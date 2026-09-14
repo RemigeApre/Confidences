@@ -1,0 +1,36 @@
+<%- include('partials/head', { title: 'Séries d\'images — ' + config.title }) %>
+<main class="container">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Séries', navBack: '/galerie' }) %>
+
+  <h2 class="wiki-detail-title">S&eacute;ries d&apos;images</h2>
+
+  <%# ── Créer une série ── %>
+  <form method="POST" action="/galerie/series" class="gs-create-form">
+    <input type="text" name="title" class="gs-create-input" placeholder="Nom de la nouvelle s&eacute;rie&hellip;" required autocomplete="off" />
+    <button type="submit" class="gb-btn-primary">Cr&eacute;er</button>
+  </form>
+
+  <%# ── Liste des séries ── %>
+  <% if (!series.length) { %>
+    <p class="intro">Aucune s&eacute;rie pour l&apos;instant.</p>
+  <% } else { %>
+  <div class="gs-list">
+    <% series.forEach(function(s) { %>
+    <div class="gs-card" data-series-id="<%= s.id %>">
+      <div class="gs-card-head">
+        <span class="gs-card-title" id="gs-title-<%= s.id %>"><%= s.title %></span>
+        <span class="gs-card-count"><%= s.count %> image<%= s.count !== 1 ? 's' : '' %></span>
+        <div class="gs-card-actions">
+          <a href="/galerie/series/<%= s.id %>" class="gb-btn-sm">G&eacute;rer</a>
+          <form method="POST" action="/galerie/series/<%= s.id %>/delete" onsubmit="return confirm('Supprimer la s&eacute;rie &laquo;&nbsp;<%= s.title %>&nbsp;&raquo; ?')" style="display:inline">
+            <button type="submit" class="link-delete-btn-text gs-delete-btn">&times;</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+
+</main>
+<%- include('partials/foot') %>

@@ -493,6 +493,108 @@ migrateSharedDataToManon();
 // d'un profil (ex. "Test") pouvait apparaitre comme celle de tout le monde
 // (colonnes partagees wiki_pages/gallery_images.rating|flame|interested, et
 // un bouton "Sync" qui recopiait ça dans les favoris de tous). Passage au
+// ── Séries d'images ──────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS image_series (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    title      TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS image_series_members (
+    series_id  INTEGER NOT NULL REFERENCES image_series(id)  ON DELETE CASCADE,
+    gallery_id INTEGER NOT NULL REFERENCES gallery_images(id) ON DELETE CASCADE,
+    position   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (series_id, gallery_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_series_members_gallery ON image_series_members(gallery_id);
+`);
+
+function createSeries(title) {
+  const now = new Date().toISOString();
+  return db.prepare("INSERT INTO image_series (title, created_at) VALUES (?, ?)").run(String(title || "").trim(), now).lastInsertRowid;
+}
+function deleteSeries(id) {
+  db.prepare("DELETE FROM image_series WHERE id = ?").run(id);
+}
+function updateSeriesTitle(id, title) {
+  db.prepare("UPDATE image_series SET title = ? WHERE id = ?").run(String(title || "").trim(), id);
+}
+function listSeries() {
+  return db.prepare("SELECT id, title, created_at FROM image_series ORDER BY id DESC").all();
+}
+function getSeries(id) {
+  return db.prepare("SELECT id, title FROM image_series WHERE id = ?").get(id) || null;
+}
+function getSeriesImages(seriesId) {
+  return db.prepare(
+    `SELECT gi.id, gi.image_paths, gi.title, gi.category, ism.position
+     FROM image_series_members ism
+     JOIN gallery_images gi ON gi.id = ism.gallery_id
+     WHERE ism.series_id = ?
+     ORDER BY ism.position ASC, gi.id ASC`
+  ).all(seriesId).map((r) => ({
+    id: r.id,
+    imagePaths: (() => { try { return JSON.parse(r.image_paths || "[]"); } catch(_) { return []; } })(),
+    title: r.title,
+    category: r.category,
+    position: r.position,
+  }));
+}
+function getImageSeries(galleryId) {
+  return db.prepare(
+    `SELECT is2.id, is2.title, ism.position,
+            (SELECT COUNT(*) FROM image_series_members WHERE series_id = is2.id) AS total
+     FROM image_series_members ism
+     JOIN image_series is2 ON is2.id = ism.series_id
+     WHERE ism.gallery_id = ?
+     ORDER BY is2.id ASC`
+  ).all(galleryId);
+}
+// Retourne { seriesId, seriesTitle, position, total, prevId, nextId }
+function getSeriesNav(galleryId, seriesId) {
+  const members = db.prepare(
+    `SELECT gallery_id FROM image_series_members WHERE series_id = ? ORDER BY position ASC, gallery_id ASC`
+  ).all(seriesId);
+  const idx = members.findIndex((m) => m.gallery_id === galleryId);
+  if (idx === -1) return null;
+  const series = getSeries(seriesId);
+  return {
+    seriesId,
+    seriesTitle: series ? series.title : "",
+    position: idx + 1,
+    total: members.length,
+    prevId: idx > 0 ? members[idx - 1].gallery_id : null,
+    nextId: idx < members.length - 1 ? members[idx + 1].gallery_id : null,
+  };
+}
+function addToSeries(seriesId, galleryId, position) {
+  db.prepare("INSERT OR REPLACE INTO image_series_members (series_id, gallery_id, position) VALUES (?, ?, ?)").run(seriesId, galleryId, position ?? 0);
+}
+function removeFromSeries(seriesId, galleryId) {
+  db.prepare("DELETE FROM image_series_members WHERE series_id = ? AND gallery_id = ?").run(seriesId, galleryId);
+}
+function reorderSeries(seriesId, orderedGalleryIds) {
+  const stmt = db.prepare("UPDATE image_series_members SET position = ? WHERE series_id = ? AND gallery_id = ?");
+  orderedGalleryIds.forEach((gid, i) => stmt.run(i, seriesId, gid));
+}
+// Retourne { galleryId: [{ seriesId, position }] } pour un ensemble d'IDs
+function getSeriesMapForIds(galleryIds) {
+  if (!galleryIds.length) return {};
+  const placeholders = galleryIds.map(() => "?").join(",");
+  const rows = db.prepare(
+    `SELECT gallery_id, series_id, is2.title AS series_title, ism.position
+     FROM image_series_members ism
+     JOIN image_series is2 ON is2.id = ism.series_id
+     WHERE gallery_id IN (${placeholders})`
+  ).all(...galleryIds);
+  const map = {};
+  rows.forEach((r) => {
+    if (!map[r.gallery_id]) map[r.gallery_id] = [];
+    map[r.gallery_id].push({ seriesId: r.series_id, title: r.series_title, position: r.position });
+  });
+  return map;
+}
+
 // nouveau modele "un profil = ses propres reactions" (table
 // content_reactions) : les vieilles colonnes partagees ne sont plus lues
 // (voir rowToWikiPage/rowToGalleryImage), donc deja neutres. Ici on vide en
@@ -1321,4 +1423,16 @@ module.exports = {
   getWikiKPIs,
   getGalleryKPIs,
   getUserDetail,
+  createSeries,
+  deleteSeries,
+  updateSeriesTitle,
+  listSeries,
+  getSeries,
+  getSeriesImages,
+  getImageSeries,
+  getSeriesNav,
+  addToSeries,
+  removeFromSeries,
+  reorderSeries,
+  getSeriesMapForIds,
 };

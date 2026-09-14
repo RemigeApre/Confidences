@@ -18,6 +18,18 @@ const {
   logGalleryView,
   mergeUserReactions,
   getUserReaction,
+  createSeries,
+  deleteSeries,
+  updateSeriesTitle,
+  listSeries,
+  getSeries,
+  getSeriesImages,
+  getImageSeries,
+  getSeriesNav,
+  addToSeries,
+  removeFromSeries,
+  reorderSeries,
+  getSeriesMapForIds,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -202,7 +214,9 @@ function buildGalleryRouter(config) {
       .filter((r) => r.item_type === "gallery")
       .map((r) => r.item_id);
     const topTags = allTags.slice(0, 20);
-    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, tagBdCounts });
+    const galleryIds = items.filter((i) => i.id).map((i) => i.id);
+    const seriesMap = galleryIds.length ? getSeriesMapForIds(galleryIds) : {};
+    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, tagBdCounts, seriesMap });
   });
 
   router.post("/", requireAdmin, upload.array("images", 30), (req, res) => {
@@ -347,6 +361,93 @@ function buildGalleryRouter(config) {
     res.redirect("/galerie");
   });
 
+  // ── Séries d'images ──────────────────────────────
+  // Navigation : retourne prev/next pour galleryId dans une série donnée
+  router.get("/series-nav", (req, res) => {
+    const galleryId = Number(req.query.galleryId);
+    const seriesId  = Number(req.query.seriesId);
+    if (!galleryId || !seriesId) return res.json(null);
+    const nav = getSeriesNav(galleryId, seriesId);
+    res.json(nav || null);
+  });
+
+  // Liste des séries (page admin)
+  router.get("/series", requireAdmin, (req, res) => {
+    const series = listSeries().map((s) => {
+      const members = getSeriesImages(s.id);
+      return { ...s, count: members.length };
+    });
+    res.render("gallery-series", { config, series });
+  });
+
+  // Créer une nouvelle série
+  router.post("/series", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
+    const title = String(req.body.title || "").trim();
+    if (!title) return res.redirect("/galerie/series");
+    createSeries(title);
+    res.redirect("/galerie/series");
+  });
+
+  // Détail d'une série (membres + réordonnancement)
+  router.get("/series/:sid", requireAdmin, (req, res) => {
+    const sid = Number(req.params.sid);
+    const series = getSeries(sid);
+    if (!series) return res.redirect("/galerie/series");
+    const members = getSeriesImages(sid);
+    res.render("gallery-series-detail", { config, series, members });
+  });
+
+  // Renommer une série
+  router.post("/series/:sid/rename", requireAdmin, express.json(), (req, res) => {
+    const sid = Number(req.params.sid);
+    const title = String(req.body.title || "").trim();
+    if (!title || !getSeries(sid)) return res.json({ ok: false });
+    updateSeriesTitle(sid, title);
+    res.json({ ok: true });
+  });
+
+  // Supprimer une série
+  router.post("/series/:sid/delete", requireAdmin, (req, res) => {
+    const sid = Number(req.params.sid);
+    if (getSeries(sid)) deleteSeries(sid);
+    res.redirect("/galerie/series");
+  });
+
+  // Ajouter une image à une série
+  router.post("/series/:sid/add", requireAdmin, express.json(), (req, res) => {
+    const sid = Number(req.params.sid);
+    const galleryId = Number(req.body.galleryId);
+    if (!getSeries(sid) || !getGalleryImage(galleryId)) return res.json({ ok: false });
+    const members = getSeriesImages(sid);
+    const maxPos = members.reduce((m, x) => Math.max(m, x.position), -1);
+    addToSeries(sid, galleryId, maxPos + 1);
+    res.json({ ok: true });
+  });
+
+  // Retirer une image d'une série
+  router.post("/series/:sid/remove", requireAdmin, express.json(), (req, res) => {
+    const sid = Number(req.params.sid);
+    const galleryId = Number(req.body.galleryId);
+    removeFromSeries(sid, galleryId);
+    res.json({ ok: true });
+  });
+
+  // Réordonner les membres d'une série
+  router.post("/series/:sid/reorder", requireAdmin, express.json(), (req, res) => {
+    const sid = Number(req.params.sid);
+    const ids = [].concat(req.body.ids || []).map(Number).filter(Number.isInteger);
+    if (!ids.length || !getSeries(sid)) return res.json({ ok: false });
+    reorderSeries(sid, ids);
+    res.json({ ok: true });
+  });
+
+  // Séries d'une image galerie (pour lightbox / formulaire)
+  router.get("/image-series/:galleryId", (req, res) => {
+    const galleryId = Number(req.params.galleryId);
+    if (!galleryId) return res.json([]);
+    res.json(getImageSeries(galleryId));
+  });
+
   router.get("/:id/edit", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
@@ -354,7 +455,9 @@ function buildGalleryRouter(config) {
     Object.assign(image, getUserReaction(req.user.id, "gallery", id));
     const { allTags } = getCtx(req.user);
     const linkedPage = image.wikiPageId ? getWikiPage(image.wikiPageId) : null;
-    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage });
+    const imageSeries = getImageSeries(id);
+    const allSeries = listSeries();
+    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage, imageSeries, allSeries });
   });
 
   router.post("/:id/view", (req, res) => {

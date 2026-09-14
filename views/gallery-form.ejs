@@ -129,10 +129,86 @@
     </div>
   </form>
 
+  <%# ─ Séries ─ %>
+  <div class="gs-form-section">
+    <h3 class="gs-form-title">S&eacute;ries</h3>
+    <% if (imageSeries.length) { %>
+      <ul class="gs-form-list">
+        <% imageSeries.forEach(function(s) { %>
+        <li class="gs-form-item">
+          <a href="/galerie/series/<%= s.id %>" class="gs-form-series-link"><%= s.title %></a>
+          <span class="gs-form-pos">&eacute;p.&nbsp;<%= s.position + 1 %> / <%= s.total %></span>
+          <button type="button" class="gs-form-rm link-delete-btn-text"
+                  data-series-id="<%= s.id %>" data-gallery-id="<%= image.id %>">&times; Retirer</button>
+        </li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="gs-form-none">Pas encore dans une s&eacute;rie.</p>
+    <% } %>
+    <div class="gs-form-add-row">
+      <select id="gf-series-select" class="gb-select gs-form-select">
+        <option value="">— Ajouter &agrave; une s&eacute;rie —</option>
+        <% allSeries.forEach(function(s) { %>
+          <% if (!imageSeries.find(function(is){ return is.id === s.id; })) { %>
+            <option value="<%= s.id %>"><%= s.title %></option>
+          <% } %>
+        <% }) %>
+      </select>
+      <button type="button" id="gf-series-add-btn" class="gb-btn-sm">Ajouter</button>
+    </div>
+    <p id="gf-series-msg" class="gs-add-msg" hidden></p>
+  </div>
+
   <form method="POST" action="/galerie/<%= image.id %>/delete" class="gallery-delete-form-page" onsubmit="return confirm('Supprimer cette image definitivement ?')">
     <button type="submit" class="link-delete-btn-text">Supprimer cette image</button>
   </form>
 </main>
+<script>
+(function () {
+  var IMAGE_ID = <%= image.id %>;
+
+  function showMsg(text, ok) {
+    var el = document.getElementById("gf-series-msg");
+    if (!el) return;
+    el.textContent = text;
+    el.className = "gs-add-msg " + (ok ? "gs-add-msg--ok" : "gs-add-msg--err");
+    el.hidden = false;
+    setTimeout(function () { el.hidden = true; }, 3000);
+  }
+
+  // Ajouter à une série
+  var addBtn = document.getElementById("gf-series-add-btn");
+  var addSel = document.getElementById("gf-series-select");
+  if (addBtn && addSel) {
+    addBtn.addEventListener("click", function () {
+      var sid = Number(addSel.value);
+      if (!sid) return;
+      fetch("/galerie/series/" + sid + "/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ galleryId: IMAGE_ID }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok) { showMsg("Ajouté ! Rechargez pour voir.", true); location.reload(); }
+        else showMsg("Erreur.", false);
+      });
+    });
+  }
+
+  // Retirer d'une série
+  document.querySelectorAll(".gs-form-rm").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var sid = Number(btn.dataset.seriesId);
+      var gid = Number(btn.dataset.galleryId);
+      fetch("/galerie/series/" + sid + "/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ galleryId: gid }),
+      }).then(function () { location.reload(); });
+    });
+  });
+})();
+</script>
 <script src="/wiki.js?v=<%= assetVersion %>"></script>
 <script src="/gallery.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

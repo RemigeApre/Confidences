@@ -121,6 +121,7 @@
     <% } %>
     <% items.forEach(function(item, idx) { %>
       <% var cat = item.category ? categories.find(function (c) { return c.key === item.category; }) : null; %>
+      <% var itemSeries = item.id ? (seriesMap[item.id] || []) : []; %>
       <div class="gallery-card"
         data-idx="<%= idx %>"
         data-tags="<%= item.tags.join('|').toLowerCase() %>"
@@ -139,7 +140,8 @@
         data-fav="<%= favoriteGalleryIds.indexOf(item.id) !== -1 ? '1' : '0' %>"
         data-processed="<%= (item.processed && item.type === 'gallery') ? '1' : '0' %>"
         data-author="<%= (item.author || '').replace(/"/g, '') %>"
-        data-parody="<%= (item.parody || '').replace(/"/g, '') %>">
+        data-parody="<%= (item.parody || '').replace(/"/g, '') %>"
+        data-series="<%= itemSeries.map(function(s){ return s.seriesId; }).join(',') %>">
 
         <% if (cat) { %><span class="wiki-card-accent" style="background: hsl(<%= cat.hue %>, 55%, 45%)"></span><% } %>
 
@@ -176,6 +178,7 @@
   <%# ─── FAB + DROPDOWN ───────────────────────────────────────────────── %>
   <% if (currentUser && currentUser.isAdmin) { %>
   <div class="gallery-fab-wrap" id="gallery-fab-wrap">
+    <a href="/galerie/series" class="gb-fab-link" title="S&eacute;ries">&#8734;</a>
     <a href="/galerie/batch" class="gb-fab-link" title="Import group&eacute;">&#9776;</a>
     <button type="button" class="wiki-fab-add" id="gallery-fab-main" title="Ajouter une image">+</button>
   </div>
@@ -269,6 +272,13 @@
     <button type="button" class="gallery-lb-next" title="Suivante">&#8250;</button>
     <img class="gallery-lb-img" alt="" />
     <div class="gallery-lb-dots" id="gallery-lb-dots" hidden></div>
+
+    <%# Barre de navigation série (superposée en bas) %>
+    <div id="gallery-lb-series-nav" class="gallery-lb-series-nav" hidden>
+      <button type="button" class="gallery-lb-series-arrow" id="gallery-lb-series-prev" title="Pr&eacute;c&eacute;dent dans la s&eacute;rie">&#8249;</button>
+      <span class="gallery-lb-series-info" id="gallery-lb-series-info"></span>
+      <button type="button" class="gallery-lb-series-arrow" id="gallery-lb-series-next" title="Suivant dans la s&eacute;rie">&#8250;</button>
+    </div>
   </div>
 
   <%# Volet droit : infos décorrélées de l'image %>

@@ -649,10 +649,15 @@
   var lbFavBtn     = document.getElementById("gallery-lb-fav-btn");
   var lbEditBtn    = document.getElementById("gallery-lb-edit-btn");
   var lbProcessBtn = document.getElementById("gallery-lb-processed-btn");
+  var lbSeriesNav  = document.getElementById("gallery-lb-series-nav");
+  var lbSeriesInfo = document.getElementById("gallery-lb-series-info");
+  var lbSeriesPrev = document.getElementById("gallery-lb-series-prev");
+  var lbSeriesNext = document.getElementById("gallery-lb-series-next");
 
   var lbVisible    = [];
   var lbCardIndex  = 0;
   var lbImgIndex   = 0;
+  var lbCurrentSeriesNav = null; // {seriesId, prevId, nextId, position, total, seriesTitle}
 
   function buildVisible() {
     if (!grid) return;
@@ -675,6 +680,7 @@
     var displayTitle = card.dataset.displayTitle || card.dataset.title || "";
     var tags         = (card.dataset.tags || "").split("|").filter(Boolean);
     var wikiId       = card.dataset.wikiId || "";
+    var galleryId    = card ? Number(card.dataset.galleryId) : 0;
 
     if (lbImg) lbImg.src = src;
     if (lbTags) {
@@ -724,6 +730,25 @@
     if (lbPrev) lbPrev.hidden = atFirst;
     if (lbNext) lbNext.hidden = atLast;
 
+    // Série : charger la nav si l'image appartient à une série
+    lbCurrentSeriesNav = null;
+    if (lbSeriesNav) lbSeriesNav.hidden = true;
+    var seriesIds = (card.dataset.series || "").split(",").map(Number).filter(Boolean);
+    if (galleryId && seriesIds.length) {
+      var sid = seriesIds[0];
+      fetch("/galerie/series-nav?galleryId=" + galleryId + "&seriesId=" + sid)
+        .then(function (r) { return r.json(); })
+        .then(function (nav) {
+          if (!nav) return;
+          lbCurrentSeriesNav = nav;
+          if (lbSeriesInfo) lbSeriesInfo.textContent = nav.seriesTitle + "\u00a0(" + nav.position + "\u00a0/\u00a0" + nav.total + ")";
+          if (lbSeriesPrev) lbSeriesPrev.hidden = nav.prevId == null;
+          if (lbSeriesNext) lbSeriesNext.hidden = nav.nextId == null;
+          if (lbSeriesNav) lbSeriesNav.hidden = false;
+        })
+        .catch(function () {});
+    }
+
     // Track view pour les images de galerie (une fois par item par session lightbox)
     var galleryIdStr = card.dataset.galleryId || "";
     if (galleryIdStr && galleryIdStr !== lastTrackedGalleryId) {
@@ -732,7 +757,6 @@
     }
 
     // Actions : rating, fav, edit (uniquement pour les images de galerie avec ID)
-    var galleryId = card ? Number(card.dataset.galleryId) : 0;
     if (lbActions) {
       lbActions.hidden = !galleryId;
       if (galleryId) {
@@ -797,9 +821,31 @@
     renderLightbox();
   }
 
+  // Naviguer vers un gallery item par son ID (pour la nav série)
+  function openLightboxByGalleryId(galleryId) {
+    if (!galleryId) return;
+    // Chercher d'abord dans les cartes visibles
+    var idx = lbVisible.findIndex(function (c) { return Number(c.dataset.galleryId) === galleryId; });
+    if (idx !== -1) { openLightbox(idx, 0); return; }
+    // Si pas visible (filtré), chercher dans tout le DOM
+    var card = document.querySelector(".gallery-card[data-gallery-id='" + galleryId + "']");
+    if (!card) return;
+    // Ouvrir temporairement en ajoutant la carte au tableau visible
+    var prev = lbVisible;
+    lbVisible = [card];
+    openLightbox(0, 0);
+    lbVisible = prev;
+  }
+
   if (lbClose)  lbClose.addEventListener("click", closeLightbox);
   if (lbPrev)   lbPrev.addEventListener("click", function(){ navigate(-1); });
   if (lbNext)   lbNext.addEventListener("click", function(){ navigate(1);  });
+  if (lbSeriesPrev) lbSeriesPrev.addEventListener("click", function () {
+    if (lbCurrentSeriesNav && lbCurrentSeriesNav.prevId != null) openLightboxByGalleryId(lbCurrentSeriesNav.prevId);
+  });
+  if (lbSeriesNext) lbSeriesNext.addEventListener("click", function () {
+    if (lbCurrentSeriesNav && lbCurrentSeriesNav.nextId != null) openLightboxByGalleryId(lbCurrentSeriesNav.nextId);
+  });
   if (lightbox) {
     lightbox.addEventListener("click", function(e) {
       if (e.target === lightbox) closeLightbox();

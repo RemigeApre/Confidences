@@ -1,0 +1,161 @@
+<%- include('partials/head', { title: series.title + ' — Séries — ' + config.title }) %>
+<main class="container">
+  <%- include('partials/top-nav', { config: config, navTitle: series.title, navBack: '/galerie/series' }) %>
+
+  <div class="gs-detail-head">
+    <h2 class="wiki-detail-title gs-detail-title" id="gs-detail-title" contenteditable="true" spellcheck="false"><%= series.title %></h2>
+    <span class="gs-detail-hint">Cliquez pour renommer</span>
+  </div>
+
+  <%# ── Membres actuels ── %>
+  <% if (!members.length) { %>
+    <p class="intro">Cette s&eacute;rie ne contient aucune image.</p>
+  <% } else { %>
+  <div class="gs-members" id="gs-members">
+    <% members.forEach(function(m, idx) { %>
+    <div class="gs-member" data-gallery-id="<%= m.id %>" data-pos="<%= m.position %>">
+      <div class="gs-member-order">
+        <button type="button" class="gs-order-btn" data-dir="-1" <%= idx === 0 ? 'disabled' : '' %> title="Monter">&#8593;</button>
+        <span class="gs-order-num"><%= idx + 1 %></span>
+        <button type="button" class="gs-order-btn" data-dir="1" <%= idx === members.length - 1 ? 'disabled' : '' %> title="Descendre">&#8595;</button>
+      </div>
+      <img src="<%= thumbUrl(m.imagePaths[0]) %>" alt="" class="gs-member-thumb" loading="lazy" />
+      <div class="gs-member-info">
+        <span class="gs-member-title"><%= m.title || '(sans titre)' %></span>
+        <span class="gs-member-id">#<%= m.id %></span>
+      </div>
+      <button type="button" class="gs-member-rm" title="Retirer de la s&eacute;rie">&times;</button>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <%# ── Ajouter une image ── %>
+  <div class="gs-add-wrap">
+    <h3 class="gs-add-title">Ajouter une image</h3>
+    <div class="gs-add-row">
+      <input type="number" id="gs-add-id" class="gb-input" placeholder="ID de l&apos;image galerie&hellip;" min="1" style="width:160px" />
+      <button type="button" id="gs-add-btn" class="gb-btn-primary">Ajouter</button>
+    </div>
+    <p id="gs-add-msg" class="gs-add-msg" hidden></p>
+  </div>
+
+</main>
+<script>
+(function () {
+  var SERIES_ID = <%= series.id %>;
+
+  // ── Renommer ─────────────────────────────────────
+  var titleEl = document.getElementById("gs-detail-title");
+  var renameTimer = null;
+  if (titleEl) {
+    titleEl.addEventListener("input", function () {
+      clearTimeout(renameTimer);
+      renameTimer = setTimeout(function () {
+        var t = titleEl.textContent.trim();
+        if (!t) return;
+        fetch("/galerie/series/" + SERIES_ID + "/rename", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: t }),
+        });
+      }, 800);
+    });
+  }
+
+  // ── Réordonner ───────────────────────────────────
+  var membersEl = document.getElementById("gs-members");
+
+  function getOrderedIds() {
+    if (!membersEl) return [];
+    return Array.from(membersEl.querySelectorAll(".gs-member")).map(function (el) {
+      return Number(el.dataset.galleryId);
+    });
+  }
+
+  function refreshOrderButtons() {
+    if (!membersEl) return;
+    var rows = Array.from(membersEl.querySelectorAll(".gs-member"));
+    rows.forEach(function (row, idx) {
+      var up   = row.querySelector("[data-dir='-1']");
+      var down = row.querySelector("[data-dir='1']");
+      var num  = row.querySelector(".gs-order-num");
+      if (up)   up.disabled   = idx === 0;
+      if (down) down.disabled = idx === rows.length - 1;
+      if (num)  num.textContent = idx + 1;
+    });
+  }
+
+  function saveOrder() {
+    var ids = getOrderedIds();
+    fetch("/galerie/series/" + SERIES_ID + "/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: ids }),
+    });
+  }
+
+  if (membersEl) {
+    membersEl.addEventListener("click", function (e) {
+      var btn = e.target.closest(".gs-order-btn");
+      if (!btn) return;
+      var dir = Number(btn.dataset.dir);
+      var row = btn.closest(".gs-member");
+      if (!row) return;
+      var sibling = dir === -1 ? row.previousElementSibling : row.nextElementSibling;
+      if (!sibling || !sibling.classList.contains("gs-member")) return;
+      if (dir === -1) membersEl.insertBefore(row, sibling);
+      else membersEl.insertBefore(sibling, row);
+      refreshOrderButtons();
+      saveOrder();
+    });
+
+    // Retirer un membre
+    membersEl.addEventListener("click", function (e) {
+      var btn = e.target.closest(".gs-member-rm");
+      if (!btn) return;
+      var row = btn.closest(".gs-member");
+      var galleryId = Number(row.dataset.galleryId);
+      if (!confirm("Retirer cette image de la série ?")) return;
+      fetch("/galerie/series/" + SERIES_ID + "/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ galleryId: galleryId }),
+      }).then(function () {
+        row.remove();
+        refreshOrderButtons();
+      });
+    });
+  }
+
+  // ── Ajouter ──────────────────────────────────────
+  var addIdInput = document.getElementById("gs-add-id");
+  var addBtn     = document.getElementById("gs-add-btn");
+  var addMsg     = document.getElementById("gs-add-msg");
+
+  function showMsg(text, ok) {
+    if (!addMsg) return;
+    addMsg.textContent = text;
+    addMsg.className = "gs-add-msg " + (ok ? "gs-add-msg--ok" : "gs-add-msg--err");
+    addMsg.hidden = false;
+    setTimeout(function () { addMsg.hidden = true; }, 3000);
+  }
+
+  if (addBtn && addIdInput) {
+    addBtn.addEventListener("click", function () {
+      var gid = Number(addIdInput.value);
+      if (!gid) return;
+      fetch("/galerie/series/" + SERIES_ID + "/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ galleryId: gid }),
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (!data.ok) { showMsg("Image introuvable ou déjà dans la série.", false); return; }
+        showMsg("Ajoutée ! Rechargez pour voir.", true);
+        addIdInput.value = "";
+      }).catch(function () { showMsg("Erreur réseau.", false); });
+    });
+  }
+})();
+</script>
+<%- include('partials/foot') %>
