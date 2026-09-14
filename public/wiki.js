@@ -2,6 +2,36 @@
   "use strict";
 
   // ══════════════════════════════════════════════════
+  // 0. TODO-PANEL : cocher l'item si page vient d'être créée
+  // ══════════════════════════════════════════════════
+  (function () {
+    var pending;
+    try { pending = JSON.parse(sessionStorage.getItem("wiki-todo-pending") || "null"); } catch (_) { pending = null; }
+    if (!pending) return;
+
+    // On est sur une page détail si .wiki-detail-banner-title existe
+    var titleEl = document.querySelector(".wiki-detail-banner-title");
+    if (!titleEl) return;
+
+    var pageTitle = titleEl.textContent.trim().toLowerCase();
+    var pendingTitle = String(pending.title || "").trim().toLowerCase();
+    if (pageTitle !== pendingTitle) return;
+
+    // Correspondance : cocher l'item (= le supprimer de la liste)
+    try { sessionStorage.removeItem("wiki-todo-pending"); } catch (_) {}
+    try {
+      var TODO_KEY = "wiki-todo-list";
+      var d = JSON.parse(localStorage.getItem(TODO_KEY) || "{}");
+      if (d[pending.catKey]) {
+        d[pending.catKey] = d[pending.catKey].filter(function (t) {
+          return t.trim().toLowerCase() !== pendingTitle;
+        });
+        localStorage.setItem(TODO_KEY, JSON.stringify(d));
+      }
+    } catch (_) {}
+  })();
+
+  // ══════════════════════════════════════════════════
   // 1. MARKDOWN RENDERER
   // ══════════════════════════════════════════════════
   function esc(s) {
