@@ -4594,6 +4594,12 @@
             goBtn.title = "Cr\u00e9er cette page";
             goBtn.textContent = "\u2192";
 
+            (function (catKey, title) {
+              goBtn.addEventListener("click", function () {
+                try { sessionStorage.setItem("wiki-todo-pending", JSON.stringify({ catKey: catKey, title: title })); } catch (_) {}
+              });
+            })(cat.key, item);
+
             var delBtn = document.createElement("button");
             delBtn.type = "button";
             delBtn.className = "wiki-todo-del-btn";
