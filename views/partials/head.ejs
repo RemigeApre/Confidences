@@ -6,6 +6,42 @@
   <meta name="robots" content="noindex, nofollow, noarchive" />
   <meta name="color-scheme" content="dark" />
   <title><%= typeof title !== "undefined" ? title : "Quiz" %></title>
-  <link rel="stylesheet" href="/style.css?v=<%= assetVersion %>" />
+  <style>
+    /* Critique, en ligne : fond sombre + loader visibles immediatement, avant
+       meme que style.css ait charge. Evite le flash blanc / la mise en page
+       "cassee" le temps que la feuille de style arrive (connexion lente). */
+    html, body { background: #121212; }
+    #boot-veil {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: #121212;
+      transition: opacity .3s ease;
+    }
+    #boot-veil svg { width: 40px; height: 40px; animation: boot-veil-spin .8s linear infinite; }
+    @keyframes boot-veil-spin { to { transform: rotate(360deg); } }
+    html.css-ready #boot-veil { opacity: 0; pointer-events: none; }
+  </style>
+  <script>
+    (function () {
+      function reveal() {
+        document.documentElement.classList.add("css-ready");
+        var veil = document.getElementById("boot-veil");
+        if (veil) setTimeout(function () { veil.remove(); }, 350);
+      }
+      window.__revealBoot = reveal;
+      // Filet de securite : si l'evenement onload de la feuille de style ne se
+      // declenche jamais (bug connu de certains navigateurs avec une feuille
+      // deja en cache), on revele quand meme la page au bout de 3s.
+      setTimeout(reveal, 3000);
+    })();
+  </script>
+  <link rel="stylesheet" href="/style.css?v=<%= assetVersion %>" onload="window.__revealBoot()" />
+  <noscript><style>#boot-veil { display: none; }</style></noscript>
 </head>
 <body>
+<div id="boot-veil" aria-hidden="true">
+  <svg viewBox="0 0 50 50">
+    <circle cx="25" cy="25" r="20" fill="none" stroke="#333" stroke-width="4" />
+    <circle cx="25" cy="25" r="20" fill="none" stroke="#5b4fcf" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.4 94.2" />
+  </svg>
+</div>

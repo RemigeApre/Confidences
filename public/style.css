@@ -21,6 +21,20 @@ body {
   line-height: 1.5;
 }
 
+/* Placeholder de chargement pour toute image du site : fond sombre + spinner
+   (SVG qui s'anime tout seul via animateTransform, pas besoin de JS/CSS
+   animation) tant que l'image ne s'est pas entierement dessinee par-dessus.
+   Remplace le flash blanc "image qui se charge du haut vers le bas". */
+img {
+  background-color: var(--card);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3E%3Ccircle cx='25' cy='25' r='20' fill='none' stroke='%23333' stroke-width='4'/%3E%3Ccircle cx='25' cy='25' r='20' fill='none' stroke='%235b4fcf' stroke-width='4' stroke-linecap='round' stroke-dasharray='31.4 94.2'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 25 25' to='360 25 25' dur='0.8s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 28px 28px;
+}
+img.lq-img-ready { background-image: none; background-color: transparent; }
+img.lq-img-error { background-image: none; }
+
 .container {
   max-width: 640px;
   margin: 0 auto;

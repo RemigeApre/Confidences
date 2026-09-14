@@ -170,3 +170,29 @@
     });
   }
 })();
+
+// ── Chargement des images : toutes les <img> ont en permanence un fond
+// sombre + spinner (voir style.css), visible tant que l'image n'a pas fini
+// de se dessiner par-dessus — plus de flash blanc qui se remplit du haut
+// vers le bas. C'est du pur CSS (marche meme sans JS, et pour toute image
+// ajoutee dynamiquement ailleurs : lightbox, formulaires...). Le JS ici sert
+// juste a : 1) enlever le fond une fois l'image chargee (sinon une image
+// avec de la transparence garderait un fond sombre en permanence derriere),
+// 2) arreter le spinner sur une image en erreur (404) au lieu qu'il tourne
+// indefiniment derriere l'icone cassee. "load"/"error" ne bubblent pas sur
+// <img>, d'ou l'ecoute en capture sur document (couvre toute image, presente
+// ou ajoutee plus tard).
+document.addEventListener("load", function (e) {
+  if (e.target && e.target.tagName === "IMG") e.target.classList.add("lq-img-ready");
+}, true);
+document.addEventListener("error", function (e) {
+  if (e.target && e.target.tagName === "IMG") e.target.classList.add("lq-img-error");
+}, true);
+// Rattrapage : une image deja en cache peut avoir fini de charger (et donc
+// declenche son evenement "load") avant que ce script (charge en fin de
+// page) n'ait eu le temps de poser l'ecouteur ci-dessus — sans ca elle
+// resterait coincee avec le spinner affiche pour rien.
+document.querySelectorAll("img").forEach(function (img) {
+  if (!img.complete) return;
+  img.classList.add(img.naturalWidth > 0 ? "lq-img-ready" : "lq-img-error");
+});
