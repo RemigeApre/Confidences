@@ -11,6 +11,8 @@ const {
   getUserById,
   createUser,
   updateUser,
+  updateOwnProfile,
+  updateUserSettings,
   updateUserPassword,
   listGalleryImages,
   getGalleryImage,
@@ -144,20 +146,33 @@ function buildAdminRouter(config) {
 
   // ── Gestion des profils ──────────────────────────────
   router.post("/profils", requireAdmin, (req, res) => {
-    const username = String(req.body.username || "").trim().toLowerCase();
-    const displayName = String(req.body.display_name || "").trim();
+    const nom = String(req.body.nom || "").trim();
+    const username = nom.toLowerCase();
+    const displayName = nom;
     const password = String(req.body.password || "");
-    const isAdmin = req.body.is_admin === "on";
-    const isTest = req.body.is_test === "on";
+    const role = String(req.body.role || "normal");
+    const isAdmin = role === "admin";
+    const isTest = role === "test";
 
-    if (!username || !displayName || !password) {
-      return renderAdmin(req, res, "Tous les champs sont obligatoires.");
+    if (!nom || !password) {
+      return renderAdmin(req, res, "Le nom et le mot de passe sont obligatoires.");
     }
     if (getUserByUsername(username)) {
       return renderAdmin(req, res, "Ce nom d'utilisateur existe déjà.");
     }
 
-    createUser({ username, displayName, passwordHash: hashPassword(password), isAdmin, isTest });
+    const newId = createUser({ username, displayName, passwordHash: hashPassword(password), isAdmin, isTest });
+
+    const email = String(req.body.email || "").trim();
+    const sexeRaw = String(req.body.sexe || "");
+    const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";
+    const birthYear = req.body.birth_year ? Number(req.body.birth_year) || null : null;
+    const orientation = String(req.body.orientation || "");
+    if (email || sexe || birthYear || orientation) {
+      updateOwnProfile(newId, { displayName, email, sexe, birthYear });
+      if (orientation) updateUserSettings(newId, { orientation });
+    }
+
     res.redirect("/admin#tab-utilisateurs");
   });
 
@@ -169,21 +184,29 @@ function buildAdminRouter(config) {
     const existing = Number.isInteger(id) ? getUserById(id) : null;
     if (!existing) return res.redirect("/admin#tab-utilisateurs");
 
-    const username = String(req.body.username || "").trim().toLowerCase();
-    const displayName = String(req.body.display_name || "").trim();
-    if (!username || !displayName) {
-      return renderAdmin(req, res, "Tous les champs sont obligatoires.");
-    }
+    const nom = String(req.body.nom || "").trim();
+    const username = nom.toLowerCase();
+    const displayName = nom;
+    if (!nom) return renderAdmin(req, res, "Le nom est obligatoire.");
+
     const dupe = getUserByUsername(username);
     if (dupe && dupe.id !== id) {
       return renderAdmin(req, res, "Ce nom d'utilisateur existe déjà.");
     }
 
-    const isAdmin = id === req.session.userId ? true : req.body.is_admin === "on";
-    const isTest = req.body.is_test === "on";
+    const role = String(req.body.role || "normal");
+    const isAdmin = id === req.session.userId ? true : role === "admin";
+    const isTest = id !== req.session.userId && role === "test";
     const sexeRaw = String(req.body.sexe || "");
     const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";
     updateUser(id, { username, displayName, isAdmin, isTest, sexe });
+
+    const email = String(req.body.email || "").trim();
+    const birthYear = req.body.birth_year ? Number(req.body.birth_year) || null : null;
+    const orientation = String(req.body.orientation || "");
+    updateOwnProfile(id, { displayName, email, sexe, birthYear });
+    if (orientation !== undefined) updateUserSettings(id, { orientation });
+
     res.redirect("/admin#tab-utilisateurs");
   });
 
@@ -202,6 +225,25 @@ function buildAdminRouter(config) {
       deleteUser(id);
     }
     res.redirect("/admin#tab-utilisateurs");
+  });
+
+  router.get("/utilisateur/:id/json", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: "invalid id" });
+    const user = getUserById(id);
+    if (!user) return res.status(404).json({ error: "not found" });
+    const attempt = getAttempt(tokenForUser(user));
+    const liveScores = attempt ? computeScores(config, attempt.data) : null;
+    let liveRaw = 0, liveMax = 0;
+    if (liveScores) {
+      for (const key of Object.keys(liveScores.sections)) {
+        const s = liveScores.sections[key];
+        if (s.type === "matrix") { liveRaw += s.raw; liveMax += s.max; }
+      }
+    }
+    const livePercentage = liveMax ? Math.round((liveRaw / liveMax) * 1000) / 10 : 0;
+    const reactionStats = getUserReactionStats(id);
+    res.json({ user, reactionStats, livePercentage });
   });
 
   router.get("/utilisateur/:id", requireAdmin, (req, res) => {

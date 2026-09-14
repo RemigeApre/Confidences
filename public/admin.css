@@ -455,6 +455,12 @@
   color: inherit;
   display: block;
   margin-bottom: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
 }
 .admin-utile-name {
   font-size: 0.88rem;
@@ -575,9 +581,140 @@
   display: flex;
   gap: 1rem;
 }
+.admin-modal-select {
+  width: 100%;
+}
+.admin-modal-extra-details {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.admin-modal-extra-summary {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  background: rgba(255,255,255,0.03);
+  transition: color 0.12s;
+}
+.admin-modal-extra-summary:hover { color: rgba(255,255,255,0.65); }
+.admin-modal-extra-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
 .admin-modal-form .admin-btn-primary {
   margin-top: 0.25rem;
   align-self: flex-start;
+}
+
+/* ── Modal profil utilisateur (popup carte) ── */
+.admin-modal--profile {
+  width: min(480px, 94vw);
+  padding: 1.5rem;
+}
+.admin-profile-loading {
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+.adm-prof-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.adm-prof-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.8);
+}
+.adm-prof-avatar--admin { background: linear-gradient(135deg, #7c3aed55, #5b21b6); color: #c4b5fd; }
+.adm-prof-avatar--test  { background: linear-gradient(135deg, #d9770655, #b45309); color: #fcd34d; }
+.adm-prof-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.adm-prof-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-prof-username {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+}
+.adm-prof-role {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 0.1rem 0.45rem;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+  align-self: flex-start;
+}
+.adm-prof-role--admin { background: #7c3aed33; color: #c4b5fd; }
+.adm-prof-role--test  { background: #d9770633; color: #fcd34d; }
+.adm-prof-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.adm-prof-stats {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.1rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.adm-prof-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.7rem 0.5rem;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  border-right: 1px solid rgba(255,255,255,0.07);
+}
+.adm-prof-stat:last-child { border-right: none; }
+.adm-prof-stat-val {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  font-variant-numeric: tabular-nums;
+}
+.adm-prof-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Legacy — conservé pour les autres onglets qui utilisent encore ces classes */

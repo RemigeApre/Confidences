@@ -60,11 +60,12 @@
                 <a href="/admin/utilisateur/<%= state.user.id %>" class="admin-utile-menu-item">Voir le profil</a>
                 <button type="button" class="admin-utile-menu-item"
                   data-edit-id="<%= state.user.id %>"
-                  data-edit-name="<%= state.user.displayName %>"
-                  data-edit-username="<%= state.user.username %>"
+                  data-edit-nom="<%= state.user.displayName %>"
+                  data-edit-role="<%= state.user.isAdmin ? 'admin' : (state.user.isTest ? 'test' : 'normal') %>"
                   data-edit-sexe="<%= state.user.sexe || '' %>"
-                  data-edit-is-admin="<%= state.user.isAdmin ? '1' : '0' %>"
-                  data-edit-is-test="<%= state.user.isTest ? '1' : '0' %>"
+                  data-edit-birth-year="<%= state.user.birthYear || '' %>"
+                  data-edit-orientation="<%= state.user.orientation || '' %>"
+                  data-edit-email="<%= state.user.email || '' %>"
                   data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>">Modifier</button>
                 <button type="button" class="admin-utile-menu-item"
                   data-pwd-id="<%= state.user.id %>"
@@ -78,10 +79,10 @@
             </details>
           </div>
 
-          <a href="/admin/utilisateur/<%= state.user.id %>" class="admin-utile-body-link">
+          <button type="button" class="admin-utile-body-link" data-profile-id="<%= state.user.id %>">
             <div class="admin-utile-name"><%= state.user.displayName %></div>
             <div class="admin-utile-login"><%= uLastLogin %></div>
-          </a>
+          </button>
 
           <div class="admin-utile-stats">
             <div class="admin-utile-stat">
@@ -108,21 +109,52 @@
         <h2 class="admin-modal-title">Nouvel utilisateur</h2>
         <form method="POST" action="/admin/profils" class="admin-modal-form">
           <label class="admin-modal-field">
-            <span>Pr&eacute;nom affich&eacute;</span>
-            <input type="text" name="display_name" required autocomplete="off" />
-          </label>
-          <label class="admin-modal-field">
-            <span>Identifiant (login)</span>
-            <input type="text" name="username" required autocomplete="off" />
+            <span>Nom</span>
+            <input type="text" name="nom" required autocomplete="off" />
           </label>
           <label class="admin-modal-field">
             <span>Mot de passe</span>
             <input type="password" name="password" required autocomplete="new-password" />
           </label>
-          <div class="admin-modal-checks">
-            <label class="admin-check-label"><input type="checkbox" name="is_admin" /> Admin</label>
-            <label class="admin-check-label"><input type="checkbox" name="is_test" /> Test</label>
-          </div>
+          <label class="admin-modal-field">
+            <span>R&ocirc;le</span>
+            <select name="role" class="admin-modal-select">
+              <option value="normal">Normal</option>
+              <option value="admin">Admin</option>
+              <option value="test">Test</option>
+            </select>
+          </label>
+          <details class="admin-modal-extra-details">
+            <summary class="admin-modal-extra-summary">Profil &rsaquo;</summary>
+            <div class="admin-modal-extra-body">
+              <label class="admin-modal-field">
+                <span>Sexe</span>
+                <select name="sexe" class="admin-modal-select">
+                  <option value="">Non pr&eacute;cis&eacute;</option>
+                  <option value="femme">Femme</option>
+                  <option value="homme">Homme</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </label>
+              <label class="admin-modal-field">
+                <span>Ann&eacute;e de naissance</span>
+                <input type="number" name="birth_year" min="1940" max="2010" autocomplete="off" />
+              </label>
+              <label class="admin-modal-field">
+                <span>Orientation</span>
+                <select name="orientation" class="admin-modal-select">
+                  <option value="">Non pr&eacute;cis&eacute;e</option>
+                  <option value="hetero">H&eacute;t&eacute;ro</option>
+                  <option value="gay">Gay / Lesbienne</option>
+                  <option value="bi">Bisexuel·le</option>
+                </select>
+              </label>
+              <label class="admin-modal-field">
+                <span>Email</span>
+                <input type="email" name="email" autocomplete="off" />
+              </label>
+            </div>
+          </details>
           <button type="submit" class="admin-btn-primary">Cr&eacute;er</button>
         </form>
       </div>
@@ -135,26 +167,48 @@
         <h2 class="admin-modal-title">Modifier</h2>
         <form method="POST" id="admin-edit-form" action="/admin/profils/__ID__/edit" class="admin-modal-form">
           <label class="admin-modal-field">
-            <span>Pr&eacute;nom affich&eacute;</span>
-            <input type="text" name="display_name" id="edit-display-name" required autocomplete="off" />
+            <span>Nom</span>
+            <input type="text" name="nom" id="edit-nom" required autocomplete="off" />
           </label>
           <label class="admin-modal-field">
-            <span>Identifiant</span>
-            <input type="text" name="username" id="edit-username" required autocomplete="off" />
-          </label>
-          <label class="admin-modal-field">
-            <span>Sexe</span>
-            <select name="sexe" id="edit-sexe">
-              <option value="">Non pr&eacute;cis&eacute;</option>
-              <option value="femme">Femme</option>
-              <option value="homme">Homme</option>
-              <option value="autre">Autre</option>
+            <span>R&ocirc;le</span>
+            <select name="role" id="edit-role" class="admin-modal-select">
+              <option value="normal">Normal</option>
+              <option value="admin">Admin</option>
+              <option value="test">Test</option>
             </select>
           </label>
-          <div class="admin-modal-checks">
-            <label class="admin-check-label"><input type="checkbox" name="is_admin" id="edit-is-admin" /> Admin</label>
-            <label class="admin-check-label"><input type="checkbox" name="is_test" id="edit-is-test" /> Test</label>
-          </div>
+          <details class="admin-modal-extra-details" open>
+            <summary class="admin-modal-extra-summary">Profil &rsaquo;</summary>
+            <div class="admin-modal-extra-body">
+              <label class="admin-modal-field">
+                <span>Sexe</span>
+                <select name="sexe" id="edit-sexe" class="admin-modal-select">
+                  <option value="">Non pr&eacute;cis&eacute;</option>
+                  <option value="femme">Femme</option>
+                  <option value="homme">Homme</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </label>
+              <label class="admin-modal-field">
+                <span>Ann&eacute;e de naissance</span>
+                <input type="number" name="birth_year" id="edit-birth-year" min="1940" max="2010" autocomplete="off" />
+              </label>
+              <label class="admin-modal-field">
+                <span>Orientation</span>
+                <select name="orientation" id="edit-orientation" class="admin-modal-select">
+                  <option value="">Non pr&eacute;cis&eacute;e</option>
+                  <option value="hetero">H&eacute;t&eacute;ro</option>
+                  <option value="gay">Gay / Lesbienne</option>
+                  <option value="bi">Bisexuel·le</option>
+                </select>
+              </label>
+              <label class="admin-modal-field">
+                <span>Email</span>
+                <input type="email" name="email" id="edit-email" autocomplete="off" />
+              </label>
+            </div>
+          </details>
           <button type="submit" class="admin-btn-primary">Enregistrer</button>
         </form>
       </div>
@@ -177,6 +231,16 @@
 
     <%# ── Formulaire caché : supprimer ── %>
     <form method="POST" id="admin-del-form" action="/admin/profils/__ID__/delete" style="display:none"></form>
+
+    <%# ── Modal : profil utilisateur (popup carte) ── %>
+    <div class="admin-modal-overlay" id="admin-profile-modal" hidden>
+      <div class="admin-modal admin-modal--profile">
+        <button type="button" class="admin-modal-close" id="admin-profile-modal-close" aria-label="Fermer">&#215;</button>
+        <div id="admin-profile-modal-body" class="admin-profile-modal-body">
+          <div class="admin-profile-loading">Chargement&hellip;</div>
+        </div>
+      </div>
+    </div>
 
   </section>
 
@@ -549,12 +613,14 @@
       btn.addEventListener("click", function () {
         var id = btn.dataset.editId;
         document.getElementById("admin-edit-form").action = "/admin/profils/" + id + "/edit";
-        document.getElementById("edit-display-name").value = btn.dataset.editName;
-        document.getElementById("edit-username").value = btn.dataset.editUsername;
-        document.getElementById("edit-sexe").value = btn.dataset.editSexe;
-        document.getElementById("edit-is-admin").checked = btn.dataset.editIsAdmin === "1";
-        document.getElementById("edit-is-admin").disabled = btn.dataset.self === "1";
-        document.getElementById("edit-is-test").checked = btn.dataset.editIsTest === "1";
+        document.getElementById("edit-nom").value = btn.dataset.editNom || "";
+        var roleSelect = document.getElementById("edit-role");
+        roleSelect.value = btn.dataset.editRole || "normal";
+        roleSelect.disabled = btn.dataset.self === "1";
+        document.getElementById("edit-sexe").value = btn.dataset.editSexe || "";
+        document.getElementById("edit-birth-year").value = btn.dataset.editBirthYear || "";
+        document.getElementById("edit-orientation").value = btn.dataset.editOrientation || "";
+        document.getElementById("edit-email").value = btn.dataset.editEmail || "";
         openModal("admin-edit-modal");
       });
     });
@@ -576,6 +642,64 @@
         if (!confirm("Supprimer " + name + " ? Cette action est irréversible.")) return;
         document.getElementById("admin-del-form").action = "/admin/profils/" + btn.dataset.delId + "/delete";
         document.getElementById("admin-del-form").submit();
+      });
+    });
+
+    // Fermer profil popup
+    document.getElementById("admin-profile-modal-close").addEventListener("click", function () {
+      closeModal("admin-profile-modal");
+    });
+    document.getElementById("admin-profile-modal").addEventListener("click", function (e) {
+      if (e.target === this) closeModal("admin-profile-modal");
+    });
+
+    // Clic sur la carte utilisateur → popup profil
+    document.querySelectorAll("[data-profile-id]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.dataset.profileId;
+        var body = document.getElementById("admin-profile-modal-body");
+        body.innerHTML = '<div class="admin-profile-loading">Chargement\u2026</div>';
+        openModal("admin-profile-modal");
+        fetch("/admin/utilisateur/" + id + "/json")
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var u = d.user;
+            var sexeLabel = { femme: "Femme", homme: "Homme", autre: "Autre" };
+            var orientLabel = { hetero: "Hétéro", gay: "Gay / Lesbienne", bi: "Bisexuel·le" };
+            var roleLabel = u.isAdmin ? "Admin" : (u.isTest ? "Test" : "Normal");
+            var roleClass = u.isAdmin ? "admin" : (u.isTest ? "test" : "normal");
+            var created = new Date(u.createdAt).toLocaleDateString("fr-FR");
+            var lastLogin = u.lastLoginAt
+              ? new Date(u.lastLoginAt).toLocaleString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+              : "Jamais";
+            var html = '<div class="adm-prof-header">';
+            html += '<div class="adm-prof-avatar adm-prof-avatar--' + roleClass + '">' + (u.displayName || "?").charAt(0).toUpperCase() + "</div>";
+            html += '<div class="adm-prof-identity">';
+            html += '<span class="adm-prof-name">' + (u.displayName || "") + "</span>";
+            html += '<span class="adm-prof-username">@' + (u.username || "") + "</span>";
+            html += '<span class="adm-prof-role adm-prof-role--' + roleClass + '">' + roleLabel + "</span>";
+            html += "</div></div>";
+            html += '<div class="adm-prof-meta">';
+            if (u.email) html += "<span>" + u.email + "</span>";
+            if (u.sexe) html += "<span>" + (sexeLabel[u.sexe] || u.sexe) + "</span>";
+            if (u.birthYear) html += "<span>Né·e en " + u.birthYear + "</span>";
+            if (u.orientation) html += "<span>" + (orientLabel[u.orientation] || u.orientation) + "</span>";
+            html += "<span>Créé le " + created + "</span>";
+            html += "<span>Dernière connexion&nbsp;: " + lastLogin + "</span>";
+            html += "</div>";
+            html += '<div class="adm-prof-stats">';
+            html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + (d.livePercentage > 0 ? d.livePercentage + "%" : "—") + "</span><span>Quizz</span></div>";
+            html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + d.reactionStats.ratingCount + "</span><span>Notes</span></div>";
+            html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + d.reactionStats.flameCount + "</span><span>J'adore</span></div>";
+            html += "</div>";
+            html += '<div class="adm-prof-actions">';
+            html += '<a href="/admin/utilisateur/' + id + '" class="admin-btn-link" target="_blank">Profil complet ↗</a>';
+            html += "</div>";
+            body.innerHTML = html;
+          })
+          .catch(function () {
+            body.innerHTML = '<div class="admin-profile-loading">Erreur de chargement.</div>';
+          });
       });
     });
   })();
