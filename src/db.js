@@ -151,6 +151,14 @@ db.exec(`
 // pour le distinguer des vrais profils lors du dev/de la maintenance.
 try { db.exec("ALTER TABLE users ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
+// Champs d'identite du compte (facultatifs, renseignes par l'utilisateur
+// et/ou l'admin selon le champ) et journal technique automatique.
+try { db.exec("ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN sexe TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN birth_year INTEGER"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN updated_at TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT"); } catch (_) {}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS favorites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,6 +167,24 @@ db.exec(`
     item_id INTEGER NOT NULL,
     created_at TEXT NOT NULL,
     UNIQUE(user_id, item_type, item_id)
+  )
+`);
+
+// Note (etoiles), J'adore et Ça m'interesse : propres a chaque profil (comme
+// les favoris ci-dessus), remplace les anciennes colonnes partagees
+// wiki_pages.rating/flame/interested et gallery_images.rating/flame/interested
+// qui etaient (par erreur de conception) une seule valeur vue et modifiee par
+// tout le monde.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS content_reactions (
+    user_id INTEGER NOT NULL,
+    item_type TEXT NOT NULL,
+    item_id INTEGER NOT NULL,
+    rating INTEGER NOT NULL DEFAULT 0,
+    flame INTEGER NOT NULL DEFAULT 0,
+    interested INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, item_type, item_id)
   )
 `);
 
@@ -226,7 +252,12 @@ function rowToUser(row) {
     displayName: row.display_name,
     isAdmin: !!row.is_admin,
     isTest: !!row.is_test,
+    email: row.email || "",
+    sexe: row.sexe || "",
+    birthYear: row.birth_year || null,
     createdAt: row.created_at,
+    updatedAt: row.updated_at || null,
+    lastLoginAt: row.last_login_at || null,
   };
 }
 
@@ -239,12 +270,26 @@ function createUser({ username, displayName, passwordHash, isAdmin, isTest }) {
   return info.lastInsertRowid;
 }
 
-// Modifie un profil existant (identite + roles). Le mot de passe se change
-// a part via updateUserPassword.
-function updateUser(id, { username, displayName, isAdmin, isTest }) {
+// Modifie un profil existant cote admin (identite, role, sexe). Le pseudo et
+// le sexe sont aussi modifiables par l'utilisateur lui-meme, voir
+// updateOwnProfile. Le mot de passe se change a part via updateUserPassword.
+function updateUser(id, { username, displayName, isAdmin, isTest, sexe }) {
   db.prepare(
-    "UPDATE users SET username = ?, display_name = ?, is_admin = ?, is_test = ? WHERE id = ?"
-  ).run(username, displayName, isAdmin ? 1 : 0, isTest ? 1 : 0, id);
+    "UPDATE users SET username = ?, display_name = ?, is_admin = ?, is_test = ?, sexe = ?, updated_at = ? WHERE id = ?"
+  ).run(username, displayName, isAdmin ? 1 : 0, isTest ? 1 : 0, sexe || "", new Date().toISOString(), id);
+}
+
+// Modifie les champs que l'utilisateur peut changer lui-meme sur son propre
+// compte : pseudo, email, sexe, annee de naissance (pas le role, pas
+// l'identifiant de connexion — reserves a l'admin).
+function updateOwnProfile(id, { displayName, email, sexe, birthYear }) {
+  db.prepare(
+    "UPDATE users SET display_name = ?, email = ?, sexe = ?, birth_year = ?, updated_at = ? WHERE id = ?"
+  ).run(displayName, email || "", sexe || "", birthYear || null, new Date().toISOString(), id);
+}
+
+function touchLastLogin(id) {
+  db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(new Date().toISOString(), id);
 }
 
 function getUserByUsername(username) {
@@ -268,7 +313,7 @@ function listUsers() {
 }
 
 function updateUserPassword(id, passwordHash) {
-  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, id);
+  db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(passwordHash, new Date().toISOString(), id);
 }
 
 function addFavorite(userId, itemType, itemId) {
@@ -291,6 +336,48 @@ function listFavoriteRows(userId) {
 
 function countFavorites() {
   return db.prepare("SELECT COUNT(*) AS c FROM favorites").get().c;
+}
+
+const REACTION_DEFAULT = { rating: 0, flame: false, interested: false };
+
+function getUserReaction(userId, itemType, itemId) {
+  if (!userId) return { ...REACTION_DEFAULT };
+  const row = db.prepare(
+    "SELECT rating, flame, interested FROM content_reactions WHERE user_id = ? AND item_type = ? AND item_id = ?"
+  ).get(userId, itemType, itemId);
+  return row ? { rating: row.rating, flame: !!row.flame, interested: !!row.interested } : { ...REACTION_DEFAULT };
+}
+
+// Toutes les reactions d'un utilisateur pour un type de contenu, indexees par
+// item_id : evite une requete par ligne quand on affiche une liste entiere
+// (sommaire wiki, galerie...).
+function getUserReactionsMap(userId, itemType) {
+  const map = {};
+  if (!userId) return map;
+  db.prepare("SELECT item_id, rating, flame, interested FROM content_reactions WHERE user_id = ? AND item_type = ?")
+    .all(userId, itemType)
+    .forEach((r) => { map[r.item_id] = { rating: r.rating, flame: !!r.flame, interested: !!r.interested }; });
+  return map;
+}
+
+// Fusionne la reaction personnelle du visiteur (userId) sur une liste
+// d'objets contenu (pages wiki, images galerie...) issus de listXxx().
+function mergeUserReactions(items, userId, itemType) {
+  const map = getUserReactionsMap(userId, itemType);
+  return items.map((item) => Object.assign(item, map[item.id] || { ...REACTION_DEFAULT }));
+}
+
+function setUserReaction(userId, itemType, itemId, { rating, flame, interested }) {
+  const current = getUserReaction(userId, itemType, itemId);
+  const r = rating !== undefined ? Math.max(0, Math.min(5, Number(rating) || 0)) : current.rating;
+  const f = flame !== undefined ? !!flame : current.flame;
+  const it = interested !== undefined ? !!interested : current.interested;
+  db.prepare(
+    `INSERT INTO content_reactions (user_id, item_type, item_id, rating, flame, interested, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, item_type, item_id) DO UPDATE SET
+       rating = excluded.rating, flame = excluded.flame, interested = excluded.interested, updated_at = excluded.updated_at`
+  ).run(userId, itemType, itemId, r, f ? 1 : 0, it ? 1 : 0, new Date().toISOString());
 }
 
 function getUserNote(pageId, userId) {
@@ -354,6 +441,30 @@ function migrateSharedDataToManon() {
 
 seedInitialUsers();
 migrateSharedDataToManon();
+
+// Remise a zero ponctuelle, suite a la decouverte que les notes (etoiles),
+// J'adore, Ça m'interesse et les favoris etaient corrompus : une reaction
+// d'un profil (ex. "Test") pouvait apparaitre comme celle de tout le monde
+// (colonnes partagees wiki_pages/gallery_images.rating|flame|interested, et
+// un bouton "Sync" qui recopiait ça dans les favoris de tous). Passage au
+// nouveau modele "un profil = ses propres reactions" (table
+// content_reactions) : les vieilles colonnes partagees ne sont plus lues
+// (voir rowToWikiPage/rowToGalleryImage), donc deja neutres. Ici on vide en
+// plus les favoris et les notes perso existants, qui datent d'avant la
+// correction et ne sont plus fiables. Marqueur pour ne s'executer qu'une
+// seule fois (jamais au redemarrage suivant).
+db.exec(`CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)`);
+(function resetReactionsAndFavoritesOnce() {
+  const KEY = "reset_favorites_reactions_notes_v1";
+  if (db.prepare("SELECT 1 FROM app_meta WHERE key = ?").get(KEY)) return;
+  // Perimetre demande : wiki + galerie uniquement (le BD n'est pas concerne
+  // par cette refonte, ses favoris existants restent intacts).
+  db.exec("DELETE FROM favorites WHERE item_type IN ('wiki', 'gallery')");
+  db.exec("DELETE FROM wiki_page_user_notes");
+  db.exec("UPDATE wiki_pages SET rating = 0, flame = 0, interested = 0");
+  db.exec("UPDATE gallery_images SET rating = 0, flame = 0, interested = 0");
+  db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)").run(KEY, new Date().toISOString());
+})();
 
 // Migration : catégorie "autre" fusionnée dans "fantasmes" (suppression du chapitre).
 // Idempotent : après le premier passage il n'y a plus de lignes "autre".
@@ -478,9 +589,12 @@ function rowToWikiPage(row) {
     imagePaths,
     owned: !!row.owned,
     meta: JSON.parse(row.meta || "{}"),
-    rating: row.rating || 0,
-    flame: !!row.flame,
-    interested: !!row.interested,
+    // rating/flame/interested : propres a chaque profil, voir content_reactions.
+    // Valeurs par defaut ici ; fusionnees avec la reaction du visiteur par les
+    // routes via mergeUserReactions()/getUserReaction().
+    rating: 0,
+    flame: false,
+    interested: false,
     views: row.views || 0,
     featured: !!row.featured,
     maturity: row.maturity || 0,
@@ -543,10 +657,8 @@ function updateWikiPage(id, { title, category, content, tags, imagePaths, owned,
   return true;
 }
 
-function reactWikiPage(id, { rating, flame, interested }) {
-  const r = Math.max(0, Math.min(5, Number(rating) || 0));
-  db.prepare("UPDATE wiki_pages SET rating = ?, flame = ?, interested = ? WHERE id = ?")
-    .run(r, flame ? 1 : 0, interested ? 1 : 0, id);
+function reactWikiPage(id, userId, { rating, flame, interested }) {
+  setUserReaction(userId, "wiki", id, { rating, flame, interested });
 }
 
 function deleteWikiPage(id) {
@@ -681,12 +793,22 @@ function getGalleryKPIs() {
   ).all();
   const topImages = topAllRows.filter(function(r) { return r.content_type !== "bd"; }).slice(0, 20);
   const topBd     = topAllRows.filter(function(r) { return r.content_type === "bd"; }).slice(0, 20);
-  // Si pas encore de consultations enregistrées, fallback par note
+  // Si pas encore de consultations enregistrées, fallback par somme des
+  // notes (content_reactions, tous profils confondus — vue admin agrégée,
+  // contrairement aux listes "mes notes" qui restent propres à chaque profil).
   const topImagesFallback = topImages.length === 0
-    ? db.prepare("SELECT id, title, content_type, rating AS views FROM gallery_images WHERE content_type != 'bd' AND rating > 0 ORDER BY rating DESC LIMIT 20").all()
+    ? db.prepare(
+        `SELECT gi.id, gi.title, gi.content_type, SUM(cr.rating) AS views
+         FROM gallery_images gi JOIN content_reactions cr ON cr.item_type = 'gallery' AND cr.item_id = gi.id
+         WHERE gi.content_type != 'bd' GROUP BY gi.id HAVING SUM(cr.rating) > 0 ORDER BY views DESC LIMIT 20`
+      ).all()
     : null;
   const topBdFallback = topBd.length === 0
-    ? db.prepare("SELECT id, title, content_type, rating AS views FROM gallery_images WHERE content_type = 'bd' AND rating > 0 ORDER BY rating DESC LIMIT 20").all()
+    ? db.prepare(
+        `SELECT gi.id, gi.title, gi.content_type, SUM(cr.rating) AS views
+         FROM gallery_images gi JOIN content_reactions cr ON cr.item_type = 'gallery' AND cr.item_id = gi.id
+         WHERE gi.content_type = 'bd' GROUP BY gi.id HAVING SUM(cr.rating) > 0 ORDER BY views DESC LIMIT 20`
+      ).all()
     : null;
   // Top images par utilisateur
   const topRows = db.prepare(
@@ -883,9 +1005,11 @@ function rowToGalleryImage(row) {
     notes: row.notes || "",
     author: row.author || "",
     parody: row.parody || "",
-    rating: row.rating || 0,
-    flame: !!row.flame,
-    interested: !!row.interested,
+    // rating/flame/interested : propres a chaque profil, voir content_reactions
+    // (memes remarques que rowToWikiPage ci-dessus).
+    rating: 0,
+    flame: false,
+    interested: false,
     wikiPageId: row.wiki_page_id || null,
     contentType: row.content_type || "image",
     processed: !!row.processed,
@@ -931,10 +1055,8 @@ function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wiki
   return true;
 }
 
-function reactGalleryImage(id, { rating, flame, interested }) {
-  const r = Math.max(0, Math.min(5, Number(rating) || 0));
-  db.prepare("UPDATE gallery_images SET rating = ?, flame = ?, interested = ? WHERE id = ?")
-    .run(r, flame ? 1 : 0, interested ? 1 : 0, id);
+function reactGalleryImage(id, userId, { rating, flame, interested }) {
+  setUserReaction(userId, "gallery", id, { rating, flame, interested });
 }
 
 function deleteGalleryImage(id) {
@@ -1022,6 +1144,14 @@ function listConnectionLogs(limit) {
   });
 }
 
+function listConnectionLogsForUser(userId, limit) {
+  return db.prepare(
+    "SELECT id, ip, user_agent, created_at FROM connection_logs WHERE user_id = ? ORDER BY id DESC LIMIT ?"
+  ).all(userId, limit || 20).map(function(r) {
+    return { id: r.id, ip: r.ip, userAgent: r.user_agent, createdAt: r.created_at };
+  });
+}
+
 function setGalleryImageFeatured(id, featured) {
   db.prepare("UPDATE gallery_images SET featured = ? WHERE id = ?").run(featured ? 1 : 0, id);
 }
@@ -1058,16 +1188,6 @@ function renameTagEverywhere(oldTag, newTag) {
     db.prepare("DELETE FROM tag_meta WHERE tag = ?").run(oldTag);
     db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type) VALUES (?, ?)").run(newTag, meta.type);
   }
-}
-
-function syncFlameFavoritesForUser(userId) {
-  const pages = db.prepare("SELECT id FROM wiki_pages WHERE flame = 1").all();
-  const stmt  = db.prepare(
-    "INSERT OR IGNORE INTO favorites (user_id, item_type, item_id, created_at) VALUES (?, 'wiki', ?, ?)"
-  );
-  const now = new Date().toISOString();
-  db.transaction(() => { pages.forEach((p) => stmt.run(userId, p.id, now)); })();
-  return pages.length;
 }
 
 module.exports = {
@@ -1124,12 +1244,18 @@ module.exports = {
   listUsers,
   createUser,
   updateUser,
+  updateOwnProfile,
   updateUserPassword,
+  touchLastLogin,
   addFavorite,
   removeFavorite,
   isFavorite,
   listFavoriteRows,
   countFavorites,
+  getUserReaction,
+  getUserReactionsMap,
+  mergeUserReactions,
+  setUserReaction,
   getUserNote,
   setUserNote,
   getAllTagMeta,
@@ -1138,9 +1264,9 @@ module.exports = {
   renameTagEverywhere,
   deleteUser,
   getUserFavoritesWithDetails,
-  syncFlameFavoritesForUser,
   logConnection,
   listConnectionLogs,
+  listConnectionLogsForUser,
   setGalleryImageFeatured,
   logGalleryView,
   logBdView,

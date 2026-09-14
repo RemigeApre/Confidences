@@ -26,11 +26,6 @@
       <p class="admin-error-msg"><%= adminError %></p>
     <% } %>
 
-    <form method="POST" action="/admin/sync-flames-all" style="margin-bottom:1rem"
-          onsubmit="return confirm('Synchroniser les J\u2019adore wiki pour tous les utilisateurs ?')">
-      <button type="submit" class="admin-btn-sm">&#128293; Sync J&rsquo;adore &rarr; Favoris (tous)</button>
-    </form>
-
     <details class="admin-create-panel">
       <summary class="admin-create-summary">+ Cr&eacute;er un utilisateur</summary>
       <form method="POST" action="/admin/profils" class="admin-create-form">
@@ -63,6 +58,12 @@
             <form method="POST" action="/admin/profils/<%= state.user.id %>/edit" class="admin-pwd-form admin-edit-form">
               <input type="text" name="display_name" placeholder="Pr&eacute;nom affich&eacute;" value="<%= state.user.displayName %>" required autocomplete="off" />
               <input type="text" name="username" placeholder="Identifiant (login)" value="<%= state.user.username %>" required autocomplete="off" />
+              <select name="sexe">
+                <option value="" <%= state.user.sexe === '' ? 'selected' : '' %>>Sexe (non pr&eacute;cis&eacute;)</option>
+                <option value="femme" <%= state.user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
+                <option value="homme" <%= state.user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
+                <option value="autre" <%= state.user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
+              </select>
               <label class="admin-check-label">
                 <input type="checkbox" name="is_admin" <%= state.user.isAdmin ? 'checked' : '' %> <%= state.user.id === currentUser.id ? 'disabled' : '' %> /> Admin
               </label>

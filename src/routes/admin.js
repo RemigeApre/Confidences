@@ -22,7 +22,8 @@ const {
   getWikiKPIs,
   getGalleryKPIs,
   getUserDetail,
-  syncFlameFavoritesForUser,
+  mergeUserReactions,
+  touchLastLogin,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -30,6 +31,7 @@ const { createThrottle } = require("../loginThrottle");
 const { slugify, computeScores, flattenItemsRaw } = require("../scoring");
 
 const loginThrottle = createThrottle();
+const SEXE_VALUES = ["", "femme", "homme", "autre"];
 
 function safeNext(next) {
   if (typeof next !== "string") return null;
@@ -57,6 +59,7 @@ function buildAdminRouter(config) {
       loginThrottle.recordSuccess(key);
       req.session.userId = user.id;
       logConnection(user.id, req.ip, req.headers["user-agent"] || "");
+      touchLastLogin(user.id);
       return res.redirect(next || (user.isAdmin ? "/admin" : "/favoris"));
     }
 
@@ -123,7 +126,8 @@ function buildAdminRouter(config) {
     const allWikiPagesSorted = listWikiPages().sort((a, b) =>
       a.title.localeCompare(b.title, "fr", { sensitivity: "base" })
     );
-    const galleryImages = listGalleryImages().sort((a, b) => (b.rating - a.rating) || b.id - a.id);
+    const galleryImages = mergeUserReactions(listGalleryImages(), req.session.userId, "gallery")
+      .sort((a, b) => (b.rating - a.rating) || b.id - a.id);
     const connectionLogs = listConnectionLogs(200);
     const submissions = listSubmissions();
     const wikiKPIs = getWikiKPIs();
@@ -175,7 +179,9 @@ function buildAdminRouter(config) {
 
     const isAdmin = id === req.session.userId ? true : req.body.is_admin === "on";
     const isTest = req.body.is_test === "on";
-    updateUser(id, { username, displayName, isAdmin, isTest });
+    const sexeRaw = String(req.body.sexe || "");
+    const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";
+    updateUser(id, { username, displayName, isAdmin, isTest, sexe });
     res.redirect("/admin#tab-utilisateurs");
   });
 
@@ -204,18 +210,6 @@ function buildAdminRouter(config) {
     const liveScores = attempt ? computeScores(config, attempt.data) : null;
     const matrixSections = config.sections.filter((s) => s.type === "matrix");
     res.render("admin-user-detail", { config, detail, attempt, liveScores, matrixSections });
-  });
-
-  router.post("/sync-flames-all", requireAdmin, (req, res) => {
-    const users = listUsers();
-    for (const u of users) syncFlameFavoritesForUser(u.id);
-    res.redirect("/admin#tab-utilisateurs");
-  });
-
-  router.post("/utilisateur/:id/sync-flames", requireAdmin, (req, res) => {
-    const id = Number(req.params.id);
-    if (Number.isInteger(id)) syncFlameFavoritesForUser(id);
-    res.redirect("/admin/utilisateur/" + id);
   });
 
   router.get("/:id", requireAdmin, (req, res) => {

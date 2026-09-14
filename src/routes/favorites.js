@@ -9,6 +9,7 @@ const {
   listGalleryImages,
   listWikiPages,
   listBdBooks,
+  mergeUserReactions,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 
@@ -53,7 +54,8 @@ function buildFavoritesRouter(config) {
   });
 
   router.get("/notes/images", requireUser, (req, res) => {
-    const all = listGalleryImages().filter((img) => img.rating > 0 || img.flame);
+    const all = mergeUserReactions(listGalleryImages(), req.user.id, "gallery")
+      .filter((img) => img.rating > 0 || img.flame);
     const tagSet = new Set();
     all.forEach((img) => (img.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
@@ -61,7 +63,8 @@ function buildFavoritesRouter(config) {
   });
 
   router.get("/notes/wiki", requireUser, (req, res) => {
-    const all = listWikiPages().filter((p) => p.rating > 0 || p.flame);
+    const all = mergeUserReactions(listWikiPages(), req.user.id, "wiki")
+      .filter((p) => p.rating > 0 || p.flame);
     const tagSet = new Set();
     all.forEach((p) => (p.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();

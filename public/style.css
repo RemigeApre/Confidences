@@ -4948,6 +4948,16 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
 .admin-edit-form input[type="text"] { width: 100%; }
 
+.admin-edit-form select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
 .admin-user-body {
   padding: 0.75rem 1rem;
   display: flex;
@@ -11155,3 +11165,84 @@ a.wiki-ql-label:hover .wiki-ql-text {
   .bd-modal-top { flex-direction: column; }
   .bd-modal-cover-wrap { width: 100%; max-width: 200px; }
 }
+
+/* Mon compte */
+.compte-title { margin: 1.5rem 0 1rem; font-size: 1.4rem; }
+
+.compte-msg {
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
+.compte-msg-error { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+.compte-msg-ok { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
+
+.compte-section {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.compte-section-title { font-size: 1rem; margin: 0 0 0.85rem; }
+
+.compte-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: end;
+}
+
+.compte-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.compte-field input,
+.compte-field select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.compte-field-readonly input { opacity: 0.65; }
+
+.compte-btn-primary {
+  grid-column: 1 / -1;
+  justify-self: start;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.compte-btn-primary:hover { opacity: 0.85; }
+
+.compte-journal {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.compte-history { margin-top: 0.75rem; }
+.compte-history summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+.compte-history .compte-journal { margin-top: 0.5rem; }

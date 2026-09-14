@@ -20,10 +20,23 @@
     </div>
     <div class="aud-meta">
       <span class="admin-muted">Compte cr&eacute;&eacute; le <%= new Date(detail.user.createdAt).toLocaleDateString('fr-FR') %></span>
+      <% if (detail.user.updatedAt) { %>
+        <span class="admin-muted">Modifi&eacute; le <%= new Date(detail.user.updatedAt).toLocaleDateString('fr-FR') %></span>
+      <% } %>
+      <% if (detail.user.lastLoginAt) { %>
+        <span class="admin-muted">Derni&egrave;re connexion le <%= new Date(detail.user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(detail.user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
+      <% } %>
       <% if (attempt) { %>
         <a href="/admin/live/<%= detail.user.id %>" class="admin-btn-link">D&eacute;tail complet du quizz &#8599;</a>
       <% } %>
     </div>
+    <% if (detail.user.email || detail.user.sexe || detail.user.birthYear) { %>
+      <div class="aud-meta">
+        <% if (detail.user.email) { %><span class="admin-muted"><%= detail.user.email %></span><% } %>
+        <% if (detail.user.sexe) { %><span class="admin-muted"><%= { femme: 'Femme', homme: 'Homme', autre: 'Autre' }[detail.user.sexe] || detail.user.sexe %></span><% } %>
+        <% if (detail.user.birthYear) { %><span class="admin-muted">N&eacute; en <%= detail.user.birthYear %></span><% } %>
+      </div>
+    <% } %>
   </div>
 
   <%# ── Quizz ── %>

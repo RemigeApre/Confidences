@@ -16,6 +16,8 @@ const {
   getWikiPage,
   listFavoriteRows,
   logGalleryView,
+  mergeUserReactions,
+  getUserReaction,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 
@@ -161,9 +163,9 @@ function buildItems(galleryImages, wikiPages) {
   return [...galleryItems, ...wikiItems].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function getCtx() {
-  const wikiPages = listWikiPages();
-  const galleryImages = listGalleryImages();
+function getCtx(userId) {
+  const wikiPages = mergeUserReactions(listWikiPages(), userId, "wiki");
+  const galleryImages = mergeUserReactions(listGalleryImages(), userId, "gallery");
   const items = buildItems(galleryImages, wikiPages);
   const tagTotalCounts = {};
   items.forEach((item) => {
@@ -182,7 +184,7 @@ function buildGalleryRouter(config) {
   router.use(requireUser);
 
   router.get("/", (req, res) => {
-    const { items, allTags } = getCtx();
+    const { items, allTags } = getCtx(req.user.id);
     const tagImageCounts = {};
     const tagBdCounts = {};
     items.forEach((item) => {
@@ -288,7 +290,8 @@ function buildGalleryRouter(config) {
     const id = Number(req.params.id);
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
     if (!image) return res.redirect("/galerie");
-    const { allTags } = getCtx();
+    Object.assign(image, getUserReaction(req.user.id, "gallery", id));
+    const { allTags } = getCtx(req.user.id);
     const linkedPage = image.wikiPageId ? getWikiPage(image.wikiPageId) : null;
     res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage });
   });
@@ -347,7 +350,7 @@ function buildGalleryRouter(config) {
     });
 
     const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
-    reactGalleryImage(id, {
+    reactGalleryImage(id, req.user.id, {
       rating,
       flame: req.body.flame === "on",
       interested: req.body.interested === "on",
@@ -359,14 +362,9 @@ function buildGalleryRouter(config) {
   router.post("/:id/react", express.json(), (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.json({ ok: false });
-    const image = getGalleryImage(id);
-    if (!image) return res.json({ ok: false });
+    if (!getGalleryImage(id)) return res.json({ ok: false });
     const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
-    reactGalleryImage(id, {
-      rating,
-      flame: image.flame,
-      interested: image.interested,
-    });
+    reactGalleryImage(id, req.user.id, { rating });
     res.json({ ok: true });
   });
 

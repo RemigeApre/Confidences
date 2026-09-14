@@ -12,6 +12,7 @@ const buildWikiRouter = require("./routes/wiki");
 const buildGalleryRouter = require("./routes/gallery");
 const buildBdRouter = require("./routes/bd");
 const buildFavoritesRouter = require("./routes/favorites");
+const buildAccountRouter = require("./routes/account");
 const { attachUser } = require("./auth");
 const { db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere } = require("./db");
 
@@ -374,6 +375,7 @@ app.use("/wiki", buildWikiRouter(config));
 app.use("/galerie", buildGalleryRouter(config));
 app.use("/bd", buildBdRouter(config));
 app.use("/favoris", buildFavoritesRouter(config));
+app.use("/compte", buildAccountRouter(config));
 
 if (usingHttps) {
   https
