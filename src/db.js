@@ -147,6 +147,9 @@ db.exec(`
     created_at TEXT NOT NULL
   )
 `);
+// Compte "test" : un utilisateur normal en tout point, juste marque a part
+// pour le distinguer des vrais profils lors du dev/de la maintenance.
+try { db.exec("ALTER TABLE users ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS favorites (
@@ -222,17 +225,26 @@ function rowToUser(row) {
     username: row.username,
     displayName: row.display_name,
     isAdmin: !!row.is_admin,
+    isTest: !!row.is_test,
     createdAt: row.created_at,
   };
 }
 
-function createUser({ username, displayName, passwordHash, isAdmin }) {
+function createUser({ username, displayName, passwordHash, isAdmin, isTest }) {
   const info = db
     .prepare(
-      "INSERT INTO users (username, display_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO users (username, display_name, password_hash, is_admin, is_test, created_at) VALUES (?, ?, ?, ?, ?, ?)"
     )
-    .run(username, displayName, passwordHash, isAdmin ? 1 : 0, new Date().toISOString());
+    .run(username, displayName, passwordHash, isAdmin ? 1 : 0, isTest ? 1 : 0, new Date().toISOString());
   return info.lastInsertRowid;
+}
+
+// Modifie un profil existant (identite + roles). Le mot de passe se change
+// a part via updateUserPassword.
+function updateUser(id, { username, displayName, isAdmin, isTest }) {
+  db.prepare(
+    "UPDATE users SET username = ?, display_name = ?, is_admin = ?, is_test = ? WHERE id = ?"
+  ).run(username, displayName, isAdmin ? 1 : 0, isTest ? 1 : 0, id);
 }
 
 function getUserByUsername(username) {
@@ -1111,6 +1123,7 @@ module.exports = {
   getUserById,
   listUsers,
   createUser,
+  updateUser,
   updateUserPassword,
   addFavorite,
   removeFavorite,

@@ -40,6 +40,9 @@
         <label class="admin-check-label">
           <input type="checkbox" name="is_admin" /> Admin
         </label>
+        <label class="admin-check-label">
+          <input type="checkbox" name="is_test" /> Test
+        </label>
         <button type="submit" class="admin-btn-primary">Cr&eacute;er</button>
       </form>
     </details>
@@ -51,9 +54,24 @@
           <span class="admin-user-name"><%= state.user.displayName %></span>
           <span class="admin-user-username">@<%= state.user.username %></span>
           <% if (state.user.isAdmin) { %><span class="admin-badge-admin">Admin</span><% } %>
+          <% if (state.user.isTest) { %><span class="admin-badge-test">Test</span><% } %>
         </div>
         <div class="admin-user-actions">
           <a href="/admin/utilisateur/<%= state.user.id %>" class="admin-btn-link">Voir le profil</a>
+          <details class="admin-pwd-details">
+            <summary class="admin-btn-link">Modifier</summary>
+            <form method="POST" action="/admin/profils/<%= state.user.id %>/edit" class="admin-pwd-form admin-edit-form">
+              <input type="text" name="display_name" placeholder="Pr&eacute;nom affich&eacute;" value="<%= state.user.displayName %>" required autocomplete="off" />
+              <input type="text" name="username" placeholder="Identifiant (login)" value="<%= state.user.username %>" required autocomplete="off" />
+              <label class="admin-check-label">
+                <input type="checkbox" name="is_admin" <%= state.user.isAdmin ? 'checked' : '' %> <%= state.user.id === currentUser.id ? 'disabled' : '' %> /> Admin
+              </label>
+              <label class="admin-check-label">
+                <input type="checkbox" name="is_test" <%= state.user.isTest ? 'checked' : '' %> /> Test
+              </label>
+              <button type="submit" class="admin-btn-primary">Enregistrer</button>
+            </form>
+          </details>
           <details class="admin-pwd-details">
             <summary class="admin-btn-link">R&eacute;init. MDP</summary>
             <form method="POST" action="/admin/profils/<%= state.user.id %>/password" class="admin-pwd-form">

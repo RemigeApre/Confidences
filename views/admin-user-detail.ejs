@@ -16,6 +16,7 @@
       <span class="aud-name"><%= detail.user.displayName %></span>
       <span class="aud-username">@<%= detail.user.username %></span>
       <% if (detail.user.isAdmin) { %><span class="admin-badge-admin">Admin</span><% } %>
+      <% if (detail.user.isTest) { %><span class="admin-badge-test">Test</span><% } %>
     </div>
     <div class="aud-meta">
       <span class="admin-muted">Compte cr&eacute;&eacute; le <%= new Date(detail.user.createdAt).toLocaleDateString('fr-FR') %></span>

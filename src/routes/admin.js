@@ -8,7 +8,9 @@ const {
   getWikiPage,
   listUsers,
   getUserByUsername,
+  getUserById,
   createUser,
+  updateUser,
   updateUserPassword,
   listGalleryImages,
   getGalleryImage,
@@ -140,6 +142,7 @@ function buildAdminRouter(config) {
     const displayName = String(req.body.display_name || "").trim();
     const password = String(req.body.password || "");
     const isAdmin = req.body.is_admin === "on";
+    const isTest = req.body.is_test === "on";
 
     if (!username || !displayName || !password) {
       return renderAdmin(req, res, "Tous les champs sont obligatoires.");
@@ -148,7 +151,31 @@ function buildAdminRouter(config) {
       return renderAdmin(req, res, "Ce nom d'utilisateur existe déjà.");
     }
 
-    createUser({ username, displayName, passwordHash: hashPassword(password), isAdmin });
+    createUser({ username, displayName, passwordHash: hashPassword(password), isAdmin, isTest });
+    res.redirect("/admin#tab-utilisateurs");
+  });
+
+  // Modifie l'identite et les roles (admin/test) d'un profil existant.
+  // Un admin ne peut pas se retirer lui-meme le role admin (meme risque de
+  // verrouillage que pour la suppression, deja empechee plus bas).
+  router.post("/profils/:id/edit", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const existing = Number.isInteger(id) ? getUserById(id) : null;
+    if (!existing) return res.redirect("/admin#tab-utilisateurs");
+
+    const username = String(req.body.username || "").trim().toLowerCase();
+    const displayName = String(req.body.display_name || "").trim();
+    if (!username || !displayName) {
+      return renderAdmin(req, res, "Tous les champs sont obligatoires.");
+    }
+    const dupe = getUserByUsername(username);
+    if (dupe && dupe.id !== id) {
+      return renderAdmin(req, res, "Ce nom d'utilisateur existe déjà.");
+    }
+
+    const isAdmin = id === req.session.userId ? true : req.body.is_admin === "on";
+    const isTest = req.body.is_test === "on";
+    updateUser(id, { username, displayName, isAdmin, isTest });
     res.redirect("/admin#tab-utilisateurs");
   });
 
