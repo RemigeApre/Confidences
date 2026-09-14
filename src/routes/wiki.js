@@ -108,30 +108,58 @@ function autoEnrichTags(tags, title, derivedTerms) {
   return result;
 }
 
-function syncGalleryRecord(pageId, title, imagePaths, tags) {
+// Synchronise le(s) enregistrement(s) galerie liés à une page wiki.
+// Seul le titre (en minuscules) est apposé automatiquement comme tag sur les
+// images — synonymes et tags libres restent entièrement manuels.
+// oldTitleTag : ancien titre normalisé, fourni lors d'un renommage pour
+//              remplacer le tag périmé dans toutes les images liées.
+function syncGalleryRecord(pageId, title, imagePaths, oldTitleTag) {
+  const newTitleTag = title.trim().toLowerCase();
   const allLinked = listGalleryImages().filter((g) => g.wikiPageId === pageId);
 
-  // Record primaire : auto-créé depuis les images du wiki (premier trouvé)
+  // Applique la logique titre-auto sur un tableau de tags existants :
+  // - remplace oldTitleTag → newTitleTag si le titre a changé
+  // - ajoute newTitleTag s'il est absent
+  // - ne touche à rien d'autre
+  function applyTitleTag(currentTags) {
+    let result = currentTags.map((t) =>
+      (oldTitleTag && oldTitleTag !== newTitleTag && t.toLowerCase() === oldTitleTag)
+        ? newTitleTag
+        : t
+    );
+    if (!result.map((t) => t.toLowerCase()).includes(newTitleTag)) result.push(newTitleTag);
+    return result;
+  }
+
   let primaryId = null;
   if (imagePaths && imagePaths.length) {
     const existing = allLinked[0];
     if (existing) {
       primaryId = existing.id;
-      updateGalleryImage(existing.id, { title, imagePaths, tags, wikiPageId: pageId });
+      updateGalleryImage(existing.id, {
+        title,
+        imagePaths,
+        tags: applyTitleTag(existing.tags),
+        wikiPageId: pageId,
+        notes: existing.notes,
+        category: existing.category,
+        author: existing.author,
+        parody: existing.parody,
+        contentType: existing.contentType,
+      });
     } else {
-      primaryId = insertGalleryImage({ imagePaths, title, tags, notes: "", category: "", wikiPageId: pageId });
+      primaryId = insertGalleryImage({ imagePaths, title, tags: [newTitleTag], notes: "", category: "", wikiPageId: pageId });
     }
   }
 
-  // Propager les tags du wiki à tous les autres records liés manuellement
-  // (merge : on ajoute les tags manquants sans toucher aux tags indépendants)
+  // Images liées manuellement : même traitement (titre auto uniquement)
   for (const img of allLinked) {
     if (img.id === primaryId) continue;
-    const missingTags = tags.filter((t) => !img.tags.includes(t));
-    if (!missingTags.length) continue;
-    const merged = [...img.tags, ...missingTags];
+    const updatedTags = applyTitleTag(img.tags);
+    // Pas de changement → skip
+    if (updatedTags.length === img.tags.length && updatedTags.every((t, i) => t === img.tags[i])) continue;
     updateGalleryImage(img.id, {
-      title: img.title, category: img.category, tags: merged,
+      title: img.title, category: img.category, tags: updatedTags,
       notes: img.notes, imagePaths: img.imagePaths, wikiPageId: img.wikiPageId,
       author: img.author, parody: img.parody, contentType: img.contentType,
     });
@@ -542,7 +570,7 @@ function buildWikiRouter(config) {
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
 
     const newId = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
-    if (imagePaths.length) syncGalleryRecord(newId, title, imagePaths, enrichedTags);
+    if (imagePaths.length) syncGalleryRecord(newId, title, imagePaths);
     res.redirect(`/wiki/${newId}`);
   });
 
@@ -679,7 +707,7 @@ function buildWikiRouter(config) {
     const extraCategories = arr(req.body.extra_categories).filter((k) => CATEGORY_KEYS.includes(k) && k !== category);
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
     updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
-    syncGalleryRecord(id, title, imagePaths, enrichedTags);
+    syncGalleryRecord(id, title, imagePaths, existing.title.trim().toLowerCase());
     res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${id}`));
   });
 
