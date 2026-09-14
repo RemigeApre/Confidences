@@ -11,12 +11,15 @@ const {
   listBdBooks,
   mergeUserReactions,
   updateUserSettings,
+  getUserById,
+  listConnectionLogsForUser,
+  updateOwnProfile,
+  updateUserPassword,
+  getUserCredentials,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
+const { hashPassword, verifyPassword } = require("../passwords");
 
-// Copie minimale des categories du wiki (memes cles/teintes que
-// src/routes/wiki.js) : necessaire pour reutiliser partials/wiki-card.ejs
-// dans "Mes favoris" sans dupliquer tout le fichier wiki.js.
 const WIKI_CATEGORIES = [
   { key: "fantasmes",   label: "Fantasmes",   hue: 330 },
   { key: "jeu_de_role",  label: "Jeu de rôle", hue:  60 },
@@ -30,11 +33,18 @@ const WIKI_CATEGORIES = [
 ];
 
 const VALID_TYPES = ["wiki", "gallery", "bd"];
+const SEXE_VALUES = ["", "femme", "homme", "autre"];
+
+function parseBirthYear(raw) {
+  const n = Number(raw);
+  if (!raw || !Number.isInteger(n) || n < 1900 || n > new Date().getFullYear()) return null;
+  return n;
+}
 
 function buildFavoritesRouter(config) {
   const router = express.Router();
 
-  router.get("/", requireUser, (req, res) => {
+  function renderProfile(res, req, extra) {
     const rows = listFavoriteRows(req.user.id);
     const wikiPages = [];
     const galleryImages = [];
@@ -51,20 +61,68 @@ function buildFavoritesRouter(config) {
         if (book) bdBooks.push(book);
       }
     });
-    // "Mes fantasmes" (Goûts) : sous-ensemble des favoris wiki appartenant
-    // à la catégorie (ou catégorie secondaire) "fantasmes". Ajouter/retirer
-    // se fait via les mêmes boutons J'adore/favori déjà existants sur une
-    // page wiki — pas de mécanisme séparé.
     const fantasyPages = wikiPages.filter((p) =>
       p.category === "fantasmes" || (p.extraCategories || []).includes("fantasmes")
     );
-    res.render("favoris", { config, wikiPages, galleryImages, bdBooks, fantasyPages, categories: WIKI_CATEGORIES });
+    const user = getUserById(req.user.id);
+    const connectionLogs = listConnectionLogsForUser(req.user.id, 20);
+    res.render("favoris", {
+      config,
+      wikiPages,
+      galleryImages,
+      bdBooks,
+      fantasyPages,
+      categories: WIKI_CATEGORIES,
+      user,
+      connectionLogs,
+      error: null,
+      notice: null,
+      openIdentite: false,
+      ...extra,
+    });
+  }
+
+  router.get("/", requireUser, (req, res) => {
+    const notice = req.query.ok ? "Modifications enregistrées." : null;
+    const error = req.query.err ? decodeURIComponent(req.query.err) : null;
+    renderProfile(res, req, { notice, error });
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
     const { orientation, ultraMode, irrealisteMode } = req.body;
     updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode });
     res.json({ ok: true });
+  });
+
+  router.post("/identite", requireUser, (req, res) => {
+    const displayName = String(req.body.display_name || "").trim();
+    if (!displayName) return renderProfile(res, req, { error: "Le pseudo est obligatoire.", openIdentite: true });
+
+    const email = String(req.body.email || "").trim().slice(0, 254);
+    if (email && !email.includes("@")) return renderProfile(res, req, { error: "Adresse mail invalide.", openIdentite: true });
+
+    const sexeRaw = String(req.body.sexe || "");
+    const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";
+    const birthYear = parseBirthYear(req.body.birth_year);
+    const orientation = String(req.body.orientation || "");
+
+    updateOwnProfile(req.user.id, { displayName, email, sexe, birthYear });
+    updateUserSettings(req.user.id, { orientation });
+    res.redirect("/favoris?ok=1");
+  });
+
+  router.post("/mot-de-passe", requireUser, (req, res) => {
+    const current = String(req.body.current_password || "");
+    const next = String(req.body.new_password || "");
+    const creds = getUserCredentials(req.user.username);
+    if (!creds || !verifyPassword(current, creds.password_hash)) {
+      return renderProfile(res, req, { error: "Mot de passe actuel incorrect.", openIdentite: true });
+    }
+    if (next.length < 4) {
+      return renderProfile(res, req, { error: "Nouveau mot de passe trop court.", openIdentite: true });
+    }
+    updateUserPassword(req.user.id, hashPassword(next));
+    res.redirect("/favoris?ok=1");
   });
 
   router.get("/notes/images", requireUser, (req, res) => {

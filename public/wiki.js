@@ -777,6 +777,7 @@
   var includedExtraCats = new Set();
   var excludedExtraCats = new Set();
   var activeSousCat   = localStorage.getItem("wiki-filter-sous-cat") || "";
+  var tagLogic        = localStorage.getItem("wiki-tag-logic") || "and"; // "and" | "or"
   var currentPage     = 1;
   var _paginationNavigation = false;
 
@@ -960,7 +961,11 @@
       var cardTags  = (card.dataset.tags || "").split("|");
       var okTag = true;
       if (includedTagsSet.size > 0) {
-        okTag = Array.from(includedTagsSet).every(function(t) { return cardTags.indexOf(t) !== -1; });
+        if (tagLogic === "or") {
+          okTag = Array.from(includedTagsSet).some(function(t) { return cardTags.indexOf(t) !== -1; });
+        } else {
+          okTag = Array.from(includedTagsSet).every(function(t) { return cardTags.indexOf(t) !== -1; });
+        }
       }
       if (okTag && excludedTagsSet.size > 0) {
         okTag = !Array.from(excludedTagsSet).some(function(t) { return cardTags.indexOf(t) !== -1; });

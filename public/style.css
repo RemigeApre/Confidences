@@ -10218,11 +10218,19 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .pc-drop-link--danger:hover { color: #dc2626 !important; background: rgba(239,68,68,0.08) !important; }
 .nav-drawer-link--danger { color: #ef4444 !important; }
 
-/* ─── Profil : volet droit ─── */
-.profil-right { display: none; }
+/* ─── Profil : panneaux latéraux ─── */
 
+/* Mobile : accordéons en flux normal */
+.profil-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0 0.25rem;
+}
+
+/* Desktop : colonne fixe à droite */
 @media (min-width: 1340px) {
-  .profil-right {
+  .profil-panels {
     position: fixed;
     right: 0;
     top: var(--topnav-height);
@@ -10232,8 +10240,8 @@ a.wiki-ql-label:hover .wiki-ql-text {
     max-width: 320px;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1.5rem 1rem 1rem;
+    gap: 0;
+    padding: 0;
     background: hsl(220, 12%, 16%);
     color: rgba(255,255,255,0.9);
     overflow-y: auto;
@@ -10244,39 +10252,151 @@ a.wiki-ql-label:hover .wiki-ql-text {
   }
 }
 
-.profil-right-name {
-  font-size: 1.25rem;
+.profil-panels-name {
+  font-size: 1.1rem;
   font-weight: 700;
   color: #fff;
-  padding-bottom: 0.75rem;
+  padding: 1rem 1rem 0.75rem;
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: none;
+}
+@media (min-width: 1340px) {
+  .profil-panels-name { display: block; }
 }
 
-.profil-right-settings-title {
-  font-size: 0.7rem;
+/* Chaque panneau = <details> */
+.profil-panel {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+@media (max-width: 1339px) {
+  .profil-panel {
+    background: hsl(220, 12%, 14%);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    overflow: hidden;
+    color: rgba(255,255,255,0.9);
+  }
+}
+
+.profil-panel-summary {
+  padding: 0.7rem 1rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.4);
-  margin-bottom: 0.5rem;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.profil-panel-summary::-webkit-details-marker { display: none; }
+.profil-panel-summary::after { content: "▸"; transition: transform 0.18s; }
+.profil-panel[open] > .profil-panel-summary::after { transform: rotate(90deg); }
+
+.profil-panel-body {
+  padding: 0 1rem 1rem;
 }
 
+/* Champs de la sidebar */
 .profil-setting-label {
   display: block;
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.65);
-  margin: 0.85rem 0 0.35rem;
+  color: rgba(255,255,255,0.55);
+  margin: 0.85rem 0 0.3rem;
 }
-.profil-setting-label:first-of-type { margin-top: 0; }
+.profil-setting-label:first-child { margin-top: 0; }
 
-.profil-setting-select {
-  width: 100%;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 6px;
-  background: rgba(255,255,255,0.05);
-  color: #fff;
-  padding: 0.4rem 0.5rem;
-  font-size: 0.85rem;
+/* Formulaire Identité dans le panneau */
+.profil-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
 }
+
+.profil-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.profil-field-label {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.profil-field-input {
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 5px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.82rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.profil-field-input:focus { outline: none; border-color: rgba(255,255,255,0.3); }
+.profil-field-readonly .profil-field-input { opacity: 0.5; }
+
+.profil-btn-primary {
+  margin-top: 0.25rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.profil-btn-primary:hover { opacity: 0.85; }
+
+/* Messages flash */
+.profil-msg {
+  padding: 0.4rem 0.6rem;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  margin-bottom: 0.5rem;
+}
+.profil-msg-error { background: rgba(239,68,68,0.15); color: #f87171; }
+.profil-msg-ok { background: rgba(34,197,94,0.12); color: #4ade80; }
+
+/* Sous-sections (mot de passe / journal) */
+.profil-sub-details {
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 0.5rem;
+}
+.profil-sub-summary {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.profil-sub-summary::-webkit-details-marker { display: none; }
+.profil-sub-details[open] > .profil-sub-summary { color: rgba(255,255,255,0.65); }
+.profil-form-pwd { margin-top: 0.5rem; }
+
+/* Journal technique */
+.profil-journal {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.profil-history { margin-top: 0.5rem; }
+.profil-history > summary {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+}
+.profil-history .profil-journal { margin-top: 0.35rem; }
 
 /* ─── Profil : sections favorites ─── */
 .profil-section-title {

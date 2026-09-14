@@ -1,64 +1,159 @@
-<%- include('partials/head', { title: 'Mon profil — ' + config.title }) %>
-<main class="container wide">
+<%- include('partials/head', { title: 'Profil — ' + config.title }) %>
+<main class="container wide profil-page">
   <%- include('partials/top-nav', { config: config }) %>
 
-  <!-- Volet droit fixe -->
-  <aside class="profil-right">
-    <div class="profil-right-name"><%= currentUser.displayName %></div>
+  <%# ── Panneaux latéraux (desktop : fixe à droite / mobile : accordéons en haut) ── %>
+  <aside class="profil-panels">
+    <div class="profil-panels-name"><%= currentUser.displayName %></div>
 
-    <div class="profil-right-settings">
-      <div class="profil-right-settings-title">Go&ucirc;ts</div>
-      <label class="profil-setting-label" for="pref-orientation">Orientation sexuelle</label>
-      <select class="profil-setting-select" id="pref-orientation" data-pref="orientation">
-        <option value="" <%= currentUser.orientation === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
-        <option value="hetero" <%= currentUser.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
-        <option value="gay" <%= currentUser.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
-        <option value="bi" <%= currentUser.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
-      </select>
-    </div>
+    <%# ── Panneau 1 : Paramètres ── %>
+    <details class="profil-panel" open>
+      <summary class="profil-panel-summary">Param&egrave;tres</summary>
+      <div class="profil-panel-body">
 
-    <div class="profil-right-settings">
-      <div class="profil-right-settings-title">Param&egrave;tres</div>
+        <div class="profil-setting-label">Ultra</div>
+        <div class="user-setting-options" id="ultra-mode-options">
+          <label class="user-setting-radio" data-val="hidden">
+            <input type="radio" name="ultra-mode" value="hidden" /> Masqu&eacute; (bascule)
+          </label>
+          <label class="user-setting-radio" data-val="visible">
+            <input type="radio" name="ultra-mode" value="visible" /> Visible
+          </label>
+          <label class="user-setting-radio" data-val="off">
+            <input type="radio" name="ultra-mode" value="off" /> D&eacute;sactiv&eacute;
+          </label>
+        </div>
 
-      <div class="profil-setting-label">Ultra</div>
-      <div class="user-setting-options" id="ultra-mode-options">
-        <label class="user-setting-radio" data-val="hidden">
-          <input type="radio" name="ultra-mode" value="hidden" />
-          Masqu&eacute; (bascule)
-        </label>
-        <label class="user-setting-radio" data-val="visible">
-          <input type="radio" name="ultra-mode" value="visible" />
-          Visible
-        </label>
-        <label class="user-setting-radio" data-val="off">
-          <input type="radio" name="ultra-mode" value="off" />
-          D&eacute;sactiv&eacute;
-        </label>
+        <div class="profil-setting-label">Irr&eacute;aliste</div>
+        <div class="user-setting-options" id="irrealiste-mode-options">
+          <label class="user-setting-radio" data-val="hidden">
+            <input type="radio" name="irrealiste-mode" value="hidden" /> Masqu&eacute; (bascule)
+          </label>
+          <label class="user-setting-radio" data-val="visible">
+            <input type="radio" name="irrealiste-mode" value="visible" /> Visible
+          </label>
+          <label class="user-setting-radio" data-val="off">
+            <input type="radio" name="irrealiste-mode" value="off" /> D&eacute;sactiv&eacute;
+          </label>
+        </div>
+
+        <div class="profil-setting-label">Filtrage des tags</div>
+        <div class="user-setting-options" id="tag-logic-options">
+          <label class="user-setting-radio" data-val="and">
+            <input type="radio" name="tag-logic" value="and" /> ET &mdash; tous les tags
+          </label>
+          <label class="user-setting-radio" data-val="or">
+            <input type="radio" name="tag-logic" value="or" /> OU &mdash; au moins un
+          </label>
+        </div>
+
       </div>
+    </details>
 
-      <div class="profil-setting-label">Irr&eacute;aliste</div>
-      <div class="user-setting-options" id="irrealiste-mode-options">
-        <label class="user-setting-radio" data-val="hidden">
-          <input type="radio" name="irrealiste-mode" value="hidden" />
-          Masqu&eacute; (bascule)
-        </label>
-        <label class="user-setting-radio" data-val="visible">
-          <input type="radio" name="irrealiste-mode" value="visible" />
-          Visible
-        </label>
-        <label class="user-setting-radio" data-val="off">
-          <input type="radio" name="irrealiste-mode" value="off" />
-          D&eacute;sactiv&eacute;
-        </label>
+    <%# ── Panneau 2 : Identité ── %>
+    <details class="profil-panel" id="profil-identite-panel" <%= openIdentite ? 'open' : '' %>>
+      <summary class="profil-panel-summary">Identit&eacute;</summary>
+      <div class="profil-panel-body">
+
+        <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
+        <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
+
+        <form method="POST" action="/favoris/identite" class="profil-form">
+
+          <label class="profil-field">
+            <span class="profil-field-label">Pseudo</span>
+            <input type="text" name="display_name" value="<%= user.displayName %>" required autocomplete="off" class="profil-field-input" />
+          </label>
+
+          <label class="profil-field">
+            <span class="profil-field-label">Orientation</span>
+            <select name="orientation" class="profil-field-input">
+              <option value="" <%= !user.orientation ? 'selected' : '' %>>Non pr&eacute;cis&eacute;e</option>
+              <option value="hetero" <%= user.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
+              <option value="gay" <%= user.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
+              <option value="bi" <%= user.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
+            </select>
+          </label>
+
+          <label class="profil-field">
+            <span class="profil-field-label">Adresse mail</span>
+            <input type="email" name="email" value="<%= user.email || '' %>" placeholder="facultatif" autocomplete="off" class="profil-field-input" />
+          </label>
+
+          <label class="profil-field">
+            <span class="profil-field-label">Sexe</span>
+            <select name="sexe" class="profil-field-input">
+              <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
+              <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
+              <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
+              <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
+            </select>
+          </label>
+
+          <label class="profil-field">
+            <span class="profil-field-label">Ann&eacute;e de naissance</span>
+            <input type="number" name="birth_year" value="<%= user.birthYear || '' %>" placeholder="facultatif" min="1900" max="<%= new Date().getFullYear() %>" class="profil-field-input" />
+          </label>
+
+          <div class="profil-field profil-field-readonly">
+            <span class="profil-field-label">Identifiant</span>
+            <input type="text" value="<%= user.username %>" disabled class="profil-field-input" />
+          </div>
+
+          <div class="profil-field profil-field-readonly">
+            <span class="profil-field-label">Statut</span>
+            <input type="text" value="<%= user.isAdmin ? 'Administrateur' : (user.isTest ? 'Utilisateur (test)' : 'Utilisateur') %>" disabled class="profil-field-input" />
+          </div>
+
+          <button type="submit" class="profil-btn-primary">Enregistrer</button>
+        </form>
+
+        <%# ── Mot de passe ── %>
+        <details class="profil-sub-details">
+          <summary class="profil-sub-summary">Changer le mot de passe</summary>
+          <form method="POST" action="/favoris/mot-de-passe" class="profil-form profil-form-pwd">
+            <label class="profil-field">
+              <span class="profil-field-label">Mot de passe actuel</span>
+              <input type="password" name="current_password" required autocomplete="current-password" class="profil-field-input" />
+            </label>
+            <label class="profil-field">
+              <span class="profil-field-label">Nouveau mot de passe</span>
+              <input type="password" name="new_password" required autocomplete="new-password" class="profil-field-input" />
+            </label>
+            <button type="submit" class="profil-btn-primary">Changer</button>
+          </form>
+        </details>
+
+        <%# ── Journal technique (admin seulement) ── %>
+        <% if (currentUser && currentUser.isAdmin) { %>
+          <details class="profil-sub-details profil-journal-details">
+            <summary class="profil-sub-summary">Journal technique</summary>
+            <ul class="profil-journal">
+              <li>Compte cr&eacute;&eacute; le <%= new Date(user.createdAt).toLocaleDateString('fr-FR') %></li>
+              <% if (user.updatedAt) { %><li>Modifi&eacute; le <%= new Date(user.updatedAt).toLocaleDateString('fr-FR') %></li><% } %>
+              <% if (user.lastLoginAt) { %>
+                <li>Derni&egrave;re connexion le <%= new Date(user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></li>
+              <% } %>
+            </ul>
+            <% if (connectionLogs.length) { %>
+              <details class="profil-history">
+                <summary>Historique des connexions (<%= connectionLogs.length %>)</summary>
+                <ul class="profil-journal">
+                  <% connectionLogs.forEach(function (log) { %>
+                    <li><%= new Date(log.createdAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %> &mdash; <%= log.ip %></li>
+                  <% }) %>
+                </ul>
+              </details>
+            <% } %>
+          </details>
+        <% } %>
+
       </div>
-    </div>
+    </details>
   </aside>
 
-  <% if (!wikiPages.length && !galleryImages.length && !bdBooks.length) { %>
-    <p class="intro">Aucun favori pour l&apos;instant. Utilise le bouton favori sur une page wiki, une image de la galerie ou une BD pour l&apos;ajouter ici.</p>
-  <% } %>
+  <%# ── Contenu principal : favoris ── %>
 
-  <!-- Section Mes Fantasmes : favoris wiki de la catégorie "fantasmes" -->
   <% if (fantasyPages.length) { %>
     <h2 class="profil-section-title">Mes fantasmes (<%= fantasyPages.length %>)</h2>
     <div class="wiki-grid">
@@ -68,17 +163,16 @@
     </div>
   <% } %>
 
-  <!-- Section pages wiki favorites -->
-  <% if (wikiPages.length) { %>
-    <h2 class="profil-section-title">Pages favorites (<%= wikiPages.length %>)</h2>
+  <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
+  <% if (nonFantasyPages.length) { %>
+    <h2 class="profil-section-title">Pages favorites (<%= nonFantasyPages.length %>)</h2>
     <div class="wiki-grid">
-      <% wikiPages.forEach(function (page) { %>
+      <% nonFantasyPages.forEach(function (page) { %>
         <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
       <% }) %>
     </div>
   <% } %>
 
-  <!-- Section images favorites -->
   <% if (galleryImages.length) { %>
     <h2 class="profil-section-title">Images favorites (<%= galleryImages.length %>)</h2>
     <div class="profil-fav-grid">
@@ -98,7 +192,6 @@
     </div>
   <% } %>
 
-  <!-- Section BD favorites -->
   <% if (bdBooks.length) { %>
     <h2 class="profil-section-title">BD favorites (<%= bdBooks.length %>)</h2>
     <div class="profil-fav-grid">
@@ -108,8 +201,6 @@
            data-fav-item data-item-type="bd" data-item-id="<%= book.id %>">
           <% if (book.imagePaths && book.imagePaths[0]) { %>
             <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
-          <% } else if (book.filename) { %>
-            <img src="<%= thumbUrl(book.filename) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
           <% } else { %>
             <div class="profil-fav-card-placeholder">&#128218;</div>
           <% } %>
@@ -120,7 +211,10 @@
     </div>
   <% } %>
 
-  <!-- Boutons CTA -->
+  <% if (!fantasyPages.length && !nonFantasyPages.length && !galleryImages.length && !bdBooks.length) { %>
+    <p class="intro" style="margin-top:2rem">Aucun favori pour l&apos;instant. Utilise les boutons favori sur les pages wiki, images ou BD.</p>
+  <% } %>
+
   <div class="profil-notes-btns">
     <a href="/favoris/notes/images" class="profil-notes-btn">Images not&eacute;es</a>
     <a href="/favoris/notes/wiki" class="profil-notes-btn">Pages wiki not&eacute;es</a>
@@ -128,10 +222,10 @@
   </div>
 
 </main>
+
 <script>
-// ── Paramètres de profil (Goûts + Ultra/Irréaliste) ────────────────────────
-// Sauvegarde instantanée côté serveur (voir POST /favoris/parametres).
-(function() {
+(function () {
+  // ── Paramètres : Ultra / Irréaliste (sauvegarde serveur) ─────────────────
   function savePref(field, value) {
     var body = {};
     body[field] = value;
@@ -139,56 +233,74 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    }).catch(function() {});
+    }).catch(function () {});
   }
 
-  function wireRadioGroup(containerId, field, initial) {
+  function wireServerRadio(containerId, field, initial) {
     var container = document.getElementById(containerId);
     if (!container) return;
     var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
     var current = initial;
-    function syncLabels() {
-      labels.forEach(function(lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
+    function sync() {
+      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
     }
-    syncLabels();
-    labels.forEach(function(lbl) {
+    sync();
+    labels.forEach(function (lbl) {
       var radio = lbl.querySelector("input");
       if (radio.value === current) radio.checked = true;
-      radio.addEventListener("change", function() {
+      radio.addEventListener("change", function () {
         if (!radio.checked) return;
         current = radio.value;
-        syncLabels();
+        sync();
         savePref(field, current);
       });
     });
   }
 
-  wireRadioGroup("ultra-mode-options", "ultraMode", window.ULTRA_MODE || "hidden");
-  wireRadioGroup("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
+  wireServerRadio("ultra-mode-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
+  wireServerRadio("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
 
-  var orientationSelect = document.getElementById("pref-orientation");
-  if (orientationSelect) {
-    orientationSelect.addEventListener("change", function() {
-      savePref("orientation", orientationSelect.value);
+  // ── Filtrage des tags (localStorage) ─────────────────────────────────────
+  function wireLocalRadio(containerId, lsKey, defaultVal) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
+    var current = localStorage.getItem(lsKey) || defaultVal;
+    function sync() {
+      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
+    }
+    sync();
+    labels.forEach(function (lbl) {
+      var radio = lbl.querySelector("input");
+      if (radio.value === current) radio.checked = true;
+      radio.addEventListener("change", function () {
+        if (!radio.checked) return;
+        current = radio.value;
+        sync();
+        localStorage.setItem(lsKey, current);
+      });
     });
   }
-})();
 
-// ── Favoris ───────────────────────────────────────────────────────────────
-document.querySelectorAll("[data-fav-item] .wiki-pl-remove").forEach(function (btn) {
-  btn.addEventListener("click", function (e) {
-    e.preventDefault();
-    var card = btn.closest("[data-fav-item]");
-    fetch("/favoris/toggle", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itemType: card.dataset.itemType, itemId: Number(card.dataset.itemId) }),
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (d.ok && !d.active) card.remove();
-      });
+  wireLocalRadio("tag-logic-options", "wiki-tag-logic", "and");
+
+  // ── Favoris : retirer ────────────────────────────────────────────────────
+  document.querySelectorAll("[data-fav-item] .wiki-pl-remove").forEach(function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      var card = btn.closest("[data-fav-item]");
+      fetch("/favoris/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemType: card.dataset.itemType, itemId: Number(card.dataset.itemId) }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok && !d.active) card.remove();
+        });
+    });
   });
-});
+})();
 </script>
+
 <%- include('partials/foot') %>
