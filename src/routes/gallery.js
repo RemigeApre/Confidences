@@ -25,12 +25,12 @@ const { filterOff } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
-  { key: "pratique",    label: "Pratiques",   hue:   5 },
   { key: "lieux",       label: "Lieux",       hue: 140 },
   { key: "partenaires", label: "Partenaires", hue: 210 },
   { key: "jeu_de_role", label: "Scénarios",   hue:  60 },
   { key: "tenues",      label: "Tenues",      hue: 175 },
   { key: "objets",      label: "Objets",      hue:  28 },
+  { key: "pratique",    label: "Pratiques",   hue:   5 },
   { key: "fantasmes",   label: "Fantasmes",   hue: 330 },
   { key: "autre",       label: "Autre",       hue: 220 },
 ];

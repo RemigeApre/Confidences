@@ -202,14 +202,13 @@
   <%# ── Panneau TODO admin (pages à créer) ── %>
   <% if (currentUser && currentUser.isAdmin) { %>
     <%
-      var TODO_CAT_ORDER = ['pratique','fantasmes','jeu_de_role','partenaires','position','lieux','objets','tenues','autre'];
+      var TODO_CAT_ORDER = ['position','lieux','partenaires','jeu_de_role','tenues','objets','pratique','fantasmes','autre'];
       var todoCategories = TODO_CAT_ORDER.map(function(k) {
         return categories.find(function(c){ return c.key === k; });
       }).filter(Boolean);
-      var todoCatLabels = { pratique: 'Pratiques', position: 'Positions' };
     %>
     <script id="wiki-todo-cats" type="application/json"><%- JSON.stringify(todoCategories.map(function(c){
-      return { key: c.key, label: todoCatLabels[c.key] || c.label, hue: c.hue };
+      return { key: c.key, label: c.label, hue: c.hue };
     })) %></script>
 
     <div class="wiki-todo-overlay" id="wiki-todo-overlay" hidden></div>

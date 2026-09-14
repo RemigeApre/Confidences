@@ -250,7 +250,29 @@
   </div>
   <div class="wiki-pagination" id="wiki-pagination" hidden></div>
   <% if (currentUser && currentUser.isAdmin && lockedCategory) { %>
+    <script id="wiki-existing-pages" type="application/json"><%- JSON.stringify(allPagesMin) %></script>
+
+    <%
+      var TODO_CAT_ORDER = ['position','lieux','partenaires','jeu_de_role','tenues','objets','pratique','fantasmes','autre'];
+      var todoCategories = TODO_CAT_ORDER.map(function(k) {
+        return categories.find(function(c){ return c.key === k; });
+      }).filter(Boolean);
+    %>
+    <script id="wiki-todo-cats" type="application/json"><%- JSON.stringify(todoCategories.map(function(c){
+      return { key: c.key, label: c.label, hue: c.hue };
+    })) %></script>
+
+    <button type="button" class="wiki-fab-list" id="wiki-fab-list-btn" title="Pages à créer">&#9776;</button>
     <a href="/wiki/ajouter?category=<%= lockedCategory.key %>" class="wiki-fab-add" title="Ajouter une page">+</a>
+
+    <div class="wiki-todo-overlay" id="wiki-todo-overlay" hidden></div>
+    <aside class="wiki-todo-drawer" id="wiki-todo-drawer" hidden aria-label="Pages à créer">
+      <div class="wiki-todo-header">
+        <span class="wiki-todo-title">Pages à créer</span>
+        <button type="button" class="wiki-todo-close" id="wiki-todo-close" aria-label="Fermer">&#215;</button>
+      </div>
+      <div class="wiki-todo-body" id="wiki-todo-body"></div>
+    </aside>
   <% } %>
 </main>
 <script>window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>

@@ -40,12 +40,12 @@ const { filterOff, isOffForUser } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",   label: "Positions",   desc: "Postures, Kama-sutra et toutes leurs variantes.",                               hue: 270 },
-  { key: "pratique",   label: "Pratiques",   desc: "Domination, BDSM, Bondage et pratiques sexuelles.",                            hue:   5 },
   { key: "lieux",      label: "Lieux",       desc: "Endroits, contextes et ambiances où se déroule l\u2019action.",                hue: 140 },
   { key: "partenaires",label: "Partenaires", desc: "Nature et nombre de partenaires : solo, duo, trio\u2026",                     hue: 210 },
   { key: "jeu_de_role",label: "Scénarios",   desc: "Jeux de rôle, scénarios joués, personnages et ambiances.",                    hue:  60 },
   { key: "tenues",     label: "Tenues",      desc: "Lingerie, costumes et tout ce qui se porte.",                                  hue: 175 },
   { key: "objets",     label: "Objets",      desc: "Sex-toys, godes, liens et accessoires hors tenues.",                          hue:  28 },
+  { key: "pratique",   label: "Pratiques",   desc: "Domination, BDSM, Bondage et pratiques sexuelles.",                            hue:   5 },
   { key: "fantasmes",  label: "Fantasmes",   desc: "Tout ce qui ne trouve pas de cat\u00e9gorie sp\u00e9cifique — le reste.",     hue: 330 },
 ];
 
@@ -542,8 +542,10 @@ function buildWikiRouter(config) {
   router.get("/categorie/:key", (req, res) => {
     const cat = CATEGORIES.find((c) => c.key === req.params.key);
     if (!cat) return res.redirect("/wiki");
-    const pages = pagesForCategory(filterOff(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki"), req.user), cat.key);
-    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, ...CTX });
+    const all = sortedPages();
+    const pages = pagesForCategory(filterOff(mergeUserReactions(all, req.user ? req.user.id : null, "wiki"), req.user), cat.key);
+    const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
+    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, ...CTX });
   });
 
   router.post("/", requireAdmin, upload.any(), (req, res) => {
