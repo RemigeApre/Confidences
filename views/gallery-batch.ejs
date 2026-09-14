@@ -1,0 +1,119 @@
+<%- include('partials/head', { title: 'Import groupé' }) %>
+<main class="container">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Import groupé', navBack: '/galerie' }) %>
+
+  <form method="POST" action="/galerie/batch" enctype="multipart/form-data" id="gb-form">
+    <input type="hidden" name="batch_meta" id="gb-batch-meta" value="{}" />
+
+    <%# ── Dropzone ── %>
+    <div class="gb-dropzone" id="gb-dropzone">
+      <input type="file" accept="image/*" multiple hidden id="gb-file-trigger" />
+      <span class="gb-dz-icon">&#128247;</span>
+      <span class="gb-dz-text">Glisser les images ici ou <u>cliquer pour sélectionner</u></span>
+      <span class="gb-dz-sub">Plusieurs fichiers acceptés</span>
+    </div>
+
+    <%# ── Paramètres communs ── %>
+    <div class="gb-section">
+      <div class="gb-section-head">
+        <h2 class="gb-section-title">Paramètres communs</h2>
+        <span class="gb-section-hint">S&apos;appliquent à toutes les images</span>
+      </div>
+      <div class="gb-common-grid">
+
+        <div class="gb-field-row">
+          <label class="gb-field-label">Catégorie</label>
+          <select name="common_category" class="gb-select">
+            <option value="">— Aucune —</option>
+            <% categories.forEach(function(c) { %>
+              <option value="<%= c.key %>"><%= c.label %></option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div class="gb-field-row">
+          <label class="gb-field-label">Type</label>
+          <div class="gb-radio-row">
+            <label class="chip-option"><input type="radio" name="common_content_type" value="image" checked><span>Image</span></label>
+            <label class="chip-option"><input type="radio" name="common_content_type" value="bd"><span>BD&nbsp;/ Manga</span></label>
+          </div>
+        </div>
+
+        <div class="gb-field-row">
+          <label class="gb-field-label">Auteur</label>
+          <input type="text" name="common_author" class="gb-input" list="gb-authors-list"
+                 placeholder="Auteur&hellip;" autocomplete="off" />
+          <datalist id="gb-authors-list">
+            <% authors.forEach(function(a) { %><option value="<%= a %>"><% }); %>
+          </datalist>
+        </div>
+
+        <div class="gb-field-row">
+          <label class="gb-field-label">Parodie</label>
+          <input type="text" name="common_parody" class="gb-input" list="gb-parodies-list"
+                 placeholder="Parodie&hellip;" autocomplete="off" />
+          <datalist id="gb-parodies-list">
+            <% parodies.forEach(function(p) { %><option value="<%= p %>"><% }); %>
+          </datalist>
+        </div>
+
+        <div class="gb-field-row gb-field-row--full">
+          <label class="gb-field-label">Tags communs</label>
+          <input type="text" name="common_tags" id="gb-common-tags" class="gb-input gb-tags-input"
+                 placeholder="tag1, tag2, tag3&hellip;" autocomplete="off" />
+          <% if (allTags.length) { %>
+          <div class="gb-tag-suggest" id="gb-tag-suggest">
+            <% allTags.slice(0, 40).forEach(function(t) { %>
+              <button type="button" class="gb-tag-chip" data-tag="<%= t %>"><%= t %></button>
+            <% }); %>
+          </div>
+          <% } %>
+        </div>
+
+      </div>
+    </div>
+
+    <%# ── Grille images ── %>
+    <div class="gb-section" id="gb-images-section" hidden>
+      <div class="gb-section-head">
+        <h2 class="gb-section-title">Images&nbsp;(<span id="gb-img-count">0</span>)</h2>
+        <div class="gb-section-actions">
+          <button type="button" class="gb-btn-sm" id="gb-sel-all">Tout sélect.</button>
+          <button type="button" class="gb-btn-sm" id="gb-desel-all">Désélect.</button>
+        </div>
+      </div>
+      <div class="gb-grid" id="gb-img-grid"></div>
+    </div>
+
+    <%# ── Sous-groupes ── %>
+    <div class="gb-section" id="gb-groups-section" hidden>
+      <div class="gb-section-head">
+        <h2 class="gb-section-title">Sous-groupes</h2>
+        <span class="gb-section-hint">Tags et paramètres supplémentaires par lot</span>
+      </div>
+      <div id="gb-groups-list"></div>
+    </div>
+
+    <%# ── Barre de sélection (sticky bottom) ── %>
+    <div class="gb-sel-bar" id="gb-sel-bar" hidden>
+      <span class="gb-sel-info"><span id="gb-sel-count">0</span>&nbsp;sélectionnée(s)</span>
+      <button type="button" class="gb-btn-primary" id="gb-new-group-btn">+ Nouveau groupe</button>
+      <div id="gb-assign-wrap" class="gb-assign-row" hidden>
+        <span class="gb-assign-sep">ou assigner&nbsp;à&nbsp;:</span>
+        <select class="gb-select-sm" id="gb-assign-sel"></select>
+        <button type="button" class="gb-btn-secondary" id="gb-assign-btn">Assigner</button>
+      </div>
+    </div>
+
+    <%# ── Soumission ── %>
+    <div class="gb-submit-row">
+      <button type="submit" class="gb-btn-submit" id="gb-submit-btn" disabled>Envoyer 0 image</button>
+    </div>
+
+  </form>
+</main>
+<script>
+window.GB_CATEGORIES = <%- JSON.stringify(categories.map(function(c){ return { key: c.key, label: c.label }; })) %>;
+</script>
+<script src="/gallery-batch.js?v=<%= assetVersion %>"></script>
+<%- include('partials/foot') %>

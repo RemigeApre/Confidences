@@ -291,6 +291,62 @@ function buildGalleryRouter(config) {
     res.json(q ? all.filter(function(a) { return a.toLowerCase().indexOf(q) !== -1; }) : all);
   });
 
+  // ── Import groupé ─────────────────────────────────
+  router.get("/batch", requireAdmin, (req, res) => {
+    const { allTags } = getCtx(req.user);
+    const authors  = listGalleryAuthors();
+    const parodies = listGalleryParodies();
+    res.render("gallery-batch", { config, allTags, authors, parodies, categories: CATEGORIES });
+  });
+
+  router.post("/batch", requireAdmin, upload.any(), (req, res) => {
+    const imgFiles = (req.files || []).filter((f) => f.fieldname === "images");
+    if (!imgFiles.length) return res.redirect("/galerie/batch");
+
+    const commonTags     = parseTags(req.body.common_tags);
+    const commonCategory = normalizeCategory(req.body.common_category);
+    const commonAuthor   = String(req.body.common_author  || "").trim();
+    const commonParody   = String(req.body.common_parody  || "").trim();
+    const commonType     = req.body.common_content_type === "bd" ? "bd" : "image";
+
+    let batchMeta = {};
+    try { batchMeta = JSON.parse(req.body.batch_meta || "{}"); } catch {}
+    const groups   = Array.isArray(batchMeta.groups)     ? batchMeta.groups     : [];
+    const fileGrps = Array.isArray(batchMeta.fileGroups) ? batchMeta.fileGroups : [];
+
+    imgFiles.forEach((file, idx) => {
+      const p = `/uploads/gallery/${file.filename}`;
+      generateThumb(p);
+
+      const assignedIds = Array.isArray(fileGrps[idx]) ? fileGrps[idx] : [];
+      let finalTags     = [...commonTags];
+      let finalCategory = commonCategory;
+      let finalAuthor   = commonAuthor;
+
+      assignedIds.forEach((gid) => {
+        const g = groups.find((gr) => gr.id === gid);
+        if (!g) return;
+        finalTags     = [...new Set([...finalTags, ...parseTags(g.extraTags || "")])];
+        if (g.category) finalCategory = normalizeCategory(g.category);
+        if (g.author)   finalAuthor   = String(g.author).trim();
+      });
+
+      insertGalleryImage({
+        imagePaths: [p],
+        title:       "",
+        tags:        finalTags,
+        notes:       "",
+        category:    finalCategory,
+        wikiPageId:  null,
+        author:      finalAuthor,
+        parody:      commonParody,
+        contentType: commonType,
+      });
+    });
+
+    res.redirect("/galerie");
+  });
+
   router.get("/:id/edit", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
