@@ -597,9 +597,10 @@ function buildWikiRouter(config) {
 
   router.get("/ajouter", requireUser, (req, res) => {
     const preCategory = String(req.query.category || "");
+    const preTitle    = String(req.query.title    || "");
     const pages = sortedPages();
     const blankPage = {
-      id: null, title: "", category: preCategory || (CATEGORIES[0] && CATEGORIES[0].key) || "",
+      id: null, title: preTitle, category: preCategory || (CATEGORIES[0] && CATEGORIES[0].key) || "",
       content: "", tags: [], imagePaths: [], owned: false, meta: {},
       extraCategories: [], rating: 0, flame: false, interested: false,
       updatedAt: new Date().toISOString()

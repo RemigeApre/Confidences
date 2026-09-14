@@ -4406,4 +4406,244 @@
     });
   })();
 
+  // ══════════════════════════════════════════════════
+  // 25. DÉTECTION DOUBLON TITRE (formulaire création/édition)
+  // ══════════════════════════════════════════════════
+  (function () {
+    var titleInput = document.querySelector(".wiki-title-input");
+    if (!titleInput) return;
+
+    var existingEl = document.getElementById("wiki-existing-pages");
+    if (!existingEl) return;
+    var existingPages;
+    try { existingPages = JSON.parse(existingEl.textContent || "[]"); } catch (e) { return; }
+
+    // ID de la page courante (édition) — null si création
+    var currentId = Number(document.querySelector("[data-page-id]") && document.querySelector("[data-page-id]").dataset.pageId) || null;
+
+    // Normalisation : minuscules + sans accents + sans ponctuation
+    function normT(s) {
+      return (s || "").toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function findSimilar(title) {
+      var n = normT(title);
+      if (n.length < 2) return null;
+      return existingPages.find(function (p) {
+        if (currentId && p.id === currentId) return false;
+        var pn = normT(p.title);
+        return pn === n || pn.indexOf(n) !== -1 || n.indexOf(pn) !== -1;
+      }) || null;
+    }
+
+    // Insérer le hint sous le champ titre
+    var titleRow = titleInput.closest(".wf-title-row");
+    var hint = document.createElement("div");
+    hint.className = "wiki-title-dup-hint";
+    hint.hidden = true;
+    titleRow.insertAdjacentElement("afterend", hint);
+
+    function check() {
+      var match = findSimilar(titleInput.value);
+      if (match) {
+        titleInput.classList.add("wiki-title-input--dup");
+        hint.hidden = false;
+        hint.innerHTML = "Page similaire\u00a0: <a href=\"/wiki/" + match.id + "\" target=\"_blank\" rel=\"noopener\">" +
+          match.title + " \u2197</a>";
+      } else {
+        titleInput.classList.remove("wiki-title-input--dup");
+        hint.hidden = true;
+      }
+    }
+
+    titleInput.addEventListener("input", check);
+    if (titleInput.value) check();
+  })();
+
+  // ══════════════════════════════════════════════════
+  // 26. PANNEAU TODO ADMIN (wiki-index : pages à créer)
+  // ══════════════════════════════════════════════════
+  (function () {
+    var listBtn = document.getElementById("wiki-fab-list-btn");
+    if (!listBtn) return;
+
+    var overlay   = document.getElementById("wiki-todo-overlay");
+    var drawer    = document.getElementById("wiki-todo-drawer");
+    var closeBtn  = document.getElementById("wiki-todo-close");
+    var bodyEl    = document.getElementById("wiki-todo-body");
+    var catsEl    = document.getElementById("wiki-todo-cats");
+    var existingEl = document.getElementById("wiki-existing-pages");
+    if (!overlay || !drawer || !bodyEl || !catsEl || !existingEl) return;
+
+    var cats = JSON.parse(catsEl.textContent);
+    var existingPages;
+    try { existingPages = JSON.parse(existingEl.textContent || "[]"); } catch (e) { existingPages = []; }
+
+    var TODO_KEY = "wiki-todo-list";
+
+    function loadTodo() {
+      try { return JSON.parse(localStorage.getItem(TODO_KEY) || "{}"); } catch (e) { return {}; }
+    }
+    function saveTodo(data) { localStorage.setItem(TODO_KEY, JSON.stringify(data)); }
+
+    function normT(s) {
+      return (s || "").toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function findSimilar(title) {
+      var n = normT(title);
+      if (n.length < 2) return null;
+      return existingPages.find(function (p) {
+        var pn = normT(p.title);
+        return pn === n || pn.indexOf(n) !== -1 || n.indexOf(pn) !== -1;
+      }) || null;
+    }
+
+    // État d'ouverture par catégorie (conservé entre rendus)
+    var openState = {};
+
+    function renderBody() {
+      var data = loadTodo();
+      // Sauvegarder l'état open des details avant de tout reconstruire
+      bodyEl.querySelectorAll(".wiki-todo-cat").forEach(function (d) {
+        openState[d.dataset.cat] = d.open;
+      });
+      bodyEl.innerHTML = "";
+
+      cats.forEach(function (cat) {
+        var items = data[cat.key] || [];
+
+        var section = document.createElement("details");
+        section.className = "wiki-todo-cat";
+        section.dataset.cat = cat.key;
+        // Ouvrir si des items existent OU si était ouvert avant
+        section.open = openState[cat.key] !== undefined ? openState[cat.key] : items.length > 0;
+
+        var summary = document.createElement("summary");
+        summary.className = "wiki-todo-cat-summary";
+        summary.style.setProperty("--ch-hue", cat.hue);
+        summary.innerHTML =
+          '<span class="wiki-todo-cat-label">' + cat.label + "</span>" +
+          (items.length ? '<span class="wiki-todo-cat-count">' + items.length + "</span>" : "");
+        section.appendChild(summary);
+
+        var secBody = document.createElement("div");
+        secBody.className = "wiki-todo-cat-body";
+
+        // Ligne d'ajout
+        var addRow = document.createElement("div");
+        addRow.className = "wiki-todo-add-row";
+        var inp = document.createElement("input");
+        inp.type = "text";
+        inp.placeholder = "Titre pr\u00e9vu\u2026";
+        inp.className = "wiki-todo-add-input";
+        var addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "wiki-todo-add-btn";
+        addBtn.textContent = "+";
+
+        (function (catKey, input) {
+          function doAdd() {
+            var val = input.value.trim();
+            if (!val) return;
+            var d = loadTodo();
+            if (!d[catKey]) d[catKey] = [];
+            if (d[catKey].indexOf(val) === -1) d[catKey].push(val);
+            saveTodo(d);
+            openState[catKey] = true;
+            renderBody();
+          }
+          addBtn.addEventListener("click", doAdd);
+          input.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") { e.preventDefault(); doAdd(); }
+          });
+        })(cat.key, inp);
+
+        addRow.appendChild(inp);
+        addRow.appendChild(addBtn);
+        secBody.appendChild(addRow);
+
+        // Liste d'items
+        if (items.length) {
+          var ul = document.createElement("ul");
+          ul.className = "wiki-todo-list";
+
+          items.forEach(function (item, idx) {
+            var similar = findSimilar(item);
+
+            var li = document.createElement("li");
+            li.className = "wiki-todo-item" + (similar ? " wiki-todo-item--dup" : "");
+
+            var textEl = document.createElement("span");
+            textEl.className = "wiki-todo-item-text";
+            textEl.textContent = item;
+            if (similar) {
+              textEl.title = "Similaire \u00e0 : " + similar.title;
+            }
+
+            var actions = document.createElement("div");
+            actions.className = "wiki-todo-item-actions";
+
+            var goBtn = document.createElement("a");
+            goBtn.href = "/wiki/ajouter?category=" + encodeURIComponent(cat.key) + "&title=" + encodeURIComponent(item);
+            goBtn.className = "wiki-todo-go-btn";
+            goBtn.title = "Cr\u00e9er cette page";
+            goBtn.textContent = "\u2192";
+
+            var delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.className = "wiki-todo-del-btn";
+            delBtn.title = "Supprimer";
+            delBtn.textContent = "\u00d7";
+
+            (function (catKey, i) {
+              delBtn.addEventListener("click", function () {
+                var d = loadTodo();
+                if (d[catKey]) d[catKey].splice(i, 1);
+                saveTodo(d);
+                renderBody();
+              });
+            })(cat.key, idx);
+
+            actions.appendChild(goBtn);
+            actions.appendChild(delBtn);
+            li.appendChild(textEl);
+            li.appendChild(actions);
+            ul.appendChild(li);
+          });
+
+          secBody.appendChild(ul);
+        }
+
+        section.appendChild(secBody);
+        bodyEl.appendChild(section);
+      });
+    }
+
+    function openDrawer() {
+      renderBody();
+      overlay.hidden = false;
+      drawer.hidden = false;
+      document.body.classList.add("wiki-todo-open");
+    }
+
+    function closeDrawer() {
+      overlay.hidden = true;
+      drawer.hidden = true;
+      document.body.classList.remove("wiki-todo-open");
+    }
+
+    listBtn.addEventListener("click", openDrawer);
+    closeBtn.addEventListener("click", closeDrawer);
+    overlay.addEventListener("click", closeDrawer);
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !drawer.hidden) closeDrawer();
+    });
+  })();
+
 })();

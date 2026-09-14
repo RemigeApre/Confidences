@@ -26,109 +26,158 @@
       <p class="admin-error-msg"><%= adminError %></p>
     <% } %>
 
-    <details class="admin-create-panel">
-      <summary class="admin-create-summary">+ Cr&eacute;er un utilisateur</summary>
-      <form method="POST" action="/admin/profils" class="admin-create-form">
-        <input type="text" name="display_name" placeholder="Pr&eacute;nom affiché" required autocomplete="off" />
-        <input type="text" name="username" placeholder="Identifiant (login)" required autocomplete="off" />
-        <input type="password" name="password" placeholder="Mot de passe" required autocomplete="off" />
-        <label class="admin-check-label">
-          <input type="checkbox" name="is_admin" /> Admin
-        </label>
-        <label class="admin-check-label">
-          <input type="checkbox" name="is_test" /> Test
-        </label>
-        <button type="submit" class="admin-btn-primary">Cr&eacute;er</button>
-      </form>
-    </details>
+    <%# ── Bibliothèque de cartes ── %>
+    <div class="admin-user-lib">
 
-    <% userStates.forEach(function(state) { %>
-    <div class="admin-user-card">
-      <div class="admin-user-header">
-        <div class="admin-user-identity">
-          <span class="admin-user-name"><%= state.user.displayName %></span>
-          <span class="admin-user-username">@<%= state.user.username %></span>
-          <% if (state.user.isAdmin) { %><span class="admin-badge-admin">Admin</span><% } %>
-          <% if (state.user.isTest) { %><span class="admin-badge-test">Test</span><% } %>
-        </div>
-        <div class="admin-user-actions">
-          <a href="/admin/utilisateur/<%= state.user.id %>" class="admin-btn-link">Voir le profil</a>
-          <details class="admin-pwd-details">
-            <summary class="admin-btn-link">Modifier</summary>
-            <form method="POST" action="/admin/profils/<%= state.user.id %>/edit" class="admin-pwd-form admin-edit-form">
-              <input type="text" name="display_name" placeholder="Pr&eacute;nom affich&eacute;" value="<%= state.user.displayName %>" required autocomplete="off" />
-              <input type="text" name="username" placeholder="Identifiant (login)" value="<%= state.user.username %>" required autocomplete="off" />
-              <select name="sexe">
-                <option value="" <%= state.user.sexe === '' ? 'selected' : '' %>>Sexe (non pr&eacute;cis&eacute;)</option>
-                <option value="femme" <%= state.user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
-                <option value="homme" <%= state.user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
-                <option value="autre" <%= state.user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
-              </select>
-              <label class="admin-check-label">
-                <input type="checkbox" name="is_admin" <%= state.user.isAdmin ? 'checked' : '' %> <%= state.user.id === currentUser.id ? 'disabled' : '' %> /> Admin
-              </label>
-              <label class="admin-check-label">
-                <input type="checkbox" name="is_test" <%= state.user.isTest ? 'checked' : '' %> /> Test
-              </label>
-              <button type="submit" class="admin-btn-primary">Enregistrer</button>
-            </form>
-          </details>
-          <details class="admin-pwd-details">
-            <summary class="admin-btn-link">R&eacute;init. MDP</summary>
-            <form method="POST" action="/admin/profils/<%= state.user.id %>/password" class="admin-pwd-form">
-              <input type="password" name="password" placeholder="Nouveau MDP" required autocomplete="new-password" />
-              <button type="submit" class="admin-btn-primary">Changer</button>
-            </form>
-          </details>
-          <form method="POST" action="/admin/profils/<%= state.user.id %>/delete"
-                onsubmit="return confirm('Supprimer <%= state.user.displayName %> ? Cette action est irr\u00e9versible.')">
-            <button type="submit" class="admin-btn-danger">Supprimer</button>
-          </form>
-        </div>
-      </div>
+      <%# Carte "+" — créer un utilisateur %>
+      <button type="button" class="admin-utile admin-utile--create" id="admin-create-btn" aria-label="Cr&eacute;er un utilisateur">
+        <span class="admin-utile-plus">+</span>
+        <span class="admin-utile-create-label">Nouvel utilisateur</span>
+      </button>
 
-      <%# Quizz progress %>
-      <div class="admin-user-body">
-        <% if (state.attempt) { %>
-          <div class="admin-progress-wrap">
-            <% matrixSections.forEach(function(s) { %>
-              <% var sc = state.liveScores && state.liveScores.sections[s.key]; %>
-              <% if (sc) { %>
-              <div class="admin-progress-row">
-                <span class="admin-progress-label"><%= s.title %></span>
-                <div class="bar admin-bar"><div class="bar-fill" style="width:<%= sc.percentage %>%"></div></div>
-                <span class="admin-progress-pct"><%= sc.percentage %>%</span>
+      <% userStates.forEach(function(state) { %>
+        <%
+          var uVariant = state.user.isAdmin ? 'admin' : (state.user.isTest ? 'test' : 'normal');
+          var uInitial = (state.user.displayName || '?').charAt(0).toUpperCase();
+          var uLastLogin = '';
+          if (state.user.lastLoginAt) {
+            var diff = Date.now() - new Date(state.user.lastLoginAt).getTime();
+            var days = Math.floor(diff / 86400000);
+            if (days === 0) uLastLogin = 'aujourd\u2019hui';
+            else if (days === 1) uLastLogin = 'hier';
+            else if (days < 30) uLastLogin = 'il y a ' + days + 'j';
+            else uLastLogin = new Date(state.user.lastLoginAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+          } else {
+            uLastLogin = 'jamais connect\u00e9';
+          }
+        %>
+        <div class="admin-utile admin-utile--<%= uVariant %>">
+          <div class="admin-utile-top">
+            <div class="admin-utile-avatar"><%= uInitial %></div>
+            <details class="admin-utile-menu" onclick="event.stopPropagation()">
+              <summary class="admin-utile-menu-btn" title="Actions">&#8943;</summary>
+              <div class="admin-utile-menu-body">
+                <a href="/admin/utilisateur/<%= state.user.id %>" class="admin-utile-menu-item">Voir le profil</a>
+                <button type="button" class="admin-utile-menu-item"
+                  data-edit-id="<%= state.user.id %>"
+                  data-edit-name="<%= state.user.displayName %>"
+                  data-edit-username="<%= state.user.username %>"
+                  data-edit-sexe="<%= state.user.sexe || '' %>"
+                  data-edit-is-admin="<%= state.user.isAdmin ? '1' : '0' %>"
+                  data-edit-is-test="<%= state.user.isTest ? '1' : '0' %>"
+                  data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>">Modifier</button>
+                <button type="button" class="admin-utile-menu-item"
+                  data-pwd-id="<%= state.user.id %>"
+                  data-pwd-name="<%= state.user.displayName %>">R&eacute;init. MDP</button>
+                <% if (state.user.id !== currentUser.id) { %>
+                  <button type="button" class="admin-utile-menu-item admin-utile-menu-item--danger"
+                    data-del-id="<%= state.user.id %>"
+                    data-del-name="<%= state.user.displayName %>">Supprimer</button>
+                <% } %>
               </div>
-              <% } %>
-            <% }) %>
+            </details>
           </div>
-        <% } else { %>
-          <p class="admin-muted">Aucune r&eacute;ponse au quizz.</p>
-        <% } %>
 
-        <%# Favoris %>
-        <% if (state.favorites.length) { %>
-          <details class="admin-fav-details">
-            <summary class="admin-fav-summary">Favoris (<%= state.favorites.length %>)</summary>
-            <ul class="admin-fav-list">
-              <% state.favorites.forEach(function(fav) { %>
-                <li class="admin-fav-item">
-                  <span class="admin-fav-type"><%= fav.itemType %></span>
-                  <% if (fav.itemType === 'wiki') { %>
-                    <a href="/wiki/<%= fav.itemId %>"><%= fav.title || '#' + fav.itemId %></a>
-                  <% } else if (fav.itemType === 'gallery') { %>
-                    <a href="/galerie"><%= fav.title || '#' + fav.itemId %></a>
-                  <% } else { %>
-                    <span><%= fav.title || '#' + fav.itemId %></span>
-                  <% } %>
-                </li>
-              <% }) %>
-            </ul>
-          </details>
-        <% } %>
+          <a href="/admin/utilisateur/<%= state.user.id %>" class="admin-utile-body-link">
+            <div class="admin-utile-name"><%= state.user.displayName %></div>
+            <div class="admin-utile-login"><%= uLastLogin %></div>
+          </a>
+
+          <div class="admin-utile-stats">
+            <div class="admin-utile-stat">
+              <span class="admin-utile-stat-val"><%= state.livePercentage > 0 ? state.livePercentage + '%' : '—' %></span>
+              <span class="admin-utile-stat-key">Quizz</span>
+            </div>
+            <div class="admin-utile-stat">
+              <span class="admin-utile-stat-val"><%= state.reactionStats.ratingCount %></span>
+              <span class="admin-utile-stat-key">Notes</span>
+            </div>
+            <div class="admin-utile-stat">
+              <span class="admin-utile-stat-val"><%= state.reactionStats.flameCount %></span>
+              <span class="admin-utile-stat-key">J&rsquo;adore</span>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <%# ── Modal : créer un utilisateur ── %>
+    <div class="admin-modal-overlay" id="admin-create-modal" hidden>
+      <div class="admin-modal">
+        <button type="button" class="admin-modal-close" id="admin-create-modal-close" aria-label="Fermer">&#215;</button>
+        <h2 class="admin-modal-title">Nouvel utilisateur</h2>
+        <form method="POST" action="/admin/profils" class="admin-modal-form">
+          <label class="admin-modal-field">
+            <span>Pr&eacute;nom affich&eacute;</span>
+            <input type="text" name="display_name" required autocomplete="off" />
+          </label>
+          <label class="admin-modal-field">
+            <span>Identifiant (login)</span>
+            <input type="text" name="username" required autocomplete="off" />
+          </label>
+          <label class="admin-modal-field">
+            <span>Mot de passe</span>
+            <input type="password" name="password" required autocomplete="new-password" />
+          </label>
+          <div class="admin-modal-checks">
+            <label class="admin-check-label"><input type="checkbox" name="is_admin" /> Admin</label>
+            <label class="admin-check-label"><input type="checkbox" name="is_test" /> Test</label>
+          </div>
+          <button type="submit" class="admin-btn-primary">Cr&eacute;er</button>
+        </form>
       </div>
     </div>
-    <% }) %>
+
+    <%# ── Modal : modifier un utilisateur ── %>
+    <div class="admin-modal-overlay" id="admin-edit-modal" hidden>
+      <div class="admin-modal">
+        <button type="button" class="admin-modal-close" id="admin-edit-modal-close" aria-label="Fermer">&#215;</button>
+        <h2 class="admin-modal-title">Modifier</h2>
+        <form method="POST" id="admin-edit-form" action="/admin/profils/__ID__/edit" class="admin-modal-form">
+          <label class="admin-modal-field">
+            <span>Pr&eacute;nom affich&eacute;</span>
+            <input type="text" name="display_name" id="edit-display-name" required autocomplete="off" />
+          </label>
+          <label class="admin-modal-field">
+            <span>Identifiant</span>
+            <input type="text" name="username" id="edit-username" required autocomplete="off" />
+          </label>
+          <label class="admin-modal-field">
+            <span>Sexe</span>
+            <select name="sexe" id="edit-sexe">
+              <option value="">Non pr&eacute;cis&eacute;</option>
+              <option value="femme">Femme</option>
+              <option value="homme">Homme</option>
+              <option value="autre">Autre</option>
+            </select>
+          </label>
+          <div class="admin-modal-checks">
+            <label class="admin-check-label"><input type="checkbox" name="is_admin" id="edit-is-admin" /> Admin</label>
+            <label class="admin-check-label"><input type="checkbox" name="is_test" id="edit-is-test" /> Test</label>
+          </div>
+          <button type="submit" class="admin-btn-primary">Enregistrer</button>
+        </form>
+      </div>
+    </div>
+
+    <%# ── Modal : réinitialiser mot de passe ── %>
+    <div class="admin-modal-overlay" id="admin-pwd-modal" hidden>
+      <div class="admin-modal">
+        <button type="button" class="admin-modal-close" id="admin-pwd-modal-close" aria-label="Fermer">&#215;</button>
+        <h2 class="admin-modal-title" id="admin-pwd-modal-title">R&eacute;init. MDP</h2>
+        <form method="POST" id="admin-pwd-form" action="/admin/profils/__ID__/password" class="admin-modal-form">
+          <label class="admin-modal-field">
+            <span>Nouveau mot de passe</span>
+            <input type="password" name="password" required autocomplete="new-password" />
+          </label>
+          <button type="submit" class="admin-btn-primary">Changer</button>
+        </form>
+      </div>
+    </div>
+
+    <%# ── Formulaire caché : supprimer ── %>
+    <form method="POST" id="admin-del-form" action="/admin/profils/__ID__/delete" style="display:none"></form>
+
   </section>
 
   <%# ═══════════════════════════════════════════════
@@ -463,6 +512,73 @@
         });
     });
   });
+  // ── Bibliothèque utilisateurs : modals ──────────────────────────────────
+  (function () {
+    function openModal(id) { document.getElementById(id).hidden = false; }
+    function closeModal(id) { document.getElementById(id).hidden = true; }
+
+    // Créer
+    document.getElementById("admin-create-btn").addEventListener("click", function () {
+      openModal("admin-create-modal");
+    });
+    document.getElementById("admin-create-modal-close").addEventListener("click", function () {
+      closeModal("admin-create-modal");
+    });
+    document.getElementById("admin-create-modal").addEventListener("click", function (e) {
+      if (e.target === this) closeModal("admin-create-modal");
+    });
+
+    // Fermer edit
+    document.getElementById("admin-edit-modal-close").addEventListener("click", function () {
+      closeModal("admin-edit-modal");
+    });
+    document.getElementById("admin-edit-modal").addEventListener("click", function (e) {
+      if (e.target === this) closeModal("admin-edit-modal");
+    });
+
+    // Fermer pwd
+    document.getElementById("admin-pwd-modal-close").addEventListener("click", function () {
+      closeModal("admin-pwd-modal");
+    });
+    document.getElementById("admin-pwd-modal").addEventListener("click", function (e) {
+      if (e.target === this) closeModal("admin-pwd-modal");
+    });
+
+    // Boutons "Modifier" dans le menu contextuel
+    document.querySelectorAll("[data-edit-id]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.dataset.editId;
+        document.getElementById("admin-edit-form").action = "/admin/profils/" + id + "/edit";
+        document.getElementById("edit-display-name").value = btn.dataset.editName;
+        document.getElementById("edit-username").value = btn.dataset.editUsername;
+        document.getElementById("edit-sexe").value = btn.dataset.editSexe;
+        document.getElementById("edit-is-admin").checked = btn.dataset.editIsAdmin === "1";
+        document.getElementById("edit-is-admin").disabled = btn.dataset.self === "1";
+        document.getElementById("edit-is-test").checked = btn.dataset.editIsTest === "1";
+        openModal("admin-edit-modal");
+      });
+    });
+
+    // Boutons "Réinit. MDP"
+    document.querySelectorAll("[data-pwd-id]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.dataset.pwdId;
+        document.getElementById("admin-pwd-form").action = "/admin/profils/" + id + "/password";
+        document.getElementById("admin-pwd-modal-title").textContent = "MDP — " + btn.dataset.pwdName;
+        openModal("admin-pwd-modal");
+      });
+    });
+
+    // Boutons "Supprimer"
+    document.querySelectorAll("[data-del-id]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var name = btn.dataset.delName;
+        if (!confirm("Supprimer " + name + " ? Cette action est irréversible.")) return;
+        document.getElementById("admin-del-form").action = "/admin/profils/" + btn.dataset.delId + "/delete";
+        document.getElementById("admin-del-form").submit();
+      });
+    });
+  })();
 })();
 </script>
 <%- include('partials/foot') %>

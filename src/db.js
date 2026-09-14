@@ -381,6 +381,19 @@ function getUserReaction(userId, itemType, itemId) {
   return row ? { rating: row.rating, flame: !!row.flame, interested: !!row.interested } : { ...REACTION_DEFAULT };
 }
 
+// Statistiques agregees des reactions d'un utilisateur (tous types confondus).
+// Retourne { ratingCount, flameCount } pour affichage sur la carte admin.
+function getUserReactionStats(userId) {
+  if (!userId) return { ratingCount: 0, flameCount: 0 };
+  const ratingRow = db.prepare(
+    "SELECT COUNT(*) AS n FROM content_reactions WHERE user_id = ? AND rating > 0"
+  ).get(userId);
+  const flameRow = db.prepare(
+    "SELECT COUNT(*) AS n FROM content_reactions WHERE user_id = ? AND flame = 1"
+  ).get(userId);
+  return { ratingCount: ratingRow ? ratingRow.n : 0, flameCount: flameRow ? flameRow.n : 0 };
+}
+
 // Toutes les reactions d'un utilisateur pour un type de contenu, indexees par
 // item_id : evite une requete par ligne quand on affiche une liste entiere
 // (sommaire wiki, galerie...).
@@ -1287,6 +1300,7 @@ module.exports = {
   listFavoriteRows,
   countFavorites,
   getUserReaction,
+  getUserReactionStats,
   getUserReactionsMap,
   mergeUserReactions,
   setUserReaction,

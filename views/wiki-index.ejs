@@ -192,11 +192,35 @@
   <div class="wiki-pagination" id="wiki-pagination" hidden></div>
 
   <% if (currentUser && currentUser.isAdmin) { %>
+    <button type="button" class="wiki-fab-list" id="wiki-fab-list-btn" title="Pages \u00e0 cr\u00e9er">&#9776;</button>
     <a href="/wiki/ajouter" class="wiki-fab-add" title="Ajouter une page">+</a>
   <% } %>
 
   <%# Données pour l'autocomplétion des liens wiki dans le formulaire d'ajout %>
   <script id="wiki-existing-pages" type="application/json"><%- JSON.stringify(pages.map(function(p){ return { id: p.id, title: p.title }; })) %></script>
+
+  <%# ── Panneau TODO admin (pages à créer) ── %>
+  <% if (currentUser && currentUser.isAdmin) { %>
+    <%
+      var TODO_CAT_ORDER = ['pratique','fantasmes','jeu_de_role','partenaires','position','lieux','objets','tenues','autre'];
+      var todoCategories = TODO_CAT_ORDER.map(function(k) {
+        return categories.find(function(c){ return c.key === k; });
+      }).filter(Boolean);
+      var todoCatLabels = { pratique: 'Pratiques', position: 'Positions' };
+    %>
+    <script id="wiki-todo-cats" type="application/json"><%- JSON.stringify(todoCategories.map(function(c){
+      return { key: c.key, label: todoCatLabels[c.key] || c.label, hue: c.hue };
+    })) %></script>
+
+    <div class="wiki-todo-overlay" id="wiki-todo-overlay" hidden></div>
+    <aside class="wiki-todo-drawer" id="wiki-todo-drawer" hidden aria-label="Pages \u00e0 cr\u00e9er">
+      <div class="wiki-todo-header">
+        <span class="wiki-todo-title">Pages &agrave; cr&eacute;er</span>
+        <button type="button" class="wiki-todo-close" id="wiki-todo-close" aria-label="Fermer">&#215;</button>
+      </div>
+      <div class="wiki-todo-body" id="wiki-todo-body"></div>
+    </aside>
+  <% } %>
 
 </main>
 <script src="/wiki.js?v=<%= assetVersion %>"></script>

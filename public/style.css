@@ -7654,6 +7654,264 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 .wiki-fab-add:hover { background: color-mix(in srgb, var(--accent) 80%, #fff); transform: scale(1.08); }
 
+/* ── Bouton FAB "Liste" (au-dessus du +) ── */
+.wiki-fab-list {
+  position: fixed;
+  bottom: calc(1.75rem + 3.2rem + 0.65rem);
+  right: 1.75rem;
+  z-index: 30;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 50%;
+  background: hsl(220, 14%, 22%);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7);
+  font-size: 1.15rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+.wiki-fab-list:hover {
+  background: hsl(220, 18%, 30%);
+  color: #fff;
+  transform: scale(1.07);
+}
+
+/* ── Overlay + drawer TODO ── */
+.wiki-todo-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 200;
+  backdrop-filter: blur(2px);
+}
+.wiki-todo-overlay[hidden] { display: none; }
+
+.wiki-todo-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 92vw);
+  background: hsl(225, 16%, 13%);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.45);
+}
+.wiki-todo-drawer[hidden] { display: none; }
+
+.wiki-todo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1rem 0.85rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.wiki-todo-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.02em;
+}
+.wiki-todo-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.12s;
+}
+.wiki-todo-close:hover { color: rgba(255,255,255,0.75); }
+
+.wiki-todo-body {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+/* Sections catégorie */
+.wiki-todo-cat {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.wiki-todo-cat-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  gap: 0.5rem;
+}
+.wiki-todo-cat-summary::-webkit-details-marker { display: none; }
+.wiki-todo-cat-summary::before {
+  content: "▸";
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.2);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.wiki-todo-cat[open] > .wiki-todo-cat-summary::before { transform: rotate(90deg); }
+
+.wiki-todo-cat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: hsl(var(--ch-hue, 220), 55%, 65%);
+  letter-spacing: 0.03em;
+  flex: 1;
+}
+.wiki-todo-cat-count {
+  font-size: 0.65rem;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4);
+  border-radius: 99px;
+  padding: 0.05rem 0.4rem;
+}
+
+.wiki-todo-cat-body {
+  padding: 0.25rem 0.75rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Ligne d'ajout */
+.wiki-todo-add-row {
+  display: flex;
+  gap: 0.35rem;
+}
+.wiki-todo-add-input {
+  flex: 1;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+}
+.wiki-todo-add-input::placeholder { color: rgba(255,255,255,0.2); }
+.wiki-todo-add-input:focus { outline: none; border-color: rgba(255,255,255,0.22); }
+.wiki-todo-add-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.55);
+  font-size: 1.1rem;
+  width: 2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.wiki-todo-add-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+/* Items de la liste */
+.wiki-todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.wiki-todo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.1s;
+}
+.wiki-todo-item:hover { background: rgba(255,255,255,0.06); }
+
+/* Doublon détecté → rouge */
+.wiki-todo-item--dup {
+  border-color: rgba(248,113,113,0.3);
+  background: rgba(239,68,68,0.07);
+}
+.wiki-todo-item--dup .wiki-todo-item-text { color: #f87171; }
+
+.wiki-todo-item-text {
+  flex: 1;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wiki-todo-item-actions {
+  display: flex;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+.wiki-todo-go-btn {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: background 0.12s, color 0.12s;
+}
+.wiki-todo-go-btn:hover { background: var(--accent); color: #fff; }
+.wiki-todo-del-btn {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 5px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.2);
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+.wiki-todo-del-btn:hover { background: rgba(239,68,68,0.15); color: #f87171; }
+
+/* Bloquer le scroll body quand le drawer est ouvert */
+body.wiki-todo-open { overflow: hidden; }
+
+/* ── Doublon sur le formulaire de création ── */
+.wiki-title-input--dup {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239,68,68,0.18);
+}
+.wiki-title-dup-hint {
+  font-size: 0.8rem;
+  color: #f87171;
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  background: rgba(239,68,68,0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(239,68,68,0.2);
+}
+.wiki-title-dup-hint a {
+  color: #fca5a5;
+  text-decoration: underline;
+  font-weight: 600;
+}
+.wiki-title-dup-hint a:hover { color: #fff; }
+
 /* ── Galerie avec sidebar gauche ─────────────────── */
 .top-nav ~ .gallery-sidebar { margin-top: 0; }
 
