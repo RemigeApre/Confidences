@@ -4131,7 +4131,13 @@
       if (rmBtn) {
         rmBtn.addEventListener("click", function () {
           var k = key();
-          if (card.dataset.path) state.remove[k] = true;
+          if (card.dataset.path) {
+            state.remove[k] = true;
+          } else {
+            // Nouvelle image : désactiver le fileInput pour qu'il ne s'uploade pas
+            var fi = card.querySelector('input[type="file"]');
+            if (fi) fi.disabled = true;
+          }
           // Nettoie les autres rôles
           delete state.secondary[k];
           delete state.sections[k];

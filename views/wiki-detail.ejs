@@ -375,8 +375,8 @@
 
         <%# Images secondaires — galerie dans le texte ─ %>
         <%
-          var secImages = (pm.secondary_image_paths && pm.secondary_image_paths.length)
-            ? pm.secondary_image_paths
+          var secImages = pm.secondary_configured
+            ? (pm.secondary_image_paths || [])
             : page.imagePaths.slice(1);
           // Ajoute les images positionnelles (intégrées dans le texte) si pas déjà présentes
           var posPaths = (pm.positional_images || []).map(function(pi){ return pi.path; });

@@ -251,7 +251,9 @@
         <%# Cartes existantes ─ %>
         <% page.imagePaths.forEach(function(src, idx) {
           var isCover     = idx === 0;
-          var isSecondary = !!(pm.secondary_image_paths && pm.secondary_image_paths.indexOf(src) !== -1);
+          var isSecondary = pm.secondary_configured
+            ? !!(pm.secondary_image_paths && pm.secondary_image_paths.indexOf(src) !== -1)
+            : !isCover;
           var posEntry    = (pm.positional_images || []).filter(function(pi) { return pi.path === src; })[0];
           var section     = posEntry ? (posEntry.section || '') : '';
         %>

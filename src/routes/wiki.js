@@ -566,6 +566,7 @@ function buildWikiRouter(config) {
     const { imagePaths, secondary_image_paths, positional_images } = parseImagesMeta(req.body, [], newImgFiles);
     meta.secondary_image_paths = secondary_image_paths;
     meta.positional_images     = positional_images;
+    meta.secondary_configured  = true;
     const scenImgFile = files.find((f) => f.fieldname === "scenario_image");
     if (scenImgFile) meta.scenario_image = `/uploads/wiki/${scenImgFile.filename}`;
     if (meta.orce_name) tags = [...new Set([...tags, meta.orce_name])];
@@ -703,6 +704,7 @@ function buildWikiRouter(config) {
       parseImagesMeta(req.body, existing.imagePaths, newImgFiles);
     meta.secondary_image_paths = secondary_image_paths;
     meta.positional_images     = positional_images;
+    meta.secondary_configured  = true;
     const scenImgFile = files.find((f) => f.fieldname === "scenario_image");
     if (scenImgFile) meta.scenario_image = `/uploads/wiki/${scenImgFile.filename}`;
     if (meta.orce_name) tags = [...new Set([...tags, meta.orce_name])];
