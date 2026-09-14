@@ -177,13 +177,7 @@
     descEl.style.display = book.description ? "" : "none";
 
     // Tags
-    tagsEl.innerHTML = "";
-    (book.tags || []).forEach(function(t) {
-      var span = document.createElement("span");
-      span.className = "link-tag-pill";
-      span.textContent = t;
-      tagsEl.appendChild(span);
-    });
+    tagsEl.innerHTML = (book.tags || []).map(function(t) { return window.buildTagBadgeHTML(t); }).join("");
 
     // Réactions
     reactEl.textContent = "";

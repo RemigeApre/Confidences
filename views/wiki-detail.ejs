@@ -491,23 +491,16 @@
           </div>
         <% } %>
 
-        <%# f) Tags cliquables → accueil wiki avec tag filtré ─ %>
+        <%# f) Tags : badge unifié (couleur ultra/irréaliste/page dédiée/terme
+               dérivé/normal), clic = popup — voir partials/tag-badge.ejs.
+               Un terme dérivé (ex. "chevaux" dérivé de la page "Cheval") est
+               déjà inclus dans page.tags (voir autoEnrichTags côté serveur),
+               donc rendu une seule fois ici, en jaune. ─ %>
         <% if (hasAnyTags) { %>
           <div class="wiki-right-tags">
             <% page.tags.forEach(function (t) { %>
-              <%
-                var _tp = tagPageCounts && tagPageCounts[t] ? tagPageCounts[t] : 0;
-                var _ti = tagImageCounts && tagImageCounts[t] ? tagImageCounts[t] : 0;
-              %>
-              <a href="/wiki?tag=<%= encodeURIComponent(t.toLowerCase()) %>"
-                 class="link-tag-pill wiki-right-tag-link"><%= t %><% if (_tp || _ti) { %><span class="wiki-tag-xy"><span class="wiki-tag-xy-pages"><%= _tp %></span>|<span class="wiki-tag-xy-imgs"><%= _ti %></span></span><% } %></a>
+              <%- include('partials/tag-badge', { tag: t }) %>
             <% }) %>
-            <% if (derivedTerms.length) { %>
-              <span class="wiki-derived-sep">&mdash;</span>
-              <% derivedTerms.forEach(function (t) { %>
-                <span class="wiki-derived-pill"><%= t.term %><% if (t.en) { %> <span class="wiki-derived-en" title="Terme anglais">&#127468;&#127463;</span><% } %></span>
-              <% }) %>
-            <% } %>
           </div>
         <% } %>
 

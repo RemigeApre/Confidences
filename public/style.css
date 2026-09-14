@@ -8037,8 +8037,8 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 
 /* Chips de type dans la sidebar et dans le popup admin */
-.tags-type-ultra     { background: hsl(10, 55%, 28%)  !important; border-color: hsl(10, 50%, 40%)  !important; color: hsl(15, 90%, 82%)  !important; }
-.tags-type-irrealiste{ background: hsl(215, 50%, 22%) !important; border-color: hsl(215, 45%, 34%) !important; color: hsl(200, 75%, 72%) !important; }
+.tags-type-ultra     { background: hsl(0, 55%, 30%)   !important; border-color: hsl(0, 50%, 42%)   !important; color: hsl(0, 85%, 90%)   !important; }
+.tags-type-irrealiste{ background: hsl(270, 40%, 32%)  !important; border-color: hsl(270, 40%, 44%) !important; color: hsl(270, 80%, 92%) !important; }
 .tags-type-fantaisie { background: hsl(315, 45%, 25%) !important; border-color: hsl(315, 42%, 38%) !important; color: hsl(315, 80%, 82%) !important; }
 .tags-type-ultra.active,     .tags-type-ultra:hover     { filter: brightness(1.25); }
 .tags-type-irrealiste.active, .tags-type-irrealiste:hover { filter: brightness(1.25); }
@@ -10698,3 +10698,141 @@ a.wiki-ql-label:hover .wiki-ql-text {
   color: var(--accent);
 }
 .compte-history .compte-journal { margin-top: 0.5rem; }
+
+/* ── Tag badges unifies (wiki/galerie/BD/tags) + popup ─────────────────────
+   Priorite de couleur : ultra (rouge) > irrealiste (violet) > page dediee
+   (vert) / terme derive (jaune) > normal (degrade noir -> bleu selon la
+   frequence, via --pct calcule serveur/client). */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.tag-badge--ultra      { background: hsl(0, 55%, 30%);   color: hsl(0, 85%, 90%); }
+.tag-badge--irrealiste { background: hsl(270, 40%, 32%); color: hsl(270, 80%, 92%); }
+.tag-badge--page       { background: hsl(140, 38%, 24%); color: hsl(140, 70%, 88%); }
+.tag-badge--derived    { background: hsl(48, 55%, 26%);  color: hsl(48, 85%, 88%); }
+.tag-badge--normal {
+  --pct: 0;
+  background: hsl(210, 45%, calc(8% + 34% * var(--pct)));
+  color: hsl(210, 60%, 90%);
+}
+.tag-badge:hover { filter: brightness(1.15); }
+
+.tag-badge-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin-left: 0.25rem;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  color: var(--fg);
+  font-size: 0.75rem;
+  text-decoration: none;
+  vertical-align: middle;
+}
+.tag-badge-arrow:hover { background: rgba(255,255,255,0.18); }
+
+.tag-popup-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  padding: 1rem;
+}
+
+.tag-popup {
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+.tag-popup-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.tag-popup-title { font-weight: 700; font-size: 1rem; text-align: center; }
+.tag-popup-close {
+  position: absolute;
+  top: 0.5rem; right: 0.5rem;
+  width: 2rem; height: 2rem;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.tag-popup-close:hover { background: rgba(255,255,255,0.08); }
+
+.tag-popup-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+
+.tag-popup-pages { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.tag-popup-page-card {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.tag-popup-page-card:hover { background: rgba(255,255,255,0.12); }
+.tag-popup-empty { font-size: 0.82rem; color: var(--muted); margin: 0; }
+
+.tag-popup-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.tag-popup-action {
+  flex: 1 1 auto;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.tag-popup-action:hover { background: rgba(255,255,255,0.08); }
+
+.tag-popup-admin { border-top: 1px solid var(--border); padding-top: 0.6rem; }
+.tag-popup-admin > summary {
+  cursor: pointer;
+  list-style: none;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.tag-popup-admin > summary::-webkit-details-marker { display: none; }
+.tag-popup-admin-body {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+.tag-popup-admin-row { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; }
+.tag-popup-admin-row input[type="text"] {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  width: 12rem;
+}
+.tag-popup-admin-feedback { font-size: 0.78rem; color: var(--muted); min-height: 1em; }

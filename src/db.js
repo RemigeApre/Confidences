@@ -164,9 +164,13 @@ try { db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT"); } catch (_) {}
 // par defaut mais reste affichable via le bouton bascule existant),
 // "visible" (toujours affiche), "off" (exclu partout, meme via le bouton).
 try { db.exec("ALTER TABLE users ADD COLUMN orientation TEXT NOT NULL DEFAULT ''"); } catch (_) {}
-try { db.exec("ALTER TABLE users ADD COLUMN tag_nav_pref TEXT NOT NULL DEFAULT 'ask'"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN ultra_mode TEXT NOT NULL DEFAULT 'hidden'"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN irrealiste_mode TEXT NOT NULL DEFAULT 'visible'"); } catch (_) {}
+// "Ouverture des tags" (ask/wiki/gallery) retire : le clic sur un tag a
+// desormais un seul comportement partout (popup unifiee), plus de choix a
+// faire. Colonne supprimee si le moteur SQLite le permet (>= 3.35), sinon
+// laissee inerte (plus lue nulle part).
+try { db.exec("ALTER TABLE users DROP COLUMN tag_nav_pref"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS favorites (
@@ -268,7 +272,6 @@ function rowToUser(row) {
     updatedAt: row.updated_at || null,
     lastLoginAt: row.last_login_at || null,
     orientation: row.orientation || "",
-    tagNavPref: row.tag_nav_pref || "ask",
     ultraMode: row.ultra_mode || "hidden",
     irrealisteMode: row.irrealiste_mode || "visible",
   };
@@ -306,22 +309,20 @@ function touchLastLogin(id) {
 }
 
 const ORIENTATION_VALUES = ["", "hetero", "gay", "bi"];
-const TAG_NAV_VALUES = ["ask", "wiki", "gallery"];
 const SPECIAL_MODE_VALUES = ["hidden", "visible", "off"];
 
 // Reglages "Goûts"/"Paramètres" (voir /favoris) : mise a jour partielle,
 // chaque champ omis garde sa valeur actuelle (sauvegarde instantanee par
 // champ, pas un gros formulaire soumis d'un coup).
-function updateUserSettings(id, { orientation, tagNavPref, ultraMode, irrealisteMode }) {
+function updateUserSettings(id, { orientation, ultraMode, irrealisteMode }) {
   const current = getUserById(id);
   if (!current) return;
   const o  = orientation   !== undefined && ORIENTATION_VALUES.includes(orientation)   ? orientation   : current.orientation;
-  const tn = tagNavPref    !== undefined && TAG_NAV_VALUES.includes(tagNavPref)        ? tagNavPref    : current.tagNavPref;
   const um = ultraMode     !== undefined && SPECIAL_MODE_VALUES.includes(ultraMode)     ? ultraMode     : current.ultraMode;
   const im = irrealisteMode !== undefined && SPECIAL_MODE_VALUES.includes(irrealisteMode) ? irrealisteMode : current.irrealisteMode;
   db.prepare(
-    "UPDATE users SET orientation = ?, tag_nav_pref = ?, ultra_mode = ?, irrealiste_mode = ? WHERE id = ?"
-  ).run(o, tn, um, im, id);
+    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ? WHERE id = ?"
+  ).run(o, um, im, id);
 }
 
 function getUserByUsername(username) {

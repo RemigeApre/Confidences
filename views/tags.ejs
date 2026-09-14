@@ -75,40 +75,8 @@
     <p class="tags-empty" id="tags-empty" hidden>Aucun tag trouv&eacute;.</p>
   </div>
 
-  <%# ─── Popup résultats tag ── %>
-  <div class="tags-popup-overlay" id="tags-popup-overlay" hidden>
-    <div class="tags-popup" id="tags-popup">
-      <div class="tags-popup-header">
-        <span class="tags-popup-tag" id="tags-popup-tag"></span>
-        <button type="button" class="tags-popup-close" id="tags-popup-close">&#215;</button>
-      </div>
-      <div class="tags-popup-tabs" id="tags-popup-tabs"></div>
-      <div class="tags-popup-body" id="tags-popup-body"></div>
-      <% if (currentUser && currentUser.isAdmin) { %>
-      <div class="tags-popup-admin" id="tags-popup-admin">
-        <details class="tags-admin-details">
-          <summary class="tags-admin-summary">&#9881; Admin</summary>
-          <div class="tags-admin-body">
-            <div class="tags-admin-row">
-              <label class="tags-admin-label">Renommer</label>
-              <input type="text" id="tags-rename-input" class="tags-admin-input" placeholder="Nouveau nom&hellip;" />
-              <button type="button" class="tags-admin-btn" id="tags-rename-btn">OK</button>
-            </div>
-            <div class="tags-admin-row">
-              <label class="tags-admin-label">Type</label>
-              <div class="tags-admin-type-btns" id="tags-admin-type-btns">
-                <button type="button" class="tag-chip tags-type-btn" data-type-val="normal">Normal</button>
-                <button type="button" class="tag-chip tags-type-ultra tags-type-btn" data-type-val="ultra">Ultra</button>
-                <button type="button" class="tag-chip tags-type-irrealiste tags-type-btn" data-type-val="irrealiste">Irr&eacute;aliste</button>
-              </div>
-            </div>
-            <p class="tags-admin-feedback" id="tags-admin-feedback" hidden></p>
-          </div>
-        </details>
-      </div>
-      <% } %>
-    </div>
-  </div>
+  <%# Popup de resultats/admin : voir partials/tag-popup.ejs (inclus une
+      seule fois par partials/foot.ejs, partagee par tout le site). %>
 
   <%# ─── Tooltip hover ── %>
   <div class="tags-tooltip" id="tags-tooltip" hidden></div>
@@ -247,206 +215,16 @@
     });
   }
 
-  /* ── Popup résultats ── */
-  var overlay   = document.getElementById("tags-popup-overlay");
-  var popup     = document.getElementById("tags-popup");
-  var popupTag  = document.getElementById("tags-popup-tag");
-  var popupTabs = document.getElementById("tags-popup-tabs");
-  var popupBody = document.getElementById("tags-popup-body");
-  var closeBtn  = document.getElementById("tags-popup-close");
-  var adminSection  = document.getElementById("tags-popup-admin");
-  var renameInput   = document.getElementById("tags-rename-input");
-  var renameBtn     = document.getElementById("tags-rename-btn");
-  var adminTypeBtns = document.getElementById("tags-admin-type-btns");
-  var adminFeedback = document.getElementById("tags-admin-feedback");
-
-  var SECTION_LABELS = { wiki: "Wiki", galerie: "Galerie", bd: "BD" };
-  var SECTION_URLS   = { wiki: "/wiki/", galerie: null, bd: null };
-
-  var currentPopupTag = null;
-  var currentPopupType = "normal";
-
-  function openPopup(tag, tagType) {
-    if (!overlay || !popupTag) return;
-    currentPopupTag  = tag;
-    currentPopupType = tagType || "normal";
-    hideTooltip();
-    popupTag.textContent = tag;
-    while (popupTabs.firstChild) popupTabs.removeChild(popupTabs.firstChild);
-    while (popupBody.firstChild) popupBody.removeChild(popupBody.firstChild);
-    var loading = document.createElement("p");
-    loading.className = "tags-popup-loading";
-    loading.textContent = "Chargement\u2026";
-    popupBody.appendChild(loading);
-    overlay.hidden = false;
-
-    // Admin panel init
-    if (isAdmin && renameInput) renameInput.value = tag;
-    if (isAdmin && adminTypeBtns) {
-      adminTypeBtns.querySelectorAll(".tags-type-btn").forEach(function (btn) {
-        btn.classList.toggle("active", btn.dataset.typeVal === currentPopupType);
-      });
-    }
-    if (isAdmin && adminFeedback) adminFeedback.hidden = true;
-
-    fetch("/api/tags/results?tag=" + encodeURIComponent(tag))
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        currentPopupType = data.type || currentPopupType;
-        if (isAdmin && adminTypeBtns) {
-          adminTypeBtns.querySelectorAll(".tags-type-btn").forEach(function (btn) {
-            btn.classList.toggle("active", btn.dataset.typeVal === currentPopupType);
-          });
-        }
-        renderPopup(data);
-      })
-      .catch(function () {
-        while (popupBody.firstChild) popupBody.removeChild(popupBody.firstChild);
-        var err = document.createElement("p"); err.className = "tags-popup-err";
-        err.textContent = "Erreur de chargement.";
-        popupBody.appendChild(err);
-      });
-  }
-
-  function renderPopup(data) {
-    while (popupTabs.firstChild) popupTabs.removeChild(popupTabs.firstChild);
-    while (popupBody.firstChild) popupBody.removeChild(popupBody.firstChild);
-    var sections = Object.keys(data).filter(function (k) {
-      return k !== "type" && data[k] && data[k].length > 0;
-    });
-    if (!sections.length) {
-      var empty = document.createElement("p"); empty.className = "tags-popup-empty";
-      empty.textContent = "Aucun r\u00e9sultat.";
-      popupBody.appendChild(empty);
-      return;
-    }
-    var activeSection = sections[0];
-
-    function showSection(key) {
-      activeSection = key;
-      popupTabs.querySelectorAll(".tags-popup-tab").forEach(function (t) {
-        t.classList.toggle("active", t.dataset.section === key);
-      });
-      while (popupBody.firstChild) popupBody.removeChild(popupBody.firstChild);
-      var ul = document.createElement("ul");
-      ul.className = "tags-popup-list";
-      data[key].forEach(function (item) {
-        var li = document.createElement("li");
-        var url = SECTION_URLS[key];
-        if (url && item.id) {
-          var a = document.createElement("a");
-          a.href = url + item.id;
-          a.textContent = item.title;
-          a.className = "tags-popup-link";
-          li.appendChild(a);
-        } else {
-          li.textContent = item.title;
-        }
-        ul.appendChild(li);
-      });
-      popupBody.appendChild(ul);
-    }
-
-    sections.forEach(function (key) {
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "tags-popup-tab";
-      btn.dataset.section = key;
-      btn.textContent = (SECTION_LABELS[key] || key) + " (" + data[key].length + ")";
-      btn.addEventListener("click", function () { showSection(key); });
-      popupTabs.appendChild(btn);
-    });
-    showSection(activeSection);
-  }
-
-  function closePopup() { if (overlay) overlay.hidden = true; }
-  if (closeBtn) closeBtn.addEventListener("click", closePopup);
-  if (overlay)  overlay.addEventListener("click", function (e) { if (e.target === overlay) closePopup(); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closePopup(); });
-
+  /* -- Resultats + admin (renommer/type) : popup unifiee partagee, voir
+     public/nav.js openTagPopup / window.openTagPopup -- */
   if (grid) {
     grid.addEventListener("click", function (e) {
       if (e.target.closest(".tags-item-wiki-link")) return; // lien wiki : navigation normale
       var item = e.target.closest(".tags-item");
-      if (item) openPopup(item.dataset.tag, item.dataset.type);
-    });
-  }
-  // Supprimé : ne pas dupliquer le listener de clic — on utilise la délégation sur `grid` ci-dessus.
-
-  /* ── Admin : renommer ── */
-  function showFeedback(msg, ok) {
-    if (!adminFeedback) return;
-    adminFeedback.textContent = msg;
-    adminFeedback.style.color = ok ? "var(--accent)" : "#e05555";
-    adminFeedback.hidden = false;
-  }
-
-  if (isAdmin && renameBtn) {
-    renameBtn.addEventListener("click", function () {
-      var newName = renameInput ? renameInput.value.trim().toLowerCase() : "";
-      if (!newName || !currentPopupTag || newName === currentPopupTag) return;
-      renameBtn.disabled = true;
-      fetch("/api/tags/rename", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ oldTag: currentPopupTag, newTag: newName })
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (d.ok) {
-            // Mise à jour du DOM
-            var oldTag = currentPopupTag;
-            currentPopupTag = newName;
-            if (popupTag) popupTag.textContent = newName;
-            var gridItem = grid ? grid.querySelector('[data-tag="' + oldTag + '"]') : null;
-            if (gridItem) {
-              gridItem.dataset.tag = newName;
-              var nameEl = gridItem.querySelector(".tags-item-name");
-              if (nameEl) nameEl.textContent = newName;
-            }
-            showFeedback("Tag renommé !", true);
-          } else {
-            showFeedback(d.error || "Erreur", false);
-          }
-        })
-        .catch(function () { showFeedback("Erreur réseau", false); })
-        .finally(function () { renameBtn.disabled = false; });
+      if (item && window.openTagPopup) { hideTooltip(); window.openTagPopup(item.dataset.tag); }
     });
   }
 
-  /* ── Admin : changer le type ── */
-  if (isAdmin && adminTypeBtns) {
-    adminTypeBtns.querySelectorAll(".tags-type-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var newType = btn.dataset.typeVal;
-        if (!currentPopupTag) return;
-        fetch("/api/tags/type", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tag: currentPopupTag, type: newType })
-        })
-          .then(function (r) { return r.json(); })
-          .then(function (d) {
-            if (d.ok) {
-              currentPopupType = newType;
-              adminTypeBtns.querySelectorAll(".tags-type-btn").forEach(function (b) {
-                b.classList.toggle("active", b.dataset.typeVal === newType);
-              });
-              // Met à jour le type dans la grille
-              var gridItem = grid ? grid.querySelector('[data-tag="' + currentPopupTag + '"]') : null;
-              if (gridItem) {
-                gridItem.dataset.type = newType;
-                gridItem.className = "tags-item tags-item--" + newType;
-              }
-              showFeedback("Type modifié !", true);
-            } else {
-              showFeedback(d.error || "Erreur", false);
-            }
-          })
-          .catch(function () { showFeedback("Erreur réseau", false); });
-      });
-    });
-  }
 
   /* ── Admin : créer un tag ── */
   var createForm     = document.getElementById("tags-create-form");

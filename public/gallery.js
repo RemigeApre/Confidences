@@ -659,13 +659,6 @@
     lbVisible = Array.from(grid.querySelectorAll(".gallery-card:not([hidden])"));
   }
 
-  function tagHueColor(t) {
-    var TAG_HUES = [4, 28, 48, 140, 175, 210, 270, 330];
-    var h = 0, s = t.toLowerCase();
-    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-    return "hsl(" + TAG_HUES[Math.abs(h) % TAG_HUES.length] + ", 55%, 42%)";
-  }
-
   function currentCard() { return lbVisible[lbCardIndex]; }
   function currentImages() {
     var card = currentCard();
@@ -685,15 +678,7 @@
 
     if (lbImg) lbImg.src = src;
     if (lbTags) {
-      lbTags.innerHTML = "";
-      tags.forEach(function(t) {
-        var pill = document.createElement("span");
-        pill.className = "link-tag-pill";
-        pill.style.background = tagHueColor(t);
-        pill.style.color = "#fff";
-        pill.textContent = t;
-        lbTags.appendChild(pill);
-      });
+      lbTags.innerHTML = tags.map(function(t) { return window.buildTagBadgeHTML(t); }).join("");
     }
     if (lbLink) {
       lbLink.hidden = !wikiId;

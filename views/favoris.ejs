@@ -20,22 +20,6 @@
     <div class="profil-right-settings">
       <div class="profil-right-settings-title">Param&egrave;tres</div>
 
-      <div class="profil-setting-label">Ouverture des tags</div>
-      <div class="user-setting-options" id="tag-nav-pref-options">
-        <label class="user-setting-radio" data-val="ask">
-          <input type="radio" name="tag-nav-pref" value="ask" />
-          Demander
-        </label>
-        <label class="user-setting-radio" data-val="wiki">
-          <input type="radio" name="tag-nav-pref" value="wiki" />
-          Wiki
-        </label>
-        <label class="user-setting-radio" data-val="gallery">
-          <input type="radio" name="tag-nav-pref" value="gallery" />
-          Galerie
-        </label>
-      </div>
-
       <div class="profil-setting-label">Ultra</div>
       <div class="user-setting-options" id="ultra-mode-options">
         <label class="user-setting-radio" data-val="hidden">
@@ -145,10 +129,8 @@
 
 </main>
 <script>
-// ── Paramètres de profil (Goûts + Ouverture des tags/Ultra/Irréaliste) ─────
-// Sauvegarde instantanée côté serveur (voir POST /favoris/parametres),
-// contrairement à l'ancien réglage "Ouverture des tags" qui vivait en
-// localStorage (par navigateur, pas par profil).
+// ── Paramètres de profil (Goûts + Ultra/Irréaliste) ────────────────────────
+// Sauvegarde instantanée côté serveur (voir POST /favoris/parametres).
 (function() {
   function savePref(field, value) {
     var body = {};
@@ -181,7 +163,6 @@
     });
   }
 
-  wireRadioGroup("tag-nav-pref-options", "tagNavPref", window.TAG_NAV_PREF || "ask");
   wireRadioGroup("ultra-mode-options", "ultraMode", window.ULTRA_MODE || "hidden");
   wireRadioGroup("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
 

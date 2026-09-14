@@ -62,8 +62,8 @@ function buildFavoritesRouter(config) {
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
-    const { orientation, tagNavPref, ultraMode, irrealisteMode } = req.body;
-    updateUserSettings(req.user.id, { orientation, tagNavPref, ultraMode, irrealisteMode });
+    const { orientation, ultraMode, irrealisteMode } = req.body;
+    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode });
     res.json({ ok: true });
   });
 

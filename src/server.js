@@ -16,8 +16,12 @@ const buildBdRouter = require("./routes/bd");
 const buildFavoritesRouter = require("./routes/favorites");
 const buildAccountRouter = require("./routes/account");
 const { attachUser } = require("./auth");
-const { db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere } = require("./db");
+const {
+  db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
+  listWikiPages, listGalleryImages, listBdBooks,
+} = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
+const { buildTagRegistry } = require("./tagRegistry");
 
 // Store de sessions SQLite : survit aux redemarrages contrairement au
 // memory store par defaut. Implémenté directement avec better-sqlite3
@@ -178,6 +182,26 @@ backfillThumbs("bd");
 
 app.use((req, res, next) => {
   res.locals.thumbUrl = thumbUrl;
+  next();
+});
+
+// Classification de chaque tag (couleur/comportement du badge, voir
+// src/tagRegistry.js) : calculee une fois par requete, exposee a toutes les
+// vues (utilisee par tags.ejs/wiki-detail.ejs) et au client (window.TAG_REGISTRY,
+// voir partials/head.ejs) pour colorer les badges construits en JS
+// (galerie/BD). Le contenu prive (galerie/BD) n'entre dans le calcul que
+// pour un visiteur connecte, coherent avec le reste du site.
+app.use((req, res, next) => {
+  try {
+    res.locals.tagRegistry = buildTagRegistry({
+      wikiPages: listWikiPages(),
+      galleryImages: req.user ? listGalleryImages() : [],
+      bdBooks: req.user ? listBdBooks() : [],
+      tagMeta: getAllTagMeta(),
+    });
+  } catch (_) {
+    res.locals.tagRegistry = {};
+  }
   next();
 });
 

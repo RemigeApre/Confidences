@@ -196,3 +196,163 @@ document.querySelectorAll("img").forEach(function (img) {
   if (!img.complete) return;
   img.classList.add(img.naturalWidth > 0 ? "lq-img-ready" : "lq-img-error");
 });
+
+// ── Badges de tag unifiés (couleur + comportement identiques partout) ──────
+// Construit le HTML d'un badge de tag à partir de window.TAG_REGISTRY (voir
+// src/tagRegistry.js, exposé par partials/head.ejs) : utilisé par
+// gallery.js/bd.js pour les listes de tags construites en JS (lightbox,
+// modale BD). Le rendu serveur équivalent est partials/tag-badge.ejs.
+function lqEscapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+window.buildTagBadgeHTML = function (tag) {
+  var reg = window.TAG_REGISTRY || {};
+  var meta = reg[String(tag).toLowerCase().trim()] || { tier: "normal", wikiPageId: null, pct: 0 };
+  var style = meta.tier === "normal" ? ' style="--pct:' + meta.pct + '"' : "";
+  var html = '<span class="tag-badge tag-badge--' + meta.tier + '" data-tag="' +
+    lqEscapeHtml(String(tag).toLowerCase().trim()) + '"' + style + '>' + lqEscapeHtml(tag) + "</span>";
+  if (meta.wikiPageId) {
+    html += '<a class="tag-badge-arrow" href="/wiki/' + meta.wikiPageId +
+      '" title="Voir la page wiki" aria-label="Voir la page wiki">&#8599;</a>';
+  }
+  return html;
+};
+
+// ── Popup de tag unifiée (voir partials/tag-popup.ejs) ──────────────────────
+(function () {
+  var overlay = document.getElementById("tag-popup-overlay");
+  if (!overlay) return;
+  var titleEl     = document.getElementById("tag-popup-title");
+  var pagesEl     = document.getElementById("tag-popup-pages");
+  var galleryBtn  = document.getElementById("tag-popup-gallery-btn");
+  var bdBtn       = document.getElementById("tag-popup-bd-btn");
+  var closeBtn    = document.getElementById("tag-popup-close");
+  var adminPanel  = document.getElementById("tag-popup-admin");
+  var renameInput = document.getElementById("tag-popup-rename-input");
+  var renameBtn   = document.getElementById("tag-popup-rename-btn");
+  var typeBtnsWrap = document.getElementById("tag-popup-type-btns");
+  var feedbackEl  = document.getElementById("tag-popup-admin-feedback");
+
+  var currentTag = "";
+
+  function close() {
+    overlay.hidden = true;
+    currentTag = "";
+  }
+
+  function syncTypeBtns() {
+    if (!typeBtnsWrap) return;
+    var meta = (window.TAG_REGISTRY || {})[currentTag] || {};
+    var activeType = (meta.tier === "ultra" || meta.tier === "irrealiste") ? meta.tier : "normal";
+    typeBtnsWrap.querySelectorAll("[data-type]").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.type === activeType);
+    });
+  }
+
+  function open(tag) {
+    currentTag = String(tag).toLowerCase().trim();
+    if (!currentTag) return;
+    titleEl.textContent = tag;
+    pagesEl.innerHTML = "";
+    galleryBtn.hidden = true;
+    bdBtn.hidden = true;
+    if (feedbackEl) feedbackEl.textContent = "";
+    if (renameInput) renameInput.value = tag;
+    syncTypeBtns();
+    if (adminPanel) adminPanel.hidden = !window.IS_ADMIN;
+    overlay.hidden = false;
+
+    fetch("/api/tags/results?tag=" + encodeURIComponent(currentTag))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (currentTag !== String(tag).toLowerCase().trim()) return;
+        (data.wiki || []).forEach(function (p) {
+          var a = document.createElement("a");
+          a.className = "tag-popup-page-card";
+          a.href = "/wiki/" + p.id;
+          a.textContent = p.title;
+          pagesEl.appendChild(a);
+        });
+        if (!data.wiki || !data.wiki.length) {
+          var empty = document.createElement("p");
+          empty.className = "tag-popup-empty";
+          empty.textContent = "Aucune page wiki avec ce tag.";
+          pagesEl.appendChild(empty);
+        }
+        if (data.galerie && data.galerie.length) {
+          galleryBtn.hidden = false;
+          galleryBtn.textContent = "Voir les images (" + data.galerie.length + ")";
+        }
+        if (data.bd && data.bd.length) {
+          bdBtn.hidden = false;
+          bdBtn.textContent = "Voir les BD (" + data.bd.length + ")";
+        }
+      })
+      .catch(function () {});
+  }
+  window.openTagPopup = open;
+
+  galleryBtn.addEventListener("click", function () {
+    if (currentTag) window.location.href = "/galerie?tag=" + encodeURIComponent(currentTag);
+  });
+  bdBtn.addEventListener("click", function () {
+    if (currentTag) window.location.href = "/bd?tag=" + encodeURIComponent(currentTag);
+  });
+  closeBtn.addEventListener("click", close);
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !overlay.hidden) close(); });
+
+  if (renameBtn) {
+    renameBtn.addEventListener("click", function () {
+      var newTag = (renameInput.value || "").trim().toLowerCase();
+      if (!newTag || !currentTag || newTag === currentTag) return;
+      fetch("/api/tags/rename", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldTag: currentTag, newTag: newTag }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok) { close(); window.location.reload(); }
+          else if (feedbackEl) feedbackEl.textContent = (d && d.error) || "Erreur";
+        })
+        .catch(function () { if (feedbackEl) feedbackEl.textContent = "Erreur reseau"; });
+    });
+  }
+
+  if (typeBtnsWrap) {
+    typeBtnsWrap.querySelectorAll("[data-type]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!currentTag) return;
+        fetch("/api/tags/type", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tag: currentTag, type: btn.dataset.type }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.ok) return;
+            if (window.TAG_REGISTRY && window.TAG_REGISTRY[currentTag]) {
+              window.TAG_REGISTRY[currentTag].tier = btn.dataset.type;
+            }
+            syncTypeBtns();
+            document.querySelectorAll('.tag-badge[data-tag="' + currentTag + '"]').forEach(function (el) {
+              el.className = el.className.replace(/tag-badge--\S+/, "tag-badge--" + btn.dataset.type);
+            });
+          })
+          .catch(function () {});
+      });
+    });
+  }
+
+  // Délégation globale : n'importe quel badge de tag, présent ou ajouté plus
+  // tard (lightbox, modale BD...), ouvre cette même popup.
+  document.addEventListener("click", function (e) {
+    var badge = e.target.closest(".tag-badge[data-tag]");
+    if (!badge) return;
+    e.preventDefault();
+    open(badge.dataset.tag);
+  });
+})();
