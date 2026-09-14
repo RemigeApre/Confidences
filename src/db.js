@@ -159,6 +159,15 @@ try { db.exec("ALTER TABLE users ADD COLUMN birth_year INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN updated_at TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT"); } catch (_) {}
 
+// Gouts + reglages d'affichage, propres a chaque profil (section "Goûts" /
+// "Paramètres" de /favoris). ultra_mode/irrealiste_mode : "hidden" (masque
+// par defaut mais reste affichable via le bouton bascule existant),
+// "visible" (toujours affiche), "off" (exclu partout, meme via le bouton).
+try { db.exec("ALTER TABLE users ADD COLUMN orientation TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN tag_nav_pref TEXT NOT NULL DEFAULT 'ask'"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN ultra_mode TEXT NOT NULL DEFAULT 'hidden'"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN irrealiste_mode TEXT NOT NULL DEFAULT 'visible'"); } catch (_) {}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS favorites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -258,6 +267,10 @@ function rowToUser(row) {
     createdAt: row.created_at,
     updatedAt: row.updated_at || null,
     lastLoginAt: row.last_login_at || null,
+    orientation: row.orientation || "",
+    tagNavPref: row.tag_nav_pref || "ask",
+    ultraMode: row.ultra_mode || "hidden",
+    irrealisteMode: row.irrealiste_mode || "visible",
   };
 }
 
@@ -290,6 +303,25 @@ function updateOwnProfile(id, { displayName, email, sexe, birthYear }) {
 
 function touchLastLogin(id) {
   db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(new Date().toISOString(), id);
+}
+
+const ORIENTATION_VALUES = ["", "hetero", "gay", "bi"];
+const TAG_NAV_VALUES = ["ask", "wiki", "gallery"];
+const SPECIAL_MODE_VALUES = ["hidden", "visible", "off"];
+
+// Reglages "Goûts"/"Paramètres" (voir /favoris) : mise a jour partielle,
+// chaque champ omis garde sa valeur actuelle (sauvegarde instantanee par
+// champ, pas un gros formulaire soumis d'un coup).
+function updateUserSettings(id, { orientation, tagNavPref, ultraMode, irrealisteMode }) {
+  const current = getUserById(id);
+  if (!current) return;
+  const o  = orientation   !== undefined && ORIENTATION_VALUES.includes(orientation)   ? orientation   : current.orientation;
+  const tn = tagNavPref    !== undefined && TAG_NAV_VALUES.includes(tagNavPref)        ? tagNavPref    : current.tagNavPref;
+  const um = ultraMode     !== undefined && SPECIAL_MODE_VALUES.includes(ultraMode)     ? ultraMode     : current.ultraMode;
+  const im = irrealisteMode !== undefined && SPECIAL_MODE_VALUES.includes(irrealisteMode) ? irrealisteMode : current.irrealisteMode;
+  db.prepare(
+    "UPDATE users SET orientation = ?, tag_nav_pref = ?, ultra_mode = ?, irrealiste_mode = ? WHERE id = ?"
+  ).run(o, tn, um, im, id);
 }
 
 function getUserByUsername(username) {
@@ -1245,6 +1277,7 @@ module.exports = {
   createUser,
   updateUser,
   updateOwnProfile,
+  updateUserSettings,
   updateUserPassword,
   touchLastLogin,
   addFavorite,

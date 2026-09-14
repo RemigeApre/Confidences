@@ -51,6 +51,13 @@
     <link rel="stylesheet" href="/<%= href %>?v=<%= assetVersion %>" onload="window.__revealBoot()" />
   <% }) %>
   <noscript><style>#boot-veil { display: none; }</style></noscript>
+  <script>
+    // Reglages "Goûts"/"Paramètres" du profil (voir /favoris), utilises par
+    // wiki.js/gallery.js/bd.js pour l'etat initial des bascules Ultra/Irréaliste.
+    window.ULTRA_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.ultraMode : "hidden") %>;
+    window.IRREALISTE_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.irrealisteMode : "visible") %>;
+    window.TAG_NAV_PREF = <%- JSON.stringify(locals.currentUser ? locals.currentUser.tagNavPref : "ask") %>;
+  </script>
 </head>
 <body>
 <div id="boot-veil" aria-hidden="true">

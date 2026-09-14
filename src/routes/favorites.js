@@ -10,6 +10,7 @@ const {
   listWikiPages,
   listBdBooks,
   mergeUserReactions,
+  updateUserSettings,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 
@@ -50,7 +51,20 @@ function buildFavoritesRouter(config) {
         if (book) bdBooks.push(book);
       }
     });
-    res.render("favoris", { config, wikiPages, galleryImages, bdBooks, categories: WIKI_CATEGORIES });
+    // "Mes fantasmes" (Goûts) : sous-ensemble des favoris wiki appartenant
+    // à la catégorie (ou catégorie secondaire) "fantasmes". Ajouter/retirer
+    // se fait via les mêmes boutons J'adore/favori déjà existants sur une
+    // page wiki — pas de mécanisme séparé.
+    const fantasyPages = wikiPages.filter((p) =>
+      p.category === "fantasmes" || (p.extraCategories || []).includes("fantasmes")
+    );
+    res.render("favoris", { config, wikiPages, galleryImages, bdBooks, fantasyPages, categories: WIKI_CATEGORIES });
+  });
+
+  router.post("/parametres", requireUserJson, (req, res) => {
+    const { orientation, tagNavPref, ultraMode, irrealisteMode } = req.body;
+    updateUserSettings(req.user.id, { orientation, tagNavPref, ultraMode, irrealisteMode });
+    res.json({ ok: true });
   });
 
   router.get("/notes/images", requireUser, (req, res) => {

@@ -10,7 +10,9 @@
 
   var activeTags   = [];
   var searchQ      = "";
-  var showUltra    = true;
+  // Etat initial derive du reglage de compte (voir /favoris > Parametres).
+  var showUltra      = (window.ULTRA_MODE || "hidden") !== "hidden";
+  var showIrrealiste = (window.IRREALISTE_MODE || "visible") !== "hidden";
   var activeLangue = "";
   var showCouleurOnly = false;
 
@@ -35,17 +37,19 @@
     cards.forEach(function(card) {
       var tags    = (card.dataset.tags || "").split(",").filter(Boolean);
       var title   = card.dataset.title || "";
-      var ultra   = card.dataset.ultra === "1";
+      var ultra      = card.dataset.ultra === "1";
+      var irrealiste = card.dataset.irrealiste === "1";
       var langue  = card.dataset.langue || "";
       var couleur = card.dataset.couleur === "1";
 
       var okTags    = activeTags.length === 0 || activeTags.every(function(t) { return tags.indexOf(t) !== -1; });
       var okSearch  = !searchQ || title.indexOf(searchQ) !== -1;
       var okUltra   = showUltra || !ultra;
+      var okIrrealiste = showIrrealiste || !irrealiste;
       var okLangue  = !activeLangue || langue === activeLangue;
       var okCouleur = !showCouleurOnly || couleur;
 
-      if (okTags && okSearch && okUltra && okLangue && okCouleur) { card.style.display = ""; visible++; }
+      if (okTags && okSearch && okUltra && okIrrealiste && okLangue && okCouleur) { card.style.display = ""; visible++; }
       else                                                         { card.style.display = "none"; }
     });
     updateCount(visible);
@@ -113,9 +117,21 @@
   // Ultra toggle
   var ultraBtn = document.getElementById("bd-ultra-toggle");
   if (ultraBtn) {
+    ultraBtn.textContent = showUltra ? "\uD83D\uDD13 Afficher Ultra" : "\uD83D\uDD12 Masquer Ultra";
     ultraBtn.addEventListener("click", function() {
       showUltra = !showUltra;
-      ultraBtn.textContent = showUltra ? "\uD83D\uDD12 Masquer Ultra" : "\uD83D\uDD13 Afficher Ultra";
+      ultraBtn.textContent = showUltra ? "\uD83D\uDD13 Afficher Ultra" : "\uD83D\uDD12 Masquer Ultra";
+      applyFilters();
+    });
+  }
+
+  // Irr\u00E9aliste toggle
+  var irrealisteBtn = document.getElementById("bd-irrealiste-toggle");
+  if (irrealisteBtn) {
+    irrealisteBtn.textContent = showIrrealiste ? "\uD83D\uDD13 Afficher Irr\u00E9aliste" : "\uD83D\uDD12 Masquer Irr\u00E9aliste";
+    irrealisteBtn.addEventListener("click", function() {
+      showIrrealiste = !showIrrealiste;
+      irrealisteBtn.textContent = showIrrealiste ? "\uD83D\uDD13 Afficher Irr\u00E9aliste" : "\uD83D\uDD12 Masquer Irr\u00E9aliste";
       applyFilters();
     });
   }

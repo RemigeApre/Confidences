@@ -36,6 +36,7 @@ const {
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
+const { filterOff, isOffForUser } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",   label: "Positions",   desc: "Postures, Kama-sutra et toutes leurs variantes.",                               hue: 270 },
@@ -474,7 +475,7 @@ function buildWikiRouter(config) {
   // (elles restent consultables via /wiki/categorie/:key et /wiki/tous).
   router.get("/", (req, res) => {
     const userId = req.user ? req.user.id : null;
-    const pages = mergeUserReactions(sortedPages(), userId, "wiki");
+    const pages = filterOff(mergeUserReactions(sortedPages(), userId, "wiki"), req.user);
     const visiblePages = pages.filter((p) => !isUltra(p));
     const chapters = CATEGORIES.map((cat) => {
       const allCatPages = pagesForCategory(visiblePages, cat.key);
@@ -482,7 +483,7 @@ function buildWikiRouter(config) {
       const primaryCount = pages.filter((p) => p.category === cat.key).length;
       return { ...cat, pages: allCatPages, count: primaryCount, preview: allCatPages.slice(0, 6) };
     });
-    const allPages = mergeUserReactions(listWikiPages(), userId, "wiki");
+    const allPages = filterOff(mergeUserReactions(listWikiPages(), userId, "wiki"), req.user);
     const recentAdded = [...allPages]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 30);
@@ -505,7 +506,7 @@ function buildWikiRouter(config) {
 
   // ── Vue "tout" : toutes les pages, toutes categories melangees ──
   router.get("/tous", (req, res) => {
-    const pages = mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki");
+    const pages = filterOff(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki"), req.user);
     res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, ...CTX });
   });
 
@@ -513,7 +514,7 @@ function buildWikiRouter(config) {
   router.get("/categorie/:key", (req, res) => {
     const cat = CATEGORIES.find((c) => c.key === req.params.key);
     if (!cat) return res.redirect("/wiki");
-    const pages = pagesForCategory(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki"), cat.key);
+    const pages = pagesForCategory(filterOff(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki"), req.user), cat.key);
     res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, ...CTX });
   });
 
@@ -611,13 +612,14 @@ function buildWikiRouter(config) {
     const id = Number(req.params.id);
     const page = Number.isInteger(id) ? getWikiPage(id) : null;
     if (!page) return res.redirect("/wiki");
+    if (isOffForUser(page.tags, req.user)) return res.redirect("/wiki");
     incrementWikiViews(id, req.user ? req.user.id : null);
     const userId = req.user ? req.user.id : null;
     Object.assign(page, getUserReaction(userId, "wiki", id));
-    const allPages = mergeUserReactions(
+    const allPages = filterOff(mergeUserReactions(
       listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" })),
       userId, "wiki"
-    );
+    ), req.user);
     const idx = allPages.findIndex((p) => p.id === id);
     const prevPage = idx > 0 ? { id: allPages[idx - 1].id, title: allPages[idx - 1].title } : null;
     const nextPage = idx < allPages.length - 1 ? { id: allPages[idx + 1].id, title: allPages[idx + 1].title } : null;

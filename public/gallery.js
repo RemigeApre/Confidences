@@ -297,8 +297,10 @@
   var tagStates      = {}; // { "tag": 0|1|2 }
   var activeCategory = "";
   var searchQ        = "";
-  var hideUltra      = localStorage.getItem("gallery-hide-ultra") !== "0";
-  var hideIrrealiste = localStorage.getItem("gallery-hide-irrealiste") === "1";
+  // Etat initial derive du reglage de compte (voir /favoris > Parametres),
+  // plus fiable qu'un localStorage par navigateur qui pouvait diverger.
+  var hideUltra      = (window.ULTRA_MODE || "hidden") === "hidden";
+  var hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
   var activeRating   = 0;
   var sortMode       = "date-desc";
   var randomSeeds    = null; // Map<card, number> — persistant entre pages
@@ -338,15 +340,14 @@
       var okCategory = !activeCategory || card.dataset.category === activeCategory;
       var okSearch   = !q || norm(card.dataset.title).indexOf(q) !== -1 || cardTags.some(function(t){ return norm(t).indexOf(q) !== -1; });
       var okUltra       = !hideUltra || card.dataset.ultra !== "1";
-      var bdTypeSelected = typeState === 1 && typeValue === "bd";
-      var okBd          = bdTypeSelected || !hideIrrealiste || card.dataset.bd !== "1";
+      var okIrrealiste  = !hideIrrealiste || card.dataset.irrealiste !== "1";
       var okRating   = !activeRating || Number(card.dataset.rating) >= activeRating;
 
       var okTag = true;
       if (tagIncludes.length) okTag = tagIncludes.every(function(t){ return cardTags.indexOf(t) !== -1; });
       if (tagExcludes.length) okTag = okTag && tagExcludes.every(function(t){ return cardTags.indexOf(t) === -1; });
 
-      var passes = okType && okCategory && okSearch && okUltra && okBd && okRating && okTag;
+      var passes = okType && okCategory && okSearch && okUltra && okIrrealiste && okRating && okTag;
       card.dataset.filtered = passes ? "1" : "0";
       if (passes) filteredCards.push(card);
     });
@@ -532,7 +533,6 @@
   if (ultraToggle) {
     ultraToggle.addEventListener("click", function() {
       hideUltra = !hideUltra;
-      localStorage.setItem("gallery-hide-ultra", hideUltra ? "1" : "0");
       syncUltraBtn();
       applyFilters();
     });
@@ -549,7 +549,6 @@
   if (irrealisteToggle) {
     irrealisteToggle.addEventListener("click", function() {
       hideIrrealiste = !hideIrrealiste;
-      localStorage.setItem("gallery-hide-irrealiste", hideIrrealiste ? "1" : "0");
       syncIrrealisteBtn();
       applyFilters();
     });
@@ -560,11 +559,9 @@
   var resetFiltersBtn = document.getElementById("gallery-reset-filters");
   if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener("click", function() {
-      // Ultra: masqué (défaut), Irréaliste: affiché (défaut galerie)
-      hideUltra = true;
-      hideIrrealiste = false;
-      localStorage.setItem("gallery-hide-ultra", "1");
-      localStorage.setItem("gallery-hide-irrealiste", "0");
+      // Revient aux reglages de compte (voir /favoris > Parametres)
+      hideUltra = (window.ULTRA_MODE || "hidden") === "hidden";
+      hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
       syncUltraBtn();
       syncIrrealisteBtn();
       // Effacer type

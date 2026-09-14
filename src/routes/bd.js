@@ -5,6 +5,7 @@ const multer = require("multer");
 const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, isFavorite, addFavorite, removeFavorite, logBdView } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
+const { filterOff, isOffForUser } = require("../specialContent");
 
 const uploadsDir = path.join(__dirname, "..", "..", "data", "uploads", "bd");
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -64,7 +65,7 @@ function buildBdRouter(config) {
   router.use(requireUser);
 
   router.get("/", (req, res) => {
-    const books = listBdBooks();
+    const books = filterOff(listBdBooks(), req.user);
     const tagSet = new Set();
     books.forEach((b) => b.tags.forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
@@ -158,6 +159,7 @@ function buildBdRouter(config) {
   router.get("/:id", (req, res) => {
     const book = getBdBook(Number(req.params.id));
     if (!book) return res.redirect("/bd");
+    if (isOffForUser(book.tags, req.user)) return res.redirect("/bd");
     logBdView(book.id, req.user ? req.user.id : null);
     const allBooks = listBdBooks();
     const idx = allBooks.findIndex((b) => b.id === book.id);

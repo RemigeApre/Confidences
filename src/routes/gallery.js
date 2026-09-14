@@ -21,6 +21,7 @@ const {
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
+const { filterOff } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -165,10 +166,11 @@ function buildItems(galleryImages, wikiPages) {
   return [...galleryItems, ...wikiItems].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function getCtx(userId) {
+function getCtx(user) {
+  const userId = user ? user.id : null;
   const wikiPages = mergeUserReactions(listWikiPages(), userId, "wiki");
   const galleryImages = mergeUserReactions(listGalleryImages(), userId, "gallery");
-  const items = buildItems(galleryImages, wikiPages);
+  const items = filterOff(buildItems(galleryImages, wikiPages), user);
   const tagTotalCounts = {};
   items.forEach((item) => {
     item.tags.forEach((t) => { tagTotalCounts[t] = (tagTotalCounts[t] || 0) + 1; });
@@ -186,7 +188,7 @@ function buildGalleryRouter(config) {
   router.use(requireUser);
 
   router.get("/", (req, res) => {
-    const { items, allTags } = getCtx(req.user.id);
+    const { items, allTags } = getCtx(req.user);
     const tagImageCounts = {};
     const tagBdCounts = {};
     items.forEach((item) => {
@@ -294,7 +296,7 @@ function buildGalleryRouter(config) {
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
     if (!image) return res.redirect("/galerie");
     Object.assign(image, getUserReaction(req.user.id, "gallery", id));
-    const { allTags } = getCtx(req.user.id);
+    const { allTags } = getCtx(req.user);
     const linkedPage = image.wikiPageId ? getWikiPage(image.wikiPageId) : null;
     res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage });
   });

@@ -5,8 +5,22 @@
   <!-- Volet droit fixe -->
   <aside class="profil-right">
     <div class="profil-right-name"><%= currentUser.displayName %></div>
+
     <div class="profil-right-settings">
-      <div class="profil-right-settings-title">Ouverture des tags</div>
+      <div class="profil-right-settings-title">Go&ucirc;ts</div>
+      <label class="profil-setting-label" for="pref-orientation">Orientation sexuelle</label>
+      <select class="profil-setting-select" id="pref-orientation" data-pref="orientation">
+        <option value="" <%= currentUser.orientation === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
+        <option value="hetero" <%= currentUser.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
+        <option value="gay" <%= currentUser.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
+        <option value="bi" <%= currentUser.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
+      </select>
+    </div>
+
+    <div class="profil-right-settings">
+      <div class="profil-right-settings-title">Param&egrave;tres</div>
+
+      <div class="profil-setting-label">Ouverture des tags</div>
       <div class="user-setting-options" id="tag-nav-pref-options">
         <label class="user-setting-radio" data-val="ask">
           <input type="radio" name="tag-nav-pref" value="ask" />
@@ -21,11 +35,53 @@
           Galerie
         </label>
       </div>
+
+      <div class="profil-setting-label">Ultra</div>
+      <div class="user-setting-options" id="ultra-mode-options">
+        <label class="user-setting-radio" data-val="hidden">
+          <input type="radio" name="ultra-mode" value="hidden" />
+          Masqu&eacute; (bascule)
+        </label>
+        <label class="user-setting-radio" data-val="visible">
+          <input type="radio" name="ultra-mode" value="visible" />
+          Visible
+        </label>
+        <label class="user-setting-radio" data-val="off">
+          <input type="radio" name="ultra-mode" value="off" />
+          D&eacute;sactiv&eacute;
+        </label>
+      </div>
+
+      <div class="profil-setting-label">Irr&eacute;aliste</div>
+      <div class="user-setting-options" id="irrealiste-mode-options">
+        <label class="user-setting-radio" data-val="hidden">
+          <input type="radio" name="irrealiste-mode" value="hidden" />
+          Masqu&eacute; (bascule)
+        </label>
+        <label class="user-setting-radio" data-val="visible">
+          <input type="radio" name="irrealiste-mode" value="visible" />
+          Visible
+        </label>
+        <label class="user-setting-radio" data-val="off">
+          <input type="radio" name="irrealiste-mode" value="off" />
+          D&eacute;sactiv&eacute;
+        </label>
+      </div>
     </div>
   </aside>
 
   <% if (!wikiPages.length && !galleryImages.length && !bdBooks.length) { %>
     <p class="intro">Aucun favori pour l&apos;instant. Utilise le bouton favori sur une page wiki, une image de la galerie ou une BD pour l&apos;ajouter ici.</p>
+  <% } %>
+
+  <!-- Section Mes Fantasmes : favoris wiki de la catégorie "fantasmes" -->
+  <% if (fantasyPages.length) { %>
+    <h2 class="profil-section-title">Mes fantasmes (<%= fantasyPages.length %>)</h2>
+    <div class="wiki-grid">
+      <% fantasyPages.forEach(function (page) { %>
+        <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+      <% }) %>
+    </div>
   <% } %>
 
   <!-- Section pages wiki favorites -->
@@ -89,25 +145,52 @@
 
 </main>
 <script>
-// ── Paramètre ouverture des tags ──────────────────────────────────────────
+// ── Paramètres de profil (Goûts + Ouverture des tags/Ultra/Irréaliste) ─────
+// Sauvegarde instantanée côté serveur (voir POST /favoris/parametres),
+// contrairement à l'ancien réglage "Ouverture des tags" qui vivait en
+// localStorage (par navigateur, pas par profil).
 (function() {
-  var pref = localStorage.getItem("tag-nav-pref") || "ask";
-  var labels = document.querySelectorAll(".user-setting-radio");
-  function syncLabels() {
-    labels.forEach(function(lbl) { lbl.classList.toggle("active", lbl.dataset.val === pref); });
+  function savePref(field, value) {
+    var body = {};
+    body[field] = value;
+    fetch("/favoris/parametres", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(function() {});
   }
-  syncLabels();
-  labels.forEach(function(lbl) {
-    var radio = lbl.querySelector("input");
-    if (radio.value === pref) radio.checked = true;
-    radio.addEventListener("change", function() {
-      if (radio.checked) {
-        pref = radio.value;
-        localStorage.setItem("tag-nav-pref", pref);
+
+  function wireRadioGroup(containerId, field, initial) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
+    var current = initial;
+    function syncLabels() {
+      labels.forEach(function(lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
+    }
+    syncLabels();
+    labels.forEach(function(lbl) {
+      var radio = lbl.querySelector("input");
+      if (radio.value === current) radio.checked = true;
+      radio.addEventListener("change", function() {
+        if (!radio.checked) return;
+        current = radio.value;
         syncLabels();
-      }
+        savePref(field, current);
+      });
     });
-  });
+  }
+
+  wireRadioGroup("tag-nav-pref-options", "tagNavPref", window.TAG_NAV_PREF || "ask");
+  wireRadioGroup("ultra-mode-options", "ultraMode", window.ULTRA_MODE || "hidden");
+  wireRadioGroup("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
+
+  var orientationSelect = document.getElementById("pref-orientation");
+  if (orientationSelect) {
+    orientationSelect.addEventListener("change", function() {
+      savePref("orientation", orientationSelect.value);
+    });
+  }
 })();
 
 // ── Favoris ───────────────────────────────────────────────────────────────

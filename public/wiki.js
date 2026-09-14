@@ -765,9 +765,10 @@
   var includedTagsSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-tags-inc") || "[]"));
   var excludedTagsSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-tags-exc") || "[]"));
   var activeSort      = localStorage.getItem("wiki-filter-sort") || "alpha-asc";
-  // Par défaut : ultra masqué. Seulement "0" explicite = affiché.
-  var hideUltra       = localStorage.getItem("wiki-hide-ultra") !== "0";
-  var hideIrrealiste  = localStorage.getItem("wiki-hide-irrealiste") !== "0";
+  // Etat initial derive du reglage de compte (voir /favoris > Parametres),
+  // plus fiable qu'un localStorage par navigateur qui pouvait diverger.
+  var hideUltra       = (window.ULTRA_MODE || "hidden") === "hidden";
+  var hideIrrealiste  = (window.IRREALISTE_MODE || "visible") === "hidden";
   var searchQuery     = localStorage.getItem("wiki-filter-search") || "";
   var advMinRating    = Number(localStorage.getItem("wiki-filter-rating")) || 0;
   var activeCols      = Number(localStorage.getItem("wiki-cols")) || 3;
@@ -1470,7 +1471,6 @@
   if (ultraToggle) {
     ultraToggle.addEventListener("click", function () {
       hideUltra = !hideUltra;
-      localStorage.setItem("wiki-hide-ultra", hideUltra ? "1" : "0");
       syncUltraBtn();
       applyFilters();
     });
@@ -1494,7 +1494,6 @@
   if (irrealisteToggle) {
     irrealisteToggle.addEventListener("click", function () {
       hideIrrealiste = !hideIrrealiste;
-      localStorage.setItem("wiki-hide-irrealiste", hideIrrealiste ? "1" : "0");
       syncIrralisteBtn();
       applyFilters();
       applyChapterStripFilters();
@@ -1507,11 +1506,9 @@
   var resetFiltersBtn = document.getElementById("wiki-reset-filters");
   if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener("click", function() {
-      // Ultra masqué, Irréaliste masqué (défauts wiki)
-      hideUltra = true;
-      hideIrrealiste = true;
-      localStorage.setItem("wiki-hide-ultra", "1");
-      localStorage.setItem("wiki-hide-irrealiste", "1");
+      // Revient aux reglages de compte (voir /favoris > Parametres)
+      hideUltra = (window.ULTRA_MODE || "hidden") === "hidden";
+      hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
       syncUltraBtn();
       syncIrralisteBtn();
       // Catégorie : Tous
@@ -3135,7 +3132,7 @@
     }
 
     // Ultra toggle
-    var heroHideUltra = localStorage.getItem("wiki-hide-ultra") !== "0";
+    var heroHideUltra = (window.ULTRA_MODE || "hidden") === "hidden";
     function syncHeroUltraBtn() {
       if (!heroUltraBtn) return;
       heroUltraBtn.textContent = "Ultra";
@@ -3145,13 +3142,12 @@
       syncHeroUltraBtn();
       heroUltraBtn.addEventListener("click", function () {
         heroHideUltra = !heroHideUltra;
-        localStorage.setItem("wiki-hide-ultra", heroHideUltra ? "1" : "0");
         syncHeroUltraBtn();
       });
     }
 
     // Irréaliste toggle
-    var heroHideIrrealiste = localStorage.getItem("wiki-hide-irrealiste") !== "0";
+    var heroHideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
     function syncHeroIrralisteBtn() {
       if (!heroIrralisteBtn) return;
       heroIrralisteBtn.textContent = "Irr\u00e9aliste";
@@ -3161,7 +3157,6 @@
       syncHeroIrralisteBtn();
       heroIrralisteBtn.addEventListener("click", function () {
         heroHideIrrealiste = !heroHideIrrealiste;
-        localStorage.setItem("wiki-hide-irrealiste", heroHideIrrealiste ? "1" : "0");
         syncHeroIrralisteBtn();
       });
     }
@@ -3782,7 +3777,7 @@
 
     tagLinks.forEach(function(link) {
       link.addEventListener("click", function(e) {
-        var pref = localStorage.getItem("tag-nav-pref") || "ask";
+        var pref = window.TAG_NAV_PREF || "ask";
         try {
           var url = new URL(link.href, window.location.origin);
           var tag = url.searchParams.get("tag") || "";
