@@ -346,6 +346,30 @@ Teste :
 curl -I https://quizz.dhuis.com
 ```
 
+### Verifier que HTTP/2 est actif
+
+HTTP/2 permet au navigateur de charger plusieurs images en parallele sur
+une seule connexion — utile surtout sur les pages avec beaucoup d'images
+(galerie). Certbot l'active generalement tout seul sur les nginx recents,
+mais ça vaut le coup de verifier :
+
+```bash
+curl -I --http2 https://quizz.dhuis.com 2>&1 | head -1
+# doit afficher "HTTP/2 200" (pas "HTTP/1.1 200")
+```
+
+Si ce n'est pas le cas, edite le bloc HTTPS que certbot a ajoute dans
+`/etc/nginx/sites-available/quizz.dhuis.com` :
+
+```bash
+sudo nginx -v   # verifie la version
+```
+
+- nginx **≥ 1.25.1** : ajoute `http2 on;` dans le bloc `server { listen 443 ssl; ... }`.
+- nginx plus ancien : remplace `listen 443 ssl;` par `listen 443 ssl http2;`.
+
+Puis `sudo nginx -t && sudo systemctl reload nginx`.
+
 ---
 
 ## Etape 11 — Verification finale

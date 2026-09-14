@@ -1,9 +1,11 @@
 require("dotenv").config();
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const https = require("https");
 const express = require("express");
 const session = require("express-session");
+const compression = require("compression");
 
 const buildQuizRouter = require("./routes/quiz");
 const buildAdminRouter = require("./routes/admin");
@@ -15,6 +17,7 @@ const buildFavoritesRouter = require("./routes/favorites");
 const buildAccountRouter = require("./routes/account");
 const { attachUser } = require("./auth");
 const { db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere } = require("./db");
+const { thumbUrl, backfillThumbs } = require("./thumbs");
 
 // Store de sessions SQLite : survit aux redemarrages contrairement au
 // memory store par defaut. Implémenté directement avec better-sqlite3
@@ -85,18 +88,38 @@ if (certPath && keyPath && !usingHttps) {
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "..", "views"));
 
+// Compression gzip/brotli des reponses texte (HTML/CSS/JS/JSON) : aucune
+// compression n'etait active avant (ni ici, ni dans le nginx.example.conf
+// fourni), donc tout partait "brut" sur le reseau.
+app.use(compression());
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "..", "public")));
 
-// Casse le cache navigateur (surtout mobile, tres agressif) a chaque
-// redemarrage du serveur : sans ca, un correctif JS/CSS deploye peut
-// continuer a servir l'ancienne version depuis le cache pendant des jours.
-const ASSET_VERSION = String(Date.now());
+// Version des assets = hash du contenu reel de public/, calcule une seule
+// fois au demarrage. Avant, c'etait `Date.now()` : ca cassait le cache a
+// CHAQUE redemarrage/redeploiement, meme quand style.css/*.js n'avaient pas
+// change. Avec un hash de contenu, le cache navigateur (1 an, voir maxAge
+// ci-dessous) ne saute que quand un fichier a reellement change.
+function computeAssetVersion(dir) {
+  try {
+    const hash = crypto.createHash("sha1");
+    fs.readdirSync(dir).sort().forEach((f) => {
+      const full = path.join(dir, f);
+      if (fs.statSync(full).isFile()) hash.update(fs.readFileSync(full));
+    });
+    return hash.digest("hex").slice(0, 10);
+  } catch (_) {
+    return String(Date.now());
+  }
+}
+const ASSET_VERSION = computeAssetVersion(path.join(__dirname, "..", "public"));
 app.use((req, res, next) => {
   res.locals.assetVersion = ASSET_VERSION;
   next();
 });
+
+app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", immutable: true }));
 
 // Le contenu est personnel : jamais d'indexation, meme sur les pages
 // publiques (wiki texte). Complete la balise <meta name="robots"> et
@@ -137,11 +160,26 @@ app.use((req, res, next) => {
 // (wiki/galerie/BD) : jamais servies sans etre connecte a un profil.
 const uploadsDir = path.join(__dirname, "..", "data", "uploads");
 fs.mkdirSync(uploadsDir, { recursive: true });
+// Chaque fichier uploade a un nom unique (horodatage + aleatoire, voir les
+// routes wiki/galerie/BD) et n'est jamais modifie sur place : un cache tres
+// long est donc sans risque (une URL donnee sert toujours le meme contenu).
 app.use(
   "/uploads",
   (req, res, next) => (req.user ? next() : res.status(403).end()),
-  express.static(uploadsDir)
+  express.static(uploadsDir, { maxAge: "1y", immutable: true })
 );
+
+// Genere en tache de fond les vignettes manquantes pour les images deja
+// uploadees avant l'ajout de cette fonctionnalite (voir src/thumbs.js).
+// Volontairement non attendu : ne doit jamais retarder le demarrage.
+backfillThumbs("wiki");
+backfillThumbs("gallery");
+backfillThumbs("bd");
+
+app.use((req, res, next) => {
+  res.locals.thumbUrl = thumbUrl;
+  next();
+});
 
 // ── Recherche globale multi-section ─────────────────────────────────────────
 app.get("/api/search", function (req, res) {

@@ -189,7 +189,7 @@
       <div class="wf-scenario-img-section">
         <% if (pm.scenario_image) { %>
           <div class="wf-scenario-img-preview" id="wf-scenario-img-preview">
-            <img src="<%= pm.scenario_image %>" alt="Illustration sc&eacute;nario" class="wf-scenario-thumb" />
+            <img src="<%= thumbUrl(pm.scenario_image) %>" alt="Illustration sc&eacute;nario" class="wf-scenario-thumb" loading="lazy" />
             <button type="button" class="wf-scenario-img-remove" id="wf-scenario-img-remove" title="Retirer l&rsquo;image">&#215;</button>
           </div>
         <% } else { %>
@@ -261,7 +261,7 @@
                data-secondary="<%= isSecondary ? '1' : '0' %>"
                data-section="<%= section %>">
             <div class="wf-img-card-photo">
-              <img src="<%= src %>" class="wf-img-thumb" alt="" loading="lazy" />
+              <img src="<%= thumbUrl(src) %>" class="wf-img-thumb" alt="" loading="lazy" />
               <button type="button" class="wf-img-rm" title="Supprimer">&#215;</button>
             </div>
             <div class="wf-img-card-controls">

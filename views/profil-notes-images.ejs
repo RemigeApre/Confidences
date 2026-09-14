@@ -65,11 +65,11 @@
 
         <% if (item.imagePaths && item.imagePaths[0]) { %>
           <a href="/galerie/<%= item.id %>/edit">
-            <img src="<%= item.imagePaths[0] %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
+            <img src="<%= thumbUrl(item.imagePaths[0]) %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
           </a>
         <% } else if (item.filename) { %>
           <a href="/galerie/<%= item.id %>/edit">
-            <img src="<%= item.filename %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
+            <img src="<%= thumbUrl(item.filename) %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
           </a>
         <% } %>
 

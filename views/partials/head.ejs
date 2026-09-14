@@ -6,6 +6,12 @@
   <meta name="robots" content="noindex, nofollow, noarchive" />
   <meta name="color-scheme" content="dark" />
   <title><%= typeof title !== "undefined" ? title : "Quiz" %></title>
+  <% if (locals.preloadImage) { %>
+    <%# Demarre le telechargement de l'image principale de la page des le
+        <head>, sans attendre que le navigateur la decouvre en parsant le
+        corps (gain de temps pour son affichage sur une connexion lente). %>
+    <link rel="preload" as="image" href="<%= preloadImage %>" />
+  <% } %>
   <style>
     /* Critique, en ligne : fond sombre + loader visibles immediatement, avant
        meme que style.css ait charge. Evite le flash blanc / la mise en page
@@ -23,19 +29,27 @@
   </style>
   <script>
     (function () {
+      // Attend style.css + les feuilles supplementaires (extraCss, ex. admin.css)
+      // avant de reveler la page, pour ne jamais laisser voir un etat "a moitie stylee".
+      var pending = 1 + <%= (locals.extraCss || []).length %>;
       function reveal() {
+        pending -= 1;
+        if (pending > 0) return;
         document.documentElement.classList.add("css-ready");
         var veil = document.getElementById("boot-veil");
         if (veil) setTimeout(function () { veil.remove(); }, 350);
       }
       window.__revealBoot = reveal;
-      // Filet de securite : si l'evenement onload de la feuille de style ne se
-      // declenche jamais (bug connu de certains navigateurs avec une feuille
-      // deja en cache), on revele quand meme la page au bout de 3s.
-      setTimeout(reveal, 3000);
+      // Filet de securite : si un evenement onload ne se declenche jamais (bug
+      // connu de certains navigateurs avec une feuille deja en cache), on
+      // revele quand meme la page au bout de 3s.
+      setTimeout(function () { pending = 1; reveal(); }, 3000);
     })();
   </script>
   <link rel="stylesheet" href="/style.css?v=<%= assetVersion %>" onload="window.__revealBoot()" />
+  <% (locals.extraCss || []).forEach(function (href) { %>
+    <link rel="stylesheet" href="/<%= href %>?v=<%= assetVersion %>" onload="window.__revealBoot()" />
+  <% }) %>
   <noscript><style>#boot-veil { display: none; }</style></noscript>
 </head>
 <body>

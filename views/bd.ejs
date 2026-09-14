@@ -73,7 +73,7 @@
           data-couleur="<%= book.tags.indexOf('en couleur') !== -1 ? '1' : '0' %>">
           <% if (book.imagePaths && book.imagePaths.length) { %>
             <div class="bd-card-cover">
-              <img src="<%= book.imagePaths[0] %>" alt="" class="bd-card-img" loading="lazy" />
+              <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
               <span class="bd-page-count"><%= book.imagePaths.length %>&nbsp;p.</span>
               <% if (book.tags.indexOf('en couleur') !== -1) { %><span class="bd-card-badge bd-card-badge--couleur">&#127775;</span><% } %>
               <% if (book.langue) { %><span class="bd-card-badge bd-card-badge--langue bd-lang-<%= book.langue %>"><%= {francais:'FR',anglais:'EN',japonais:'JP',autre:'??'}[book.langue] || '' %></span><% } %>

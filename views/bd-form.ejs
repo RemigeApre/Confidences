@@ -53,7 +53,7 @@
           <% book.imagePaths.forEach(function(src, i) { %>
             <div class="bd-sort-item" draggable="true" data-src="<%= src %>">
               <div class="bd-sort-handle">&#8597;</div>
-              <img src="<%= src %>" alt="" class="bd-sort-img" />
+              <img src="<%= thumbUrl(src) %>" alt="" class="bd-sort-img" loading="lazy" />
               <span class="bd-sort-num"><%= i + 1 %></span>
               <label class="bd-sort-remove" title="Supprimer cette page">
                 <input type="checkbox" name="remove_image" value="<%= src %>" class="bd-remove-cb" />

@@ -20,6 +20,7 @@ const {
   getUserReaction,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
+const { generateThumb, deleteThumb } = require("../thumbs");
 
 const CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -83,6 +84,7 @@ function applyUltraCheckbox(tags, checked) {
 function unlinkFiles(paths) {
   (paths || []).forEach((p) => {
     try { fs.unlinkSync(path.join(uploadsDir, path.basename(p))); } catch (_) {}
+    deleteThumb(p);
   });
 }
 
@@ -212,6 +214,7 @@ function buildGalleryRouter(config) {
     const parody = String(req.body.parody || "").trim();
     const contentType = req.body.content_type === "bd" ? "bd" : "image";
     const imagePaths = files.map((f) => `/uploads/gallery/${f.filename}`);
+    imagePaths.forEach((p) => generateThumb(p));
     insertGalleryImage({ imagePaths, title, tags, notes, category, author, parody, contentType });
     res.redirect("/galerie");
   });
@@ -324,6 +327,7 @@ function buildGalleryRouter(config) {
     const toRemove = [].concat(req.body.remove_image || []);
     const kept = image.imagePaths.filter((p) => !toRemove.includes(p));
     const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
+    added.forEach((p) => generateThumb(p));
     let imagePaths = [...kept, ...added];
     const cover = req.body.cover_image;
     if (cover && imagePaths.includes(cover) && imagePaths[0] !== cover) {

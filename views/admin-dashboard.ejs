@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: 'Admin — ' + config.title }) %>
+<%- include('partials/head', { title: 'Admin — ' + config.title, extraCss: ['admin.css'] }) %>
 
 <div class="admin-topbar">
   <span class="admin-topbar-title"><%= config.title %></span>
@@ -351,7 +351,7 @@
     <div class="admin-gallery-grid" id="admin-gallery-grid">
       <% galleryImages.slice(0, 40).forEach(function(img) { %>
         <div class="admin-gallery-card" data-id="<%= img.id %>">
-          <img src="<%= img.imagePaths[0] %>" alt="<%= img.title %>" class="admin-gallery-thumb" loading="lazy" />
+          <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title %>" class="admin-gallery-thumb" loading="lazy" />
           <div class="admin-gallery-info">
             <span class="admin-gallery-name"><%= img.title || '—' %></span>
             <span class="admin-gallery-rating">&#9733; <%= img.rating %></span>

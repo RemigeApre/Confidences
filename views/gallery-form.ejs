@@ -103,7 +103,7 @@
         <div class="wiki-images-existing">
           <% image.imagePaths.forEach(function(src, idx) { %>
             <div class="wiki-existing-img-wrap">
-              <img src="<%= src %>" alt="" class="wiki-form-existing-image" />
+              <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
               <label class="wiki-cover-radio-label" title="D&eacute;finir comme couverture">
                 <input type="radio" name="cover_image" value="<%= src %>" class="wiki-cover-radio" <%= idx === 0 ? 'checked' : '' %> />
                 <span class="wiki-cover-badge-icon">&#9733;</span>

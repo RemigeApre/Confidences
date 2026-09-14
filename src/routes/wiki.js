@@ -35,6 +35,7 @@ const {
   listGalleryImages,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
+const { generateThumb } = require("../thumbs");
 
 const CATEGORIES = [
   { key: "position",   label: "Positions",   desc: "Postures, Kama-sutra et toutes leurs variantes.",                               hue: 270 },
@@ -527,6 +528,7 @@ function buildWikiRouter(config) {
     const extraCategories = arr(req.body.extra_categories).filter((k) => CATEGORY_KEYS.includes(k) && k !== category);
 
     const files = req.files || [];
+    files.forEach((f) => generateThumb(`/uploads/wiki/${f.filename}`));
     const newImgFiles = files.filter((f) => f.fieldname === "images");
     const bodyWithVarianteImgs = injectVarianteImages(req.body, files);
     const meta = parseMeta(category, bodyWithVarianteImgs);
@@ -629,7 +631,13 @@ function buildWikiRouter(config) {
     allPages.forEach((p) => p.tags.forEach((t) => { tagPageCounts[t] = (tagPageCounts[t] || 0) + 1; }));
     const tagImageCounts = {};
     listGalleryImages().forEach((img) => img.tags.forEach((t) => { tagImageCounts[t] = (tagImageCounts[t] || 0) + 1; }));
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, ...CTX });
+    // Precharge l'image principale (meme condition que le hero cote vue) :
+    // demarre son telechargement des le <head>, avant meme que le CSS/JS
+    // n'aient fini de charger, au lieu d'attendre que le navigateur
+    // decouvre le <img> en parsant le corps de la page.
+    const heroImg = (page.imagePaths && page.imagePaths.length && req.user)
+      ? res.locals.thumbUrl(page.imagePaths[0]) : null;
+    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ...CTX });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
@@ -654,6 +662,7 @@ function buildWikiRouter(config) {
     const owned    = OWNED_CATEGORIES.includes(category) && req.body.owned === "on";
 
     const files = req.files || [];
+    files.forEach((f) => generateThumb(`/uploads/wiki/${f.filename}`));
     const newImgFiles = files.filter((f) => f.fieldname === "images");
     const bodyWithVarianteImgs = injectVarianteImages(req.body, files);
     const meta = parseMeta(category, bodyWithVarianteImgs);

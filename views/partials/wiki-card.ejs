@@ -89,7 +89,7 @@
     <div class="wiki-card-image" data-images="<%= page.imagePaths.join('|') %>">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
-      <img src="<%= page.imagePaths[0] %>" alt="" class="wiki-card-img" />
+      <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="" class="wiki-card-img" loading="lazy" />
       <div class="wiki-card-overlay">
         <% if (wcShowBadge) { %><span class="wiki-category-badge" style="background: hsl(<%= cat ? cat.hue : 220 %>, 55%, 45%)"><%= cat ? cat.label : page.category %></span><% } %>
         <% if (currentUser) { %><span class="wiki-card-badges">

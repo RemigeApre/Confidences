@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: page.title }) %>
+<%- include('partials/head', { title: page.title, preloadImage: preloadImage }) %>
 <main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: 'Wiki', navBack: '/wiki/categorie/' + page.category }) %>
 
@@ -290,7 +290,7 @@
         <%# Image principale — mobile uniquement, glissée par JS avant le 1er h2 ─ %>
         <% if (hasImages && currentUser) { %>
           <div class="wiki-mobile-hero" id="wiki-mobile-hero" aria-hidden="true">
-            <img src="<%= page.imagePaths[0] %>" alt="" class="wiki-mobile-hero-img" loading="lazy" />
+            <img src="<%= thumbUrl(page.imagePaths[0]) %>" alt="" class="wiki-mobile-hero-img" loading="lazy" />
           </div>
         <% } %>
 
@@ -305,7 +305,7 @@
                 <div class="wiki-var-body">
                   <% if (v.description) { %><div class="wiki-md"><span class="wiki-md-raw" hidden><%= v.description %></span></div><% } %>
                   <% if (currentUser && v.images && v.images.length) { %>
-                    <div class="wiki-var-images"><% v.images.forEach(function(src) { %><img src="<%= src %>" alt="" class="wiki-var-img" /><% }) %></div>
+                    <div class="wiki-var-images"><% v.images.forEach(function(src) { %><img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-var-img" loading="lazy" /><% }) %></div>
                   <% } %>
                   <% if (v.variantes && v.variantes.length) { %>
                     <% v.variantes.forEach(function(sv) { %>
@@ -315,7 +315,7 @@
                         <div class="wiki-var-body">
                           <% if (sv.description) { %><div class="wiki-md"><span class="wiki-md-raw" hidden><%= sv.description %></span></div><% } %>
                           <% if (currentUser && sv.images && sv.images.length) { %>
-                            <div class="wiki-var-images"><% sv.images.forEach(function(src) { %><img src="<%= src %>" alt="" class="wiki-var-img" /><% }) %></div>
+                            <div class="wiki-var-images"><% sv.images.forEach(function(src) { %><img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-var-img" loading="lazy" /><% }) %></div>
                           <% } %>
                         </div>
                       </details>
@@ -339,7 +339,7 @@
               <% } %>
             </summary>
             <% if (pm.scenario_image) { %>
-              <img src="<%= pm.scenario_image %>" alt="" class="wiki-scenario-img" loading="lazy" />
+              <img src="<%= thumbUrl(pm.scenario_image) %>" data-src="<%= pm.scenario_image %>" alt="" class="wiki-scenario-img" loading="lazy" />
             <% } %>
             <div class="wiki-pos-nouvelles-text"><%= pm.scenario %></div>
           </details>
@@ -402,7 +402,7 @@
                  id="wiki-secondary-grid">
               <% secDisplay.forEach(function(src) { %>
                 <div class="wiki-secondary-img-wrap">
-                  <img src="<%= src %>" alt="" class="wiki-secondary-img" loading="lazy" />
+                  <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-secondary-img" loading="lazy" />
                 </div>
               <% }) %>
             </div>
@@ -457,7 +457,7 @@
         <%# c) Image principale ─ %>
         <% if (hasImages && currentUser) { %>
           <div class="wiki-right-img-wrap">
-            <img src="<%= page.imagePaths[0] %>" alt="" class="wiki-right-img" />
+            <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="" class="wiki-right-img" />
           </div>
         <% } %>
 
@@ -522,7 +522,7 @@
             <div class="wiki-mobile-sec-carousel" id="wiki-sec-carousel">
               <% page.imagePaths.slice(1).forEach(function (src) { %>
                 <div class="wiki-mobile-sec-item">
-                  <img src="<%= src %>" alt="" class="wiki-mobile-sec-img" loading="lazy" />
+                  <img src="<%= thumbUrl(src) %>" alt="" class="wiki-mobile-sec-img" loading="lazy" />
                 </div>
               <% }) %>
             </div>
@@ -596,7 +596,7 @@
             <% var scat = categories.find(function (c) { return c.key === s.category; }); %>
             <a href="/wiki/<%= s.id %>" class="wiki-sugg-card">
               <% if (s.imagePaths && s.imagePaths.length && currentUser) { %>
-                <div class="wiki-sugg-img-wrap"><img src="<%= s.imagePaths[0] %>" alt="" class="wiki-sugg-img" /></div>
+                <div class="wiki-sugg-img-wrap"><img src="<%= thumbUrl(s.imagePaths[0]) %>" alt="" class="wiki-sugg-img" loading="lazy" /></div>
               <% } %>
               <span class="wiki-sugg-badge" style="background: hsl(<%= scat ? scat.hue : 220 %>, 55%, 45%)"><%= scat ? scat.label : s.category %></span>
               <span class="wiki-sugg-title"><%= s.title %></span>

@@ -4,6 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, isFavorite, addFavorite, removeFavorite, logBdView } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
+const { generateThumb, deleteThumb } = require("../thumbs");
 
 const uploadsDir = path.join(__dirname, "..", "..", "data", "uploads", "bd");
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -82,6 +83,7 @@ function buildBdRouter(config) {
     tags = applyTagCheckbox(tags, "en couleur", req.body.couleur === "on");
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
     const newFiles = (req.files || []).map((f) => `/uploads/bd/${f.filename}`);
+    newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder([], newFiles, req.body.image_order);
     const id = insertBdBook({ title, description, tags, imagePaths, langue });
     res.redirect(`/bd/${id}`);
@@ -99,6 +101,7 @@ function buildBdRouter(config) {
     if (book) {
       for (const src of book.imagePaths) {
         try { fs.unlinkSync(path.join(uploadsDir, path.basename(src))); } catch (_) {}
+        deleteThumb(src);
       }
       deleteBdBook(id);
     }
@@ -119,10 +122,12 @@ function buildBdRouter(config) {
     const toRemove = new Set([].concat(req.body.remove_image || []));
     for (const src of toRemove) {
       try { fs.unlinkSync(path.join(uploadsDir, path.basename(src))); } catch (_) {}
+      deleteThumb(src);
     }
 
     const existing = book.imagePaths.filter((p) => !toRemove.has(p));
     const newFiles = (req.files || []).map((f) => `/uploads/bd/${f.filename}`);
+    newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder(existing, newFiles, req.body.image_order);
 
     updateBdBook(id, { title, description, tags, imagePaths, langue });

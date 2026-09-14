@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: detail.user.displayName + ' — Admin' }) %>
+<%- include('partials/head', { title: detail.user.displayName + ' — Admin', extraCss: ['admin.css'] }) %>
 
 <div class="admin-topbar">
   <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
@@ -76,7 +76,7 @@
       <% favWiki.forEach(function(f) { %>
       <a href="/wiki/<%= f.itemId %>" class="aud-fav-card">
         <% if (f.coverImg) { %>
-          <img src="<%= f.coverImg %>" alt="" class="aud-fav-card-img" loading="lazy" />
+          <img src="<%= thumbUrl(f.coverImg) %>" alt="" class="aud-fav-card-img" loading="lazy" />
         <% } else { %>
           <div class="aud-fav-card-placeholder">&#10084;</div>
         <% } %>
@@ -96,7 +96,7 @@
       <% favGallery.forEach(function(f) { %>
       <a href="/galerie/<%= f.itemId %>/edit" class="aud-fav-card aud-fav-card--img">
         <% if (f.coverImg) { %>
-          <img src="<%= f.coverImg %>" alt="" class="aud-fav-card-img" loading="lazy" />
+          <img src="<%= thumbUrl(f.coverImg) %>" alt="" class="aud-fav-card-img" loading="lazy" />
         <% } else { %>
           <div class="aud-fav-card-placeholder">&#128247;</div>
         <% } %>
@@ -116,7 +116,7 @@
       <% favBd.forEach(function(f) { %>
       <a href="/bd/<%= f.itemId %>" class="aud-fav-card aud-fav-card--img">
         <% if (f.coverImg) { %>
-          <img src="<%= f.coverImg %>" alt="" class="aud-fav-card-img" loading="lazy" />
+          <img src="<%= thumbUrl(f.coverImg) %>" alt="" class="aud-fav-card-img" loading="lazy" />
         <% } else { %>
           <div class="aud-fav-card-placeholder">&#128214;</div>
         <% } %>

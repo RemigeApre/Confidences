@@ -47,7 +47,7 @@
            class="profil-fav-card"
            data-fav-item data-item-type="gallery" data-item-id="<%= img.id %>">
           <% if (img.imagePaths && img.imagePaths[0]) { %>
-            <img src="<%= img.imagePaths[0] %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
+            <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
           <% } else { %>
             <div class="profil-fav-card-placeholder">&#128247;</div>
           <% } %>
@@ -67,9 +67,9 @@
            class="profil-fav-card"
            data-fav-item data-item-type="bd" data-item-id="<%= book.id %>">
           <% if (book.imagePaths && book.imagePaths[0]) { %>
-            <img src="<%= book.imagePaths[0] %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
+            <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
           <% } else if (book.filename) { %>
-            <img src="<%= book.filename %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
+            <img src="<%= thumbUrl(book.filename) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
           <% } else { %>
             <div class="profil-fav-card-placeholder">&#128218;</div>
           <% } %>
