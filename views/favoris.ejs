@@ -1,157 +1,8 @@
-<%- include('partials/head', { title: 'Profil — ' + config.title }) %>
-<main class="container wide profil-page">
+<%- include('partials/head', { title: 'Mes favoris — ' + config.title }) %>
+<main class="container wide profil-page gallery-has-sidebar">
   <%- include('partials/top-nav', { config: config }) %>
 
-  <%# ── Panneaux latéraux (desktop : fixe à droite / mobile : accordéons en haut) ── %>
-  <aside class="profil-panels" id="profil-panels">
-    <button type="button" class="profil-panels-toggle" id="profil-panels-toggle" aria-expanded="true" title="R&eacute;duire le panneau" aria-label="R&eacute;duire le panneau">&#9656;</button>
-    <div class="profil-panels-name"><%= currentUser.displayName %></div>
-
-    <%# ── Panneau 1 : Paramètres ── %>
-    <details class="profil-panel" open>
-      <summary class="profil-panel-summary">Param&egrave;tres</summary>
-      <div class="profil-panel-body">
-
-        <div class="profil-setting-label">Ultra</div>
-        <div class="user-setting-options" id="ultra-mode-options">
-          <label class="user-setting-radio" data-val="hidden">
-            <input type="radio" name="ultra-mode" value="hidden" /> Masqu&eacute; (bascule)
-          </label>
-          <label class="user-setting-radio" data-val="visible">
-            <input type="radio" name="ultra-mode" value="visible" /> Visible
-          </label>
-          <label class="user-setting-radio" data-val="off">
-            <input type="radio" name="ultra-mode" value="off" /> D&eacute;sactiv&eacute;
-          </label>
-        </div>
-
-        <div class="profil-setting-label">Irr&eacute;aliste</div>
-        <div class="user-setting-options" id="irrealiste-mode-options">
-          <label class="user-setting-radio" data-val="hidden">
-            <input type="radio" name="irrealiste-mode" value="hidden" /> Masqu&eacute; (bascule)
-          </label>
-          <label class="user-setting-radio" data-val="visible">
-            <input type="radio" name="irrealiste-mode" value="visible" /> Visible
-          </label>
-          <label class="user-setting-radio" data-val="off">
-            <input type="radio" name="irrealiste-mode" value="off" /> D&eacute;sactiv&eacute;
-          </label>
-        </div>
-
-        <div class="profil-setting-label">Filtrage des tags</div>
-        <div class="user-setting-options" id="tag-logic-options">
-          <label class="user-setting-radio" data-val="and">
-            <input type="radio" name="tag-logic" value="and" /> ET &mdash; tous les tags
-          </label>
-          <label class="user-setting-radio" data-val="or">
-            <input type="radio" name="tag-logic" value="or" /> OU &mdash; au moins un
-          </label>
-        </div>
-
-      </div>
-    </details>
-
-    <%# ── Panneau 2 : Identité ── %>
-    <details class="profil-panel" id="profil-identite-panel" <%= openIdentite ? 'open' : '' %>>
-      <summary class="profil-panel-summary">Identit&eacute;</summary>
-      <div class="profil-panel-body">
-
-        <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
-        <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
-
-        <form method="POST" action="/favoris/identite" class="profil-form">
-
-          <label class="profil-field">
-            <span class="profil-field-label">Pseudo</span>
-            <input type="text" name="display_name" value="<%= user.displayName %>" required autocomplete="off" class="profil-field-input" />
-          </label>
-
-          <label class="profil-field">
-            <span class="profil-field-label">Orientation</span>
-            <select name="orientation" class="profil-field-input">
-              <option value="" <%= !user.orientation ? 'selected' : '' %>>Non pr&eacute;cis&eacute;e</option>
-              <option value="hetero" <%= user.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
-              <option value="gay" <%= user.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
-              <option value="bi" <%= user.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
-            </select>
-          </label>
-
-          <label class="profil-field">
-            <span class="profil-field-label">Adresse mail</span>
-            <input type="email" name="email" value="<%= user.email || '' %>" placeholder="facultatif" autocomplete="off" class="profil-field-input" />
-          </label>
-
-          <label class="profil-field">
-            <span class="profil-field-label">Sexe</span>
-            <select name="sexe" class="profil-field-input">
-              <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
-              <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
-              <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
-              <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
-            </select>
-          </label>
-
-          <label class="profil-field">
-            <span class="profil-field-label">Ann&eacute;e de naissance</span>
-            <input type="number" name="birth_year" value="<%= user.birthYear || '' %>" placeholder="facultatif" min="1900" max="<%= new Date().getFullYear() %>" class="profil-field-input" />
-          </label>
-
-          <div class="profil-field profil-field-readonly">
-            <span class="profil-field-label">Identifiant</span>
-            <input type="text" value="<%= user.username %>" disabled class="profil-field-input" />
-          </div>
-
-          <div class="profil-field profil-field-readonly">
-            <span class="profil-field-label">Statut</span>
-            <input type="text" value="<%= user.isAdmin ? 'Administrateur' : (user.isTest ? 'Utilisateur (test)' : 'Utilisateur') %>" disabled class="profil-field-input" />
-          </div>
-
-          <button type="submit" class="profil-btn-primary">Enregistrer</button>
-        </form>
-
-        <%# ── Mot de passe ── %>
-        <details class="profil-sub-details">
-          <summary class="profil-sub-summary">Changer le mot de passe</summary>
-          <form method="POST" action="/favoris/mot-de-passe" class="profil-form profil-form-pwd">
-            <label class="profil-field">
-              <span class="profil-field-label">Mot de passe actuel</span>
-              <input type="password" name="current_password" required autocomplete="current-password" class="profil-field-input" />
-            </label>
-            <label class="profil-field">
-              <span class="profil-field-label">Nouveau mot de passe</span>
-              <input type="password" name="new_password" required autocomplete="new-password" class="profil-field-input" />
-            </label>
-            <button type="submit" class="profil-btn-primary">Changer</button>
-          </form>
-        </details>
-
-        <%# ── Journal technique (admin seulement) ── %>
-        <% if (currentUser && currentUser.isAdmin) { %>
-          <details class="profil-sub-details profil-journal-details">
-            <summary class="profil-sub-summary">Journal technique</summary>
-            <ul class="profil-journal">
-              <li>Compte cr&eacute;&eacute; le <%= new Date(user.createdAt).toLocaleDateString('fr-FR') %></li>
-              <% if (user.updatedAt) { %><li>Modifi&eacute; le <%= new Date(user.updatedAt).toLocaleDateString('fr-FR') %></li><% } %>
-              <% if (user.lastLoginAt) { %>
-                <li>Derni&egrave;re connexion le <%= new Date(user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></li>
-              <% } %>
-            </ul>
-            <% if (connectionLogs.length) { %>
-              <details class="profil-history">
-                <summary>Historique des connexions (<%= connectionLogs.length %>)</summary>
-                <ul class="profil-journal">
-                  <% connectionLogs.forEach(function (log) { %>
-                    <li><%= new Date(log.createdAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %> &mdash; <%= log.ip %></li>
-                  <% }) %>
-                </ul>
-              </details>
-            <% } %>
-          </details>
-        <% } %>
-
-      </div>
-    </details>
-  </aside>
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
   <%# ── Contenu principal : favoris ── %>
 
@@ -218,79 +69,10 @@
     <p class="intro" style="margin-top:2rem">Aucun favori pour l&apos;instant. Utilise les boutons favori sur les pages codex, images ou BD.</p>
   <% } %>
 
-  <div class="profil-notes-btns">
-    <a href="/favoris/notes/images" class="profil-notes-btn">Images not&eacute;es</a>
-    <a href="/favoris/notes/wiki" class="profil-notes-btn">Pages codex not&eacute;es</a>
-    <a href="/favoris/notes/bd" class="profil-notes-btn">BD not&eacute;es</a>
-  </div>
-
-  <%# Pas de volet filtre sur cette page : bouton discret dédié pour masquer
-      les contenus Ultra parmi les favoris (PC uniquement). %>
-  <button type="button" class="profil-ultra-toggle" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">ULTRA</button>
-
 </main>
 
 <script>
 (function () {
-  // ── Paramètres : Ultra / Irréaliste (sauvegarde serveur) ─────────────────
-  function savePref(field, value) {
-    var body = {};
-    body[field] = value;
-    fetch("/favoris/parametres", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }).catch(function () {});
-  }
-
-  function wireServerRadio(containerId, field, initial) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
-    var current = initial;
-    function sync() {
-      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
-    }
-    sync();
-    labels.forEach(function (lbl) {
-      var radio = lbl.querySelector("input");
-      if (radio.value === current) radio.checked = true;
-      radio.addEventListener("change", function () {
-        if (!radio.checked) return;
-        current = radio.value;
-        sync();
-        savePref(field, current);
-      });
-    });
-  }
-
-  wireServerRadio("ultra-mode-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
-  wireServerRadio("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
-
-  // ── Filtrage des tags (localStorage) ─────────────────────────────────────
-  function wireLocalRadio(containerId, lsKey, defaultVal) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
-    var current = localStorage.getItem(lsKey) || defaultVal;
-    function sync() {
-      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
-    }
-    sync();
-    labels.forEach(function (lbl) {
-      var radio = lbl.querySelector("input");
-      if (radio.value === current) radio.checked = true;
-      radio.addEventListener("change", function () {
-        if (!radio.checked) return;
-        current = radio.value;
-        sync();
-        localStorage.setItem(lsKey, current);
-      });
-    });
-  }
-
-  wireLocalRadio("tag-logic-options", "wiki-tag-logic", "and");
-
   // ── Favoris : retirer ────────────────────────────────────────────────────
   document.querySelectorAll("[data-fav-item] .wiki-pl-remove").forEach(function (btn) {
     btn.addEventListener("click", function (e) {
@@ -308,60 +90,30 @@
     });
   });
 
-  // ── Masquer les contenus Ultra sur cette page (pas de volet filtre ici) ──
-  var ultraBtn = document.getElementById("profil-ultra-toggle");
-  if (ultraBtn) {
-    var ULTRA_KEY = "profil-hide-ultra";
-    var ultraCards = document.querySelectorAll('[data-ultra="1"]');
-    var pfTitle = document.getElementById("profil-pf-title");
-    var pfGrid  = document.getElementById("profil-pf-grid");
+  // ── Masquer les contenus Ultra (bouton dans partials/profil-nav.ejs, géré
+  // pour son propre état par nav.js) : ici on ne réagit qu'au changement
+  // pour cacher/afficher les cartes de cette page.
+  var ultraCards = document.querySelectorAll('[data-ultra="1"]');
+  var pfTitle = document.getElementById("profil-pf-title");
+  var pfGrid  = document.getElementById("profil-pf-grid");
 
-    // "Pages favorites" : si tout ce qu'il en reste est masqué (Ultra),
-    // on fait comme s'il n'y en avait pas — section entière cachée.
-    function syncFavPages() {
-      if (!pfTitle || !pfGrid) return;
-      var visible = pfGrid.querySelectorAll(".wiki-card:not([hidden])").length;
-      pfTitle.hidden = visible === 0;
-      pfGrid.hidden = visible === 0;
-      if (visible > 0) pfTitle.textContent = visible > 1 ? "Pages favorites" : "Page favorite";
-    }
-
-    function applyUltraHide(on) {
-      ultraCards.forEach(function (el) { el.hidden = on; });
-      ultraBtn.setAttribute("aria-pressed", on ? "true" : "false");
-      ultraBtn.title = on ? "Afficher les contenus Ultra" : "Masquer les contenus Ultra";
-      ultraBtn.setAttribute("aria-label", ultraBtn.title);
-      syncFavPages();
-    }
-    var hideUltra = localStorage.getItem(ULTRA_KEY) === "1";
-    applyUltraHide(hideUltra);
-    ultraBtn.addEventListener("click", function () {
-      hideUltra = !hideUltra;
-      localStorage.setItem(ULTRA_KEY, hideUltra ? "1" : "0");
-      applyUltraHide(hideUltra);
-    });
+  // "Pages favorites" : si tout ce qu'il en reste est masqué (Ultra),
+  // on fait comme s'il n'y en avait pas — section entière cachée.
+  function syncFavPages() {
+    if (!pfTitle || !pfGrid) return;
+    var visible = pfGrid.querySelectorAll(".wiki-card:not([hidden])").length;
+    pfTitle.hidden = visible === 0;
+    pfGrid.hidden = visible === 0;
+    if (visible > 0) pfTitle.textContent = visible > 1 ? "Pages favorites" : "Page favorite";
   }
 
-  // ── Volet paramètres rétractable (PC) ─────────────────────────────────────
-  var panels = document.getElementById("profil-panels");
-  var panelsToggle = document.getElementById("profil-panels-toggle");
-  if (panels && panelsToggle) {
-    var PANELS_KEY = "profil-panels-collapsed";
-    function applyPanelsCollapsed(on) {
-      panels.classList.toggle("profil-panels-collapsed", on);
-      panelsToggle.setAttribute("aria-expanded", on ? "false" : "true");
-      panelsToggle.innerHTML = on ? "&#9666;" : "&#9656;";
-      panelsToggle.title = on ? "Déplier le panneau" : "Réduire le panneau";
-      panelsToggle.setAttribute("aria-label", panelsToggle.title);
-    }
-    var collapsed = localStorage.getItem(PANELS_KEY) === "1";
-    applyPanelsCollapsed(collapsed);
-    panelsToggle.addEventListener("click", function () {
-      collapsed = !collapsed;
-      localStorage.setItem(PANELS_KEY, collapsed ? "1" : "0");
-      applyPanelsCollapsed(collapsed);
-    });
+  function applyUltraHide() {
+    var on = localStorage.getItem("profil-hide-ultra") === "1";
+    ultraCards.forEach(function (el) { el.hidden = on; });
+    syncFavPages();
   }
+  applyUltraHide();
+  document.addEventListener("profil-ultra-toggle-change", applyUltraHide);
 })();
 </script>
 

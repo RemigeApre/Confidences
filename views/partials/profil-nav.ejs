@@ -1,0 +1,22 @@
+<%# Volet de navigation du profil : même composant que les volets filtre
+    (.wiki-cat-sidebar), teinté selon le rôle du compte (roleHue, calculé
+    par src/routes/favorites.js). Remplace l'ancien panneau droit : Pseudo →
+    accueil favoris, Codex/Images/BD → notes, Paramètres/Profil → sous-pages
+    dédiées, ULTRA tout en bas. %>
+<aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue: <%= roleHue %>">
+  <div class="profil-nav-header">
+    <a href="/favoris" class="profil-nav-name"><%= currentUser.displayName %></a>
+  </div>
+  <div class="wiki-sidebar-body">
+    <nav class="profil-nav-links">
+      <a href="/favoris/notes/wiki" class="profil-nav-link<%= currentPath === '/favoris/notes/wiki' ? ' active' : '' %>">Codex</a>
+      <a href="/favoris/notes/images" class="profil-nav-link<%= currentPath === '/favoris/notes/images' ? ' active' : '' %>">Images</a>
+      <a href="/favoris/notes/bd" class="profil-nav-link<%= currentPath === '/favoris/notes/bd' ? ' active' : '' %>">BD</a>
+    </nav>
+    <nav class="profil-nav-links">
+      <a href="/favoris/parametres" class="profil-nav-link<%= currentPath === '/favoris/parametres' ? ' active' : '' %>">Param&egrave;tres</a>
+      <a href="/favoris/identite" class="profil-nav-link<%= currentPath === '/favoris/identite' ? ' active' : '' %>">Profil</a>
+    </nav>
+    <button type="button" class="profil-ultra-toggle" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">ULTRA</button>
+  </div>
+</aside>

@@ -1,0 +1,106 @@
+<%- include('partials/head', { title: 'Profil — ' + config.title }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+    <h1>Profil</h1>
+
+    <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
+    <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
+
+    <form method="POST" action="/favoris/identite" class="profil-form">
+
+      <label class="profil-field">
+        <span class="profil-field-label">Pseudo</span>
+        <input type="text" name="display_name" value="<%= user.displayName %>" required autocomplete="off" class="profil-field-input" />
+      </label>
+
+      <label class="profil-field">
+        <span class="profil-field-label">Orientation</span>
+        <select name="orientation" class="profil-field-input">
+          <option value="" <%= !user.orientation ? 'selected' : '' %>>Non pr&eacute;cis&eacute;e</option>
+          <option value="hetero" <%= user.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
+          <option value="gay" <%= user.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
+          <option value="bi" <%= user.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
+        </select>
+      </label>
+
+      <label class="profil-field">
+        <span class="profil-field-label">Adresse mail</span>
+        <input type="email" name="email" value="<%= user.email || '' %>" placeholder="facultatif" autocomplete="off" class="profil-field-input" />
+      </label>
+
+      <label class="profil-field">
+        <span class="profil-field-label">Sexe</span>
+        <select name="sexe" class="profil-field-input">
+          <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
+          <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
+          <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
+          <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
+        </select>
+      </label>
+
+      <label class="profil-field">
+        <span class="profil-field-label">Ann&eacute;e de naissance</span>
+        <input type="number" name="birth_year" value="<%= user.birthYear || '' %>" placeholder="facultatif" min="1900" max="<%= new Date().getFullYear() %>" class="profil-field-input" />
+      </label>
+
+      <div class="profil-field profil-field-readonly">
+        <span class="profil-field-label">Identifiant</span>
+        <input type="text" value="<%= user.username %>" disabled class="profil-field-input" />
+      </div>
+
+      <div class="profil-field profil-field-readonly">
+        <span class="profil-field-label">Statut</span>
+        <input type="text" value="<%= user.isAdmin ? 'Administrateur' : (user.isTest ? 'Utilisateur (test)' : 'Utilisateur') %>" disabled class="profil-field-input" />
+      </div>
+
+      <button type="submit" class="profil-btn-primary">Enregistrer</button>
+    </form>
+
+    <%# ── Mot de passe ── %>
+    <details class="profil-sub-details">
+      <summary class="profil-sub-summary">Changer le mot de passe</summary>
+      <form method="POST" action="/favoris/mot-de-passe" class="profil-form profil-form-pwd">
+        <label class="profil-field">
+          <span class="profil-field-label">Mot de passe actuel</span>
+          <input type="password" name="current_password" required autocomplete="current-password" class="profil-field-input" />
+        </label>
+        <label class="profil-field">
+          <span class="profil-field-label">Nouveau mot de passe</span>
+          <input type="password" name="new_password" required autocomplete="new-password" class="profil-field-input" />
+        </label>
+        <button type="submit" class="profil-btn-primary">Changer</button>
+      </form>
+    </details>
+
+    <%# ── Journal technique (admin seulement) ── %>
+    <% if (currentUser && currentUser.isAdmin) { %>
+      <details class="profil-sub-details profil-journal-details">
+        <summary class="profil-sub-summary">Journal technique</summary>
+        <ul class="profil-journal">
+          <li>Compte cr&eacute;&eacute; le <%= new Date(user.createdAt).toLocaleDateString('fr-FR') %></li>
+          <% if (user.updatedAt) { %><li>Modifi&eacute; le <%= new Date(user.updatedAt).toLocaleDateString('fr-FR') %></li><% } %>
+          <% if (user.lastLoginAt) { %>
+            <li>Derni&egrave;re connexion le <%= new Date(user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></li>
+          <% } %>
+        </ul>
+        <% if (connectionLogs.length) { %>
+          <details class="profil-history">
+            <summary>Historique des connexions (<%= connectionLogs.length %>)</summary>
+            <ul class="profil-journal">
+              <% connectionLogs.forEach(function (log) { %>
+                <li><%= new Date(log.createdAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %> &mdash; <%= log.ip %></li>
+              <% }) %>
+            </ul>
+          </details>
+        <% } %>
+      </details>
+    <% } %>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

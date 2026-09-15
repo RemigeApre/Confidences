@@ -1,0 +1,112 @@
+<%- include('partials/head', { title: 'Paramètres — ' + config.title }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+    <h1>Param&egrave;tres</h1>
+
+    <div class="profil-setting-label">Ultra</div>
+    <div class="user-setting-options" id="ultra-mode-options">
+      <label class="user-setting-radio" data-val="hidden">
+        <input type="radio" name="ultra-mode" value="hidden" /> Masqu&eacute; (bascule)
+      </label>
+      <label class="user-setting-radio" data-val="visible">
+        <input type="radio" name="ultra-mode" value="visible" /> Visible
+      </label>
+      <label class="user-setting-radio" data-val="off">
+        <input type="radio" name="ultra-mode" value="off" /> D&eacute;sactiv&eacute;
+      </label>
+    </div>
+
+    <div class="profil-setting-label">Irr&eacute;aliste</div>
+    <div class="user-setting-options" id="irrealiste-mode-options">
+      <label class="user-setting-radio" data-val="hidden">
+        <input type="radio" name="irrealiste-mode" value="hidden" /> Masqu&eacute; (bascule)
+      </label>
+      <label class="user-setting-radio" data-val="visible">
+        <input type="radio" name="irrealiste-mode" value="visible" /> Visible
+      </label>
+      <label class="user-setting-radio" data-val="off">
+        <input type="radio" name="irrealiste-mode" value="off" /> D&eacute;sactiv&eacute;
+      </label>
+    </div>
+
+    <div class="profil-setting-label">Filtrage des tags</div>
+    <div class="user-setting-options" id="tag-logic-options">
+      <label class="user-setting-radio" data-val="and">
+        <input type="radio" name="tag-logic" value="and" /> ET &mdash; tous les tags
+      </label>
+      <label class="user-setting-radio" data-val="or">
+        <input type="radio" name="tag-logic" value="or" /> OU &mdash; au moins un
+      </label>
+    </div>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  // ── Ultra / Irréaliste (sauvegarde serveur) ───────────────────────────────
+  function savePref(field, value) {
+    var body = {};
+    body[field] = value;
+    fetch("/favoris/parametres", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(function () {});
+  }
+
+  function wireServerRadio(containerId, field, initial) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
+    var current = initial;
+    function sync() {
+      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
+    }
+    sync();
+    labels.forEach(function (lbl) {
+      var radio = lbl.querySelector("input");
+      if (radio.value === current) radio.checked = true;
+      radio.addEventListener("change", function () {
+        if (!radio.checked) return;
+        current = radio.value;
+        sync();
+        savePref(field, current);
+      });
+    });
+  }
+
+  wireServerRadio("ultra-mode-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
+  wireServerRadio("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
+
+  // ── Filtrage des tags (localStorage) ─────────────────────────────────────
+  function wireLocalRadio(containerId, lsKey, defaultVal) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
+    var current = localStorage.getItem(lsKey) || defaultVal;
+    function sync() {
+      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
+    }
+    sync();
+    labels.forEach(function (lbl) {
+      var radio = lbl.querySelector("input");
+      if (radio.value === current) radio.checked = true;
+      radio.addEventListener("change", function () {
+        if (!radio.checked) return;
+        current = radio.value;
+        sync();
+        localStorage.setItem(lsKey, current);
+      });
+    });
+  }
+
+  wireLocalRadio("tag-logic-options", "wiki-tag-logic", "and");
+})();
+</script>
+
+<%- include('partials/foot') %>

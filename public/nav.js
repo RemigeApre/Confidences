@@ -419,6 +419,31 @@ window.buildTagBadgeHTML = function (tag) {
   });
 })();
 
+// ── Bouton "ULTRA" du volet profil (partials/profil-nav.ejs) ────────────────
+// Présent sur /favoris, /favoris/parametres et /favoris/identite. Cette IIFE
+// ne gère que l'état visuel du bouton lui-même (partagé par les 3 pages) ;
+// le masquage effectif des cartes Ultra ne concerne que /favoris, qui
+// écoute l'évènement "profil-ultra-toggle-change" pour réagir sans dupliquer
+// cette logique ici.
+(function () {
+  var btn = document.getElementById("profil-ultra-toggle");
+  if (!btn) return;
+  var KEY = "profil-hide-ultra";
+  function sync() {
+    var on = localStorage.getItem(KEY) === "1";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.title = on ? "Afficher les contenus Ultra" : "Masquer les contenus Ultra";
+    btn.setAttribute("aria-label", btn.title);
+  }
+  sync();
+  btn.addEventListener("click", function () {
+    var on = localStorage.getItem(KEY) === "1";
+    localStorage.setItem(KEY, on ? "0" : "1");
+    sync();
+    document.dispatchEvent(new CustomEvent("profil-ultra-toggle-change"));
+  });
+})();
+
 // ── Mode discret (masquer les images) ───────────────────────────────────────
 // La classe est déjà posée au chargement par partials/head.ejs (évite le
 // flash) ; ici on ne fait que synchroniser les boutons et gérer le clic.

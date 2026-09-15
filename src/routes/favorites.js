@@ -41,10 +41,18 @@ function parseBirthYear(raw) {
   return n;
 }
 
+// Teinte du volet de navigation profil, selon le rôle du compte (même
+// couleurs que l'icône clé du header : admin violet, test orange, sinon bleu).
+function roleHue(user) {
+  if (user.isAdmin) return 262;
+  if (user.isTest) return 32;
+  return 217;
+}
+
 function buildFavoritesRouter(config) {
   const router = express.Router();
 
-  function renderProfile(res, req, extra) {
+  function renderFavoris(res, req) {
     const rows = listFavoriteRows(req.user.id);
     const wikiPages = [];
     const galleryImages = [];
@@ -64,8 +72,6 @@ function buildFavoritesRouter(config) {
     const fantasyPages = wikiPages.filter((p) =>
       p.category === "fantasmes" || (p.extraCategories || []).includes("fantasmes")
     );
-    const user = getUserById(req.user.id);
-    const connectionLogs = listConnectionLogsForUser(req.user.id, 20);
     res.render("favoris", {
       config,
       wikiPages,
@@ -73,19 +79,36 @@ function buildFavoritesRouter(config) {
       bdBooks,
       fantasyPages,
       categories: WIKI_CATEGORIES,
+      roleHue: roleHue(req.user),
+    });
+  }
+
+  function renderIdentite(res, req, extra) {
+    const user = getUserById(req.user.id);
+    const connectionLogs = listConnectionLogsForUser(req.user.id, 20);
+    res.render("profil-identite", {
+      config,
       user,
       connectionLogs,
+      roleHue: roleHue(req.user),
       error: null,
       notice: null,
-      openIdentite: false,
       ...extra,
     });
   }
 
   router.get("/", requireUser, (req, res) => {
+    renderFavoris(res, req);
+  });
+
+  router.get("/parametres", requireUser, (req, res) => {
+    res.render("profil-parametres", { config, roleHue: roleHue(req.user) });
+  });
+
+  router.get("/identite", requireUser, (req, res) => {
     const notice = req.query.ok ? "Modifications enregistrées." : null;
     const error = req.query.err ? decodeURIComponent(req.query.err) : null;
-    renderProfile(res, req, { notice, error });
+    renderIdentite(res, req, { notice, error });
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
@@ -96,10 +119,10 @@ function buildFavoritesRouter(config) {
 
   router.post("/identite", requireUser, (req, res) => {
     const displayName = String(req.body.display_name || "").trim();
-    if (!displayName) return renderProfile(res, req, { error: "Le pseudo est obligatoire.", openIdentite: true });
+    if (!displayName) return renderIdentite(res, req, { error: "Le pseudo est obligatoire." });
 
     const email = String(req.body.email || "").trim().slice(0, 254);
-    if (email && !email.includes("@")) return renderProfile(res, req, { error: "Adresse mail invalide.", openIdentite: true });
+    if (email && !email.includes("@")) return renderIdentite(res, req, { error: "Adresse mail invalide." });
 
     const sexeRaw = String(req.body.sexe || "");
     const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";
@@ -108,7 +131,7 @@ function buildFavoritesRouter(config) {
 
     updateOwnProfile(req.user.id, { displayName, email, sexe, birthYear });
     updateUserSettings(req.user.id, { orientation });
-    res.redirect("/favoris?ok=1");
+    res.redirect("/favoris/identite?ok=1");
   });
 
   router.post("/mot-de-passe", requireUser, (req, res) => {
@@ -116,13 +139,13 @@ function buildFavoritesRouter(config) {
     const next = String(req.body.new_password || "");
     const creds = getUserCredentials(req.user.username);
     if (!creds || !verifyPassword(current, creds.password_hash)) {
-      return renderProfile(res, req, { error: "Mot de passe actuel incorrect.", openIdentite: true });
+      return renderIdentite(res, req, { error: "Mot de passe actuel incorrect." });
     }
     if (next.length < 4) {
-      return renderProfile(res, req, { error: "Nouveau mot de passe trop court.", openIdentite: true });
+      return renderIdentite(res, req, { error: "Nouveau mot de passe trop court." });
     }
     updateUserPassword(req.user.id, hashPassword(next));
-    res.redirect("/favoris?ok=1");
+    res.redirect("/favoris/identite?ok=1");
   });
 
   router.get("/notes/images", requireUser, (req, res) => {
