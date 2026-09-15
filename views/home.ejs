@@ -2,92 +2,69 @@
 <main class="container wide">
   <%- include('partials/top-nav', { config: config }) %>
 
-  <div class="home-intro">
-
-    <p class="home-intro-lead">Avant d&rsquo;entrer dans <em>Confidences</em>, il faut poser une distinction essentielle&nbsp;: un fantasme n&rsquo;est ni une intention, ni un consentement futur, ni une opinion morale. Nous vous proposons de penser vos fantasmes selon quatre grandes cat&eacute;gories.</p>
-
-    <div class="home-cats">
-
-      <div class="home-cat home-cat--i">
-        <div class="home-cat-header">
-          <span class="home-cat-num">I</span>
-          <span class="home-cat-subtitle">Le possible et le consenti</span>
-        </div>
-        <p class="home-cat-body">Les fantasmes que vous aimez, que vous avez d&eacute;j&agrave; pratiqu&eacute;s ou que vous pourriez souhaiter pratiquer. Ils appartiennent au domaine du possible, du consenti et du r&eacute;alisable.</p>
-      </div>
-
-      <div class="home-cat home-cat--ii">
-        <div class="home-cat-header">
-          <span class="home-cat-num">II</span>
-          <span class="home-cat-subtitle">L&rsquo;imaginaire pr&eacute;f&eacute;r&eacute;</span>
-        </div>
-        <p class="home-cat-body">Les fantasmes que vous pr&eacute;f&eacute;rez conserver dans l&rsquo;imaginaire. Vous pouvez les appr&eacute;cier, les explorer ou les comprendre sans souhaiter les r&eacute;aliser. Certains peuvent &ecirc;tre simplement incompatibles avec vos envies r&eacute;elles&nbsp;; d&rsquo;autres peuvent &ecirc;tre dangereux, immoraux ou interdits par la loi. Fantasmer n&rsquo;oblige jamais &agrave; agir.</p>
-      </div>
-
-      <div class="home-cat home-cat--iii">
-        <div class="home-cat-header">
-          <span class="home-cat-num">III</span>
-          <span class="home-cat-subtitle">L&rsquo;impossible</span>
-        </div>
-        <p class="home-cat-body">Ils rel&egrave;vent de la fiction, de la magie, de cr&eacute;atures, de transformations ou de situations qui ne peuvent pas exister dans la r&eacute;alit&eacute;. Ils appartiennent pleinement &agrave; l&rsquo;imaginaire.</p>
-      </div>
-
-      <div class="home-cat home-cat--iv">
-        <div class="home-cat-header">
-          <span class="home-cat-num">IV</span>
-          <span class="home-cat-subtitle">Ce qui ne vous attire pas</span>
-        </div>
-        <p class="home-cat-body">Certaines pratiques, situations ou fantasmes peuvent vous laisser indiff&eacute;rent ou vous d&eacute;go&ucirc;ter. Les conna&icirc;tre ou les explorer intellectuellement ne signifie pas les d&eacute;sirer.</p>
-      </div>
-
-    </div>
-
-    <p class="home-cta">Si cette architecture vous convient, vous &ecirc;tes au bon endroit pour explorer.</p>
-
-    <div class="home-about">
-      <p><em>Confidences</em> propose un codex consacr&eacute; aux pratiques, fantasmes, lieux, objets, partenaires et imaginaires li&eacute;s &agrave; la sexualit&eacute;. Nous expliquons leur existence, leur histoire, leurs variantes et, lorsque c&rsquo;est utile, les raisons pour lesquelles certaines personnes peuvent les trouver attirants.</p>
-      <p>Lorsque des pratiques pr&eacute;sentent des risques pour la sant&eacute;, des enjeux de consentement ou des interdictions l&eacute;gales, ceux-ci sont signal&eacute;s clairement.</p>
-      <p>Les utilisateurs majeurs disposant d&rsquo;un compte peuvent &eacute;galement acc&eacute;der aux illustrations et &agrave; la galerie de dessins associ&eacute;es au codex.</p>
-      <p>Les quiz permettent enfin d&rsquo;explorer vos propres envies, limites, curiosit&eacute;s et pratiques. Ils sont con&ccedil;us pour rester courts et pr&eacute;cis, et peuvent &ecirc;tre refaits r&eacute;guli&egrave;rement&nbsp;: les fantasmes comme les d&eacute;sirs peuvent &eacute;voluer avec le temps.</p>
-    </div>
-
-  </div>
-
-  <div class="home-shortcuts">
-    <a href="/wiki" class="home-shortcut">Codex</a>
-    <% if (currentUser) { %><a href="/liens" class="home-shortcut">Liens</a><% } %>
-  </div>
-
-  <% if (currentUser && featuredPages && featuredPages.length) { %>
-  <section class="home-featured">
-    <h2 class="home-featured-heading">Ce qui pourrait t&apos;int&eacute;resser</h2>
-    <div class="home-featured-strip">
-      <% featuredPages.forEach(function (p) { %>
-        <a href="/wiki/<%= p.id %>" class="home-featured-card">
-          <% if (p.imagePaths && p.imagePaths.length) { %>
-            <div class="home-featured-img-wrap">
-              <img src="<%= thumbUrl(p.imagePaths[0]) %>" alt="" class="home-featured-img" loading="lazy" />
-            </div>
-          <% } else { %>
-            <div class="home-featured-img-wrap home-featured-img-placeholder"></div>
-          <% } %>
-          <span class="home-featured-title"><%= p.title %></span>
-        </a>
-      <% }) %>
-    </div>
+  <section class="home-hero">
+    <h1 class="home-hero-title">Explorer et d&eacute;couvrir</h1>
+    <div class="home-hero-rule"></div>
   </section>
-  <% } %>
 
-  <% if (currentUser) { %>
-  <div class="section-cards">
-    <% config.sections.forEach(function (s, i) { %>
-      <a class="section-card" href="/section/<%= i %>" style="--card-color: <%= s.color || 'var(--accent)' %>">
-        <span class="section-card-number"><%= i + 1 %></span>
-        <span class="section-card-title"><%= s.title %></span>
-      </a>
-    <% }) %>
+  <section class="home-carousel" aria-roledescription="carrousel" aria-label="Les quatre cat&eacute;gories de fantasmes">
+    <button type="button" class="home-carousel-arrow home-carousel-arrow--prev" id="home-carousel-prev" aria-label="Cat&eacute;gories pr&eacute;c&eacute;dentes">&#10094;</button>
+
+    <div class="home-carousel-viewport">
+      <div class="home-carousel-track" id="home-carousel-track">
+
+        <div class="home-carousel-page">
+          <div class="home-cat home-cat--i">
+            <div class="home-cat-header">
+              <span class="home-cat-num">I</span>
+              <span class="home-cat-subtitle">Le possible et le consenti</span>
+            </div>
+            <p class="home-cat-body">Les fantasmes que vous aimez, que vous avez d&eacute;j&agrave; pratiqu&eacute;s ou que vous pourriez souhaiter pratiquer. Ils appartiennent au domaine du possible, du consenti et du r&eacute;alisable.</p>
+          </div>
+          <div class="home-cat home-cat--ii">
+            <div class="home-cat-header">
+              <span class="home-cat-num">II</span>
+              <span class="home-cat-subtitle">L&rsquo;imaginaire pr&eacute;f&eacute;r&eacute;</span>
+            </div>
+            <p class="home-cat-body">Les fantasmes que vous pr&eacute;f&eacute;rez conserver dans l&rsquo;imaginaire. Vous pouvez les appr&eacute;cier, les explorer ou les comprendre sans souhaiter les r&eacute;aliser. Certains peuvent &ecirc;tre simplement incompatibles avec vos envies r&eacute;elles&nbsp;; d&rsquo;autres peuvent &ecirc;tre dangereux, immoraux ou interdits par la loi. Fantasmer n&rsquo;oblige jamais &agrave; agir.</p>
+          </div>
+        </div>
+
+        <div class="home-carousel-page">
+          <div class="home-cat home-cat--iii">
+            <div class="home-cat-header">
+              <span class="home-cat-num">III</span>
+              <span class="home-cat-subtitle">L&rsquo;impossible</span>
+            </div>
+            <p class="home-cat-body">Ils rel&egrave;vent de la fiction, de la magie, de cr&eacute;atures, de transformations ou de situations qui ne peuvent pas exister dans la r&eacute;alit&eacute;. Ils appartiennent pleinement &agrave; l&rsquo;imaginaire.</p>
+          </div>
+          <div class="home-cat home-cat--iv">
+            <div class="home-cat-header">
+              <span class="home-cat-num">IV</span>
+              <span class="home-cat-subtitle">Ce qui ne vous attire pas</span>
+            </div>
+            <p class="home-cat-body">Certaines pratiques, situations ou fantasmes peuvent vous laisser indiff&eacute;rent ou vous d&eacute;go&ucirc;ter. Les conna&icirc;tre ou les explorer intellectuellement ne signifie pas les d&eacute;sirer.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <button type="button" class="home-carousel-arrow home-carousel-arrow--next" id="home-carousel-next" aria-label="Cat&eacute;gories suivantes">&#10095;</button>
+  </section>
+
+  <div class="home-carousel-dots" id="home-carousel-dots">
+    <button type="button" class="home-carousel-dot active" aria-label="Cat&eacute;gories I et II"></button>
+    <button type="button" class="home-carousel-dot" aria-label="Cat&eacute;gories III et IV"></button>
   </div>
-  <% } %>
+  <!-- Les points restent hors de la balise section (largeur pleine, centrés
+       indépendamment des flèches) : voir .home-carousel-dots en CSS. -->
+
+  <section class="home-actions">
+    <a href="/wiki" class="home-action home-action--wiki">Codex</a>
+    <a href="/section/<%= quizIdx %>" class="home-action home-action--quizz">Quizz</a>
+    <a href="/galerie" class="home-action home-action--galerie">Galerie</a>
+  </section>
 </main>
 
 <% if (currentUser) { %>

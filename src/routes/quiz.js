@@ -4,7 +4,6 @@ const {
   insertSubmission,
   getAttempt,
   saveAttempt,
-  listFeaturedWikiPages,
   getLinkedQuestionIds,
 } = require("../db");
 const csvLog = require("../csvLog");
@@ -123,8 +122,13 @@ function buildQuizRouter(config) {
 
   router.get("/", (req, res) => {
     if (!req.user) return res.redirect("/wiki");
-    const featuredPages = listFeaturedWikiPages();
-    res.render("home", { config, featuredPages });
+    // Bouton "Quizz" de l'accueil : reprend là où le profil s'était arrêté
+    // plutôt que de toujours renvoyer à la première section.
+    const attempt = getAttempt(tokenForUser(req.user));
+    const quizIdx = attempt
+      ? Math.min(Math.max(attempt.nextSection, 0), config.sections.length - 1)
+      : 0;
+    res.render("home", { config, quizIdx });
   });
 
   router.get("/section/:idx", requireUser, (req, res) => {
