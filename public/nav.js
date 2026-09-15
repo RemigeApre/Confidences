@@ -334,16 +334,17 @@ window.buildTagBadgeHTML = function (tag) {
     });
   }
 
-  // "Masquer le tag" : ajoute currentTag à la blacklist personnelle (voir
-  // /tags/masques). Une fois masqué, seule la page /tags/masques permet de
-  // le retirer (bouton désactivé ici, pas de bascule).
+  // "Masquer le tag" : ajoute/retire currentTag de la blacklist personnelle
+  // (voir /tags/masques). Bascule tant que la popup reste ouverte — un clic
+  // accidentel se corrige d'un second clic sans avoir à aller sur la page
+  // dédiée ; l'effet ne se voit sur les autres champs de tags qu'à la
+  // fermeture (voir close()).
   function syncBlacklistBtn() {
     if (!blacklistBtn) return;
     if (!window.IS_LOGGED_IN) { blacklistBtn.hidden = true; return; }
     blacklistBtn.hidden = false;
     var isBlacklisted = (window.TAG_BLACKLIST || []).indexOf(currentTag) !== -1;
-    blacklistBtn.disabled = isBlacklisted;
-    blacklistBtn.textContent = isBlacklisted ? "Tag déjà masqué" : "Masquer le tag";
+    blacklistBtn.textContent = isBlacklisted ? "Ne plus masquer" : "Masquer le tag";
   }
 
   function open(tag) {
@@ -404,8 +405,10 @@ window.buildTagBadgeHTML = function (tag) {
   if (blacklistBtn) {
     blacklistBtn.addEventListener("click", function () {
       if (!currentTag || blacklistBtn.disabled) return;
+      var wasBlacklisted = (window.TAG_BLACKLIST || []).indexOf(currentTag) !== -1;
+      blacklistBtn.disabled = true; // évite un double-clic pendant l'aller-retour réseau
       fetch("/api/tags/blacklist", {
-        method: "POST",
+        method: wasBlacklisted ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tag: currentTag }),
       })
@@ -413,11 +416,19 @@ window.buildTagBadgeHTML = function (tag) {
         .then(function (d) {
           if (!d.ok) return;
           if (!window.TAG_BLACKLIST) window.TAG_BLACKLIST = [];
-          if (window.TAG_BLACKLIST.indexOf(currentTag) === -1) window.TAG_BLACKLIST.push(currentTag);
+          var idx = window.TAG_BLACKLIST.indexOf(currentTag);
+          if (wasBlacklisted) {
+            if (idx !== -1) window.TAG_BLACKLIST.splice(idx, 1);
+          } else if (idx === -1) {
+            window.TAG_BLACKLIST.push(currentTag);
+          }
           blacklistChangedSinceOpen = true;
-          syncBlacklistBtn();
         })
-        .catch(function () {});
+        .catch(function () {})
+        .then(function () {
+          blacklistBtn.disabled = false;
+          syncBlacklistBtn();
+        });
     });
   }
 

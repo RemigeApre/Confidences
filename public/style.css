@@ -1738,6 +1738,25 @@ input[type="text"], input[type="password"] {
   color: #fff;
 }
 
+/* ── "Explorer l'inconnu" : juste sous réinitialiser, distinct (accent
+   plutôt que rouge) puisque ce n'est pas une action destructive ── */
+.wiki-explore-btn {
+  margin-top: 0.5rem;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.wiki-explore-btn:hover {
+  background: #4a3fb8;
+  border-color: #4a3fb8;
+  color: #fff;
+}
+.wiki-explore-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ── Popup avertissement quizz ──────────────────────────────── */
 .quiz-warning-overlay {
   position: fixed;
@@ -2698,6 +2717,52 @@ input[type="text"], input[type="password"] {
 @media (max-width: 640px) {
   .wiki-detail-banner-title { font-size: 1.15rem; }
 }
+
+/* ── Bandeau "Explorer l'inconnu" (mode exploration, ?explore=1) ─────
+   Distinct du bandeau de catégorie ci-dessus (teinte accent plutôt que
+   --ch-hue) pour bien signaler qu'on n'est plus dans une navigation
+   normale. */
+.wiki-explore-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.55rem 1rem;
+  margin: 0 -1.25rem;
+  background: color-mix(in srgb, var(--accent) 25%, var(--bg));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  font-size: 0.82rem;
+}
+.wiki-explore-banner-label {
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+.wiki-explore-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+.wiki-explore-nav-btn {
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wiki-explore-nav-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.22); }
+.wiki-explore-nav-btn:disabled { opacity: 0.4; cursor: default; }
+.wiki-explore-banner-close {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+}
+.wiki-explore-banner-close:hover { color: #fff; }
 
 /* ── Note : grosse, centrée, fonctionnelle, juste au-dessus de l'image ── */
 .wiki-detail-rating {

@@ -33,10 +33,12 @@ const {
   insertGalleryImage,
   updateGalleryImage,
   listGalleryImages,
+  listUnexploredWikiPages,
+  listBlacklistedTags,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
-const { filterOff, isOffForUser } = require("../specialContent");
+const { filterOff, isOffForUser, specialTagOf } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",   label: "Positions",   desc: "Postures, Kama-sutra et toutes leurs variantes.",                               hue: 270 },
@@ -627,6 +629,32 @@ function buildWikiRouter(config) {
     res.json(results.map((p) => ({ id: p.id, title: p.title, category: p.category })));
   });
 
+  // ── "Explorer l'inconnu" : pioche une page jamais notée ni en favori ────
+  // (voir wiki-index.ejs/wiki.ejs, le bouton, et wiki-detail.ejs, le bandeau
+  // Précédent/Suivant). L'historique de navigation entre pioches successives
+  // vit côté client (sessionStorage) : ici on ne fait que piocher, en
+  // excluant les ids déjà vus (exclude) pour ne pas repasser deux fois par
+  // la même page dans une session d'exploration.
+  router.get("/explorer/aleatoire", requireUser, (req, res) => {
+    const excludeIds = new Set(
+      String(req.query.exclude || "").split(",").map(Number).filter(Number.isInteger)
+    );
+    const hideUltra = req.query.hideUltra === "1";
+    const hideIrrealiste = req.query.hideIrrealiste === "1";
+    const blacklist = new Set(listBlacklistedTags(req.user.id).map((r) => r.tag));
+    const candidates = listUnexploredWikiPages(req.user.id).filter((p) => {
+      if (excludeIds.has(p.id)) return false;
+      if (p.tags.some((t) => blacklist.has(String(t).toLowerCase()))) return false;
+      const special = specialTagOf(p.tags);
+      if (special === "ultra" && hideUltra) return false;
+      if (special === "irrealiste" && hideIrrealiste) return false;
+      return true;
+    });
+    if (!candidates.length) return res.json({ id: null });
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    res.json({ id: pick.id });
+  });
+
   router.get("/ajouter", requireUser, (req, res) => {
     const preCategory = String(req.query.category || "");
     const preTitle    = String(req.query.title    || "");
@@ -672,7 +700,8 @@ function buildWikiRouter(config) {
     // decouvre le <img> en parsant le corps de la page.
     const heroImg = (page.imagePaths && page.imagePaths.length && req.user)
       ? res.locals.thumbUrl(page.imagePaths[0]) : null;
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ...CTX });
+    const exploreMode = req.query.explore === "1";
+    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, exploreMode, ...CTX });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {

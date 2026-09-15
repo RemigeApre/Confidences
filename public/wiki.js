@@ -4773,4 +4773,102 @@
     });
   })();
 
+  // ── "Explorer l'inconnu" : page codex aléatoire jamais notée ni en
+  // favori, avec petit historique de session pour Précédent/Suivant.
+  // Bouton dans le volet filtre (wiki.ejs/wiki-index.ejs) et bandeau sur la
+  // fiche (wiki-detail.ejs, ?explore=1) — réutilise hideUltra/hideIrrealiste
+  // du reste du fichier pour piocher parmi ce que l'utilisateur voit déjà.
+  (function () {
+    var exploreBtn = document.getElementById("wiki-explore-btn");
+    var banner     = document.getElementById("wiki-explore-banner");
+    if (!exploreBtn && !banner) return;
+
+    var HKEY = "wiki-explore-history";
+    var PKEY = "wiki-explore-pos";
+
+    function getHistory() {
+      try { return JSON.parse(sessionStorage.getItem(HKEY) || "[]"); } catch (_) { return []; }
+    }
+    function getPos() { return Number(sessionStorage.getItem(PKEY) || "0"); }
+    function saveState(history, pos) {
+      sessionStorage.setItem(HKEY, JSON.stringify(history));
+      sessionStorage.setItem(PKEY, String(pos));
+    }
+    function fetchRandom(excludeIds, cb) {
+      var params = new URLSearchParams();
+      if (excludeIds.length) params.set("exclude", excludeIds.join(","));
+      if (hideUltra) params.set("hideUltra", "1");
+      if (hideIrrealiste) params.set("hideIrrealiste", "1");
+      fetch("/wiki/explorer/aleatoire?" + params.toString())
+        .then(function (r) { return r.json(); })
+        .then(function (d) { cb(d.id || null); })
+        .catch(function () { cb(null); });
+    }
+    function goTo(id) { window.location.href = "/wiki/" + id + "?explore=1"; }
+
+    // Bouton du volet filtre : démarre une nouvelle session d'exploration.
+    if (exploreBtn) {
+      exploreBtn.addEventListener("click", function () {
+        exploreBtn.disabled = true;
+        fetchRandom([], function (id) {
+          if (!id) {
+            exploreBtn.textContent = "Tout est déjà exploré !";
+            return;
+          }
+          saveState([id], 0);
+          goTo(id);
+        });
+      });
+    }
+
+    // Bandeau de la fiche : Précédent/Suivant dans l'historique de session.
+    if (banner) {
+      var currentId = Number(banner.dataset.pageId);
+      var prevBtn = document.getElementById("wiki-explore-prev");
+      var nextBtn = document.getElementById("wiki-explore-next");
+      var history = getHistory();
+      var pos = getPos();
+
+      // Arrivée sur une page en mode exploration sans historique cohérent
+      // (lien partagé, rechargement après un long moment...) : on démarre
+      // un historique à une page plutôt que de planter le bandeau.
+      if (!history.length || history[pos] !== currentId) {
+        history = [currentId];
+        pos = 0;
+        saveState(history, pos);
+      }
+
+      if (prevBtn) {
+        prevBtn.disabled = pos <= 0;
+        prevBtn.addEventListener("click", function () {
+          if (pos <= 0) return;
+          pos -= 1;
+          saveState(history, pos);
+          goTo(history[pos]);
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener("click", function () {
+          if (pos < history.length - 1) {
+            pos += 1;
+            saveState(history, pos);
+            goTo(history[pos]);
+            return;
+          }
+          nextBtn.disabled = true;
+          fetchRandom(history, function (id) {
+            if (!id) {
+              nextBtn.textContent = "Tout est exploré !";
+              return;
+            }
+            history.push(id);
+            pos = history.length - 1;
+            saveState(history, pos);
+            goTo(id);
+          });
+        });
+      }
+    }
+  })();
+
 })();

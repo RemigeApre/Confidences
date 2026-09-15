@@ -845,6 +845,28 @@ function listWikiPages() {
   return rows.map(rowToWikiPage);
 }
 
+// Pool de pages codex "encore à explorer" pour un profil : jamais notées
+// (content_reactions.rating > 0) ni mises en favori. Utilisé par le bouton
+// "Explorer l'inconnu" (voir routes/wiki.js) — le filtrage ultra/irréaliste
+// (specialTagOf) et blacklist se fait ensuite côté route.
+function listUnexploredWikiPages(userId) {
+  return db.prepare(
+    `SELECT wp.id, wp.tags FROM wiki_pages wp
+     WHERE NOT EXISTS (
+       SELECT 1 FROM content_reactions cr
+       WHERE cr.user_id = ? AND cr.item_type = 'wiki' AND cr.item_id = wp.id AND cr.rating > 0
+     )
+     AND NOT EXISTS (
+       SELECT 1 FROM favorites f
+       WHERE f.user_id = ? AND f.item_type = 'wiki' AND f.item_id = wp.id
+     )`
+  ).all(userId, userId).map(function(r) {
+    let tags = [];
+    try { tags = JSON.parse(r.tags || "[]"); } catch (_) {}
+    return { id: r.id, tags: tags };
+  });
+}
+
 function getWikiPage(id) {
   const row = db.prepare("SELECT * FROM wiki_pages WHERE id = ?").get(id);
   if (!row) return null;
@@ -1534,6 +1556,7 @@ module.exports = {
   listBlacklistedTags,
   addBlacklistedTag,
   removeBlacklistedTag,
+  listUnexploredWikiPages,
   setGalleryImageFeatured,
   logGalleryView,
   logBdView,
