@@ -7006,15 +7006,25 @@ a.wiki-ql-label:hover .wiki-ql-text {
     font-family: Georgia, "Times New Roman", serif;
     font-weight: 700;
     font-style: italic;
-    font-size: 1.2rem;
+    font-size: 1.75rem;
     letter-spacing: 0.03em;
     color: var(--fg);
     text-decoration: none;
     padding: 0 1.75rem;
-    transition: color 0.15s;
+    transition: color 0.15s, text-shadow 0.15s, transform 0.15s;
     white-space: nowrap;
+    text-shadow: none;
   }
-  .pc-nav-brand-link:hover { color: var(--wiki-gold); }
+  .pc-nav-brand-link:hover {
+    color: var(--wiki-gold);
+    transform: translateY(-1px);
+    /* "Relief" : reflet clair au-dessus, ombre portée en dessous. */
+    text-shadow:
+      0 1px 0 rgba(255,255,255,0.18),
+      0 2px 1px rgba(255,255,255,0.08),
+      0 3px 6px rgba(0,0,0,0.5),
+      0 -1px 0 rgba(0,0,0,0.35);
+  }
 
   /* Colonne droite : liens vers la droite, poussés vers le centre */
   .pc-nav-right {
@@ -7035,7 +7045,7 @@ a.wiki-ql-label:hover .wiki-ql-text {
     color: var(--fg);
     text-decoration: none;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 700;
     white-space: nowrap;
     transition: background 0.15s, color 0.15s;
   }
@@ -7043,6 +7053,18 @@ a.wiki-ql-label:hover .wiki-ql-text {
     background: var(--bg);
     color: var(--accent);
   }
+  /* Une couleur par page : au survol et quand la page est active. */
+  .pc-nav-link--wiki    { --nav-color: hsl(252, 70%, 70%); }
+  .pc-nav-link--galerie { --nav-color: hsl(28, 82%, 62%); }
+  .pc-nav-link--quizz   { --nav-color: hsl(175, 58%, 52%); }
+  .pc-nav-link--wiki:hover,
+  .pc-nav-link--galerie:hover,
+  .pc-nav-link--quizz:hover,
+  .pc-nav-link--active {
+    color: var(--nav-color);
+    background: var(--bg);
+  }
+  .pc-nav-link--active { box-shadow: inset 0 -2px 0 var(--nav-color); }
   .pc-nav-link-disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -7118,6 +7140,19 @@ a.wiki-ql-label:hover .wiki-ql-text {
     color: var(--accent);
   }
 
+  /* Dropdowns de pages (Wiki/Galerie/Quizz) : texte centré, précédé d'un "+".
+     Le menu profil (.pc-drop-right, ce sont des actions, pas des pages)
+     garde son alignement normal, sans "+". */
+  .pc-drop:not(.pc-drop-right) .pc-drop-link {
+    justify-content: center;
+    text-align: center;
+  }
+  .pc-drop:not(.pc-drop-right) .pc-drop-link::before {
+    content: "+";
+    color: var(--muted);
+    font-weight: 700;
+  }
+
   .pc-drop-dot {
     width: 0.5rem;
     height: 0.5rem;
@@ -7157,6 +7192,22 @@ a.wiki-ql-label:hover .wiki-ql-text {
     color: var(--accent);
   }
   .pc-svg-icon { width: 1.15rem; height: 1.15rem; }
+  /* Icônes du header en "gras" : trait plus épais. */
+  .pc-svg-icon path, .pc-svg-icon circle,
+  .eye-icon path, .eye-icon circle {
+    stroke-width: 2.3;
+  }
+
+  /* Icône clé : couleur selon le rôle du profil connecté. */
+  .pc-icon-btn.pc-key-admin, .pc-icon-btn.pc-key-admin:hover { color: #7c3aed; }
+  .pc-icon-btn.pc-key-test,  .pc-icon-btn.pc-key-test:hover  { color: #d97706; }
+  .pc-icon-btn.pc-key-user,  .pc-icon-btn.pc-key-user:hover  { color: #3b82f6; }
+
+  /* "?" jamais consulté : couleur or jusqu'au premier survol/clic (voir nav.js). */
+  html.consent-unseen .pc-consent-btn,
+  html.consent-unseen .pc-consent-btn:hover {
+    color: var(--wiki-gold);
+  }
 }
 
 /* ── Bulle consentement — desktop ───────────────────────────────────────── */

@@ -214,6 +214,25 @@
   });
 })();
 
+// ── Rappel de consentement "?" : couleur or tant qu'il n'a jamais été
+// survolé/ouvert, puis couleur normale pour toujours (par navigateur). ───────
+(function () {
+  var details = document.querySelector(".pc-consent-details");
+  if (!details) return;
+  try {
+    if (localStorage.getItem("lq-consent-seen") === "1") return;
+  } catch (_) { return; }
+
+  function markSeen() {
+    try { localStorage.setItem("lq-consent-seen", "1"); } catch (_) {}
+    document.documentElement.classList.remove("consent-unseen");
+    details.removeEventListener("mouseenter", markSeen);
+    details.removeEventListener("click", markSeen);
+  }
+  details.addEventListener("mouseenter", markSeen);
+  details.addEventListener("click", markSeen);
+})();
+
 // ── Chargement des images : toutes les <img> ont en permanence un fond
 // sombre + spinner (voir style.css), visible tant que l'image n'a pas fini
 // de se dessiner par-dessus — plus de flash blanc qui se remplit du haut

@@ -14,6 +14,9 @@
       if (localStorage.getItem("lq-discreet") === "1") {
         document.documentElement.classList.add("lq-discreet-mode");
       }
+      if (localStorage.getItem("lq-consent-seen") !== "1") {
+        document.documentElement.classList.add("consent-unseen");
+      }
     } catch (_) {}
   </script>
   <% if (locals.preloadImage) { %>
