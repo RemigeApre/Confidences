@@ -134,7 +134,7 @@
   }
 
   var LABELS = {
-    wiki:    "Wiki",
+    wiki:    "Codex",
     galerie: "Galerie",
     bd:      "BD",
     liens:   "Liens",
@@ -277,7 +277,7 @@ window.buildTagBadgeHTML = function (tag) {
     lqEscapeHtml(String(tag).toLowerCase().trim()) + '"' + style + '>' + lqEscapeHtml(tag) + "</span>";
   if (meta.wikiPageId) {
     html += '<a class="tag-badge-arrow" href="/wiki/' + meta.wikiPageId +
-      '" title="Voir la page wiki" aria-label="Voir la page wiki">&#8599;</a>';
+      '" title="Voir la page codex" aria-label="Voir la page codex">&#8599;</a>';
   }
   return html;
 };
@@ -340,7 +340,7 @@ window.buildTagBadgeHTML = function (tag) {
         if (!data.wiki || !data.wiki.length) {
           var empty = document.createElement("p");
           empty.className = "tag-popup-empty";
-          empty.textContent = "Aucune page wiki avec ce tag.";
+          empty.textContent = "Aucune page codex avec ce tag.";
           pagesEl.appendChild(empty);
         }
         if (data.galerie && data.galerie.length) {

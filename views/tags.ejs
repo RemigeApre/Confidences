@@ -67,7 +67,7 @@
         <span class="tags-item-right">
           <span class="tags-item-count"><%= item.count %></span>
           <% if (wikiId) { %>
-            <a href="/wiki/<%= wikiId %>" class="tags-item-wiki-link" title="Voir la page wiki" aria-label="Voir la page wiki">&#8599;</a>
+            <a href="/wiki/<%= wikiId %>" class="tags-item-wiki-link" title="Voir la page codex" aria-label="Voir la page codex">&#8599;</a>
           <% } %>
         </span>
       </div>
@@ -176,7 +176,7 @@
     var bk = {};
     try { bk = JSON.parse(item.dataset.breakdown || "{}"); } catch (_) {}
     var entries = [];
-    if (bk.wiki)    entries.push(["Wiki",    bk.wiki]);
+    if (bk.wiki)    entries.push(["Codex",   bk.wiki]);
     if (bk.galerie) entries.push(["Galerie", bk.galerie]);
     if (bk.bd)      entries.push(["BD",      bk.bd]);
     if (!entries.length) return;

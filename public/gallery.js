@@ -690,7 +690,7 @@
       lbLink.hidden = !wikiId;
       if (wikiId) {
         lbLink.href = "/wiki/" + wikiId;
-        lbLink.textContent = displayTitle ? "Wiki : " + displayTitle : "Voir la page wiki";
+        lbLink.textContent = displayTitle ? "Codex : " + displayTitle : "Voir la page codex";
       }
     }
 

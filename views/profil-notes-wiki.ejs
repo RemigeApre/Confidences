@@ -1,13 +1,13 @@
-<%- include('partials/head', { title: 'Pages wiki notées — ' + config.title }) %>
+<%- include('partials/head', { title: 'Pages codex notées — ' + config.title }) %>
 <main class="container wide gallery-has-sidebar">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Wiki noté', navBack: '/favoris' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: 'Codex noté', navBack: '/favoris' }) %>
 
   <%# ─── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
   <aside class="wiki-cat-sidebar gallery-sidebar">
     <div class="wiki-chapter-hero" style="--ch-hue: 330">
       <div class="wiki-chapter-hero-top">
         <span></span>
-        <h1 class="wiki-chapter-hero-title">Pages wiki not&eacute;es</h1>
+        <h1 class="wiki-chapter-hero-title">Pages codex not&eacute;es</h1>
         <span class="wiki-chapter-hero-count" id="noteswiki-count-hero"><%= pages.length %></span>
       </div>
     </div>
@@ -55,7 +55,7 @@
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
   <div class="wiki-grid" id="noteswiki-grid">
     <% if (!pages.length) { %>
-      <p class="intro">Aucune page wiki not&eacute;e pour l&apos;instant.</p>
+      <p class="intro">Aucune page codex not&eacute;e pour l&apos;instant.</p>
     <% } %>
     <% pages.forEach(function(page) { %>
       <div data-item
