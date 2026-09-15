@@ -18,47 +18,51 @@
 
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
-          <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="notes-search" class="wiki-search-input" placeholder="Rechercher" autocomplete="off" />
+          <input type="search" id="notes-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
         </div>
       </div>
 
-      <%# Filtre type %>
-      <div class="wiki-filter-section">
-        <div class="links-filter" id="notes-ctype-filter">
-          <button type="button" class="tag-chip" data-ctype="image">Images</button>
-          <button type="button" class="tag-chip" data-ctype="bd">BD</button>
-        </div>
-      </div>
+      <details class="wiki-sidebar-filter-details" open>
+      <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+      <div class="wiki-sidebar-filters">
 
-      <%# Tags %>
-      <% if (allTags.length) { %>
-      <div class="wiki-filter-section">
-        <div class="wiki-tag-cloud" id="notes-tag-filter">
-          <% allTags.forEach(function(t) { %>
-            <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-              <span class="wtc-label"><%= t %></span>
-            </button>
-          <% }) %>
+        <%# Filtre type %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Type</span>
+          <div class="links-filter" id="notes-ctype-filter">
+            <button type="button" class="tag-chip" data-ctype="image">Images</button>
+            <button type="button" class="tag-chip" data-ctype="bd">BD</button>
+          </div>
         </div>
-      </div>
-      <% } %>
 
-      <div class="wiki-filter-section">
-        <button type="button" id="notes-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser</button>
+        <%# Tags %>
+        <% if (allTags.length) { %>
+        <div class="wiki-filter-section">
+          <input type="search" id="notes-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
+          <div class="wiki-tag-cloud" id="notes-tag-filter">
+            <% allTags.forEach(function(t) { %>
+              <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
+                <span class="wtc-label"><%= t %></span>
+              </button>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
       </div>
+      </details>
+
+      <button type="button" id="notes-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
 
     </div>
   </aside>
 
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
-  <% if (!items.length) { %>
-    <div class="profil-empty">
-      <div class="profil-empty-icon">&#10024;</div>
-      <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/galerie">Commence &agrave; explorer la galerie</a>.</p>
-    </div>
-  <% } else { %>
-  <div class="gallery-grid" id="notes-grid">
+  <div class="profil-empty" id="notes-empty"<%= items.length ? ' hidden' : '' %>>
+    <div class="profil-empty-icon">&#10024;</div>
+    <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/galerie">Commence &agrave; explorer la galerie</a>.</p>
+  </div>
+  <div class="gallery-grid" id="notes-grid"<%= items.length ? '' : ' hidden' %>>
     <% items.forEach(function(item) { %>
       <% var ctype = item.contentType || (item.type === 'bd' ? 'bd' : 'image'); %>
       <div class="gallery-card"
@@ -96,12 +100,13 @@
       </div>
     <% }) %>
   </div>
-  <% } %>
 
 </main>
 <script>
 (function() {
   var items = document.querySelectorAll('[data-item]');
+  var emptyEl = document.getElementById('notes-empty');
+  var gridEl = document.getElementById('notes-grid');
   var activeTags = [];
   var activeCtype = '';
   var search = '';
@@ -123,6 +128,8 @@
       if (matchesTags && matchesSearch && matchesCtype && matchesUltra) { show(el); visible++; }
       else { hide(el); }
     });
+    if (emptyEl) emptyEl.hidden = visible > 0;
+    if (gridEl) gridEl.hidden = visible === 0;
   }
 
   document.addEventListener('profil-ultra-toggle-change', function() {
@@ -165,6 +172,21 @@
     });
   }
 
+  var tagSearchInput = document.getElementById('notes-tag-search');
+  var tagSearchDebounceTimer = null;
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener('input', function() {
+      clearTimeout(tagSearchDebounceTimer);
+      tagSearchDebounceTimer = setTimeout(function() {
+        var q = tagSearchInput.value.trim().toLowerCase();
+        document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(chip) {
+          var tag = (chip.dataset.tag || '').toLowerCase();
+          chip.hidden = q.length > 0 && tag.indexOf(q) === -1;
+        });
+      }, 120);
+    });
+  }
+
   var resetBtn = document.getElementById('notes-reset-filters');
   if (resetBtn) {
     resetBtn.addEventListener('click', function() {
@@ -172,15 +194,16 @@
       activeCtype = '';
       search = '';
       if (searchInput) searchInput.value = '';
+      if (tagSearchInput) tagSearchInput.value = '';
       document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(c) {
-        c.classList.remove('active'); c.dataset.state = '0';
+        c.classList.remove('active'); c.dataset.state = '0'; c.hidden = false;
       });
       document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(b) { b.classList.remove('active'); });
       applyFilters();
     });
   }
 
-  if (hideUltra) applyFilters();
+  applyFilters();
 })();
 </script>
 <%- include('partials/foot') %>

@@ -18,65 +18,70 @@
 
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
-          <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="noteswiki-search" class="wiki-search-input" placeholder="Rechercher" autocomplete="off" />
+          <input type="search" id="noteswiki-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
         </div>
       </div>
 
-      <%# Filtre catégorie %>
-      <% if (categories && categories.length) { %>
-      <div class="wiki-filter-section">
-        <div class="links-filter" id="noteswiki-cat-filter">
-          <% categories.forEach(function(c) { %>
-            <button type="button" class="tag-chip" data-cat="<%= c.key %>"><%= c.label %></button>
-          <% }) %>
-        </div>
-      </div>
-      <% } %>
+      <details class="wiki-sidebar-filter-details" open>
+      <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+      <div class="wiki-sidebar-filters">
 
-      <%# Tags %>
-      <% if (allTags.length) { %>
-      <div class="wiki-filter-section">
-        <div class="wiki-tag-cloud" id="noteswiki-tag-filter">
-          <% allTags.forEach(function(t) { %>
-            <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-              <span class="wtc-label"><%= t %></span>
-            </button>
-          <% }) %>
+        <%# Filtre catégorie %>
+        <% if (categories && categories.length) { %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Cat&eacute;gorie</span>
+          <div class="links-filter" id="noteswiki-cat-filter">
+            <% categories.forEach(function(c) { %>
+              <button type="button" class="tag-chip" data-cat="<%= c.key %>"><%= c.label %></button>
+            <% }) %>
+          </div>
         </div>
-      </div>
-      <% } %>
+        <% } %>
 
-      <div class="wiki-filter-section">
-        <button type="button" id="noteswiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser</button>
+        <%# Tags %>
+        <% if (allTags.length) { %>
+        <div class="wiki-filter-section">
+          <input type="search" id="noteswiki-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
+          <div class="wiki-tag-cloud" id="noteswiki-tag-filter">
+            <% allTags.forEach(function(t) { %>
+              <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
+                <span class="wtc-label"><%= t %></span>
+              </button>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
       </div>
+      </details>
+
+      <button type="button" id="noteswiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
 
     </div>
   </aside>
 
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
-  <% if (!pages.length) { %>
-    <div class="profil-empty">
-      <div class="profil-empty-icon">&#10024;</div>
-      <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/wiki">Commence &agrave; explorer le codex</a>.</p>
-    </div>
-  <% } else { %>
-    <div class="wiki-grid" id="noteswiki-grid">
-      <% pages.forEach(function(page) { %>
-        <div data-item
-          data-tags="<%= (page.tags || []).join(',').toLowerCase() %>"
-          data-cat="<%= page.category || '' %>"
-          data-title="<%= (page.title || '').toLowerCase().replace(/"/g, '') %>">
-          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
-        </div>
-      <% }) %>
-    </div>
-  <% } %>
+  <div class="profil-empty" id="noteswiki-empty"<%= pages.length ? ' hidden' : '' %>>
+    <div class="profil-empty-icon">&#10024;</div>
+    <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/wiki">Commence &agrave; explorer le codex</a>.</p>
+  </div>
+  <div class="wiki-grid" id="noteswiki-grid"<%= pages.length ? '' : ' hidden' %>>
+    <% pages.forEach(function(page) { %>
+      <div data-item
+        data-tags="<%= (page.tags || []).join(',').toLowerCase() %>"
+        data-cat="<%= page.category || '' %>"
+        data-title="<%= (page.title || '').toLowerCase().replace(/"/g, '') %>">
+        <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+      </div>
+    <% }) %>
+  </div>
 
 </main>
 <script>
 (function() {
   var items = document.querySelectorAll('[data-item]');
+  var emptyEl = document.getElementById('noteswiki-empty');
+  var gridEl = document.getElementById('noteswiki-grid');
   var activeTags = [];
   var activeCat = '';
   var search = '';
@@ -98,6 +103,8 @@
       if (matchesTags && matchesSearch && matchesCat && matchesUltra) { show(el); visible++; }
       else { hide(el); }
     });
+    if (emptyEl) emptyEl.hidden = visible > 0;
+    if (gridEl) gridEl.hidden = visible === 0;
   }
 
   document.addEventListener('profil-ultra-toggle-change', function() {
@@ -140,6 +147,21 @@
     });
   }
 
+  var tagSearchInput = document.getElementById('noteswiki-tag-search');
+  var tagSearchDebounceTimer = null;
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener('input', function() {
+      clearTimeout(tagSearchDebounceTimer);
+      tagSearchDebounceTimer = setTimeout(function() {
+        var q = tagSearchInput.value.trim().toLowerCase();
+        document.querySelectorAll('#noteswiki-tag-filter .wiki-tag-chip').forEach(function(chip) {
+          var tag = (chip.dataset.tag || '').toLowerCase();
+          chip.hidden = q.length > 0 && tag.indexOf(q) === -1;
+        });
+      }, 120);
+    });
+  }
+
   var resetBtn = document.getElementById('noteswiki-reset-filters');
   if (resetBtn) {
     resetBtn.addEventListener('click', function() {
@@ -147,15 +169,16 @@
       activeCat = '';
       search = '';
       if (searchInput) searchInput.value = '';
+      if (tagSearchInput) tagSearchInput.value = '';
       document.querySelectorAll('#noteswiki-tag-filter .wiki-tag-chip').forEach(function(c) {
-        c.classList.remove('active'); c.dataset.state = '0';
+        c.classList.remove('active'); c.dataset.state = '0'; c.hidden = false;
       });
       document.querySelectorAll('#noteswiki-cat-filter .tag-chip').forEach(function(b) { b.classList.remove('active'); });
       applyFilters();
     });
   }
 
-  if (hideUltra) applyFilters();
+  applyFilters();
 })();
 </script>
 <%- include('partials/foot') %>

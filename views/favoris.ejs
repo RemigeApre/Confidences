@@ -6,16 +6,23 @@
 
   <%# ── Contenu principal : favoris ── %>
 
+  <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
+  <% var hasAnything = fantasyPages.length || nonFantasyPages.length || galleryImages.length || bdBooks.length; %>
+
+  <div id="profil-empty" class="profil-empty"<%= hasAnything ? ' hidden' : '' %>>
+    <div class="profil-empty-icon">&#10024;</div>
+    <p>Vous retrouverez ici ce que vous pr&eacute;f&eacute;rez.<br>Commencez &agrave; explorer le <a href="/wiki">codex</a>, la <a href="/galerie">galerie</a> ou les <a href="/bd">BD</a> pour ajouter des favoris.</p>
+  </div>
+
   <% if (fantasyPages.length) { %>
-    <h2 class="profil-section-title">Mes fantasmes (<%= fantasyPages.length %>)</h2>
-    <div class="wiki-grid">
+    <h2 class="profil-section-title" id="profil-fantasy-title">Mes fantasmes (<%= fantasyPages.length %>)</h2>
+    <div class="wiki-grid" id="profil-fantasy-grid">
       <% fantasyPages.forEach(function (page) { %>
         <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
       <% }) %>
     </div>
   <% } %>
 
-  <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
   <% if (nonFantasyPages.length) { %>
     <h2 class="profil-section-title profil-section-title--center" id="profil-pf-title"><%= nonFantasyPages.length > 1 ? 'Pages favorites' : 'Page favorite' %></h2>
     <div class="wiki-grid" id="profil-pf-grid">
@@ -26,8 +33,8 @@
   <% } %>
 
   <% if (galleryImages.length) { %>
-    <h2 class="profil-section-title">Images favorites (<%= galleryImages.length %>)</h2>
-    <div class="profil-fav-grid">
+    <h2 class="profil-section-title" id="profil-images-title">Images favorites (<%= galleryImages.length %>)</h2>
+    <div class="profil-fav-grid" id="profil-images-grid">
       <% galleryImages.forEach(function (img) { %>
         <a href="/galerie/<%= img.id %>/edit"
            class="profil-fav-card"
@@ -46,8 +53,8 @@
   <% } %>
 
   <% if (bdBooks.length) { %>
-    <h2 class="profil-section-title">BD favorites (<%= bdBooks.length %>)</h2>
-    <div class="profil-fav-grid">
+    <h2 class="profil-section-title" id="profil-bd-title">BD favorites (<%= bdBooks.length %>)</h2>
+    <div class="profil-fav-grid" id="profil-bd-grid">
       <% bdBooks.forEach(function (book) { %>
         <a href="/bd/<%= book.id %>"
            class="profil-fav-card"
@@ -62,13 +69,6 @@
           <button type="button" class="wiki-pl-remove" title="Retirer des favoris">&#215;</button>
         </a>
       <% }) %>
-    </div>
-  <% } %>
-
-  <% if (!fantasyPages.length && !nonFantasyPages.length && !galleryImages.length && !bdBooks.length) { %>
-    <div class="profil-empty">
-      <div class="profil-empty-icon">&#10024;</div>
-      <p>Vous retrouverez ici ce que vous pr&eacute;f&eacute;rez.<br>Commencez &agrave; explorer le <a href="/wiki">codex</a>, la <a href="/galerie">galerie</a> ou les <a href="/bd">BD</a> pour ajouter des favoris.</p>
     </div>
   <% } %>
 
@@ -95,25 +95,32 @@
 
   // ── Masquer les contenus Ultra (bouton dans partials/profil-nav.ejs, géré
   // pour son propre état par nav.js) : ici on ne réagit qu'au changement
-  // pour cacher/afficher les cartes de cette page.
+  // pour cacher/afficher les cartes de cette page. Une section entière
+  // disparaît si tout ce qu'elle contenait était de l'Ultra désormais masqué,
+  // et le message "rien à voir" apparaît si les 4 sections sont vides.
   var ultraCards = document.querySelectorAll('[data-ultra="1"]');
-  var pfTitle = document.getElementById("profil-pf-title");
-  var pfGrid  = document.getElementById("profil-pf-grid");
-
-  // "Pages favorites" : si tout ce qu'il en reste est masqué (Ultra),
-  // on fait comme s'il n'y en avait pas — section entière cachée.
-  function syncFavPages() {
-    if (!pfTitle || !pfGrid) return;
-    var visible = pfGrid.querySelectorAll(".wiki-card:not([hidden])").length;
-    pfTitle.hidden = visible === 0;
-    pfGrid.hidden = visible === 0;
-    if (visible > 0) pfTitle.textContent = visible > 1 ? "Pages favorites" : "Page favorite";
-  }
+  var emptyMsg = document.getElementById("profil-empty");
+  var sections = [
+    { title: document.getElementById("profil-fantasy-title"), grid: document.getElementById("profil-fantasy-grid"), sel: ".wiki-card" },
+    { title: document.getElementById("profil-pf-title"), grid: document.getElementById("profil-pf-grid"), sel: ".wiki-card", relabel: "Pages favorites", relabelSingle: "Page favorite" },
+    { title: document.getElementById("profil-images-title"), grid: document.getElementById("profil-images-grid"), sel: ".profil-fav-card" },
+    { title: document.getElementById("profil-bd-title"), grid: document.getElementById("profil-bd-grid"), sel: ".profil-fav-card" },
+  ];
 
   function applyUltraHide() {
     var on = localStorage.getItem("profil-hide-ultra") === "1";
     ultraCards.forEach(function (el) { el.hidden = on; });
-    syncFavPages();
+
+    var totalVisible = 0;
+    sections.forEach(function (s) {
+      if (!s.title || !s.grid) return;
+      var visible = s.grid.querySelectorAll(s.sel + ":not([hidden])").length;
+      s.title.hidden = visible === 0;
+      s.grid.hidden = visible === 0;
+      if (s.relabel && visible > 0) s.title.textContent = visible > 1 ? s.relabel : s.relabelSingle;
+      totalVisible += visible;
+    });
+    if (emptyMsg) emptyMsg.hidden = totalVisible > 0;
   }
   applyUltraHide();
   document.addEventListener("profil-ultra-toggle-change", applyUltraHide);
