@@ -1,11 +1,8 @@
-<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' — Codex', extraCss: ['admin.css'] }) %>
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Codex', extraCss: ['admin.css'] }) %>
 
 <div class="admin-topbar">
   <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
-  <span class="admin-topbar-title"><%= detail.user.displayName %></span>
-  <form method="POST" action="/admin/logout" style="margin:0">
-    <button type="submit" class="admin-topbar-logout">D&eacute;connexion</button>
-  </form>
+  <span class="admin-topbar-title"><%= config.title %></span>
 </div>
 
 <div class="aud-layout">
@@ -15,9 +12,6 @@
 
     <div class="aud-section-header">
       <h2 class="aud-section-title">Notes &amp; favoris codex (<%= items.length %>)</h2>
-      <% if (topViews.length) { %>
-        <button type="button" class="admin-btn-link" id="aud-codex-toggle-views">Voir les vues &#8595;</button>
-      <% } %>
     </div>
 
     <div class="aud-card-grid" id="aud-codex-items">
@@ -54,6 +48,10 @@
           }) %>
         <% }) %>
       </div>
+      <button type="button" class="aud-view-toggle" id="aud-codex-toggle-views">
+        <span aria-hidden="true">&#128065;</span>
+        <span id="aud-codex-toggle-label">Voir les vues</span>
+      </button>
     <% } %>
 
   </main>
@@ -66,13 +64,14 @@
   var items = document.getElementById("aud-codex-items");
   var viewsHeader = document.getElementById("aud-codex-views-header");
   var views = document.getElementById("aud-codex-views");
+  var label = document.getElementById("aud-codex-toggle-label");
   var showingViews = false;
   btn.addEventListener("click", function () {
     showingViews = !showingViews;
     items.hidden = showingViews;
     viewsHeader.hidden = !showingViews;
     views.hidden = !showingViews;
-    btn.textContent = showingViews ? "Voir notes & favoris ↑" : "Voir les vues ↓";
+    label.textContent = showingViews ? "Voir notes & favoris" : "Voir les vues";
   });
 })();
 </script>

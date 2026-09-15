@@ -4626,56 +4626,69 @@ a.wiki-ql-label:hover .wiki-ql-text {
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
 }
+/* Même esthétique que le volet profil (.profil-nav-sidebar) : dégradé
+   teinté par --ch-hue (roleHue), pseudo centré en en-tête, liens en
+   majuscule avec icône. Reste un flex sticky simple (pas de position:fixed
+   pleine hauteur comme .wiki-cat-sidebar) : les pages admin utilisent
+   .admin-main, un conteneur plus étroit dont la largeur ne suit pas le
+   même calcul que .container.wide côté public. */
 .aud-nav {
-  flex: 0 0 200px;
+  flex: 0 0 220px;
   position: sticky;
   top: calc(3.25rem + 1.5rem);
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(160deg,
+    hsl(var(--ch-hue, 220), 52%, 20%) 0%,
+    hsl(var(--ch-hue, 220), 44%, 16%) 100%
+  );
+  padding-bottom: 0.75rem;
 }
 .aud-nav-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-}
-.aud-nav-role-dot {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 50%;
-  flex-shrink: 0;
+  padding: 1.4rem 1.1rem 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .aud-nav-name {
+  display: block;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
   font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--fg);
+  font-size: 1.3rem;
+  color: #fff;
 }
 .aud-nav-links {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  padding: 0.6rem;
 }
 .aud-nav-link {
-  padding: 0.5rem 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.65rem;
   border-radius: 6px;
-  color: var(--muted);
+  color: rgba(255,255,255,0.8);
   text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   transition: background 0.12s, color 0.12s;
 }
-.aud-nav-link:hover { background: var(--card); color: var(--fg); }
-.aud-nav-link.active { background: #7f1d1d; color: #fff; }
-.aud-nav-back {
-  display: block;
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-  font-size: 0.78rem;
-  color: var(--muted);
-  text-decoration: none;
+.aud-nav-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  opacity: 0.85;
 }
-.aud-nav-back:hover { color: var(--fg); }
+.aud-nav-link:hover,
+.aud-nav-link.active {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+.aud-nav-link.active { background: rgba(255,255,255,0.18); }
 @media (max-width: 820px) {
   .aud-layout { flex-direction: column; }
   .aud-nav { position: static; flex: none; width: 100%; }

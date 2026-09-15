@@ -1,11 +1,8 @@
-<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' — Activité', extraCss: ['admin.css'] }) %>
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Activité', extraCss: ['admin.css'] }) %>
 
 <div class="admin-topbar">
   <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
-  <span class="admin-topbar-title"><%= detail.user.displayName %></span>
-  <form method="POST" action="/admin/logout" style="margin:0">
-    <button type="submit" class="admin-topbar-logout">D&eacute;connexion</button>
-  </form>
+  <span class="admin-topbar-title"><%= config.title %></span>
 </div>
 
 <div class="aud-layout">
