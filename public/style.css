@@ -10581,8 +10581,8 @@ body.wiki-todo-open { overflow: hidden; }
 }
 
 /* Bouton discret bas-gauche : masque les contenus Ultra sur cette page (pas
-   de volet filtre ici pour porter cette bascule). Simple emoji, sans fond ni
-   bordure — le texte de l'emoji change au clic (voir favoris.ejs). */
+   de volet filtre ici pour porter cette bascule). Texte simple, sans fond ni
+   bordure — barré une fois actif. */
 .profil-ultra-toggle {
   display: none;
 }
@@ -10595,16 +10595,22 @@ body.wiki-todo-open { overflow: hidden; }
     border: none;
     background: none;
     padding: 0;
-    font-size: 1.3rem;
-    line-height: 1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--muted);
     cursor: pointer;
     z-index: 20;
     opacity: 0.6;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, color 0.15s;
   }
-  .profil-ultra-toggle:hover,
+  .profil-ultra-toggle:hover {
+    opacity: 1;
+  }
   .profil-ultra-toggle[aria-pressed="true"] {
     opacity: 1;
+    color: #ef4444;
+    text-decoration: line-through;
   }
 }
 
@@ -10767,6 +10773,9 @@ body.wiki-todo-open { overflow: hidden; }
   margin: 2rem 0 0.75rem;
   padding-bottom: 0.4rem;
   border-bottom: 1px solid var(--border);
+}
+.profil-section-title--center {
+  text-align: center;
 }
 
 .profil-fav-grid {

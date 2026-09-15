@@ -166,8 +166,8 @@
 
   <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
   <% if (nonFantasyPages.length) { %>
-    <h2 class="profil-section-title">Pages favorites (<%= nonFantasyPages.length %>)</h2>
-    <div class="wiki-grid">
+    <h2 class="profil-section-title profil-section-title--center" id="profil-pf-title"><%= nonFantasyPages.length > 1 ? 'Pages favorites' : 'Page favorite' %></h2>
+    <div class="wiki-grid" id="profil-pf-grid">
       <% nonFantasyPages.forEach(function (page) { %>
         <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
       <% }) %>
@@ -226,7 +226,7 @@
 
   <%# Pas de volet filtre sur cette page : bouton discret dédié pour masquer
       les contenus Ultra parmi les favoris (PC uniquement). %>
-  <button type="button" class="profil-ultra-toggle" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">&#128275;</button>
+  <button type="button" class="profil-ultra-toggle" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">ULTRA</button>
 
 </main>
 
@@ -313,12 +313,25 @@
   if (ultraBtn) {
     var ULTRA_KEY = "profil-hide-ultra";
     var ultraCards = document.querySelectorAll('[data-ultra="1"]');
+    var pfTitle = document.getElementById("profil-pf-title");
+    var pfGrid  = document.getElementById("profil-pf-grid");
+
+    // "Pages favorites" : si tout ce qu'il en reste est masqué (Ultra),
+    // on fait comme s'il n'y en avait pas — section entière cachée.
+    function syncFavPages() {
+      if (!pfTitle || !pfGrid) return;
+      var visible = pfGrid.querySelectorAll(".wiki-card:not([hidden])").length;
+      pfTitle.hidden = visible === 0;
+      pfGrid.hidden = visible === 0;
+      if (visible > 0) pfTitle.textContent = visible > 1 ? "Pages favorites" : "Page favorite";
+    }
+
     function applyUltraHide(on) {
       ultraCards.forEach(function (el) { el.hidden = on; });
       ultraBtn.setAttribute("aria-pressed", on ? "true" : "false");
-      ultraBtn.textContent = on ? "🔒" : "🔓";
       ultraBtn.title = on ? "Afficher les contenus Ultra" : "Masquer les contenus Ultra";
       ultraBtn.setAttribute("aria-label", ultraBtn.title);
+      syncFavPages();
     }
     var hideUltra = localStorage.getItem(ULTRA_KEY) === "1";
     applyUltraHide(hideUltra);
