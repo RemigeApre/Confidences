@@ -1,0 +1,59 @@
+<%- include('partials/head', { title: 'Tags : Masqués' }) %>
+<main class="container wide">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <div class="profil-subpage">
+    <div class="profil-setting-heading">
+      <span>Tags masqués</span>
+    </div>
+    <p class="intro" style="text-align:center">
+      Tout le contenu portant un de ces tags reste masqué partout sur le site.
+      <a href="/tags">&larr; Retour à tous les tags</a>
+    </p>
+
+    <div class="tags-blacklist-grid" id="tags-blacklist-grid">
+      <% blacklist.forEach(function (item) { %>
+        <div class="tags-blacklist-item" data-tag="<%= item.tag %>">
+          <span class="tags-blacklist-name"><%= item.tag %></span>
+          <button type="button" class="tags-blacklist-remove" title="Retirer de la liste" aria-label="Retirer &laquo;&nbsp;<%= item.tag %>&nbsp;&raquo; de la liste">&times;</button>
+        </div>
+      <% }) %>
+    </div>
+    <p class="tags-blacklist-empty" id="tags-blacklist-empty" <%= blacklist.length ? 'hidden' : '' %>>Aucun tag masqué pour l&rsquo;instant.</p>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  var grid  = document.getElementById("tags-blacklist-grid");
+  var empty = document.getElementById("tags-blacklist-empty");
+  if (!grid) return;
+
+  grid.addEventListener("click", function (e) {
+    var btn = e.target.closest(".tags-blacklist-remove");
+    if (!btn) return;
+    var item = btn.closest(".tags-blacklist-item");
+    var tag = item.dataset.tag;
+    btn.disabled = true;
+    fetch("/api/tags/blacklist", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag: tag }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { btn.disabled = false; return; }
+        item.remove();
+        if (window.TAG_BLACKLIST) {
+          var idx = window.TAG_BLACKLIST.indexOf(tag);
+          if (idx !== -1) window.TAG_BLACKLIST.splice(idx, 1);
+        }
+        if (empty && !grid.querySelector(".tags-blacklist-item")) empty.hidden = false;
+      })
+      .catch(function () { btn.disabled = false; });
+  });
+})();
+</script>
+
+<%- include('partials/foot') %>

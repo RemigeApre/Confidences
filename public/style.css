@@ -7781,6 +7781,18 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 .wiki-tag-all-link:hover { color: #fff; }
 
+/* Lien "Tags masqués" (page /tags, volet gauche) : entrée vers la blacklist
+   personnelle, teinté rouge pour rester cohérent avec le reste du système
+   (exclusion = rouge). */
+.tags-masked-link {
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f87171;
+  text-decoration: none;
+}
+.tags-masked-link:hover { color: #fca5a5; text-decoration: underline; }
+
 /* ── Note min : titre + croix, centrés en groupe ─────── */
 .wiki-filter-label-row {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
@@ -8295,6 +8307,43 @@ body.wiki-todo-open { overflow: hidden; }
   padding: 0.1rem 0.3rem; min-width: 1.2rem; text-align: center;
 }
 .tags-empty { color: var(--muted); text-align: center; margin-top: 2rem; }
+
+/* ── Tags masqués (/tags/masques) : liste de la blacklist personnelle ── */
+.tags-blacklist-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+.tags-blacklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid #7f1d1d;
+  color: #f87171;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.tags-blacklist-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.tags-blacklist-remove:hover { background: #dc2626; color: #fff; }
+.tags-blacklist-empty { color: var(--muted); text-align: center; margin-top: 2rem; }
 
 /* Tooltip répartition */
 .tags-tooltip {
@@ -11492,6 +11541,17 @@ body.wiki-todo-open { overflow: hidden; }
   cursor: pointer;
 }
 .tag-popup-action:hover { background: rgba(255,255,255,0.08); }
+.tag-popup-action--danger {
+  width: 100%;
+  border-color: #7f1d1d;
+  color: #f87171;
+}
+.tag-popup-action--danger:hover { background: rgba(239,68,68,0.12); }
+.tag-popup-action--danger:disabled {
+  opacity: 0.55;
+  cursor: default;
+  background: none;
+}
 
 .tag-popup-admin { border-top: 1px solid var(--border); padding-top: 0.6rem; }
 .tag-popup-admin > summary {

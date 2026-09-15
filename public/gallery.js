@@ -295,6 +295,10 @@
   var typeState      = 0;   // 0=neutre, 1=inclure, 2=exclure
   var typeValue      = "";  // "image" ou "bd"
   var tagStates      = {}; // { "tag": 0|1|2 }
+  // Tags masqués (voir /favoris et le bouton "Masquer le tag" de la popup
+  // tag) : toute image portant l'un de ces tags reste masquée partout, sans
+  // bascule possible ici (on les retire depuis /tags/masques).
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
   var activeCategory = "";
   var searchQ        = "";
   // Etat initial : le réglage de compte sert de valeur par défaut, mais une
@@ -350,8 +354,9 @@
       var okTag = true;
       if (tagIncludes.length) okTag = tagIncludes.every(function(t){ return cardTags.indexOf(t) !== -1; });
       if (tagExcludes.length) okTag = okTag && tagExcludes.every(function(t){ return cardTags.indexOf(t) === -1; });
+      var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
 
-      var passes = okType && okCategory && okSearch && okUltra && okIrrealiste && okRating && okTag;
+      var passes = okType && okCategory && okSearch && okUltra && okIrrealiste && okRating && okTag && okBlacklist;
       card.dataset.filtered = passes ? "1" : "0";
       if (passes) filteredCards.push(card);
     });
@@ -484,8 +489,25 @@
   var gTagExpandedCount = GTAG_PAGE;
   var gTagExpandBtn = document.getElementById("gallery-tag-expand-btn");
 
+  // Regroupe visuellement les chips par état : inclus (vert) en premier,
+  // puis exclus (rouge), puis neutres (noir) — dans leur ordre d'origine au
+  // sein de chaque groupe. Purement visuel, ne touche pas au filtrage.
+  function reorderTagChips() {
+    if (!tagFilter) return;
+    var chips = Array.prototype.slice.call(tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]"));
+    var inc = [], exc = [], neu = [];
+    chips.forEach(function (chip) {
+      var s = tagStates[(chip.dataset.tag || "").toLowerCase()] || 0;
+      if (s === 1) inc.push(chip);
+      else if (s === 2) exc.push(chip);
+      else neu.push(chip);
+    });
+    inc.concat(exc, neu).forEach(function (chip) { tagFilter.appendChild(chip); });
+  }
+
   function applyGalleryTagOverflow() {
     if (!tagFilter) return;
+    reorderTagChips();
     var allChips = Array.from(tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]"));
     // Les chips actives (include/exclude) restent toujours visibles
     var neutralIdx = 0;

@@ -101,6 +101,9 @@
   var langueFilter = document.getElementById("bd-notes-langue-filter");
   var activeTags = [], searchQ = "", activeLangue = "";
   var hideUltra = localStorage.getItem("profil-hide-ultra") === "1";
+  // Tags masqués (voir bouton "Masquer le tag" de la popup tag) : reste
+  // masqué même dans ses propres notes, comme partout ailleurs sur le site.
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
 
   function applyFilters() {
     var vis = 0;
@@ -111,7 +114,8 @@
       var ok = (activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); }))
             && (!searchQ || title.includes(searchQ))
             && (!activeLangue || langue === activeLangue)
-            && (!hideUltra || tags.indexOf("ultra") === -1);
+            && (!hideUltra || tags.indexOf("ultra") === -1)
+            && (blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); }));
       c.style.display = ok ? "" : "none";
       if (ok) vis++;
     });

@@ -274,6 +274,37 @@ db.exec(`
   )
 `);
 
+// Blacklist personnelle de tags (bouton "Masquer le tag" de la popup tag,
+// gérée depuis /tags/masques) : tout contenu portant un de ces tags reste
+// masqué partout pour ce profil, jusqu'à retrait explicite.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tag_blacklist (
+    user_id INTEGER NOT NULL,
+    tag TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, tag)
+  )
+`);
+
+function listBlacklistedTags(userId) {
+  return db.prepare(
+    "SELECT tag, created_at FROM tag_blacklist WHERE user_id = ? ORDER BY created_at DESC"
+  ).all(userId).map(function(r) { return { tag: r.tag, createdAt: r.created_at }; });
+}
+
+function addBlacklistedTag(userId, tag) {
+  var t = String(tag || "").toLowerCase().trim();
+  if (!t) return;
+  db.prepare(
+    "INSERT OR IGNORE INTO tag_blacklist (user_id, tag, created_at) VALUES (?, ?, ?)"
+  ).run(userId, t, new Date().toISOString());
+}
+
+function removeBlacklistedTag(userId, tag) {
+  var t = String(tag || "").toLowerCase().trim();
+  db.prepare("DELETE FROM tag_blacklist WHERE user_id = ? AND tag = ?").run(userId, t);
+}
+
 function rowToUser(row) {
   if (!row) return null;
   return {
@@ -1500,6 +1531,9 @@ module.exports = {
   listConnectionLogsForUser,
   recordActivityPing,
   listActivitySessions,
+  listBlacklistedTags,
+  addBlacklistedTag,
+  removeBlacklistedTag,
   setGalleryImageFeatured,
   logGalleryView,
   logBdView,

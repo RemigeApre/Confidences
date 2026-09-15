@@ -32,6 +32,12 @@
           </div>
         </div>
 
+        <% if (currentUser) { %>
+        <div class="wiki-filter-section">
+          <a href="/tags/masques" class="tags-masked-link">Tags masqu&eacute;s<% if (locals.tagBlacklist && tagBlacklist.length) { %> (<%= tagBlacklist.length %>)<% } %></a>
+        </div>
+        <% } %>
+
         <% if (currentUser && currentUser.isAdmin) { %>
         <%# ─ Admin : créer un tag ─ %>
         <div class="wiki-filter-section">

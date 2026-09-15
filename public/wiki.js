@@ -801,6 +801,10 @@
   };
   var includedTagsSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-tags-inc") || "[]"));
   var excludedTagsSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-tags-exc") || "[]"));
+  // Tags masqués (voir /favoris et le bouton "Masquer le tag" de la popup
+  // tag) : toute page portant l'un de ces tags reste masquée partout, sans
+  // bascule possible ici (on les retire depuis /tags/masques).
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
   var activeSort      = localStorage.getItem("wiki-filter-sort") || "alpha-asc";
   // Etat initial : le réglage de compte (voir /favoris > Parametres) sert de
   // valeur par défaut, mais une bascule explicite en session (via les
@@ -936,8 +940,25 @@
     return score;
   }
 
+  // Regroupe visuellement les chips par état : inclus (vert) en premier,
+  // puis exclus (rouge), puis neutres (noir) — dans leur ordre d'origine au
+  // sein de chaque groupe. Purement visuel, ne touche pas au filtrage.
+  function reorderTagChips() {
+    if (!tagFilter) return;
+    var chips = Array.prototype.slice.call(tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]"));
+    var inc = [], exc = [], neu = [];
+    chips.forEach(function (chip) {
+      var s = chip.dataset.state || "0";
+      if (s === "1") inc.push(chip);
+      else if (s === "2") exc.push(chip);
+      else neu.push(chip);
+    });
+    inc.concat(exc, neu).forEach(function (chip) { tagFilter.appendChild(chip); });
+  }
+
   function updateTagChipVisibility(baseCards) {
     if (!tagFilter) return;
+    reorderTagChips();
     var chips = tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]");
     if (includedTagsSet.size === 0 && excludedTagsSet.size === 0) {
       chips.forEach(function(chip) {
@@ -1022,6 +1043,7 @@
       if (okTag && excludedTagsSet.size > 0) {
         okTag = !Array.from(excludedTagsSet).some(function(t) { return cardTags.indexOf(t) !== -1; });
       }
+      var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
       // Ultra toggle only applies to cards that are ultra but NOT irréaliste
       var okUltra = !hideUltra || card.dataset.ultra !== "1" || card.dataset.irrealiste === "1";
       // Irréaliste toggle controls all irréaliste cards
@@ -1065,10 +1087,10 @@
       var okSousCat    = !activeSousCat || (card.dataset.sousCat || "") === activeSousCat;
 
       // Track which cards pass all non-tag filters (for smart tag chip visibility)
-      var okNonTag = okCat && okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okFlame && okInterested && okMaturity && okSousCat;
+      var okNonTag = okCat && okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okFlame && okInterested && okMaturity && okSousCat && okBlacklist;
       card._passesNonTag = okNonTag;
       // Track which cards pass all filters except the category (for 9/27 chip counts)
-      card._passesNonCat = okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okFlame && okInterested && okMaturity && okSousCat && okTag;
+      card._passesNonCat = okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okFlame && okInterested && okMaturity && okSousCat && okTag && okBlacklist;
       card.hidden = !(okNonTag && okTag);
     });
 

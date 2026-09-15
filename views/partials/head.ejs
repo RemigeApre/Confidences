@@ -70,6 +70,11 @@
     window.ULTRA_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.ultraMode : "hidden") %>;
     window.IRREALISTE_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.irrealisteMode : "visible") %>;
     window.IS_ADMIN = <%= (locals.currentUser && locals.currentUser.isAdmin) ? 'true' : 'false' %>;
+    window.IS_LOGGED_IN = <%= locals.currentUser ? 'true' : 'false' %>;
+    // Tags masqués (voir /tags/masques et le bouton "Masquer le tag" de la
+    // popup tag) : liste utilisee par wiki.js/gallery.js/bd.js et les pages
+    // de notes du profil pour masquer partout le contenu concerné.
+    window.TAG_BLACKLIST = <%- JSON.stringify(locals.tagBlacklist || []) %>;
     // Classification de chaque tag connu (type + page wiki associee), pour
     // colorer/rendre cliquable un badge de tag sans requete supplementaire.
     // Voir src/tagRegistry.js. Vide sur les pages qui ne le calculent pas

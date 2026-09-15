@@ -308,6 +308,7 @@ window.buildTagBadgeHTML = function (tag) {
   var renameBtn   = document.getElementById("tag-popup-rename-btn");
   var typeBtnsWrap = document.getElementById("tag-popup-type-btns");
   var feedbackEl  = document.getElementById("tag-popup-admin-feedback");
+  var blacklistBtn = document.getElementById("tag-popup-blacklist-btn");
 
   var currentTag = "";
 
@@ -325,6 +326,18 @@ window.buildTagBadgeHTML = function (tag) {
     });
   }
 
+  // "Masquer le tag" : ajoute currentTag à la blacklist personnelle (voir
+  // /tags/masques). Une fois masqué, seule la page /tags/masques permet de
+  // le retirer (bouton désactivé ici, pas de bascule).
+  function syncBlacklistBtn() {
+    if (!blacklistBtn) return;
+    if (!window.IS_LOGGED_IN) { blacklistBtn.hidden = true; return; }
+    blacklistBtn.hidden = false;
+    var isBlacklisted = (window.TAG_BLACKLIST || []).indexOf(currentTag) !== -1;
+    blacklistBtn.disabled = isBlacklisted;
+    blacklistBtn.textContent = isBlacklisted ? "Tag déjà masqué" : "Masquer le tag";
+  }
+
   function open(tag) {
     currentTag = String(tag).toLowerCase().trim();
     if (!currentTag) return;
@@ -335,6 +348,7 @@ window.buildTagBadgeHTML = function (tag) {
     if (feedbackEl) feedbackEl.textContent = "";
     if (renameInput) renameInput.value = tag;
     syncTypeBtns();
+    syncBlacklistBtn();
     if (adminPanel) adminPanel.hidden = !window.IS_ADMIN;
     overlay.hidden = false;
 
@@ -377,6 +391,25 @@ window.buildTagBadgeHTML = function (tag) {
   closeBtn.addEventListener("click", close);
   overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !overlay.hidden) close(); });
+
+  if (blacklistBtn) {
+    blacklistBtn.addEventListener("click", function () {
+      if (!currentTag || blacklistBtn.disabled) return;
+      fetch("/api/tags/blacklist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag: currentTag }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) return;
+          if (!window.TAG_BLACKLIST) window.TAG_BLACKLIST = [];
+          if (window.TAG_BLACKLIST.indexOf(currentTag) === -1) window.TAG_BLACKLIST.push(currentTag);
+          syncBlacklistBtn();
+        })
+        .catch(function () {});
+    });
+  }
 
   if (renameBtn) {
     renameBtn.addEventListener("click", function () {

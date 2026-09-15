@@ -19,6 +19,7 @@ const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
   listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
+  listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -190,6 +191,16 @@ backfillThumbs("bd");
 
 app.use((req, res, next) => {
   res.locals.thumbUrl = thumbUrl;
+  next();
+});
+
+// Blacklist personnelle de tags (voir /tags/masques) : exposee au client
+// (window.TAG_BLACKLIST, voir partials/head.ejs) pour masquer partout tout
+// contenu portant un de ces tags. Toujours calculee (pas de raccourci
+// /favoris comme tagRegistry ci-dessous) car les sous-pages notes en ont
+// aussi besoin pour filtrer leurs propres cartes.
+app.use((req, res, next) => {
+  res.locals.tagBlacklist = req.user ? listBlacklistedTags(req.user.id).map((r) => r.tag) : [];
   next();
 });
 
@@ -442,6 +453,29 @@ app.get("/api/tags/results", function (req, res) {
     } catch (_) {}
   }
   res.json(result);
+});
+
+// ── Blacklist personnelle de tags ("Masquer le tag" dans la popup tag) ─────
+app.post("/api/tags/blacklist", function (req, res) {
+  if (!req.user) return res.status(403).json({ ok: false, error: "Interdit" });
+  var tag = String(req.body.tag || "").toLowerCase().trim();
+  if (!tag) return res.status(400).json({ ok: false, error: "Tag vide" });
+  addBlacklistedTag(req.user.id, tag);
+  res.json({ ok: true });
+});
+
+app.delete("/api/tags/blacklist", function (req, res) {
+  if (!req.user) return res.status(403).json({ ok: false, error: "Interdit" });
+  var tag = String(req.body.tag || "").toLowerCase().trim();
+  removeBlacklistedTag(req.user.id, tag);
+  res.json({ ok: true });
+});
+
+// ── Sous-page dédiée : gérer la blacklist (retrait uniquement, l'ajout se
+// fait depuis la popup tag partagée, voir partials/tag-popup.ejs) ──────────
+app.get("/tags/masques", function (req, res) {
+  if (!req.user) return res.redirect("/admin/login?next=" + encodeURIComponent("/tags/masques"));
+  res.render("tags-masques", { config, blacklist: listBlacklistedTags(req.user.id) });
 });
 
 app.use("/", buildQuizRouter(config));

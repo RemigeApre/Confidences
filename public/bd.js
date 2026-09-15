@@ -10,6 +10,10 @@
 
   var activeTags   = [];
   var searchQ      = "";
+  // Tags masqués (voir /favoris et le bouton "Masquer le tag" de la popup
+  // tag) : toute BD portant l'un de ces tags reste masquée partout, sans
+  // bascule possible ici (on les retire depuis /tags/masques).
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
   // Etat initial : le réglage de compte sert de valeur par défaut, mais une
   // bascule explicite en session est mémorisée et prime dessus au
   // rechargement — sinon revenir sur la page annulait silencieusement le
@@ -53,8 +57,9 @@
       var okIrrealiste = showIrrealiste || !irrealiste;
       var okLangue  = !activeLangue || langue === activeLangue;
       var okCouleur = !showCouleurOnly || couleur;
+      var okBlacklist = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
 
-      if (okTags && okSearch && okUltra && okIrrealiste && okLangue && okCouleur) { card.style.display = ""; visible++; }
+      if (okTags && okSearch && okUltra && okIrrealiste && okLangue && okCouleur && okBlacklist) { card.style.display = ""; visible++; }
       else                                                         { card.style.display = "none"; }
     });
     updateCount(visible);
