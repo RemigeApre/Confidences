@@ -3,7 +3,8 @@
   <%- include('partials/top-nav', { config: config }) %>
 
   <%# ── Panneaux latéraux (desktop : fixe à droite / mobile : accordéons en haut) ── %>
-  <aside class="profil-panels">
+  <aside class="profil-panels" id="profil-panels">
+    <button type="button" class="profil-panels-toggle" id="profil-panels-toggle" aria-expanded="true" title="R&eacute;duire le panneau" aria-label="R&eacute;duire le panneau">&#9656;</button>
     <div class="profil-panels-name"><%= currentUser.displayName %></div>
 
     <%# ── Panneau 1 : Paramètres ── %>
@@ -179,7 +180,8 @@
       <% galleryImages.forEach(function (img) { %>
         <a href="/galerie/<%= img.id %>/edit"
            class="profil-fav-card"
-           data-fav-item data-item-type="gallery" data-item-id="<%= img.id %>">
+           data-fav-item data-item-type="gallery" data-item-id="<%= img.id %>"
+           data-ultra="<%= img.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
           <% if (img.imagePaths && img.imagePaths[0]) { %>
             <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
           <% } else { %>
@@ -198,7 +200,8 @@
       <% bdBooks.forEach(function (book) { %>
         <a href="/bd/<%= book.id %>"
            class="profil-fav-card"
-           data-fav-item data-item-type="bd" data-item-id="<%= book.id %>">
+           data-fav-item data-item-type="bd" data-item-id="<%= book.id %>"
+           data-ultra="<%= book.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
           <% if (book.imagePaths && book.imagePaths[0]) { %>
             <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
           <% } else { %>
@@ -220,6 +223,12 @@
     <a href="/favoris/notes/wiki" class="profil-notes-btn">Pages codex not&eacute;es</a>
     <a href="/favoris/notes/bd" class="profil-notes-btn">BD not&eacute;es</a>
   </div>
+
+  <%# Pas de volet filtre sur cette page : bouton discret dédié pour masquer
+      les contenus Ultra parmi les favoris (PC uniquement). %>
+  <button type="button" class="profil-ultra-toggle" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">
+    <%- include('partials/eye-icon') %>
+  </button>
 
 </main>
 
@@ -300,6 +309,45 @@
         });
     });
   });
+
+  // ── Masquer les contenus Ultra sur cette page (pas de volet filtre ici) ──
+  var ultraBtn = document.getElementById("profil-ultra-toggle");
+  if (ultraBtn) {
+    var ULTRA_KEY = "profil-hide-ultra";
+    var ultraCards = document.querySelectorAll('[data-ultra="1"]');
+    function applyUltraHide(on) {
+      ultraCards.forEach(function (el) { el.hidden = on; });
+      ultraBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    var hideUltra = localStorage.getItem(ULTRA_KEY) === "1";
+    applyUltraHide(hideUltra);
+    ultraBtn.addEventListener("click", function () {
+      hideUltra = !hideUltra;
+      localStorage.setItem(ULTRA_KEY, hideUltra ? "1" : "0");
+      applyUltraHide(hideUltra);
+    });
+  }
+
+  // ── Volet paramètres rétractable (PC) ─────────────────────────────────────
+  var panels = document.getElementById("profil-panels");
+  var panelsToggle = document.getElementById("profil-panels-toggle");
+  if (panels && panelsToggle) {
+    var PANELS_KEY = "profil-panels-collapsed";
+    function applyPanelsCollapsed(on) {
+      panels.classList.toggle("profil-panels-collapsed", on);
+      panelsToggle.setAttribute("aria-expanded", on ? "false" : "true");
+      panelsToggle.innerHTML = on ? "&#9666;" : "&#9656;";
+      panelsToggle.title = on ? "Déplier le panneau" : "Réduire le panneau";
+      panelsToggle.setAttribute("aria-label", panelsToggle.title);
+    }
+    var collapsed = localStorage.getItem(PANELS_KEY) === "1";
+    applyPanelsCollapsed(collapsed);
+    panelsToggle.addEventListener("click", function () {
+      collapsed = !collapsed;
+      localStorage.setItem(PANELS_KEY, collapsed ? "1" : "0");
+      applyPanelsCollapsed(collapsed);
+    });
+  }
 })();
 </script>
 

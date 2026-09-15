@@ -10525,7 +10525,7 @@ body.wiki-todo-open { overflow: hidden; }
   padding: 0.75rem 0 0.25rem;
 }
 
-/* Desktop : colonne fixe à droite */
+/* Desktop : colonne fixe à droite, rétractable */
 @media (min-width: 1340px) {
   .profil-panels {
     position: fixed;
@@ -10546,7 +10546,87 @@ body.wiki-todo-open { overflow: hidden; }
     scrollbar-color: rgba(255,255,255,0.15) transparent;
     z-index: 5;
     border-left: 1px solid rgba(255,255,255,0.07);
+    transition: width 0.2s ease, min-width 0.2s ease;
   }
+  .profil-panels.profil-panels-collapsed {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    overflow: hidden;
+  }
+  .profil-panels.profil-panels-collapsed .profil-panels-name,
+  .profil-panels.profil-panels-collapsed .profil-panel {
+    display: none;
+  }
+}
+
+/* Languette pour réduire/déplier le panneau : toujours visible, même replié
+   (elle n'est pas un .profil-panel, donc pas cachée par la règle ci-dessus). */
+.profil-panels-toggle {
+  display: none;
+}
+@media (min-width: 1340px) {
+  .profil-panels-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0.75rem;
+    left: 0.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    font-size: 0.8rem;
+    z-index: 1;
+    transition: background 0.15s, color 0.15s;
+  }
+  .profil-panels-toggle:hover {
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+  }
+}
+
+/* Bouton discret bas-gauche : masque les contenus Ultra sur cette page (pas
+   de volet filtre ici pour porter cette bascule). Icône œil, barrée + rouge
+   une fois active — même langage que le bouton "masquer les images" du header. */
+.profil-ultra-toggle {
+  display: none;
+}
+@media (min-width: 641px) {
+  .profil-ultra-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    cursor: pointer;
+    z-index: 20;
+    opacity: 0.55;
+    transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .profil-ultra-toggle:hover {
+    opacity: 1;
+    border-color: var(--accent);
+  }
+  .profil-ultra-toggle[aria-pressed="true"] {
+    opacity: 1;
+    color: #ef4444;
+    border-color: #ef4444;
+  }
+  .profil-ultra-toggle .eye-icon { width: 1.1rem; height: 1.1rem; }
+  .profil-ultra-toggle .eye-icon--off { display: none; }
+  .profil-ultra-toggle[aria-pressed="true"] .eye-icon--open { display: none; }
+  .profil-ultra-toggle[aria-pressed="true"] .eye-icon--off { display: block; }
 }
 
 .profil-panels-name {
