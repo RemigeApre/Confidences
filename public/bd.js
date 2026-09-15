@@ -14,6 +14,23 @@
   // tag) : toute BD portant l'un de ces tags reste masquée partout, sans
   // bascule possible ici (on les retire depuis /tags/masques).
   var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Un tag masqué (voir /tags/masques) n'est plus un choix disponible : son
+  // chip est retiré du nuage de tags, pas seulement le contenu qui le porte.
+  function hideBlacklistedTagChips() {
+    if (!tagFilter) return;
+    tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]").forEach(function (chip) {
+      if (blacklistSet.has((chip.dataset.tag || "").toLowerCase())) chip.hidden = true;
+    });
+  }
+
+  // Effectif à la fermeture de la popup tag (voir public/nav.js), pas au
+  // clic sur "Masquer le tag" : on ne veut pas faire disparaître le tag
+  // sous les yeux de l'utilisateur pendant qu'il consulte encore la popup.
+  document.addEventListener("tag-blacklist-change", function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    hideBlacklistedTagChips();
+    applyFilters();
+  });
   // Etat initial : le réglage de compte sert de valeur par défaut, mais une
   // bascule explicite en session est mémorisée et prime dessus au
   // rechargement — sinon revenir sur la page annulait silencieusement le
@@ -151,6 +168,7 @@
     });
   }
 
+  hideBlacklistedTagChips();
   applyFilters();
 })();
 

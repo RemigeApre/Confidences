@@ -311,10 +311,18 @@ window.buildTagBadgeHTML = function (tag) {
   var blacklistBtn = document.getElementById("tag-popup-blacklist-btn");
 
   var currentTag = "";
+  // Un tag masqué depuis cette popup ne doit disparaître des champs de tags
+  // (chips, grille /tags...) qu'à la fermeture — pas pendant qu'on consulte
+  // encore la popup — d'où ce drapeau plutôt qu'un événement au clic.
+  var blacklistChangedSinceOpen = false;
 
   function close() {
     overlay.hidden = true;
     currentTag = "";
+    if (blacklistChangedSinceOpen) {
+      blacklistChangedSinceOpen = false;
+      document.dispatchEvent(new CustomEvent("tag-blacklist-change"));
+    }
   }
 
   function syncTypeBtns() {
@@ -341,6 +349,7 @@ window.buildTagBadgeHTML = function (tag) {
   function open(tag) {
     currentTag = String(tag).toLowerCase().trim();
     if (!currentTag) return;
+    blacklistChangedSinceOpen = false;
     titleEl.textContent = tag;
     pagesEl.innerHTML = "";
     galleryBtn.hidden = true;
@@ -405,6 +414,7 @@ window.buildTagBadgeHTML = function (tag) {
           if (!d.ok) return;
           if (!window.TAG_BLACKLIST) window.TAG_BLACKLIST = [];
           if (window.TAG_BLACKLIST.indexOf(currentTag) === -1) window.TAG_BLACKLIST.push(currentTag);
+          blacklistChangedSinceOpen = true;
           syncBlacklistBtn();
         })
         .catch(function () {});

@@ -805,6 +805,13 @@
   // tag) : toute page portant l'un de ces tags reste masquée partout, sans
   // bascule possible ici (on les retire depuis /tags/masques).
   var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Effectif à la fermeture de la popup tag (voir public/nav.js), pas au
+  // clic sur "Masquer le tag" : on ne veut pas faire disparaître le tag
+  // sous les yeux de l'utilisateur pendant qu'il consulte encore la popup.
+  document.addEventListener("tag-blacklist-change", function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    applyFilters();
+  });
   var activeSort      = localStorage.getItem("wiki-filter-sort") || "alpha-asc";
   // Etat initial : le réglage de compte (voir /favoris > Parametres) sert de
   // valeur par défaut, mais une bascule explicite en session (via les
@@ -963,6 +970,10 @@
     if (includedTagsSet.size === 0 && excludedTagsSet.size === 0) {
       chips.forEach(function(chip) {
         var t = (chip.dataset.tag || "").toLowerCase();
+        // Un tag masqué (voir /tags/masques) n'est plus un choix disponible,
+        // pas seulement un choix inutile : on le retire sans même regarder
+        // s'il "rapporterait" des cartes.
+        if (blacklistSet.has(t)) { chip.hidden = true; return; }
         chip.hidden = !baseCards.some(function(c) {
           return (c.dataset.tags || "").split("|").indexOf(t) !== -1;
         });
@@ -971,6 +982,7 @@
     }
     chips.forEach(function(chip) {
       var chipTag = (chip.dataset.tag || "").toLowerCase();
+      if (blacklistSet.has(chipTag)) { chip.hidden = true; return; }
       var chipState = chip.dataset.state || "0";
       if (chipState !== "0") {
         chip.hidden = false; // always show active chips

@@ -104,6 +104,20 @@
   // Tags masqués (voir bouton "Masquer le tag" de la popup tag) : reste
   // masqué même dans ses propres notes, comme partout ailleurs sur le site.
   var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Un tag masqué (voir /tags/masques) n'est plus un choix disponible : son
+  // chip est retiré du nuage de tags, pas seulement le contenu qui le porte.
+  function hideBlacklistedTagChips() {
+    if (!tagCloud) return;
+    tagCloud.querySelectorAll(".wiki-tag-chip").forEach(function(chip) {
+      if (blacklistSet.has((chip.dataset.tag || "").toLowerCase())) chip.hidden = true;
+    });
+  }
+  hideBlacklistedTagChips();
+  document.addEventListener("tag-blacklist-change", function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    hideBlacklistedTagChips();
+    applyFilters();
+  });
 
   function applyFilters() {
     var vis = 0;

@@ -299,6 +299,13 @@
   // tag) : toute image portant l'un de ces tags reste masquée partout, sans
   // bascule possible ici (on les retire depuis /tags/masques).
   var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Effectif à la fermeture de la popup tag (voir public/nav.js), pas au
+  // clic sur "Masquer le tag" : on ne veut pas faire disparaître le tag
+  // sous les yeux de l'utilisateur pendant qu'il consulte encore la popup.
+  document.addEventListener("tag-blacklist-change", function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    applyFilters();
+  });
   var activeCategory = "";
   var searchQ        = "";
   // Etat initial : le réglage de compte sert de valeur par défaut, mais une
@@ -512,7 +519,12 @@
     // Les chips actives (include/exclude) restent toujours visibles
     var neutralIdx = 0;
     allChips.forEach(function(chip) {
-      var isActive = (tagStates[(chip.dataset.tag || "").toLowerCase()] || 0) !== 0;
+      var tag = (chip.dataset.tag || "").toLowerCase();
+      // Un tag masqué (voir /tags/masques) n'est plus un choix disponible :
+      // retiré sans conditions, pas seulement rejeté par le budget d'affichage.
+      if (blacklistSet.has(tag)) { chip.hidden = true; return; }
+      chip.hidden = false;
+      var isActive = (tagStates[tag] || 0) !== 0;
       if (isActive) {
         chip.classList.remove("wiki-tag-overflow-hidden");
       } else {
@@ -522,7 +534,8 @@
     });
     if (gTagExpandBtn) {
       var neutralTotal = allChips.filter(function(c) {
-        return (tagStates[(c.dataset.tag || "").toLowerCase()] || 0) === 0;
+        var t = (c.dataset.tag || "").toLowerCase();
+        return (tagStates[t] || 0) === 0 && !blacklistSet.has(t);
       }).length;
       gTagExpandBtn.hidden = !(neutralTotal > gTagExpandedCount && gTagExpandedCount < GTAG_MAX);
     }

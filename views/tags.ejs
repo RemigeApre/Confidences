@@ -34,7 +34,7 @@
 
         <% if (currentUser) { %>
         <div class="wiki-filter-section">
-          <a href="/tags/masques" class="tags-masked-link">Tags masqu&eacute;s<% if (locals.tagBlacklist && tagBlacklist.length) { %> (<%= tagBlacklist.length %>)<% } %></a>
+          <a href="/tags/masques" class="tags-masked-link" id="tags-masked-link">Tags masqu&eacute;s<span id="tags-masked-count"><% if (locals.tagBlacklist && tagBlacklist.length) { %> (<%= tagBlacklist.length %>)<% } %></span></a>
         </div>
         <% } %>
 
@@ -132,6 +132,21 @@
     if (emptyMsg) emptyMsg.hidden = visible > 0 || !hasFilter;
     if (countDisplay) countDisplay.textContent = visible;
   }
+
+  // Effectif à la fermeture de la popup tag (voir public/nav.js) : cette
+  // page est filtrée côté serveur (le tag masqué n'est même pas rendu au
+  // prochain chargement), donc ici on retire directement l'élément de la
+  // grille — pas besoin de recharger la page pour le voir disparaître.
+  document.addEventListener("tag-blacklist-change", function () {
+    if (!grid) return;
+    var blacklist = window.TAG_BLACKLIST || [];
+    grid.querySelectorAll(".tags-item").forEach(function (item) {
+      if (blacklist.indexOf(item.dataset.tag) !== -1) item.remove();
+    });
+    applyFilters();
+    var maskedCount = document.getElementById("tags-masked-count");
+    if (maskedCount) maskedCount.textContent = blacklist.length ? " (" + blacklist.length + ")" : "";
+  });
 
   var searchDebounceTimer = null;
   if (searchInput) searchInput.addEventListener("input", function () {
