@@ -432,6 +432,7 @@ window.buildTagBadgeHTML = function (tag) {
   function sync() {
     var on = localStorage.getItem(KEY) === "1";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.textContent = on ? "Afficher Ultra" : "Masquer Ultra";
     btn.title = on ? "Afficher les contenus Ultra" : "Masquer les contenus Ultra";
     btn.setAttribute("aria-label", btn.title);
   }
