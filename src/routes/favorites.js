@@ -156,8 +156,8 @@ function buildFavoritesRouter(config) {
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
-    const { orientation, ultraMode, irrealisteMode } = req.body;
-    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode });
+    const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin } = req.body;
+    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin });
     res.json({ ok: true });
   });
 

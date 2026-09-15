@@ -166,6 +166,11 @@ try { db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN orientation TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN ultra_mode TEXT NOT NULL DEFAULT 'hidden'"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN irrealiste_mode TEXT NOT NULL DEFAULT 'visible'"); } catch (_) {}
+// Consentement explicite (facultatif, décoché par défaut) : le profil
+// choisit lui-même de rendre ses notes/favoris visibles à l'admin. N'affecte
+// pas l'accès réel (l'admin voit déjà tout) : sert uniquement de pastille
+// indicative sur la carte utilisateur et sa fiche (admin-dashboard/admin-user-*).
+try { db.exec("ALTER TABLE users ADD COLUMN share_notes_with_admin INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 // "Ouverture des tags" (ask/wiki/gallery) retire : le clic sur un tag a
 // desormais un seul comportement partout (popup unifiee), plus de choix a
 // faire. Colonne supprimee si le moteur SQLite le permet (>= 3.35), sinon
@@ -238,6 +243,18 @@ db.exec(`
   )
 `);
 
+// Pings de présence discrets (voir recordActivityPing) : contrairement à
+// connection_logs (uniquement à la saisie du mot de passe), permet de savoir
+// quand un profil est simplement en train de naviguer sur le site.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS activity_pings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_pings_user ON activity_pings (user_id, id)`);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_user_notes (
     page_id INTEGER NOT NULL,
@@ -274,6 +291,7 @@ function rowToUser(row) {
     orientation: row.orientation || "",
     ultraMode: row.ultra_mode || "hidden",
     irrealisteMode: row.irrealiste_mode || "visible",
+    shareNotesWithAdmin: !!row.share_notes_with_admin,
   };
 }
 
@@ -314,15 +332,16 @@ const SPECIAL_MODE_VALUES = ["hidden", "visible", "off"];
 // Reglages "Goûts"/"Paramètres" (voir /favoris) : mise a jour partielle,
 // chaque champ omis garde sa valeur actuelle (sauvegarde instantanee par
 // champ, pas un gros formulaire soumis d'un coup).
-function updateUserSettings(id, { orientation, ultraMode, irrealisteMode }) {
+function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin }) {
   const current = getUserById(id);
   if (!current) return;
   const o  = orientation   !== undefined && ORIENTATION_VALUES.includes(orientation)   ? orientation   : current.orientation;
   const um = ultraMode     !== undefined && SPECIAL_MODE_VALUES.includes(ultraMode)     ? ultraMode     : current.ultraMode;
   const im = irrealisteMode !== undefined && SPECIAL_MODE_VALUES.includes(irrealisteMode) ? irrealisteMode : current.irrealisteMode;
+  const snwa = shareNotesWithAdmin !== undefined ? (shareNotesWithAdmin ? 1 : 0) : (current.shareNotesWithAdmin ? 1 : 0);
   db.prepare(
-    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ? WHERE id = ?"
-  ).run(o, um, im, id);
+    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ? WHERE id = ?"
+  ).run(o, um, im, snwa, id);
 }
 
 function getUserByUsername(username) {
@@ -1312,6 +1331,55 @@ function listConnectionLogsForUser(userId, limit) {
   });
 }
 
+// connection_logs ne trace que les connexions explicites (saisie du mot de
+// passe). Pour savoir aussi quand un profil est "juste sur le site", on
+// enregistre un ping discret à chaque requête dynamique (voir server.js),
+// throttlé pour ne pas remplir la table à chaque clic.
+const ACTIVITY_PING_THROTTLE_MS = 3 * 60 * 1000; // 1 ping max toutes les 3 min / profil
+const ACTIVITY_SESSION_GAP_MS = 30 * 60 * 1000; // > 30 min sans ping = nouvelle session
+
+function recordActivityPing(userId) {
+  if (!userId) return;
+  const last = db
+    .prepare("SELECT created_at FROM activity_pings WHERE user_id = ? ORDER BY id DESC LIMIT 1")
+    .get(userId);
+  const now = Date.now();
+  if (last && now - new Date(last.created_at).getTime() < ACTIVITY_PING_THROTTLE_MS) return;
+  db.prepare("INSERT INTO activity_pings (user_id, created_at) VALUES (?, ?)").run(userId, new Date(now).toISOString());
+}
+
+// Regroupe les pings bruts en "sessions" de présence : deux pings séparés de
+// plus de ACTIVITY_SESSION_GAP_MS appartiennent à deux passages distincts sur
+// le site. La durée d'une session est l'écart entre son premier et son
+// dernier ping (sous-estimée pour une session à un seul ping, faute de mieux).
+function listActivitySessions(userId, limit) {
+  const pings = db
+    .prepare("SELECT created_at FROM activity_pings WHERE user_id = ? ORDER BY id DESC LIMIT 1000")
+    .all(userId)
+    .map(function(r) { return new Date(r.created_at).getTime(); })
+    .sort(function(a, b) { return a - b; });
+
+  const sessions = [];
+  pings.forEach(function(t) {
+    const current = sessions[sessions.length - 1];
+    if (current && t - current.end <= ACTIVITY_SESSION_GAP_MS) {
+      current.end = t;
+      current.pings += 1;
+    } else {
+      sessions.push({ start: t, end: t, pings: 1 });
+    }
+  });
+
+  return sessions.reverse().slice(0, limit || 30).map(function(s) {
+    return {
+      start: new Date(s.start).toISOString(),
+      end: new Date(s.end).toISOString(),
+      durationMinutes: Math.max(1, Math.round((s.end - s.start) / 60000)),
+      pings: s.pings,
+    };
+  });
+}
+
 function setGalleryImageFeatured(id, featured) {
   db.prepare("UPDATE gallery_images SET featured = ? WHERE id = ?").run(featured ? 1 : 0, id);
 }
@@ -1430,6 +1498,8 @@ module.exports = {
   logConnection,
   listConnectionLogs,
   listConnectionLogsForUser,
+  recordActivityPing,
+  listActivitySessions,
   setGalleryImageFeatured,
   logGalleryView,
   logBdView,

@@ -34,22 +34,6 @@
       <% } %>
     </div>
 
-    <div class="aud-section">
-      <h2 class="aud-section-title">Connexions (<%= connectionLogs.length %> derni&egrave;res)</h2>
-      <% if (connectionLogs.length) { %>
-        <ul class="aud-activity-list">
-          <% connectionLogs.forEach(function(log) { %>
-            <li class="aud-activity-row">
-              <span class="aud-activity-date"><%= new Date(log.createdAt).toLocaleString('fr-FR') %></span>
-              <span class="admin-muted"><%= log.ip %></span>
-            </li>
-          <% }) %>
-        </ul>
-      <% } else { %>
-        <p class="admin-muted">Aucune connexion enregistr&eacute;e.</p>
-      <% } %>
-    </div>
-
   </main>
 </div>
 <%- include('partials/foot') %>

@@ -14,6 +14,9 @@
     <div class="aud-header">
       <div class="aud-identity">
         <span class="aud-name"><%= detail.user.displayName %></span>
+        <% if (detail.user.shareNotesWithAdmin) { %>
+          <span class="admin-share-dot" title="Partage ses notes et favoris avec l'admin" aria-label="Partage ses notes et favoris avec l'admin"></span>
+        <% } %>
         <span class="aud-username">@<%= detail.user.username %></span>
         <% if (detail.user.isAdmin) { %><span class="admin-badge-admin">Admin</span><% } %>
         <% if (detail.user.isTest) { %><span class="admin-badge-test">Test</span><% } %>

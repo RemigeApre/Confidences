@@ -63,6 +63,15 @@
       </label>
     </div>
 
+    <div class="profil-setting-heading">
+      <span>Partage avec l&rsquo;admin</span>
+      <span class="profil-info-icon" tabindex="0" data-tip="Si coché, une pastille verte indique à l'admin que tu acceptes qu'il consulte tes notes et favoris (codex, images, BD)." aria-label="Que fait cette option ?">!</span>
+    </div>
+    <label class="profil-checkbox-row">
+      <input type="checkbox" id="share-notes-checkbox" <%= currentUser.shareNotesWithAdmin ? 'checked' : '' %> />
+      <span>Rendre accessibles mes notes et mes favoris &agrave; l&rsquo;admin</span>
+    </label>
+
   </div>
 
 </main>
@@ -103,6 +112,13 @@
 
   wireServerRadio("ultra-mode-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
   wireServerRadio("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
+
+  var shareCheckbox = document.getElementById("share-notes-checkbox");
+  if (shareCheckbox) {
+    shareCheckbox.addEventListener("change", function () {
+      savePref("shareNotesWithAdmin", shareCheckbox.checked);
+    });
+  }
 
   // ── Filtrage des tags (localStorage) ─────────────────────────────────────
   function wireLocalRadio(containerId, lsKey, defaultVal) {

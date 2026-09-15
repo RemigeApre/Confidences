@@ -10239,6 +10239,24 @@ body.wiki-todo-open { overflow: hidden; }
   border-color: transparent;
 }
 
+/* Case à cocher simple (ex. "Partage avec l'admin") : même logique visuelle
+   que .user-setting-radio (pilule centrée) mais pour un choix binaire seul. */
+.profil-checkbox-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+.profil-checkbox-row input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    SIDEBAR — format intermédiaire (641px – 1100px)
    Quand la fenêtre est trop étroite pour la sidebar fixe (demi-écran PC,

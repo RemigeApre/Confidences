@@ -80,7 +80,12 @@
           </div>
 
           <button type="button" class="admin-utile-body-link" data-profile-id="<%= state.user.id %>">
-            <div class="admin-utile-name"><%= state.user.displayName %></div>
+            <div class="admin-utile-name">
+              <%= state.user.displayName %>
+              <% if (state.user.shareNotesWithAdmin) { %>
+                <span class="admin-share-dot" title="Partage ses notes et favoris avec l'admin" aria-label="Partage ses notes et favoris avec l'admin"></span>
+              <% } %>
+            </div>
             <div class="admin-utile-login"><%= uLastLogin %></div>
           </button>
 

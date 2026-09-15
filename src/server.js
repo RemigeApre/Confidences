@@ -18,7 +18,7 @@ const buildAccountRouter = require("./routes/account");
 const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
-  listWikiPages, listGalleryImages, listBdBooks,
+  listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -149,6 +149,14 @@ app.use(
 );
 
 app.use(attachUser);
+
+// Ping de présence discret (throttlé, voir recordActivityPing dans db.js) :
+// contrairement à connection_logs (uniquement à la saisie du mot de passe),
+// permet de savoir quand un profil est simplement en train de naviguer.
+app.use((req, res, next) => {
+  if (req.user) recordActivityPing(req.user.id);
+  next();
+});
 
 // Expose le chemin courant pour que le lien "Se connecter" dans la nav
 // puisse y revenir après connexion (paramètre ?next=).

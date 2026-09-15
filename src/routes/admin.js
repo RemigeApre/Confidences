@@ -30,6 +30,7 @@ const {
   listBdBooks,
   listFavoriteRows,
   listConnectionLogsForUser,
+  listActivitySessions,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -308,13 +309,21 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
     if (!detail) return res.redirect("/admin#tab-utilisateurs");
-    const connectionLogs = listConnectionLogsForUser(id, 30);
     const feed = [];
     detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki", title: v.title, id: v.pageId, at: v.createdAt }));
     detail.recentGalViews.forEach((v) => feed.push({ type: "gallery", title: v.title, id: v.galleryId, at: v.createdAt }));
     detail.recentBdViews.forEach((v) => feed.push({ type: "bd", title: v.title, id: v.bookId, at: v.createdAt }));
     feed.sort((a, b) => new Date(b.at) - new Date(a.at));
-    res.render("admin-user-activite", { config, detail, feed, connectionLogs, roleHue: roleHue(detail.user) });
+    res.render("admin-user-activite", { config, detail, feed, roleHue: roleHue(detail.user) });
+  });
+
+  router.get("/utilisateur/:id/connexions", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    const connectionLogs = listConnectionLogsForUser(id, 30);
+    const sessions = listActivitySessions(id, 30);
+    res.render("admin-user-connexions", { config, detail, connectionLogs, sessions, roleHue: roleHue(detail.user) });
   });
 
   router.get("/:id", requireAdmin, (req, res) => {
