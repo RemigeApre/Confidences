@@ -8272,6 +8272,37 @@ body.wiki-todo-open { overflow: hidden; }
   margin-bottom: 0.6rem;
 }
 
+/* PC : titres de strips centrés, cartes de catégorie centrées et équilibrées
+   avec leur compteur en badge contrasté en bas à droite (au lieu du chiffre
+   ton-sur-ton en haut à gauche, peu lisible). */
+@media (min-width: 641px) {
+  .wiki-index-strip-title {
+    text-align: center;
+  }
+  .wiki-index-cat-card {
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 5.5rem;
+    padding: 1.1rem 1rem 1.7rem;
+  }
+  .wiki-index-cat-label {
+    font-size: 0.94rem;
+  }
+  .wiki-index-cat-count {
+    position: absolute;
+    right: 0.6rem;
+    bottom: 0.55rem;
+    min-width: 1.35rem;
+    padding: 0.12rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    font-weight: 700;
+  }
+}
+
 /* La sidebar n'a pas de back-link sur la page d'accueil */
 .wiki-index-back-placeholder {
   display: inline-block;
