@@ -1,0 +1,22 @@
+<%# Carte contenu pour les pages admin/utilisateur/:id/{codex,images,bd} :
+    image, titre, nombre de vues, note (si présente), traitement particulier
+    si "j'adore". Attend : href, coverImg (chemin ou null), title,
+    viewCount (nombre ou undefined), rating (0-5 ou 0), flame (bool),
+    placeholderIcon (code HTML de l'icône de repli, ex. &#128247;). %>
+<a href="<%= href %>" class="aud-card<%= flame ? ' aud-card--flame' : '' %>">
+  <div class="aud-card-img-wrap">
+    <% if (coverImg) { %>
+      <img src="<%= thumbUrl(coverImg) %>" alt="" class="aud-card-img" loading="lazy" />
+    <% } else { %>
+      <div class="aud-card-placeholder"><%- placeholderIcon || '&#128247;' %></div>
+    <% } %>
+    <% if (flame) { %><span class="aud-card-flame" title="J&apos;adore">&#128293;</span><% } %>
+  </div>
+  <div class="aud-card-body">
+    <span class="aud-card-title"><%= title %></span>
+    <div class="aud-card-meta">
+      <% if (rating > 0) { %><span class="aud-card-rating"><%= rating %>&#9733;</span><% } %>
+      <% if (typeof viewCount === 'number') { %><span class="aud-card-views">&#128065;&nbsp;<%= viewCount %></span><% } %>
+    </div>
+  </div>
+</a>

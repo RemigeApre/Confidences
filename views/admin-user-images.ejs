@@ -1,0 +1,79 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' — Images', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= detail.user.displayName %></span>
+  <form method="POST" action="/admin/logout" style="margin:0">
+    <button type="submit" class="admin-topbar-logout">D&eacute;connexion</button>
+  </form>
+</div>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <div class="aud-section-header">
+      <h2 class="aud-section-title">Notes &amp; favoris images (<%= items.length %>)</h2>
+      <% if (topViews.length) { %>
+        <button type="button" class="admin-btn-link" id="aud-images-toggle-views">Voir les vues &#8595;</button>
+      <% } %>
+    </div>
+
+    <div class="aud-card-grid" id="aud-images-items">
+      <% if (!items.length) { %>
+        <p class="admin-muted">Aucune note ni favori image.</p>
+      <% } %>
+      <% items.forEach(function(img) { %>
+        <%- include('partials/admin-content-card', {
+          href: '/galerie/' + img.id + '/edit',
+          coverImg: (img.imagePaths && img.imagePaths[0]) || img.filename,
+          title: img.title || 'Sans titre',
+          viewCount: undefined,
+          rating: img.rating || 0,
+          flame: !!img.flame,
+          placeholderIcon: '&#128247;',
+        }) %>
+      <% }) %>
+    </div>
+
+    <% if (topViews.length) { %>
+      <div class="aud-section-header" id="aud-images-views-header" hidden>
+        <h2 class="aud-section-title">Images les plus visit&eacute;es</h2>
+      </div>
+      <div class="aud-card-grid" id="aud-images-views" hidden>
+        <% topViews.forEach(function(img) { %>
+          <%- include('partials/admin-content-card', {
+            href: '/galerie/' + img.id + '/edit',
+            coverImg: (img.imagePaths && img.imagePaths[0]) || img.filename,
+            title: img.title || 'Sans titre',
+            viewCount: img.viewCount,
+            rating: img.rating || 0,
+            flame: !!img.flame,
+            placeholderIcon: '&#128247;',
+          }) %>
+        <% }) %>
+      </div>
+    <% } %>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById("aud-images-toggle-views");
+  if (!btn) return;
+  var items = document.getElementById("aud-images-items");
+  var viewsHeader = document.getElementById("aud-images-views-header");
+  var views = document.getElementById("aud-images-views");
+  var showingViews = false;
+  btn.addEventListener("click", function () {
+    showingViews = !showingViews;
+    items.hidden = showingViews;
+    viewsHeader.hidden = !showingViews;
+    views.hidden = !showingViews;
+    btn.textContent = showingViews ? "Voir notes & favoris ↑" : "Voir les vues ↓";
+  });
+})();
+</script>
+<%- include('partials/foot') %>

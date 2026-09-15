@@ -8,268 +8,64 @@
   </form>
 </div>
 
-<main class="admin-main">
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
 
-  <%# ── En-tête utilisateur ── %>
-  <div class="aud-header">
-    <div class="aud-identity">
-      <span class="aud-name"><%= detail.user.displayName %></span>
-      <span class="aud-username">@<%= detail.user.username %></span>
-      <% if (detail.user.isAdmin) { %><span class="admin-badge-admin">Admin</span><% } %>
-      <% if (detail.user.isTest) { %><span class="admin-badge-test">Test</span><% } %>
-    </div>
-    <div class="aud-meta">
-      <span class="admin-muted">Compte cr&eacute;&eacute; le <%= new Date(detail.user.createdAt).toLocaleDateString('fr-FR') %></span>
-      <% if (detail.user.updatedAt) { %>
-        <span class="admin-muted">Modifi&eacute; le <%= new Date(detail.user.updatedAt).toLocaleDateString('fr-FR') %></span>
-      <% } %>
-      <% if (detail.user.lastLoginAt) { %>
-        <span class="admin-muted">Derni&egrave;re connexion le <%= new Date(detail.user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(detail.user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
-      <% } %>
-      <% if (attempt) { %>
-        <a href="/admin/live/<%= detail.user.id %>" class="admin-btn-link">D&eacute;tail complet du quizz &#8599;</a>
-      <% } %>
-    </div>
-    <% if (detail.user.email || detail.user.sexe || detail.user.birthYear) { %>
+  <main class="aud-content">
+
+    <%# ── En-tête utilisateur ── %>
+    <div class="aud-header">
+      <div class="aud-identity">
+        <span class="aud-name"><%= detail.user.displayName %></span>
+        <span class="aud-username">@<%= detail.user.username %></span>
+        <% if (detail.user.isAdmin) { %><span class="admin-badge-admin">Admin</span><% } %>
+        <% if (detail.user.isTest) { %><span class="admin-badge-test">Test</span><% } %>
+      </div>
       <div class="aud-meta">
-        <% if (detail.user.email) { %><span class="admin-muted"><%= detail.user.email %></span><% } %>
-        <% if (detail.user.sexe) { %><span class="admin-muted"><%= { femme: 'Femme', homme: 'Homme', autre: 'Autre' }[detail.user.sexe] || detail.user.sexe %></span><% } %>
-        <% if (detail.user.birthYear) { %><span class="admin-muted">N&eacute; en <%= detail.user.birthYear %></span><% } %>
+        <span class="admin-muted">Compte cr&eacute;&eacute; le <%= new Date(detail.user.createdAt).toLocaleDateString('fr-FR') %></span>
+        <% if (detail.user.updatedAt) { %>
+          <span class="admin-muted">Modifi&eacute; le <%= new Date(detail.user.updatedAt).toLocaleDateString('fr-FR') %></span>
+        <% } %>
+        <% if (detail.user.lastLoginAt) { %>
+          <span class="admin-muted">Derni&egrave;re connexion le <%= new Date(detail.user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(detail.user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
+        <% } %>
+        <% if (attempt) { %>
+          <a href="/admin/live/<%= detail.user.id %>" class="admin-btn-link">D&eacute;tail complet du quizz &#8599;</a>
+        <% } %>
       </div>
-    <% } %>
-  </div>
-
-  <%# ── Quizz ── %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">R&eacute;ponses au quizz</h2>
-    <% if (attempt && liveScores) { %>
-      <div class="admin-progress-wrap">
-        <% matrixSections.forEach(function(s) { %>
-          <% var sc = liveScores.sections[s.key]; %>
-          <% if (sc) { %>
-          <div class="admin-progress-row">
-            <span class="admin-progress-label"><%= s.title %></span>
-            <div class="bar admin-bar"><div class="bar-fill" style="width:<%= sc.percentage %>%"></div></div>
-            <span class="admin-progress-pct"><%= sc.percentage %>%</span>
-          </div>
-          <% } %>
-        <% }) %>
-      </div>
-      <p class="admin-muted" style="margin-top:.5rem">
-        Derni&egrave;re modification : <%= new Date(attempt.updatedAt).toLocaleString('fr-FR') %>
-      </p>
-    <% } else { %>
-      <p class="admin-muted">Aucune r&eacute;ponse enregistr&eacute;e.</p>
-    <% } %>
-  </div>
-
-  <%# ── Favoris ── %>
-  <%
-    var favWiki    = detail.favorites.filter(function(f){ return f.itemType === 'wiki'; });
-    var favGallery = detail.favorites.filter(function(f){ return f.itemType === 'gallery'; });
-    var favBd      = detail.favorites.filter(function(f){ return f.itemType === 'bd'; });
-  %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">&#128293;&nbsp;Codex favoris (<%= favWiki.length %>)</h2>
-    <% if (favWiki.length) { %>
-    <div class="aud-fav-rail">
-      <% favWiki.forEach(function(f) { %>
-      <a href="/wiki/<%= f.itemId %>" class="aud-fav-card">
-        <% if (f.coverImg) { %>
-          <img src="<%= thumbUrl(f.coverImg) %>" alt="" class="aud-fav-card-img" loading="lazy" />
-        <% } else { %>
-          <div class="aud-fav-card-placeholder">&#10084;</div>
-        <% } %>
-        <span class="aud-fav-card-title"><%= f.title || ('#' + f.itemId) %></span>
-      </a>
-      <% }) %>
-    </div>
-    <% } else { %>
-      <p class="admin-muted">Aucun favori codex.</p>
-    <% } %>
-  </div>
-
-  <div class="aud-section">
-    <h2 class="aud-section-title">&#128293;&nbsp;Images favorites (<%= favGallery.length %>)</h2>
-    <% if (favGallery.length) { %>
-    <div class="aud-fav-rail">
-      <% favGallery.forEach(function(f) { %>
-      <a href="/galerie/<%= f.itemId %>/edit" class="aud-fav-card aud-fav-card--img">
-        <% if (f.coverImg) { %>
-          <img src="<%= thumbUrl(f.coverImg) %>" alt="" class="aud-fav-card-img" loading="lazy" />
-        <% } else { %>
-          <div class="aud-fav-card-placeholder">&#128247;</div>
-        <% } %>
-        <% if (f.title) { %><span class="aud-fav-card-title"><%= f.title %></span><% } %>
-      </a>
-      <% }) %>
-    </div>
-    <% } else { %>
-      <p class="admin-muted">Aucune image favorite.</p>
-    <% } %>
-  </div>
-
-  <div class="aud-section">
-    <h2 class="aud-section-title">&#128293;&nbsp;BD favorites (<%= favBd.length %>)</h2>
-    <% if (favBd.length) { %>
-    <div class="aud-fav-rail">
-      <% favBd.forEach(function(f) { %>
-      <a href="/bd/<%= f.itemId %>" class="aud-fav-card aud-fav-card--img">
-        <% if (f.coverImg) { %>
-          <img src="<%= thumbUrl(f.coverImg) %>" alt="" class="aud-fav-card-img" loading="lazy" />
-        <% } else { %>
-          <div class="aud-fav-card-placeholder">&#128214;</div>
-        <% } %>
-        <% if (f.title) { %><span class="aud-fav-card-title"><%= f.title %></span><% } %>
-      </a>
-      <% }) %>
-    </div>
-    <% } else { %>
-      <p class="admin-muted">Aucune BD favorite.</p>
-    <% } %>
-  </div>
-
-  <%# ── Notes sur les pages wiki ── %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">Notes &amp; commentaires codex (<%= detail.notes.length %>)</h2>
-    <% if (detail.notes.length) { %>
-      <div class="aud-notes-list">
-        <% detail.notes.forEach(function(n) { %>
-        <div class="aud-note-card">
-          <div class="aud-note-header">
-            <a href="/wiki/<%= n.pageId %>" class="aud-note-page"><%= n.title %></a>
-            <span class="admin-muted" style="font-size:.75rem"><%= new Date(n.updatedAt).toLocaleDateString('fr-FR') %></span>
-          </div>
-          <p class="aud-note-content"><%= n.content %></p>
+      <% if (detail.user.email || detail.user.sexe || detail.user.birthYear) { %>
+        <div class="aud-meta">
+          <% if (detail.user.email) { %><span class="admin-muted"><%= detail.user.email %></span><% } %>
+          <% if (detail.user.sexe) { %><span class="admin-muted"><%= { femme: 'Femme', homme: 'Homme', autre: 'Autre' }[detail.user.sexe] || detail.user.sexe %></span><% } %>
+          <% if (detail.user.birthYear) { %><span class="admin-muted">N&eacute; en <%= detail.user.birthYear %></span><% } %>
         </div>
-        <% }) %>
-      </div>
-    <% } else { %>
-      <p class="admin-muted">Aucune note.</p>
-    <% } %>
-  </div>
+      <% } %>
+    </div>
 
-  <%# ── Pages Wiki les plus vues ── %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">Pages codex les plus visit&eacute;es</h2>
-    <% if (detail.wikiViewCounts && detail.wikiViewCounts.length) { %>
-      <table class="admin-table">
-        <thead><tr><th>Page</th><th style="text-align:right">Visites</th></tr></thead>
-        <tbody>
-          <% detail.wikiViewCounts.forEach(function(v) { %>
-          <tr>
-            <td><a href="/wiki/<%= v.pageId %>"><%= v.title %></a></td>
-            <td style="text-align:right;font-weight:600;color:var(--accent)"><%= v.viewCount %></td>
-          </tr>
+    <%# ── Quizz ── %>
+    <div class="aud-section">
+      <h2 class="aud-section-title">R&eacute;ponses au quizz</h2>
+      <% if (attempt && liveScores) { %>
+        <div class="admin-progress-wrap">
+          <% matrixSections.forEach(function(s) { %>
+            <% var sc = liveScores.sections[s.key]; %>
+            <% if (sc) { %>
+            <div class="admin-progress-row">
+              <span class="admin-progress-label"><%= s.title %></span>
+              <div class="bar admin-bar"><div class="bar-fill" style="width:<%= sc.percentage %>%"></div></div>
+              <span class="admin-progress-pct"><%= sc.percentage %>%</span>
+            </div>
+            <% } %>
           <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="admin-muted">Aucune visite codex enregistr&eacute;e.</p>
-    <% } %>
-  </div>
+        </div>
+        <p class="admin-muted" style="margin-top:.5rem">
+          Derni&egrave;re modification : <%= new Date(attempt.updatedAt).toLocaleString('fr-FR') %>
+        </p>
+      <% } else { %>
+        <p class="admin-muted">Aucune r&eacute;ponse enregistr&eacute;e.</p>
+      <% } %>
+    </div>
 
-  <%# ── Galerie les plus vues ── %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">Images galerie les plus visit&eacute;es</h2>
-    <% if (detail.galViewCounts && detail.galViewCounts.length) { %>
-      <table class="admin-table">
-        <thead><tr><th>Contenu</th><th>Type</th><th style="text-align:right">Visites</th></tr></thead>
-        <tbody>
-          <% detail.galViewCounts.forEach(function(v) { %>
-          <tr>
-            <td><a href="/galerie/<%= v.galleryId %>/edit"><%= v.title || '#' + v.galleryId %></a></td>
-            <td class="admin-muted" style="font-size:.78rem"><%= v.contentType === 'bd' ? 'BD' : 'Image' %></td>
-            <td style="text-align:right;font-weight:600;color:var(--accent)"><%= v.viewCount %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="admin-muted">Aucune visite galerie enregistr&eacute;e.</p>
-    <% } %>
-  </div>
-
-  <%# ── Activité wiki récente ── %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">Activit&eacute; codex r&eacute;cente (30 derni&egrave;res)</h2>
-    <% if (detail.recentWikiViews.length) { %>
-      <table class="admin-table">
-        <thead><tr><th>Page</th><th style="text-align:right;white-space:nowrap">Date</th></tr></thead>
-        <tbody>
-          <% detail.recentWikiViews.forEach(function(v) { %>
-          <tr>
-            <td><a href="/wiki/<%= v.pageId %>"><%= v.title %></a></td>
-            <td style="text-align:right;font-size:.78rem;color:var(--muted);white-space:nowrap"><%= new Date(v.createdAt).toLocaleString('fr-FR') %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="admin-muted">Aucune activit&eacute; codex enregistr&eacute;e.</p>
-    <% } %>
-  </div>
-
-  <%# ── Activité galerie récente ── %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">Activit&eacute; galerie r&eacute;cente (30 derni&egrave;res)</h2>
-    <% if (detail.recentGalViews.length) { %>
-      <table class="admin-table">
-        <thead><tr><th>Contenu</th><th>Type</th><th style="text-align:right;white-space:nowrap">Date</th></tr></thead>
-        <tbody>
-          <% detail.recentGalViews.forEach(function(v) { %>
-          <tr>
-            <td><a href="/galerie/<%= v.galleryId %>/edit"><%= v.title || '#' + v.galleryId %></a></td>
-            <td class="admin-muted" style="font-size:.78rem"><%= v.contentType === 'bd' ? 'BD' : 'Image' %></td>
-            <td style="text-align:right;font-size:.78rem;color:var(--muted);white-space:nowrap"><%= new Date(v.createdAt).toLocaleString('fr-FR') %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="admin-muted">Aucune activit&eacute; galerie enregistr&eacute;e.</p>
-    <% } %>
-  </div>
-
-  <%# ── BD les plus vues ── %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">BD les plus visit&eacute;es</h2>
-    <% if (detail.bdViewCounts && detail.bdViewCounts.length) { %>
-      <table class="admin-table">
-        <thead><tr><th>BD</th><th style="text-align:right">Visites</th></tr></thead>
-        <tbody>
-          <% detail.bdViewCounts.forEach(function(v) { %>
-          <tr>
-            <td><a href="/bd/<%= v.bookId %>"><%= v.title || '#' + v.bookId %></a></td>
-            <td style="text-align:right;font-weight:600;color:var(--accent)"><%= v.viewCount %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="admin-muted">Aucune visite BD enregistr&eacute;e.</p>
-    <% } %>
-  </div>
-
-  <%# ── Activité BD récente ── %>
-  <div class="aud-section">
-    <h2 class="aud-section-title">Activit&eacute; BD r&eacute;cente (30 derni&egrave;res)</h2>
-    <% if (detail.recentBdViews && detail.recentBdViews.length) { %>
-      <table class="admin-table">
-        <thead><tr><th>BD</th><th style="text-align:right;white-space:nowrap">Date</th></tr></thead>
-        <tbody>
-          <% detail.recentBdViews.forEach(function(v) { %>
-          <tr>
-            <td><a href="/bd/<%= v.bookId %>"><%= v.title || '#' + v.bookId %></a></td>
-            <td style="text-align:right;font-size:.78rem;color:var(--muted);white-space:nowrap"><%= new Date(v.createdAt).toLocaleString('fr-FR') %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="admin-muted">Aucune activit&eacute; BD enregistr&eacute;e.</p>
-    <% } %>
-  </div>
-
-</main>
+  </main>
+</div>
 <%- include('partials/foot') %>

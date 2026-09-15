@@ -1,0 +1,79 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' — Codex', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= detail.user.displayName %></span>
+  <form method="POST" action="/admin/logout" style="margin:0">
+    <button type="submit" class="admin-topbar-logout">D&eacute;connexion</button>
+  </form>
+</div>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <div class="aud-section-header">
+      <h2 class="aud-section-title">Notes &amp; favoris codex (<%= items.length %>)</h2>
+      <% if (topViews.length) { %>
+        <button type="button" class="admin-btn-link" id="aud-codex-toggle-views">Voir les vues &#8595;</button>
+      <% } %>
+    </div>
+
+    <div class="aud-card-grid" id="aud-codex-items">
+      <% if (!items.length) { %>
+        <p class="admin-muted">Aucune note ni favori codex.</p>
+      <% } %>
+      <% items.forEach(function(p) { %>
+        <%- include('partials/admin-content-card', {
+          href: '/wiki/' + p.id,
+          coverImg: p.imagePaths && p.imagePaths[0],
+          title: p.title,
+          viewCount: undefined,
+          rating: p.rating || 0,
+          flame: !!p.flame,
+          placeholderIcon: '&#128214;',
+        }) %>
+      <% }) %>
+    </div>
+
+    <% if (topViews.length) { %>
+      <div class="aud-section-header" id="aud-codex-views-header" hidden>
+        <h2 class="aud-section-title">Pages les plus visit&eacute;es</h2>
+      </div>
+      <div class="aud-card-grid" id="aud-codex-views" hidden>
+        <% topViews.forEach(function(p) { %>
+          <%- include('partials/admin-content-card', {
+            href: '/wiki/' + p.id,
+            coverImg: p.imagePaths && p.imagePaths[0],
+            title: p.title,
+            viewCount: p.viewCount,
+            rating: p.rating || 0,
+            flame: !!p.flame,
+            placeholderIcon: '&#128214;',
+          }) %>
+        <% }) %>
+      </div>
+    <% } %>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById("aud-codex-toggle-views");
+  if (!btn) return;
+  var items = document.getElementById("aud-codex-items");
+  var viewsHeader = document.getElementById("aud-codex-views-header");
+  var views = document.getElementById("aud-codex-views");
+  var showingViews = false;
+  btn.addEventListener("click", function () {
+    showingViews = !showingViews;
+    items.hidden = showingViews;
+    viewsHeader.hidden = !showingViews;
+    views.hidden = !showingViews;
+    btn.textContent = showingViews ? "Voir notes & favoris ↑" : "Voir les vues ↓";
+  });
+})();
+</script>
+<%- include('partials/foot') %>

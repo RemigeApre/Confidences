@@ -232,16 +232,6 @@
     <%# ── Formulaire caché : supprimer ── %>
     <form method="POST" id="admin-del-form" action="/admin/profils/__ID__/delete" style="display:none"></form>
 
-    <%# ── Modal : profil utilisateur (popup carte) ── %>
-    <div class="admin-modal-overlay" id="admin-profile-modal" hidden>
-      <div class="admin-modal admin-modal--profile">
-        <button type="button" class="admin-modal-close" id="admin-profile-modal-close" aria-label="Fermer">&#215;</button>
-        <div id="admin-profile-modal-body" class="admin-profile-modal-body">
-          <div class="admin-profile-loading">Chargement&hellip;</div>
-        </div>
-      </div>
-    </div>
-
   </section>
 
   <%# ═══════════════════════════════════════════════
@@ -645,61 +635,10 @@
       });
     });
 
-    // Fermer profil popup
-    document.getElementById("admin-profile-modal-close").addEventListener("click", function () {
-      closeModal("admin-profile-modal");
-    });
-    document.getElementById("admin-profile-modal").addEventListener("click", function (e) {
-      if (e.target === this) closeModal("admin-profile-modal");
-    });
-
-    // Clic sur la carte utilisateur → popup profil
+    // Clic sur la carte utilisateur → page dédiée (plus de popup)
     document.querySelectorAll("[data-profile-id]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var id = btn.dataset.profileId;
-        var body = document.getElementById("admin-profile-modal-body");
-        body.innerHTML = '<div class="admin-profile-loading">Chargement\u2026</div>';
-        openModal("admin-profile-modal");
-        fetch("/admin/utilisateur/" + id + "/json")
-          .then(function (r) { return r.json(); })
-          .then(function (d) {
-            var u = d.user;
-            var sexeLabel = { femme: "Femme", homme: "Homme", autre: "Autre" };
-            var orientLabel = { hetero: "Hétéro", gay: "Gay / Lesbienne", bi: "Bisexuel·le" };
-            var roleLabel = u.isAdmin ? "Admin" : (u.isTest ? "Test" : "Normal");
-            var roleClass = u.isAdmin ? "admin" : (u.isTest ? "test" : "normal");
-            var created = new Date(u.createdAt).toLocaleDateString("fr-FR");
-            var lastLogin = u.lastLoginAt
-              ? new Date(u.lastLoginAt).toLocaleString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
-              : "Jamais";
-            var html = '<div class="adm-prof-header">';
-            html += '<div class="adm-prof-avatar adm-prof-avatar--' + roleClass + '">' + (u.displayName || "?").charAt(0).toUpperCase() + "</div>";
-            html += '<div class="adm-prof-identity">';
-            html += '<span class="adm-prof-name">' + (u.displayName || "") + "</span>";
-            html += '<span class="adm-prof-username">@' + (u.username || "") + "</span>";
-            html += '<span class="adm-prof-role adm-prof-role--' + roleClass + '">' + roleLabel + "</span>";
-            html += "</div></div>";
-            html += '<div class="adm-prof-meta">';
-            if (u.email) html += "<span>" + u.email + "</span>";
-            if (u.sexe) html += "<span>" + (sexeLabel[u.sexe] || u.sexe) + "</span>";
-            if (u.birthYear) html += "<span>Né·e en " + u.birthYear + "</span>";
-            if (u.orientation) html += "<span>" + (orientLabel[u.orientation] || u.orientation) + "</span>";
-            html += "<span>Créé le " + created + "</span>";
-            html += "<span>Dernière connexion&nbsp;: " + lastLogin + "</span>";
-            html += "</div>";
-            html += '<div class="adm-prof-stats">';
-            html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + (d.livePercentage > 0 ? d.livePercentage + "%" : "N/A") + "</span><span>Quizz</span></div>";
-            html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + d.reactionStats.ratingCount + "</span><span>Notes</span></div>";
-            html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + d.reactionStats.flameCount + "</span><span>J'adore</span></div>";
-            html += "</div>";
-            html += '<div class="adm-prof-actions">';
-            html += '<a href="/admin/utilisateur/' + id + '" class="admin-btn-link" target="_blank">Profil complet ↗</a>';
-            html += "</div>";
-            body.innerHTML = html;
-          })
-          .catch(function () {
-            body.innerHTML = '<div class="admin-profile-loading">Erreur de chargement.</div>';
-          });
+        window.location.href = "/admin/utilisateur/" + btn.dataset.profileId;
       });
     });
   })();

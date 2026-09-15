@@ -27,6 +27,9 @@ const {
   mergeUserReactions,
   touchLastLogin,
   getUserReactionStats,
+  listBdBooks,
+  listFavoriteRows,
+  listConnectionLogsForUser,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -227,24 +230,39 @@ function buildAdminRouter(config) {
     res.redirect("/admin#tab-utilisateurs");
   });
 
-  router.get("/utilisateur/:id/json", requireAdmin, (req, res) => {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: "invalid id" });
-    const user = getUserById(id);
-    if (!user) return res.status(404).json({ error: "not found" });
-    const attempt = getAttempt(tokenForUser(user));
-    const liveScores = attempt ? computeScores(config, attempt.data) : null;
-    let liveRaw = 0, liveMax = 0;
-    if (liveScores) {
-      for (const key of Object.keys(liveScores.sections)) {
-        const s = liveScores.sections[key];
-        if (s.type === "matrix") { liveRaw += s.raw; liveMax += s.max; }
-      }
-    }
-    const livePercentage = liveMax ? Math.round((liveRaw / liveMax) * 1000) / 10 : 0;
-    const reactionStats = getUserReactionStats(id);
-    res.json({ user, reactionStats, livePercentage });
-  });
+  // Teinte du volet, même logique que src/routes/favorites.js pour le profil
+  // du visiteur (admin violet, test orange, sinon bleu) — ici appliquée au
+  // rôle du profil CONSULTÉ, pas de l'admin qui regarde.
+  function roleHue(user) {
+    if (user.isAdmin) return 262;
+    if (user.isTest) return 32;
+    return 217;
+  }
+
+  // Volet gauche "Activité utilisateur" (admin uniquement, voir requireAdmin
+  // sur chacune de ces routes) : items notés (rating/flame) ou mis en favori
+  // par ce profil, pour un type de contenu donné.
+  function ratedOrFavorited(userId, itemType, listFn) {
+    const withReactions = itemType === "bd" ? listFn() : mergeUserReactions(listFn(), userId, itemType);
+    const favIds = new Set(
+      listFavoriteRows(userId).filter((r) => r.item_type === itemType).map((r) => r.item_id)
+    );
+    return withReactions.filter((it) => it.rating > 0 || it.flame || favIds.has(it.id));
+  }
+
+  // Rattache le nombre de vues (déjà calculé par getUserDetail) aux objets
+  // contenu complets (image, note...), pour affichage en carte.
+  function withViewCounts(viewCounts, idKey, userId, itemType, listFn) {
+    const withReactions = itemType === "bd" ? listFn() : mergeUserReactions(listFn(), userId, itemType);
+    const byId = {};
+    withReactions.forEach((it) => { byId[it.id] = it; });
+    return viewCounts
+      .map((v) => {
+        const item = byId[v[idKey]];
+        return item ? Object.assign({}, item, { viewCount: v.viewCount }) : null;
+      })
+      .filter(Boolean);
+  }
 
   router.get("/utilisateur/:id", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
@@ -253,7 +271,50 @@ function buildAdminRouter(config) {
     const attempt = getAttempt(tokenForUser(detail.user));
     const liveScores = attempt ? computeScores(config, attempt.data) : null;
     const matrixSections = config.sections.filter((s) => s.type === "matrix");
-    res.render("admin-user-detail", { config, detail, attempt, liveScores, matrixSections });
+    res.render("admin-user-detail", { config, detail, attempt, liveScores, matrixSections, roleHue: roleHue(detail.user) });
+  });
+
+  router.get("/utilisateur/:id/codex", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    const items = ratedOrFavorited(id, "wiki", listWikiPages);
+    const topViews = withViewCounts(detail.wikiViewCounts, "pageId", id, "wiki", listWikiPages);
+    res.render("admin-user-codex", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
+  });
+
+  router.get("/utilisateur/:id/images", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    // BD est traité par sa propre page (listBdBooks) : on exclut ici les
+    // entrées galerie marquées "bd" pour ne pas les compter deux fois.
+    const onlyImages = () => listGalleryImages().filter((img) => img.contentType !== "bd");
+    const items = ratedOrFavorited(id, "gallery", onlyImages);
+    const topViews = withViewCounts(detail.galViewCounts, "galleryId", id, "gallery", onlyImages);
+    res.render("admin-user-images", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
+  });
+
+  router.get("/utilisateur/:id/bd", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    const items = ratedOrFavorited(id, "bd", listBdBooks);
+    const topViews = withViewCounts(detail.bdViewCounts, "bookId", id, "bd", listBdBooks);
+    res.render("admin-user-bd", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
+  });
+
+  router.get("/utilisateur/:id/activite", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    const connectionLogs = listConnectionLogsForUser(id, 30);
+    const feed = [];
+    detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki", title: v.title, id: v.pageId, at: v.createdAt }));
+    detail.recentGalViews.forEach((v) => feed.push({ type: "gallery", title: v.title, id: v.galleryId, at: v.createdAt }));
+    detail.recentBdViews.forEach((v) => feed.push({ type: "bd", title: v.title, id: v.bookId, at: v.createdAt }));
+    feed.sort((a, b) => new Date(b.at) - new Date(a.at));
+    res.render("admin-user-activite", { config, detail, feed, connectionLogs, roleHue: roleHue(detail.user) });
   });
 
   router.get("/:id", requireAdmin, (req, res) => {

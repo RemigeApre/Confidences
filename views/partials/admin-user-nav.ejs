@@ -1,0 +1,17 @@
+<%# Volet de navigation "activité utilisateur" (admin uniquement — toutes les
+    routes /admin/utilisateur/:id/* sont derrière requireAdmin). Attend :
+    detail (getUserDetail), roleHue (calculé par src/routes/admin.js). %>
+<aside class="aud-nav">
+  <div class="aud-nav-header">
+    <span class="aud-nav-role-dot" style="background: hsl(<%= roleHue %>, 70%, 55%)" aria-hidden="true"></span>
+    <span class="aud-nav-name"><%= detail.user.displayName %></span>
+  </div>
+  <nav class="aud-nav-links">
+    <a href="/admin/utilisateur/<%= detail.user.id %>" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id ? ' active' : '' %>">Quizz</a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/codex" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/codex' ? ' active' : '' %>">Codex</a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/images" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/images' ? ' active' : '' %>">Images</a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/bd" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/bd' ? ' active' : '' %>">BD</a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/activite" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/activite' ? ' active' : '' %>">Activit&eacute;</a>
+  </nav>
+  <a href="/admin#tab-utilisateurs" class="aud-nav-back">&larr; Tous les profils</a>
+</aside>
