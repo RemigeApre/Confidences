@@ -61,10 +61,10 @@
           </div>
         </details>
         <button type="button" class="pc-icon-btn pc-discreet-btn" id="pc-discreet-btn" aria-pressed="false" title="Masquer les images" aria-label="Masquer les images"><%- include('eye-icon') %></button>
-        <button type="button" class="pc-icon-btn" id="pc-search-btn" aria-label="Rechercher sur tout le site">&#128269;</button>
+        <button type="button" class="pc-icon-btn" id="pc-search-btn" aria-label="Rechercher sur tout le site"><%- include('search-icon') %></button>
         <% if (currentUser) { %>
           <div class="pc-nav-item pc-has-drop">
-            <button type="button" class="pc-icon-btn" title="<%= currentUser.displayName %>">&#128273;</button>
+            <button type="button" class="pc-icon-btn" title="<%= currentUser.displayName %>"><%- include('key-icon') %></button>
             <div class="pc-drop pc-drop-right">
               <a href="/favoris" class="pc-drop-link">Profil</a>
               <% if (currentUser.isAdmin) { %>
@@ -77,7 +77,7 @@
           </div>
         <% } else { %>
           <a href="/admin/login?next=<%= encodeURIComponent(locals.currentPath || '/') %>"
-             class="pc-icon-btn" title="Connexion">&#128273;</a>
+             class="pc-icon-btn" title="Connexion"><%- include('key-icon') %></a>
         <% } %>
       </div>
     </div>

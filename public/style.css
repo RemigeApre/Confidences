@@ -7139,20 +7139,22 @@ a.wiki-ql-label:hover .wiki-ql-text {
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--fg);
-    font-size: 1rem;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 1.15rem;
     text-decoration: none;
     cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    padding: 0;
+    transition: color 0.15s;
   }
   .pc-icon-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--bg);
+    color: var(--fg);
   }
+  .pc-discreet-btn[aria-pressed="true"] {
+    color: var(--accent);
+  }
+  .pc-svg-icon { width: 1.15rem; height: 1.15rem; }
 }
 
 /* ── Bulle consentement — desktop ───────────────────────────────────────── */
@@ -11632,7 +11634,7 @@ html.lq-discreet-mode img {
 }
 
 /* Bouton "masquer les images" : icône œil/œil-barré (voir partials/eye-icon.ejs) */
-.eye-icon { width: 1.05rem; height: 1.05rem; display: block; }
+.eye-icon { width: 1.15rem; height: 1.15rem; display: block; }
 .pc-discreet-btn .eye-icon--off,
 .nav-drawer-discreet-btn .eye-icon--off { display: none; }
 .pc-discreet-btn[aria-pressed="true"] .eye-icon--open,
@@ -11640,11 +11642,6 @@ html.lq-discreet-mode img {
 .pc-discreet-btn[aria-pressed="true"] .eye-icon--off,
 .nav-drawer-discreet-btn[aria-pressed="true"] .eye-icon--off { display: block; }
 
-.pc-discreet-btn[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
 .nav-drawer-discreet-btn {
   display: flex;
   align-items: center;
