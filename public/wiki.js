@@ -764,6 +764,10 @@
   // 6. FILTRES + RECHERCHE + TRI DE LA GRILLE
   // ══════════════════════════════════════════════════
   var categoryFilter  = document.getElementById("wiki-category-filter");
+  // Chips de catégorie (dont "Nos objets", hors du conteneur) : figées une
+  // fois pour toutes au chargement — évite de refaire ce querySelectorAll
+  // sur tout le document à chaque applyFilters() (recherche, clic tag...).
+  var catChipEls = document.querySelectorAll(".tag-chip[data-category]");
   var tagFilter       = document.getElementById("wiki-tag-filter");
   var sortSelect      = document.getElementById("wiki-sort-select");
   var ultraToggle      = document.getElementById("wiki-ultra-toggle");
@@ -1082,9 +1086,7 @@
         }
       });
       var totalPasses = cards.filter(function(c) { return c._passesNonCat; }).length;
-      // "Nos objets" vit hors de #wiki-category-filter (sous Ultra/Irréaliste) :
-      // on cible l'attribut plutôt que le conteneur pour continuer à le compter.
-      document.querySelectorAll(".tag-chip[data-category]").forEach(function(chip) {
+      catChipEls.forEach(function(chip) {
         var cat   = chip.dataset.category || "";
         var label = chip.dataset.label || chip.textContent.trim();
         if (!chip.dataset.label) chip.dataset.label = label; // cache on first call
@@ -1414,7 +1416,7 @@
       chip.classList.toggle("chip-include", state === "1");
       chip.classList.toggle("chip-exclude", state === "2");
     }
-    document.querySelectorAll(".tag-chip[data-category]").forEach(function (chip) {
+    catChipEls.forEach(function (chip) {
       var cat = chip.dataset.category || "";
       syncCatChip(chip);
       chip.addEventListener("click", function () {
@@ -1588,7 +1590,7 @@
       excludedCategoriesSet.clear();
       localStorage.setItem("wiki-filter-cats-inc", "[]");
       localStorage.setItem("wiki-filter-cats-exc", "[]");
-      document.querySelectorAll(".tag-chip[data-category]").forEach(function(c) {
+      catChipEls.forEach(function(c) {
         c.dataset.state = "0";
         c.classList.remove("chip-include", "chip-exclude");
       });
