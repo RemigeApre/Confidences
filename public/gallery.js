@@ -354,10 +354,14 @@
 
     var start = currentPage * ITEMS_PER_PAGE;
     var end   = start + ITEMS_PER_PAGE;
+    // Index de rang calculé dans la même boucle plutôt qu'avec indexOf (qui
+    // rescannait filteredCards pour chaque carte, coûteux avec beaucoup
+    // d'images).
+    var rank = 0;
     cards.forEach(function(card) {
       if (card.dataset.filtered !== "1") { card.hidden = true; return; }
-      var idx = filteredCards.indexOf(card);
-      card.hidden = idx < start || idx >= end;
+      card.hidden = rank < start || rank >= end;
+      rank++;
     });
 
     var total = filteredCards.length;
@@ -507,12 +511,15 @@
 
   applyGalleryTagOverflow();
 
-  // Search
+  // Search. applyFilters() refiltre/repagine toute la grille : léger
+  // débounce pour éviter de le refaire à chaque frappe sur une grosse galerie.
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function () {
       searchQ = searchInput.value;
       if (searchClear) searchClear.hidden = !searchQ;
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
   }
   if (searchClear) {

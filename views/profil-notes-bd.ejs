@@ -14,7 +14,7 @@
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
           <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="bd-notes-search" class="wiki-search-input" placeholder="Rechercher&hellip;" autocomplete="off" />
+          <input type="search" id="bd-notes-search" class="wiki-search-input" placeholder="Rechercher" autocomplete="off" />
           <button type="button" id="bd-notes-search-clear" class="wiki-search-clear" hidden>&#215;</button>
         </div>
       </div>
@@ -101,11 +101,13 @@
       applyFilters();
     });
   }
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function() {
       searchQ = searchInput.value.toLowerCase().trim();
       if (searchClear) searchClear.hidden = !searchQ;
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
     if (searchClear) {
       searchClear.addEventListener("click", function() {

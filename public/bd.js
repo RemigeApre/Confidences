@@ -68,12 +68,15 @@
     });
   }
 
-  // Search
+  // Search. Léger débounce : l'input reste instantané, seul le filtrage
+  // (potentiellement coûteux sur beaucoup de BD) est différé.
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function() {
       searchQ = searchInput.value.toLowerCase().trim();
       if (searchClear) searchClear.hidden = !searchQ;
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
     if (searchClear) {
       searchClear.addEventListener("click", function() {

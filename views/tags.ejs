@@ -127,7 +127,11 @@
     if (countDisplay) countDisplay.textContent = visible;
   }
 
-  if (searchInput) searchInput.addEventListener("input", applyFilters);
+  var searchDebounceTimer = null;
+  if (searchInput) searchInput.addEventListener("input", function () {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(applyFilters, 120);
+  });
 
   /* ── Filtre par type : 3 états (neutre → inclus → exclu) ── */
   var typeFilter = document.getElementById("tags-type-filter");

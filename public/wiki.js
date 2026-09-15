@@ -1261,13 +1261,17 @@
     });
   }
 
-  // Barre de recherche
+  // Barre de recherche. applyFilters() rescore/trie/repagine toute la
+  // grille : coûteux à chaque frappe sur une grosse collection, donc
+  // léger débounce (l'input reste instantané, seul le filtrage est différé).
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function () {
       searchQuery = searchInput.value;
       localStorage.setItem("wiki-filter-search", searchQuery);
       if (searchClear) searchClear.hidden = !searchQuery;
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
   }
   if (searchClear) {
@@ -1482,17 +1486,21 @@
   }
 
   // Réinitialise le niveau d'expansion quand la recherche de tag change
+  var tagSearchDebounceTimer = null;
   if (tagSearchInput) {
     tagSearchInput.addEventListener("input", function () {
-      tagExpandedCount = TAG_MAX; // on montre tout lors d'une recherche
-      var q = tagSearchInput.value.trim().toLowerCase();
-      if (tagFilter) {
-        tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function (chip) {
-          var tag = (chip.dataset.tag || "").toLowerCase();
-          chip.hidden = q.length > 0 && (chip.dataset.state || "0") === "0" && tag.indexOf(q) === -1;
-        });
-        applyTagOverflow();
-      }
+      clearTimeout(tagSearchDebounceTimer);
+      tagSearchDebounceTimer = setTimeout(function () {
+        tagExpandedCount = TAG_MAX; // on montre tout lors d'une recherche
+        var q = tagSearchInput.value.trim().toLowerCase();
+        if (tagFilter) {
+          tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function (chip) {
+            var tag = (chip.dataset.tag || "").toLowerCase();
+            chip.hidden = q.length > 0 && (chip.dataset.state || "0") === "0" && tag.indexOf(q) === -1;
+          });
+          applyTagOverflow();
+        }
+      }, 120);
     });
   }
 

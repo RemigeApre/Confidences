@@ -17,7 +17,7 @@
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
           <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="notes-search" class="wiki-search-input" placeholder="Rechercher&hellip;" autocomplete="off" />
+          <input type="search" id="notes-search" class="wiki-search-input" placeholder="Rechercher" autocomplete="off" />
         </div>
       </div>
 
@@ -43,7 +43,7 @@
       <% } %>
 
       <div class="wiki-filter-section">
-        <button type="button" id="notes-reset-filters" class="wiki-filter-reset-btn">R&eacute;initialiser</button>
+        <button type="button" id="notes-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser</button>
       </div>
 
     </div>
@@ -145,10 +145,12 @@
   });
 
   var searchInput = document.getElementById('notes-search');
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener('input', function() {
       search = this.value.toLowerCase().trim();
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
   }
 
