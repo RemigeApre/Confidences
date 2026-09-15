@@ -356,3 +356,31 @@ window.buildTagBadgeHTML = function (tag) {
     open(badge.dataset.tag);
   });
 })();
+
+// ── Mode discret (masquer les images) ───────────────────────────────────────
+// La classe est déjà posée au chargement par partials/head.ejs (évite le
+// flash) ; ici on ne fait que synchroniser les boutons et gérer le clic.
+(function () {
+  var KEY = "lq-discreet";
+  var btns = [
+    document.getElementById("pc-discreet-btn"),
+    document.getElementById("nav-drawer-discreet-btn"),
+  ].filter(Boolean);
+  if (!btns.length) return;
+
+  function isOn() { return document.documentElement.classList.contains("lq-discreet-mode"); }
+  function sync() {
+    var on = isOn();
+    btns.forEach(function (btn) { btn.setAttribute("aria-pressed", on ? "true" : "false"); });
+  }
+  sync();
+
+  btns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var on = !isOn();
+      document.documentElement.classList.toggle("lq-discreet-mode", on);
+      try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (_) {}
+      sync();
+    });
+  });
+})();

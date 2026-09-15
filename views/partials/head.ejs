@@ -6,6 +6,16 @@
   <meta name="robots" content="noindex, nofollow, noarchive" />
   <meta name="color-scheme" content="dark" />
   <title><%= typeof title !== "undefined" ? title : "Quiz" %></title>
+  <script>
+    // Mode discret (masquer les images, voir bouton dans le header) : appliqué
+    // ici, synchrone et avant tout rendu, pour ne jamais laisser flasher une
+    // image réelle le temps que nav.js (chargé en fin de page) ne s'exécute.
+    try {
+      if (localStorage.getItem("lq-discreet") === "1") {
+        document.documentElement.classList.add("lq-discreet-mode");
+      }
+    } catch (_) {}
+  </script>
   <% if (locals.preloadImage) { %>
     <%# Demarre le telechargement de l'image principale de la page des le
         <head>, sans attendre que le navigateur la decouvre en parsant le
