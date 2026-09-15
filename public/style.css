@@ -7055,10 +7055,15 @@ a.wiki-ql-label:hover .wiki-ql-text {
   .pc-nav-link--quizz   { --nav-color: hsl(175, 58%, 52%); }
   .pc-nav-link--wiki:hover,
   .pc-nav-link--galerie:hover,
-  .pc-nav-link--quizz:hover,
-  .pc-nav-link--active {
+  .pc-nav-link--quizz:hover {
     color: var(--nav-color);
     background: var(--bg);
+  }
+  /* Page active : uniquement la couleur du texte, pas de fond (pas de
+     "renfoncement" façon bouton enfoncé). */
+  .pc-nav-link--active {
+    color: var(--nav-color);
+    background: none;
   }
   .pc-nav-link-disabled {
     opacity: 0.45;
@@ -7072,23 +7077,29 @@ a.wiki-ql-label:hover .wiki-ql-text {
   /* Conteneur d'un lien avec dropdown */
   .pc-nav-item { position: relative; }
 
-  /* Dropdown */
+  /* Dropdown — carte flottante avec ouverture en fondu + léger glissement,
+     plus raffinée que l'ancien "display:none/flex" abrupt. */
   .pc-drop {
     position: absolute;
     top: 100%;
     left: 50%;
-    transform: translateX(-50%);
-    min-width: 175px;
+    min-width: 190px;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.13);
-    padding: 0.35rem;
-    display: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18), 0 18px 40px rgba(0, 0, 0, 0.28);
+    padding: 0.4rem;
+    display: flex;
     flex-direction: column;
+    gap: 0.1rem;
     z-index: 200;
-    /* Pont invisible entre le lien et le menu pour ne pas perdre le hover */
-    margin-top: 0;
+    margin-top: 0.7rem;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(-4px) scale(0.97);
+    transform-origin: top center;
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
   }
   .pc-has-drop::after {
     /* zone de pontage hover entre le lien et le dropdown */
@@ -7099,14 +7110,28 @@ a.wiki-ql-label:hover .wiki-ql-text {
     right: 0;
     height: 8px;
   }
-  .pc-has-drop:hover .pc-drop { display: flex; }
+  .pc-has-drop:hover .pc-drop,
   /* Épinglé par clic (voir nav.js) : reste ouvert même sans survol. */
-  .pc-has-drop.pc-menu-open .pc-drop { display: flex; }
+  .pc-has-drop.pc-menu-open .pc-drop {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0s;
+  }
+  .pc-has-drop:hover .pc-drop:not(.pc-drop-right),
+  .pc-has-drop.pc-menu-open .pc-drop:not(.pc-drop-right) {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
 
   .pc-drop-right {
     left: auto;
     right: 0;
-    transform: none;
+    transform: translateY(-4px) scale(0.97);
+    transform-origin: top right;
+  }
+  .pc-has-drop:hover .pc-drop-right,
+  .pc-has-drop.pc-menu-open .pc-drop-right {
+    transform: translateY(0) scale(1);
   }
 
   .pc-drop-link-btn {
@@ -7122,11 +7147,11 @@ a.wiki-ql-label:hover .wiki-ql-text {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.45rem 0.7rem;
-    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
     color: var(--fg);
     text-decoration: none;
-    font-size: 0.84rem;
+    font-size: 0.86rem;
     white-space: nowrap;
     transition: background 0.12s, color 0.12s;
   }
@@ -7146,11 +7171,15 @@ a.wiki-ql-label:hover .wiki-ql-text {
   .pc-drop:not(.pc-drop-right) .pc-drop-link::before {
     content: "+";
     position: absolute;
-    left: 0.7rem;
+    left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
     color: var(--muted);
     font-weight: 700;
+    transition: color 0.12s;
+  }
+  .pc-drop:not(.pc-drop-right) .pc-drop-link:hover::before {
+    color: var(--accent);
   }
 
   .pc-drop-dot {
