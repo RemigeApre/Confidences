@@ -1255,6 +1255,29 @@ function listGalleryImages() {
   return db.prepare("SELECT * FROM gallery_images ORDER BY created_at DESC").all().map(rowToGalleryImage);
 }
 
+// Pool d'images "encore à explorer" pour un profil : jamais notées ni mises
+// en favori, BD exclue (a son propre système d'exploration). Utilisé par le
+// bouton "Explorer l'inconnu" (voir routes/gallery.js) — le filtrage
+// ultra/irréaliste (specialTagOf) et blacklist se fait ensuite côté route.
+function listUnexploredGalleryImages(userId) {
+  return db.prepare(
+    `SELECT gi.id, gi.tags FROM gallery_images gi
+     WHERE gi.content_type != 'bd'
+     AND NOT EXISTS (
+       SELECT 1 FROM content_reactions cr
+       WHERE cr.user_id = ? AND cr.item_type = 'gallery' AND cr.item_id = gi.id AND cr.rating > 0
+     )
+     AND NOT EXISTS (
+       SELECT 1 FROM favorites f
+       WHERE f.user_id = ? AND f.item_type = 'gallery' AND f.item_id = gi.id
+     )`
+  ).all(userId, userId).map(function(r) {
+    let tags = [];
+    try { tags = JSON.parse(r.tags || "[]"); } catch (_) {}
+    return { id: r.id, tags: tags };
+  });
+}
+
 function getGalleryImage(id) {
   const row = db.prepare("SELECT * FROM gallery_images WHERE id = ?").get(id);
   return row ? rowToGalleryImage(row) : null;
@@ -1557,6 +1580,7 @@ module.exports = {
   addBlacklistedTag,
   removeBlacklistedTag,
   listUnexploredWikiPages,
+  listUnexploredGalleryImages,
   setGalleryImageFeatured,
   logGalleryView,
   logBdView,

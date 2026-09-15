@@ -11913,6 +11913,41 @@ body.wiki-todo-open { overflow: hidden; }
   max-width: 260px;
 }
 
+/* ── Lightbox : barre "Explorer l'inconnu" (voir gallery.js) ─────────
+   Dans le volet droit plutôt que superposée à l'image (déjà pris par la
+   barre de série ci-dessus) — les boutons Précédent/Suivant réutilisent
+   .wiki-explore-nav-btn (même style que sur le codex). */
+.gallery-lb-explore-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.gallery-lb-explore-label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #fff;
+}
+.gallery-lb-explore-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+.gallery-lb-explore-exit {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.2rem;
+}
+.gallery-lb-explore-exit:hover { color: #fff; }
+
 /* ── Page liste des séries ── */
 .gs-create-form {
   display: flex;

@@ -69,6 +69,7 @@
       <%# Réinitialiser %>
       <div class="wiki-filter-section">
         <button type="button" id="gallery-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+        <button type="button" id="gallery-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
       </div>
 
       <%# Tri %>
@@ -284,6 +285,16 @@
   <%# Volet droit : infos décorrélées de l'image %>
   <aside class="gallery-lb-panel">
     <button type="button" class="gallery-lb-close" title="Fermer">&#215;</button>
+    <%# Barre "Explorer l'inconnu" (voir gallery.js) : uniquement pendant
+        une session d'exploration démarrée depuis le volet filtre. %>
+    <div id="gallery-lb-explore-nav" class="gallery-lb-explore-nav" hidden>
+      <span class="gallery-lb-explore-label">Mode exploration</span>
+      <div class="gallery-lb-explore-actions">
+        <button type="button" id="gallery-lb-explore-prev" class="wiki-explore-nav-btn" title="Image pr&eacute;c&eacute;dente" aria-label="Image pr&eacute;c&eacute;dente" disabled>&#8592; Pr&eacute;c&eacute;dent</button>
+        <button type="button" id="gallery-lb-explore-next" class="wiki-explore-nav-btn" title="Image suivante" aria-label="Image suivante">Suivant &#8594;</button>
+      </div>
+      <button type="button" id="gallery-lb-explore-exit" class="gallery-lb-explore-exit" title="Quitter le mode exploration" aria-label="Quitter le mode exploration">&times;</button>
+    </div>
     <div class="gallery-lb-tags"></div>
     <a class="gallery-lb-wiki-btn" href="" hidden></a>
     <div class="gallery-lb-notes"></div>

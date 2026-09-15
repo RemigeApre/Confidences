@@ -30,10 +30,12 @@ const {
   removeFromSeries,
   reorderSeries,
   getSeriesMapForIds,
+  listUnexploredGalleryImages,
+  listBlacklistedTags,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
-const { filterOff } = require("../specialContent");
+const { filterOff, specialTagOf } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -446,6 +448,30 @@ function buildGalleryRouter(config) {
     const galleryId = Number(req.params.galleryId);
     if (!galleryId) return res.json([]);
     res.json(getImageSeries(galleryId));
+  });
+
+  // ── "Explorer l'inconnu" : pioche une image (pas BD) jamais notée ni en
+  // favori — voir gallery.ejs (le bouton) et public/gallery.js (le mode
+  // exploration du lightbox, avec son historique de session). Même logique
+  // que /wiki/explorer/aleatoire.
+  router.get("/explorer/aleatoire", requireUser, (req, res) => {
+    const excludeIds = new Set(
+      String(req.query.exclude || "").split(",").map(Number).filter(Number.isInteger)
+    );
+    const hideUltra = req.query.hideUltra === "1";
+    const hideIrrealiste = req.query.hideIrrealiste === "1";
+    const blacklist = new Set(listBlacklistedTags(req.user.id).map((r) => r.tag));
+    const candidates = listUnexploredGalleryImages(req.user.id).filter((img) => {
+      if (excludeIds.has(img.id)) return false;
+      if (img.tags.some((t) => blacklist.has(String(t).toLowerCase()))) return false;
+      const special = specialTagOf(img.tags);
+      if (special === "ultra" && hideUltra) return false;
+      if (special === "irrealiste" && hideIrrealiste) return false;
+      return true;
+    });
+    if (!candidates.length) return res.json({ id: null });
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    res.json({ id: pick.id });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {

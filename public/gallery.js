@@ -704,6 +704,14 @@
   var lbSeriesInfo = document.getElementById("gallery-lb-series-info");
   var lbSeriesPrev = document.getElementById("gallery-lb-series-prev");
   var lbSeriesNext = document.getElementById("gallery-lb-series-next");
+  var exploreBtn      = document.getElementById("gallery-explore-btn");
+  var exploreNav      = document.getElementById("gallery-lb-explore-nav");
+  var explorePrevBtn  = document.getElementById("gallery-lb-explore-prev");
+  var exploreNextBtn  = document.getElementById("gallery-lb-explore-next");
+  var exploreExitBtn  = document.getElementById("gallery-lb-explore-exit");
+  var exploreActive = false;
+  var exploreHistory = [];
+  var explorePos = 0;
 
   var lbVisible    = [];
   var lbCardIndex  = 0;
@@ -776,10 +784,15 @@
       });
     }
 
-    var atFirst = lbCardIndex === 0 && lbImgIndex === 0;
-    var atLast  = lbCardIndex === lbVisible.length - 1 && lbImgIndex === images.length - 1;
+    // En mode exploration, lbVisible ne contient que l'image en cours (voir
+    // openLightboxByGalleryId) : les flèches principales n'ont pas de sens,
+    // c'est la barre dédiée (gallery-lb-explore-nav) qui prend le relais.
+    var atFirst = exploreActive || (lbCardIndex === 0 && lbImgIndex === 0);
+    var atLast  = exploreActive || (lbCardIndex === lbVisible.length - 1 && lbImgIndex === images.length - 1);
     if (lbPrev) lbPrev.hidden = atFirst;
     if (lbNext) lbNext.hidden = atLast;
+    if (exploreNav) exploreNav.hidden = !exploreActive;
+    if (exploreActive && explorePrevBtn) explorePrevBtn.disabled = explorePos <= 0;
 
     // Série : charger la nav si l'image appartient à une série
     lbCurrentSeriesNav = null;
@@ -854,6 +867,8 @@
     document.body.style.overflow = "";
     lastTrackedGalleryId = null;
     if (lbImg) lbImg.src = "";
+    exploreActive = false;
+    if (exploreNav) exploreNav.hidden = true;
   }
 
   function navigate(dir) {
@@ -897,6 +912,60 @@
   if (lbSeriesNext) lbSeriesNext.addEventListener("click", function () {
     if (lbCurrentSeriesNav && lbCurrentSeriesNav.nextId != null) openLightboxByGalleryId(lbCurrentSeriesNav.nextId);
   });
+
+  // ── "Explorer l'inconnu" : image jamais notée ni en favori (pas BD), avec
+  // petit historique de session pour Précédent/Suivant — même principe que
+  // sur le codex, mais tout se passe dans le lightbox (pas de rechargement
+  // de page) : l'historique reste donc de simples variables JS.
+  function exploreFetchRandom(excludeIds, cb) {
+    var params = new URLSearchParams();
+    if (excludeIds.length) params.set("exclude", excludeIds.join(","));
+    if (hideUltra) params.set("hideUltra", "1");
+    if (hideIrrealiste) params.set("hideIrrealiste", "1");
+    fetch("/galerie/explorer/aleatoire?" + params.toString())
+      .then(function (r) { return r.json(); })
+      .then(function (d) { cb(d.id || null); })
+      .catch(function () { cb(null); });
+  }
+
+  if (exploreBtn) {
+    exploreBtn.addEventListener("click", function () {
+      exploreBtn.disabled = true;
+      exploreFetchRandom([], function (id) {
+        exploreBtn.disabled = false;
+        if (!id) { exploreBtn.textContent = "Tout est déjà exploré !"; return; }
+        exploreHistory = [id];
+        explorePos = 0;
+        exploreActive = true;
+        openLightboxByGalleryId(id);
+      });
+    });
+  }
+  if (explorePrevBtn) {
+    explorePrevBtn.addEventListener("click", function () {
+      if (explorePos <= 0) return;
+      explorePos -= 1;
+      openLightboxByGalleryId(exploreHistory[explorePos]);
+    });
+  }
+  if (exploreNextBtn) {
+    exploreNextBtn.addEventListener("click", function () {
+      if (explorePos < exploreHistory.length - 1) {
+        explorePos += 1;
+        openLightboxByGalleryId(exploreHistory[explorePos]);
+        return;
+      }
+      exploreNextBtn.disabled = true;
+      exploreFetchRandom(exploreHistory, function (id) {
+        exploreNextBtn.disabled = false;
+        if (!id) { exploreNextBtn.textContent = "Tout est exploré !"; return; }
+        exploreHistory.push(id);
+        explorePos = exploreHistory.length - 1;
+        openLightboxByGalleryId(id);
+      });
+    });
+  }
+  if (exploreExitBtn) exploreExitBtn.addEventListener("click", closeLightbox);
   if (lightbox) {
     lightbox.addEventListener("click", function(e) {
       if (e.target === lightbox) closeLightbox();
