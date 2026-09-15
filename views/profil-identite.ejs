@@ -5,11 +5,13 @@
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
   <div class="profil-subpage">
-    <h1>Profil</h1>
 
     <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
     <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
 
+    <div class="profil-setting-heading">
+      <span>Identit&eacute;</span>
+    </div>
     <form method="POST" action="/favoris/identite" class="profil-form">
 
       <label class="profil-field">

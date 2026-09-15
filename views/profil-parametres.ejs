@@ -5,9 +5,11 @@
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
   <div class="profil-subpage">
-    <h1>Param&egrave;tres</h1>
 
-    <div class="profil-setting-label">Ultra</div>
+    <div class="profil-setting-heading">
+      <span>Ultra</span>
+      <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Ultra rassemblent les pratiques et fantasmes les plus extrêmes du codex." aria-label="Qu'est-ce qu'un contenu Ultra ?">!</span>
+    </div>
     <div class="user-setting-options" id="ultra-mode-options">
       <label class="user-setting-radio" data-val="hidden">
         <input type="radio" name="ultra-mode" value="hidden" /> Masqu&eacute; (bascule)
@@ -20,7 +22,10 @@
       </label>
     </div>
 
-    <div class="profil-setting-label">Irr&eacute;aliste</div>
+    <div class="profil-setting-heading">
+      <span>Irr&eacute;aliste</span>
+      <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Irréaliste relèvent de scénarios impossibles : davantage le fantasme pur que le réalisable." aria-label="Qu'est-ce qu'un contenu Irréaliste ?">!</span>
+    </div>
     <div class="user-setting-options" id="irrealiste-mode-options">
       <label class="user-setting-radio" data-val="hidden">
         <input type="radio" name="irrealiste-mode" value="hidden" /> Masqu&eacute; (bascule)
@@ -33,7 +38,9 @@
       </label>
     </div>
 
-    <div class="profil-setting-label">Filtrage des tags</div>
+    <div class="profil-setting-heading">
+      <span>Filtrage des tags</span>
+    </div>
     <div class="user-setting-options" id="tag-logic-options">
       <label class="user-setting-radio" data-val="and">
         <input type="radio" name="tag-logic" value="and" /> ET &mdash; tous les tags
@@ -42,6 +49,20 @@
         <input type="radio" name="tag-logic" value="or" /> OU &mdash; au moins un
       </label>
     </div>
+
+    <div class="profil-setting-heading">
+      <span>Clic sur un tag</span>
+      <span class="profil-info-icon" tabindex="0" data-tip="Choisis ce qui se passe quand tu cliques un badge de tag : afficher un résumé, ou aller directement à sa page." aria-label="Comment fonctionne le clic sur un tag ?">!</span>
+    </div>
+    <div class="user-setting-options" id="tag-click-options">
+      <label class="user-setting-radio" data-val="popup">
+        <input type="radio" name="tag-click" value="popup" /> Aper&ccedil;u (popup)
+      </label>
+      <label class="user-setting-radio" data-val="direct">
+        <input type="radio" name="tag-click" value="direct" /> Acc&egrave;s direct &mdash; codex ou images
+      </label>
+    </div>
+
   </div>
 
 </main>
@@ -106,6 +127,7 @@
   }
 
   wireLocalRadio("tag-logic-options", "wiki-tag-logic", "and");
+  wireLocalRadio("tag-click-options", "tag-click-mode", "popup");
 })();
 </script>
 

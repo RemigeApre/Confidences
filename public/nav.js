@@ -410,12 +410,22 @@ window.buildTagBadgeHTML = function (tag) {
   }
 
   // Délégation globale : n'importe quel badge de tag, présent ou ajouté plus
-  // tard (lightbox, modale BD...), ouvre cette même popup.
+  // tard (lightbox, modale BD...), ouvre cette même popup — sauf en mode
+  // "accès direct" (réglage /favoris/parametres) qui saute la popup et va
+  // droit à la page codex du tag si elle existe, sinon à la galerie filtrée.
   document.addEventListener("click", function (e) {
     var badge = e.target.closest(".tag-badge[data-tag]");
     if (!badge) return;
     e.preventDefault();
-    open(badge.dataset.tag);
+    var tag = badge.dataset.tag;
+    if (localStorage.getItem("tag-click-mode") === "direct") {
+      var meta = (window.TAG_REGISTRY || {})[tag] || {};
+      window.location.href = meta.wikiPageId
+        ? "/wiki/" + meta.wikiPageId
+        : "/galerie?tag=" + encodeURIComponent(tag);
+      return;
+    }
+    open(tag);
   });
 })();
 
