@@ -20,7 +20,9 @@
   %>
   <div class="pc-nav" id="pc-nav">
 
-    <div class="pc-nav-left">
+    <a href="/" class="pc-nav-brand-link"><%= config.title %></a>
+
+    <div class="pc-nav-links">
       <div class="pc-nav-item pc-has-drop">
         <a href="/wiki" class="pc-nav-link pc-nav-link--wiki<%= _onWiki ? ' pc-nav-link--active' : '' %>">Wiki</a>
         <div class="pc-drop">
@@ -37,14 +39,6 @@
             <a href="/bd" class="pc-drop-link">BD</a>
           </div>
         </div>
-      <% } %>
-    </div>
-
-    <a href="/" class="pc-nav-brand-link"><%= config.title %></a>
-
-    <div class="pc-nav-right">
-      <% if (currentUser) { %>
-        <span class="pc-nav-link pc-nav-link-disabled" title="Bient&ocirc;t disponible">Liens</span>
         <div class="pc-nav-item pc-has-drop">
           <a href="/" class="pc-nav-link pc-nav-link--quizz<%= _onQuizz ? ' pc-nav-link--active' : '' %>">Quizz</a>
           <div class="pc-drop">
@@ -57,7 +51,9 @@
           </div>
         </div>
       <% } %>
-      <div class="pc-nav-actions">
+    </div>
+
+    <div class="pc-nav-actions">
         <details class="pc-consent-details pc-hover-menu">
           <summary class="pc-icon-btn pc-consent-btn" title="Rappel consentement" aria-label="Rappel sur le consentement">?</summary>
           <div class="pc-consent-panel">
@@ -91,7 +87,6 @@
              class="pc-icon-btn" title="Connexion"><%- include('key-icon') %></a>
         <% } %>
       </div>
-    </div>
 
   </div>
 </div>

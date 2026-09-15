@@ -6991,16 +6991,7 @@ a.wiki-ql-label:hover .wiki-ql-text {
     height: 100%;
   }
 
-  /* Colonne gauche : liens vers la gauche, mais poussés vers le centre */
-  .pc-nav-left {
-    display: flex;
-    align-items: center;
-    gap: 0.1rem;
-    flex: 1;
-    justify-content: flex-end;
-  }
-
-  /* Brand centré */
+  /* Brand à gauche ; les liens de pages restent l'élément central du header. */
   .pc-nav-brand-link {
     flex-shrink: 0;
     font-family: Georgia, "Times New Roman", serif;
@@ -7010,7 +7001,6 @@ a.wiki-ql-label:hover .wiki-ql-text {
     letter-spacing: 0.03em;
     color: var(--fg);
     text-decoration: none;
-    padding: 0 1.75rem;
     transition: color 0.15s, text-shadow 0.15s, transform 0.15s;
     white-space: nowrap;
     text-shadow: none;
@@ -7026,13 +7016,14 @@ a.wiki-ql-label:hover .wiki-ql-text {
       0 -1px 0 rgba(0,0,0,0.35);
   }
 
-  /* Colonne droite : liens vers la droite, poussés vers le centre */
-  .pc-nav-right {
+  /* Liens de pages : restent l'élément central du header (le titre est à
+     gauche, les icônes à droite, tout le reste de l'espace leur revient). */
+  .pc-nav-links {
     display: flex;
     align-items: center;
-    gap: 0.1rem;
+    justify-content: center;
+    gap: 0.3rem;
     flex: 1;
-    justify-content: flex-start;
   }
 
   /* Liens de navigation */
@@ -7168,9 +7159,9 @@ a.wiki-ql-label:hover .wiki-ql-text {
   .pc-nav-actions {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.7rem;
     margin-left: auto;
-    padding-left: 0.75rem;
+    padding-left: 1rem;
     border-left: 1px solid var(--border);
   }
 
