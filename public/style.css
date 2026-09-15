@@ -10578,6 +10578,53 @@ body.wiki-todo-open { overflow: hidden; }
   border-color: #7a2418;
 }
 
+/* ─── Sous-pages "notes" du profil : deux volets à la fois ───────────────
+   La navigation garde la gauche (comme sur le reste du profil), le volet
+   filtre passe à droite. Le palier "intermédiaire" existant (641–1100px, un
+   seul volet redevenu statique) ne suffit pas à deux volets fixes : on
+   l'étend jusqu'à 1339px pour ces deux-là spécifiquement, et ils ne
+   redeviennent fixes qu'à partir de 1340px — comme l'ancien panneau profil,
+   qui avait la même contrainte de place. */
+@media (min-width: 1101px) and (max-width: 1339px) {
+  .profil-notes-page .profil-nav-sidebar,
+  .profil-notes-page .profil-notes-filter {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    z-index: auto;
+    overflow: visible;
+    border-radius: 0.75rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    flex-direction: column;
+  }
+  .profil-notes-page .profil-nav-sidebar .wiki-sidebar-body,
+  .profil-notes-page .profil-notes-filter .wiki-sidebar-body {
+    flex: none;
+    overflow: visible;
+    max-height: none;
+    padding: 0.5rem 1rem 0.75rem;
+  }
+  .profil-notes-page .profil-notes-filter .wiki-chapter-hero {
+    display: flex !important;
+    flex-shrink: 0;
+  }
+  .profil-notes-page .profil-notes-filter .wiki-sidebar-filter-details > .wiki-sidebar-filter-summary {
+    display: flex;
+  }
+}
+@media (min-width: 1340px) {
+  .profil-notes-page .profil-notes-filter {
+    left: auto;
+    right: 0;
+  }
+}
+
 /* Champs de la sidebar */
 .profil-setting-label {
   display: block;

@@ -154,7 +154,7 @@ function buildFavoritesRouter(config) {
     const tagSet = new Set();
     all.forEach((img) => (img.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
-    res.render("profil-notes-images", { config, items: all, allTags });
+    res.render("profil-notes-images", { config, items: all, allTags, roleHue: roleHue(req.user) });
   });
 
   router.get("/notes/wiki", requireUser, (req, res) => {
@@ -163,7 +163,7 @@ function buildFavoritesRouter(config) {
     const tagSet = new Set();
     all.forEach((p) => (p.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
-    res.render("profil-notes-wiki", { config, pages: all, allTags, categories: WIKI_CATEGORIES });
+    res.render("profil-notes-wiki", { config, pages: all, allTags, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user) });
   });
 
   router.get("/notes/bd", requireUser, (req, res) => {
@@ -171,7 +171,7 @@ function buildFavoritesRouter(config) {
     const tagSet = new Set();
     all.forEach((b) => (b.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
-    res.render("profil-notes-bd", { config, books: all, allTags });
+    res.render("profil-notes-bd", { config, books: all, allTags, roleHue: roleHue(req.user) });
   });
 
   router.post("/toggle", requireUserJson, (req, res) => {
