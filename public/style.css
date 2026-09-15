@@ -7296,6 +7296,15 @@ a.wiki-ql-label:hover .wiki-ql-text {
     background: #1c1638;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.18);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  /* On doit bien voir qu'on est dans le champ : la bordure/le fond de
+     .wiki-search-bar réagit (l'input lui-même reste transparent, sans
+     bordure propre). */
+  .wiki-cat-sidebar .wiki-search-bar:focus-within {
+    background: #2a2154;
+    border-color: var(--wiki-gold);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25);
   }
   .wiki-cat-sidebar .wiki-search-input {
     background: transparent;
@@ -7381,10 +7390,21 @@ a.wiki-ql-label:hover .wiki-ql-text {
     font-size: 0.76rem;
     font-weight: 700;
   }
-  .wiki-cat-sidebar .tag-chip.active,
   .wiki-cat-sidebar .tag-chip:hover {
     background: #000;
     border-color: rgba(255, 255, 255, 0.55);
+    color: #fff;
+  }
+  /* Catégories : multi-sélection 3 états, comme les tags — un clic inclut
+     (vert), deux clics excluent (rouge), trois clics reviennent à neutre. */
+  .wiki-cat-sidebar .tag-chip.chip-include {
+    background: hsl(140, 55%, 30%);
+    border-color: hsl(140, 55%, 40%);
+    color: #fff;
+  }
+  .wiki-cat-sidebar .tag-chip.chip-exclude {
+    background: hsl(0, 58%, 40%);
+    border-color: hsl(0, 58%, 50%);
     color: #fff;
   }
   .wiki-ultra-btn {
@@ -7455,6 +7475,36 @@ a.wiki-ql-label:hover .wiki-ql-text {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.5);
+    text-align: center;
+  }
+  /* Volet interne réduit (Catégorie, Notation...) : replié par défaut,
+     libellé centré avec petit triangle — même esprit que .gallery-cat-details. */
+  .wiki-subpanel-details {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 0.6rem;
+  }
+  .wiki-subpanel-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  .wiki-subpanel-summary::-webkit-details-marker { display: none; }
+  .wiki-subpanel-summary::before { content: "▸"; font-size: 0.75rem; }
+  .wiki-subpanel-details[open] .wiki-subpanel-summary::before { content: "▾"; }
+  .wiki-subpanel-details .links-filter,
+  .wiki-subpanel-details .wiki-filter-label-row,
+  .wiki-subpanel-details .wiki-adv-stars,
+  .wiki-subpanel-details .wiki-prop-grid {
+    margin-top: 0.5rem;
   }
   .wiki-filter-toggles {
     flex-direction: row;
@@ -7485,7 +7535,15 @@ a.wiki-ql-label:hover .wiki-ql-text {
     box-sizing: border-box;
   }
   .wiki-tag-search-input::placeholder { color: rgba(255,255,255,0.35); }
-  .wiki-tag-search-input:focus { outline: none; border-color: rgba(255,255,255,0.4); }
+  .wiki-tag-search-input {
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .wiki-tag-search-input:focus {
+    outline: none;
+    background: #2a2154;
+    border-color: var(--wiki-gold);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25);
+  }
   .wiki-notrated-opt { margin-top: 0.25rem; }
   .wiki-cat-sidebar .wiki-adv-checks { gap: 0.3rem; }
 
@@ -7499,7 +7557,7 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
 .wiki-prop-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.35rem;
 }
 .wiki-prop-btn {

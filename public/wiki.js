@@ -785,10 +785,13 @@
   var extraCatFilter  = document.getElementById("wiki-extra-cat-filter");
   var indexNative     = document.getElementById("wiki-index-native");
 
-  var activeCategory  = localStorage.getItem("wiki-filter-cat") || "";
+  // Catégories : multi-sélection à 3 états (comme les tags), plus de simple
+  // "Tous" — aucune catégorie cochée revient déjà à "toutes affichées".
+  var includedCategoriesSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-cats-inc") || "[]"));
+  var excludedCategoriesSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-cats-exc") || "[]"));
   var propStates = {
+    // "owned" retiré : doublon avec la bascule "Nos objets".
     "not-rated": Number(localStorage.getItem("wiki-prop-not-rated") || "0"),
-    "owned":     Number(localStorage.getItem("wiki-prop-owned")     || "0"),
     "flame":     Number(localStorage.getItem("wiki-prop-flame")     || "0"),
     "interested":Number(localStorage.getItem("wiki-prop-interested")|| "0")
   };
@@ -964,7 +967,7 @@
 
   function hasActiveFilters() {
     if (searchQuery) return true;
-    if (activeCategory) return true;
+    if (includedCategoriesSet.size > 0 || excludedCategoriesSet.size > 0) return true;
     if (advMinRating > 0) return true;
     if (includedTagsSet.size > 0 || excludedTagsSet.size > 0) return true;
     for (var _p in propStates) { if (propStates[_p] !== 0) return true; }
@@ -985,9 +988,19 @@
     // Filtrage
     cards.forEach(function (card) {
       var extraCats = (card.dataset.extraCats || "").split("|").filter(Boolean);
-      var okCat = !activeCategory ||
-        (activeCategory === "__owned__" ? card.dataset.owned === "1"
-          : card.dataset.category === activeCategory || extraCats.indexOf(activeCategory) !== -1);
+      // Catégories : multi-sélection 3 états, OR entre catégories incluses,
+      // exclusion prioritaire (comme les tags / catégories liées).
+      function cardMatchesCat(cat) {
+        return cat === "__owned__" ? card.dataset.owned === "1"
+          : (card.dataset.category === cat || extraCats.indexOf(cat) !== -1);
+      }
+      var okCat = true;
+      if (includedCategoriesSet.size > 0) {
+        okCat = Array.from(includedCategoriesSet).some(cardMatchesCat);
+      }
+      if (okCat && excludedCategoriesSet.size > 0) {
+        okCat = !Array.from(excludedCategoriesSet).some(cardMatchesCat);
+      }
       var cardTags  = (card.dataset.tags || "").split("|");
       var okTag = true;
       if (includedTagsSet.size > 0) {
@@ -1037,17 +1050,16 @@
       // Prop filters (3-state)
       var isUnrated = !Number(card.dataset.rating);
       var okNotRated   = propStates["not-rated"]  === 0 ? true : (propStates["not-rated"]  === 1 ? isUnrated              : !isUnrated);
-      var okOwned      = propStates["owned"]      === 0 ? true : (propStates["owned"]      === 1 ? card.dataset.owned === "1"      : card.dataset.owned !== "1");
       var okFlame      = propStates["flame"]      === 0 ? true : (propStates["flame"]      === 1 ? card.dataset.flame === "1"      : card.dataset.flame !== "1");
       var okInterested = propStates["interested"] === 0 ? true : (propStates["interested"] === 1 ? card.dataset.interested === "1" : card.dataset.interested !== "1");
       var okMaturity   = activeMaturityFilter < 0 || Number(card.dataset.maturity || 0) === activeMaturityFilter;
       var okSousCat    = !activeSousCat || (card.dataset.sousCat || "") === activeSousCat;
 
       // Track which cards pass all non-tag filters (for smart tag chip visibility)
-      var okNonTag = okCat && okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okOwned && okFlame && okInterested && okMaturity && okSousCat;
+      var okNonTag = okCat && okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okFlame && okInterested && okMaturity && okSousCat;
       card._passesNonTag = okNonTag;
       // Track which cards pass all filters except the category (for 9/27 chip counts)
-      card._passesNonCat = okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okOwned && okFlame && okInterested && okMaturity && okSousCat && okTag;
+      card._passesNonCat = okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okFlame && okInterested && okMaturity && okSousCat && okTag;
       card.hidden = !(okNonTag && okTag);
     });
 
@@ -1077,13 +1089,11 @@
         var label = chip.dataset.label || chip.textContent.trim();
         if (!chip.dataset.label) chip.dataset.label = label; // cache on first call
         if (!anyNonCatFilter) {
-          chip.textContent = (cat === "__owned__" ? "\u2605\u00a0" : "") + chip.dataset.label;
-        } else if (cat === "") {
-          chip.textContent = chip.dataset.label + "\u00a0" + totalPasses + "/" + cards.length;
+          chip.textContent = chip.dataset.label;
         } else if (cat === "__owned__") {
           var ownedTotal = cards.filter(function(c) { return c.dataset.owned === "1"; }).length;
           var ownedFilt  = cards.filter(function(c) { return c.dataset.owned === "1" && c._passesNonCat; }).length;
-          chip.textContent = "\u2605\u00a0" + chip.dataset.label + "\u00a0" + ownedFilt + "/" + ownedTotal;
+          chip.textContent = chip.dataset.label + "\u00a0" + ownedFilt + "/" + ownedTotal;
         } else {
           var f = catFiltered[cat] || 0;
           var t = catTotal[cat] || 0;
@@ -1127,7 +1137,7 @@
 
     var heroCountEl = document.querySelector(".wiki-chapter-hero-count");
     if (heroCountEl) {
-      var hasFilter = q || hasAdv || (categoryFilter && activeCategory !== "") || includedTagsSet.size > 0 || excludedTagsSet.size > 0;
+      var hasFilter = q || hasAdv || includedCategoriesSet.size > 0 || excludedCategoriesSet.size > 0 || includedTagsSet.size > 0 || excludedTagsSet.size > 0;
       heroCountEl.textContent = hasFilter ? (visible.length + "/" + cards.length) : cards.length;
     }
 
@@ -1395,28 +1405,36 @@
     // "Nos objets" (data-category="__owned__") vit hors de #wiki-category-filter,
     // sous Ultra/Irréaliste : on cible l'attribut data-category partout sur la
     // page plutôt que le conteneur, pour qu'il reste synchronisé avec les
-    // vraies catégories (un seul actif à la fois).
-    var allCatChips = document.querySelectorAll(".tag-chip[data-category]");
-    allCatChips.forEach(function (chip) {
+    // vraies catégories. Multi-sélection à 3 états (neutre → inclure (vert)
+    // → exclure (rouge) → neutre), comme les tags.
+    function syncCatChip(chip) {
+      var cat = chip.dataset.category || "";
+      var state = includedCategoriesSet.has(cat) ? "1" : (excludedCategoriesSet.has(cat) ? "2" : "0");
+      chip.dataset.state = state;
+      chip.classList.toggle("chip-include", state === "1");
+      chip.classList.toggle("chip-exclude", state === "2");
+    }
+    document.querySelectorAll(".tag-chip[data-category]").forEach(function (chip) {
+      var cat = chip.dataset.category || "";
+      syncCatChip(chip);
       chip.addEventListener("click", function () {
-        allCatChips.forEach(function (c) { c.classList.remove("active"); });
-        chip.classList.add("active");
-        activeCategory = chip.dataset.category || "";
-        localStorage.setItem("wiki-filter-cat", activeCategory);
+        var state = chip.dataset.state || "0";
+        if (state === "0") {
+          includedCategoriesSet.add(cat);
+          excludedCategoriesSet.delete(cat);
+        } else if (state === "1") {
+          includedCategoriesSet.delete(cat);
+          excludedCategoriesSet.add(cat);
+        } else {
+          includedCategoriesSet.delete(cat);
+          excludedCategoriesSet.delete(cat);
+        }
+        syncCatChip(chip);
+        localStorage.setItem("wiki-filter-cats-inc", JSON.stringify(Array.from(includedCategoriesSet)));
+        localStorage.setItem("wiki-filter-cats-exc", JSON.stringify(Array.from(excludedCategoriesSet)));
         applyFilters();
       });
     });
-    // Restaure la catégorie active visuellement
-    if (activeCategory) {
-      var restoredCatChip = document.querySelector('.tag-chip[data-category="' + activeCategory + '"]');
-      if (restoredCatChip) {
-        allCatChips.forEach(function (c) { c.classList.remove("active"); });
-        restoredCatChip.classList.add("active");
-      } else {
-        activeCategory = "";
-        localStorage.removeItem("wiki-filter-cat");
-      }
-    }
   }
   if (tagFilter) {
     // Restore state from localStorage
@@ -1523,6 +1541,10 @@
       hideUltra = !hideUltra;
       syncUltraBtn();
       applyFilters();
+      // Sans cet appel, les cartes proposées du sommaire (Derniers ajouts,
+      // Mieux notées...) ne reflétaient pas la bascule Ultra — seul le
+      // bouton Irréaliste l'appelait.
+      applyChapterStripFilters();
     });
   }
   syncUltraBtn();
@@ -1561,14 +1583,15 @@
       hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
       syncUltraBtn();
       syncIrralisteBtn();
-      // Catégorie : Tous
-      activeCategory = "";
-      localStorage.setItem("wiki-filter-cat", "");
-      if (categoryFilter) {
-        document.querySelectorAll(".tag-chip[data-category]").forEach(function(c) { c.classList.remove("active"); });
-        var allBtn = categoryFilter.querySelector("[data-category='']");
-        if (allBtn) allBtn.classList.add("active");
-      }
+      // Catégories : plus rien inclus/exclu
+      includedCategoriesSet.clear();
+      excludedCategoriesSet.clear();
+      localStorage.setItem("wiki-filter-cats-inc", "[]");
+      localStorage.setItem("wiki-filter-cats-exc", "[]");
+      document.querySelectorAll(".tag-chip[data-category]").forEach(function(c) {
+        c.dataset.state = "0";
+        c.classList.remove("chip-include", "chip-exclude");
+      });
       // Tags
       includedTagsSet.clear();
       excludedTagsSet.clear();
@@ -1625,7 +1648,8 @@
   }
 
   var filtersPanel = document.getElementById("wiki-filters-panel");
-  if (filtersPanel && (anyAdv || activeCategory || activeSort !== "alpha-asc" || !hideUltra || !hideIrrealiste)) {
+  var anyCatFilter = includedCategoriesSet.size > 0 || excludedCategoriesSet.size > 0;
+  if (filtersPanel && (anyAdv || anyCatFilter || activeSort !== "alpha-asc" || !hideUltra || !hideIrrealiste)) {
     filtersPanel.open = true;
   }
 

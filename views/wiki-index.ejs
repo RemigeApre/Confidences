@@ -52,21 +52,23 @@
           <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
           <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
           <% if (hasOwnedItems) { %>
-            <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">&#9733; Nos objets</button>
+            <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">Nos objets</button>
           <% } %>
         </div>
 
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label">Cat&eacute;gorie</span>
+        <%# Pas de "Tous" : aucune catégorie cochée = toutes affichées. Volet
+            réduit (fermé par défaut) pour limiter l'espace pris par la liste. %>
+        <details class="wiki-subpanel-details">
+          <summary class="wiki-subpanel-summary">Cat&eacute;gorie</summary>
           <div class="links-filter wiki-index-cat-filter" id="wiki-category-filter">
-            <button type="button" class="tag-chip active" data-category="" data-label="Tous">Tous</button>
             <% categories.forEach(function (c) { %>
               <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"><%= c.label %></button>
             <% }) %>
           </div>
-        </div>
+        </details>
 
-        <div class="wiki-filter-section">
+        <details class="wiki-subpanel-details">
+          <summary class="wiki-subpanel-summary">Notation</summary>
           <div class="wiki-filter-label-row">
             <span class="wiki-filter-label">Note minimale</span>
             <button type="button" class="wiki-adv-star-reset" id="wiki-adv-star-reset">&#10006;</button>
@@ -76,16 +78,13 @@
               <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
             <% } %>
           </div>
-        </div>
-
-        <div class="wiki-filter-section">
+          <%# "Possédé" retiré : doublon avec la bascule "Nos objets" ci-dessus. %>
           <div class="wiki-prop-grid" id="wiki-prop-grid">
             <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0">Pas encore not&eacute;</button>
-            <button type="button" class="wiki-prop-btn" data-prop="owned" data-state="0">Poss&eacute;d&eacute;</button>
             <button type="button" class="wiki-prop-btn" data-prop="flame" data-state="0">J&apos;adore</button>
             <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0">Int&eacute;ress&eacute;e</button>
           </div>
-        </div>
+        </details>
 
         <% if (allTags.length) { %>
           <div class="wiki-filter-section">
