@@ -394,6 +394,18 @@ function getUserReactionStats(userId) {
   return { ratingCount: ratingRow ? ratingRow.n : 0, flameCount: flameRow ? flameRow.n : 0 };
 }
 
+// Compte "noté" (rating > 0 ou flame) d'un utilisateur pour un type de
+// contenu donné — même critère que les pages /favoris/notes/*, mais sans
+// charger la liste complète : sert au badge de compteur du volet profil,
+// affiché sur toutes les pages du profil (pas seulement la page concernée).
+function countUserNotes(userId, itemType) {
+  if (!userId) return 0;
+  const row = db.prepare(
+    "SELECT COUNT(*) AS n FROM content_reactions WHERE user_id = ? AND item_type = ? AND (rating > 0 OR flame = 1)"
+  ).get(userId, itemType);
+  return row ? row.n : 0;
+}
+
 // Toutes les reactions d'un utilisateur pour un type de contenu, indexees par
 // item_id : evite une requete par ligne quand on affiche une liste entiere
 // (sommaire wiki, galerie...).
@@ -1403,6 +1415,7 @@ module.exports = {
   countFavorites,
   getUserReaction,
   getUserReactionStats,
+  countUserNotes,
   getUserReactionsMap,
   mergeUserReactions,
   setUserReaction,

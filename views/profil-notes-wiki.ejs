@@ -10,7 +10,7 @@
       <div class="wiki-chapter-hero-top">
         <span></span>
         <h1 class="wiki-chapter-hero-title">Pages codex not&eacute;es</h1>
-        <span class="wiki-chapter-hero-count" id="noteswiki-count-hero"><%= pages.length %></span>
+        <span></span>
       </div>
     </div>
 
@@ -55,22 +55,23 @@
   </aside>
 
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
-  <div class="wiki-grid" id="noteswiki-grid">
-    <% if (!pages.length) { %>
-      <div class="profil-empty">
-        <div class="profil-empty-icon">&#10024;</div>
-        <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/wiki">Commence &agrave; explorer le codex</a>.</p>
-      </div>
-    <% } %>
-    <% pages.forEach(function(page) { %>
-      <div data-item
-        data-tags="<%= (page.tags || []).join(',').toLowerCase() %>"
-        data-cat="<%= page.category || '' %>"
-        data-title="<%= (page.title || '').toLowerCase().replace(/"/g, '') %>">
-        <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
-      </div>
-    <% }) %>
-  </div>
+  <% if (!pages.length) { %>
+    <div class="profil-empty">
+      <div class="profil-empty-icon">&#10024;</div>
+      <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/wiki">Commence &agrave; explorer le codex</a>.</p>
+    </div>
+  <% } else { %>
+    <div class="wiki-grid" id="noteswiki-grid">
+      <% pages.forEach(function(page) { %>
+        <div data-item
+          data-tags="<%= (page.tags || []).join(',').toLowerCase() %>"
+          data-cat="<%= page.category || '' %>"
+          data-title="<%= (page.title || '').toLowerCase().replace(/"/g, '') %>">
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
 
 </main>
 <script>
@@ -79,6 +80,7 @@
   var activeTags = [];
   var activeCat = '';
   var search = '';
+  var hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
 
   function show(el) { el.style.display = ''; }
   function hide(el) { el.style.display = 'none'; }
@@ -92,12 +94,16 @@
       var matchesTags = activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); });
       var matchesSearch = !search || title.includes(search);
       var matchesCat = !activeCat || cat === activeCat;
-      if (matchesTags && matchesSearch && matchesCat) { show(el); visible++; }
+      var matchesUltra = !hideUltra || tags.indexOf('ultra') === -1;
+      if (matchesTags && matchesSearch && matchesCat && matchesUltra) { show(el); visible++; }
       else { hide(el); }
     });
-    var counter = document.getElementById('noteswiki-count-hero');
-    if (counter) counter.textContent = visible;
   }
+
+  document.addEventListener('profil-ultra-toggle-change', function() {
+    hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
+    applyFilters();
+  });
 
   document.querySelectorAll('#noteswiki-tag-filter .wiki-tag-chip').forEach(function(chip) {
     chip.addEventListener('click', function() {
@@ -148,6 +154,8 @@
       applyFilters();
     });
   }
+
+  if (hideUltra) applyFilters();
 })();
 </script>
 <%- include('partials/foot') %>

@@ -2036,7 +2036,7 @@
       var valueEl = field.querySelector(".wiki-lb-meta-value");
       field.querySelector(".wiki-lb-meta-label").hidden = false;
       valueEl.hidden = false;
-      valueEl.textContent = val || LB_FIELD_PLACEHOLDER[key] || "\u2014";
+      valueEl.textContent = val || LB_FIELD_PLACEHOLDER[key] || "N/A";
       valueEl.classList.toggle("wiki-lb-meta-placeholder", !val);
       field.querySelector(".wiki-lb-meta-edit").hidden = true;
       field.hidden = false;
@@ -2067,7 +2067,7 @@
           var val = (meta && meta[key]) || "";
           var valueEl = field.querySelector(".wiki-lb-meta-value");
           valueEl.hidden = false;
-          valueEl.textContent = val || LB_FIELD_PLACEHOLDER[key] || "\u2014";
+          valueEl.textContent = val || LB_FIELD_PLACEHOLDER[key] || "N/A";
           valueEl.classList.toggle("wiki-lb-meta-placeholder", !val);
           field.querySelector(".wiki-lb-meta-edit").hidden = true;
           field.hidden = false;
@@ -3800,7 +3800,7 @@
       sel.className = "wf-pos-section-sel wf-select";
       var blank = document.createElement("option");
       blank.value = "";
-      blank.textContent = "— Choisir une section —";
+      blank.textContent = "Choisir une section";
       sel.appendChild(blank);
       getHeadings().forEach(function (h) {
         var opt = document.createElement("option");

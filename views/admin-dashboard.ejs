@@ -86,7 +86,7 @@
 
           <div class="admin-utile-stats">
             <div class="admin-utile-stat">
-              <span class="admin-utile-stat-val"><%= state.livePercentage > 0 ? state.livePercentage + '%' : '—' %></span>
+              <span class="admin-utile-stat-val"><%= state.livePercentage > 0 ? state.livePercentage + '%' : 'N/A' %></span>
               <span class="admin-utile-stat-key">Quizz</span>
             </div>
             <div class="admin-utile-stat">
@@ -385,7 +385,7 @@
     <% if (galleryKPIs.topImages.length) { %>
     <div class="admin-kpi-top-section">
       <div class="admin-kpi-top-header">
-        <span class="admin-kpi-top-title">Images les plus consult&eacute;es<% if (galleryKPIs.topImagesFallback) { %> <span class="admin-kpi-fallback-label">(par note — suivi pas encore actif)</span><% } %></span>
+        <span class="admin-kpi-top-title">Images les plus consult&eacute;es<% if (galleryKPIs.topImagesFallback) { %> <span class="admin-kpi-fallback-label">(par note, suivi pas encore actif)</span><% } %></span>
         <div class="admin-kpi-limit-toggle" id="gal-img-limit-toggle">
           <button class="active" data-limit="10">10</button>
           <button data-limit="20">20</button>
@@ -397,7 +397,7 @@
           <% galleryKPIs.topImages.forEach(function(img, i) { %>
           <tr data-rank="<%= i + 1 %>"<%= i >= 10 ? ' class="admin-rank-hidden"' : '' %>>
             <td class="admin-kpi-rank"><%= i + 1 %></td>
-            <td><a href="/galerie/<%= img.id %>/edit"><%= img.title || '—' %></a></td>
+            <td><a href="/galerie/<%= img.id %>/edit"><%= img.title || 'N/A' %></a></td>
             <td style="text-align:right;font-variant-numeric:tabular-nums"><%= img.views %></td>
           </tr>
           <% }) %>
@@ -410,7 +410,7 @@
     <% if (galleryKPIs.topBd.length) { %>
     <div class="admin-kpi-top-section">
       <div class="admin-kpi-top-header">
-        <span class="admin-kpi-top-title">BD les plus consult&eacute;es<% if (galleryKPIs.topBdFallback) { %> <span class="admin-kpi-fallback-label">(par note — suivi pas encore actif)</span><% } %></span>
+        <span class="admin-kpi-top-title">BD les plus consult&eacute;es<% if (galleryKPIs.topBdFallback) { %> <span class="admin-kpi-fallback-label">(par note, suivi pas encore actif)</span><% } %></span>
         <div class="admin-kpi-limit-toggle" id="gal-bd-limit-toggle">
           <button class="active" data-limit="10">10</button>
           <button data-limit="20">20</button>
@@ -422,7 +422,7 @@
           <% galleryKPIs.topBd.forEach(function(img, i) { %>
           <tr data-rank="<%= i + 1 %>"<%= i >= 10 ? ' class="admin-rank-hidden"' : '' %>>
             <td class="admin-kpi-rank"><%= i + 1 %></td>
-            <td><a href="/galerie/<%= img.id %>/edit"><%= img.title || '—' %></a></td>
+            <td><a href="/galerie/<%= img.id %>/edit"><%= img.title || 'N/A' %></a></td>
             <td style="text-align:right;font-variant-numeric:tabular-nums"><%= img.views %></td>
           </tr>
           <% }) %>
@@ -466,7 +466,7 @@
         <div class="admin-gallery-card" data-id="<%= img.id %>">
           <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title %>" class="admin-gallery-thumb" loading="lazy" />
           <div class="admin-gallery-info">
-            <span class="admin-gallery-name"><%= img.title || '—' %></span>
+            <span class="admin-gallery-name"><%= img.title || 'N/A' %></span>
             <span class="admin-gallery-rating">&#9733; <%= img.rating %></span>
             <div class="admin-gallery-row">
               <button type="button" class="admin-gallery-feat-btn<%= img.featured ? ' active' : '' %>" title="<%= img.featured ? 'Retirer' : 'Mettre en avant' %>">
@@ -497,7 +497,7 @@
         <tbody>
           <% connectionLogs.forEach(function(log) { %>
             <tr>
-              <td><%= log.userDisplayName || '—' %></td>
+              <td><%= log.userDisplayName || 'N/A' %></td>
               <td><%= log.ip %></td>
               <td style="font-variant-numeric:tabular-nums;white-space:nowrap"><%= new Date(log.createdAt).toLocaleString('fr-FR') %></td>
             </tr>
@@ -630,7 +630,7 @@
       btn.addEventListener("click", function () {
         var id = btn.dataset.pwdId;
         document.getElementById("admin-pwd-form").action = "/admin/profils/" + id + "/password";
-        document.getElementById("admin-pwd-modal-title").textContent = "MDP — " + btn.dataset.pwdName;
+        document.getElementById("admin-pwd-modal-title").textContent = "MDP : " + btn.dataset.pwdName;
         openModal("admin-pwd-modal");
       });
     });
@@ -688,7 +688,7 @@
             html += "<span>Dernière connexion&nbsp;: " + lastLogin + "</span>";
             html += "</div>";
             html += '<div class="adm-prof-stats">';
-            html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + (d.livePercentage > 0 ? d.livePercentage + "%" : "—") + "</span><span>Quizz</span></div>";
+            html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + (d.livePercentage > 0 ? d.livePercentage + "%" : "N/A") + "</span><span>Quizz</span></div>";
             html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + d.reactionStats.ratingCount + "</span><span>Notes</span></div>";
             html += '<div class="adm-prof-stat"><span class="adm-prof-stat-val">' + d.reactionStats.flameCount + "</span><span>J'adore</span></div>";
             html += "</div>";

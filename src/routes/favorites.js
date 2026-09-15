@@ -16,6 +16,7 @@ const {
   updateOwnProfile,
   updateUserPassword,
   getUserCredentials,
+  countUserNotes,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -49,6 +50,16 @@ function roleHue(user) {
   return 217;
 }
 
+// Compteurs affichés dans le volet de navigation, en face de Codex/Images/BD
+// (voir partials/profil-nav.ejs) — de simples COUNT, pas les listes entières.
+function notesCounts(user) {
+  return {
+    wiki: countUserNotes(user.id, "wiki"),
+    gallery: countUserNotes(user.id, "gallery"),
+    bd: countUserNotes(user.id, "bd"),
+  };
+}
+
 function buildFavoritesRouter(config) {
   const router = express.Router();
 
@@ -80,20 +91,43 @@ function buildFavoritesRouter(config) {
       fantasyPages,
       categories: WIKI_CATEGORIES,
       roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
     });
   }
 
   function renderIdentite(res, req, extra) {
     const user = getUserById(req.user.id);
-    const connectionLogs = listConnectionLogsForUser(req.user.id, 20);
     res.render("profil-identite", {
+      config,
+      user,
+      roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
+      error: null,
+      notice: null,
+      ...extra,
+    });
+  }
+
+  function renderMotDePasse(res, req, extra) {
+    res.render("profil-mot-de-passe", {
+      config,
+      roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
+      error: null,
+      notice: null,
+      ...extra,
+    });
+  }
+
+  function renderJournal(res, req) {
+    const user = getUserById(req.user.id);
+    const connectionLogs = listConnectionLogsForUser(req.user.id, 20);
+    res.render("profil-journal", {
       config,
       user,
       connectionLogs,
       roleHue: roleHue(req.user),
-      error: null,
-      notice: null,
-      ...extra,
+      notesCounts: notesCounts(req.user),
     });
   }
 
@@ -102,13 +136,23 @@ function buildFavoritesRouter(config) {
   });
 
   router.get("/parametres", requireUser, (req, res) => {
-    res.render("profil-parametres", { config, roleHue: roleHue(req.user) });
+    res.render("profil-parametres", { config, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   router.get("/identite", requireUser, (req, res) => {
     const notice = req.query.ok ? "Modifications enregistrées." : null;
     const error = req.query.err ? decodeURIComponent(req.query.err) : null;
     renderIdentite(res, req, { notice, error });
+  });
+
+  router.get("/mot-de-passe", requireUser, (req, res) => {
+    const notice = req.query.ok ? "Mot de passe modifié." : null;
+    renderMotDePasse(res, req, { notice });
+  });
+
+  router.get("/journal", requireUser, (req, res) => {
+    if (!req.user.isAdmin) return res.redirect("/favoris/identite");
+    renderJournal(res, req);
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
@@ -139,13 +183,13 @@ function buildFavoritesRouter(config) {
     const next = String(req.body.new_password || "");
     const creds = getUserCredentials(req.user.username);
     if (!creds || !verifyPassword(current, creds.password_hash)) {
-      return renderIdentite(res, req, { error: "Mot de passe actuel incorrect." });
+      return renderMotDePasse(res, req, { error: "Mot de passe actuel incorrect." });
     }
     if (next.length < 4) {
-      return renderIdentite(res, req, { error: "Nouveau mot de passe trop court." });
+      return renderMotDePasse(res, req, { error: "Nouveau mot de passe trop court." });
     }
     updateUserPassword(req.user.id, hashPassword(next));
-    res.redirect("/favoris/identite?ok=1");
+    res.redirect("/favoris/mot-de-passe?ok=1");
   });
 
   router.get("/notes/images", requireUser, (req, res) => {
@@ -154,7 +198,7 @@ function buildFavoritesRouter(config) {
     const tagSet = new Set();
     all.forEach((img) => (img.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
-    res.render("profil-notes-images", { config, items: all, allTags, roleHue: roleHue(req.user) });
+    res.render("profil-notes-images", { config, items: all, allTags, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   router.get("/notes/wiki", requireUser, (req, res) => {
@@ -163,7 +207,7 @@ function buildFavoritesRouter(config) {
     const tagSet = new Set();
     all.forEach((p) => (p.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
-    res.render("profil-notes-wiki", { config, pages: all, allTags, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user) });
+    res.render("profil-notes-wiki", { config, pages: all, allTags, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   router.get("/notes/bd", requireUser, (req, res) => {
@@ -171,7 +215,7 @@ function buildFavoritesRouter(config) {
     const tagSet = new Set();
     all.forEach((b) => (b.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
-    res.render("profil-notes-bd", { config, books: all, allTags, roleHue: roleHue(req.user) });
+    res.render("profil-notes-bd", { config, books: all, allTags, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   router.post("/toggle", requireUserJson, (req, res) => {

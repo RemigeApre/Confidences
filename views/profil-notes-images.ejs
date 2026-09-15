@@ -10,7 +10,7 @@
       <div class="wiki-chapter-hero-top">
         <span></span>
         <h1 class="wiki-chapter-hero-title">Images not&eacute;es</h1>
-        <span class="wiki-chapter-hero-count" id="notes-count-hero"><%= items.length %></span>
+        <span></span>
       </div>
     </div>
 
@@ -52,13 +52,13 @@
   </aside>
 
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
+  <% if (!items.length) { %>
+    <div class="profil-empty">
+      <div class="profil-empty-icon">&#10024;</div>
+      <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/galerie">Commence &agrave; explorer la galerie</a>.</p>
+    </div>
+  <% } else { %>
   <div class="gallery-grid" id="notes-grid">
-    <% if (!items.length) { %>
-      <div class="profil-empty">
-        <div class="profil-empty-icon">&#10024;</div>
-        <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/galerie">Commence &agrave; explorer la galerie</a>.</p>
-      </div>
-    <% } %>
     <% items.forEach(function(item) { %>
       <% var ctype = item.contentType || (item.type === 'bd' ? 'bd' : 'image'); %>
       <div class="gallery-card"
@@ -96,6 +96,7 @@
       </div>
     <% }) %>
   </div>
+  <% } %>
 
 </main>
 <script>
@@ -104,6 +105,7 @@
   var activeTags = [];
   var activeCtype = '';
   var search = '';
+  var hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
 
   function show(el) { el.style.display = ''; }
   function hide(el) { el.style.display = 'none'; }
@@ -117,12 +119,16 @@
       var matchesTags = activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); });
       var matchesSearch = !search || title.includes(search);
       var matchesCtype = !activeCtype || ctype === activeCtype;
-      if (matchesTags && matchesSearch && matchesCtype) { show(el); visible++; }
+      var matchesUltra = !hideUltra || tags.indexOf('ultra') === -1;
+      if (matchesTags && matchesSearch && matchesCtype && matchesUltra) { show(el); visible++; }
       else { hide(el); }
     });
-    var counter = document.getElementById('notes-count-hero');
-    if (counter) counter.textContent = visible;
   }
+
+  document.addEventListener('profil-ultra-toggle-change', function() {
+    hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
+    applyFilters();
+  });
 
   document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(chip) {
     chip.addEventListener('click', function() {
@@ -173,6 +179,8 @@
       applyFilters();
     });
   }
+
+  if (hideUltra) applyFilters();
 })();
 </script>
 <%- include('partials/foot') %>

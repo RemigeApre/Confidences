@@ -10,7 +10,7 @@
       <div class="wiki-chapter-hero-top">
         <span></span>
         <h1 class="wiki-chapter-hero-title">BD not&eacute;es</h1>
-        <span class="wiki-chapter-hero-count" id="bd-notes-count"><%= books.length %></span>
+        <span></span>
       </div>
     </div>
     <div class="wiki-sidebar-body">
@@ -77,11 +77,11 @@
 (function() {
   var grid  = document.getElementById("bd-notes-grid");
   var cards = grid ? Array.from(grid.querySelectorAll(".bd-card")) : [];
-  var countEl = document.getElementById("bd-notes-count");
   var searchInput = document.getElementById("bd-notes-search");
   var searchClear = document.getElementById("bd-notes-search-clear");
   var tagCloud = document.getElementById("bd-notes-tags");
   var activeTags = [], searchQ = "";
+  var hideUltra = localStorage.getItem("profil-hide-ultra") === "1";
 
   function applyFilters() {
     var vis = 0;
@@ -89,12 +89,17 @@
       var tags  = (c.dataset.tags || "").split(",").filter(Boolean);
       var title = c.dataset.title || "";
       var ok = (activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); }))
-            && (!searchQ || title.includes(searchQ));
+            && (!searchQ || title.includes(searchQ))
+            && (!hideUltra || tags.indexOf("ultra") === -1);
       c.style.display = ok ? "" : "none";
       if (ok) vis++;
     });
-    if (countEl) countEl.textContent = vis;
   }
+
+  document.addEventListener("profil-ultra-toggle-change", function() {
+    hideUltra = localStorage.getItem("profil-hide-ultra") === "1";
+    applyFilters();
+  });
 
   if (tagCloud) {
     tagCloud.addEventListener("click", function(e) {

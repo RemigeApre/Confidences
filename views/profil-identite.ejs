@@ -9,9 +9,6 @@
     <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
     <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
 
-    <div class="profil-setting-heading">
-      <span>Identit&eacute;</span>
-    </div>
     <form method="POST" action="/favoris/identite" class="profil-form">
 
       <label class="profil-field">
@@ -61,46 +58,6 @@
 
       <button type="submit" class="profil-btn-primary">Enregistrer</button>
     </form>
-
-    <%# ── Mot de passe ── %>
-    <details class="profil-sub-details">
-      <summary class="profil-sub-summary">Changer le mot de passe</summary>
-      <form method="POST" action="/favoris/mot-de-passe" class="profil-form profil-form-pwd">
-        <label class="profil-field">
-          <span class="profil-field-label">Mot de passe actuel</span>
-          <input type="password" name="current_password" required autocomplete="current-password" class="profil-field-input" />
-        </label>
-        <label class="profil-field">
-          <span class="profil-field-label">Nouveau mot de passe</span>
-          <input type="password" name="new_password" required autocomplete="new-password" class="profil-field-input" />
-        </label>
-        <button type="submit" class="profil-btn-primary">Changer</button>
-      </form>
-    </details>
-
-    <%# ── Journal technique (admin seulement) ── %>
-    <% if (currentUser && currentUser.isAdmin) { %>
-      <details class="profil-sub-details profil-journal-details">
-        <summary class="profil-sub-summary">Journal technique</summary>
-        <ul class="profil-journal">
-          <li>Compte cr&eacute;&eacute; le <%= new Date(user.createdAt).toLocaleDateString('fr-FR') %></li>
-          <% if (user.updatedAt) { %><li>Modifi&eacute; le <%= new Date(user.updatedAt).toLocaleDateString('fr-FR') %></li><% } %>
-          <% if (user.lastLoginAt) { %>
-            <li>Derni&egrave;re connexion le <%= new Date(user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></li>
-          <% } %>
-        </ul>
-        <% if (connectionLogs.length) { %>
-          <details class="profil-history">
-            <summary>Historique des connexions (<%= connectionLogs.length %>)</summary>
-            <ul class="profil-journal">
-              <% connectionLogs.forEach(function (log) { %>
-                <li><%= new Date(log.createdAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %> &mdash; <%= log.ip %></li>
-              <% }) %>
-            </ul>
-          </details>
-        <% } %>
-      </details>
-    <% } %>
 
   </div>
 

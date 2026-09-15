@@ -10583,23 +10583,62 @@ body.wiki-todo-open { overflow: hidden; }
   flex-shrink: 0;
   opacity: 0.85;
 }
-.profil-nav-link:hover {
+.profil-nav-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+.profil-nav-link:hover,
+.profil-nav-link.active {
   background: rgba(255,255,255,0.08);
   color: #fff;
 }
 .profil-nav-link.active {
   background: rgba(255,255,255,0.16);
-  color: #fff;
+}
+.profil-nav-link:hover .profil-nav-count,
+.profil-nav-link.active .profil-nav-count {
+  opacity: 0.9;
 }
 
-/* Bouton ULTRA : même style que "Réinitialiser les filtres" (rouge plein,
-   texte blanc), tout en bas du volet. */
+/* Sous-liens de "Profil" (Mot de passe, Journal technique) : même liste,
+   légèrement en retrait et plus discrets que les entrées principales. */
+.profil-nav-sublink {
+  padding-left: 2.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.profil-nav-sublink:hover,
+.profil-nav-sublink.active {
+  opacity: 1;
+}
+
+/* Bouton ULTRA : vert quand les contenus Ultra sont visibles, rouge une
+   fois masqués — tout en bas du volet. */
 .profil-ultra-toggle {
   margin-top: auto;
+  background: #1a5c1a;
+  border-color: #1a5c1a;
+  color: #fff;
+  font-weight: 600;
+}
+.profil-ultra-toggle:hover {
+  background: #226b22;
+  border-color: #226b22;
+  color: #fff;
 }
 .profil-ultra-toggle[aria-pressed="true"] {
-  background: #7a2418;
-  border-color: #7a2418;
+  background: #c0392b;
+  border-color: #c0392b;
+}
+.profil-ultra-toggle[aria-pressed="true"]:hover {
+  background: #a8301f;
+  border-color: #a8301f;
 }
 
 /* ─── Sous-pages "notes" du profil : deux volets à la fois ───────────────
@@ -10712,23 +10751,6 @@ body.wiki-todo-open { overflow: hidden; }
 .profil-msg-error { background: rgba(239,68,68,0.15); color: #f87171; }
 .profil-msg-ok { background: rgba(34,197,94,0.12); color: #4ade80; }
 
-/* Sous-sections (mot de passe / journal) */
-.profil-sub-details {
-  margin-top: 0.75rem;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  padding-top: 0.5rem;
-}
-.profil-sub-summary {
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.4);
-  cursor: pointer;
-  user-select: none;
-  list-style: none;
-}
-.profil-sub-summary::-webkit-details-marker { display: none; }
-.profil-sub-details[open] > .profil-sub-summary { color: rgba(255,255,255,0.65); }
-.profil-form-pwd { margin-top: 0.5rem; }
-
 /* Journal technique */
 .profil-journal {
   list-style: none;
@@ -10770,16 +10792,19 @@ body.wiki-todo-open { overflow: hidden; }
   padding-top: 2rem;
 }
 
-/* Titre de réglage (Ultra / Irréaliste / Filtrage des tags) + bulle "!"
-   d'explication au survol. */
+/* Titre de section (Ultra / Irréaliste / Filtrage des tags / Identité /
+   Mot de passe / Journal technique...), centré et bien lisible — bulle "!"
+   d'explication au survol quand il y en a une. */
 .profil-setting-heading {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--fg);
-  margin: 1.75rem 0 0.6rem;
+  text-align: center;
+  margin: 1.75rem 0 0.75rem;
 }
 .profil-setting-heading:first-child {
   margin-top: 0;

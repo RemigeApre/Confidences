@@ -430,10 +430,10 @@ window.buildTagBadgeHTML = function (tag) {
 })();
 
 // ── Bouton "ULTRA" du volet profil (partials/profil-nav.ejs) ────────────────
-// Présent sur /favoris, /favoris/parametres et /favoris/identite. Cette IIFE
-// ne gère que l'état visuel du bouton lui-même (partagé par les 3 pages) ;
-// le masquage effectif des cartes Ultra ne concerne que /favoris, qui
-// écoute l'évènement "profil-ultra-toggle-change" pour réagir sans dupliquer
+// Présent sur toutes les pages du profil. Cette IIFE ne gère que l'état
+// visuel du bouton lui-même (partagé par toutes) ; chaque page qui a du
+// contenu Ultra à masquer (favoris, notes codex/images/BD) écoute
+// l'évènement "profil-ultra-toggle-change" pour réagir sans dupliquer
 // cette logique ici.
 (function () {
   var btn = document.getElementById("profil-ultra-toggle");

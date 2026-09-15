@@ -334,7 +334,7 @@
     var catSel = document.createElement("select");
     catSel.className = "gb-select";
     var opt0 = document.createElement("option");
-    opt0.value = ""; opt0.textContent = "\u2014 H\u00e9rite du commun \u2014";
+    opt0.value = ""; opt0.textContent = "H\u00e9rite du commun";
     catSel.appendChild(opt0);
     (window.GB_CATEGORIES || []).forEach(function (c) {
       var opt = document.createElement("option");
