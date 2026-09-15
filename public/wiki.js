@@ -1070,7 +1070,9 @@
         }
       });
       var totalPasses = cards.filter(function(c) { return c._passesNonCat; }).length;
-      categoryFilter.querySelectorAll(".tag-chip[data-category]").forEach(function(chip) {
+      // "Nos objets" vit hors de #wiki-category-filter (sous Ultra/Irréaliste) :
+      // on cible l'attribut plutôt que le conteneur pour continuer à le compter.
+      document.querySelectorAll(".tag-chip[data-category]").forEach(function(chip) {
         var cat   = chip.dataset.category || "";
         var label = chip.dataset.label || chip.textContent.trim();
         if (!chip.dataset.label) chip.dataset.label = label; // cache on first call
@@ -1386,9 +1388,14 @@
   }
 
   if (categoryFilter) {
-    categoryFilter.querySelectorAll(".tag-chip").forEach(function (chip) {
+    // "Nos objets" (data-category="__owned__") vit hors de #wiki-category-filter,
+    // sous Ultra/Irréaliste : on cible l'attribut data-category partout sur la
+    // page plutôt que le conteneur, pour qu'il reste synchronisé avec les
+    // vraies catégories (un seul actif à la fois).
+    var allCatChips = document.querySelectorAll(".tag-chip[data-category]");
+    allCatChips.forEach(function (chip) {
       chip.addEventListener("click", function () {
-        categoryFilter.querySelectorAll(".tag-chip").forEach(function (c) { c.classList.remove("active"); });
+        allCatChips.forEach(function (c) { c.classList.remove("active"); });
         chip.classList.add("active");
         activeCategory = chip.dataset.category || "";
         localStorage.setItem("wiki-filter-cat", activeCategory);
@@ -1397,9 +1404,9 @@
     });
     // Restaure la catégorie active visuellement
     if (activeCategory) {
-      var restoredCatChip = categoryFilter.querySelector('[data-category="' + activeCategory + '"]');
+      var restoredCatChip = document.querySelector('.tag-chip[data-category="' + activeCategory + '"]');
       if (restoredCatChip) {
-        categoryFilter.querySelectorAll(".tag-chip").forEach(function (c) { c.classList.remove("active"); });
+        allCatChips.forEach(function (c) { c.classList.remove("active"); });
         restoredCatChip.classList.add("active");
       } else {
         activeCategory = "";
@@ -1550,7 +1557,7 @@
       activeCategory = "";
       localStorage.setItem("wiki-filter-cat", "");
       if (categoryFilter) {
-        categoryFilter.querySelectorAll(".tag-chip").forEach(function(c) { c.classList.remove("active"); });
+        document.querySelectorAll(".tag-chip[data-category]").forEach(function(c) { c.classList.remove("active"); });
         var allBtn = categoryFilter.querySelector("[data-category='']");
         if (allBtn) allBtn.classList.add("active");
       }

@@ -528,6 +528,7 @@ function buildWikiRouter(config) {
       tagCounts: getTagCounts(pages),
       totalCount: pages.length,
       recentAdded, recentUpdated, popular,
+      hasOwnedItems: pages.some((p) => p.owned),
       ...CTX
     });
   });
