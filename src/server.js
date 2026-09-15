@@ -192,6 +192,12 @@ app.use((req, res, next) => {
 // (galerie/BD). Le contenu prive (galerie/BD) n'entre dans le calcul que
 // pour un visiteur connecte, coherent avec le reste du site.
 app.use((req, res, next) => {
+  // Le profil (/favoris et ses sous-pages) n'affiche jamais de badge de tag :
+  // pas la peine de scanner wiki/galerie/BD à chaque chargement pour rien.
+  // head.ejs retombe déjà sur {} si tagRegistry n'est pas défini.
+  if (req.path === "/favoris" || req.path.startsWith("/favoris/")) {
+    return next();
+  }
   try {
     res.locals.tagRegistry = buildTagRegistry({
       wikiPages: listWikiPages(),

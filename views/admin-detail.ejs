@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: (isLive ? 'Etat actuel' : 'Reponse #' + submission.id) + ' — Admin', extraCss: ['admin.css'] }) %>
+<%- include('partials/head', { title: 'Admin : ' + (isLive ? 'Etat actuel' : 'Reponse #' + submission.id), extraCss: ['admin.css'] }) %>
 <main class="container wide">
   <a class="link" href="/admin">&larr; Retour</a>
   <h1><%= isLive ? ("Etat actuel" + (typeof liveUser !== "undefined" && liveUser ? " — " + liveUser.displayName : "")) : "Reponse #" + submission.id %></h1>

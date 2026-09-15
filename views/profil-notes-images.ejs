@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: 'Images notées — ' + config.title }) %>
+<%- include('partials/head', { title: 'Profil : Images' }) %>
 <main class="container wide gallery-has-sidebar">
   <%- include('partials/top-nav', { config: config, navTitle: 'Images notées', navBack: '/favoris' }) %>
 
@@ -52,7 +52,7 @@
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
   <div class="gallery-grid" id="notes-grid">
     <% if (!items.length) { %>
-      <p class="intro">Aucune image not&eacute;e pour l&apos;instant.</p>
+      <p class="intro">Aucune donn&eacute;e pour l&apos;instant. <a href="/galerie">Commence &agrave; explorer la galerie</a>.</p>
     <% } %>
     <% items.forEach(function(item) { %>
       <% var ctype = item.contentType || (item.type === 'bd' ? 'bd' : 'image'); %>
