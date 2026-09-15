@@ -189,17 +189,28 @@
     var trigger = menu.querySelector(isDetails ? ":scope > summary" : ":scope > button, :scope > a");
     if (!trigger) return;
     var pinned = false;
+    var closeTimer = null;
 
     function setOpen(v) {
       if (isDetails) menu.open = v;
       menu.classList.toggle("pc-menu-open", v);
     }
 
-    menu.addEventListener("mouseenter", function () { setOpen(true); });
-    menu.addEventListener("mouseleave", function () { if (!pinned) setOpen(false); });
+    menu.addEventListener("mouseenter", function () {
+      clearTimeout(closeTimer);
+      setOpen(true);
+    });
+    menu.addEventListener("mouseleave", function () {
+      if (pinned) return;
+      // Petit délai avant fermeture : un mouvement rapide ou légèrement
+      // diagonal peut faire sortir la souris du menu un instant, pas la
+      // peine de refermer tout de suite.
+      closeTimer = setTimeout(function () { setOpen(false); }, 300);
+    });
 
     trigger.addEventListener("click", function (e) {
       if (isDetails) e.preventDefault(); // on gère l'ouverture nous-mêmes
+      clearTimeout(closeTimer);
       pinned = !pinned;
       setOpen(pinned);
     });
@@ -207,6 +218,7 @@
     document.addEventListener("click", function (e) {
       if (!pinned) return;
       if (!menu.contains(e.target)) {
+        clearTimeout(closeTimer);
         pinned = false;
         setOpen(false);
       }
