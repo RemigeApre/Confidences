@@ -340,6 +340,11 @@ app.get("/tags", function (req, res) {
   var allKeys = new Set(Object.keys(wiki).concat(Object.keys(galerie)).concat(Object.keys(bd)));
   // Tags standalone (dans tag_meta mais pas dans le contenu)
   Object.keys(metaMap).forEach(function (t) { allKeys.add(t); });
+  // Tags masqués (voir /tags/masques) : invisibles sur cette page, comme
+  // partout ailleurs sur le site pour ce profil.
+  if (req.user) {
+    try { listBlacklistedTags(req.user.id).forEach(function (r) { allKeys.delete(r.tag); }); } catch (_) {}
+  }
 
   var tags = Array.from(allKeys).map(function (t) {
     return {

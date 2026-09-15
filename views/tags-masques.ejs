@@ -1,26 +1,28 @@
 <%- include('partials/head', { title: 'Tags : Masqués' }) %>
-<main class="container wide">
+<main class="container wide wiki-locked tags-page-locked" style="--ch-hue: 270">
   <%- include('partials/top-nav', { config: config }) %>
 
-  <div class="profil-subpage">
-    <div class="profil-setting-heading">
-      <span>Tags masqués</span>
+  <%# ─── SIDEBAR (même bandeau que /tags, juste épuré des filtres) ────────── %>
+  <aside class="wiki-cat-sidebar tags-sidebar">
+    <div class="wiki-chapter-hero">
+      <div class="wiki-chapter-hero-top">
+        <a href="/tags" class="wiki-chapter-hero-back" title="Retour à tous les tags">&larr;</a>
+        <h1 class="wiki-chapter-hero-title">Masqu&eacute;s</h1>
+        <span class="wiki-chapter-hero-count" id="tags-masked-count"><%= blacklist.length %></span>
+      </div>
     </div>
-    <p class="intro" style="text-align:center">
-      Tout le contenu portant un de ces tags reste masqué partout sur le site.
-      <a href="/tags">&larr; Retour à tous les tags</a>
-    </p>
+  </aside>
 
-    <div class="tags-blacklist-grid" id="tags-blacklist-grid">
-      <% blacklist.forEach(function (item) { %>
-        <div class="tags-blacklist-item" data-tag="<%= item.tag %>">
-          <span class="tags-blacklist-name"><%= item.tag %></span>
-          <button type="button" class="tags-blacklist-remove" title="Retirer de la liste" aria-label="Retirer &laquo;&nbsp;<%= item.tag %>&nbsp;&raquo; de la liste">&times;</button>
-        </div>
-      <% }) %>
-    </div>
-    <p class="tags-blacklist-empty" id="tags-blacklist-empty" <%= blacklist.length ? 'hidden' : '' %>>Aucun tag masqué pour l&rsquo;instant.</p>
+  <%# ─── LISTE DES TAGS MASQUÉS ─────────────────────────────────────────── %>
+  <div class="tags-blacklist-grid" id="tags-blacklist-grid">
+    <% blacklist.forEach(function (item) { %>
+      <div class="tags-blacklist-item" data-tag="<%= item.tag %>">
+        <span class="tags-blacklist-name"><%= item.tag %></span>
+        <button type="button" class="tags-blacklist-remove" title="Retirer de la liste" aria-label="Retirer &laquo;&nbsp;<%= item.tag %>&nbsp;&raquo; de la liste">&times;</button>
+      </div>
+    <% }) %>
   </div>
+  <p class="tags-blacklist-empty" id="tags-blacklist-empty" <%= blacklist.length ? 'hidden' : '' %>>Aucun tag masqu&eacute; pour l&rsquo;instant.</p>
 
 </main>
 
@@ -28,6 +30,7 @@
 (function () {
   var grid  = document.getElementById("tags-blacklist-grid");
   var empty = document.getElementById("tags-blacklist-empty");
+  var countEl = document.getElementById("tags-masked-count");
   if (!grid) return;
 
   grid.addEventListener("click", function (e) {
@@ -49,7 +52,9 @@
           var idx = window.TAG_BLACKLIST.indexOf(tag);
           if (idx !== -1) window.TAG_BLACKLIST.splice(idx, 1);
         }
-        if (empty && !grid.querySelector(".tags-blacklist-item")) empty.hidden = false;
+        var remaining = grid.querySelectorAll(".tags-blacklist-item").length;
+        if (countEl) countEl.textContent = remaining;
+        if (empty && remaining === 0) empty.hidden = false;
       })
       .catch(function () { btn.disabled = false; });
   });
