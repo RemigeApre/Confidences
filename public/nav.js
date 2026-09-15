@@ -77,32 +77,36 @@
   });
 })();
 
-// ── Recherche globale (overlay desktop) ─────────────────────────────────────
+// ── Recherche globale : champ qui s'agrandit dans le header ─────────────────
 (function () {
-  var overlay  = document.getElementById("pc-search-overlay");
-  var input    = document.getElementById("pc-search-input");
-  var closeBtn = document.getElementById("pc-search-close");
-  var results  = document.getElementById("pc-search-results");
-  var openBtn  = document.getElementById("pc-search-btn");
-  if (!overlay || !input || !results) return;
+  var wrap    = document.getElementById("pc-search-inline");
+  var input   = document.getElementById("pc-search-input");
+  var results = document.getElementById("pc-search-results");
+  var openBtn = document.getElementById("pc-search-btn");
+  if (!wrap || !input || !results || !openBtn) return;
+
+  function isOpen() { return wrap.classList.contains("pc-search-open"); }
 
   function open() {
-    overlay.hidden = false;
+    wrap.classList.add("pc-search-open");
+    openBtn.setAttribute("aria-expanded", "true");
     input.focus();
-    input.select();
   }
 
   function close() {
-    overlay.hidden = true;
+    wrap.classList.remove("pc-search-open");
+    openBtn.setAttribute("aria-expanded", "false");
+    results.hidden = true;
     results.innerHTML = "";
     input.value = "";
   }
 
-  if (openBtn) openBtn.addEventListener("click", open);
-  if (closeBtn) closeBtn.addEventListener("click", close);
+  openBtn.addEventListener("click", function () {
+    if (isOpen()) close(); else open();
+  });
 
-  overlay.addEventListener("click", function (e) {
-    if (e.target === overlay) close();
+  document.addEventListener("click", function (e) {
+    if (isOpen() && !wrap.contains(e.target)) close();
   });
 
   document.addEventListener("keydown", function (e) {
@@ -111,14 +115,14 @@
       e.preventDefault();
       open();
     }
-    if (e.key === "Escape" && !overlay.hidden) close();
+    if (e.key === "Escape" && isOpen()) close();
   });
 
   var timer;
   input.addEventListener("input", function () {
     clearTimeout(timer);
     var q = input.value.trim();
-    if (q.length < 2) { results.innerHTML = ""; return; }
+    if (q.length < 2) { results.hidden = true; results.innerHTML = ""; return; }
     timer = setTimeout(function () { fetchSearch(q); }, 280);
   });
 
@@ -139,6 +143,7 @@
 
   function render(data) {
     while (results.firstChild) results.removeChild(results.firstChild);
+    results.hidden = false;
     var keys = Object.keys(data);
     if (!keys.length) {
       var empty = document.createElement("p");
@@ -169,6 +174,44 @@
       results.appendChild(sec);
     });
   }
+})();
+
+// ── Encarts "survol = aperçu, clic = épinglé, clic dehors = ferme" ──────────
+// (rappel de consentement, menu profil). Pour <details> on pilote .open
+// directement (le natif gère déjà l'affichage/l'accessibilité) ; pour les
+// autres (.pc-has-drop) on pose/enlève .pc-menu-open (voir style.css).
+(function () {
+  var menus = document.querySelectorAll(".pc-hover-menu");
+  if (!menus.length) return;
+
+  menus.forEach(function (menu) {
+    var isDetails = menu.tagName === "DETAILS";
+    var trigger = menu.querySelector(isDetails ? ":scope > summary" : ":scope > button, :scope > a");
+    if (!trigger) return;
+    var pinned = false;
+
+    function setOpen(v) {
+      if (isDetails) menu.open = v;
+      menu.classList.toggle("pc-menu-open", v);
+    }
+
+    menu.addEventListener("mouseenter", function () { setOpen(true); });
+    menu.addEventListener("mouseleave", function () { if (!pinned) setOpen(false); });
+
+    trigger.addEventListener("click", function (e) {
+      if (isDetails) e.preventDefault(); // on gère l'ouverture nous-mêmes
+      pinned = !pinned;
+      setOpen(pinned);
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!pinned) return;
+      if (!menu.contains(e.target)) {
+        pinned = false;
+        setOpen(false);
+      }
+    });
+  });
 })();
 
 // ── Chargement des images : toutes les <img> ont en permanence un fond

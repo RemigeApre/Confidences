@@ -52,7 +52,7 @@
         </div>
       <% } %>
       <div class="pc-nav-actions">
-        <details class="pc-consent-details">
+        <details class="pc-consent-details pc-hover-menu">
           <summary class="pc-icon-btn pc-consent-btn" title="Rappel consentement" aria-label="Rappel sur le consentement">?</summary>
           <div class="pc-consent-panel">
             <p class="pc-consent-title">Consentement</p>
@@ -61,9 +61,13 @@
           </div>
         </details>
         <button type="button" class="pc-icon-btn pc-discreet-btn" id="pc-discreet-btn" aria-pressed="false" title="Masquer les images" aria-label="Masquer les images"><%- include('eye-icon') %></button>
-        <button type="button" class="pc-icon-btn" id="pc-search-btn" aria-label="Rechercher sur tout le site"><%- include('search-icon') %></button>
+        <div class="pc-search-inline" id="pc-search-inline">
+          <button type="button" class="pc-icon-btn" id="pc-search-btn" aria-label="Rechercher sur tout le site" aria-expanded="false"><%- include('search-icon') %></button>
+          <input type="search" id="pc-search-input" class="pc-search-inline-input" placeholder="Rechercher&hellip;" autocomplete="off" aria-label="Rechercher sur tout le site" />
+          <div class="pc-search-results" id="pc-search-results" hidden></div>
+        </div>
         <% if (currentUser) { %>
-          <div class="pc-nav-item pc-has-drop">
+          <div class="pc-nav-item pc-has-drop pc-hover-menu">
             <button type="button" class="pc-icon-btn" title="<%= currentUser.displayName %>"><%- include('key-icon') %></button>
             <div class="pc-drop pc-drop-right">
               <a href="/favoris" class="pc-drop-link">Profil</a>
@@ -85,18 +89,6 @@
   </div>
 </div>
 
-<%# ─── Overlay de recherche globale ─────────────────────────────────────── %>
-<div class="pc-search-overlay" id="pc-search-overlay" hidden>
-  <div class="pc-search-box">
-    <div class="pc-search-bar">
-      <span class="pc-search-icon">&#128269;</span>
-      <input type="search" id="pc-search-input" class="pc-search-input"
-             placeholder="Rechercher partout&hellip;" autocomplete="off" />
-      <button type="button" id="pc-search-close" class="pc-search-close-btn">&#215;</button>
-    </div>
-    <div class="pc-search-results" id="pc-search-results"></div>
-  </div>
-</div>
 
 <div class="nav-backdrop" id="nav-backdrop"></div>
 
