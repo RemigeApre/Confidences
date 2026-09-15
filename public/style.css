@@ -59,11 +59,20 @@ img.lq-img-error { background-image: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* Isole le header du reste de la page : sa hauteur est fixe et ne dépend
+     jamais de son contenu, donc les animations internes (recherche qui
+     s'agrandit, dropdowns) ne doivent jamais forcer un recalcul de mise en
+     page du reste du site. */
+  contain: layout style;
   /* Se détache du fond de page sans couleur franche (évite l'effet kitsch) :
-     un ton à peine plus clair + un grain très discret (bruit SVG, ~4%
-     d'opacité) pour une texture plutôt qu'une teinte. */
+     un ton à peine plus clair + un grain très discret pour une texture
+     plutôt qu'une teinte. Vignette PNG 16x16 précalculée (au lieu d'un
+     filtre SVG feTurbulence) : le filtre devait être recalculé par le
+     navigateur à chaque affichage, ce qui coûte cher sur un header sticky
+     présent sur toutes les pages ; une image figée se décode une fois et ne
+     coûte quasiment rien. */
   background-color: #18181b;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAA8klEQVR42i3RQXFrQQxE0eNvl1daGIIgBIKgDIRAeBAMYSAEgiAYgiAEwl9kVqqSqm63uu2o6BAZGTvECpHR0ZGxIuOR2rJsrSxbKVxI6ZZRyoWxXMYotDHGo7TUWtkK+xC3Uf61S+pzYkljHUq77VhG20ZLS55JKo99tNi2NtIYS6I8UhqttEu5jDq8gb+PJzrEiowVE3UyyRC3inFZUlkuddB/Jrn3cx3ljy8vy+Xt1zK+vdx/ns5jpI/28vYx3r58ewzq2CxOyH0kNismxMSOjIw+Jjt2ZHRMPJZSFkZJg3W6Kek+z7fx8nOWTm1tbJf/dbhyfchyg7EAAAAASUVORK5CYII=");
   background-repeat: repeat;
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
