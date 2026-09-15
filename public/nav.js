@@ -419,40 +419,6 @@ window.buildTagBadgeHTML = function (tag) {
   });
 })();
 
-// ── Accueil : carrousel des 4 catégories de fantasmes (2 par 2) ─────────────
-(function () {
-  var track = document.getElementById("home-carousel-track");
-  var prev  = document.getElementById("home-carousel-prev");
-  var next  = document.getElementById("home-carousel-next");
-  var dots  = document.querySelectorAll(".home-carousel-dot");
-  if (!track) return;
-
-  var pages = track.children.length;
-  var idx = 0;
-
-  function render() {
-    // translateX/transform : anime en dehors du flux normal, ne déclenche
-    // jamais de recalcul de mise en page du reste de la page.
-    track.style.transform = "translateX(-" + (idx * 100) + "%)";
-    dots.forEach(function (d, i) { d.classList.toggle("active", i === idx); });
-    if (prev) prev.disabled = idx === 0;
-    if (next) next.disabled = idx === pages - 1;
-  }
-
-  function go(i) {
-    idx = Math.max(0, Math.min(pages - 1, i));
-    render();
-  }
-
-  if (prev) prev.addEventListener("click", function () { go(idx - 1); });
-  if (next) next.addEventListener("click", function () { go(idx + 1); });
-  dots.forEach(function (d, i) {
-    d.addEventListener("click", function () { go(i); });
-  });
-
-  render();
-})();
-
 // ── Mode discret (masquer les images) ───────────────────────────────────────
 // La classe est déjà posée au chargement par partials/head.ejs (évite le
 // flash) ; ici on ne fait que synchroniser les boutons et gérer le clic.
