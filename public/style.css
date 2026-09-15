@@ -8272,32 +8272,27 @@ body.wiki-todo-open { overflow: hidden; }
   margin-bottom: 0.6rem;
 }
 
-/* PC : titres de strips centrés, cartes de catégorie centrées et équilibrées
-   avec leur compteur en badge contrasté en bas à droite (au lieu du chiffre
-   ton-sur-ton en haut à gauche, peu lisible). */
+/* PC : titres de strips centrés ; grille de cartes de catégorie centrée en
+   tant que groupe (cartes à largeur naturelle plutôt qu'étirées edge-to-edge,
+   dernière ligne incomplète centrée) — mais le CONTENU de chaque carte reste
+   à gauche. Numéro en bas à droite, simple texte contrasté, sans bulle. */
 @media (min-width: 641px) {
   .wiki-index-strip-title {
     text-align: center;
   }
+  .wiki-index-cats {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 160px));
+    justify-content: center;
+  }
   .wiki-index-cat-card {
     position: relative;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
     min-height: 5.5rem;
-    padding: 1.1rem 1rem 1.7rem;
-  }
-  .wiki-index-cat-label {
-    font-size: 0.94rem;
+    padding: 0.8rem 0.9rem 1.6rem;
   }
   .wiki-index-cat-count {
     position: absolute;
-    right: 0.6rem;
+    right: 0.7rem;
     bottom: 0.55rem;
-    min-width: 1.35rem;
-    padding: 0.12rem 0.4rem;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.4);
     color: #fff;
     font-weight: 700;
   }
