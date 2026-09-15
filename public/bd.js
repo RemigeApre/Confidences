@@ -10,9 +10,14 @@
 
   var activeTags   = [];
   var searchQ      = "";
-  // Etat initial derive du reglage de compte (voir /favoris > Parametres).
-  var showUltra      = (window.ULTRA_MODE || "hidden") !== "hidden";
-  var showIrrealiste = (window.IRREALISTE_MODE || "visible") !== "hidden";
+  // Etat initial : le réglage de compte sert de valeur par défaut, mais une
+  // bascule explicite en session est mémorisée et prime dessus au
+  // rechargement — sinon revenir sur la page annulait silencieusement le
+  // filtre qu'on venait de poser.
+  var storedShowUltra      = localStorage.getItem("bd-show-ultra");
+  var storedShowIrrealiste = localStorage.getItem("bd-show-irrealiste");
+  var showUltra      = storedShowUltra !== null ? storedShowUltra === "1" : (window.ULTRA_MODE || "hidden") !== "hidden";
+  var showIrrealiste = storedShowIrrealiste !== null ? storedShowIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") !== "hidden";
   var activeLangue = "";
   var showCouleurOnly = false;
 
@@ -123,6 +128,7 @@
     ultraBtn.textContent = showUltra ? "\uD83D\uDD13 Afficher Ultra" : "\uD83D\uDD12 Masquer Ultra";
     ultraBtn.addEventListener("click", function() {
       showUltra = !showUltra;
+      localStorage.setItem("bd-show-ultra", showUltra ? "1" : "0");
       ultraBtn.textContent = showUltra ? "\uD83D\uDD13 Afficher Ultra" : "\uD83D\uDD12 Masquer Ultra";
       applyFilters();
     });
@@ -134,6 +140,7 @@
     irrealisteBtn.textContent = showIrrealiste ? "\uD83D\uDD13 Afficher Irr\u00E9aliste" : "\uD83D\uDD12 Masquer Irr\u00E9aliste";
     irrealisteBtn.addEventListener("click", function() {
       showIrrealiste = !showIrrealiste;
+      localStorage.setItem("bd-show-irrealiste", showIrrealiste ? "1" : "0");
       irrealisteBtn.textContent = showIrrealiste ? "\uD83D\uDD13 Afficher Irr\u00E9aliste" : "\uD83D\uDD12 Masquer Irr\u00E9aliste";
       applyFilters();
     });

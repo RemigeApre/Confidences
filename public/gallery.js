@@ -297,10 +297,14 @@
   var tagStates      = {}; // { "tag": 0|1|2 }
   var activeCategory = "";
   var searchQ        = "";
-  // Etat initial derive du reglage de compte (voir /favoris > Parametres),
-  // plus fiable qu'un localStorage par navigateur qui pouvait diverger.
-  var hideUltra      = (window.ULTRA_MODE || "hidden") === "hidden";
-  var hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
+  // Etat initial : le réglage de compte sert de valeur par défaut, mais une
+  // bascule explicite en session (boutons Ultra/Irréaliste) est mémorisée et
+  // prime dessus au rechargement — sinon revenir sur la page annulait
+  // silencieusement le filtre qu'on venait de poser.
+  var storedHideUltra      = localStorage.getItem("gallery-hide-ultra");
+  var storedHideIrrealiste = localStorage.getItem("gallery-hide-irrealiste");
+  var hideUltra      = storedHideUltra !== null ? storedHideUltra === "1" : (window.ULTRA_MODE || "hidden") === "hidden";
+  var hideIrrealiste = storedHideIrrealiste !== null ? storedHideIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") === "hidden";
   var activeRating   = 0;
   var sortMode       = "date-desc";
   var randomSeeds    = null; // Map<card, number> — persistant entre pages
@@ -540,6 +544,7 @@
   if (ultraToggle) {
     ultraToggle.addEventListener("click", function() {
       hideUltra = !hideUltra;
+      localStorage.setItem("gallery-hide-ultra", hideUltra ? "1" : "0");
       syncUltraBtn();
       applyFilters();
     });
@@ -556,6 +561,7 @@
   if (irrealisteToggle) {
     irrealisteToggle.addEventListener("click", function() {
       hideIrrealiste = !hideIrrealiste;
+      localStorage.setItem("gallery-hide-irrealiste", hideIrrealiste ? "1" : "0");
       syncIrrealisteBtn();
       applyFilters();
     });
@@ -566,7 +572,10 @@
   var resetFiltersBtn = document.getElementById("gallery-reset-filters");
   if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener("click", function() {
-      // Revient aux reglages de compte (voir /favoris > Parametres)
+      // Revient aux reglages de compte (voir /favoris > Parametres) et
+      // oublie la bascule mémorisée, sinon elle reviendrait au prochain chargement.
+      localStorage.removeItem("gallery-hide-ultra");
+      localStorage.removeItem("gallery-hide-irrealiste");
       hideUltra = (window.ULTRA_MODE || "hidden") === "hidden";
       hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
       syncUltraBtn();

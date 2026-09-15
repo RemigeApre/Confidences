@@ -802,10 +802,15 @@
   var includedTagsSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-tags-inc") || "[]"));
   var excludedTagsSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-tags-exc") || "[]"));
   var activeSort      = localStorage.getItem("wiki-filter-sort") || "alpha-asc";
-  // Etat initial derive du reglage de compte (voir /favoris > Parametres),
-  // plus fiable qu'un localStorage par navigateur qui pouvait diverger.
-  var hideUltra       = (window.ULTRA_MODE || "hidden") === "hidden";
-  var hideIrrealiste  = (window.IRREALISTE_MODE || "visible") === "hidden";
+  // Etat initial : le réglage de compte (voir /favoris > Parametres) sert de
+  // valeur par défaut, mais une bascule explicite en session (via les
+  // boutons Ultra/Irréaliste du volet filtre) est mémorisée et prime dessus
+  // au rechargement — sinon revenir sur la page annulait silencieusement le
+  // filtre qu'on venait de poser.
+  var storedHideUltra      = localStorage.getItem("wiki-hide-ultra");
+  var storedHideIrrealiste = localStorage.getItem("wiki-hide-irrealiste");
+  var hideUltra       = storedHideUltra !== null ? storedHideUltra === "1" : (window.ULTRA_MODE || "hidden") === "hidden";
+  var hideIrrealiste  = storedHideIrrealiste !== null ? storedHideIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") === "hidden";
   var searchQuery     = localStorage.getItem("wiki-filter-search") || "";
   var advMinRating    = Number(localStorage.getItem("wiki-filter-rating")) || 0;
   var activeCols      = Number(localStorage.getItem("wiki-cols")) || 3;
@@ -1541,6 +1546,7 @@
   if (ultraToggle) {
     ultraToggle.addEventListener("click", function () {
       hideUltra = !hideUltra;
+      localStorage.setItem("wiki-hide-ultra", hideUltra ? "1" : "0");
       syncUltraBtn();
       applyFilters();
       // Sans cet appel, les cartes proposées du sommaire (Derniers ajouts,
@@ -1568,6 +1574,7 @@
   if (irrealisteToggle) {
     irrealisteToggle.addEventListener("click", function () {
       hideIrrealiste = !hideIrrealiste;
+      localStorage.setItem("wiki-hide-irrealiste", hideIrrealiste ? "1" : "0");
       syncIrralisteBtn();
       applyFilters();
       applyChapterStripFilters();
@@ -1580,7 +1587,10 @@
   var resetFiltersBtn = document.getElementById("wiki-reset-filters");
   if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener("click", function() {
-      // Revient aux reglages de compte (voir /favoris > Parametres)
+      // Revient aux reglages de compte (voir /favoris > Parametres) et
+      // oublie la bascule mémorisée, sinon elle reviendrait au prochain chargement.
+      localStorage.removeItem("wiki-hide-ultra");
+      localStorage.removeItem("wiki-hide-irrealiste");
       hideUltra = (window.ULTRA_MODE || "hidden") === "hidden";
       hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
       syncUltraBtn();
