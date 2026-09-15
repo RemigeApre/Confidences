@@ -226,9 +226,7 @@
 
   <%# Pas de volet filtre sur cette page : bouton discret dédié pour masquer
       les contenus Ultra parmi les favoris (PC uniquement). %>
-  <button type="button" class="profil-ultra-toggle" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">
-    <%- include('partials/eye-icon') %>
-  </button>
+  <button type="button" class="profil-ultra-toggle" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">&#128275;</button>
 
 </main>
 
@@ -318,6 +316,9 @@
     function applyUltraHide(on) {
       ultraCards.forEach(function (el) { el.hidden = on; });
       ultraBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      ultraBtn.textContent = on ? "🔒" : "🔓";
+      ultraBtn.title = on ? "Afficher les contenus Ultra" : "Masquer les contenus Ultra";
+      ultraBtn.setAttribute("aria-label", ultraBtn.title);
     }
     var hideUltra = localStorage.getItem(ULTRA_KEY) === "1";
     applyUltraHide(hideUltra);

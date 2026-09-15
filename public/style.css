@@ -8274,25 +8274,21 @@ body.wiki-todo-open { overflow: hidden; }
 
 /* PC : titres de strips centrés ; grille de cartes de catégorie centrée en
    tant que groupe (cartes à largeur naturelle plutôt qu'étirées edge-to-edge,
-   dernière ligne incomplète centrée) — mais le CONTENU de chaque carte reste
-   à gauche. Numéro en bas à droite, simple texte contrasté, sans bulle. */
+   dernière ligne incomplète centrée elle aussi) — taille des cartes et
+   contenu inchangés sinon. Numéro en bas à droite, simple texte contrasté,
+   sans bulle, poussé par flex (pas de position absolute ni de surcroît de
+   hauteur). */
 @media (min-width: 641px) {
   .wiki-index-strip-title {
     text-align: center;
   }
   .wiki-index-cats {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 160px));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 150px));
     justify-content: center;
   }
-  .wiki-index-cat-card {
-    position: relative;
-    min-height: 5.5rem;
-    padding: 0.8rem 0.9rem 1.6rem;
-  }
   .wiki-index-cat-count {
-    position: absolute;
-    right: 0.7rem;
-    bottom: 0.55rem;
+    margin-top: auto;
+    align-self: flex-end;
     color: #fff;
     font-weight: 700;
   }
@@ -10585,43 +10581,31 @@ body.wiki-todo-open { overflow: hidden; }
 }
 
 /* Bouton discret bas-gauche : masque les contenus Ultra sur cette page (pas
-   de volet filtre ici pour porter cette bascule). Icône œil, barrée + rouge
-   une fois active — même langage que le bouton "masquer les images" du header. */
+   de volet filtre ici pour porter cette bascule). Simple emoji, sans fond ni
+   bordure — le texte de l'emoji change au clic (voir favoris.ejs). */
 .profil-ultra-toggle {
   display: none;
 }
 @media (min-width: 641px) {
   .profil-ultra-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
     position: fixed;
     bottom: 1.5rem;
     left: 1.5rem;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: var(--card);
-    color: var(--muted);
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 1.3rem;
+    line-height: 1;
     cursor: pointer;
     z-index: 20;
-    opacity: 0.55;
-    transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    opacity: 0.6;
+    transition: opacity 0.15s;
   }
-  .profil-ultra-toggle:hover {
-    opacity: 1;
-    border-color: var(--accent);
-  }
+  .profil-ultra-toggle:hover,
   .profil-ultra-toggle[aria-pressed="true"] {
     opacity: 1;
-    color: #ef4444;
-    border-color: #ef4444;
   }
-  .profil-ultra-toggle .eye-icon { width: 1.1rem; height: 1.1rem; }
-  .profil-ultra-toggle .eye-icon--off { display: none; }
-  .profil-ultra-toggle[aria-pressed="true"] .eye-icon--open { display: none; }
-  .profil-ultra-toggle[aria-pressed="true"] .eye-icon--off { display: block; }
 }
 
 .profil-panels-name {
@@ -10633,7 +10617,12 @@ body.wiki-todo-open { overflow: hidden; }
   display: none;
 }
 @media (min-width: 1340px) {
-  .profil-panels-name { display: block; }
+  .profil-panels-name {
+    display: block;
+    /* Laisse la place à la languette réduire/déplier, positionnée en
+       absolu sur ce même coin (sinon le texte passait dessous). */
+    padding-left: 2.75rem;
+  }
 }
 
 /* Chaque panneau = <details> */
