@@ -92,6 +92,12 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN parody TEXT NOT NULL DEFAUL
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN content_type TEXT NOT NULL DEFAULT 'image'"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN processed INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+// Distingue une fiche créée automatiquement à partir d'une image de page
+// codex (voir syncPageGalleryImages, routes/wiki.js) d'une fiche liée
+// manuellement via l'upload direct dans la Galerie (champ "Page codex" du
+// formulaire) : seules les premières sont géré/nettoyées par la synchro —
+// on ne doit jamais toucher aux images/tags d'une fiche liée à la main.
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN wiki_synced INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS bd_books (
@@ -972,6 +978,69 @@ db.exec(`CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)`
   db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)").run(KEY, new Date().toISOString());
 })();
 
+// Migration ponctuelle : une fiche galerie par image, y compris les images
+// "principales" d'une page codex — jusqu'ici regroupées dans une seule
+// fiche "album" multi-images (voir l'ancien syncGalleryRecord). Chaque
+// image doit être indépendamment notable/masquable/collectionnable (voir
+// syncPageGalleryImages dans routes/wiki.js pour l'écriture au fil de
+// l'eau). Marque aussi comme "wiki_synced" les fiches par-image déjà
+// présentes (ex. issues de la migration précédente sur les variantes), pour
+// que la synchro sache lesquelles elle peut gérer sans jamais toucher à une
+// fiche liée à la main depuis l'upload direct de la Galerie.
+(function splitGalleryAlbumsToPerImageOnce() {
+  const KEY = "gallery_per_image_v1";
+  if (db.prepare("SELECT 1 FROM app_meta WHERE key = ?").get(KEY)) return;
+
+  const pages = listWikiPages();
+  pages.forEach(function (page) {
+    const items = [];
+    (page.imagePaths || []).forEach(function (p) { items.push({ path: p, label: "" }); });
+    const variantes = (page.meta && Array.isArray(page.meta.variantes)) ? page.meta.variantes : [];
+    variantes.forEach(function (v) {
+      (Array.isArray(v.images) ? v.images : []).forEach(function (p) { items.push({ path: p, label: v.nom || "" }); });
+      (Array.isArray(v.variantes) ? v.variantes : []).forEach(function (sv) {
+        (Array.isArray(sv.images) ? sv.images : []).forEach(function (p) { items.push({ path: p, label: sv.nom || "" }); });
+      });
+    });
+    if (page.meta && page.meta.scenario_image) items.push({ path: page.meta.scenario_image, label: "" });
+    if (!items.length) return;
+
+    const seenPaths = new Set();
+    const dedupedItems = items.filter(function (it) {
+      if (seenPaths.has(it.path)) return false;
+      seenPaths.add(it.path);
+      return true;
+    });
+    const desiredPaths = new Set(dedupedItems.map(function (it) { return it.path; }));
+    const titleTag = page.title.trim().toLowerCase();
+
+    const linked = db.prepare("SELECT * FROM gallery_images WHERE wiki_page_id = ?").all(page.id);
+    const existingSinglePaths = new Set();
+    linked.forEach(function (row) {
+      let paths = [];
+      try { paths = JSON.parse(row.image_paths || "[]"); } catch (_) {}
+      if (paths.length === 1 && desiredPaths.has(paths[0])) {
+        db.prepare("UPDATE gallery_images SET wiki_synced = 1 WHERE id = ?").run(row.id);
+        existingSinglePaths.add(paths[0]);
+      } else if (paths.length > 1) {
+        // Ancienne fiche "album" (toutes ses images vont redevenir des fiches individuelles ci-dessous).
+        deleteGalleryImage(row.id);
+      }
+      // paths.length === 1 mais hors desiredPaths : fiche liée à la main, on n'y touche pas.
+    });
+
+    dedupedItems.forEach(function (it) {
+      if (existingSinglePaths.has(it.path)) return;
+      const tags = [titleTag];
+      if (it.label) tags.push(it.label.toLowerCase());
+      const newId = insertGalleryImage({ imagePaths: [it.path], title: page.title, tags, notes: "", category: "", wikiPageId: page.id });
+      setGalleryImageWikiSynced(newId, true);
+    });
+  });
+
+  db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)").run(KEY, new Date().toISOString());
+})();
+
 // Migration : catégorie "autre" fusionnée dans "fantasmes" (suppression du chapitre).
 // Idempotent : après le premier passage il n'y a plus de lignes "autre".
 db.prepare("UPDATE wiki_pages SET category = 'fantasmes' WHERE category = 'autre'").run();
@@ -1545,6 +1614,7 @@ function rowToGalleryImage(row) {
     flame: false,
     interested: false,
     wikiPageId: row.wiki_page_id || null,
+    wikiSynced: !!row.wiki_synced,
     contentType: row.content_type || "image",
     processed: !!row.processed,
     featured: !!row.featured,
@@ -1597,6 +1667,13 @@ function insertGalleryImage({ imagePaths, title, tags, notes, category, wikiPage
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(paths[0] || "", JSON.stringify(paths), title || "", JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", contentType === "bd" ? "bd" : "image", now, now);
   return info.lastInsertRowid;
+}
+
+// Marque une fiche comme gérée par la synchro codex (voir syncPageGalleryImages) :
+// seules ces fiches sont recréées/supprimées automatiquement, jamais une
+// fiche liée à la main depuis le formulaire d'upload de la Galerie.
+function setGalleryImageWikiSynced(id, synced) {
+  db.prepare("UPDATE gallery_images SET wiki_synced = ? WHERE id = ?").run(synced ? 1 : 0, id);
 }
 
 function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, contentType }) {
@@ -1862,6 +1939,7 @@ module.exports = {
   listGalleryImages,
   getGalleryImage,
   insertGalleryImage,
+  setGalleryImageWikiSynced,
   updateGalleryImage,
   reactGalleryImage,
   deleteGalleryImage,

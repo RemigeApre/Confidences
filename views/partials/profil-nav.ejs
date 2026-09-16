@@ -58,6 +58,25 @@
         </a>
       <% } %>
     </nav>
+    <%# Sur mobile, la barre du bas (mobile-tabbar) ne laisse plus de place
+        pour ces liens dans le header — c'est ici, dans le profil, qu'on les
+        retrouve maintenant (même esprit qu'Instagram : compte/déconnexion
+        vivent dans l'onglet profil, pas dans la nav principale). %>
+    <nav class="profil-nav-links">
+      <% if (locals.partnerUser) { %>
+        <a href="/couple" class="profil-nav-link profil-nav-sublink<%= currentPath.indexOf('/couple') === 0 ? ' active' : '' %>">
+          <span>Profil de <%= partnerUser.displayName %></span>
+        </a>
+      <% } %>
+      <% if (currentUser.isAdmin) { %>
+        <a href="/admin" class="profil-nav-link profil-nav-sublink">
+          <span>Admin</span>
+        </a>
+      <% } %>
+      <form method="POST" action="/admin/logout" class="profil-nav-logout-form">
+        <button type="submit" class="profil-nav-link profil-nav-sublink profil-nav-link--danger">D&eacute;connexion</button>
+      </form>
+    </nav>
     <button type="button" class="profil-ultra-toggle wiki-filter-reset-btn" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">Masquer Ultra</button>
   </div>
 </aside>

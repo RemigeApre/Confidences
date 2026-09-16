@@ -464,6 +464,17 @@ body.nav-drawer-locked {
   margin: 0;
 }
 
+@media (max-width: 640px) {
+  /* Numéro centré au-dessus du titre, lui aussi centré, avant le texte. */
+  .home-cat-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.2rem;
+  }
+  .home-cat-num { min-width: 0; }
+}
+
 .home-actions {
   display: flex;
   justify-content: center;
@@ -7124,12 +7135,121 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 
 @media (max-width: 640px) {
-  /* Top-nav : grid 3 colonnes symétriques */
+  /* Top-nav : grid 3 colonnes (retour | titre | utilitaires) — la 3e
+     colonne s'adapte au contenu (1 ou 2 icônes selon connecté ou non). */
   .top-nav {
     display: grid;
-    grid-template-columns: 2.5rem 1fr 2.5rem;
+    grid-template-columns: 2.5rem 1fr auto;
     gap: 0.25rem;
+    align-items: center;
     justify-items: center;
+  }
+
+  .nav-mobile-utils {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .nav-mobile-util-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    cursor: pointer;
+    list-style: none;
+  }
+  .nav-mobile-util-btn::-webkit-details-marker { display: none; }
+  .nav-mobile-util-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+  .nav-mobile-consent { position: relative; }
+  .nav-mobile-consent-panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    width: 260px;
+    max-width: 78vw;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    z-index: 30;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--fg);
+  }
+  .nav-mobile-consent-panel p { margin: 0 0 0.5rem; }
+  .nav-mobile-consent-panel p:last-child { margin-bottom: 0; }
+
+  /* ── Barre de navigation principale, fixée en bas (façon TikTok/
+     Instagram) : toujours visible, pas de menu à ouvrir. ────────────── */
+  .mobile-tabbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 3.75rem;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background-color: #18181b;
+    border-top: 1px solid var(--border);
+    z-index: 50;
+  }
+  .mobile-tabbar-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+  }
+  .mobile-tabbar-link svg { width: 1.5rem; height: 1.5rem; }
+  .mobile-tabbar-link.active { color: var(--accent); }
+  .mobile-tabbar-home {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 800;
+    font-size: 1.35rem;
+    text-decoration: none;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+    transition: transform 0.12s;
+  }
+  .mobile-tabbar-home:active { transform: scale(0.92); }
+  .mobile-tabbar-home.active { box-shadow: 0 0 0 2px #fff, 0 3px 12px rgba(0,0,0,0.35); }
+
+  /* Réserve la place en bas pour ne jamais passer sous la barre fixe. */
+  body { padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0)); }
+
+  /* Les boutons flottants (admin) et la barre de sélection groupée
+     remontent d'autant pour ne pas passer sous la barre du bas. */
+  .wiki-fab-add,
+  .gallery-fab-wrap {
+    bottom: calc(1.75rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
+  .wiki-fab-list {
+    bottom: calc(1.75rem + 3.2rem + 0.65rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
+  .gallery-bulk-bar {
+    bottom: calc(3.75rem + env(safe-area-inset-bottom, 0));
   }
 
   /* ── Wiki sidebar sur mobile : masquer le hero (titre dans le header) ── */
@@ -7250,7 +7370,9 @@ a.wiki-ql-label:hover .wiki-ql-text {
   /* nav-back/placeholder hidden on desktop (pc-nav handles navigation) */
   .nav-back-btn,
   .nav-back-placeholder,
-  .top-nav-page-title { display: none; }
+  .top-nav-page-title,
+  .nav-mobile-utils,
+  .mobile-tabbar { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -11217,6 +11339,19 @@ body.wiki-todo-open { overflow: hidden; }
   opacity: 1;
 }
 
+.profil-nav-logout-form { margin: 0; }
+button.profil-nav-link--danger {
+  display: flex;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: #ff8080;
+}
+button.profil-nav-link--danger:hover { background: rgba(220,50,50,0.15); color: #ff5050; }
+
 /* Bouton ULTRA : vert quand les contenus Ultra sont visibles, rouge une
    fois masqués — tout en bas du volet. */
 .profil-ultra-toggle {
@@ -12708,18 +12843,11 @@ html.lq-discreet-mode img {
 /* Bouton "masquer les images" : icône œil/œil-barré (voir partials/eye-icon.ejs) */
 .eye-icon { width: 1.15rem; height: 1.15rem; display: block; }
 .pc-discreet-btn .eye-icon--off,
-.nav-drawer-discreet-btn .eye-icon--off { display: none; }
+.nav-mobile-discreet-btn .eye-icon--off { display: none; }
 .pc-discreet-btn[aria-pressed="true"] .eye-icon--open,
-.nav-drawer-discreet-btn[aria-pressed="true"] .eye-icon--open { display: none; }
+.nav-mobile-discreet-btn[aria-pressed="true"] .eye-icon--open { display: none; }
 .pc-discreet-btn[aria-pressed="true"] .eye-icon--off,
-.nav-drawer-discreet-btn[aria-pressed="true"] .eye-icon--off { display: block; }
-
-.nav-drawer-discreet-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-.nav-drawer-discreet-btn .eye-icon { width: 1.15rem; height: 1.15rem; }
+.nav-mobile-discreet-btn[aria-pressed="true"] .eye-icon--off { display: block; }
 .nav-drawer-discreet-btn[aria-pressed="true"] { color: var(--accent); }
 
 /* ── Codex hors-ligne (voir partials/codex-offline.ejs) : bandeau discret,

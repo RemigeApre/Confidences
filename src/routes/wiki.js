@@ -35,6 +35,7 @@ const {
   insertGalleryImage,
   updateGalleryImage,
   deleteGalleryImage,
+  setGalleryImageWikiSynced,
   listGalleryImages,
   listUnexploredWikiPages,
   listBlacklistedTags,
@@ -113,74 +114,24 @@ function autoEnrichTags(tags, title, derivedTerms) {
   return result;
 }
 
-// Synchronise le(s) enregistrement(s) galerie liés à une page wiki.
-// Seul le titre (en minuscules) est apposé automatiquement comme tag sur les
-// images — synonymes et tags libres restent entièrement manuels.
+// Synchronise les fiches galerie d'une page wiki : une fiche par image
+// (principales + variantes/sous-variantes + image de scénario), jamais
+// regroupées — chaque image du site doit avoir sa propre fiche, notable/
+// masquable/collectionnable indépendamment des autres. Recalculé à chaque
+// sauvegarde : les fiches dont l'image n'est plus utilisée (retirée/
+// remplacée) sont supprimées, les nouvelles sont créées, celles qui
+// existent déjà (même chemin) sont conservées telles quelles pour ne pas
+// perdre leurs notes/favoris/collections — seul leur tag de titre est
+// resynchronisé (utile en cas de renommage de la page).
+// Ne touche jamais une fiche liée à la main depuis l'upload direct de la
+// Galerie (wikiSynced=false, voir gallery_images.wiki_synced) : celles-ci
+// ne sont pas dérivées du contenu de la page, on ne fait que garder leur
+// tag de titre à jour.
 // oldTitleTag : ancien titre normalisé, fourni lors d'un renommage pour
-//              remplacer le tag périmé dans toutes les images liées.
-function syncGalleryRecord(pageId, title, imagePaths, oldTitleTag) {
-  const newTitleTag = title.trim().toLowerCase();
-  const allLinked = listGalleryImages().filter((g) => g.wikiPageId === pageId);
-
-  // Applique la logique titre-auto sur un tableau de tags existants :
-  // - remplace oldTitleTag → newTitleTag si le titre a changé
-  // - ajoute newTitleTag s'il est absent
-  // - ne touche à rien d'autre
-  function applyTitleTag(currentTags) {
-    let result = currentTags.map((t) =>
-      (oldTitleTag && oldTitleTag !== newTitleTag && t.toLowerCase() === oldTitleTag)
-        ? newTitleTag
-        : t
-    );
-    if (!result.map((t) => t.toLowerCase()).includes(newTitleTag)) result.push(newTitleTag);
-    return result;
-  }
-
-  let primaryId = null;
-  if (imagePaths && imagePaths.length) {
-    const existing = allLinked[0];
-    if (existing) {
-      primaryId = existing.id;
-      updateGalleryImage(existing.id, {
-        title,
-        imagePaths,
-        tags: applyTitleTag(existing.tags),
-        wikiPageId: pageId,
-        notes: existing.notes,
-        category: existing.category,
-        author: existing.author,
-        parody: existing.parody,
-        contentType: existing.contentType,
-      });
-    } else {
-      primaryId = insertGalleryImage({ imagePaths, title, tags: [newTitleTag], notes: "", category: "", wikiPageId: pageId });
-    }
-  }
-
-  // Images liées manuellement : même traitement (titre auto uniquement)
-  for (const img of allLinked) {
-    if (img.id === primaryId) continue;
-    const updatedTags = applyTitleTag(img.tags);
-    // Pas de changement → skip
-    if (updatedTags.length === img.tags.length && updatedTags.every((t, i) => t === img.tags[i])) continue;
-    updateGalleryImage(img.id, {
-      title: img.title, category: img.category, tags: updatedTags,
-      notes: img.notes, imagePaths: img.imagePaths, wikiPageId: img.wikiPageId,
-      author: img.author, parody: img.parody, contentType: img.contentType,
-    });
-  }
-}
-
-// Synchronise les images "extra" d'une page (variantes/sous-variantes +
-// image de scénario) : une fiche galerie par image, jamais fusionnées dans
-// la fiche "principale" multi-images gérée par syncGalleryRecord ci-dessus
-// (chaque image du site doit avoir sa propre fiche, y compris les variantes).
-// Recalculé à chaque sauvegarde : les fiches dont l'image n'est plus
-// utilisée (variante supprimée/remplacée) sont supprimées, les nouvelles
-// sont créées, celles qui existent déjà (même chemin) sont conservées
-// telles quelles pour ne pas perdre leurs notes/favoris/collections.
-function syncExtraGalleryImages(pageId, title, meta) {
+//              remplacer le tag périmé dans toutes les images concernées.
+function syncPageGalleryImages(pageId, title, imagePaths, meta, oldTitleTag) {
   const items = [];
+  (imagePaths || []).forEach((p) => items.push({ path: p, label: "" }));
   const variantes = (meta && Array.isArray(meta.variantes)) ? meta.variantes : [];
   variantes.forEach((v) => {
     (Array.isArray(v.images) ? v.images : []).forEach((p) => items.push({ path: p, label: v.nom || "" }));
@@ -190,25 +141,67 @@ function syncExtraGalleryImages(pageId, title, meta) {
   });
   if (meta && meta.scenario_image) items.push({ path: meta.scenario_image, label: "" });
 
-  const desiredPaths = new Set(items.map((it) => it.path));
+  const seenPaths = new Set();
+  const dedupedItems = items.filter((it) => {
+    if (seenPaths.has(it.path)) return false;
+    seenPaths.add(it.path);
+    return true;
+  });
+  const desiredPaths = new Set(dedupedItems.map((it) => it.path));
   const titleTag = title.trim().toLowerCase();
 
-  // Fiches déjà liées à cette page avec une seule image (jamais la fiche
-  // "principale" multi-images) : retirer celles qui ne sont plus utilisées,
-  // repérer celles qu'on garde.
-  const linked = listGalleryImages().filter((g) => g.wikiPageId === pageId && g.imagePaths.length === 1);
+  function withTitleTag(tags) {
+    let result = tags.map((t) =>
+      (oldTitleTag && oldTitleTag !== titleTag && t.toLowerCase() === oldTitleTag) ? titleTag : t
+    );
+    if (!result.some((t) => t.toLowerCase() === titleTag)) result.push(titleTag);
+    return result;
+  }
+  function tagsEqual(a, b) {
+    return a.length === b.length && a.every((t, i) => t === b[i]);
+  }
+
+  const linked = listGalleryImages().filter((g) => g.wikiPageId === pageId);
   const existingByPath = {};
   linked.forEach((g) => {
-    const p = g.imagePaths[0];
-    if (desiredPaths.has(p)) existingByPath[p] = g.id;
-    else deleteGalleryImage(g.id);
+    if (!g.wikiSynced) {
+      // Lien manuel (upload direct Galerie) : on garde juste le tag de
+      // titre à jour, jamais ses images ni sa suppression.
+      const updatedTags = withTitleTag(g.tags);
+      if (!tagsEqual(updatedTags, g.tags)) {
+        updateGalleryImage(g.id, {
+          title: g.title, category: g.category, tags: updatedTags, notes: g.notes,
+          imagePaths: g.imagePaths, wikiPageId: g.wikiPageId, author: g.author,
+          parody: g.parody, contentType: g.contentType,
+        });
+      }
+      return;
+    }
+    if (g.imagePaths.length === 1 && desiredPaths.has(g.imagePaths[0])) {
+      existingByPath[g.imagePaths[0]] = g;
+    } else {
+      // Image retirée/remplacée, ou ancienne fiche "album" multi-images.
+      deleteGalleryImage(g.id);
+    }
   });
 
-  items.forEach((it) => {
-    if (existingByPath[it.path]) return;
+  dedupedItems.forEach((it) => {
+    const existing = existingByPath[it.path];
+    if (existing) {
+      const updatedTags = withTitleTag(existing.tags);
+      if (existing.title !== title || !tagsEqual(updatedTags, existing.tags)) {
+        updateGalleryImage(existing.id, {
+          title, category: existing.category, tags: updatedTags, notes: existing.notes,
+          imagePaths: existing.imagePaths, wikiPageId: pageId, author: existing.author,
+          parody: existing.parody, contentType: existing.contentType,
+        });
+      }
+      return;
+    }
     const tags = [titleTag];
     if (it.label) tags.push(it.label.toLowerCase());
-    insertGalleryImage({ imagePaths: [it.path], title, tags, notes: "", category: "", wikiPageId: pageId });
+    const newId = insertGalleryImage({ imagePaths: [it.path], title, tags, notes: "", category: "", wikiPageId: pageId });
+    setGalleryImageWikiSynced(newId, true);
   });
 }
 
@@ -694,8 +687,7 @@ function buildWikiRouter(config) {
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
 
     const newId = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
-    if (imagePaths.length) syncGalleryRecord(newId, title, imagePaths);
-    syncExtraGalleryImages(newId, title, meta);
+    syncPageGalleryImages(newId, title, imagePaths, meta);
     res.redirect(`/wiki/${newId}`);
   });
 
@@ -862,8 +854,7 @@ function buildWikiRouter(config) {
     const extraCategories = arr(req.body.extra_categories).filter((k) => CATEGORY_KEYS.includes(k) && k !== category);
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
     updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
-    syncGalleryRecord(id, title, imagePaths, existing.title.trim().toLowerCase());
-    syncExtraGalleryImages(id, title, meta);
+    syncPageGalleryImages(id, title, imagePaths, meta, existing.title.trim().toLowerCase());
     res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${id}`));
   });
 

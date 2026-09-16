@@ -45,38 +45,6 @@
   });
 })();
 
-// ── Drawer mobile ────────────────────────────────────────────────────────────
-(function () {
-  var burger = document.getElementById("nav-burger");
-  var drawer = document.getElementById("nav-drawer");
-  var backdrop = document.getElementById("nav-backdrop");
-  var closeBtn = document.getElementById("nav-drawer-close");
-  if (!burger || !drawer || !backdrop) return;
-
-  function openDrawer() {
-    drawer.classList.add("open");
-    backdrop.classList.add("open");
-    drawer.setAttribute("aria-hidden", "false");
-    burger.setAttribute("aria-expanded", "true");
-    document.body.classList.add("nav-drawer-locked");
-  }
-
-  function closeDrawer() {
-    drawer.classList.remove("open");
-    backdrop.classList.remove("open");
-    drawer.setAttribute("aria-hidden", "true");
-    burger.setAttribute("aria-expanded", "false");
-    document.body.classList.remove("nav-drawer-locked");
-  }
-
-  burger.addEventListener("click", openDrawer);
-  backdrop.addEventListener("click", closeDrawer);
-  if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeDrawer();
-  });
-})();
-
 // ── Recherche globale : champ qui s'agrandit dans le header ─────────────────
 (function () {
   var wrap    = document.getElementById("pc-search-inline");
@@ -528,7 +496,7 @@ window.buildTagBadgeHTML = function (tag) {
   var KEY = "lq-discreet";
   var btns = [
     document.getElementById("pc-discreet-btn"),
-    document.getElementById("nav-drawer-discreet-btn"),
+    document.getElementById("nav-mobile-discreet-btn"),
   ].filter(Boolean);
   if (!btns.length) return;
 
