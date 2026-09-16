@@ -48,6 +48,7 @@ Tout ce qu'un profil (non-admin) peut faire sur le site, espace par espace. Les 
 - **Filtres avancés** : note minimale, propriétés (favoris, j'adore, intéressé...).
 - **Ultra** / **Irréaliste** : bouton pour afficher ou masquer ces contenus dans la session en cours (le réglage par défaut se choisit dans Profil > Paramètres).
 - **Nos objets** : filtre sur les pages marquées comme possédées (si applicable).
+- **Profils de recherche** : dès qu'un filtre est actif, un bouton **Enregistrer le filtre** apparaît au-dessus de "Réinitialiser" — il ouvre une popup pour nommer la combinaison de filtres en cours. Une fois enregistré, le profil apparaît dans un volet rétracté **Profils de recherche** (visible seulement s'il en existe au moins un) : cliquer dessus réapplique tous ces filtres d'un coup, une croix permet de le supprimer. ⚠️ Strictement personnel : les profils de recherche d'un utilisateur ne sont jamais visibles par un autre, même l'admin ne les voit pas.
 - **Réinitialiser les filtres**.
 - **Explorer l'inconnu** (voir plus bas).
 
@@ -90,6 +91,7 @@ Tout ce qu'un profil (non-admin) peut faire sur le site, espace par espace. Les 
 
 - Recherche, tags (même logique à 3 états que le Codex), catégorie, note minimale, tri.
 - Ultra / Irréaliste : bascule identique au Codex.
+- **Profils de recherche** : même principe qu'au Codex (bouton "Enregistrer le filtre" au-dessus de "Réinitialiser", volet rétracté pour les retrouver et les supprimer), strictement personnel.
 - **Explorer l'inconnu** : mêmes principes que sur le Codex.
 
 ### Visionneuse (clic sur une image)

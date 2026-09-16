@@ -644,6 +644,167 @@
     });
   }
 
+  // ── Profils de recherche (voir partials/filter-profiles.ejs) ────────────
+  // Contrairement au Codex, la galerie ne garde pas tout en localStorage :
+  // on capture donc l'état directement depuis les variables JS en cours, et
+  // on le restitue de la même façon (pas de rechargement de page nécessaire
+  // ici, tout est déjà en mémoire).
+  (function () {
+    var saveBtn    = document.getElementById("gallery-save-filter-btn");
+    var modal      = document.getElementById("gallery-filter-profile-modal");
+    var nameInput  = document.getElementById("gallery-filter-profile-name");
+    var confirmBtn = document.getElementById("gallery-filter-profile-confirm");
+    var cancelBtn  = document.getElementById("gallery-filter-profile-cancel");
+    var listEl     = document.getElementById("gallery-filter-profiles-list");
+    if (!saveBtn && !listEl) return;
+
+    function syncSaveBtn() {
+      if (!saveBtn) return;
+      var active = !!(typeState || Object.keys(tagStates).some(function (t) { return tagStates[t]; }) || activeCategory || searchQ || hideUltra || hideIrrealiste);
+      saveBtn.hidden = !active;
+    }
+    syncSaveBtn();
+    // applyFilters est une déclaration de fonction (hoisted) : la
+    // réaffecter après coup est sans risque, voir la même remarque dans
+    // public/wiki.js.
+    var _origApplyFilters = applyFilters;
+    applyFilters = function () {
+      _origApplyFilters();
+      syncSaveBtn();
+    };
+
+    function collectState() {
+      return {
+        typeValue: typeValue,
+        tagStates: tagStates,
+        activeCategory: activeCategory,
+        searchQ: searchQ,
+        sortMode: sortMode,
+        hideUltra: hideUltra,
+        hideIrrealiste: hideIrrealiste
+      };
+    }
+
+    function applyState(state) {
+      // Type
+      typeValue = state.typeValue || "";
+      typeState = typeValue ? 1 : 0;
+      if (typeFilter) {
+        typeFilter.querySelectorAll(".tag-chip").forEach(function (c) {
+          var active = c.dataset.type === typeValue && typeState !== 0;
+          c.dataset.state = active ? "1" : "0";
+          c.classList.toggle("chip-include", active);
+          c.classList.remove("chip-exclude");
+        });
+      }
+      // Tags
+      tagStates = state.tagStates || {};
+      if (tagFilter) {
+        tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]").forEach(function (c) {
+          var s = tagStates[(c.dataset.tag || "").toLowerCase()] || 0;
+          c.dataset.state = s;
+          c.classList.toggle("chip-include", s === 1);
+          c.classList.toggle("chip-exclude", s === 2);
+        });
+      }
+      // Catégorie
+      activeCategory = state.activeCategory || "";
+      if (categoryFilter) {
+        categoryFilter.querySelectorAll(".tag-chip[data-category]").forEach(function (c) {
+          c.classList.toggle("active", (c.dataset.category || "") === activeCategory && !!activeCategory);
+        });
+      }
+      // Recherche
+      searchQ = state.searchQ || "";
+      if (searchInput) searchInput.value = searchQ;
+      if (searchClear) searchClear.hidden = !searchQ;
+      // Tri
+      sortMode = state.sortMode || "date-desc";
+      if (sortSelect) sortSelect.value = sortMode;
+      // Ultra / Irréaliste
+      hideUltra = !!state.hideUltra;
+      hideIrrealiste = !!state.hideIrrealiste;
+      localStorage.setItem("gallery-hide-ultra", hideUltra ? "1" : "0");
+      localStorage.setItem("gallery-hide-irrealiste", hideIrrealiste ? "1" : "0");
+      if (typeof syncUltraBtn === "function") syncUltraBtn();
+      if (typeof syncIrrealisteBtn === "function") syncIrrealisteBtn();
+
+      applyFilters();
+      window.scrollTo(0, 0);
+    }
+
+    function openModal() {
+      if (!modal) return;
+      if (nameInput) nameInput.value = "";
+      modal.hidden = false;
+      if (nameInput) nameInput.focus();
+    }
+    function closeModal() { if (modal) modal.hidden = true; }
+
+    if (saveBtn) saveBtn.addEventListener("click", openModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+    if (modal) {
+      modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+    }
+    if (nameInput) {
+      nameInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && confirmBtn) confirmBtn.click();
+      });
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", function () {
+        var name = nameInput ? nameInput.value.trim() : "";
+        if (!name) return;
+        confirmBtn.disabled = true;
+        fetch("/api/filter-profils", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section: "gallery", name: name, state: collectState() })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            confirmBtn.disabled = false;
+            if (!d.ok) return;
+            closeModal();
+            window.location.reload();
+          })
+          .catch(function () { confirmBtn.disabled = false; });
+      });
+    }
+
+    if (listEl) {
+      listEl.addEventListener("click", function (e) {
+        var chip = e.target.closest(".filter-profile-chip");
+        if (!chip) return;
+        var id = Number(chip.dataset.profileId);
+
+        if (e.target.closest(".filter-profile-apply")) {
+          var profile = (window.GALLERY_FILTER_PROFILES || []).find(function (p) { return p.id === id; });
+          if (!profile) return;
+          applyState(profile.state || {});
+          return;
+        }
+
+        var removeBtn = e.target.closest(".filter-profile-remove");
+        if (removeBtn) {
+          removeBtn.disabled = true;
+          fetch("/api/filter-profils/" + id, { method: "DELETE" })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (!d.ok) { removeBtn.disabled = false; return; }
+              chip.remove();
+              if (!listEl.querySelector(".filter-profile-chip")) {
+                var details = listEl.closest(".filter-profiles-details");
+                if (details) details.hidden = true;
+              }
+            })
+            .catch(function () { removeBtn.disabled = false; });
+        }
+      });
+    }
+  })();
+
   // Sort
   var sortSelect = document.getElementById("gallery-sort-select");
   if (sortSelect) {

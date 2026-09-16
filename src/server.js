@@ -20,6 +20,7 @@ const {
   db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
   listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
+  listFilterProfiles, createFilterProfile, deleteFilterProfile,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -211,6 +212,19 @@ app.use((req, res, next) => {
 // aussi besoin pour filtrer leurs propres cartes.
 app.use((req, res, next) => {
   res.locals.tagBlacklist = req.user ? listBlacklistedTags(req.user.id).map((r) => r.tag) : [];
+  next();
+});
+
+// Profils de recherche personnels (voir "Enregistrer le filtre" dans les
+// volets Codex/Galerie) : calculés seulement sur les pages où le bloc
+// "Profils de recherche" peut apparaître, pour ne pas ajouter une requête
+// inutile ailleurs. Strictement privés (filtrés par user_id), jamais
+// visibles par un autre profil — même portée que tagBlacklist ci-dessus.
+app.use((req, res, next) => {
+  res.locals.wikiFilterProfiles = (req.user && req.path.indexOf("/wiki") === 0)
+    ? listFilterProfiles(req.user.id, "wiki") : [];
+  res.locals.galleryFilterProfiles = (req.user && req.path.indexOf("/galerie") === 0)
+    ? listFilterProfiles(req.user.id, "gallery") : [];
   next();
 });
 
@@ -491,6 +505,29 @@ app.delete("/api/tags/blacklist", function (req, res) {
 app.get("/tags/masques", function (req, res) {
   if (!req.user) return res.redirect("/admin/login?next=" + encodeURIComponent("/tags/masques"));
   res.render("tags-masques", { config, blacklist: listBlacklistedTags(req.user.id) });
+});
+
+// ── Profils de recherche personnels (Codex/Galerie) ─────────────────────────
+// "state" est un blob opaque construit par public/wiki.js ou
+// public/gallery.js (jamais interprété ici) : voir listFilterProfiles/
+// createFilterProfile dans db.js.
+var FILTER_PROFILE_SECTIONS = ["wiki", "gallery"];
+app.post("/api/filter-profils", function (req, res) {
+  if (!req.user) return res.status(403).json({ ok: false, error: "Interdit" });
+  var section = String(req.body.section || "");
+  var name = String(req.body.name || "").trim().slice(0, 60);
+  if (FILTER_PROFILE_SECTIONS.indexOf(section) === -1) return res.status(400).json({ ok: false, error: "Section invalide" });
+  if (!name) return res.status(400).json({ ok: false, error: "Nom vide" });
+  var id = createFilterProfile(req.user.id, section, name, req.body.state || {});
+  res.json({ ok: true, id: id });
+});
+
+app.delete("/api/filter-profils/:id", function (req, res) {
+  if (!req.user) return res.status(403).json({ ok: false, error: "Interdit" });
+  var id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
+  deleteFilterProfile(req.user.id, id);
+  res.json({ ok: true });
 });
 
 app.use("/", buildQuizRouter(config));

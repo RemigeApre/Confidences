@@ -322,6 +322,45 @@ function removeBlacklistedTag(userId, tag) {
   db.prepare("DELETE FROM tag_blacklist WHERE user_id = ? AND tag = ?").run(userId, t);
 }
 
+// Profils de recherche personnels (voir bouton "Enregistrer le filtre" dans
+// les volets Codex/Galerie) : une combinaison de filtres nommée par le
+// profil qui l'a créée, strictement privée — même logique de portée que
+// tag_blacklist ci-dessus. "state" est un blob JSON opaque pour le serveur
+// (whatever public/wiki.js ou public/gallery.js y a mis), jamais interprété
+// côté serveur, juste stocké/restitué tel quel.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS filter_profiles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    section TEXT NOT NULL,
+    name TEXT NOT NULL,
+    state TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_filter_profiles_user ON filter_profiles (user_id, section)`);
+
+function listFilterProfiles(userId, section) {
+  return db.prepare(
+    "SELECT id, name, state FROM filter_profiles WHERE user_id = ? AND section = ? ORDER BY created_at ASC"
+  ).all(userId, section).map(function(r) {
+    let state = {};
+    try { state = JSON.parse(r.state || "{}"); } catch (_) {}
+    return { id: r.id, name: r.name, state: state };
+  });
+}
+
+function createFilterProfile(userId, section, name, state) {
+  const info = db.prepare(
+    "INSERT INTO filter_profiles (user_id, section, name, state, created_at) VALUES (?, ?, ?, ?, ?)"
+  ).run(userId, section, name, JSON.stringify(state || {}), new Date().toISOString());
+  return info.lastInsertRowid;
+}
+
+function deleteFilterProfile(userId, id) {
+  db.prepare("DELETE FROM filter_profiles WHERE user_id = ? AND id = ?").run(userId, id);
+}
+
 function rowToUser(row) {
   if (!row) return null;
   return {
@@ -1600,6 +1639,9 @@ module.exports = {
   listBlacklistedTags,
   addBlacklistedTag,
   removeBlacklistedTag,
+  listFilterProfiles,
+  createFilterProfile,
+  deleteFilterProfile,
   listUnexploredWikiPages,
   listUnexploredGalleryImages,
   setGalleryImageFeatured,

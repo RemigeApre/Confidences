@@ -1782,6 +1782,117 @@ input[type="text"], input[type="password"] {
   cursor: default;
 }
 
+/* ── Profils de recherche (Codex/Galerie) — voir partials/filter-profiles.ejs,
+   public/wiki.js, public/gallery.js ── */
+.filter-profile-save-btn {
+  margin-top: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+}
+.filter-profile-save-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+.filter-profiles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.2rem 0 0.4rem;
+}
+.filter-profile-chip {
+  display: flex;
+  align-items: stretch;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #111;
+}
+.filter-profile-apply {
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filter-profile-apply:hover { color: #fff; }
+.filter-profile-remove {
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+}
+.filter-profile-remove:hover { color: #f87171; }
+
+.filter-profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 1rem;
+}
+.filter-profile-modal {
+  width: 100%;
+  max-width: 340px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  padding: 1.1rem;
+}
+.filter-profile-modal-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+.filter-profile-modal-input {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.88rem;
+}
+.filter-profile-modal-input:focus { outline: none; border-color: var(--accent); }
+.filter-profile-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.filter-profile-modal-cancel,
+.filter-profile-modal-confirm {
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.filter-profile-modal-cancel {
+  background: transparent;
+  color: var(--muted);
+}
+.filter-profile-modal-cancel:hover { color: var(--fg); }
+.filter-profile-modal-confirm {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.filter-profile-modal-confirm:hover { background: #4a3fb8; }
+.filter-profile-modal-confirm:disabled { opacity: 0.6; cursor: default; }
+
 /* ── Popup avertissement quizz ──────────────────────────────── */
 .quiz-warning-overlay {
   position: fixed;

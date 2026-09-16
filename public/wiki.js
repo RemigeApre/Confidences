@@ -1690,6 +1690,133 @@
     });
   }
 
+  // ── Profils de recherche (voir partials/filter-profiles.ejs) ────────────
+  // Toutes les dimensions du filtre Codex vivent déjà dans localStorage (une
+  // clé par dimension, lues plus haut dans ce fichier) : un profil de
+  // recherche n'est donc qu'un instantané nommé de ces clés — l'appliquer
+  // revient à les réécrire puis recharger la page, qui se réinitialise
+  // alors exactement comme un retour normal sur le Codex avec ces réglages.
+  (function () {
+    var WIKI_PROFILE_KEYS = [
+      "wiki-filter-cats-inc", "wiki-filter-cats-exc",
+      "wiki-prop-not-rated", "wiki-prop-flame", "wiki-prop-interested",
+      "wiki-filter-tags-inc", "wiki-filter-tags-exc",
+      "wiki-filter-sort",
+      "wiki-hide-ultra", "wiki-hide-irrealiste",
+      "wiki-filter-search",
+      "wiki-filter-rating",
+      "wiki-filter-special",
+      "wiki-filter-sous-cat"
+    ];
+    var saveBtn    = document.getElementById("wiki-save-filter-btn");
+    var modal      = document.getElementById("wiki-filter-profile-modal");
+    var nameInput  = document.getElementById("wiki-filter-profile-name");
+    var confirmBtn = document.getElementById("wiki-filter-profile-confirm");
+    var cancelBtn  = document.getElementById("wiki-filter-profile-cancel");
+    var listEl     = document.getElementById("wiki-filter-profiles-list");
+    if (!saveBtn && !listEl) return;
+
+    function syncSaveBtn() {
+      if (saveBtn) saveBtn.hidden = !hasActiveFilters();
+    }
+    syncSaveBtn();
+    // hasActiveFilters() dépend de variables mises à jour un peu partout
+    // dans applyFilters() : plus sûr de resynchroniser à chaque appel que
+    // de dupliquer sa logique ici. applyFilters est une déclaration de
+    // fonction (hoisted) : la réaffecter après coup est sans risque, tous
+    // les appelants existants (déclarés plus haut) la référencent par son
+    // nom au moment de l'appel, pas au moment de leur déclaration.
+    var _origApplyFilters = applyFilters;
+    applyFilters = function () {
+      _origApplyFilters();
+      syncSaveBtn();
+    };
+
+    function collectState() {
+      var state = {};
+      WIKI_PROFILE_KEYS.forEach(function (k) {
+        var v = localStorage.getItem(k);
+        if (v !== null) state[k] = v;
+      });
+      return state;
+    }
+
+    function openModal() {
+      if (!modal) return;
+      if (nameInput) nameInput.value = "";
+      modal.hidden = false;
+      if (nameInput) nameInput.focus();
+    }
+    function closeModal() { if (modal) modal.hidden = true; }
+
+    if (saveBtn) saveBtn.addEventListener("click", openModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+    if (modal) {
+      modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+    }
+    if (nameInput) {
+      nameInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && confirmBtn) confirmBtn.click();
+      });
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", function () {
+        var name = nameInput ? nameInput.value.trim() : "";
+        if (!name) return;
+        confirmBtn.disabled = true;
+        fetch("/api/filter-profils", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section: "wiki", name: name, state: collectState() })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            confirmBtn.disabled = false;
+            if (!d.ok) return;
+            closeModal();
+            window.location.reload();
+          })
+          .catch(function () { confirmBtn.disabled = false; });
+      });
+    }
+
+    if (listEl) {
+      listEl.addEventListener("click", function (e) {
+        var chip = e.target.closest(".filter-profile-chip");
+        if (!chip) return;
+        var id = Number(chip.dataset.profileId);
+
+        if (e.target.closest(".filter-profile-apply")) {
+          var profile = (window.WIKI_FILTER_PROFILES || []).find(function (p) { return p.id === id; });
+          if (!profile) return;
+          WIKI_PROFILE_KEYS.forEach(function (k) {
+            if (Object.prototype.hasOwnProperty.call(profile.state, k)) localStorage.setItem(k, profile.state[k]);
+            else localStorage.removeItem(k);
+          });
+          window.location.href = "/wiki";
+          return;
+        }
+
+        var removeBtn = e.target.closest(".filter-profile-remove");
+        if (removeBtn) {
+          removeBtn.disabled = true;
+          fetch("/api/filter-profils/" + id, { method: "DELETE" })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (!d.ok) { removeBtn.disabled = false; return; }
+              chip.remove();
+              if (!listEl.querySelector(".filter-profile-chip")) {
+                var details = listEl.closest(".filter-profiles-details");
+                if (details) details.hidden = true;
+              }
+            })
+            .catch(function () { removeBtn.disabled = false; });
+        }
+      });
+    }
+  })();
+
   // Restaure la barre de recherche
   if (searchInput && searchQuery) {
     searchInput.value = searchQuery;
