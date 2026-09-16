@@ -4,6 +4,11 @@
 
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
+  <div class="profil-page-actions">
+    <button type="button" id="wiki-export-gouts-btn" class="profil-export-gouts-btn">Extraire mes go&ucirc;ts</button>
+  </div>
+  <%- include('partials/export-gouts-modal') %>
+
   <%# ── Contenu principal : favoris ── %>
 
   <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
@@ -124,6 +129,40 @@
   }
   applyUltraHide();
   document.addEventListener("profil-ultra-toggle-change", applyUltraHide);
+
+  // ── "Extraire mes goûts" : popup de réglages puis téléchargement d'une
+  // synthèse .txt générée côté serveur (voir GET /wiki/export-gouts).
+  var exportBtn = document.getElementById("wiki-export-gouts-btn");
+  var exportModal = document.getElementById("export-gouts-modal");
+  if (exportBtn && exportModal) {
+    var exportUltraCheck = document.getElementById("export-gouts-ultra");
+    var exportIrrealisteCheck = document.getElementById("export-gouts-irrealiste");
+    var exportConfirmBtn = document.getElementById("export-gouts-confirm");
+    var exportCancelBtn = document.getElementById("export-gouts-cancel");
+
+    function openExportModal() { exportModal.hidden = false; }
+    function closeExportModal() { exportModal.hidden = true; }
+
+    exportBtn.addEventListener("click", openExportModal);
+    if (exportCancelBtn) exportCancelBtn.addEventListener("click", closeExportModal);
+    exportModal.addEventListener("click", function (e) { if (e.target === exportModal) closeExportModal(); });
+
+    if (exportConfirmBtn) {
+      exportConfirmBtn.addEventListener("click", function () {
+        var min = "all";
+        exportModal.querySelectorAll('input[name="export-gouts-min"]').forEach(function (r) {
+          if (r.checked) min = r.value;
+        });
+        var params = new URLSearchParams({
+          ultra: exportUltraCheck && exportUltraCheck.checked ? "1" : "0",
+          irrealiste: exportIrrealisteCheck && exportIrrealisteCheck.checked ? "1" : "0",
+          min: min
+        });
+        window.location.href = "/wiki/export-gouts?" + params.toString();
+        closeExportModal();
+      });
+    }
+  }
 })();
 </script>
 
