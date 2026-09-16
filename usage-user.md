@@ -134,7 +134,7 @@ Volet de navigation à gauche, teinté selon le rôle du compte.
 
 ### Historique
 
-- Les dernières pages Codex, images et BD que vous avez consultées, toutes confondues et triées par date (pas affichée), sous forme de cartes de taille identique mais à la mise en page différente selon le type (Codex en bandeau texte, Images en photo pleine carte, BD en couverture).
+- Les dernières pages Codex, images et BD que vous avez consultées, toutes confondues, groupées par période (Aujourd'hui, Hier, la semaine dernière, le mois dernier, plus ancien) sous forme de cartes de taille identique mais à la mise en page différente selon le type (Codex en bandeau icône, Images en photo pleine carte, BD en couverture).
 - Lien direct vers chacune (sauf les images, sans page dédiée : le lien ramène à la Galerie).
 - Durée conservée réglable dans Paramètres (3 jours, 1 semaine, 1 mois ou 3 mois) — ne masque que l'affichage de cette page, ne supprime rien.
 

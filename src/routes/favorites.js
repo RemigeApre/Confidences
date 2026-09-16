@@ -61,6 +61,39 @@ function notesCounts(user) {
   };
 }
 
+// Regroupement par période pour /favoris/historique (voir profil-historique.ejs) :
+// fenêtre glissante depuis aujourd'hui, pas calée sur les bornes du calendrier
+// (semaine/mois) — plus simple et largement suffisant pour un historique perso.
+const HISTORY_WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+const HISTORY_MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+function historyBucketLabel(at) {
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.floor((startOfDay(new Date()) - startOfDay(new Date(at))) / 86400000);
+  if (diffDays <= 0) return "Aujourd'hui";
+  if (diffDays === 1) {
+    const d = new Date(at);
+    return "Hier · " + HISTORY_WEEKDAYS[d.getDay()] + " " + d.getDate() + " " + HISTORY_MONTHS[d.getMonth()];
+  }
+  if (diffDays <= 7) return "La semaine dernière";
+  if (diffDays <= 30) return "Le mois dernier";
+  return "Il y a plus longtemps";
+}
+// Regroupe un flux déjà trié (desc) en buckets, dans l'ordre où ils
+// apparaissent (donc chronologiquement décroissant, Aujourd'hui en premier).
+function groupHistoryFeed(feed) {
+  const buckets = [];
+  const byLabel = {};
+  feed.forEach((f) => {
+    const label = historyBucketLabel(f.at);
+    if (!byLabel[label]) {
+      byLabel[label] = { label, items: [] };
+      buckets.push(byLabel[label]);
+    }
+    byLabel[label].items.push(f);
+  });
+  return buckets;
+}
+
 // Durée de rétention de /favoris/historique (voir profil-parametres.ejs) :
 // ne filtre que ce qui s'affiche sur cette page précise, ne supprime jamais
 // les vues elles-mêmes (utilisées ailleurs, notamment par les stats admin).
@@ -187,7 +220,8 @@ function buildFavoritesRouter(config) {
     const filteredFeed = feed
       .filter((f) => new Date(f.at).getTime() >= cutoff)
       .sort((a, b) => new Date(b.at) - new Date(a.at));
-    res.render("profil-historique", { config, feed: filteredFeed, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+    const buckets = groupHistoryFeed(filteredFeed);
+    res.render("profil-historique", { config, buckets, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
