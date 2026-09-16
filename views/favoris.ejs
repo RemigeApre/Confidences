@@ -40,11 +40,10 @@
 
   <% if (galleryImages.length) { %>
     <h2 class="profil-section-title" id="profil-images-title">Images favorites (<%= galleryImages.length %>)</h2>
-    <div class="profil-fav-grid" id="profil-images-grid">
+    <div class="profil-fav-grid profil-fav-grid--lg" id="profil-images-grid">
       <% galleryImages.forEach(function (img) { %>
         <a href="/galerie/<%= img.id %>/edit"
-           class="profil-fav-card"
-           data-fav-item data-item-type="gallery" data-item-id="<%= img.id %>"
+           class="profil-fav-card profil-fav-card--lg"
            data-ultra="<%= img.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
           <% if (img.imagePaths && img.imagePaths[0]) { %>
             <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
@@ -52,7 +51,6 @@
             <div class="profil-fav-card-placeholder">&#128247;</div>
           <% } %>
           <span class="profil-fav-card-title"><%= img.title || 'Sans titre' %></span>
-          <button type="button" class="wiki-pl-remove" title="Retirer des favoris">&#215;</button>
         </a>
       <% }) %>
     </div>
