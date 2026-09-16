@@ -140,6 +140,7 @@
         data-title="<%= (item.title || '').toLowerCase() %>"
         data-display-title="<%= (item.title || '').replace(/"/g, '') %>"
         data-images="<%= item.imagePaths.join('|') %>"
+        data-thumbs="<%= item.imagePaths.map(function(p){ return thumbUrl(p); }).join('|') %>"
         data-wiki-id="<%= item.wikiPageId || '' %>"
         data-gallery-id="<%= item.id || '' %>"
         data-date="<%= item.date || '' %>"
@@ -282,7 +283,7 @@
     <button type="button" class="gallery-lb-mobile-close" title="Fermer" aria-label="Fermer">&#215;</button>
     <button type="button" class="gallery-lb-prev" title="Pr&eacute;c&eacute;dente">&#8249;</button>
     <button type="button" class="gallery-lb-next" title="Suivante">&#8250;</button>
-    <img class="gallery-lb-img" alt="" />
+    <img class="gallery-lb-img" alt="" decoding="async" />
     <div class="gallery-lb-dots" id="gallery-lb-dots" hidden></div>
 
     <%# Barre de navigation série (superposée en bas) %>
@@ -291,6 +292,10 @@
       <span class="gallery-lb-series-info" id="gallery-lb-series-info"></span>
       <button type="button" class="gallery-lb-series-arrow" id="gallery-lb-series-next" title="Suivant dans la s&eacute;rie">&#8250;</button>
     </div>
+
+    <%# Indice mobile : rappelle qu'il y a plus d'infos en scrollant (voir
+        style.css/nav.js — caché sur desktop où le volet est déjà visible). %>
+    <button type="button" class="gallery-lb-down-hint" aria-label="Voir plus d'informations">&#8249;</button>
 
   </div>
 

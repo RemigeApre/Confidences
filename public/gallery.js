@@ -903,6 +903,42 @@
     var card = currentCard();
     return card ? (card.dataset.images || "").split("|").filter(Boolean) : [];
   }
+  function currentThumbs() {
+    var card = currentCard();
+    return card ? (card.dataset.thumbs || "").split("|").filter(Boolean) : [];
+  }
+
+  // Calcule les indices (carte, image) après un pas dir, en bouclant sur
+  // tout le contenu filtré (voir buildVisible) — partagé entre navigate()
+  // et le préchargement de l'image adjacente (voir preloadAdjacent).
+  function stepIndices(dir) {
+    var images = currentImages();
+    var nextImgIdx = lbImgIndex + dir;
+    if (nextImgIdx >= 0 && nextImgIdx < images.length) {
+      return { cardIdx: lbCardIndex, imgIdx: nextImgIdx };
+    }
+    if (!lbVisible.length) return null;
+    var cardIdx = (lbCardIndex + dir + lbVisible.length) % lbVisible.length;
+    var card = lbVisible[cardIdx];
+    var imgs = card ? (card.dataset.images || "").split("|").filter(Boolean) : [];
+    var imgIdx = dir > 0 ? 0 : Math.max(imgs.length - 1, 0);
+    return { cardIdx: cardIdx, imgIdx: imgIdx };
+  }
+
+  // Anti-latence : l'image suivante ET précédente (boucle infinie, donc les
+  // deux sens sont possibles à tout moment) sont chargées en tâche de fond
+  // dès qu'une image s'affiche — la plupart des swipes retombent alors sur
+  // du déjà-en-cache, sans le moindre temps de chargement perceptible.
+  function preloadAdjacent() {
+    [1, -1].forEach(function (dir) {
+      var step = stepIndices(dir);
+      if (!step) return;
+      var card = lbVisible[step.cardIdx];
+      var imgs = card ? (card.dataset.images || "").split("|").filter(Boolean) : [];
+      var src = imgs[step.imgIdx];
+      if (src) { var im = new Image(); im.src = src; }
+    });
+  }
 
   var lastTrackedGalleryId = null;
 
@@ -939,13 +975,32 @@
     if (!lightbox || !card) return;
     lightbox.scrollTop = 0; // chaque nouvelle image se montre d'abord, infos accessibles au scroll
     var images  = currentImages();
+    var thumbs  = currentThumbs();
     var src          = images[lbImgIndex] || "";
+    var thumbSrc     = thumbs[lbImgIndex] || src;
     var displayTitle = card.dataset.displayTitle || card.dataset.title || "";
     var tags         = (card.dataset.tags || "").split("|").filter(Boolean);
     var wikiId       = card.dataset.wikiId || "";
     var galleryId    = card ? Number(card.dataset.galleryId) : 0;
 
-    if (lbImg) lbImg.src = src;
+    if (lbImg) {
+      // Anti-latence : la vignette (déjà en cache la plupart du temps,
+      // c'est elle qui s'affichait dans la grille) apparaît immédiatement,
+      // l'original haute résolution se charge en tâche de fond et prend sa
+      // place dès qu'il est prêt — jamais d'écran vide le temps du réseau.
+      // dataset.targetSrc évite qu'un chargement tardif n'écrase l'image
+      // affichée si l'utilisateur a déjà navigué ailleurs entre-temps.
+      lbImg.dataset.targetSrc = src;
+      lbImg.src = thumbSrc || src;
+      if (src && thumbSrc !== src) {
+        var full = new Image();
+        full.onload = function () {
+          if (lbImg.dataset.targetSrc === src) lbImg.src = src;
+        };
+        full.src = src;
+      }
+    }
+    preloadAdjacent();
     if (lbTags) {
       lbTags.innerHTML = tags.map(function(t) { return window.buildTagBadgeHTML(t); }).join("");
     }
@@ -1089,17 +1144,10 @@
   // buildVisible) : après la dernière image, on repart sur la première, et
   // inversement — jamais de bout de liste qui bloque le swipe/la flèche.
   function navigate(dir) {
-    var images = currentImages();
-    var nextImgIdx = lbImgIndex + dir;
-    if (nextImgIdx >= 0 && nextImgIdx < images.length) {
-      lbImgIndex = nextImgIdx;
-      renderLightbox();
-      return;
-    }
-    if (!lbVisible.length) return;
-    lbCardIndex = (lbCardIndex + dir + lbVisible.length) % lbVisible.length;
-    var nextImages = currentImages();
-    lbImgIndex = dir > 0 ? 0 : Math.max(nextImages.length - 1, 0);
+    var step = stepIndices(dir);
+    if (!step) return;
+    lbCardIndex = step.cardIdx;
+    lbImgIndex = step.imgIdx;
     renderLightbox();
   }
 
@@ -1428,11 +1476,19 @@
   var lbPanelEl = lightbox ? lightbox.querySelector(".gallery-lb-panel") : null;
   var lbImageAreaEl = lightbox ? lightbox.querySelector(".gallery-lb-image-area") : null;
   var lbPanelHandle = lightbox ? lightbox.querySelector(".gallery-lb-panel-handle") : null;
+  var lbDownHint = lightbox ? lightbox.querySelector(".gallery-lb-down-hint") : null;
   // La poignée reste un simple raccourci pour remonter voir la photo — un
   // tap explicite de l'utilisateur, jamais une bascule imposée par le code.
   if (lbPanelHandle) {
     lbPanelHandle.addEventListener("click", function () {
       if (lbImageAreaEl) lbImageAreaEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+  // Même logique dans l'autre sens : raccourci explicite, pas d'ouverture
+  // automatique.
+  if (lbDownHint) {
+    lbDownHint.addEventListener("click", function () {
+      if (lbPanelEl) lbPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 

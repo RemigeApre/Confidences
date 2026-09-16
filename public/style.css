@@ -5771,7 +5771,8 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
 /* Masquée par défaut (desktop) : n'existe que sur mobile, voir ci-dessous. */
 .gallery-lb-mobile-close,
-.gallery-lb-panel-handle { display: none; }
+.gallery-lb-panel-handle,
+.gallery-lb-down-hint { display: none; }
 
 @media (max-width: 640px) {
   .gallery-grid { --gallery-card-min: 140px; }
@@ -5810,6 +5811,28 @@ a.wiki-ql-label:hover .wiki-ql-text {
   }
   .gallery-lb-prev { left: 0; }
   .gallery-lb-next { right: 0; }
+
+  /* Rappel discret en bas de l'image : quelque chose à voir en scrollant
+     (chevron du même style que prev/next, tourné vers le bas). */
+  .gallery-lb-down-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 50%;
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    transform: translateX(-50%) rotate(-90deg);
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.8rem;
+    opacity: 0.5;
+    line-height: 1;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+  }
+  .gallery-lb-down-hint:active { opacity: 0.9; }
+
   .gallery-lb-prev:active,
   .gallery-lb-next:active { opacity: 0.85; }
 
