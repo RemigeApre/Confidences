@@ -1,17 +1,20 @@
 <%# Profils de recherche personnels (Codex/Galerie) : enregistrer la
     combinaison de filtres en cours sous un nom, la retrouver ensuite dans un
-    champ rétracté. Strictement privé (voir res.locals dans server.js — ce
-    bloc n'existe même pas côté serveur si le profil n'a rien enregistré).
-    Attend : section ('wiki' | 'gallery'), profiles (tableau, potentiellement
-    vide). La logique de collecte/application du filtre vit dans
-    public/wiki.js ou public/gallery.js (différente selon la page), ce
-    partial ne fournit que le HTML + les données embarquées. %>
+    champ rétracté (fermé par défaut : simple clic pour dérouler la liste).
+    Strictement privé (voir res.locals dans server.js — ce bloc n'existe même
+    pas côté serveur si le profil n'a rien enregistré). Attend : section
+    ('wiki' | 'gallery'), profiles (tableau, potentiellement vide). Le
+    bouton "Enregistrer le filtre" lui-même vit dans la vue appelante (pour
+    rester au plus près de Réinitialiser/Explorer) : ce partial ne fournit
+    que le volet rétracté + la popup de nommage. La logique de collecte/
+    application du filtre vit dans public/wiki.js ou public/gallery.js
+    (différente selon la page). %>
 <script>
 window.<%= section === 'wiki' ? 'WIKI' : 'GALLERY' %>_FILTER_PROFILES = <%- JSON.stringify(profiles || []) %>;
 </script>
 
 <% if (profiles && profiles.length) { %>
-  <details class="wiki-sidebar-filter-details filter-profiles-details" open>
+  <details class="wiki-sidebar-filter-details filter-profiles-details">
     <summary class="wiki-sidebar-filter-summary">Profils de recherche</summary>
     <div class="filter-profiles-list" id="<%= section %>-filter-profiles-list">
       <% profiles.forEach(function (p) { %>
@@ -23,8 +26,6 @@ window.<%= section === 'wiki' ? 'WIKI' : 'GALLERY' %>_FILTER_PROFILES = <%- JSON
     </div>
   </details>
 <% } %>
-
-<button type="button" id="<%= section %>-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
 
 <div class="filter-profile-modal-overlay" id="<%= section %>-filter-profile-modal" hidden>
   <div class="filter-profile-modal">

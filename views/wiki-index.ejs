@@ -110,10 +110,15 @@
         <%- include('partials/filter-profiles', { section: 'wiki', profiles: locals.wikiFilterProfiles || [] }) %>
       <% } %>
 
-      <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
-      <% if (currentUser) { %>
-        <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
-      <% } %>
+      <div class="wiki-filter-section wiki-filter-bottom-actions">
+        <% if (currentUser) { %>
+          <button type="button" id="wiki-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
+        <% } %>
+        <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+        <% if (currentUser) { %>
+          <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
+        <% } %>
+      </div>
 
     </div><%# /wiki-sidebar-body %>
   </aside>

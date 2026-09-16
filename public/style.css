@@ -1084,6 +1084,7 @@ h2 { font-size: 1.1rem; margin-top: 2rem; }
   z-index: 5;
   width: 1.6rem;
   height: 1.6rem;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1766,7 +1767,6 @@ input[type="text"], input[type="password"] {
 /* ── "Explorer l'inconnu" : juste sous réinitialiser, distinct (accent
    plutôt que rouge) puisque ce n'est pas une action destructive ── */
 .wiki-explore-btn {
-  margin-top: 0.5rem;
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
@@ -1785,11 +1785,14 @@ input[type="text"], input[type="password"] {
 /* ── Profils de recherche (Codex/Galerie) — voir partials/filter-profiles.ejs,
    public/wiki.js, public/gallery.js ── */
 .filter-profile-save-btn {
-  margin-top: 0.5rem;
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.25);
   color: rgba(255, 255, 255, 0.85);
 }
+/* Appartient au même groupe que Réinitialiser/Explorer (voir
+   .wiki-filter-section, gap:0.4rem) : ancre tout le groupe en bas du volet,
+   comme le faisait auparavant .wiki-filter-reset-btn--danger seul. */
+.wiki-filter-bottom-actions { margin-top: auto; }
 .filter-profile-save-btn:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
@@ -3634,6 +3637,12 @@ input[type="text"], input[type="password"] {
   background: #1e1440;
   border-color: #8060d0;
   color: #b090ff;
+}
+
+.wiki-react-readlater.active {
+  background: #1a2c40;
+  border-color: #2080c0;
+  color: #70c0ff;
 }
 
 /* ── Indicateurs sur les cartes ─────────────── */
@@ -8535,6 +8544,7 @@ body.wiki-todo-open { overflow: hidden; }
   justify-content: center;
   width: 1.3rem;
   height: 1.3rem;
+  padding: 0;
   border-radius: 50%;
   border: none;
   background: rgba(239, 68, 68, 0.2);
@@ -9326,6 +9336,12 @@ body.wiki-todo-open { overflow: hidden; }
   background: rgba(130,80,220,0.35);
   border-color: #9060d0;
   color: #cc99ff;
+  font-weight: 600;
+}
+.wiki-right-reactions .wiki-react-readlater.active {
+  background: rgba(30,140,220,0.35);
+  border-color: #2090d0;
+  color: #90d0ff;
   font-weight: 600;
 }
 
@@ -11806,6 +11822,7 @@ body.wiki-todo-open { overflow: hidden; }
   position: absolute;
   top: 0.5rem; right: 0.5rem;
   width: 2rem; height: 2rem;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--fg);
