@@ -5481,10 +5481,11 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
 /* Volet droit : fixe, scrollable, décorrélé du centrage de l'image */
 .gallery-lb-panel {
-  width: 280px;
+  width: 340px;
   flex-shrink: 0;
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   background: rgba(0,0,0,0.45);
   border-left: 1px solid rgba(255,255,255,0.1);
   padding: 1rem;
@@ -5645,6 +5646,7 @@ a.wiki-ql-label:hover .wiki-ql-text {
 /* Rangée de boutons texte (J'adore / Masquer / Collection) */
 .gallery-lb-react-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: stretch;
   gap: 0.5rem;
   margin-top: 0.6rem;
@@ -5667,7 +5669,9 @@ a.wiki-ql-label:hover .wiki-ql-text {
 /* Boutons texte (J'adore / Masquer / Collection) : de vrais boutons avec
    libellé, pas de simples icônes — plus lisible et moins ambigu au clic. */
 .gallery-lb-text-btn {
-  flex: 1;
+  flex: 1 1 96px;
+  min-width: 0;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5700,6 +5704,7 @@ a.wiki-ql-label:hover .wiki-ql-text {
 /* Rangée admin (edit + traité) */
 .gallery-lb-admin-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
@@ -9434,6 +9439,7 @@ body.wiki-todo-open { overflow: hidden; }
 /* ── Mode couple : note du/de la partenaire révélée ──── */
 .wiki-partner-reveal {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
   margin-top: 0.5rem;
@@ -9444,6 +9450,7 @@ body.wiki-todo-open { overflow: hidden; }
   font-size: 0.85rem;
   color: #ffb3d9;
   width: fit-content;
+  max-width: 100%;
 }
 .wiki-partner-reveal-stars { display: flex; gap: 0.05rem; color: var(--wiki-gold); }
 .wiki-partner-reveal-stars .wiki-card-star { color: rgba(255,255,255,0.25); font-size: 0.85rem; }
