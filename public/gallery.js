@@ -636,6 +636,9 @@
           c.classList.remove("chip-include","chip-exclude");
         });
       }
+      // Niveau d'expansion du nuage de tags (voir "Plus") : sans ça, le
+      // volet restait déplié après réinitialisation (même bug que Codex).
+      gTagExpandedCount = GTAG_PAGE;
       // Effacer recherche
       searchQ = "";
       if (searchInput) { searchInput.value = ""; }
@@ -860,6 +863,7 @@
   var lbRating     = document.getElementById("gallery-lb-rating");
   var lbPartnerReveal = document.getElementById("gallery-lb-partner-reveal");
   var lbFavBtn     = document.getElementById("gallery-lb-fav-btn");
+  var lbHideBtn    = document.getElementById("gallery-lb-hide-btn");
   var lbEditBtn    = document.getElementById("gallery-lb-edit-btn");
   var lbProcessBtn = document.getElementById("gallery-lb-processed-btn");
   var lbSeriesNav  = document.getElementById("gallery-lb-series-nav");
@@ -1028,6 +1032,8 @@
           lbFavBtn.dataset.itemId = galleryId;
           lbFavBtn.classList.toggle("active", card.dataset.fav === "1");
         }
+        // Masquer
+        if (lbHideBtn) lbHideBtn.dataset.galleryId = galleryId;
         // Edit + Processed
         if (lbEditBtn) {
           lbEditBtn.dataset.galleryId = galleryId;
@@ -1203,6 +1209,30 @@
           lbFavBtn.classList.toggle("active", !isActive);
           var card = currentCard();
           if (card) card.dataset.fav = isActive ? "0" : "1";
+        }
+      });
+    });
+  }
+
+  // Masquer en lightbox : retire l'image des listings pour ce seul profil
+  // (voir /favoris/masques pour la retrouver et la réafficher). Contrairement
+  // à la note/au favori, il n'y a rien à afficher "actif" ensuite — l'image
+  // disparaît du flux tout de suite, on referme donc la lightbox.
+  if (lbHideBtn) {
+    lbHideBtn.addEventListener("click", function() {
+      var galleryId = Number(lbHideBtn.dataset.galleryId);
+      if (!galleryId) return;
+      fetch("/galerie/" + galleryId + "/react", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden: true }),
+      }).then(function(r){ return r.json(); }).then(function(data){
+        if (!data.ok) return;
+        var card = currentCard();
+        closeLightbox();
+        if (card) {
+          card.remove();
+          buildVisible();
         }
       });
     });

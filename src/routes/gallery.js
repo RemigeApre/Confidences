@@ -18,6 +18,7 @@ const {
   logGalleryView,
   mergeUserReactions,
   mergePartnerReaction,
+  excludeHidden,
   getUserReaction,
   createSeries,
   deleteSeries,
@@ -185,8 +186,8 @@ function buildItems(galleryImages, wikiPages) {
 function getCtx(user) {
   const userId = user ? user.id : null;
   const partnerId = user ? user.partnerId : null;
-  const wikiPages = mergeUserReactions(listWikiPages(), userId, "wiki");
-  const galleryImages = mergePartnerReaction(mergeUserReactions(listGalleryImages(), userId, "gallery"), partnerId, "gallery");
+  const wikiPages = excludeHidden(mergeUserReactions(listWikiPages(), userId, "wiki"));
+  const galleryImages = mergePartnerReaction(excludeHidden(mergeUserReactions(listGalleryImages(), userId, "gallery")), partnerId, "gallery");
   const items = filterOff(buildItems(galleryImages, wikiPages), user);
   const tagTotalCounts = {};
   items.forEach((item) => {
@@ -558,9 +559,11 @@ function buildGalleryRouter(config) {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.json({ ok: false });
     if (!getGalleryImage(id)) return res.json({ ok: false });
-    const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
-    reactGalleryImage(id, req.user.id, { rating });
-    res.json({ ok: true });
+    const payload = {};
+    if (req.body.rating !== undefined) payload.rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
+    if (req.body.hidden !== undefined) payload.hidden = !!req.body.hidden;
+    reactGalleryImage(id, req.user.id, payload);
+    res.json({ ok: true, hidden: !!req.body.hidden });
   });
 
   router.post("/:id/delete", requireAdmin, (req, res) => {

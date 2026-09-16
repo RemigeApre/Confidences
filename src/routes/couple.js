@@ -39,25 +39,25 @@ function buildCoupleRouter(config) {
 
   router.get("/notes/wiki", (req, res) => {
     const pages = mergeUserReactions(listWikiPages(), req.partner.id, "wiki")
-      .filter((p) => p.rating > 0 || p.flame || p.interested);
+      .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested));
     res.render("couple-notes-wiki", { config, partner: req.partner, pages, categories: WIKI_CATEGORIES });
   });
 
   router.get("/notes/images", (req, res) => {
     const items = mergeUserReactions(listGalleryImages(), req.partner.id, "gallery")
-      .filter((img) => img.rating > 0 || img.flame || img.interested);
+      .filter((img) => !img.hidden && (img.rating > 0 || img.flame || img.interested));
     res.render("couple-notes-images", { config, partner: req.partner, items });
   });
 
   router.get("/notes/bd", (req, res) => {
     const books = mergeUserReactions(listBdBooks(), req.partner.id, "bd")
-      .filter((b) => b.rating > 0 || b.flame || b.interested);
+      .filter((b) => !b.hidden && (b.rating > 0 || b.flame || b.interested));
     res.render("couple-notes-bd", { config, partner: req.partner, books });
   });
 
   router.get("/a-lire-plus-tard", (req, res) => {
     const pages = mergeUserReactions(listWikiPages(), req.partner.id, "wiki")
-      .filter((p) => p.readLater);
+      .filter((p) => !p.hidden && p.readLater);
     res.render("couple-a-lire-plus-tard", { config, partner: req.partner, pages, categories: WIKI_CATEGORIES });
   });
 

@@ -272,14 +272,19 @@ app.get("/api/search", function (req, res) {
   var ql = q.toLowerCase();
   var pat = "%" + ql + "%";
   var results = {};
+  // Sentinelle : ne correspond à aucun user_id réel, évite de brancher la
+  // requête selon connecté/non connecté pour exclure le contenu masqué
+  // (voir bouton "Masquer" et content_reactions.hidden).
+  var uid = req.user ? req.user.id : -1;
 
   // Wiki — public (texte accessible sans connexion)
   try {
     var wikiRows = db
       .prepare(
-        "SELECT id, title FROM wiki_pages WHERE lower(title) LIKE ? OR lower(content) LIKE ? OR lower(tags) LIKE ? OR lower(meta) LIKE ? LIMIT 6"
+        "SELECT id, title FROM wiki_pages WHERE (lower(title) LIKE ? OR lower(content) LIKE ? OR lower(tags) LIKE ? OR lower(meta) LIKE ?) " +
+        "AND id NOT IN (SELECT item_id FROM content_reactions WHERE user_id = ? AND item_type = 'wiki' AND hidden = 1) LIMIT 6"
       )
-      .all(pat, pat, pat, pat);
+      .all(pat, pat, pat, pat, uid);
     if (wikiRows.length)
       results.wiki = wikiRows.map(function (r) {
         return { title: r.title, url: "/wiki/" + r.id };
@@ -291,9 +296,10 @@ app.get("/api/search", function (req, res) {
     try {
       var galRows = db
         .prepare(
-          "SELECT id, title FROM gallery_images WHERE lower(title) LIKE ? OR lower(notes) LIKE ? OR lower(tags) LIKE ? LIMIT 5"
+          "SELECT id, title FROM gallery_images WHERE (lower(title) LIKE ? OR lower(notes) LIKE ? OR lower(tags) LIKE ?) " +
+          "AND id NOT IN (SELECT item_id FROM content_reactions WHERE user_id = ? AND item_type = 'gallery' AND hidden = 1) LIMIT 5"
         )
-        .all(pat, pat, pat);
+        .all(pat, pat, pat, uid);
       if (galRows.length)
         results.galerie = galRows.map(function (r) {
           return { title: r.title || "Image #" + r.id, url: "/galerie" };
@@ -303,9 +309,10 @@ app.get("/api/search", function (req, res) {
     try {
       var bdRows = db
         .prepare(
-          "SELECT id, title FROM bd_books WHERE lower(title) LIKE ? OR lower(description) LIKE ? OR lower(tags) LIKE ? LIMIT 5"
+          "SELECT id, title FROM bd_books WHERE (lower(title) LIKE ? OR lower(description) LIKE ? OR lower(tags) LIKE ?) " +
+          "AND id NOT IN (SELECT item_id FROM content_reactions WHERE user_id = ? AND item_type = 'bd' AND hidden = 1) LIMIT 5"
         )
-        .all(pat, pat, pat);
+        .all(pat, pat, pat, uid);
       if (bdRows.length)
         results.bd = bdRows.map(function (r) {
           return { title: r.title, url: "/bd" };

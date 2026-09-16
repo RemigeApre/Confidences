@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, mergeUserReactions, mergePartnerReaction, getUserReaction, isFavorite, addFavorite, removeFavorite, logBdView } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, addFavorite, removeFavorite, logBdView } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -67,7 +67,7 @@ function buildBdRouter(config) {
   router.get("/", (req, res) => {
     const userId = req.user ? req.user.id : null;
     const partnerId = req.user ? req.user.partnerId : null;
-    const books = filterOff(mergePartnerReaction(mergeUserReactions(listBdBooks(), userId, "bd"), partnerId, "bd"), req.user);
+    const books = filterOff(mergePartnerReaction(excludeHidden(mergeUserReactions(listBdBooks(), userId, "bd")), partnerId, "bd"), req.user);
     const tagSet = new Set();
     books.forEach((b) => b.tags.forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
@@ -147,14 +147,15 @@ function buildBdRouter(config) {
     const rating = req.body.rating !== undefined ? Math.max(0, Math.min(5, Number(req.body.rating) || 0)) : current.rating;
     const flame = req.body.flame !== undefined ? !!req.body.flame : current.flame;
     const interested = req.body.interested !== undefined ? !!req.body.interested : current.interested;
+    const hidden = req.body.hidden !== undefined ? !!req.body.hidden : current.hidden;
 
-    reactBdBook(id, req.user.id, { rating, flame, interested });
+    reactBdBook(id, req.user.id, { rating, flame, interested, hidden });
 
     // Sync flame → favorites
     if (flame) addFavorite(req.user.id, "bd", id);
     else removeFavorite(req.user.id, "bd", id);
 
-    res.json({ ok: true, rating, flame, interested });
+    res.json({ ok: true, rating, flame, interested, hidden });
   });
 
   router.get("/:id", (req, res) => {

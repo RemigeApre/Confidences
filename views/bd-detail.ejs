@@ -11,6 +11,8 @@
       <button type="button" class="bd-react-btn<%= book.flame ? ' active' : '' %>" id="bd-flame-btn" data-id="<%= book.id %>" title="J&rsquo;adore">&#128293;</button>
       <%# Intéressé %>
       <button type="button" class="bd-react-btn<%= book.interested ? ' active' : '' %>" id="bd-interested-btn" data-id="<%= book.id %>" title="Ça m&rsquo;int&eacute;resse">&#10024;</button>
+      <%# Masquer (voir /favoris/masques pour retrouver et réafficher) %>
+      <button type="button" class="bd-react-btn bd-react-hidden<%= book.hidden ? ' active' : '' %>" id="bd-hidden-btn" data-id="<%= book.id %>" title="<%= book.hidden ? 'Réafficher cette BD' : 'Masquer cette BD' %>">&#128065;</button>
       <%# Note %>
       <span class="bd-rating-stars" id="bd-rating" data-id="<%= book.id %>" data-rating="<%= book.rating %>">
         <% for (var i = 1; i <= 5; i++) { %>
@@ -157,6 +159,18 @@
       var next = !intBtn.classList.contains("active");
       sendReact({ interested: next }).then(function (d) {
         if (d.ok) intBtn.classList.toggle("active", d.interested);
+      });
+    });
+  }
+
+  var hideBtn = document.getElementById("bd-hidden-btn");
+  if (hideBtn) {
+    hideBtn.addEventListener("click", function () {
+      var next = !hideBtn.classList.contains("active");
+      sendReact({ hidden: next }).then(function (d) {
+        if (!d.ok) return;
+        hideBtn.classList.toggle("active", d.hidden);
+        hideBtn.title = d.hidden ? "Réafficher cette BD" : "Masquer cette BD";
       });
     });
   }

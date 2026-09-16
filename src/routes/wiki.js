@@ -29,6 +29,7 @@ const {
   setUserNote,
   mergeUserReactions,
   mergePartnerReaction,
+  excludeHidden,
   getUserReaction,
   createStandaloneTag,
   insertGalleryImage,
@@ -507,7 +508,7 @@ function buildWikiRouter(config) {
   router.get("/", (req, res) => {
     const userId = req.user ? req.user.id : null;
     const partnerId = req.user ? req.user.partnerId : null;
-    const pages = mergePartnerReaction(filterOff(mergeUserReactions(sortedPages(), userId, "wiki"), req.user), partnerId, "wiki");
+    const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), userId, "wiki")), req.user), partnerId, "wiki");
     const visiblePages = pages.filter((p) => !isUltra(p));
     const chapters = CATEGORIES.map((cat) => {
       const allCatPages = pagesForCategory(visiblePages, cat.key);
@@ -515,7 +516,7 @@ function buildWikiRouter(config) {
       const primaryCount = pages.filter((p) => p.category === cat.key).length;
       return { ...cat, pages: allCatPages, count: primaryCount, preview: allCatPages.slice(0, 6) };
     });
-    const allPages = mergePartnerReaction(filterOff(mergeUserReactions(listWikiPages(), userId, "wiki"), req.user), partnerId, "wiki");
+    const allPages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(listWikiPages(), userId, "wiki")), req.user), partnerId, "wiki");
     const recentAdded = [...allPages]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 30);
@@ -539,7 +540,7 @@ function buildWikiRouter(config) {
 
   // ── Vue "tout" : toutes les pages, toutes categories melangees ──
   router.get("/tous", (req, res) => {
-    const pages = mergePartnerReaction(filterOff(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki"), req.user), req.user ? req.user.partnerId : null, "wiki");
+    const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki")), req.user), req.user ? req.user.partnerId : null, "wiki");
     res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, ...CTX });
   });
 
@@ -548,7 +549,7 @@ function buildWikiRouter(config) {
     const cat = CATEGORIES.find((c) => c.key === req.params.key);
     if (!cat) return res.redirect("/wiki");
     const all = sortedPages();
-    const pages = mergePartnerReaction(pagesForCategory(filterOff(mergeUserReactions(all, req.user ? req.user.id : null, "wiki"), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
+    const pages = mergePartnerReaction(pagesForCategory(filterOff(excludeHidden(mergeUserReactions(all, req.user ? req.user.id : null, "wiki")), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
     const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
     res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, ...CTX });
   });
@@ -576,7 +577,7 @@ function buildWikiRouter(config) {
     const minKey = Object.prototype.hasOwnProperty.call(GOUTS_MIN_INDEX, req.query.min) ? req.query.min : "all";
     const maxIndex = GOUTS_MIN_INDEX[minKey];
 
-    const pages = mergeUserReactions(listWikiPages(), req.user.id, "wiki");
+    const pages = excludeHidden(mergeUserReactions(listWikiPages(), req.user.id, "wiki"));
     const buckets = {};
     GOUTS_ORDER.forEach((k) => { buckets[k] = []; });
 
@@ -894,8 +895,8 @@ function buildWikiRouter(config) {
   router.post("/:id/react", requireUserJson, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
-    const { rating, flame, interested, readLater } = req.body;
-    reactWikiPage(id, req.user.id, { rating, flame, interested, readLater });
+    const { rating, flame, interested, readLater, hidden } = req.body;
+    reactWikiPage(id, req.user.id, { rating, flame, interested, readLater, hidden });
     // J'adore = favori : synchro avec la table favorites
     if (flame) addFavorite(req.user.id, "wiki", id);
     else removeFavorite(req.user.id, "wiki", id);

@@ -296,6 +296,20 @@ function buildFavoritesRouter(config) {
     res.render("profil-a-lire-plus-tard", { config, pages, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
+  // ── Contenus masqués (Codex/Images/BD) — strictement personnel : voir
+  // le bouton "Masquer" sur chaque page/image/BD, qui les retire des
+  // listings pour ce seul profil. Seul endroit pour les rendre visibles à
+  // nouveau (le bouton lui-même y redevient inactif une fois republié).
+  router.get("/masques", requireUser, (req, res) => {
+    const wikiPages = mergeUserReactions(listWikiPages(), req.user.id, "wiki").filter((p) => p.hidden);
+    const galleryImages = mergeUserReactions(listGalleryImages(), req.user.id, "gallery").filter((img) => img.hidden);
+    const bdBooks = mergeUserReactions(listBdBooks(), req.user.id, "bd").filter((b) => b.hidden);
+    res.render("profil-masques", {
+      config, wikiPages, galleryImages, bdBooks,
+      categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user),
+    });
+  });
+
   router.get("/notes/bd", requireUser, (req, res) => {
     const favIds = new Set(
       listFavoriteRows(req.user.id).filter((r) => r.item_type === "bd").map((r) => r.item_id)

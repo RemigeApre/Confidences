@@ -696,17 +696,19 @@
     var reactFlame    = reactWidget ? reactWidget.dataset.flame === "1" : false;
     var reactInterest = reactWidget ? reactWidget.dataset.interested === "1" : false;
     var reactReadLater = reactWidget ? reactWidget.dataset.readlater === "1" : false;
+    var reactHidden    = reactWidget ? reactWidget.dataset.hidden === "1" : false;
 
     var starBtns = (ratingWidget || reactWidget).querySelectorAll(".wiki-star");
     var flamBtn  = reactWidget ? reactWidget.querySelector("[data-key='flame']") : null;
     var intrBtn  = reactWidget ? reactWidget.querySelector("[data-key='interested']") : null;
     var rlBtn    = reactWidget ? reactWidget.querySelector("[data-key='readlater']") : null;
+    var hideBtn  = reactWidget ? reactWidget.querySelector("[data-key='hidden']") : null;
 
     function save() {
       fetch("/wiki/" + reactId + "/react", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: reactRating, flame: reactFlame, interested: reactInterest, readLater: reactReadLater }),
+        body: JSON.stringify({ rating: reactRating, flame: reactFlame, interested: reactInterest, readLater: reactReadLater, hidden: reactHidden }),
       });
     }
 
@@ -766,6 +768,18 @@
       rlBtn.addEventListener("click", function () {
         reactReadLater = !reactReadLater;
         rlBtn.classList.toggle("active", reactReadLater);
+        save();
+      });
+    }
+
+    // Masquer (voir /favoris/masques pour retrouver et réafficher) : reste
+    // consultable sur cette page même une fois masquée, seulement retirée
+    // des listings (sommaire, catégories, "tous", extraction des goûts...).
+    if (hideBtn) {
+      hideBtn.addEventListener("click", function () {
+        reactHidden = !reactHidden;
+        hideBtn.classList.toggle("active", reactHidden);
+        hideBtn.title = reactHidden ? "Réafficher cette page" : "Masquer cette page";
         save();
       });
     }
@@ -989,6 +1003,7 @@
           return (c.dataset.tags || "").split("|").indexOf(t) !== -1;
         });
       });
+      applyTagOverflow();
       return;
     }
     chips.forEach(function(chip) {
@@ -1658,8 +1673,13 @@
         tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function(c) {
           c.dataset.state = "0";
           c.classList.remove("chip-include","chip-exclude");
+          c.hidden = false;
         });
       }
+      // Recherche de tag + niveau d'expansion du nuage (voir "Plus"/"Tous
+      // les tags") : sans ça, le volet restait déplié après réinitialisation.
+      tagExpandedCount = TAG_PAGE;
+      if (tagSearchInput) tagSearchInput.value = "";
       // Propriétés
       for (var pk in propStates) { propStates[pk] = 0; localStorage.setItem("wiki-prop-" + pk, "0"); }
       if (propGrid) {

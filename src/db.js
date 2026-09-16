@@ -218,6 +218,9 @@ db.exec(`
 // "À lire plus tard" (Codex uniquement pour l'instant, voir /favoris/a-lire-plus-tard) :
 // même table que les autres réactions personnelles, par profil.
 try { db.exec("ALTER TABLE content_reactions ADD COLUMN read_later INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+// "Masquer" (Codex/Images/BD, voir /favoris/masques) : contenu retiré des
+// listings pour ce seul profil, jamais supprimé ni masqué pour les autres.
+try { db.exec("ALTER TABLE content_reactions ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_views (
@@ -503,14 +506,14 @@ function countFavorites() {
   return db.prepare("SELECT COUNT(*) AS c FROM favorites").get().c;
 }
 
-const REACTION_DEFAULT = { rating: 0, flame: false, interested: false, readLater: false };
+const REACTION_DEFAULT = { rating: 0, flame: false, interested: false, readLater: false, hidden: false };
 
 function getUserReaction(userId, itemType, itemId) {
   if (!userId) return { ...REACTION_DEFAULT };
   const row = db.prepare(
-    "SELECT rating, flame, interested, read_later FROM content_reactions WHERE user_id = ? AND item_type = ? AND item_id = ?"
+    "SELECT rating, flame, interested, read_later, hidden FROM content_reactions WHERE user_id = ? AND item_type = ? AND item_id = ?"
   ).get(userId, itemType, itemId);
-  return row ? { rating: row.rating, flame: !!row.flame, interested: !!row.interested, readLater: !!row.read_later } : { ...REACTION_DEFAULT };
+  return row ? { rating: row.rating, flame: !!row.flame, interested: !!row.interested, readLater: !!row.read_later, hidden: !!row.hidden } : { ...REACTION_DEFAULT };
 }
 
 // Statistiques agregees des reactions d'un utilisateur (tous types confondus).
@@ -544,9 +547,9 @@ function countUserNotes(userId, itemType) {
 function getUserReactionsMap(userId, itemType) {
   const map = {};
   if (!userId) return map;
-  db.prepare("SELECT item_id, rating, flame, interested, read_later FROM content_reactions WHERE user_id = ? AND item_type = ?")
+  db.prepare("SELECT item_id, rating, flame, interested, read_later, hidden FROM content_reactions WHERE user_id = ? AND item_type = ?")
     .all(userId, itemType)
-    .forEach((r) => { map[r.item_id] = { rating: r.rating, flame: !!r.flame, interested: !!r.interested, readLater: !!r.read_later }; });
+    .forEach((r) => { map[r.item_id] = { rating: r.rating, flame: !!r.flame, interested: !!r.interested, readLater: !!r.read_later, hidden: !!r.hidden }; });
   return map;
 }
 
@@ -555,6 +558,14 @@ function getUserReactionsMap(userId, itemType) {
 function mergeUserReactions(items, userId, itemType) {
   const map = getUserReactionsMap(userId, itemType);
   return items.map((item) => Object.assign(item, map[item.id] || { ...REACTION_DEFAULT }));
+}
+
+// "Masquer" (voir /favoris/masques) : retire du listing les items que ce
+// profil a masqués — s'utilise après mergeUserReactions (qui pose .hidden),
+// jamais avant. Sans effet pour un visiteur non connecté (.hidden toujours
+// false via REACTION_DEFAULT).
+function excludeHidden(items) {
+  return items.filter((item) => !item.hidden);
 }
 
 // Mode couple (voir setCouplePartners) : fusionne la réaction du/de la
@@ -574,18 +585,19 @@ function mergePartnerReaction(items, partnerId, itemType) {
   return items;
 }
 
-function setUserReaction(userId, itemType, itemId, { rating, flame, interested, readLater }) {
+function setUserReaction(userId, itemType, itemId, { rating, flame, interested, readLater, hidden }) {
   const current = getUserReaction(userId, itemType, itemId);
   const r = rating !== undefined ? Math.max(0, Math.min(5, Number(rating) || 0)) : current.rating;
   const f = flame !== undefined ? !!flame : current.flame;
   const it = interested !== undefined ? !!interested : current.interested;
   const rl = readLater !== undefined ? !!readLater : current.readLater;
+  const h = hidden !== undefined ? !!hidden : current.hidden;
   db.prepare(
-    `INSERT INTO content_reactions (user_id, item_type, item_id, rating, flame, interested, read_later, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO content_reactions (user_id, item_type, item_id, rating, flame, interested, read_later, hidden, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id, item_type, item_id) DO UPDATE SET
-       rating = excluded.rating, flame = excluded.flame, interested = excluded.interested, read_later = excluded.read_later, updated_at = excluded.updated_at`
-  ).run(userId, itemType, itemId, r, f ? 1 : 0, it ? 1 : 0, rl ? 1 : 0, new Date().toISOString());
+       rating = excluded.rating, flame = excluded.flame, interested = excluded.interested, read_later = excluded.read_later, hidden = excluded.hidden, updated_at = excluded.updated_at`
+  ).run(userId, itemType, itemId, r, f ? 1 : 0, it ? 1 : 0, rl ? 1 : 0, h ? 1 : 0, new Date().toISOString());
 }
 
 function getUserNote(pageId, userId) {
@@ -959,8 +971,12 @@ function listUnexploredWikiPages(userId) {
      AND NOT EXISTS (
        SELECT 1 FROM favorites f
        WHERE f.user_id = ? AND f.item_type = 'wiki' AND f.item_id = wp.id
+     )
+     AND NOT EXISTS (
+       SELECT 1 FROM content_reactions cr2
+       WHERE cr2.user_id = ? AND cr2.item_type = 'wiki' AND cr2.item_id = wp.id AND cr2.hidden = 1
      )`
-  ).all(userId, userId).map(function(r) {
+  ).all(userId, userId, userId).map(function(r) {
     let tags = [];
     try { tags = JSON.parse(r.tags || "[]"); } catch (_) {}
     return { id: r.id, tags: tags };
@@ -989,8 +1005,8 @@ function updateWikiPage(id, { title, category, content, tags, imagePaths, owned,
   return true;
 }
 
-function reactWikiPage(id, userId, { rating, flame, interested, readLater }) {
-  setUserReaction(userId, "wiki", id, { rating, flame, interested, readLater });
+function reactWikiPage(id, userId, { rating, flame, interested, readLater, hidden }) {
+  setUserReaction(userId, "wiki", id, { rating, flame, interested, readLater, hidden });
 }
 
 function deleteWikiPage(id) {
@@ -1321,8 +1337,8 @@ function deleteBdBook(id) {
   db.prepare("DELETE FROM bd_books WHERE id = ?").run(id);
 }
 
-function reactBdBook(id, userId, { rating, flame, interested }) {
-  setUserReaction(userId, "bd", id, { rating, flame, interested });
+function reactBdBook(id, userId, { rating, flame, interested, hidden }) {
+  setUserReaction(userId, "bd", id, { rating, flame, interested, hidden });
 }
 
 function rowToGalleryImage(row) {
@@ -1372,8 +1388,12 @@ function listUnexploredGalleryImages(userId) {
      AND NOT EXISTS (
        SELECT 1 FROM favorites f
        WHERE f.user_id = ? AND f.item_type = 'gallery' AND f.item_id = gi.id
+     )
+     AND NOT EXISTS (
+       SELECT 1 FROM content_reactions cr2
+       WHERE cr2.user_id = ? AND cr2.item_type = 'gallery' AND cr2.item_id = gi.id AND cr2.hidden = 1
      )`
-  ).all(userId, userId).map(function(r) {
+  ).all(userId, userId, userId).map(function(r) {
     let tags = [];
     try { tags = JSON.parse(r.tags || "[]"); } catch (_) {}
     return { id: r.id, tags: tags };
@@ -1412,8 +1432,8 @@ function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wiki
   return true;
 }
 
-function reactGalleryImage(id, userId, { rating, flame, interested }) {
-  setUserReaction(userId, "gallery", id, { rating, flame, interested });
+function reactGalleryImage(id, userId, { rating, flame, interested, hidden }) {
+  setUserReaction(userId, "gallery", id, { rating, flame, interested, hidden });
 }
 
 function deleteGalleryImage(id) {
@@ -1665,6 +1685,7 @@ module.exports = {
   getUserReactionsMap,
   mergeUserReactions,
   mergePartnerReaction,
+  excludeHidden,
   setUserReaction,
   getUserNote,
   setUserNote,
