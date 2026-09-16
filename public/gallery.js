@@ -858,6 +858,7 @@
   var lbNext    = lightbox ? lightbox.querySelector(".gallery-lb-next")      : null;
   var lbActions    = document.getElementById("gallery-lb-actions");
   var lbRating     = document.getElementById("gallery-lb-rating");
+  var lbPartnerReveal = document.getElementById("gallery-lb-partner-reveal");
   var lbFavBtn     = document.getElementById("gallery-lb-fav-btn");
   var lbEditBtn    = document.getElementById("gallery-lb-edit-btn");
   var lbProcessBtn = document.getElementById("gallery-lb-processed-btn");
@@ -891,6 +892,34 @@
   }
 
   var lastTrackedGalleryId = null;
+
+  // Mode couple : révèle la réaction du/de la partenaire (déjà exposée en
+  // data-partner-* par le serveur, voir mergePartnerReaction) uniquement
+  // une fois que le visiteur a lui-même noté l'image.
+  function syncPartnerReveal(card, rating) {
+    if (!lbPartnerReveal) return;
+    var pRating = card ? Number(card.dataset.partnerRating) || 0 : 0;
+    var pFlame = card ? card.dataset.partnerFlame === "1" : false;
+    var pInterested = card ? card.dataset.partnerInterested === "1" : false;
+    var hasPartnerReaction = pRating > 0 || pFlame || pInterested;
+    if (!rating || !hasPartnerReaction) {
+      lbPartnerReveal.hidden = true;
+      return;
+    }
+    var name = lbPartnerReveal.dataset.partnerName || "Partenaire";
+    var html = "&#127800; " + name + "&nbsp;: ";
+    if (pRating > 0) {
+      html += '<span class="wiki-partner-reveal-stars">';
+      for (var i = 1; i <= 5; i++) {
+        html += '<span class="wiki-card-star' + (i <= pRating ? ' filled' : '') + '">&#9733;</span>';
+      }
+      html += "</span>";
+    }
+    if (pFlame) html += '<span class="wiki-react-icon" title="J\'adore">&#128293;</span>';
+    if (pInterested) html += '<span class="wiki-react-icon" title="&Ccedil;a l\'int&eacute;resse">&#10024;</span>';
+    lbPartnerReveal.innerHTML = html;
+    lbPartnerReveal.hidden = false;
+  }
 
   function renderLightbox() {
     var card = currentCard();
@@ -993,6 +1022,7 @@
             s.classList.toggle("filled", i < rating);
           });
         }
+        syncPartnerReveal(card, rating);
         // Fav
         if (lbFavBtn) {
           lbFavBtn.dataset.itemId = galleryId;
@@ -1152,6 +1182,7 @@
           lbRating.querySelectorAll(".gallery-star").forEach(function(s, i){ s.classList.toggle("filled", i < newRating); });
           var card = currentCard();
           if (card) card.dataset.rating = newRating;
+          syncPartnerReveal(card, newRating);
         }
       });
     });

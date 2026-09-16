@@ -175,6 +175,12 @@ try { db.exec("ALTER TABLE users ADD COLUMN share_notes_with_admin INTEGER NOT N
 // filtre uniquement ce qui s'affiche sur cette page, ne supprime jamais les
 // vues elles-mêmes (utilisées ailleurs par les stats admin).
 try { db.exec("ALTER TABLE users ADD COLUMN history_retention TEXT NOT NULL DEFAULT '1mois'"); } catch (_) {}
+// Mode couple (lié par l'admin uniquement, voir /admin) : relation
+// symétrique 1↔1, stockée en miroir sur les deux comptes pour qu'un simple
+// SELECT suffise à retrouver le/la partenaire de n'importe quel profil, sans
+// jointure OR coûteuse. setCouplePartners()/clearCouplePartner() ci-dessous
+// garantissent qu'un profil n'a jamais plus d'un·e partenaire à la fois.
+try { db.exec("ALTER TABLE users ADD COLUMN partner_id INTEGER"); } catch (_) {}
 // "Ouverture des tags" (ask/wiki/gallery) retire : le clic sur un tag a
 // desormais un seul comportement partout (popup unifiee), plus de choix a
 // faire. Colonne supprimee si le moteur SQLite le permet (>= 3.35), sinon
@@ -380,7 +386,24 @@ function rowToUser(row) {
     irrealisteMode: row.irrealiste_mode || "visible",
     shareNotesWithAdmin: !!row.share_notes_with_admin,
     historyRetention: row.history_retention || "1mois",
+    partnerId: row.partner_id || null,
   };
+}
+
+// Lie deux profils en couple (relation stockée en miroir, voir la colonne
+// partner_id ci-dessus). Casse d'abord toute liaison existante des deux
+// côtés : un profil n'a jamais plus d'un·e partenaire à la fois.
+function setCouplePartners(userIdA, userIdB) {
+  clearCouplePartner(userIdA);
+  clearCouplePartner(userIdB);
+  db.prepare("UPDATE users SET partner_id = ? WHERE id = ?").run(userIdB, userIdA);
+  db.prepare("UPDATE users SET partner_id = ? WHERE id = ?").run(userIdA, userIdB);
+}
+
+function clearCouplePartner(userId) {
+  const row = db.prepare("SELECT partner_id FROM users WHERE id = ?").get(userId);
+  if (row && row.partner_id) db.prepare("UPDATE users SET partner_id = NULL WHERE id = ?").run(row.partner_id);
+  db.prepare("UPDATE users SET partner_id = NULL WHERE id = ?").run(userId);
 }
 
 function createUser({ username, displayName, passwordHash, isAdmin, isTest }) {
@@ -532,6 +555,23 @@ function getUserReactionsMap(userId, itemType) {
 function mergeUserReactions(items, userId, itemType) {
   const map = getUserReactionsMap(userId, itemType);
   return items.map((item) => Object.assign(item, map[item.id] || { ...REACTION_DEFAULT }));
+}
+
+// Mode couple (voir setCouplePartners) : fusionne la réaction du/de la
+// partenaire sur une liste déjà passée par mergeUserReactions, dans un champ
+// à part (partnerReaction) pour ne jamais écraser la réaction personnelle du
+// visiteur courant. null si le/la partenaire n'a rien noté sur cet item —
+// c'est ce null qui commande l'affichage de la petite fleur (item.
+// partnerReaction truthy) et sa révélation détaillée une fois que le
+// visiteur a lui-même noté (voir wiki-detail.ejs / gallery.ejs).
+function mergePartnerReaction(items, partnerId, itemType) {
+  if (!partnerId) return items;
+  const map = getUserReactionsMap(partnerId, itemType);
+  items.forEach((item) => {
+    const r = map[item.id];
+    item.partnerReaction = (r && (r.rating > 0 || r.flame || r.interested)) ? r : null;
+  });
+  return items;
 }
 
 function setUserReaction(userId, itemType, itemId, { rating, flame, interested, readLater }) {
@@ -1241,9 +1281,13 @@ function rowToBdBook(row) {
     description: row.description || "",
     tags: JSON.parse(row.tags || "[]"),
     imagePaths: JSON.parse(row.image_paths || "[]"),
-    rating: row.rating || 0,
-    flame: !!row.flame,
-    interested: !!row.interested,
+    // rating/flame/interested : desormais propres a chaque profil (comme
+    // wiki/galerie), et non plus une valeur unique partagee sur la ligne.
+    // Valeurs par defaut ici ; fusionnees avec la reaction du visiteur par
+    // les routes via mergeUserReactions()/getUserReaction().
+    rating: 0,
+    flame: false,
+    interested: false,
     langue: row.langue || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -1277,10 +1321,8 @@ function deleteBdBook(id) {
   db.prepare("DELETE FROM bd_books WHERE id = ?").run(id);
 }
 
-function reactBdBook(id, { rating, flame, interested }) {
-  const r = Math.max(0, Math.min(5, Number(rating) || 0));
-  db.prepare("UPDATE bd_books SET rating = ?, flame = ?, interested = ? WHERE id = ?")
-    .run(r, flame ? 1 : 0, interested ? 1 : 0, id);
+function reactBdBook(id, userId, { rating, flame, interested }) {
+  setUserReaction(userId, "bd", id, { rating, flame, interested });
 }
 
 function rowToGalleryImage(row) {
@@ -1622,6 +1664,7 @@ module.exports = {
   countUserNotes,
   getUserReactionsMap,
   mergeUserReactions,
+  mergePartnerReaction,
   setUserReaction,
   getUserNote,
   setUserNote,
@@ -1642,6 +1685,8 @@ module.exports = {
   listFilterProfiles,
   createFilterProfile,
   deleteFilterProfile,
+  setCouplePartners,
+  clearCouplePartner,
   listUnexploredWikiPages,
   listUnexploredGalleryImages,
   setGalleryImageFeatured,

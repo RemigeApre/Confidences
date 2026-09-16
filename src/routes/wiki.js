@@ -28,6 +28,7 @@ const {
   getUserNote,
   setUserNote,
   mergeUserReactions,
+  mergePartnerReaction,
   getUserReaction,
   createStandaloneTag,
   insertGalleryImage,
@@ -505,7 +506,8 @@ function buildWikiRouter(config) {
   // (elles restent consultables via /wiki/categorie/:key et /wiki/tous).
   router.get("/", (req, res) => {
     const userId = req.user ? req.user.id : null;
-    const pages = filterOff(mergeUserReactions(sortedPages(), userId, "wiki"), req.user);
+    const partnerId = req.user ? req.user.partnerId : null;
+    const pages = mergePartnerReaction(filterOff(mergeUserReactions(sortedPages(), userId, "wiki"), req.user), partnerId, "wiki");
     const visiblePages = pages.filter((p) => !isUltra(p));
     const chapters = CATEGORIES.map((cat) => {
       const allCatPages = pagesForCategory(visiblePages, cat.key);
@@ -513,7 +515,7 @@ function buildWikiRouter(config) {
       const primaryCount = pages.filter((p) => p.category === cat.key).length;
       return { ...cat, pages: allCatPages, count: primaryCount, preview: allCatPages.slice(0, 6) };
     });
-    const allPages = filterOff(mergeUserReactions(listWikiPages(), userId, "wiki"), req.user);
+    const allPages = mergePartnerReaction(filterOff(mergeUserReactions(listWikiPages(), userId, "wiki"), req.user), partnerId, "wiki");
     const recentAdded = [...allPages]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 30);
@@ -537,7 +539,7 @@ function buildWikiRouter(config) {
 
   // ── Vue "tout" : toutes les pages, toutes categories melangees ──
   router.get("/tous", (req, res) => {
-    const pages = filterOff(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki"), req.user);
+    const pages = mergePartnerReaction(filterOff(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki"), req.user), req.user ? req.user.partnerId : null, "wiki");
     res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, ...CTX });
   });
 
@@ -546,7 +548,7 @@ function buildWikiRouter(config) {
     const cat = CATEGORIES.find((c) => c.key === req.params.key);
     if (!cat) return res.redirect("/wiki");
     const all = sortedPages();
-    const pages = pagesForCategory(filterOff(mergeUserReactions(all, req.user ? req.user.id : null, "wiki"), req.user), cat.key);
+    const pages = mergePartnerReaction(pagesForCategory(filterOff(mergeUserReactions(all, req.user ? req.user.id : null, "wiki"), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
     const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
     res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, ...CTX });
   });
@@ -678,6 +680,7 @@ function buildWikiRouter(config) {
     incrementWikiViews(id, req.user ? req.user.id : null);
     const userId = req.user ? req.user.id : null;
     Object.assign(page, getUserReaction(userId, "wiki", id));
+    mergePartnerReaction([page], req.user ? req.user.partnerId : null, "wiki");
     const allPages = filterOff(mergeUserReactions(
       listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" })),
       userId, "wiki"

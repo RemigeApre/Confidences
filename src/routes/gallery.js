@@ -17,6 +17,7 @@ const {
   listFavoriteRows,
   logGalleryView,
   mergeUserReactions,
+  mergePartnerReaction,
   getUserReaction,
   createSeries,
   deleteSeries,
@@ -172,6 +173,7 @@ function buildItems(galleryImages, wikiPages) {
     rating: img.rating,
     flame: img.flame,
     interested: img.interested,
+    partnerReaction: img.partnerReaction || null,
     contentType: img.contentType || "image",
     processed: !!img.processed,
     date: img.createdAt,
@@ -182,8 +184,9 @@ function buildItems(galleryImages, wikiPages) {
 
 function getCtx(user) {
   const userId = user ? user.id : null;
+  const partnerId = user ? user.partnerId : null;
   const wikiPages = mergeUserReactions(listWikiPages(), userId, "wiki");
-  const galleryImages = mergeUserReactions(listGalleryImages(), userId, "gallery");
+  const galleryImages = mergePartnerReaction(mergeUserReactions(listGalleryImages(), userId, "gallery"), partnerId, "gallery");
   const items = filterOff(buildItems(galleryImages, wikiPages), user);
   const tagTotalCounts = {};
   items.forEach((item) => {

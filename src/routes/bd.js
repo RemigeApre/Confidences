@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, isFavorite, addFavorite, removeFavorite, logBdView } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, mergeUserReactions, mergePartnerReaction, getUserReaction, isFavorite, addFavorite, removeFavorite, logBdView } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -65,7 +65,9 @@ function buildBdRouter(config) {
   router.use(requireUser);
 
   router.get("/", (req, res) => {
-    const books = filterOff(listBdBooks(), req.user);
+    const userId = req.user ? req.user.id : null;
+    const partnerId = req.user ? req.user.partnerId : null;
+    const books = filterOff(mergePartnerReaction(mergeUserReactions(listBdBooks(), userId, "bd"), partnerId, "bd"), req.user);
     const tagSet = new Set();
     books.forEach((b) => b.tags.forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
@@ -140,27 +142,30 @@ function buildBdRouter(config) {
     if (!Number.isInteger(id)) return res.json({ ok: false });
     const book = getBdBook(id);
     if (!book) return res.json({ ok: false });
+    const current = getUserReaction(req.user.id, "bd", id);
 
-    const rating = req.body.rating !== undefined ? Math.max(0, Math.min(5, Number(req.body.rating) || 0)) : book.rating;
-    const flame = req.body.flame !== undefined ? !!req.body.flame : book.flame;
-    const interested = req.body.interested !== undefined ? !!req.body.interested : book.interested;
+    const rating = req.body.rating !== undefined ? Math.max(0, Math.min(5, Number(req.body.rating) || 0)) : current.rating;
+    const flame = req.body.flame !== undefined ? !!req.body.flame : current.flame;
+    const interested = req.body.interested !== undefined ? !!req.body.interested : current.interested;
 
-    reactBdBook(id, { rating, flame, interested });
+    reactBdBook(id, req.user.id, { rating, flame, interested });
 
     // Sync flame → favorites
-    if (req.user) {
-      if (flame) addFavorite(req.user.id, "bd", id);
-      else removeFavorite(req.user.id, "bd", id);
-    }
+    if (flame) addFavorite(req.user.id, "bd", id);
+    else removeFavorite(req.user.id, "bd", id);
 
     res.json({ ok: true, rating, flame, interested });
   });
 
   router.get("/:id", (req, res) => {
-    const book = getBdBook(Number(req.params.id));
+    const id = Number(req.params.id);
+    const book = getBdBook(id);
     if (!book) return res.redirect("/bd");
     if (isOffForUser(book.tags, req.user)) return res.redirect("/bd");
     logBdView(book.id, req.user ? req.user.id : null);
+    const userId = req.user ? req.user.id : null;
+    Object.assign(book, getUserReaction(userId, "bd", id));
+    mergePartnerReaction([book], req.user ? req.user.partnerId : null, "bd");
     const allBooks = listBdBooks();
     const idx = allBooks.findIndex((b) => b.id === book.id);
     const prevBook = idx < allBooks.length - 1 ? allBooks[idx + 1] : null;

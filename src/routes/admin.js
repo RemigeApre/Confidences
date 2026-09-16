@@ -31,6 +31,8 @@ const {
   listFavoriteRows,
   listConnectionLogsForUser,
   listActivitySessions,
+  setCouplePartners,
+  clearCouplePartner,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -211,6 +213,16 @@ function buildAdminRouter(config) {
     updateOwnProfile(id, { displayName, email, sexe, birthYear });
     if (orientation !== undefined) updateUserSettings(id, { orientation });
 
+    // Mode couple : "Aucun" (champ vide) délie, sinon lie aux deux profils
+    // en miroir (voir setCouplePartners, remplace toute liaison existante).
+    const partnerIdRaw = String(req.body.partner_id || "");
+    const partnerId = partnerIdRaw ? Number(partnerIdRaw) : null;
+    if (partnerId && Number.isInteger(partnerId) && partnerId !== id) {
+      setCouplePartners(id, partnerId);
+    } else if (!partnerIdRaw) {
+      clearCouplePartner(id);
+    }
+
     res.redirect("/admin#tab-utilisateurs");
   });
 
@@ -244,7 +256,7 @@ function buildAdminRouter(config) {
   // sur chacune de ces routes) : items notés (rating/flame) ou mis en favori
   // par ce profil, pour un type de contenu donné.
   function ratedOrFavorited(userId, itemType, listFn) {
-    const withReactions = itemType === "bd" ? listFn() : mergeUserReactions(listFn(), userId, itemType);
+    const withReactions = mergeUserReactions(listFn(), userId, itemType);
     const favIds = new Set(
       listFavoriteRows(userId).filter((r) => r.item_type === itemType).map((r) => r.item_id)
     );
@@ -254,7 +266,7 @@ function buildAdminRouter(config) {
   // Rattache le nombre de vues (déjà calculé par getUserDetail) aux objets
   // contenu complets (image, note...), pour affichage en carte.
   function withViewCounts(viewCounts, idKey, userId, itemType, listFn) {
-    const withReactions = itemType === "bd" ? listFn() : mergeUserReactions(listFn(), userId, itemType);
+    const withReactions = mergeUserReactions(listFn(), userId, itemType);
     const byId = {};
     withReactions.forEach((it) => { byId[it.id] = it; });
     return viewCounts

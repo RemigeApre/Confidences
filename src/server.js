@@ -15,12 +15,14 @@ const buildGalleryRouter = require("./routes/gallery");
 const buildBdRouter = require("./routes/bd");
 const buildFavoritesRouter = require("./routes/favorites");
 const buildAccountRouter = require("./routes/account");
+const buildCoupleRouter = require("./routes/couple");
 const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
   listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
+  getUserById,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -212,6 +214,15 @@ app.use((req, res, next) => {
 // aussi besoin pour filtrer leurs propres cartes.
 app.use((req, res, next) => {
   res.locals.tagBlacklist = req.user ? listBlacklistedTags(req.user.id).map((r) => r.tag) : [];
+  next();
+});
+
+// Mode couple (lié par l'admin, voir /admin) : expose le/la partenaire pour
+// le lien dans le menu profil (voir partials/top-nav.ejs). Toujours
+// calculé (une seule lecture par PK, négligeable) plutôt que scopé à
+// certaines pages, pour que le lien apparaisse dans le header partout.
+app.use((req, res, next) => {
+  res.locals.partnerUser = (req.user && req.user.partnerId) ? getUserById(req.user.partnerId) : null;
   next();
 });
 
@@ -538,6 +549,7 @@ app.use("/galerie", buildGalleryRouter(config));
 app.use("/bd", buildBdRouter(config));
 app.use("/favoris", buildFavoritesRouter(config));
 app.use("/compte", buildAccountRouter(config));
+app.use("/couple", buildCoupleRouter(config));
 
 if (usingHttps) {
   https

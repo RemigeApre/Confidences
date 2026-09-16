@@ -66,6 +66,7 @@
                   data-edit-birth-year="<%= state.user.birthYear || '' %>"
                   data-edit-orientation="<%= state.user.orientation || '' %>"
                   data-edit-email="<%= state.user.email || '' %>"
+                  data-edit-partner="<%= state.user.partnerId || '' %>"
                   data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>">Modifier</button>
                 <button type="button" class="admin-utile-menu-item"
                   data-pwd-id="<%= state.user.id %>"
@@ -211,6 +212,15 @@
               <label class="admin-modal-field">
                 <span>Email</span>
                 <input type="email" name="email" id="edit-email" autocomplete="off" />
+              </label>
+              <label class="admin-modal-field">
+                <span>Partenaire (mode couple)</span>
+                <select name="partner_id" id="edit-partner" class="admin-modal-select">
+                  <option value="">Aucun</option>
+                  <% userStates.forEach(function(s) { %>
+                    <option value="<%= s.user.id %>"><%= s.user.displayName %></option>
+                  <% }) %>
+                </select>
               </label>
             </div>
           </details>
@@ -616,6 +626,14 @@
         document.getElementById("edit-birth-year").value = btn.dataset.editBirthYear || "";
         document.getElementById("edit-orientation").value = btn.dataset.editOrientation || "";
         document.getElementById("edit-email").value = btn.dataset.editEmail || "";
+        var partnerSelect = document.getElementById("edit-partner");
+        if (partnerSelect) {
+          // Un profil ne peut pas être son propre partenaire.
+          partnerSelect.querySelectorAll("option").forEach(function (opt) {
+            opt.hidden = opt.value === id;
+          });
+          partnerSelect.value = btn.dataset.editPartner || "";
+        }
         openModal("admin-edit-modal");
       });
     });

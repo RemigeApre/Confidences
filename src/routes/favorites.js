@@ -300,7 +300,7 @@ function buildFavoritesRouter(config) {
     const favIds = new Set(
       listFavoriteRows(req.user.id).filter((r) => r.item_type === "bd").map((r) => r.item_id)
     );
-    const all = listBdBooks()
+    const all = mergeUserReactions(listBdBooks(), req.user.id, "bd")
       .filter((b) => b.rating > 0 || b.flame)
       .map((b) => Object.assign(b, { isFavorite: favIds.has(b.id) }));
     // Favoris d'abord, puis par note décroissante.

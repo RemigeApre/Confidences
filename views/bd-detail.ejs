@@ -17,6 +17,20 @@
           <button type="button" class="bd-star<%= book.rating >= i ? ' filled' : '' %>" data-val="<%= i %>">&#9733;</button>
         <% } %>
       </span>
+      <%# Mode couple : révélé seulement une fois que le visiteur a lui-même
+          noté la BD — voir mergePartnerReaction / toggle JS plus bas. %>
+      <% if (book.partnerReaction) { %>
+        <span class="wiki-partner-reveal bd-partner-reveal" id="bd-partner-reveal"<%= book.rating > 0 ? '' : ' hidden' %>>
+          &#127800; <%= partnerUser.displayName %>&nbsp;:
+          <% if (book.partnerReaction.rating > 0) { %>
+            <span class="wiki-partner-reveal-stars">
+              <% for (var pi = 1; pi <= 5; pi++) { %><span class="wiki-card-star<%= pi <= book.partnerReaction.rating ? ' filled' : '' %>">&#9733;</span><% } %>
+            </span>
+          <% } %>
+          <% if (book.partnerReaction.flame) { %><span class="wiki-react-icon" title="J&apos;adore">&#128293;</span><% } %>
+          <% if (book.partnerReaction.interested) { %><span class="wiki-react-icon" title="&Ccedil;a l&apos;int&eacute;resse">&#10024;</span><% } %>
+        </span>
+      <% } %>
       <% if (currentUser && currentUser.isAdmin) { %><a href="/bd/<%= book.id %>/edit" class="bd-reader-edit link-button">Modifier</a><% } %>
     </div>
   </div>
@@ -159,7 +173,12 @@
         var val = Number(star.dataset.val);
         var newRating = currentRating === val ? 0 : val;
         sendReact({ rating: newRating }).then(function (d) {
-          if (d.ok) { currentRating = d.rating; renderStars(currentRating); }
+          if (d.ok) {
+            currentRating = d.rating;
+            renderStars(currentRating);
+            var partnerReveal = document.getElementById("bd-partner-reveal");
+            if (partnerReveal) partnerReveal.hidden = currentRating === 0;
+          }
         });
       });
     });

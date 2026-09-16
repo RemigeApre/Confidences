@@ -3658,6 +3658,13 @@ input[type="text"], input[type="password"] {
   line-height: 1;
 }
 
+/* Mode couple : signale que le/la partenaire a noté ce contenu, sans révéler
+   sa note (voir mergePartnerReaction côté serveur). */
+.wiki-card-partner-badge {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
 .wiki-card-mini-stars {
   display: flex;
   gap: 0.05rem;
@@ -9312,6 +9319,25 @@ body.wiki-todo-open { overflow: hidden; }
 .wiki-right-rating .wiki-star:hover,
 .wiki-right-rating .wiki-star.active,
 .wiki-right-rating .wiki-star.filled { color: var(--wiki-gold); }
+
+/* ── Mode couple : note du/de la partenaire révélée ──── */
+.wiki-partner-reveal {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 105, 180, 0.1);
+  border: 1px solid rgba(255, 105, 180, 0.3);
+  font-size: 0.85rem;
+  color: #ffb3d9;
+  width: fit-content;
+}
+.wiki-partner-reveal-stars { display: flex; gap: 0.05rem; color: var(--wiki-gold); }
+.wiki-partner-reveal-stars .wiki-card-star { color: rgba(255,255,255,0.25); font-size: 0.85rem; }
+.wiki-partner-reveal-stars .wiki-card-star.filled { color: var(--wiki-gold); }
+.bd-partner-reveal { margin-top: 0; white-space: nowrap; }
 
 /* ── Réactions côte à côte ──────────────────────────── */
 .wiki-right-reactions { display: flex; gap: 0.5rem; }

@@ -1,0 +1,44 @@
+<%- include('partials/head', { title: 'Couple : BD de ' + partner.displayName }) %>
+<main class="container wide gallery-has-sidebar profil-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'BD de ' + partner.displayName, navBack: '/couple' }) %>
+
+  <%- include('partials/couple-nav', { partner: partner }) %>
+
+  <div class="profil-subpage">
+
+    <div class="profil-empty"<%= books.length ? ' hidden' : '' %>>
+      <div class="profil-empty-icon">&#10024;</div>
+      <p><%= partner.displayName %> n&rsquo;a encore rien not&eacute; en BD.</p>
+    </div>
+
+    <div class="bd-grid"<%= books.length ? '' : ' hidden' %>>
+      <% books.forEach(function(book) { %>
+        <a href="/bd/<%= book.id %>" class="bd-card">
+          <% if (book.imagePaths && book.imagePaths.length) { %>
+            <div class="bd-card-cover">
+              <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
+              <span class="bd-page-count"><%= book.imagePaths.length %>&nbsp;p.</span>
+            </div>
+          <% } else { %>
+            <div class="bd-card-cover bd-card-cover-empty">
+              <span class="bd-card-empty-icon">&#128214;</span>
+            </div>
+          <% } %>
+          <div class="bd-card-body">
+            <p class="bd-card-title"><%= book.title %></p>
+            <div class="bd-card-reactions">
+              <% if (book.flame) { %><span class="bd-card-react-badge">&#128293;</span><% } %>
+              <% if (book.interested) { %><span class="bd-card-react-badge">&#10024;</span><% } %>
+              <% if (book.rating > 0) { %>
+                <span class="bd-card-rating"><%= book.rating %><span class="bd-card-star">&#9733;</span></span>
+              <% } %>
+            </div>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

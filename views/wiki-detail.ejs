@@ -502,6 +502,20 @@
               <button type="button" class="wiki-star wiki-star-lg" data-value="<%= i %>"><%- i <= page.rating ? '&#9733;' : '&#9734;' %></button>
             <% } %>
           </div>
+          <%# Mode couple : révélé seulement une fois que le visiteur a
+              lui-même noté la page — voir mergePartnerReaction. %>
+          <% if (page.rating > 0 && page.partnerReaction) { %>
+            <div class="wiki-partner-reveal">
+              <span class="wiki-partner-reveal-label">&#127800; <%= partnerUser.displayName %>&nbsp;:</span>
+              <% if (page.partnerReaction.rating > 0) { %>
+                <span class="wiki-partner-reveal-stars">
+                  <% for (var pi = 1; pi <= 5; pi++) { %><span class="wiki-card-star<%= pi <= page.partnerReaction.rating ? ' filled' : '' %>">&#9733;</span><% } %>
+                </span>
+              <% } %>
+              <% if (page.partnerReaction.flame) { %><span class="wiki-react-icon" title="J&apos;adore">&#128293;</span><% } %>
+              <% if (page.partnerReaction.interested) { %><span class="wiki-react-icon" title="&Ccedil;a l&apos;int&eacute;resse">&#10024;</span><% } %>
+            </div>
+          <% } %>
         <% } %>
 
         <%# f) Tags : badge unifié (couleur ultra/irréaliste/page dédiée/terme
