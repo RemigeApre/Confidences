@@ -11028,49 +11028,93 @@ body.wiki-todo-open { overflow: hidden; }
 }
 .profil-history .profil-journal { margin-top: 0.35rem; }
 
-/* Historique de consultation (Codex/Images/BD) — voir profil-historique.ejs */
-.profil-history-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* ── Historique de consultation (Codex/Images/BD) — voir profil-historique.ejs
+   Cartes de taille identique (grille uniforme), mais mise en page interne
+   différente par type pour les distinguer d'un coup d'œil : Codex = texte
+   d'abord (pas de photo, bandeau icône teinté par catégorie), Images = photo
+   plein cadre avec légende incrustée, BD = couverture dominante avec légende
+   en dessous (façon étagère). Pas de date/heure : juste la reconnaissance
+   visuelle du contenu. ── */
+.profil-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.9rem;
+}
+.profil-history-card {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--fg);
+  position: relative;
+  transition: transform 0.15s, border-color 0.15s;
 }
-.profil-history-row {
+.profil-history-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+.profil-history-cover { position: relative; overflow: hidden; background: #1c1c1c; }
+.profil-history-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profil-history-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 0.4rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  justify-content: center;
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #1e1e3a, #2a2a4a);
+  color: rgba(255, 255, 255, 0.3);
 }
-.profil-history-row:hover { background: rgba(255, 255, 255, 0.05); }
-.profil-history-type {
-  flex-shrink: 0;
-  font-size: 0.68rem;
+.profil-history-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.4rem 0.6rem 0.55rem;
+}
+.profil-history-badge {
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--muted);
-  width: 3.5rem;
 }
 .profil-history-title {
-  flex: 1;
-  min-width: 0;
-  color: var(--accent);
-  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.25;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
-.profil-history-title:hover { text-decoration: underline; }
-.profil-history-date {
-  flex-shrink: 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  white-space: nowrap;
+
+/* Codex : bandeau icône teinté par catégorie, pas de photo, texte d'abord */
+.profil-history-card--wiki .profil-history-cover {
+  flex: 0 0 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, hsl(var(--ch-hue, 220), 45%, 24%), hsl(var(--ch-hue, 220), 40%, 32%));
 }
+.profil-history-card--wiki .profil-history-icon { width: 2rem; height: 2rem; color: rgba(255, 255, 255, 0.85); }
+
+/* Images : photo plein cadre, légende incrustée en dégradé */
+.profil-history-card--gallery .profil-history-cover { flex: 1; }
+.profil-history-card--gallery .profil-history-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-top: 1.6rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85) 45%);
+}
+.profil-history-card--gallery .profil-history-badge,
+.profil-history-card--gallery .profil-history-title { color: #fff; }
+
+/* BD : couverture dominante, légende en dessous (façon étagère) */
+.profil-history-card--bd .profil-history-cover { flex: 0 0 78%; }
 
 /* ─── Profil : sections favorites ─── */
 .profil-section-title {

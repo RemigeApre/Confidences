@@ -6,21 +6,36 @@
 
   <div class="profil-subpage">
 
-    <%
-      var TYPE_LABEL = { wiki: 'Codex', gallery: 'Images', bd: 'BD' };
-      var TYPE_HREF  = { wiki: '/wiki/', gallery: '/galerie', bd: '/bd/' };
-    %>
-
     <% if (feed.length) { %>
-      <ul class="profil-history-list">
+      <div class="profil-history-grid">
         <% feed.forEach(function (f) { %>
-          <li class="profil-history-row">
-            <span class="profil-history-type"><%= TYPE_LABEL[f.type] %></span>
-            <a href="<%= TYPE_HREF[f.type] %><%= f.type === 'gallery' ? '' : f.id %>" class="profil-history-title"><%= f.title || ('#' + f.id) %></a>
-            <span class="profil-history-date"><%= new Date(f.at).toLocaleString('fr-FR') %></span>
-          </li>
+          <% var href = f.type === 'wiki' ? '/wiki/' + f.id : f.type === 'bd' ? '/bd/' + f.id : '/galerie'; %>
+          <a href="<%= href %>" class="profil-history-card profil-history-card--<%= f.type %>">
+            <% if (f.type === 'wiki') { %>
+              <% var cat = categories.find(function (c) { return c.key === f.category; }); %>
+              <div class="profil-history-cover" style="--ch-hue: <%= cat ? cat.hue : 220 %>">
+                <svg class="profil-history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9a2 2 0 0 1 2 2v16l-6.5-4.2L4 21V5a2 2 0 0 1 2-2Z"/></svg>
+              </div>
+              <div class="profil-history-caption">
+                <span class="profil-history-badge">Codex</span>
+                <span class="profil-history-title"><%= f.title %></span>
+              </div>
+            <% } else { %>
+              <div class="profil-history-cover">
+                <% if (f.coverImg) { %>
+                  <img src="<%= thumbUrl(f.coverImg) %>" alt="" class="profil-history-img" loading="lazy" />
+                <% } else { %>
+                  <span class="profil-history-placeholder"><%- f.type === 'bd' ? '&#128214;' : '&#128247;' %></span>
+                <% } %>
+              </div>
+              <div class="profil-history-caption">
+                <span class="profil-history-badge"><%= f.type === 'bd' ? 'BD' : 'Images' %></span>
+                <span class="profil-history-title"><%= f.title %></span>
+              </div>
+            <% } %>
+          </a>
         <% }) %>
-      </ul>
+      </div>
     <% } else { %>
       <div class="profil-empty">
         <div class="profil-empty-icon">&#10024;</div>

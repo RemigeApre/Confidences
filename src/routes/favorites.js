@@ -171,14 +171,23 @@ function buildFavoritesRouter(config) {
   router.get("/historique", requireUser, (req, res) => {
     const detail = getUserDetail(req.user.id);
     const feed = [];
-    detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki", title: v.title, id: v.pageId, at: v.createdAt }));
-    detail.recentGalViews.forEach((v) => feed.push({ type: "gallery", title: v.title, id: v.galleryId, at: v.createdAt }));
-    detail.recentBdViews.forEach((v) => feed.push({ type: "bd", title: v.title, id: v.bookId, at: v.createdAt }));
+    detail.recentWikiViews.forEach((v) => {
+      const page = getWikiPage(v.pageId);
+      feed.push({ type: "wiki", title: v.title, id: v.pageId, at: v.createdAt, coverImg: page && page.imagePaths && page.imagePaths[0], category: page && page.category });
+    });
+    detail.recentGalViews.forEach((v) => {
+      const img = getGalleryImage(v.galleryId);
+      feed.push({ type: "gallery", title: v.title, id: v.galleryId, at: v.createdAt, coverImg: img && ((img.imagePaths && img.imagePaths[0]) || img.filename) });
+    });
+    detail.recentBdViews.forEach((v) => {
+      const book = getBdBook(v.bookId);
+      feed.push({ type: "bd", title: v.title, id: v.bookId, at: v.createdAt, coverImg: book && book.imagePaths && book.imagePaths[0] });
+    });
     const cutoff = Date.now() - historyRetentionDays(req.user) * 86400000;
     const filteredFeed = feed
       .filter((f) => new Date(f.at).getTime() >= cutoff)
       .sort((a, b) => new Date(b.at) - new Date(a.at));
-    res.render("profil-historique", { config, feed: filteredFeed, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+    res.render("profil-historique", { config, feed: filteredFeed, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
