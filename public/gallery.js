@@ -885,9 +885,17 @@
   var lbImgIndex   = 0;
   var lbCurrentSeriesNav = null; // {seriesId, prevId, nextId, position, total, seriesTitle}
 
+  // Tout le contenu filtré (toutes pages confondues, voir renderPage) sert
+  // de base à la navigation lightbox — pas seulement les 10/50 cartes
+  // affichées sur la page courante, sinon le swipe/la boucle s'arrêterait
+  // artificiellement à la pagination visuelle au lieu de tout le résultat.
+  // grid.querySelectorAll (pas filteredCards) pour respecter l'ordre DOM
+  // réel, déjà trié par sortCards().
   function buildVisible() {
     if (!grid) return;
-    lbVisible = Array.from(grid.querySelectorAll(".gallery-card:not([hidden])"));
+    lbVisible = Array.from(grid.querySelectorAll(".gallery-card")).filter(function (c) {
+      return c.dataset.filtered === "1";
+    });
   }
 
   function currentCard() { return lbVisible[lbCardIndex]; }

@@ -5787,8 +5787,14 @@ a.wiki-ql-label:hover .wiki-ql-text {
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
   }
+  /* flex: 1 1 0 côté desktop fixe le flex-basis à 0, ce qui rend la
+     hauteur explicite ci-dessous inerte pour l'algorithme flex (basis
+     prime sur height) — l'image rétrécissait pour laisser toute la place
+     au volet, qui devenait visible sans scroll. flex: 0 0 auto redonne la
+     main à height : l'image prend exactement l'écran, jamais plus, jamais
+     moins, et le volet reste hors champ tant qu'on ne scrolle pas. */
   .gallery-lb-image-area {
-    flex-shrink: 0;
+    flex: 0 0 auto;
     height: 100vh;
     height: 100dvh;
     padding: 1.25rem;
