@@ -7229,15 +7229,12 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 
 @media (max-width: 640px) {
-  /* Top-nav : grid 3 colonnes (retour | titre | utilitaires) — la 3e
-     colonne s'adapte au contenu (1 ou 2 icônes selon connecté ou non). */
-  .top-nav {
-    display: grid;
-    grid-template-columns: 2.5rem 1fr auto;
-    gap: 0.25rem;
-    align-items: center;
-    justify-items: center;
-  }
+  /* Pas de header en haut sur mobile : la barre du bas (.mobile-tabbar)
+     est l'unique navigation. Ni titre, ni rappel consentement, ni bascule
+     "masquer les images" — tout ce bloc top-nav disparaît. On garde un peu
+     d'air en haut (encoche/caméra) puisque le header ne le fait plus. */
+  .top-nav { display: none; }
+  .container { padding-top: max(0.75rem, env(safe-area-inset-top)); }
 
   .nav-mobile-utils {
     display: flex;
@@ -7369,6 +7366,9 @@ a.wiki-ql-label:hover .wiki-ql-text {
   }
   .mobile-filter-toggle svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
 
+  /* Opaque et organisé comme le volet desktop (même dégradé teinté par
+     catégorie, même corps flex + scroll) — jamais transparent sur le
+     contenu de la page qui reste dessous. */
   #mobile-filter-sidebar {
     position: fixed;
     top: 0;
@@ -7377,28 +7377,59 @@ a.wiki-ql-label:hover .wiki-ql-text {
     width: min(85vw, 340px);
     max-width: none;
     z-index: 95;
+    display: flex;
+    flex-direction: column;
     transform: translateX(-100%);
     transition: transform 0.28s ease;
-    overflow-y: auto;
+    overflow: hidden;
     margin-top: 0;
-    padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem;
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.35);
+    padding: 0;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--ch-hue, 220), 52%, 20%) 0%,
+      hsl(var(--ch-hue, 220), 44%, 16%) 100%
+    );
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.45);
   }
   #mobile-filter-sidebar.mobile-filter-open { transform: translateX(0); }
-  #mobile-filter-sidebar .wiki-chapter-hero { display: block; }
+
+  #mobile-filter-sidebar .wiki-chapter-hero {
+    display: block;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: max(1rem, env(safe-area-inset-top)) 3.2rem 0.8rem 1.1rem;
+  }
+
+  /* Corps scrollable : search + filtres, même rythme que le desktop. */
+  #mobile-filter-sidebar .wiki-sidebar-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem 1.1rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 
   .mobile-filter-close {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: 0.75rem;
+    z-index: 2;
     width: 2.25rem;
     height: 2.25rem;
     flex-shrink: 0;
-    align-self: flex-end;
-    margin-bottom: 0.5rem;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1);
     color: #fff;
     font-size: 1.2rem;
     line-height: 1;
