@@ -64,6 +64,25 @@
     </div>
 
     <div class="profil-setting-heading">
+      <span>Historique</span>
+      <span class="profil-info-icon" tabindex="0" data-tip="Durée pendant laquelle vos consultations récentes (codex, images, BD) restent visibles dans Profil > Historique." aria-label="Que fait ce réglage ?">!</span>
+    </div>
+    <div class="user-setting-options" id="history-retention-options">
+      <label class="user-setting-radio" data-val="3jours">
+        <input type="radio" name="history-retention" value="3jours" /> 3 jours
+      </label>
+      <label class="user-setting-radio" data-val="1semaine">
+        <input type="radio" name="history-retention" value="1semaine" /> 1 semaine
+      </label>
+      <label class="user-setting-radio" data-val="1mois">
+        <input type="radio" name="history-retention" value="1mois" /> 1 mois
+      </label>
+      <label class="user-setting-radio" data-val="3mois">
+        <input type="radio" name="history-retention" value="3mois" /> 3 mois
+      </label>
+    </div>
+
+    <div class="profil-setting-heading">
       <span>Partage avec l&rsquo;admin</span>
       <span class="profil-info-icon" tabindex="0" data-tip="Si coché, un badge vert indique à l'admin que vous acceptez qu'il consulte vos notes et favoris (codex, images, BD)." aria-label="Que fait cette option ?">!</span>
     </div>
@@ -111,6 +130,7 @@
 
   wireServerRadio("ultra-mode-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
   wireServerRadio("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
+  wireServerRadio("history-retention-options", "historyRetention", window.HISTORY_RETENTION || "1mois");
 
   var shareCheckbox = document.getElementById("share-notes-checkbox");
   if (shareCheckbox) {

@@ -69,6 +69,7 @@
     // wiki.js/gallery.js/bd.js pour l'etat initial des bascules Ultra/Irréaliste.
     window.ULTRA_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.ultraMode : "hidden") %>;
     window.IRREALISTE_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.irrealisteMode : "visible") %>;
+    window.HISTORY_RETENTION = <%- JSON.stringify(locals.currentUser ? locals.currentUser.historyRetention : "1mois") %>;
     window.IS_ADMIN = <%= (locals.currentUser && locals.currentUser.isAdmin) ? 'true' : 'false' %>;
     window.IS_LOGGED_IN = <%= locals.currentUser ? 'true' : 'false' %>;
     // Identifie le profil connecté (ou "guest") pour le cache hors-ligne du

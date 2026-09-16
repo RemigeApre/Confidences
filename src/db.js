@@ -171,6 +171,10 @@ try { db.exec("ALTER TABLE users ADD COLUMN irrealiste_mode TEXT NOT NULL DEFAUL
 // pas l'accès réel (l'admin voit déjà tout) : sert uniquement de pastille
 // indicative sur la carte utilisateur et sa fiche (admin-dashboard/admin-user-*).
 try { db.exec("ALTER TABLE users ADD COLUMN share_notes_with_admin INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+// Durée de rétention de la page /favoris/historique (voir routes/favorites.js) :
+// filtre uniquement ce qui s'affiche sur cette page, ne supprime jamais les
+// vues elles-mêmes (utilisées ailleurs par les stats admin).
+try { db.exec("ALTER TABLE users ADD COLUMN history_retention TEXT NOT NULL DEFAULT '1mois'"); } catch (_) {}
 // "Ouverture des tags" (ask/wiki/gallery) retire : le clic sur un tag a
 // desormais un seul comportement partout (popup unifiee), plus de choix a
 // faire. Colonne supprimee si le moteur SQLite le permet (>= 3.35), sinon
@@ -333,6 +337,7 @@ function rowToUser(row) {
     ultraMode: row.ultra_mode || "hidden",
     irrealisteMode: row.irrealiste_mode || "visible",
     shareNotesWithAdmin: !!row.share_notes_with_admin,
+    historyRetention: row.history_retention || "1mois",
   };
 }
 
@@ -369,20 +374,22 @@ function touchLastLogin(id) {
 
 const ORIENTATION_VALUES = ["", "hetero", "gay", "bi"];
 const SPECIAL_MODE_VALUES = ["hidden", "visible", "off"];
+const HISTORY_RETENTION_VALUES = ["3jours", "1semaine", "1mois", "3mois"];
 
 // Reglages "Goûts"/"Paramètres" (voir /favoris) : mise a jour partielle,
 // chaque champ omis garde sa valeur actuelle (sauvegarde instantanee par
 // champ, pas un gros formulaire soumis d'un coup).
-function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin }) {
+function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention }) {
   const current = getUserById(id);
   if (!current) return;
   const o  = orientation   !== undefined && ORIENTATION_VALUES.includes(orientation)   ? orientation   : current.orientation;
   const um = ultraMode     !== undefined && SPECIAL_MODE_VALUES.includes(ultraMode)     ? ultraMode     : current.ultraMode;
   const im = irrealisteMode !== undefined && SPECIAL_MODE_VALUES.includes(irrealisteMode) ? irrealisteMode : current.irrealisteMode;
   const snwa = shareNotesWithAdmin !== undefined ? (shareNotesWithAdmin ? 1 : 0) : (current.shareNotesWithAdmin ? 1 : 0);
+  const hr = historyRetention !== undefined && HISTORY_RETENTION_VALUES.includes(historyRetention) ? historyRetention : current.historyRetention;
   db.prepare(
-    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ? WHERE id = ?"
-  ).run(o, um, im, snwa, id);
+    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ? WHERE id = ?"
+  ).run(o, um, im, snwa, hr, id);
 }
 
 function getUserByUsername(username) {

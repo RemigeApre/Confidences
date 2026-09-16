@@ -35,6 +35,18 @@
           </div>
         </div>
 
+        <div class="wiki-filter-section">
+          <div class="wiki-filter-label-row">
+            <span class="wiki-filter-label">Note minimale</span>
+            <button type="button" class="wiki-adv-star-reset" id="bd-notes-adv-star-reset">&#10006;</button>
+          </div>
+          <div class="wiki-adv-stars" id="bd-notes-adv-stars">
+            <% for (var si = 1; si <= 5; si++) { %>
+              <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
+            <% } %>
+          </div>
+        </div>
+
         <% if (allTags.length) { %>
         <div class="wiki-filter-section">
           <input type="search" id="bd-notes-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
@@ -64,7 +76,8 @@
       <a href="/bd/<%= book.id %>" class="bd-card"
          data-tags="<%= book.tags.join(',') %>"
          data-langue="<%= book.langue || '' %>"
-         data-title="<%= book.title.toLowerCase() %>">
+         data-title="<%= book.title.toLowerCase() %>"
+         data-rating="<%= book.rating || 0 %>">
         <% if (book.imagePaths && book.imagePaths.length) { %>
           <div class="bd-card-cover">
             <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
@@ -99,7 +112,7 @@
   var searchClear = document.getElementById("bd-notes-search-clear");
   var tagCloud = document.getElementById("bd-notes-tags");
   var langueFilter = document.getElementById("bd-notes-langue-filter");
-  var activeTags = [], searchQ = "", activeLangue = "";
+  var activeTags = [], searchQ = "", activeLangue = "", advMinRating = 0;
   var hideUltra = localStorage.getItem("profil-hide-ultra") === "1";
   // Tags masqués (voir bouton "Masquer le tag" de la popup tag) : reste
   // masqué même dans ses propres notes, comme partout ailleurs sur le site.
@@ -125,9 +138,11 @@
       var tags  = (c.dataset.tags || "").split(",").filter(Boolean);
       var title = c.dataset.title || "";
       var langue = c.dataset.langue || "";
+      var rating = Number(c.dataset.rating) || 0;
       var ok = (activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); }))
             && (!searchQ || title.includes(searchQ))
             && (!activeLangue || langue === activeLangue)
+            && (!advMinRating || rating >= advMinRating)
             && (!hideUltra || tags.indexOf("ultra") === -1)
             && (blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); }));
       c.style.display = ok ? "" : "none";
@@ -150,6 +165,34 @@
       var idx = activeTags.indexOf(tag);
       if (idx === -1) { activeTags.push(tag); chip.classList.add("active"); chip.dataset.state = "1"; }
       else            { activeTags.splice(idx, 1); chip.classList.remove("active"); chip.dataset.state = "0"; }
+      applyFilters();
+    });
+  }
+
+  var advStarsWrap = document.getElementById("bd-notes-adv-stars");
+  var advStarReset = document.getElementById("bd-notes-adv-star-reset");
+  function syncStars() {
+    if (!advStarsWrap) return;
+    advStarsWrap.querySelectorAll(".wiki-adv-star").forEach(function(btn) {
+      var v = Number(btn.dataset.value);
+      btn.innerHTML = v <= advMinRating ? "&#9733;" : "&#9734;";
+      btn.classList.toggle("active", v <= advMinRating);
+    });
+  }
+  if (advStarsWrap) {
+    advStarsWrap.querySelectorAll(".wiki-adv-star").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var v = Number(btn.dataset.value);
+        advMinRating = advMinRating === v ? 0 : v;
+        syncStars();
+        applyFilters();
+      });
+    });
+  }
+  if (advStarReset) {
+    advStarReset.addEventListener("click", function() {
+      advMinRating = 0;
+      syncStars();
       applyFilters();
     });
   }
@@ -204,7 +247,7 @@
   var resetBtn = document.getElementById("bd-notes-reset-filters");
   if (resetBtn) {
     resetBtn.addEventListener("click", function() {
-      activeTags = []; searchQ = ""; activeLangue = "";
+      activeTags = []; searchQ = ""; activeLangue = ""; advMinRating = 0;
       if (searchInput) searchInput.value = "";
       if (searchClear) searchClear.hidden = true;
       if (tagSearchInput) tagSearchInput.value = "";
@@ -212,6 +255,7 @@
         c.classList.remove("active"); c.dataset.state = "0"; c.hidden = false;
       });
       if (langueFilter) langueFilter.querySelectorAll(".tag-chip").forEach(function(b) { b.classList.remove("active"); });
+      syncStars();
       applyFilters();
     });
   }

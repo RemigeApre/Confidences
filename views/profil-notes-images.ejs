@@ -35,6 +35,19 @@
           </div>
         </div>
 
+        <%# Note minimale %>
+        <div class="wiki-filter-section">
+          <div class="wiki-filter-label-row">
+            <span class="wiki-filter-label">Note minimale</span>
+            <button type="button" class="wiki-adv-star-reset" id="notes-adv-star-reset">&#10006;</button>
+          </div>
+          <div class="wiki-adv-stars" id="notes-adv-stars">
+            <% for (var si = 1; si <= 5; si++) { %>
+              <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
+            <% } %>
+          </div>
+        </div>
+
         <%# Tags %>
         <% if (allTags.length) { %>
         <div class="wiki-filter-section">
@@ -109,6 +122,7 @@
   var gridEl = document.getElementById('notes-grid');
   var activeTags = [];
   var activeCtype = '';
+  var advMinRating = 0;
   var search = '';
   var hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
   // Tags masqués (voir bouton "Masquer le tag" de la popup tag) : reste
@@ -137,12 +151,14 @@
       var tags = (el.dataset.tags || '').split(',').filter(Boolean);
       var title = (el.dataset.title || '');
       var ctype = (el.dataset.ctype || '');
+      var rating = Number(el.dataset.rating) || 0;
       var matchesTags = activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); });
       var matchesSearch = !search || title.includes(search);
       var matchesCtype = !activeCtype || ctype === activeCtype;
+      var matchesRating = !advMinRating || rating >= advMinRating;
       var matchesUltra = !hideUltra || tags.indexOf('ultra') === -1;
       var matchesBlacklist = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
-      if (matchesTags && matchesSearch && matchesCtype && matchesUltra && matchesBlacklist) { show(el); visible++; }
+      if (matchesTags && matchesSearch && matchesCtype && matchesRating && matchesUltra && matchesBlacklist) { show(el); visible++; }
       else { hide(el); }
     });
     if (emptyEl) emptyEl.hidden = visible > 0;
@@ -163,6 +179,34 @@
       applyFilters();
     });
   });
+
+  var advStarsWrap = document.getElementById('notes-adv-stars');
+  var advStarReset = document.getElementById('notes-adv-star-reset');
+  function syncStars() {
+    if (!advStarsWrap) return;
+    advStarsWrap.querySelectorAll('.wiki-adv-star').forEach(function(btn) {
+      var v = Number(btn.dataset.value);
+      btn.innerHTML = v <= advMinRating ? '&#9733;' : '&#9734;';
+      btn.classList.toggle('active', v <= advMinRating);
+    });
+  }
+  if (advStarsWrap) {
+    advStarsWrap.querySelectorAll('.wiki-adv-star').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var v = Number(btn.dataset.value);
+        advMinRating = advMinRating === v ? 0 : v;
+        syncStars();
+        applyFilters();
+      });
+    });
+  }
+  if (advStarReset) {
+    advStarReset.addEventListener('click', function() {
+      advMinRating = 0;
+      syncStars();
+      applyFilters();
+    });
+  }
 
   document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -209,6 +253,7 @@
     resetBtn.addEventListener('click', function() {
       activeTags = [];
       activeCtype = '';
+      advMinRating = 0;
       search = '';
       if (searchInput) searchInput.value = '';
       if (tagSearchInput) tagSearchInput.value = '';
@@ -216,6 +261,7 @@
         c.classList.remove('active'); c.dataset.state = '0'; c.hidden = false;
       });
       document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(b) { b.classList.remove('active'); });
+      syncStars();
       applyFilters();
     });
   }

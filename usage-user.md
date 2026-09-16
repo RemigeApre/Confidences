@@ -130,10 +130,12 @@ Volet de navigation à gauche, teinté selon le rôle du compte.
 
 - Tout ce que vous avez noté ou mis en favori dans chaque section, avec les mêmes filtres (recherche, tags, catégorie) que la section d'origine.
 - Un compteur par section est visible directement dans le volet de gauche.
+- Sur Images et BD, un filtre **Note minimale** (étoiles) s'ajoute aux autres, et le tri met d'abord vos favoris, puis le reste par note décroissante.
 
 ### Historique
 
-- Les 30 dernières pages Codex, images et BD que vous avez consultées, toutes confondues et triées par date, avec un lien direct vers chacune (sauf les images, sans page dédiée : le lien ramène à la Galerie).
+- Les dernières pages Codex, images et BD que vous avez consultées, toutes confondues et triées par date, avec un lien direct vers chacune (sauf les images, sans page dédiée : le lien ramène à la Galerie).
+- Durée conservée réglable dans Paramètres (3 jours, 1 semaine, 1 mois ou 3 mois) — ne masque que l'affichage de cette page, ne supprime rien.
 
 ### Bouton ULTRA (bas du volet)
 
@@ -144,6 +146,7 @@ Volet de navigation à gauche, teinté selon le rôle du compte.
 - **Ultra** / **Irréaliste** : visible, masqué par défaut (bascule disponible), ou totalement désactivé ("off" — jamais montré, même via la bascule).
 - **Filtrage des tags** : ET (toutes les tags sélectionnés) ou OU (au moins un).
 - **Clic sur un tag** : aperçu en popup, ou accès direct à la page/galerie du tag.
+- **Historique** : durée de conservation de la page Profil > Historique (3 jours, 1 semaine, 1 mois, 3 mois).
 - **Partage avec l'admin** : une case à cocher indiquant que vous acceptez que l'admin consulte vos notes et favoris (affiche un badge visible par l'admin — n'affecte pas l'accès réel).
 
 ### Identité

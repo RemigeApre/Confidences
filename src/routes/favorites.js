@@ -61,6 +61,14 @@ function notesCounts(user) {
   };
 }
 
+// Durée de rétention de /favoris/historique (voir profil-parametres.ejs) :
+// ne filtre que ce qui s'affiche sur cette page précise, ne supprime jamais
+// les vues elles-mêmes (utilisées ailleurs, notamment par les stats admin).
+const HISTORY_RETENTION_DAYS = { "3jours": 3, "1semaine": 7, "1mois": 30, "3mois": 90 };
+function historyRetentionDays(user) {
+  return HISTORY_RETENTION_DAYS[user.historyRetention] || HISTORY_RETENTION_DAYS["1mois"];
+}
+
 function buildFavoritesRouter(config) {
   const router = express.Router();
 
@@ -166,13 +174,16 @@ function buildFavoritesRouter(config) {
     detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki", title: v.title, id: v.pageId, at: v.createdAt }));
     detail.recentGalViews.forEach((v) => feed.push({ type: "gallery", title: v.title, id: v.galleryId, at: v.createdAt }));
     detail.recentBdViews.forEach((v) => feed.push({ type: "bd", title: v.title, id: v.bookId, at: v.createdAt }));
-    feed.sort((a, b) => new Date(b.at) - new Date(a.at));
-    res.render("profil-historique", { config, feed, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+    const cutoff = Date.now() - historyRetentionDays(req.user) * 86400000;
+    const filteredFeed = feed
+      .filter((f) => new Date(f.at).getTime() >= cutoff)
+      .sort((a, b) => new Date(b.at) - new Date(a.at));
+    res.render("profil-historique", { config, feed: filteredFeed, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
-    const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin } = req.body;
-    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin });
+    const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention } = req.body;
+    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention });
     res.json({ ok: true });
   });
 
@@ -208,8 +219,17 @@ function buildFavoritesRouter(config) {
   });
 
   router.get("/notes/images", requireUser, (req, res) => {
+    const favIds = new Set(
+      listFavoriteRows(req.user.id).filter((r) => r.item_type === "gallery").map((r) => r.item_id)
+    );
     const all = mergeUserReactions(listGalleryImages(), req.user.id, "gallery")
-      .filter((img) => img.rating > 0 || img.flame);
+      .filter((img) => img.rating > 0 || img.flame)
+      .map((img) => Object.assign(img, { isFavorite: favIds.has(img.id) }));
+    // Favoris d'abord, puis par note décroissante.
+    all.sort((a, b) => {
+      if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1;
+      return b.rating - a.rating;
+    });
     const tagSet = new Set();
     all.forEach((img) => (img.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
@@ -226,7 +246,17 @@ function buildFavoritesRouter(config) {
   });
 
   router.get("/notes/bd", requireUser, (req, res) => {
-    const all = listBdBooks().filter((b) => b.rating > 0 || b.flame);
+    const favIds = new Set(
+      listFavoriteRows(req.user.id).filter((r) => r.item_type === "bd").map((r) => r.item_id)
+    );
+    const all = listBdBooks()
+      .filter((b) => b.rating > 0 || b.flame)
+      .map((b) => Object.assign(b, { isFavorite: favIds.has(b.id) }));
+    // Favoris d'abord, puis par note décroissante.
+    all.sort((a, b) => {
+      if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1;
+      return b.rating - a.rating;
+    });
     const tagSet = new Set();
     all.forEach((b) => (b.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
