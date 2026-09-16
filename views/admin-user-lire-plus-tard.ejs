@@ -1,0 +1,36 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : À lire plus tard', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= config.title %></span>
+</div>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <div class="aud-section-header">
+      <h2 class="aud-section-title">&Agrave; lire plus tard (<%= items.length %>)</h2>
+    </div>
+
+    <div class="aud-card-grid">
+      <% if (!items.length) { %>
+        <p class="admin-muted">Aucune page mise de c&ocirc;t&eacute; pour plus tard.</p>
+      <% } %>
+      <% items.forEach(function(p) { %>
+        <%- include('partials/admin-content-card', {
+          href: '/wiki/' + p.id,
+          coverImg: p.imagePaths && p.imagePaths[0],
+          title: p.title,
+          viewCount: undefined,
+          rating: p.rating || 0,
+          flame: !!p.flame,
+          placeholderIcon: '&#128214;',
+        }) %>
+      <% }) %>
+    </div>
+
+  </main>
+</div>
+<%- include('partials/foot') %>

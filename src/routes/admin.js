@@ -326,6 +326,16 @@ function buildAdminRouter(config) {
     res.render("admin-user-connexions", { config, detail, connectionLogs, sessions, roleHue: roleHue(detail.user) });
   });
 
+  // ── "À lire plus tard" (Codex) d'un profil, réservé à l'admin — lecture
+  // seule, même liste que /favoris/a-lire-plus-tard côté profil lui-même.
+  router.get("/utilisateur/:id/a-lire-plus-tard", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    const items = mergeUserReactions(listWikiPages(), id, "wiki").filter((p) => p.readLater);
+    res.render("admin-user-lire-plus-tard", { config, detail, items, roleHue: roleHue(detail.user) });
+  });
+
   router.get("/:id", requireAdmin, (req, res) => {
     const submission = getSubmission(Number(req.params.id));
     if (!submission) return res.redirect("/admin");

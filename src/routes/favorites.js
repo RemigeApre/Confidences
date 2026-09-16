@@ -288,6 +288,14 @@ function buildFavoritesRouter(config) {
     res.render("profil-notes-wiki", { config, pages: all, allTags, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
+  // ── "À lire plus tard" (Codex uniquement) — strictement personnel : voir
+  // routes/admin.js pour l'équivalent réservé à l'admin sur un profil tiers.
+  router.get("/a-lire-plus-tard", requireUser, (req, res) => {
+    const pages = mergeUserReactions(listWikiPages(), req.user.id, "wiki")
+      .filter((p) => p.readLater);
+    res.render("profil-a-lire-plus-tard", { config, pages, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+  });
+
   router.get("/notes/bd", requireUser, (req, res) => {
     const favIds = new Set(
       listFavoriteRows(req.user.id).filter((r) => r.item_type === "bd").map((r) => r.item_id)

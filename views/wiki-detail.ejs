@@ -559,12 +559,16 @@
           <div class="wiki-react wiki-right-reactions"
                data-id="<%= page.id %>"
                data-flame="<%= (page.flame || isFavorite) ? '1' : '0' %>"
-               data-interested="<%= page.interested ? '1' : '0' %>">
+               data-interested="<%= page.interested ? '1' : '0' %>"
+               data-readlater="<%= page.readLater ? '1' : '0' %>">
             <button type="button" class="wiki-react-btn wiki-react-flame<%= (page.flame || isFavorite) ? ' active' : '' %>" data-key="flame">
               <span class="wiki-react-icon">&#128293;</span><span class="wiki-react-label">J&apos;adore</span>
             </button>
             <button type="button" class="wiki-react-btn wiki-react-interest<%= page.interested ? ' active' : '' %>" data-key="interested">
               <span class="wiki-react-icon">&#10024;</span><span class="wiki-react-label"><%= interestedLabel %></span>
+            </button>
+            <button type="button" class="wiki-react-btn wiki-react-readlater<%= page.readLater ? ' active' : '' %>" data-key="readlater">
+              <span class="wiki-react-icon">&#9203;</span><span class="wiki-react-label">&Agrave; lire plus tard</span>
             </button>
           </div>
         <% } %>

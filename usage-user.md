@@ -54,7 +54,7 @@ Tout ce qu'un profil (non-admin) peut faire sur le site, espace par espace. Les 
 ### Une page Codex
 
 - Lecture du contenu, images associées.
-- **Note** (étoiles, 1 à 5), **J'adore** (flamme), **Intéressé(e)** : personnels à chaque profil, indépendants de ceux du partenaire.
+- **Note** (étoiles, 1 à 5), **J'adore** (flamme), **Intéressé(e)**, **À lire plus tard** : personnels à chaque profil, indépendants de ceux du partenaire.
 - **Possédé** : badge informatif (posé par l'admin à la création de la page), pas une action du profil.
 - **Note personnelle** : un champ de texte libre, visible seulement par vous.
 - **Tags cliquables** : ouvrent une popup avec les autres pages/images portant ce tag, avec un bouton **Masquer le tag** (voir "Tags", plus bas). Le comportement du clic (popup ou accès direct) se règle dans Profil > Paramètres.
@@ -138,6 +138,12 @@ Volet de navigation à gauche, teinté selon le rôle du compte.
 - Lien direct vers chacune (sauf les images, sans page dédiée : le lien ramène à la Galerie).
 - Durée conservée réglable dans Paramètres (3 jours, 1 semaine, 1 mois ou 3 mois) — ne masque que l'affichage de cette page, ne supprime rien.
 
+### À lire plus tard
+
+- Toutes les pages Codex marquées avec le bouton **À lire plus tard** (voir la section Codex ci-dessus), sous forme des mêmes cartes que partout ailleurs sur le Codex.
+- Une croix sur chaque carte retire la page de la liste.
+- ⚠️ Strictement personnel : ni les autres profils ni personne d'autre que vous et l'admin ne peut voir cette liste (l'admin la retrouve, en lecture seule, depuis la fiche de votre profil).
+
 ### Bouton ULTRA (bas du volet)
 
 - Masque ou affiche les contenus Ultra sur toutes les pages du profil, indépendamment du réglage par défaut.
@@ -189,6 +195,6 @@ Volet de navigation à gauche, teinté selon le rôle du compte.
 Réservé aux comptes administrateur — géré séparément, en dehors de la navigation normale :
 
 - Tableau de bord des profils, création/modification/suppression de comptes.
-- Fiche détaillée par profil : quizz, notes et favoris (Codex/Images/BD) avec vue "par nombre de vues", activité récente, connexions et durée de présence sur le site.
+- Fiche détaillée par profil : quizz, notes et favoris (Codex/Images/BD), liste "à lire plus tard" (lecture seule), avec vue "par nombre de vues", activité récente, connexions et durée de présence sur le site.
 - Gestion des tags (création, renommage, changement de type).
 - Création et modification de contenu (pages Codex, images, BD, liens).

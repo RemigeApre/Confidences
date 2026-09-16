@@ -818,8 +818,8 @@ function buildWikiRouter(config) {
   router.post("/:id/react", requireUserJson, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
-    const { rating, flame, interested } = req.body;
-    reactWikiPage(id, req.user.id, { rating, flame, interested });
+    const { rating, flame, interested, readLater } = req.body;
+    reactWikiPage(id, req.user.id, { rating, flame, interested, readLater });
     // J'adore = favori : synchro avec la table favorites
     if (flame) addFavorite(req.user.id, "wiki", id);
     else removeFavorite(req.user.id, "wiki", id);

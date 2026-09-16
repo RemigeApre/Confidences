@@ -209,6 +209,9 @@ db.exec(`
     PRIMARY KEY (user_id, item_type, item_id)
   )
 `);
+// "À lire plus tard" (Codex uniquement pour l'instant, voir /favoris/a-lire-plus-tard) :
+// même table que les autres réactions personnelles, par profil.
+try { db.exec("ALTER TABLE content_reactions ADD COLUMN read_later INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_views (
@@ -438,14 +441,14 @@ function countFavorites() {
   return db.prepare("SELECT COUNT(*) AS c FROM favorites").get().c;
 }
 
-const REACTION_DEFAULT = { rating: 0, flame: false, interested: false };
+const REACTION_DEFAULT = { rating: 0, flame: false, interested: false, readLater: false };
 
 function getUserReaction(userId, itemType, itemId) {
   if (!userId) return { ...REACTION_DEFAULT };
   const row = db.prepare(
-    "SELECT rating, flame, interested FROM content_reactions WHERE user_id = ? AND item_type = ? AND item_id = ?"
+    "SELECT rating, flame, interested, read_later FROM content_reactions WHERE user_id = ? AND item_type = ? AND item_id = ?"
   ).get(userId, itemType, itemId);
-  return row ? { rating: row.rating, flame: !!row.flame, interested: !!row.interested } : { ...REACTION_DEFAULT };
+  return row ? { rating: row.rating, flame: !!row.flame, interested: !!row.interested, readLater: !!row.read_later } : { ...REACTION_DEFAULT };
 }
 
 // Statistiques agregees des reactions d'un utilisateur (tous types confondus).
@@ -479,9 +482,9 @@ function countUserNotes(userId, itemType) {
 function getUserReactionsMap(userId, itemType) {
   const map = {};
   if (!userId) return map;
-  db.prepare("SELECT item_id, rating, flame, interested FROM content_reactions WHERE user_id = ? AND item_type = ?")
+  db.prepare("SELECT item_id, rating, flame, interested, read_later FROM content_reactions WHERE user_id = ? AND item_type = ?")
     .all(userId, itemType)
-    .forEach((r) => { map[r.item_id] = { rating: r.rating, flame: !!r.flame, interested: !!r.interested }; });
+    .forEach((r) => { map[r.item_id] = { rating: r.rating, flame: !!r.flame, interested: !!r.interested, readLater: !!r.read_later }; });
   return map;
 }
 
@@ -492,17 +495,18 @@ function mergeUserReactions(items, userId, itemType) {
   return items.map((item) => Object.assign(item, map[item.id] || { ...REACTION_DEFAULT }));
 }
 
-function setUserReaction(userId, itemType, itemId, { rating, flame, interested }) {
+function setUserReaction(userId, itemType, itemId, { rating, flame, interested, readLater }) {
   const current = getUserReaction(userId, itemType, itemId);
   const r = rating !== undefined ? Math.max(0, Math.min(5, Number(rating) || 0)) : current.rating;
   const f = flame !== undefined ? !!flame : current.flame;
   const it = interested !== undefined ? !!interested : current.interested;
+  const rl = readLater !== undefined ? !!readLater : current.readLater;
   db.prepare(
-    `INSERT INTO content_reactions (user_id, item_type, item_id, rating, flame, interested, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO content_reactions (user_id, item_type, item_id, rating, flame, interested, read_later, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id, item_type, item_id) DO UPDATE SET
-       rating = excluded.rating, flame = excluded.flame, interested = excluded.interested, updated_at = excluded.updated_at`
-  ).run(userId, itemType, itemId, r, f ? 1 : 0, it ? 1 : 0, new Date().toISOString());
+       rating = excluded.rating, flame = excluded.flame, interested = excluded.interested, read_later = excluded.read_later, updated_at = excluded.updated_at`
+  ).run(userId, itemType, itemId, r, f ? 1 : 0, it ? 1 : 0, rl ? 1 : 0, new Date().toISOString());
 }
 
 function getUserNote(pageId, userId) {
@@ -906,8 +910,8 @@ function updateWikiPage(id, { title, category, content, tags, imagePaths, owned,
   return true;
 }
 
-function reactWikiPage(id, userId, { rating, flame, interested }) {
-  setUserReaction(userId, "wiki", id, { rating, flame, interested });
+function reactWikiPage(id, userId, { rating, flame, interested, readLater }) {
+  setUserReaction(userId, "wiki", id, { rating, flame, interested, readLater });
 }
 
 function deleteWikiPage(id) {

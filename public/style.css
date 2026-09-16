@@ -1073,6 +1073,31 @@ h2 { font-size: 1.1rem; margin-top: 2rem; }
 }
 .profil-empty a:hover { text-decoration: underline; }
 
+/* "À lire plus tard" (voir profil-a-lire-plus-tard.ejs) : réutilise la
+   carte codex standard (partials/wiki-card), juste enveloppée pour poser
+   une croix de retrait par-dessus sans imbriquer un bouton dans le lien. */
+.profil-readlater-item { position: relative; }
+.profil-readlater-remove {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 5;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.profil-readlater-remove:hover { background: #c0392b; }
+
 .extra-cards {
   display: flex;
   flex-direction: column;
