@@ -103,12 +103,12 @@
           </div>
         <% } %>
 
+        <% if (currentUser) { %>
+          <%- include('partials/filter-profiles', { section: 'wiki', profiles: locals.wikiFilterProfiles || [] }) %>
+        <% } %>
+
       </div><%# /wiki-sidebar-filters %>
       </details>
-
-      <% if (currentUser) { %>
-        <%- include('partials/filter-profiles', { section: 'wiki', profiles: locals.wikiFilterProfiles || [] }) %>
-      <% } %>
 
       <div class="wiki-filter-section wiki-filter-bottom-actions">
         <% if (currentUser) { %>
