@@ -292,18 +292,13 @@
       <button type="button" class="gallery-lb-series-arrow" id="gallery-lb-series-next" title="Suivant dans la s&eacute;rie">&#8250;</button>
     </div>
 
-    <%# Indice mobile : swiper vers le haut (ou taper) r&eacute;v&egrave;le le volet
-        d'infos, masqu&eacute; par d&eacute;faut pour une image plein &eacute;cran (voir
-        style.css + gallery.js:openPanelSheet). Invisible sur desktop. %>
-    <button type="button" class="gallery-lb-mobile-hint" aria-label="Voir les informations">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 15l-6-6-6 6"/></svg>
-      <span>Infos</span>
-    </button>
   </div>
 
-  <%# Volet droit (desktop) / tiroir du bas (mobile) : infos décorrélées de l'image %>
+  <%# Volet droit (desktop) / bloc suivant dans le flux, sous la photo
+      (mobile — on y accède en scrollant, voir style.css) : infos
+      décorrélées de l'image. %>
   <aside class="gallery-lb-panel">
-    <span class="gallery-lb-panel-handle" aria-hidden="true"></span>
+    <button type="button" class="gallery-lb-panel-handle" aria-label="Remonter voir la photo"></button>
     <button type="button" class="gallery-lb-close" title="Fermer">&#215;</button>
     <%# Barre "Explorer l'inconnu" (voir gallery.js) : uniquement pendant
         une session d'exploration démarrée depuis le volet filtre. %>

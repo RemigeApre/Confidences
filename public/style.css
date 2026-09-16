@@ -5771,18 +5771,29 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
 /* Masquée par défaut (desktop) : n'existe que sur mobile, voir ci-dessous. */
 .gallery-lb-mobile-close,
-.gallery-lb-mobile-hint,
 .gallery-lb-panel-handle { display: none; }
 
 @media (max-width: 640px) {
   .gallery-grid { --gallery-card-min: 140px; }
 
-  /* ── Lightbox façon Tinder : image plein écran, croix flottante pour
-     fermer, swipe droite/gauche = suivant/précédent (voir gallery.js), le
-     volet d'infos devient un tiroir du bas masqué par défaut, révélé par
-     un swipe vers le haut ou un tap sur l'indice/la poignée. ──────────── */
-  .gallery-lightbox { flex-direction: column; }
-  .gallery-lb-image-area { flex: 1 1 auto; height: 100%; padding: 1.25rem; }
+  /* ── Lightbox : un seul bloc scrollable, entièrement au doigt ─────────
+     Photo d'abord (pleine hauteur d'écran), volet d'infos juste après dans
+     le flux normal — on y accède en scrollant, comme une page, jamais par
+     une bascule ouverte/fermée décidée par du code. Swipe gauche/droite =
+     image suivante/précédente (voir gallery.js), vertical = scroll natif. */
+  .gallery-lightbox {
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gallery-lb-image-area {
+    flex-shrink: 0;
+    height: 100vh;
+    height: 100dvh;
+    padding: 1.25rem;
+  }
+
   /* Chevrons discrets sur les bords : incitent à swiper sans encombrer
      l'image, restent tapables en secours (même navigate() que le swipe). */
   .gallery-lb-prev,
@@ -5815,60 +5826,46 @@ a.wiki-ql-label:hover .wiki-ql-text {
     cursor: pointer;
   }
 
-  .gallery-lb-mobile-hint {
-    display: flex;
-    position: absolute;
-    bottom: max(0.85rem, env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translateX(-50%);
-    flex-direction: column;
-    align-items: center;
-    gap: 0.1rem;
-    padding: 0.3rem 0.7rem;
-    border: none;
-    background: none;
-    color: rgba(255, 255, 255, 0.65);
-    font-size: 0.68rem;
-  }
-  .gallery-lb-mobile-hint svg { width: 1.3rem; height: 1.3rem; }
-
+  /* Le volet redevient un bloc normal dans le flux (plus de position
+     fixed/transform) : c'est le scroll de .gallery-lightbox ci-dessus qui
+     l'amène à l'écran, au rythme du doigt, sans aucune animation forcée. */
   .gallery-lb-panel {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    flex-shrink: 0;
     width: 100%;
-    max-height: 78vh;
+    max-height: none;
+    height: auto;
     border-left: none;
     border-top: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 18px 18px 0 0;
     background-color: #18181b; /* opaque sur mobile (semi-transparent en volet latéral desktop) */
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
-    transform: translateY(100%);
-    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-    z-index: 5;
     padding: 0.6rem 1.1rem max(1.1rem, env(safe-area-inset-bottom));
     gap: 0.85rem;
   }
-  .gallery-lb-panel.gallery-lb-panel-open { transform: translateY(0); }
-  /* Pendant le glissé, la transform suit le doigt image par image : pas de
-     transition, sinon le volet traîne derrière au lieu de le suivre. */
-  .gallery-lb-panel.gallery-lb-panel-dragging { transition: none; }
 
   .gallery-lb-panel-handle {
     display: block;
     width: 2.75rem;
     height: 0.32rem;
     margin: 0.2rem auto 0.4rem;
+    padding: 0;
+    border: none;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
     flex-shrink: 0;
   }
 
-  /* Croix "Fermer" interne masquée sur mobile : la poignée + la croix
-     flottante sur l'image (.gallery-lb-mobile-close) suffisent. */
+  /* Croix "Fermer" interne masquée sur mobile : la croix flottante sur
+     l'image (.gallery-lb-mobile-close) suffit, toujours accessible en
+     remontant le volet grâce au scroll. */
   .gallery-lb-panel > .gallery-lb-close { display: none; }
+
+  /* Notation centrée juste sous l'image, étoiles et tags agrandis pour
+     rester lisibles/tapables au doigt. */
+  .gallery-lb-rating { justify-content: center; gap: 0.5rem; }
+  .gallery-lb-rating .gallery-star { font-size: 2.2rem; }
+  .gallery-lb-tags { gap: 0.5rem; }
+  .gallery-lb-tags .tag-badge { font-size: 1rem; padding: 0.35rem 0.85rem; }
 }
 
 /* ── BD ───────────────────────────────────────────────────────────────── */
@@ -7228,6 +7225,13 @@ a.wiki-ql-label:hover .wiki-ql-text {
   color: var(--fg);
 }
 
+/* Bouton burger + croix de fermeture du volet filtre : strictement mobile,
+   invisibles par défaut (la version PC garde le volet fixe, sans tiroir ni
+   bouton). Les règles d'affichage réelles sont dans le media query mobile
+   ci-dessous, qui gagne le cascade quand il s'applique. */
+.mobile-filter-toggle,
+.mobile-filter-close { display: none; }
+
 @media (max-width: 640px) {
   /* Pas de header en haut sur mobile : la barre du bas (.mobile-tabbar)
      est l'unique navigation. Ni titre, ni rappel consentement, ni bascule
@@ -7404,6 +7408,9 @@ a.wiki-ql-label:hover .wiki-ql-text {
     margin: 0;
     padding: max(1rem, env(safe-area-inset-top)) 3.2rem 0.8rem 1.1rem;
   }
+  /* Le nombre d'éléments chevauchait la croix de fermeture (toutes deux en
+     haut à droite) : inutile ici, on le retire simplement sur mobile. */
+  #mobile-filter-sidebar .wiki-chapter-hero-count { display: none; }
 
   /* Corps scrollable : search + filtres, même rythme que le desktop. */
   #mobile-filter-sidebar .wiki-sidebar-body {
@@ -7415,6 +7422,42 @@ a.wiki-ql-label:hover .wiki-ql-text {
     flex-direction: column;
     gap: 0.75rem;
   }
+
+  /* Volets rétractables imbriqués (Filtres > Catégorie/Notation/...) : sur
+     mobile, une fois le tiroir déjà ouvert, un accordéon en plus n'apporte
+     rien qu'un tap superflu pour atteindre des micro-tags — le contenu est
+     forcé ouvert en JS (voir nav.js) et reste toujours visible, sans second
+     niveau de repli. Le summary devient un simple intitulé, non cliquable. */
+  #mobile-filter-sidebar .wiki-sidebar-filter-details {
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+  #mobile-filter-sidebar .wiki-sidebar-filter-summary,
+  #mobile-filter-sidebar .gallery-cat-summary,
+  #mobile-filter-sidebar .wiki-subpanel-summary {
+    pointer-events: none;
+    cursor: default;
+  }
+  #mobile-filter-sidebar .wiki-sidebar-filter-summary::before,
+  #mobile-filter-sidebar .wiki-sidebar-filter-summary::after,
+  #mobile-filter-sidebar .gallery-cat-summary::before,
+  #mobile-filter-sidebar .wiki-subpanel-summary::before {
+    display: none;
+  }
+  #mobile-filter-sidebar .wiki-sidebar-filter-details[open] .wiki-sidebar-filter-summary {
+    border-bottom: none;
+  }
+
+  /* Tags à cocher : trop petits pour un doigt (pensés pour un volet fixe
+     étroit sur PC) — on les agrandit et on passe à 2 colonnes sur mobile. */
+  #mobile-filter-sidebar .wiki-tag-chip {
+    flex-basis: calc(50% - 0.25rem);
+    padding: 0.55rem 0.7rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+  }
+  #mobile-filter-sidebar .wiki-tag-chip .wtc-count { font-size: 0.75rem; }
 
   .mobile-filter-close {
     display: flex;
@@ -8916,14 +8959,13 @@ body.wiki-todo-open { overflow: hidden; }
 .tags-item-name { font-weight: 600; }
 .tags-item-right { display: flex; align-items: center; gap: 0.35rem; }
 .tags-item-wiki-link {
-  font-size: 0.75rem; line-height: 1;
-  color: rgba(120,230,140,0.85);
+  font-size: 0.85em; line-height: 1;
+  color: inherit;
   text-decoration: none;
-  padding: 0.1rem 0.2rem;
-  border-radius: 3px;
-  transition: color 0.12s, background 0.12s;
+  opacity: 0.75;
+  transition: opacity 0.12s;
 }
-.tags-item-wiki-link:hover { color: #fff; background: rgba(120,230,140,0.25); }
+.tags-item-wiki-link:hover { opacity: 1; }
 .tags-item--wiki-page {
   background: color-mix(in oklab, hsl(138, 52%, 28%) 100%, transparent) !important;
   border-color: hsl(138, 45%, 38%) !important;

@@ -929,6 +929,7 @@
   function renderLightbox() {
     var card = currentCard();
     if (!lightbox || !card) return;
+    lightbox.scrollTop = 0; // chaque nouvelle image se montre d'abord, infos accessibles au scroll
     var images  = currentImages();
     var src          = images[lbImgIndex] || "";
     var displayTitle = card.dataset.displayTitle || card.dataset.title || "";
@@ -1063,7 +1064,7 @@
     renderLightbox();
     lightbox.hidden = false;
     document.body.style.overflow = "hidden";
-    closePanelSheet(); // plein écran d'abord sur mobile, infos sur swipe/tap
+    lightbox.scrollTop = 0; // photo d'abord (voir .gallery-lightbox scrollable, style.css)
   }
 
   function closeLightbox() {
@@ -1074,7 +1075,6 @@
     if (lbImg) lbImg.src = "";
     exploreActive = false;
     if (exploreNav) exploreNav.hidden = true;
-    closePanelSheet();
   }
 
   function navigate(dir) {
@@ -1410,87 +1410,39 @@
     if (e.key === "ArrowRight") navigate(1);
   });
 
-  // Volet d'infos mobile façon Tinder : masqué par défaut (voir style.css),
-  // suit le doigt en temps réel pendant le glissé (comme une vraie feuille),
-  // et se referme aussi bien en le retirant vers le bas depuis sa poignée
-  // qu'en swipant vers le bas depuis l'image. Horizontal = navigation.
+  // Volet d'infos mobile : plus de tiroir déclenché par du JS — tout est un
+  // seul bloc scrollable (voir style.css : .gallery-lightbox devient un
+  // simple overflow-y:auto, image d'abord puis le volet dans le flux
+  // normal). Le scroll natif fait tout le travail, à 100% au doigt : rien
+  // ne s'ouvre ni ne se ferme tout seul, aucun seuil ni animation forcée.
   var lbPanelEl = lightbox ? lightbox.querySelector(".gallery-lb-panel") : null;
+  var lbImageAreaEl = lightbox ? lightbox.querySelector(".gallery-lb-image-area") : null;
   var lbPanelHandle = lightbox ? lightbox.querySelector(".gallery-lb-panel-handle") : null;
-  var lbPanelHint = lightbox ? lightbox.querySelector(".gallery-lb-mobile-hint") : null;
-  var panelOpen = false;
-
-  function panelHeightPx() { return lbPanelEl ? lbPanelEl.getBoundingClientRect().height || 1 : 1; }
-  // pos: 0 = complètement ouvert (en haut), panelHeightPx() = complètement fermé (hors écran).
-  function dragPanelTo(pos) {
-    if (!lbPanelEl) return;
-    lbPanelEl.classList.add("gallery-lb-panel-dragging");
-    lbPanelEl.style.transform = "translateY(" + Math.max(0, Math.min(panelHeightPx(), pos)) + "px)";
-  }
-  function releasePanelDrag() {
-    if (!lbPanelEl) return;
-    lbPanelEl.classList.remove("gallery-lb-panel-dragging");
-    lbPanelEl.style.transform = "";
-  }
-  function openPanelSheet() { panelOpen = true; releasePanelDrag(); if (lbPanelEl) lbPanelEl.classList.add("gallery-lb-panel-open"); }
-  function closePanelSheet() { panelOpen = false; releasePanelDrag(); if (lbPanelEl) lbPanelEl.classList.remove("gallery-lb-panel-open"); }
-
-  [lbPanelHint, lbPanelHandle].forEach(function (el) {
-    if (el) el.addEventListener("click", function () { panelOpen ? closePanelSheet() : openPanelSheet(); });
-  });
-
-  // Poignée dédiée : on peut toujours la retirer vers le bas pour refermer,
-  // même si le contenu du volet défile en dessous.
+  // La poignée reste un simple raccourci pour remonter voir la photo — un
+  // tap explicite de l'utilisateur, jamais une bascule imposée par le code.
   if (lbPanelHandle) {
-    var handleStartY = 0;
-    lbPanelHandle.addEventListener("touchstart", function (e) {
-      handleStartY = e.touches[0].clientY;
-    }, { passive: true });
-    lbPanelHandle.addEventListener("touchmove", function (e) {
-      var dy = e.touches[0].clientY - handleStartY;
-      if (dy > 0) dragPanelTo(dy);
-    }, { passive: true });
-    lbPanelHandle.addEventListener("touchend", function (e) {
-      var dy = e.changedTouches[0].clientY - handleStartY;
-      if (dy > panelHeightPx() * 0.28) closePanelSheet(); else openPanelSheet();
+    lbPanelHandle.addEventListener("click", function () {
+      if (lbImageAreaEl) lbImageAreaEl.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
-  var touchStartX = 0, touchStartY = 0, touchInPanel = false, dragAxis = null, dragBase = 0;
+  // Navigation horizontale (swipe gauche/droite) uniquement : le vertical
+  // est laissé entièrement au scroll natif, jamais intercepté ici.
+  var touchStartX = 0, touchStartY = 0, touchInPanel = false;
   if (lightbox) {
     lightbox.addEventListener("touchstart", function (e) {
       touchInPanel = !!(lbPanelEl && e.target.closest(".gallery-lb-panel"));
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
-      dragAxis = null;
-      dragBase = panelOpen ? 0 : panelHeightPx();
-    }, { passive: true });
-
-    lightbox.addEventListener("touchmove", function (e) {
-      if (touchInPanel) return;
-      var dx = e.touches[0].clientX - touchStartX;
-      var dy = e.touches[0].clientY - touchStartY;
-      if (!dragAxis) {
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-        dragAxis = Math.abs(dy) > Math.abs(dx) ? "y" : "x";
-      }
-      // Depuis l'image : seulement remonter le volet (fermé → on tire vers
-      // le haut). Le refermer se fait via la poignée ci-dessus.
-      if (dragAxis === "y" && !panelOpen && dy < 0) dragPanelTo(dragBase + dy);
     }, { passive: true });
 
     lightbox.addEventListener("touchend", function (e) {
-      if (touchInPanel) { touchInPanel = false; return; }
-      if (dragAxis === "y") {
-        if (!panelOpen) {
-          var dy = e.changedTouches[0].clientY - touchStartY;
-          if (-dy > panelHeightPx() * 0.22) openPanelSheet(); else closePanelSheet();
-        }
-        dragAxis = null;
-        return;
-      }
-      dragAxis = null;
+      if (touchInPanel) return;
       var dx = e.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(dx) <= 50) return;
+      var dy = e.changedTouches[0].clientY - touchStartY;
+      // Geste clairement plus horizontal que vertical, sinon on laisse le
+      // scroll de la page faire son travail sans interférer.
+      if (Math.abs(dx) <= 50 || Math.abs(dx) <= Math.abs(dy)) return;
       if (exploreActive) {
         if (dx < 0 && exploreNextBtn) exploreNextBtn.click();
         else if (dx > 0 && explorePrevBtn && !explorePrevBtn.disabled) explorePrevBtn.click();

@@ -56,6 +56,16 @@
   var closeBtn = document.getElementById("mobile-filter-close");
   if (!toggle || !sidebar || !backdrop) return;
 
+  // Sur mobile, les volets internes (Filtres > Catégorie/Notation/...) sont
+  // forcés ouverts une fois pour toutes : un accordéon dans un accordéon
+  // n'apporte qu'un tap superflu avant d'atteindre les tags. Leur summary
+  // est neutralisé en CSS (pointer-events: none) donc ils ne se referment
+  // jamais tout seuls. Le desktop (même élément, sidebar fixe) n'est pas
+  // concerné et garde son repli habituel.
+  if (window.matchMedia && window.matchMedia("(max-width: 640px)").matches) {
+    sidebar.querySelectorAll("details").forEach(function (d) { d.open = true; });
+  }
+
   function openDrawer() {
     sidebar.classList.add("mobile-filter-open");
     backdrop.classList.add("open");
