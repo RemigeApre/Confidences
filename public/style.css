@@ -5783,9 +5783,18 @@ a.wiki-ql-label:hover .wiki-ql-text {
      un swipe vers le haut ou un tap sur l'indice/la poignée. ──────────── */
   .gallery-lightbox { flex-direction: column; }
   .gallery-lb-image-area { flex: 1 1 auto; height: 100%; padding: 1.25rem; }
-  /* Plus de flèches visibles : navigation au swipe uniquement. */
+  /* Chevrons discrets sur les bords : incitent à swiper sans encombrer
+     l'image, restent tapables en secours (même navigate() que le swipe). */
   .gallery-lb-prev,
-  .gallery-lb-next { display: none; }
+  .gallery-lb-next {
+    font-size: 1.8rem;
+    opacity: 0.4;
+    padding: 0.5rem 0.35rem;
+  }
+  .gallery-lb-prev { left: 0; }
+  .gallery-lb-next { right: 0; }
+  .gallery-lb-prev:active,
+  .gallery-lb-next:active { opacity: 0.85; }
 
   .gallery-lb-mobile-close {
     display: flex;
@@ -5832,23 +5841,34 @@ a.wiki-ql-label:hover .wiki-ql-text {
     max-height: 78vh;
     border-left: none;
     border-top: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px 16px 0 0;
+    border-radius: 18px 18px 0 0;
+    background-color: #18181b; /* opaque sur mobile (semi-transparent en volet latéral desktop) */
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
     transform: translateY(100%);
-    transition: transform 0.28s ease;
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 5;
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding: 0.6rem 1.1rem max(1.1rem, env(safe-area-inset-bottom));
+    gap: 0.85rem;
   }
   .gallery-lb-panel.gallery-lb-panel-open { transform: translateY(0); }
+  /* Pendant le glissé, la transform suit le doigt image par image : pas de
+     transition, sinon le volet traîne derrière au lieu de le suivre. */
+  .gallery-lb-panel.gallery-lb-panel-dragging { transition: none; }
 
   .gallery-lb-panel-handle {
     display: block;
-    width: 2.5rem;
-    height: 0.3rem;
-    margin: 0 auto 0.75rem;
+    width: 2.75rem;
+    height: 0.32rem;
+    margin: 0.2rem auto 0.4rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
+    flex-shrink: 0;
   }
+
+  /* Croix "Fermer" interne masquée sur mobile : la poignée + la croix
+     flottante sur l'image (.gallery-lb-mobile-close) suffisent. */
+  .gallery-lb-panel > .gallery-lb-close { display: none; }
 }
 
 /* ── BD ───────────────────────────────────────────────────────────────── */

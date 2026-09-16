@@ -5038,9 +5038,10 @@
         });
       }
 
-      // Entrée / → / swipe droite : contenu suivant. ← / swipe gauche :
-      // précédent. Ignoré si le focus est dans un champ de saisie (ex. la
-      // zone "Mes notes"), pour ne pas voler la touche Entrée.
+      // Clavier : Entrée / → = contenu suivant, ← = précédent. Swipe : sens
+      // inverse du clavier (swipe gauche = suivant, swipe droite = précédent),
+      // ignoré si le focus est dans un champ de saisie (ex. "Mes notes"),
+      // pour ne pas voler la touche Entrée.
       document.addEventListener("keydown", function (e) {
         var tag = document.activeElement && document.activeElement.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
@@ -5061,8 +5062,8 @@
         var dx = e.changedTouches[0].clientX - exploreSwipeStartX;
         var dy = e.changedTouches[0].clientY - exploreSwipeStartY;
         if (Math.abs(dx) > 80 && Math.abs(dy) < 60) {
-          if (dx > 0 && nextBtn) nextBtn.click(); // swipe droite = suivant
-          else if (dx < 0 && prevBtn && !prevBtn.disabled) prevBtn.click(); // swipe gauche = précédent
+          if (dx < 0 && nextBtn) nextBtn.click(); // swipe gauche = suivant
+          else if (dx > 0 && prevBtn && !prevBtn.disabled) prevBtn.click(); // swipe droite = précédent
         }
       }, { passive: true });
     }
