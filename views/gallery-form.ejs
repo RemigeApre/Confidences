@@ -97,17 +97,16 @@
 
     <textarea name="notes" class="wiki-textarea gallery-notes-input" rows="4" placeholder="Notes&hellip;"><%= image.notes %></textarea>
 
-    <%# ─ Images de l'album ─ %>
+    <%# ─ Image(s) de cette fiche — chaque image est indépendante : les
+        nouveaux fichiers ajoutés ci-dessous deviennent chacun leur propre
+        fiche, jamais fusionnés ici (voir routes/gallery.js). Les vignettes
+        listées ne servent qu'à retirer une image d'une fiche existante. ─ %>
     <div class="wiki-image-field">
       <% if (image.imagePaths && image.imagePaths.length) { %>
         <div class="wiki-images-existing">
-          <% image.imagePaths.forEach(function(src, idx) { %>
+          <% image.imagePaths.forEach(function(src) { %>
             <div class="wiki-existing-img-wrap">
               <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
-              <label class="wiki-cover-radio-label" title="D&eacute;finir comme couverture">
-                <input type="radio" name="cover_image" value="<%= src %>" class="wiki-cover-radio" <%= idx === 0 ? 'checked' : '' %> />
-                <span class="wiki-cover-badge-icon">&#9733;</span>
-              </label>
               <label class="wiki-img-remove-label">
                 <input type="checkbox" name="remove_image" value="<%= src %>" />
                 <span>&#215;</span>
@@ -117,7 +116,7 @@
         </div>
       <% } %>
       <label class="wiki-image-add-label">
-        <span>+ Ajouter des images &agrave; cet album</span>
+        <span>+ Ajouter d&rsquo;autres images (fiches ind&eacute;pendantes)</span>
         <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
       </label>
       <div class="wiki-new-previews"></div>

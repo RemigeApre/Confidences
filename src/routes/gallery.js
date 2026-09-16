@@ -202,6 +202,11 @@ function buildGalleryRouter(config) {
     res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, tagBdCounts, seriesMap });
   });
 
+  // Chaque image est sa propre fiche, jamais regroupées automatiquement —
+  // même en sélectionnant plusieurs fichiers d'un coup dans ce formulaire,
+  // chacun devient une fiche indépendante (notable/masquable/collectionnable
+  // séparément). Le seul regroupement possible reste manuel et explicite,
+  // via les Séries (voir /galerie/series) — jamais automatique à l'upload.
   router.post("/", requireAdmin, upload.array("images", 30), (req, res) => {
     const files = req.files || [];
     if (!files.length) return res.redirect("/galerie");
@@ -212,9 +217,11 @@ function buildGalleryRouter(config) {
     const author = String(req.body.author || "").trim();
     const parody = String(req.body.parody || "").trim();
     const contentType = req.body.content_type === "bd" ? "bd" : "image";
-    const imagePaths = files.map((f) => `/uploads/gallery/${f.filename}`);
-    imagePaths.forEach((p) => generateThumb(p));
-    insertGalleryImage({ imagePaths, title, tags, notes, category, author, parody, contentType });
+    files.forEach((f) => {
+      const p = `/uploads/gallery/${f.filename}`;
+      generateThumb(p);
+      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, author, parody, contentType });
+    });
     res.redirect("/galerie");
   });
 
@@ -486,22 +493,17 @@ function buildGalleryRouter(config) {
     res.json({ ok: true, processed });
   });
 
+  // Même principe que POST / ci-dessus : on ne fusionne jamais un nouveau
+  // fichier dans la fiche éditée, il devient sa propre fiche indépendante
+  // (mêmes métadonnées que celle en cours d'édition). Cette fiche-ci ne
+  // fait que retirer les images décochées, jamais en accueillir de nouvelles.
   router.post("/:id", requireAdmin, upload.array("images", 30), (req, res) => {
     const id = Number(req.params.id);
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
     if (!image) return res.redirect("/galerie");
 
-    // Images : on part des existantes, on retire celles cochées, on ajoute
-    // les nouvelles, puis on remet la couverture choisie en tête.
     const toRemove = [].concat(req.body.remove_image || []);
-    const kept = image.imagePaths.filter((p) => !toRemove.includes(p));
-    const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
-    added.forEach((p) => generateThumb(p));
-    let imagePaths = [...kept, ...added];
-    const cover = req.body.cover_image;
-    if (cover && imagePaths.includes(cover) && imagePaths[0] !== cover) {
-      imagePaths = [cover, ...imagePaths.filter((p) => p !== cover)];
-    }
+    const imagePaths = image.imagePaths.filter((p) => !toRemove.includes(p));
     unlinkFiles(toRemove);
 
     const tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
@@ -509,17 +511,17 @@ function buildGalleryRouter(config) {
     const wikiPageIdRaw = Number(req.body.wiki_page_id);
     const wikiPageId = Number.isInteger(wikiPageIdRaw) && wikiPageIdRaw > 0 ? wikiPageIdRaw : null;
     const contentType = req.body.content_type === "bd" ? "bd" : "image";
+    const title = String(req.body.title || "").trim();
+    const notes = String(req.body.notes || "").trim();
+    const author = String(req.body.author || "").trim();
+    const parody = String(req.body.parody || "").trim();
 
-    updateGalleryImage(id, {
-      title: String(req.body.title || "").trim(),
-      category,
-      tags,
-      notes: String(req.body.notes || "").trim(),
-      imagePaths,
-      wikiPageId,
-      author: String(req.body.author || "").trim(),
-      parody: String(req.body.parody || "").trim(),
-      contentType,
+    updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, contentType });
+
+    const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
+    added.forEach((p) => {
+      generateThumb(p);
+      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, wikiPageId, author, parody, contentType });
     });
 
     const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));

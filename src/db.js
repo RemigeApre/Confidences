@@ -1041,6 +1041,42 @@ db.exec(`CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)`
   db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)").run(KEY, new Date().toISOString());
 })();
 
+// Migration ponctuelle : CHAQUE image de la galerie est indépendante, sans
+// exception — y compris celles ajoutées en sélectionnant plusieurs fichiers
+// d'un coup dans le formulaire d'upload direct (avant cette migration,
+// elles étaient regroupées dans une seule fiche multi-images). Le seul
+// regroupement reste manuel et explicite, via les Séries — jamais
+// automatique. Filet de sécurité universel après le passage ciblé
+// ci-dessus (qui ne couvrait que les images liées à une page codex) :
+// éclate ici toute fiche gallery_images encore multi-images, quelle que
+// soit son origine, en gardant la première image sur la fiche existante
+// (conserve ses notes/favoris/collections) et en créant une fiche à part
+// pour chacune des suivantes.
+(function splitAllGalleryAlbumsToPerImageOnce() {
+  const KEY = "gallery_all_per_image_v1";
+  if (db.prepare("SELECT 1 FROM app_meta WHERE key = ?").get(KEY)) return;
+
+  const rows = db.prepare("SELECT * FROM gallery_images").all();
+  rows.forEach(function (row) {
+    let paths = [];
+    try { paths = JSON.parse(row.image_paths || "[]"); } catch (_) {}
+    if (paths.length <= 1) return;
+
+    const now = new Date().toISOString();
+    db.prepare("UPDATE gallery_images SET image_paths = ?, filename = ?, updated_at = ? WHERE id = ?")
+      .run(JSON.stringify([paths[0]]), paths[0], now, row.id);
+
+    paths.slice(1).forEach(function (p) {
+      db.prepare(
+        `INSERT INTO gallery_images (filename, image_paths, title, tags, notes, category, wiki_page_id, author, parody, content_type, wiki_synced, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(p, JSON.stringify([p]), row.title, row.tags, row.notes, row.category, row.wiki_page_id, row.author, row.parody, row.content_type, row.wiki_synced, now, now);
+    });
+  });
+
+  db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)").run(KEY, new Date().toISOString());
+})();
+
 // Migration : catégorie "autre" fusionnée dans "fantasmes" (suppression du chapitre).
 // Idempotent : après le premier passage il n'y a plus de lignes "autre".
 db.prepare("UPDATE wiki_pages SET category = 'fantasmes' WHERE category = 'autre'").run();
