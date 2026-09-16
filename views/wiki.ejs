@@ -4,10 +4,13 @@
 
   <% if (lockedCategory) { %>
 
+    <%- include('partials/mobile-filter-toggle') %>
+
     <%# ─── SIDEBAR CATÉGORIE ────────────────────────────────────────────── %>
     <%# Sur desktop : panneau fixe à gauche, pleine hauteur, sans pousser  %>
-    <%# la grille centrale. Sur mobile : bloc inline au-dessus de la grille.%>
-    <aside class="wiki-cat-sidebar">
+    <%# la grille centrale. Sur mobile : tiroir rétracté depuis la gauche. %>
+    <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
+      <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
 
       <%# ─ En-tête : flèche retour + nom + nombre ─ %>
       <div class="wiki-chapter-hero">

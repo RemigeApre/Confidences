@@ -5769,12 +5769,86 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .gallery-wiki-link-current .wiki-pl-card { flex: 1; min-width: 0; }
 .gallery-wiki-link-search-wrap { position: relative; }
 
+/* Masquée par défaut (desktop) : n'existe que sur mobile, voir ci-dessous. */
+.gallery-lb-mobile-close,
+.gallery-lb-mobile-hint,
+.gallery-lb-panel-handle { display: none; }
+
 @media (max-width: 640px) {
   .gallery-grid { --gallery-card-min: 140px; }
-  /* Mobile : volet sous l'image */
+
+  /* ── Lightbox façon Tinder : image plein écran, croix flottante pour
+     fermer, swipe droite/gauche = suivant/précédent (voir gallery.js), le
+     volet d'infos devient un tiroir du bas masqué par défaut, révélé par
+     un swipe vers le haut ou un tap sur l'indice/la poignée. ──────────── */
   .gallery-lightbox { flex-direction: column; }
-  .gallery-lb-image-area { flex: 1 1 auto; padding: 1.5rem 2.5rem; }
-  .gallery-lb-panel { width: 100%; height: auto; max-height: 40vh; border-left: none; border-top: 1px solid rgba(255,255,255,0.1); }
+  .gallery-lb-image-area { flex: 1 1 auto; height: 100%; padding: 1.25rem; }
+  /* Plus de flèches visibles : navigation au swipe uniquement. */
+  .gallery-lb-prev,
+  .gallery-lb-next { display: none; }
+
+  .gallery-lb-mobile-close {
+    display: flex;
+    position: absolute;
+    top: max(1rem, env(safe-area-inset-top));
+    right: 1rem;
+    z-index: 6;
+    width: 2.5rem;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: none;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .gallery-lb-mobile-hint {
+    display: flex;
+    position: absolute;
+    bottom: max(0.85rem, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.3rem 0.7rem;
+    border: none;
+    background: none;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.68rem;
+  }
+  .gallery-lb-mobile-hint svg { width: 1.3rem; height: 1.3rem; }
+
+  .gallery-lb-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 78vh;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.28s ease;
+    z-index: 5;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .gallery-lb-panel.gallery-lb-panel-open { transform: translateY(0); }
+
+  .gallery-lb-panel-handle {
+    display: block;
+    width: 2.5rem;
+    height: 0.3rem;
+    margin: 0 auto 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+  }
 }
 
 /* ── BD ───────────────────────────────────────────────────────────────── */
@@ -7254,6 +7328,62 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
   /* ── Wiki sidebar sur mobile : masquer le hero (titre dans le header) ── */
   .wiki-cat-sidebar .wiki-chapter-hero { display: none; }
+
+  /* ── Volet filtre (Codex/Galerie) : rétracté par défaut, tiroir depuis la
+     gauche (voir partials/mobile-filter-toggle.ejs + public/nav.js). Le
+     desktop n'est pas concerné (le volet y reste fixe comme avant). ────── */
+  .mobile-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    margin: 0.6rem 0 0.85rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mobile-filter-toggle svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+
+  #mobile-filter-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(85vw, 340px);
+    max-width: none;
+    z-index: 95;
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    overflow-y: auto;
+    margin-top: 0;
+    padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.35);
+  }
+  #mobile-filter-sidebar.mobile-filter-open { transform: translateX(0); }
+  #mobile-filter-sidebar .wiki-chapter-hero { display: block; }
+
+  .mobile-filter-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    align-self: flex-end;
+    margin-bottom: 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+  }
 
   /* ── Pousser le contenu sous le header sticky ───────────────────────── */
   /* Le margin-top: -1.5rem global est conçu pour le desktop ; sur mobile  */

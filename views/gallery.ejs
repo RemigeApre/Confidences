@@ -2,8 +2,11 @@
 <main class="container wide gallery-has-sidebar">
   <%- include('partials/top-nav', { config: config, navTitle: 'Galerie', navBack: '/' }) %>
 
+  <%- include('partials/mobile-filter-toggle') %>
+
   <%# ─── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar gallery-sidebar">
+  <aside class="wiki-cat-sidebar gallery-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
     <div class="wiki-chapter-hero" style="--ch-hue: 220">
       <div class="wiki-chapter-hero-top">
         <span></span>
@@ -276,6 +279,7 @@
 
   <%# Zone image : centrée, prend tout l'espace restant %>
   <div class="gallery-lb-image-area">
+    <button type="button" class="gallery-lb-mobile-close" title="Fermer" aria-label="Fermer">&#215;</button>
     <button type="button" class="gallery-lb-prev" title="Pr&eacute;c&eacute;dente">&#8249;</button>
     <button type="button" class="gallery-lb-next" title="Suivante">&#8250;</button>
     <img class="gallery-lb-img" alt="" />
@@ -287,10 +291,19 @@
       <span class="gallery-lb-series-info" id="gallery-lb-series-info"></span>
       <button type="button" class="gallery-lb-series-arrow" id="gallery-lb-series-next" title="Suivant dans la s&eacute;rie">&#8250;</button>
     </div>
+
+    <%# Indice mobile : swiper vers le haut (ou taper) r&eacute;v&egrave;le le volet
+        d'infos, masqu&eacute; par d&eacute;faut pour une image plein &eacute;cran (voir
+        style.css + gallery.js:openPanelSheet). Invisible sur desktop. %>
+    <button type="button" class="gallery-lb-mobile-hint" aria-label="Voir les informations">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 15l-6-6-6 6"/></svg>
+      <span>Infos</span>
+    </button>
   </div>
 
-  <%# Volet droit : infos décorrélées de l'image %>
+  <%# Volet droit (desktop) / tiroir du bas (mobile) : infos décorrélées de l'image %>
   <aside class="gallery-lb-panel">
+    <span class="gallery-lb-panel-handle" aria-hidden="true"></span>
     <button type="button" class="gallery-lb-close" title="Fermer">&#215;</button>
     <%# Barre "Explorer l'inconnu" (voir gallery.js) : uniquement pendant
         une session d'exploration démarrée depuis le volet filtre. %>

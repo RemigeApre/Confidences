@@ -45,6 +45,38 @@
   });
 })();
 
+// ── Volet filtre mobile (Codex/Galerie) : rétracté par défaut, s'ouvre en
+// tiroir depuis la gauche (voir partials/mobile-filter-toggle.ejs). Un seul
+// jeu d'ids par page (jamais deux volets filtre en même temps), donc
+// réutilisable tel quel sur wiki-index/wiki/gallery sans dupliquer le JS.
+(function () {
+  var toggle = document.getElementById("mobile-filter-toggle");
+  var sidebar = document.getElementById("mobile-filter-sidebar");
+  var backdrop = document.getElementById("mobile-filter-backdrop");
+  var closeBtn = document.getElementById("mobile-filter-close");
+  if (!toggle || !sidebar || !backdrop) return;
+
+  function openDrawer() {
+    sidebar.classList.add("mobile-filter-open");
+    backdrop.classList.add("open");
+    toggle.setAttribute("aria-expanded", "true");
+    document.body.classList.add("nav-drawer-locked");
+  }
+  function closeDrawer() {
+    sidebar.classList.remove("mobile-filter-open");
+    backdrop.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("nav-drawer-locked");
+  }
+
+  toggle.addEventListener("click", openDrawer);
+  backdrop.addEventListener("click", closeDrawer);
+  if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeDrawer();
+  });
+})();
+
 // ── Recherche globale : champ qui s'agrandit dans le header ─────────────────
 (function () {
   var wrap    = document.getElementById("pc-search-inline");

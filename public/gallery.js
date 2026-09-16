@@ -1063,6 +1063,7 @@
     renderLightbox();
     lightbox.hidden = false;
     document.body.style.overflow = "hidden";
+    closePanelSheet(); // plein écran d'abord sur mobile, infos sur swipe/tap
   }
 
   function closeLightbox() {
@@ -1073,6 +1074,7 @@
     if (lbImg) lbImg.src = "";
     exploreActive = false;
     if (exploreNav) exploreNav.hidden = true;
+    closePanelSheet();
   }
 
   function navigate(dir) {
@@ -1108,6 +1110,8 @@
   }
 
   if (lbClose)  lbClose.addEventListener("click", closeLightbox);
+  var lbMobileClose = lightbox ? lightbox.querySelector(".gallery-lb-mobile-close") : null;
+  if (lbMobileClose) lbMobileClose.addEventListener("click", closeLightbox);
   if (lbPrev)   lbPrev.addEventListener("click", function(){ navigate(-1); });
   if (lbNext)   lbNext.addEventListener("click", function(){ navigate(1);  });
   if (lbSeriesPrev) lbSeriesPrev.addEventListener("click", function () {
@@ -1406,18 +1410,46 @@
     if (e.key === "ArrowRight") navigate(1);
   });
 
-  var touchStartX = 0;
+  // Volet d'infos mobile façon Tinder : masqué par défaut (voir style.css),
+  // révélé par un swipe vers le haut ou un tap sur son "handle" ; un swipe
+  // vers le bas le referme. Horizontal = navigation (swipe droite/gauche).
+  var lbPanelEl = lightbox ? lightbox.querySelector(".gallery-lb-panel") : null;
+  function openPanelSheet() { if (lbPanelEl) lbPanelEl.classList.add("gallery-lb-panel-open"); }
+  function closePanelSheet() { if (lbPanelEl) lbPanelEl.classList.remove("gallery-lb-panel-open"); }
+  ["gallery-lb-mobile-hint", "gallery-lb-panel-handle"].forEach(function (cls) {
+    if (lightbox) {
+      var el = lightbox.querySelector("." + cls);
+      if (el) el.addEventListener("click", openPanelSheet);
+    }
+  });
+
+  var touchStartX = 0, touchStartY = 0, touchInPanel = false;
   if (lightbox) {
-    lightbox.addEventListener("touchstart", function(e){ touchStartX = e.touches[0].clientX; }, { passive: true });
+    lightbox.addEventListener("touchstart", function(e){
+      touchInPanel = !!(lbPanelEl && e.target.closest(".gallery-lb-panel"));
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
     lightbox.addEventListener("touchend", function(e) {
+      if (touchInPanel) return; // laisse le volet défiler/être cliqué normalement
       var dx = e.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(dx) <= 50) return;
+      var dy = e.changedTouches[0].clientY - touchStartY;
+      var adx = Math.abs(dx), ady = Math.abs(dy);
+
+      // Vertical dominant : swipe haut = infos, swipe bas = referme les infos.
+      if (ady > adx && ady > 60) {
+        if (dy < 0) openPanelSheet(); else closePanelSheet();
+        return;
+      }
+      if (adx <= 50) return;
       if (exploreActive) {
         if (dx > 0 && exploreNextBtn) exploreNextBtn.click();
         else if (dx < 0 && explorePrevBtn && !explorePrevBtn.disabled) explorePrevBtn.click();
         return;
       }
-      navigate(dx < 0 ? 1 : -1);
+      // Façon Tinder : swipe droite = suivant, swipe gauche = précédent
+      // (même sens que le mode exploration ci-dessus, désormais unifié).
+      navigate(dx > 0 ? 1 : -1);
     });
   }
 

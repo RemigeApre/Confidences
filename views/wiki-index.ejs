@@ -2,8 +2,11 @@
 <main class="container wide wiki-locked" style="--ch-hue: 250">
   <%- include('partials/top-nav', { config: config, navTitle: 'Codex', navBack: '/' }) %>
 
+  <%- include('partials/mobile-filter-toggle') %>
+
   <%# ─── SIDEBAR ──────────────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar">
+  <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
 
     <%# ─ En-tête ─ %>
     <div class="wiki-chapter-hero">
