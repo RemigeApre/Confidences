@@ -983,10 +983,10 @@
     // En mode exploration, lbVisible ne contient que l'image en cours (voir
     // openLightboxByGalleryId) : les flèches principales n'ont pas de sens,
     // c'est la barre dédiée (gallery-lb-explore-nav) qui prend le relais.
-    var atFirst = exploreActive || (lbCardIndex === 0 && lbImgIndex === 0);
-    var atLast  = exploreActive || (lbCardIndex === lbVisible.length - 1 && lbImgIndex === images.length - 1);
-    if (lbPrev) lbPrev.hidden = atFirst;
-    if (lbNext) lbNext.hidden = atLast;
+    // Hors exploration, la navigation boucle à l'infini (voir navigate()) :
+    // les flèches restent donc toujours visibles, jamais de bout de liste.
+    if (lbPrev) lbPrev.hidden = exploreActive;
+    if (lbNext) lbNext.hidden = exploreActive;
     if (exploreNav) exploreNav.hidden = !exploreActive;
     if (exploreActive && explorePrevBtn) explorePrevBtn.disabled = explorePos <= 0;
 
@@ -1077,6 +1077,9 @@
     if (exploreNav) exploreNav.hidden = true;
   }
 
+  // Boucle infinie sur tout le contenu visible (déjà filtré, voir
+  // buildVisible) : après la dernière image, on repart sur la première, et
+  // inversement — jamais de bout de liste qui bloque le swipe/la flèche.
   function navigate(dir) {
     var images = currentImages();
     var nextImgIdx = lbImgIndex + dir;
@@ -1085,9 +1088,8 @@
       renderLightbox();
       return;
     }
-    var nextCardIdx = lbCardIndex + dir;
-    if (nextCardIdx < 0 || nextCardIdx >= lbVisible.length) return;
-    lbCardIndex = nextCardIdx;
+    if (!lbVisible.length) return;
+    lbCardIndex = (lbCardIndex + dir + lbVisible.length) % lbVisible.length;
     var nextImages = currentImages();
     lbImgIndex = dir > 0 ? 0 : Math.max(nextImages.length - 1, 0);
     renderLightbox();
