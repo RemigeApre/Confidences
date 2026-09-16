@@ -924,6 +924,54 @@ db.exec(`CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)`
   db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)").run(KEY, new Date().toISOString());
 })();
 
+// Migration ponctuelle : chaque image du site doit avoir sa propre fiche
+// galerie (voir syncExtraGalleryImages dans routes/wiki.js pour l'écriture
+// au fil de l'eau côté création/édition). Jusqu'ici, les images de
+// variantes/sous-variantes et l'image de scénario d'une page codex
+// n'existaient que dans wiki_pages.meta — jamais comme vraie fiche
+// gallery_images, donc jamais notables/masquables/collectionnables. On
+// crée ici une fiche par image manquante pour tout le stock existant.
+(function backfillExtraGalleryImagesOnce() {
+  const KEY = "backfill_extra_gallery_images_v1";
+  if (db.prepare("SELECT 1 FROM app_meta WHERE key = ?").get(KEY)) return;
+
+  const pages = listWikiPages();
+  const existingLinks = new Set(
+    db.prepare("SELECT wiki_page_id, image_paths FROM gallery_images WHERE wiki_page_id IS NOT NULL").all()
+      .map(function (r) {
+        let paths = [];
+        try { paths = JSON.parse(r.image_paths || "[]"); } catch (_) {}
+        return paths.length === 1 ? (r.wiki_page_id + "::" + paths[0]) : null;
+      }).filter(Boolean)
+  );
+
+  pages.forEach(function (page) {
+    const items = [];
+    const variantes = (page.meta && Array.isArray(page.meta.variantes)) ? page.meta.variantes : [];
+    variantes.forEach(function (v) {
+      (Array.isArray(v.images) ? v.images : []).forEach(function (p) { items.push({ path: p, label: v.nom || "" }); });
+      (Array.isArray(v.variantes) ? v.variantes : []).forEach(function (sv) {
+        (Array.isArray(sv.images) ? sv.images : []).forEach(function (p) { items.push({ path: p, label: sv.nom || "" }); });
+      });
+    });
+    if (page.meta && page.meta.scenario_image) items.push({ path: page.meta.scenario_image, label: "" });
+    if (!items.length) return;
+
+    const titleTag = page.title.trim().toLowerCase();
+    const seenPaths = new Set();
+    items.forEach(function (it) {
+      if (seenPaths.has(it.path)) return; // même image référencée deux fois sur la page
+      seenPaths.add(it.path);
+      if (existingLinks.has(page.id + "::" + it.path)) return;
+      const tags = [titleTag];
+      if (it.label) tags.push(it.label.toLowerCase());
+      insertGalleryImage({ imagePaths: [it.path], title: page.title, tags, notes: "", category: "", wikiPageId: page.id });
+    });
+  });
+
+  db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)").run(KEY, new Date().toISOString());
+})();
+
 // Migration : catégorie "autre" fusionnée dans "fantasmes" (suppression du chapitre).
 // Idempotent : après le premier passage il n'y a plus de lignes "autre".
 db.prepare("UPDATE wiki_pages SET category = 'fantasmes' WHERE category = 'autre'").run();

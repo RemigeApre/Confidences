@@ -133,33 +133,10 @@ function buildItems(galleryImages, wikiPages) {
         });
       });
     }
-    // Images des variantes : une carte par image
-    const variantes = (page.meta && Array.isArray(page.meta.variantes)) ? page.meta.variantes : [];
-    variantes.forEach((v) => {
-      const allSubs = Array.isArray(v.variantes) ? v.variantes : [];
-      const varianteSources = [v, ...allSubs];
-      varianteSources.forEach((vv) => {
-        if (!Array.isArray(vv.images) || !vv.images.length) return;
-        const extraTag = vv.nom ? [vv.nom.toLowerCase()] : [];
-        vv.images.forEach((imgPath) => {
-          wikiItems.push({
-            type: "wiki",
-            id: null,
-            wikiPageId: page.id,
-            imagePaths: [imgPath],
-            title: page.title,
-            category: page.category,
-            tags: [...page.tags, ...extraTag],
-            notes: "",
-            rating: page.rating || 0,
-            flame: !!page.flame,
-            interested: !!page.interested,
-            contentType: "image",
-            date: page.updatedAt,
-          });
-        });
-      });
-    });
+    // Images de variantes/sous-variantes et de scénario : plus synthétisées
+    // ici, elles ont désormais leur propre fiche gallery_images (voir
+    // syncExtraGalleryImages dans routes/wiki.js), donc déjà présentes dans
+    // galleryItems ci-dessous — les resynthétiser ferait un doublon.
   });
 
   const galleryItems = galleryImages.map((img) => ({

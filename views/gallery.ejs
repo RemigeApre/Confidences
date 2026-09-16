@@ -306,15 +306,21 @@
     <a class="gallery-lb-wiki-btn" href="" hidden></a>
     <div class="gallery-lb-notes"></div>
     <div class="gallery-lb-actions" id="gallery-lb-actions" hidden>
+      <div class="gallery-lb-rating" id="gallery-lb-rating">
+        <% for (var lri = 1; lri <= 5; lri++) { %>
+          <span class="gallery-star" data-val="<%= lri %>">&#9733;</span>
+        <% } %>
+      </div>
       <div class="gallery-lb-react-row">
-        <div class="gallery-lb-rating" id="gallery-lb-rating">
-          <% for (var lri = 1; lri <= 5; lri++) { %>
-            <span class="gallery-star" data-val="<%= lri %>">&#9733;</span>
-          <% } %>
-        </div>
-        <button type="button" class="gallery-lb-fav-btn" id="gallery-lb-fav-btn" title="Favori">&#10084;</button>
-        <button type="button" class="gallery-card-btn gallery-lb-hide-btn" id="gallery-lb-hide-btn" title="Masquer (voir Profil &gt; Contenus masqu&eacute;s)">&#128065;</button>
-        <button type="button" class="gallery-card-btn gallery-lb-collection-btn" id="gallery-lb-collection-btn" title="Ajouter &agrave; une collection">&#128193;</button>
+        <button type="button" class="gallery-lb-text-btn gallery-lb-fav-btn" id="gallery-lb-fav-btn" title="Favori">
+          <span class="gallery-lb-text-btn-icon">&#10084;</span><span>J&rsquo;adore</span>
+        </button>
+        <button type="button" class="gallery-lb-text-btn gallery-lb-hide-btn" id="gallery-lb-hide-btn" title="Retire cette image de vos listings (voir Profil &gt; Contenus masqu&eacute;s)">
+          <span class="gallery-lb-text-btn-icon">&#128065;</span><span>Masquer</span>
+        </button>
+        <button type="button" class="gallery-lb-text-btn gallery-lb-collection-btn" id="gallery-lb-collection-btn" title="Ajouter &agrave; une collection">
+          <span class="gallery-lb-text-btn-icon">&#128193;</span><span>Collection</span>
+        </button>
       </div>
       <%# Mode couple : révélé seulement une fois que le visiteur a lui-même
           noté (voir gallery.js:syncPartnerReveal). %>

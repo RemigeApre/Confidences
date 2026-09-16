@@ -1206,16 +1206,15 @@
     lbFavBtn.addEventListener("click", function() {
       var itemId = Number(lbFavBtn.dataset.itemId);
       if (!itemId) return;
-      var isActive = lbFavBtn.classList.contains("active");
       fetch("/favoris/toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item_type: "gallery", item_id: itemId, action: isActive ? "remove" : "add" }),
+        body: JSON.stringify({ itemType: "gallery", itemId: itemId }),
       }).then(function(r){ return r.json(); }).then(function(data){
         if (data.ok) {
-          lbFavBtn.classList.toggle("active", !isActive);
+          lbFavBtn.classList.toggle("active", data.active);
           var card = currentCard();
-          if (card) card.dataset.fav = isActive ? "0" : "1";
+          if (card) card.dataset.fav = data.active ? "1" : "0";
         }
       });
     });
@@ -1387,9 +1386,22 @@
     });
   }
 
+  // Mode exploration : Entrée/→/swipe droite = suivant, ←/swipe gauche =
+  // précédent (sens volontairement inverse du swipe normal ci-dessous, sur
+  // demande explicite — pense "tirer la carte suivante").
   document.addEventListener("keydown", function (e) {
     if (!lightbox || lightbox.hidden) return;
-    if (e.key === "Escape")     closeLightbox();
+    if (e.key === "Escape") closeLightbox();
+    if (exploreActive) {
+      var tag = document.activeElement && document.activeElement.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "Enter" || e.key === "ArrowRight") {
+        if (exploreNextBtn) { e.preventDefault(); exploreNextBtn.click(); }
+      } else if (e.key === "ArrowLeft") {
+        if (explorePrevBtn && !explorePrevBtn.disabled) { e.preventDefault(); explorePrevBtn.click(); }
+      }
+      return;
+    }
     if (e.key === "ArrowLeft")  navigate(-1);
     if (e.key === "ArrowRight") navigate(1);
   });
@@ -1399,7 +1411,13 @@
     lightbox.addEventListener("touchstart", function(e){ touchStartX = e.touches[0].clientX; }, { passive: true });
     lightbox.addEventListener("touchend", function(e) {
       var dx = e.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(dx) > 50) navigate(dx < 0 ? 1 : -1);
+      if (Math.abs(dx) <= 50) return;
+      if (exploreActive) {
+        if (dx > 0 && exploreNextBtn) exploreNextBtn.click();
+        else if (dx < 0 && explorePrevBtn && !explorePrevBtn.disabled) explorePrevBtn.click();
+        return;
+      }
+      navigate(dx < 0 ? 1 : -1);
     });
   }
 

@@ -5642,11 +5642,12 @@ a.wiki-ql-label:hover .wiki-ql-text {
   margin-top: 0.75rem;
 }
 
-/* Rangée étoiles + cœur */
+/* Rangée de boutons texte (J'adore / Masquer / Collection) */
 .gallery-lb-react-row {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
 }
 
 .gallery-lb-rating {
@@ -5661,29 +5662,40 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 .gallery-lb-rating .gallery-star:hover { transform: scale(1.15); }
 .gallery-lb-rating .gallery-star.filled { color: var(--wiki-gold); }
-.gallery-lb-rating:hover .gallery-star { color: rgba(255,255,255,0.15); }
-.gallery-lb-rating:hover .gallery-star:hover,
-.gallery-lb-rating:hover .gallery-star:hover ~ .gallery-star { color: rgba(255,255,255,0.15); }
 
 /* Bouton favori cœur */
-.gallery-lb-fav-btn {
-  flex-shrink: 0;
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.45);
-  font-size: 1.15rem;
-  cursor: pointer;
+/* Boutons texte (J'adore / Masquer / Collection) : de vrais boutons avec
+   libellé, pas de simples icônes — plus lisible et moins ambigu au clic. */
+.gallery-lb-text-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  gap: 0.35rem;
+  padding: 0.42rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.gallery-lb-fav-btn:hover { background: rgba(220,50,80,0.2); border-color: rgba(220,50,80,0.5); color: #ff7090; transform: scale(1.1); }
-.gallery-lb-fav-btn.active { background: rgba(220,50,80,0.3); border-color: rgba(220,50,80,0.7); color: #ff5070; }
-.gallery-lb-fav-btn.active:hover { background: rgba(220,50,80,0.15); color: rgba(255,255,255,0.5); }
+.gallery-lb-text-btn:hover { background: rgba(255,255,255,0.14); }
+.gallery-lb-text-btn-icon { font-size: 1rem; line-height: 1; }
+
+.gallery-lb-fav-btn.active {
+  background: rgba(220,50,80,0.3);
+  border-color: rgba(220,50,80,0.7);
+  color: #ff8fa8;
+  font-weight: 600;
+}
+.gallery-lb-hide-btn.active {
+  background: rgba(150,150,150,0.3);
+  border-color: #a0a0a0;
+  color: #e0e0e0;
+  font-weight: 600;
+}
 
 /* Rangée admin (edit + traité) */
 .gallery-lb-admin-row {
@@ -12099,22 +12111,19 @@ body.wiki-todo-open { overflow: hidden; }
 }
 .tag-badge:hover { filter: brightness(1.15); }
 
+/* Intégrée au badge (même couleur, pas de forme séparée) plutôt qu'un petit
+   bouton rond en plus, qui donnait l'impression de deux éléments distincts. */
 .tag-badge-arrow {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-left: 0.3rem;
-  margin-right: -0.2rem;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.1);
+  margin-left: 0.35rem;
   color: inherit;
-  font-size: 0.72rem;
+  font-size: 0.85em;
   text-decoration: none;
+  opacity: 0.75;
   flex-shrink: 0;
 }
-.tag-badge-arrow:hover { background: rgba(255,255,255,0.22); }
+.tag-badge-arrow:hover { opacity: 1; }
 
 .tag-popup-overlay {
   position: fixed; inset: 0; z-index: 200;

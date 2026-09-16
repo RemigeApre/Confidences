@@ -5037,6 +5037,34 @@
           });
         });
       }
+
+      // Entrée / → / swipe droite : contenu suivant. ← / swipe gauche :
+      // précédent. Ignoré si le focus est dans un champ de saisie (ex. la
+      // zone "Mes notes"), pour ne pas voler la touche Entrée.
+      document.addEventListener("keydown", function (e) {
+        var tag = document.activeElement && document.activeElement.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (e.key === "Enter" || e.key === "ArrowRight") {
+          if (nextBtn) { e.preventDefault(); nextBtn.click(); }
+        } else if (e.key === "ArrowLeft") {
+          if (prevBtn && !prevBtn.disabled) { e.preventDefault(); prevBtn.click(); }
+        }
+      });
+
+      var exploreSwipeStartX = 0;
+      var exploreSwipeStartY = 0;
+      document.addEventListener("touchstart", function (e) {
+        exploreSwipeStartX = e.touches[0].clientX;
+        exploreSwipeStartY = e.touches[0].clientY;
+      }, { passive: true });
+      document.addEventListener("touchend", function (e) {
+        var dx = e.changedTouches[0].clientX - exploreSwipeStartX;
+        var dy = e.changedTouches[0].clientY - exploreSwipeStartY;
+        if (Math.abs(dx) > 80 && Math.abs(dy) < 60) {
+          if (dx > 0 && nextBtn) nextBtn.click(); // swipe droite = suivant
+          else if (dx < 0 && prevBtn && !prevBtn.disabled) prevBtn.click(); // swipe gauche = précédent
+        }
+      }, { passive: true });
     }
   })();
 

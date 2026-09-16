@@ -34,6 +34,7 @@ const {
   createStandaloneTag,
   insertGalleryImage,
   updateGalleryImage,
+  deleteGalleryImage,
   listGalleryImages,
   listUnexploredWikiPages,
   listBlacklistedTags,
@@ -168,6 +169,47 @@ function syncGalleryRecord(pageId, title, imagePaths, oldTitleTag) {
       author: img.author, parody: img.parody, contentType: img.contentType,
     });
   }
+}
+
+// Synchronise les images "extra" d'une page (variantes/sous-variantes +
+// image de scénario) : une fiche galerie par image, jamais fusionnées dans
+// la fiche "principale" multi-images gérée par syncGalleryRecord ci-dessus
+// (chaque image du site doit avoir sa propre fiche, y compris les variantes).
+// Recalculé à chaque sauvegarde : les fiches dont l'image n'est plus
+// utilisée (variante supprimée/remplacée) sont supprimées, les nouvelles
+// sont créées, celles qui existent déjà (même chemin) sont conservées
+// telles quelles pour ne pas perdre leurs notes/favoris/collections.
+function syncExtraGalleryImages(pageId, title, meta) {
+  const items = [];
+  const variantes = (meta && Array.isArray(meta.variantes)) ? meta.variantes : [];
+  variantes.forEach((v) => {
+    (Array.isArray(v.images) ? v.images : []).forEach((p) => items.push({ path: p, label: v.nom || "" }));
+    (Array.isArray(v.variantes) ? v.variantes : []).forEach((sv) => {
+      (Array.isArray(sv.images) ? sv.images : []).forEach((p) => items.push({ path: p, label: sv.nom || "" }));
+    });
+  });
+  if (meta && meta.scenario_image) items.push({ path: meta.scenario_image, label: "" });
+
+  const desiredPaths = new Set(items.map((it) => it.path));
+  const titleTag = title.trim().toLowerCase();
+
+  // Fiches déjà liées à cette page avec une seule image (jamais la fiche
+  // "principale" multi-images) : retirer celles qui ne sont plus utilisées,
+  // repérer celles qu'on garde.
+  const linked = listGalleryImages().filter((g) => g.wikiPageId === pageId && g.imagePaths.length === 1);
+  const existingByPath = {};
+  linked.forEach((g) => {
+    const p = g.imagePaths[0];
+    if (desiredPaths.has(p)) existingByPath[p] = g.id;
+    else deleteGalleryImage(g.id);
+  });
+
+  items.forEach((it) => {
+    if (existingByPath[it.path]) return;
+    const tags = [titleTag];
+    if (it.label) tags.push(it.label.toLowerCase());
+    insertGalleryImage({ imagePaths: [it.path], title, tags, notes: "", category: "", wikiPageId: pageId });
+  });
 }
 
 // Chaque synonyme peut être marqué "anglais" individuellement (suffixe
@@ -653,6 +695,7 @@ function buildWikiRouter(config) {
 
     const newId = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
     if (imagePaths.length) syncGalleryRecord(newId, title, imagePaths);
+    syncExtraGalleryImages(newId, title, meta);
     res.redirect(`/wiki/${newId}`);
   });
 
@@ -820,6 +863,7 @@ function buildWikiRouter(config) {
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
     updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
     syncGalleryRecord(id, title, imagePaths, existing.title.trim().toLowerCase());
+    syncExtraGalleryImages(id, title, meta);
     res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${id}`));
   });
 
