@@ -323,6 +323,13 @@ function buildFavoritesRouter(config) {
   router.get("/notes/wiki", requireUser, (req, res) => {
     const all = mergeUserReactions(listWikiPages(), req.user.id, "wiki")
       .filter((p) => p.rating > 0 || p.flame);
+    // J'adore d'abord (mis en avant comme sur les pages Images/BD — pour le
+    // codex, flame et favori sont la même chose, voir /wiki/:id/react), puis
+    // par note décroissante.
+    all.sort((a, b) => {
+      if (a.flame !== b.flame) return a.flame ? -1 : 1;
+      return b.rating - a.rating;
+    });
     const tagSet = new Set();
     all.forEach((p) => (p.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
