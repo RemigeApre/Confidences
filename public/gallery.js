@@ -864,6 +864,7 @@
   var lbPartnerReveal = document.getElementById("gallery-lb-partner-reveal");
   var lbFavBtn     = document.getElementById("gallery-lb-fav-btn");
   var lbHideBtn    = document.getElementById("gallery-lb-hide-btn");
+  var lbCollectionBtn = document.getElementById("gallery-lb-collection-btn");
   var lbEditBtn    = document.getElementById("gallery-lb-edit-btn");
   var lbProcessBtn = document.getElementById("gallery-lb-processed-btn");
   var lbSeriesNav  = document.getElementById("gallery-lb-series-nav");
@@ -1034,6 +1035,12 @@
         }
         // Masquer
         if (lbHideBtn) lbHideBtn.dataset.galleryId = galleryId;
+        // Collections (images uniquement, pas les BD de la galerie)
+        if (lbCollectionBtn) {
+          var isBdItem = card.dataset.type === "bd";
+          lbCollectionBtn.hidden = isBdItem;
+          lbCollectionBtn.dataset.galleryId = galleryId;
+        }
         // Edit + Processed
         if (lbEditBtn) {
           lbEditBtn.dataset.galleryId = galleryId;
@@ -1212,6 +1219,111 @@
         }
       });
     });
+  }
+
+  // ── Collections personnelles (images uniquement) ────────────────────────
+  var collectionModal = document.getElementById("collection-picker-modal");
+  var collectionList = document.getElementById("collection-picker-list");
+  var collectionNewToggle = document.getElementById("collection-picker-new-toggle");
+  var collectionNewForm = document.getElementById("collection-picker-new-form");
+  var collectionNewTitle = document.getElementById("collection-picker-new-title");
+  var collectionNewDesc = document.getElementById("collection-picker-new-desc");
+  var collectionNewTags = document.getElementById("collection-picker-new-tags");
+  var collectionNewConfirm = document.getElementById("collection-picker-new-confirm");
+  var collectionClose = document.getElementById("collection-picker-close");
+  var collectionCurrentGalleryId = null;
+
+  function renderCollectionList(collections) {
+    if (!collectionList) return;
+    collectionList.innerHTML = "";
+    if (!collections.length) {
+      var p = document.createElement("p");
+      p.className = "admin-muted";
+      p.textContent = "Aucune collection pour l'instant.";
+      collectionList.appendChild(p);
+      return;
+    }
+    collections.forEach(function (c) {
+      var row = document.createElement("button");
+      row.type = "button";
+      row.className = "collection-picker-row" + (c.contains ? " active" : "");
+      row.dataset.id = c.id;
+      var check = document.createElement("span");
+      check.className = "collection-picker-check";
+      check.innerHTML = c.contains ? "&#10003;" : "";
+      var label = document.createElement("span");
+      label.textContent = c.title;
+      row.appendChild(check);
+      row.appendChild(label);
+      row.addEventListener("click", function () {
+        var willAdd = !row.classList.contains("active");
+        fetch("/favoris/collections/" + c.id + "/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ galleryId: collectionCurrentGalleryId, action: willAdd ? "add" : "remove" }),
+        }).then(function (r) { return r.json(); }).then(function (d) {
+          if (!d.ok) return;
+          row.classList.toggle("active", willAdd);
+          check.innerHTML = willAdd ? "&#10003;" : "";
+        });
+      });
+      collectionList.appendChild(row);
+    });
+  }
+
+  if (lbCollectionBtn) {
+    lbCollectionBtn.addEventListener("click", function () {
+      var galleryId = Number(lbCollectionBtn.dataset.galleryId);
+      if (!galleryId || !collectionModal) return;
+      collectionCurrentGalleryId = galleryId;
+      if (collectionNewForm) collectionNewForm.hidden = true;
+      fetch("/favoris/collections/for-image/" + galleryId)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) return;
+          renderCollectionList(d.collections);
+          collectionModal.hidden = false;
+        });
+    });
+  }
+
+  if (collectionNewToggle) {
+    collectionNewToggle.addEventListener("click", function () {
+      if (collectionNewForm) collectionNewForm.hidden = !collectionNewForm.hidden;
+    });
+  }
+
+  if (collectionNewConfirm) {
+    collectionNewConfirm.addEventListener("click", function () {
+      var title = collectionNewTitle.value.trim();
+      if (!title || !collectionCurrentGalleryId) return;
+      collectionNewConfirm.disabled = true;
+      fetch("/favoris/collections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title,
+          description: collectionNewDesc.value.trim(),
+          tags: collectionNewTags.value.trim(),
+          galleryId: collectionCurrentGalleryId,
+        }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        collectionNewConfirm.disabled = false;
+        if (!d.ok) return;
+        collectionNewTitle.value = "";
+        collectionNewDesc.value = "";
+        collectionNewTags.value = "";
+        if (collectionNewForm) collectionNewForm.hidden = true;
+        fetch("/favoris/collections/for-image/" + collectionCurrentGalleryId)
+          .then(function (r) { return r.json(); })
+          .then(function (d2) { if (d2.ok) renderCollectionList(d2.collections); });
+      }).catch(function () { collectionNewConfirm.disabled = false; });
+    });
+  }
+
+  if (collectionClose) collectionClose.addEventListener("click", function () { collectionModal.hidden = true; });
+  if (collectionModal) {
+    collectionModal.addEventListener("click", function (e) { if (e.target === collectionModal) collectionModal.hidden = true; });
   }
 
   // Masquer en lightbox : retire l'image des listings pour ce seul profil

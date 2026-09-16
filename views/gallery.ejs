@@ -314,6 +314,7 @@
         </div>
         <button type="button" class="gallery-lb-fav-btn" id="gallery-lb-fav-btn" title="Favori">&#10084;</button>
         <button type="button" class="gallery-card-btn gallery-lb-hide-btn" id="gallery-lb-hide-btn" title="Masquer (voir Profil &gt; Contenus masqu&eacute;s)">&#128065;</button>
+        <button type="button" class="gallery-card-btn gallery-lb-collection-btn" id="gallery-lb-collection-btn" title="Ajouter &agrave; une collection">&#128193;</button>
       </div>
       <%# Mode couple : révélé seulement une fois que le visiteur a lui-même
           noté (voir gallery.js:syncPartnerReveal). %>
@@ -327,6 +328,24 @@
     </div>
   </aside>
 
+</div>
+
+<%# ─── Popup "Ajouter à une collection" (voir public/gallery.js) ───────── %>
+<div class="filter-profile-modal-overlay" id="collection-picker-modal" hidden>
+  <div class="filter-profile-modal collection-modal">
+    <p class="filter-profile-modal-title">Ajouter &agrave; une collection</p>
+    <div class="collection-picker-list" id="collection-picker-list"></div>
+    <button type="button" class="link-button" id="collection-picker-new-toggle">+ Nouvelle collection</button>
+    <div class="collection-picker-new-form" id="collection-picker-new-form" hidden>
+      <input type="text" class="filter-profile-modal-input" id="collection-picker-new-title" placeholder="Titre de la nouvelle collection&hellip;" maxlength="80" autocomplete="off" />
+      <textarea class="collection-modal-textarea" id="collection-picker-new-desc" placeholder="Description (optionnelle)&hellip;" rows="2"></textarea>
+      <input type="text" class="filter-profile-modal-input" id="collection-picker-new-tags" placeholder="Tags, s&eacute;par&eacute;s par des virgules (optionnel)&hellip;" maxlength="200" autocomplete="off" />
+      <button type="button" class="filter-profile-modal-confirm" id="collection-picker-new-confirm">Cr&eacute;er et ajouter</button>
+    </div>
+    <div class="filter-profile-modal-actions">
+      <button type="button" class="filter-profile-modal-cancel" id="collection-picker-close">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <script>window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>

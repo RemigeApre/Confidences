@@ -21,6 +21,15 @@ const {
   resetUserContent,
   deleteUser,
   listUsers,
+  listCollections,
+  getCollection,
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  getCollectionImages,
+  addToCollection,
+  removeFromCollection,
+  listCollectionsForImagePopup,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -38,6 +47,10 @@ const WIKI_CATEGORIES = [
 ];
 
 const VALID_TYPES = ["wiki", "gallery", "bd"];
+
+function parseCollectionTags(raw) {
+  return String(raw || "").split(/[,;]+/).map((t) => t.trim()).filter(Boolean);
+}
 const SEXE_VALUES = ["", "femme", "homme", "autre"];
 
 function parseBirthYear(raw) {
@@ -370,6 +383,69 @@ function buildFavoritesRouter(config) {
       addFavorite(req.user.id, itemType, itemId);
     }
     res.json({ ok: true, active: !already });
+  });
+
+  // ── Collections personnelles (Galerie, images uniquement) — strictement
+  // privées (voir listCollections/getCollection). Le bouton "Ajouter à une
+  // collection" vit dans la lightbox galerie (voir public/gallery.js), ces
+  // routes sont son backend + la sous-page "Mes collections" du profil.
+  router.get("/collections", requireUser, (req, res) => {
+    const collections = listCollections(req.user.id);
+    res.render("profil-collections", { config, collections, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+  });
+
+  router.get("/collections/for-image/:galleryId", requireUserJson, (req, res) => {
+    const galleryId = Number(req.params.galleryId);
+    if (!Number.isInteger(galleryId)) return res.status(400).json({ ok: false });
+    res.json({ ok: true, collections: listCollectionsForImagePopup(req.user.id, galleryId) });
+  });
+
+  router.get("/collections/:id", requireUser, (req, res) => {
+    const id = Number(req.params.id);
+    const collection = Number.isInteger(id) ? getCollection(id) : null;
+    if (!collection || collection.userId !== req.user.id) return res.redirect("/favoris/collections");
+    const items = getCollectionImages(id);
+    res.render("profil-collection-detail", { config, collection, items, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+  });
+
+  router.post("/collections", requireUserJson, (req, res) => {
+    const title = String(req.body.title || "").trim();
+    if (!title) return res.status(400).json({ ok: false, error: "Titre requis." });
+    const description = String(req.body.description || "").trim();
+    const tags = parseCollectionTags(req.body.tags);
+    const id = createCollection(req.user.id, { title, description, tags });
+    const galleryId = Number(req.body.galleryId);
+    if (Number.isInteger(galleryId) && galleryId > 0) addToCollection(id, galleryId);
+    res.json({ ok: true, id });
+  });
+
+  router.post("/collections/:id/items", requireUserJson, (req, res) => {
+    const id = Number(req.params.id);
+    const collection = Number.isInteger(id) ? getCollection(id) : null;
+    if (!collection || collection.userId !== req.user.id) return res.status(403).json({ ok: false });
+    const galleryId = Number(req.body.galleryId);
+    if (!Number.isInteger(galleryId)) return res.status(400).json({ ok: false });
+    if (req.body.action === "remove") removeFromCollection(id, galleryId);
+    else addToCollection(id, galleryId);
+    res.json({ ok: true });
+  });
+
+  router.post("/collections/:id", requireUser, (req, res) => {
+    const id = Number(req.params.id);
+    const collection = Number.isInteger(id) ? getCollection(id) : null;
+    if (!collection || collection.userId !== req.user.id) return res.redirect("/favoris/collections");
+    const title = String(req.body.title || "").trim() || collection.title;
+    const description = String(req.body.description || "").trim();
+    const tags = parseCollectionTags(req.body.tags);
+    updateCollection(id, { title, description, tags });
+    res.redirect("/favoris/collections/" + id);
+  });
+
+  router.post("/collections/:id/delete", requireUser, (req, res) => {
+    const id = Number(req.params.id);
+    const collection = Number.isInteger(id) ? getCollection(id) : null;
+    if (collection && collection.userId === req.user.id) deleteCollection(id);
+    res.redirect("/favoris/collections");
   });
 
   return router;

@@ -33,6 +33,9 @@ const {
   listActivitySessions,
   setCouplePartners,
   clearCouplePartner,
+  listCollections,
+  getCollection,
+  getCollectionImages,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -346,6 +349,27 @@ function buildAdminRouter(config) {
     if (!detail) return res.redirect("/admin#tab-utilisateurs");
     const items = mergeUserReactions(listWikiPages(), id, "wiki").filter((p) => p.readLater);
     res.render("admin-user-lire-plus-tard", { config, detail, items, roleHue: roleHue(detail.user) });
+  });
+
+  // ── Collections (Galerie) d'un profil, réservé à l'admin — lecture seule,
+  // même donnée que /favoris/collections côté profil lui-même (voir
+  // listCollections/getCollection/getCollectionImages dans src/db.js).
+  router.get("/utilisateur/:id/collections", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    const collections = listCollections(id);
+    res.render("admin-user-collections", { config, detail, collections, roleHue: roleHue(detail.user) });
+  });
+
+  router.get("/utilisateur/:id/collections/:cid", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const cid = Number(req.params.cid);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    const collection = Number.isInteger(cid) ? getCollection(cid) : null;
+    if (!detail || !collection || collection.userId !== id) return res.redirect("/admin/utilisateur/" + id + "/collections");
+    const items = getCollectionImages(cid);
+    res.render("admin-user-collection-detail", { config, detail, collection, items, roleHue: roleHue(detail.user) });
   });
 
   router.get("/:id", requireAdmin, (req, res) => {

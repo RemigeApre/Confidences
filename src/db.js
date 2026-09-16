@@ -773,6 +773,138 @@ function getSeriesMapForIds(galleryIds) {
   return map;
 }
 
+// ── Collections personnelles (Galerie, images uniquement) ───────────────────
+// Regroupement privé d'images choisies par un profil, strictement visible de
+// lui/elle et de l'admin (jamais des autres profils, même en mode couple —
+// pas demandé). Les images elles-mêmes restent visibles normalement partout
+// dans la galerie : une collection n'est qu'un rangement en plus, pas un
+// masquage. Foreign keys SQLite non activées dans ce projet (pas de PRAGMA
+// foreign_keys), donc le nettoyage de collection_items à la suppression
+// d'une image ou d'un compte se fait à la main (voir deleteGalleryImage,
+// deleteUser).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS collections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS collection_items (
+    collection_id INTEGER NOT NULL,
+    gallery_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (collection_id, gallery_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_collections_user ON collections (user_id);
+  CREATE INDEX IF NOT EXISTS idx_collection_items_gallery ON collection_items (gallery_id);
+`);
+
+function rowToCollection(row) {
+  let tags = [];
+  try { tags = JSON.parse(row.tags || "[]"); } catch (_) {}
+  return {
+    id: row.id,
+    userId: row.user_id,
+    title: row.title,
+    description: row.description || "",
+    tags,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+// Résout la couverture (première image ajoutée la plus récente) et le
+// nombre d'images de chaque collection en une passe, pour la grille "Mes
+// collections" — évite une requête par carte.
+function listCollections(userId) {
+  const rows = db.prepare("SELECT * FROM collections WHERE user_id = ? ORDER BY updated_at DESC").all(userId);
+  return rows.map((row) => {
+    const c = rowToCollection(row);
+    const countRow = db.prepare(
+      `SELECT COUNT(*) AS n FROM collection_items ci
+       JOIN gallery_images gi ON gi.id = ci.gallery_id
+       WHERE ci.collection_id = ?`
+    ).get(c.id);
+    c.itemCount = countRow ? countRow.n : 0;
+    const coverRow = db.prepare(
+      `SELECT gi.image_paths, gi.filename FROM collection_items ci
+       JOIN gallery_images gi ON gi.id = ci.gallery_id
+       WHERE ci.collection_id = ? ORDER BY ci.created_at DESC LIMIT 1`
+    ).get(c.id);
+    if (coverRow) {
+      let paths = [];
+      try { paths = JSON.parse(coverRow.image_paths || "[]"); } catch (_) {}
+      c.coverImg = paths[0] || coverRow.filename || null;
+    } else {
+      c.coverImg = null;
+    }
+    return c;
+  });
+}
+
+function getCollection(id) {
+  const row = db.prepare("SELECT * FROM collections WHERE id = ?").get(id);
+  return row ? rowToCollection(row) : null;
+}
+
+function createCollection(userId, { title, description, tags }) {
+  const now = new Date().toISOString();
+  const info = db.prepare(
+    "INSERT INTO collections (user_id, title, description, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+  ).run(userId, String(title || "").trim(), String(description || "").trim(), JSON.stringify(tags || []), now, now);
+  return info.lastInsertRowid;
+}
+
+function updateCollection(id, { title, description, tags }) {
+  db.prepare(
+    "UPDATE collections SET title = ?, description = ?, tags = ?, updated_at = ? WHERE id = ?"
+  ).run(String(title || "").trim(), String(description || "").trim(), JSON.stringify(tags || []), new Date().toISOString(), id);
+}
+
+function deleteCollection(id) {
+  db.prepare("DELETE FROM collection_items WHERE collection_id = ?").run(id);
+  db.prepare("DELETE FROM collections WHERE id = ?").run(id);
+}
+
+function getCollectionImages(collectionId) {
+  const rows = db.prepare(
+    `SELECT gi.* FROM collection_items ci
+     JOIN gallery_images gi ON gi.id = ci.gallery_id
+     WHERE ci.collection_id = ?
+     ORDER BY ci.created_at DESC`
+  ).all(collectionId);
+  return rows.map(rowToGalleryImage);
+}
+
+function addToCollection(collectionId, galleryId) {
+  db.prepare(
+    "INSERT OR IGNORE INTO collection_items (collection_id, gallery_id, created_at) VALUES (?, ?, ?)"
+  ).run(collectionId, galleryId, new Date().toISOString());
+  db.prepare("UPDATE collections SET updated_at = ? WHERE id = ?").run(new Date().toISOString(), collectionId);
+}
+
+function removeFromCollection(collectionId, galleryId) {
+  db.prepare("DELETE FROM collection_items WHERE collection_id = ? AND gallery_id = ?").run(collectionId, galleryId);
+}
+
+// Pour la popup "Ajouter à une collection" : les collections de l'utilisateur
+// avec un booléen "contains" pour l'image en cours de consultation.
+function listCollectionsForImagePopup(userId, galleryId) {
+  return db.prepare(
+    `SELECT c.id, c.title,
+       EXISTS(SELECT 1 FROM collection_items ci WHERE ci.collection_id = c.id AND ci.gallery_id = ?) AS contains_img
+     FROM collections c WHERE c.user_id = ? ORDER BY c.updated_at DESC`
+  ).all(galleryId, userId).map((r) => ({ id: r.id, title: r.title, contains: !!r.contains_img }));
+}
+
+function deleteUserCollections(userId) {
+  const ids = db.prepare("SELECT id FROM collections WHERE user_id = ?").all(userId).map((r) => r.id);
+  ids.forEach((id) => deleteCollection(id));
+}
+
 // nouveau modele "un profil = ses propres reactions" (table
 // content_reactions) : les vieilles colonnes partagees ne sont plus lues
 // (voir rowToWikiPage/rowToGalleryImage), donc deja neutres. Ici on vide en
@@ -1441,6 +1573,10 @@ function reactGalleryImage(id, userId, { rating, flame, interested, hidden }) {
 }
 
 function deleteGalleryImage(id) {
+  // Foreign keys SQLite non activées (pas de PRAGMA foreign_keys) : nettoyage
+  // manuel des tables qui référencent une image par id, sinon lignes orphelines.
+  db.prepare("DELETE FROM collection_items WHERE gallery_id = ?").run(id);
+  db.prepare("DELETE FROM image_series_members WHERE gallery_id = ?").run(id);
   db.prepare("DELETE FROM gallery_images WHERE id = ?").run(id);
 }
 
@@ -1493,6 +1629,7 @@ function createStandaloneTag(tag) {
 // pour ne pas laisser le/la partenaire avec un partner_id fantôme.
 function deleteUser(id) {
   clearCouplePartner(id);
+  deleteUserCollections(id);
   db.prepare("DELETE FROM favorites WHERE user_id = ?").run(id);
   db.prepare("DELETE FROM content_reactions WHERE user_id = ?").run(id);
   db.prepare("DELETE FROM wiki_page_user_notes WHERE user_id = ?").run(id);
@@ -1757,4 +1894,14 @@ module.exports = {
   removeFromSeries,
   reorderSeries,
   getSeriesMapForIds,
+  listCollections,
+  getCollection,
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  getCollectionImages,
+  addToCollection,
+  removeFromCollection,
+  listCollectionsForImagePopup,
+  deleteUserCollections,
 };

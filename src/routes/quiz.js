@@ -121,10 +121,12 @@ function buildQuizRouter(config) {
   const router = express.Router();
 
   router.get("/", (req, res) => {
-    if (!req.user) return res.redirect("/wiki");
     // Bouton "Quizz" de l'accueil : reprend là où le profil s'était arrêté
-    // plutôt que de toujours renvoyer à la première section.
-    const attempt = getAttempt(tokenForUser(req.user));
+    // plutôt que de toujours renvoyer à la première section. Pas de profil
+    // (visiteur non connecté) : accueil quand même affichée (elle expose le
+    // système du site), simplement sans historique de quizz à reprendre —
+    // le bouton "Quizz" mènera à la connexion, comme partout ailleurs.
+    const attempt = req.user ? getAttempt(tokenForUser(req.user)) : null;
     const quizIdx = attempt
       ? Math.min(Math.max(attempt.nextSection, 0), config.sections.length - 1)
       : 0;

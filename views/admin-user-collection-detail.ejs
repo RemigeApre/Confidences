@@ -1,0 +1,42 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : ' + collection.title, extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin/utilisateur/<%= detail.user.id %>/collections" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= config.title %></span>
+</div>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <div class="aud-section-header">
+      <h2 class="aud-section-title"><%= collection.title %> (<%= items.length %>)</h2>
+    </div>
+    <% if (collection.description) { %><p class="admin-muted collection-detail-desc"><%= collection.description %></p><% } %>
+    <% if (collection.tags && collection.tags.length) { %>
+      <div class="collection-card-tags collection-detail-tags">
+        <% collection.tags.forEach(function (t) { %><span class="collection-card-tag"><%= t %></span><% }) %>
+      </div>
+    <% } %>
+
+    <div class="aud-card-grid">
+      <% if (!items.length) { %>
+        <p class="admin-muted">Aucune image dans cette collection.</p>
+      <% } %>
+      <% items.forEach(function(img) { %>
+        <%- include('partials/admin-content-card', {
+          href: '/galerie/' + img.id + '/edit',
+          coverImg: img.imagePaths && img.imagePaths[0],
+          title: img.title || 'Sans titre',
+          viewCount: undefined,
+          rating: 0,
+          flame: false,
+          placeholderIcon: '&#128247;',
+        }) %>
+      <% }) %>
+    </div>
+
+  </main>
+</div>
+<%- include('partials/foot') %>

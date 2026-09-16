@@ -48,26 +48,4 @@
   </section>
 </main>
 
-<% if (currentUser) { %>
-<div id="quiz-warning-popup" class="quiz-warning-overlay" hidden>
-  <div class="quiz-warning-box">
-    <p class="quiz-warning-text">Le quizz n&apos;a pas &eacute;t&eacute; retravaill&eacute;. Actuellement seuls le codex et la galerie l&apos;ont &eacute;t&eacute;. Vous &ecirc;tes alors sur un espace du site ancien et non &agrave; jour.</p>
-    <button type="button" id="quiz-warning-ok" class="quiz-warning-btn">OK</button>
-  </div>
-</div>
-<script>
-(function() {
-  if (!sessionStorage.getItem("quiz-warning-seen")) {
-    var popup = document.getElementById("quiz-warning-popup");
-    if (popup) popup.hidden = false;
-    var btn = document.getElementById("quiz-warning-ok");
-    if (btn) btn.addEventListener("click", function() {
-      popup.hidden = true;
-      sessionStorage.setItem("quiz-warning-seen", "1");
-    });
-  }
-})();
-</script>
-<% } %>
-
 <%- include('partials/foot') %>

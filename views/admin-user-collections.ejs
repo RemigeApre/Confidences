@@ -1,0 +1,43 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Collections', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= config.title %></span>
+</div>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <div class="aud-section-header">
+      <h2 class="aud-section-title">Collections (<%= collections.length %>)</h2>
+    </div>
+
+    <div class="collection-grid">
+      <% if (!collections.length) { %>
+        <p class="admin-muted">Aucune collection pour l&rsquo;instant.</p>
+      <% } %>
+      <% collections.forEach(function (c) { %>
+        <a href="/admin/utilisateur/<%= detail.user.id %>/collections/<%= c.id %>" class="collection-card">
+          <% if (c.coverImg) { %>
+            <img src="<%= thumbUrl(c.coverImg) %>" alt="" class="collection-card-img" loading="lazy" />
+          <% } else { %>
+            <div class="collection-card-placeholder">&#128193;</div>
+          <% } %>
+          <div class="collection-card-body">
+            <p class="collection-card-title"><%= c.title %></p>
+            <span class="collection-card-count"><%= c.itemCount %> image<%= c.itemCount > 1 ? 's' : '' %></span>
+            <% if (c.tags && c.tags.length) { %>
+              <div class="collection-card-tags">
+                <% c.tags.slice(0, 4).forEach(function (t) { %><span class="collection-card-tag"><%= t %></span><% }) %>
+              </div>
+            <% } %>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+
+  </main>
+</div>
+<%- include('partials/foot') %>

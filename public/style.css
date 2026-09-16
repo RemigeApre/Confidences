@@ -506,13 +506,16 @@ body.nav-drawer-locked {
 
 .gate-form {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1.1rem;
   width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
 }
 
 .gate-form input {
-  flex: 1;
+  width: 100%;
   border: none;
   border-bottom: 2px solid var(--border);
   background: transparent;
@@ -543,6 +546,7 @@ body.nav-drawer-locked {
   border-radius: 999px;
   font-size: 1.2rem;
   padding: 0;
+  margin-top: 0.3rem;
 }
 
 .gate-error {
@@ -11582,6 +11586,158 @@ body.wiki-todo-open { overflow: hidden; }
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+/* ─── Collections personnelles (Galerie, images) ──────────────────────── */
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.1rem;
+  margin-top: 1rem;
+}
+.collection-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+}
+.collection-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+.collection-card-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--surface2);
+}
+.collection-card-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  background: var(--surface2);
+  color: var(--muted);
+}
+.collection-card-body {
+  padding: 0.6rem 0.7rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.collection-card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collection-card-count {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.collection-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+.collection-card-tag {
+  font-size: 0.68rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: var(--muted);
+}
+
+/* Popup création/édition : champs empilés, réutilise les classes de
+   filter-profile-modal (overlay/titre/actions) avec un peu plus de largeur. */
+.collection-modal { max-width: 400px; display: flex; flex-direction: column; gap: 0.6rem; }
+.collection-modal .filter-profile-modal-title { margin-bottom: 0; }
+.collection-modal-textarea {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+}
+.collection-modal-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* Page détail d'une collection */
+.collection-detail-header { margin-bottom: 1.2rem; }
+.collection-detail-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.collection-detail-title { margin: 0; font-size: 1.4rem; text-align: center; }
+.collection-detail-actions { display: flex; gap: 0.7rem; font-size: 0.8rem; }
+.collection-delete-link:hover { color: #e53; }
+.collection-detail-desc {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.5rem auto 0;
+  max-width: 520px;
+}
+.collection-detail-tags { justify-content: center; margin-top: 0.6rem; }
+
+/* Popup "Ajouter à une collection" (lightbox galerie) : liste des
+   collections existantes avec coche togglable + repli "nouvelle collection". */
+.collection-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.collection-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+.collection-picker-row:hover { border-color: var(--accent); }
+.collection-picker-row.active {
+  border-color: var(--accent);
+  background: rgba(124, 58, 237, 0.12);
+  font-weight: 600;
+}
+.collection-picker-check {
+  width: 1.1rem;
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-weight: 700;
+}
+.collection-picker-new-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
 }
 
 /* ─── BD : réactions dans la topbar ─────────────────────────── */
