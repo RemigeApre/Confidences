@@ -221,6 +221,9 @@ try { db.exec("ALTER TABLE content_reactions ADD COLUMN read_later INTEGER NOT N
 // "Masquer" (Codex/Images/BD, voir /favoris/masques) : contenu retiré des
 // listings pour ce seul profil, jamais supprimé ni masqué pour les autres.
 try { db.exec("ALTER TABLE content_reactions ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+// "Déjà pratiqué" (Codex, voir le carré de 4 boutons sur wiki-detail.ejs) :
+// même table que les autres réactions personnelles, par profil.
+try { db.exec("ALTER TABLE content_reactions ADD COLUMN practiced INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_views (
@@ -506,14 +509,14 @@ function countFavorites() {
   return db.prepare("SELECT COUNT(*) AS c FROM favorites").get().c;
 }
 
-const REACTION_DEFAULT = { rating: 0, flame: false, interested: false, readLater: false, hidden: false };
+const REACTION_DEFAULT = { rating: 0, flame: false, interested: false, readLater: false, hidden: false, practiced: false };
 
 function getUserReaction(userId, itemType, itemId) {
   if (!userId) return { ...REACTION_DEFAULT };
   const row = db.prepare(
-    "SELECT rating, flame, interested, read_later, hidden FROM content_reactions WHERE user_id = ? AND item_type = ? AND item_id = ?"
+    "SELECT rating, flame, interested, read_later, hidden, practiced FROM content_reactions WHERE user_id = ? AND item_type = ? AND item_id = ?"
   ).get(userId, itemType, itemId);
-  return row ? { rating: row.rating, flame: !!row.flame, interested: !!row.interested, readLater: !!row.read_later, hidden: !!row.hidden } : { ...REACTION_DEFAULT };
+  return row ? { rating: row.rating, flame: !!row.flame, interested: !!row.interested, readLater: !!row.read_later, hidden: !!row.hidden, practiced: !!row.practiced } : { ...REACTION_DEFAULT };
 }
 
 // Statistiques agregees des reactions d'un utilisateur (tous types confondus).
@@ -547,9 +550,9 @@ function countUserNotes(userId, itemType) {
 function getUserReactionsMap(userId, itemType) {
   const map = {};
   if (!userId) return map;
-  db.prepare("SELECT item_id, rating, flame, interested, read_later, hidden FROM content_reactions WHERE user_id = ? AND item_type = ?")
+  db.prepare("SELECT item_id, rating, flame, interested, read_later, hidden, practiced FROM content_reactions WHERE user_id = ? AND item_type = ?")
     .all(userId, itemType)
-    .forEach((r) => { map[r.item_id] = { rating: r.rating, flame: !!r.flame, interested: !!r.interested, readLater: !!r.read_later, hidden: !!r.hidden }; });
+    .forEach((r) => { map[r.item_id] = { rating: r.rating, flame: !!r.flame, interested: !!r.interested, readLater: !!r.read_later, hidden: !!r.hidden, practiced: !!r.practiced }; });
   return map;
 }
 
@@ -585,19 +588,20 @@ function mergePartnerReaction(items, partnerId, itemType) {
   return items;
 }
 
-function setUserReaction(userId, itemType, itemId, { rating, flame, interested, readLater, hidden }) {
+function setUserReaction(userId, itemType, itemId, { rating, flame, interested, readLater, hidden, practiced }) {
   const current = getUserReaction(userId, itemType, itemId);
   const r = rating !== undefined ? Math.max(0, Math.min(5, Number(rating) || 0)) : current.rating;
   const f = flame !== undefined ? !!flame : current.flame;
   const it = interested !== undefined ? !!interested : current.interested;
   const rl = readLater !== undefined ? !!readLater : current.readLater;
   const h = hidden !== undefined ? !!hidden : current.hidden;
+  const pr = practiced !== undefined ? !!practiced : current.practiced;
   db.prepare(
-    `INSERT INTO content_reactions (user_id, item_type, item_id, rating, flame, interested, read_later, hidden, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO content_reactions (user_id, item_type, item_id, rating, flame, interested, read_later, hidden, practiced, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id, item_type, item_id) DO UPDATE SET
-       rating = excluded.rating, flame = excluded.flame, interested = excluded.interested, read_later = excluded.read_later, hidden = excluded.hidden, updated_at = excluded.updated_at`
-  ).run(userId, itemType, itemId, r, f ? 1 : 0, it ? 1 : 0, rl ? 1 : 0, h ? 1 : 0, new Date().toISOString());
+       rating = excluded.rating, flame = excluded.flame, interested = excluded.interested, read_later = excluded.read_later, hidden = excluded.hidden, practiced = excluded.practiced, updated_at = excluded.updated_at`
+  ).run(userId, itemType, itemId, r, f ? 1 : 0, it ? 1 : 0, rl ? 1 : 0, h ? 1 : 0, pr ? 1 : 0, new Date().toISOString());
 }
 
 function getUserNote(pageId, userId) {
@@ -1005,8 +1009,8 @@ function updateWikiPage(id, { title, category, content, tags, imagePaths, owned,
   return true;
 }
 
-function reactWikiPage(id, userId, { rating, flame, interested, readLater, hidden }) {
-  setUserReaction(userId, "wiki", id, { rating, flame, interested, readLater, hidden });
+function reactWikiPage(id, userId, { rating, flame, interested, readLater, hidden, practiced }) {
+  setUserReaction(userId, "wiki", id, { rating, flame, interested, readLater, hidden, practiced });
 }
 
 function deleteWikiPage(id) {

@@ -3725,6 +3725,12 @@ input[type="text"], input[type="password"] {
   color: #d0d0d0;
 }
 
+.wiki-react-practiced.active {
+  background: #0f3320;
+  border-color: #20a060;
+  color: #6ee0a0;
+}
+
 /* ── Indicateurs sur les cartes ─────────────── */
 .wiki-card-badges {
   display: flex;
@@ -9429,7 +9435,12 @@ body.wiki-todo-open { overflow: hidden; }
 .bd-partner-reveal { margin-top: 0; white-space: nowrap; }
 
 /* ── Réactions côte à côte ──────────────────────────── */
-.wiki-right-reactions { display: flex; gap: 0.5rem; }
+.wiki-right-reactions { display: flex; flex-direction: column; gap: 0.5rem; }
+.wiki-react-square {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
 .wiki-right-reactions .wiki-react-btn {
   flex: 1; justify-content: center;
   font-size: 0.78rem; padding: 0.38rem 0.4rem;
@@ -9440,6 +9451,10 @@ body.wiki-todo-open { overflow: hidden; }
 }
 .wiki-right-reactions .wiki-react-btn:hover {
   background: rgba(255,255,255,0.18);
+}
+.wiki-react-standalone {
+  font-size: 0.72rem;
+  opacity: 0.8;
 }
 .wiki-right-reactions .wiki-react-flame.active {
   background: rgba(240,100,30,0.35);
@@ -9463,6 +9478,12 @@ body.wiki-todo-open { overflow: hidden; }
   background: rgba(150,150,150,0.3);
   border-color: #a0a0a0;
   color: #e0e0e0;
+  font-weight: 600;
+}
+.wiki-right-reactions .wiki-react-practiced.active {
+  background: rgba(30,160,90,0.3);
+  border-color: #20a060;
+  color: #6ee0a0;
   font-weight: 600;
 }
 

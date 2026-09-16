@@ -696,19 +696,21 @@
     var reactFlame    = reactWidget ? reactWidget.dataset.flame === "1" : false;
     var reactInterest = reactWidget ? reactWidget.dataset.interested === "1" : false;
     var reactReadLater = reactWidget ? reactWidget.dataset.readlater === "1" : false;
+    var reactPracticed = reactWidget ? reactWidget.dataset.practiced === "1" : false;
     var reactHidden    = reactWidget ? reactWidget.dataset.hidden === "1" : false;
 
     var starBtns = (ratingWidget || reactWidget).querySelectorAll(".wiki-star");
     var flamBtn  = reactWidget ? reactWidget.querySelector("[data-key='flame']") : null;
     var intrBtn  = reactWidget ? reactWidget.querySelector("[data-key='interested']") : null;
     var rlBtn    = reactWidget ? reactWidget.querySelector("[data-key='readlater']") : null;
+    var pracBtn  = reactWidget ? reactWidget.querySelector("[data-key='practiced']") : null;
     var hideBtn  = reactWidget ? reactWidget.querySelector("[data-key='hidden']") : null;
 
     function save() {
       fetch("/wiki/" + reactId + "/react", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: reactRating, flame: reactFlame, interested: reactInterest, readLater: reactReadLater, hidden: reactHidden }),
+        body: JSON.stringify({ rating: reactRating, flame: reactFlame, interested: reactInterest, readLater: reactReadLater, practiced: reactPracticed, hidden: reactHidden }),
       });
     }
 
@@ -768,6 +770,15 @@
       rlBtn.addEventListener("click", function () {
         reactReadLater = !reactReadLater;
         rlBtn.classList.toggle("active", reactReadLater);
+        save();
+      });
+    }
+
+    // Déjà pratiqué
+    if (pracBtn) {
+      pracBtn.addEventListener("click", function () {
+        reactPracticed = !reactPracticed;
+        pracBtn.classList.toggle("active", reactPracticed);
         save();
       });
     }
