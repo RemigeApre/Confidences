@@ -1896,6 +1896,51 @@ input[type="text"], input[type="password"] {
 .filter-profile-modal-confirm:hover { background: #4a3fb8; }
 .filter-profile-modal-confirm:disabled { opacity: 0.6; cursor: default; }
 
+/* ── Popup "Extraire mes goûts" (Codex) : mêmes classes de base que la
+   popup profils de recherche (overlay/titre/actions), élargie pour le
+   formulaire cases + radios. ── */
+.export-gouts-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 1rem;
+}
+.export-gouts-modal {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  padding: 1.1rem;
+}
+.export-gouts-section { margin-top: 0.9rem; }
+.export-gouts-section:first-of-type { margin-top: 0; }
+.export-gouts-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.export-gouts-check,
+.export-gouts-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0;
+  font-size: 0.85rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.export-gouts-radios { display: flex; flex-direction: column; }
+
 /* ── Popup avertissement quizz ──────────────────────────────── */
 .quiz-warning-overlay {
   position: fixed;

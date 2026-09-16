@@ -553,6 +553,79 @@ function buildWikiRouter(config) {
     res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, ...CTX });
   });
 
+  // ── Extraction "Mes goûts" : synthèse .txt des pages notées par le
+  // visiteur, groupées par degré d'appréciation (J'adore d'abord, puis 5
+  // étoiles, 4, 3, 2, 1, puis "Ça m'intéresse" si le seuil choisi va jusque
+  // là). Chaque page n'apparaît que dans son degré le plus haut ; le seuil
+  // "min" fixe jusqu'où descendre, Ultra/Irréaliste s'excluent au choix. ──
+  const GOUTS_ORDER = ["adore", "5", "4", "3", "2", "1", "interesse"];
+  const GOUTS_LABELS = {
+    adore: "J'adore",
+    "5": "Note 5/5",
+    "4": "Note 4/5",
+    "3": "Note 3/5",
+    "2": "Note 2/5",
+    "1": "Note 1/5",
+    interesse: "Ça m'intéresse",
+  };
+  const GOUTS_MIN_INDEX = { flame: 0, "5": 1, "4": 2, "3": 3, "2": 4, "1": 5, all: 6 };
+
+  router.get("/export-gouts", requireUser, (req, res) => {
+    const includeUltra = req.query.ultra !== "0";
+    const includeIrrealiste = req.query.irrealiste !== "0";
+    const minKey = Object.prototype.hasOwnProperty.call(GOUTS_MIN_INDEX, req.query.min) ? req.query.min : "all";
+    const maxIndex = GOUTS_MIN_INDEX[minKey];
+
+    const pages = mergeUserReactions(listWikiPages(), req.user.id, "wiki");
+    const buckets = {};
+    GOUTS_ORDER.forEach((k) => { buckets[k] = []; });
+
+    pages.forEach((p) => {
+      const isUltraTag = p.tags.indexOf("ultra") !== -1;
+      const isIrrealisteTag = p.tags.indexOf("irréaliste") !== -1 || p.tags.indexOf("fantaisie") !== -1;
+      if (!includeUltra && isUltraTag) return;
+      if (!includeIrrealiste && isIrrealisteTag) return;
+
+      let bucket = null;
+      if (p.flame) bucket = "adore";
+      else if (p.rating >= 5) bucket = "5";
+      else if (p.rating >= 4) bucket = "4";
+      else if (p.rating >= 3) bucket = "3";
+      else if (p.rating >= 2) bucket = "2";
+      else if (p.rating >= 1) bucket = "1";
+      else if (p.interested) bucket = "interesse";
+      if (!bucket || GOUTS_ORDER.indexOf(bucket) > maxIndex) return;
+
+      buckets[bucket].push(p);
+    });
+
+    const catLabelOf = (key) => {
+      const c = CATEGORIES.find((cat) => cat.key === key);
+      return c ? c.label : key;
+    };
+
+    let out = "Mes goûts — " + config.title + "\n";
+    out += "Généré le " + new Date().toLocaleDateString("fr-FR") + "\n";
+    out += "=".repeat(40) + "\n";
+
+    let hasAny = false;
+    GOUTS_ORDER.forEach((key) => {
+      const items = buckets[key];
+      if (!items.length) return;
+      hasAny = true;
+      const heading = GOUTS_LABELS[key].toUpperCase() + " (" + items.length + ")";
+      out += "\n" + heading + "\n" + "-".repeat(heading.length) + "\n";
+      items
+        .sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }))
+        .forEach((p) => { out += "- " + p.title + " (" + catLabelOf(p.category) + ")\n"; });
+    });
+    if (!hasAny) out += "\nAucun contenu ne correspond à ces critères.\n";
+
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Content-Disposition", "attachment; filename=\"mes-gouts.txt\"");
+    res.send(out);
+  });
+
   router.post("/", requireAdmin, upload.any(), (req, res) => {
     const title = String(req.body.title || "").trim();
     if (!title) return res.redirect("/wiki");

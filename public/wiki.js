@@ -5009,4 +5009,40 @@
     }
   })();
 
+  // ── "Extraire mes goûts" : popup de réglages puis téléchargement d'une
+  // synthèse .txt générée côté serveur (voir GET /wiki/export-gouts).
+  (function () {
+    var btn = document.getElementById("wiki-export-gouts-btn");
+    var modal = document.getElementById("export-gouts-modal");
+    if (!btn || !modal) return;
+
+    var ultraCheck = document.getElementById("export-gouts-ultra");
+    var irrealisteCheck = document.getElementById("export-gouts-irrealiste");
+    var confirmBtn = document.getElementById("export-gouts-confirm");
+    var cancelBtn = document.getElementById("export-gouts-cancel");
+
+    function openModal() { modal.hidden = false; }
+    function closeModal() { modal.hidden = true; }
+
+    btn.addEventListener("click", openModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", function () {
+        var min = "all";
+        modal.querySelectorAll('input[name="export-gouts-min"]').forEach(function (r) {
+          if (r.checked) min = r.value;
+        });
+        var params = new URLSearchParams({
+          ultra: ultraCheck && ultraCheck.checked ? "1" : "0",
+          irrealiste: irrealisteCheck && irrealisteCheck.checked ? "1" : "0",
+          min: min
+        });
+        window.location.href = "/wiki/export-gouts?" + params.toString();
+        closeModal();
+      });
+    }
+  })();
+
 })();
