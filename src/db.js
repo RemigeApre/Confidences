@@ -1482,12 +1482,36 @@ function createStandaloneTag(tag) {
   return true;
 }
 
+// Supprime définitivement un compte et tout ce qui lui appartient — utilisé
+// par l'admin (profil tiers, voir routes/admin.js) et en self-service par
+// le profil lui-même (voir /favoris/parametres > "Supprimer le compte").
+// Casse d'abord une éventuelle liaison mode couple (voir setCouplePartners)
+// pour ne pas laisser le/la partenaire avec un partner_id fantôme.
 function deleteUser(id) {
+  clearCouplePartner(id);
   db.prepare("DELETE FROM favorites WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM content_reactions WHERE user_id = ?").run(id);
   db.prepare("DELETE FROM wiki_page_user_notes WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM tag_blacklist WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM filter_profiles WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM activity_pings WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM connection_logs WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM wiki_page_views WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM gallery_views WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM bd_views WHERE user_id = ?").run(id);
   db.prepare("UPDATE submissions SET user_id = NULL WHERE user_id = ?").run(id);
   db.prepare("DELETE FROM attempts WHERE token = ?").run("user:" + id);
   db.prepare("DELETE FROM users WHERE id = ?").run(id);
+}
+
+// Réinitialise le contenu personnel d'un profil (notes/étoiles/j'adore/
+// intéressé/à lire plus tard/masqué, commentaires texte, favoris) sans
+// toucher au compte lui-même (identité, mot de passe, réglages) — voir
+// /favoris/parametres > "Réinitialiser le compte".
+function resetUserContent(userId) {
+  db.prepare("DELETE FROM content_reactions WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM wiki_page_user_notes WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM favorites WHERE user_id = ?").run(userId);
 }
 
 function getUserFavoritesWithDetails(userId) {
@@ -1694,6 +1718,7 @@ module.exports = {
   createStandaloneTag,
   renameTagEverywhere,
   deleteUser,
+  resetUserContent,
   getUserFavoritesWithDetails,
   logConnection,
   listConnectionLogs,

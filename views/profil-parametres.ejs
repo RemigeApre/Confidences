@@ -6,6 +6,9 @@
 
   <div class="profil-subpage">
 
+    <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
+    <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
+
     <div class="profil-setting-heading">
       <span>Ultra</span>
       <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Ultra rassemblent les pratiques et fantasmes les plus extrêmes du codex." aria-label="Qu'est-ce qu'un contenu Ultra ?">!</span>
@@ -90,6 +93,20 @@
       <input type="checkbox" id="share-notes-checkbox" <%= currentUser.shareNotesWithAdmin ? 'checked' : '' %> />
     </label>
 
+    <div class="profil-setting-heading">
+      <span>Zone dangereuse</span>
+    </div>
+    <div class="profil-danger-zone">
+      <form method="POST" action="/favoris/parametres/reinitialiser" id="reset-account-form" class="profil-danger-row">
+        <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser le compte</button>
+        <p class="profil-danger-hint">Supprime vos notes, &eacute;toiles, j&rsquo;adore/int&eacute;ress&eacute;, &laquo;&nbsp;&agrave; lire plus tard&nbsp;&raquo;, contenus masqu&eacute;s, commentaires et favoris. Votre identit&eacute; et votre mot de passe restent inchang&eacute;s.</p>
+      </form>
+      <form method="POST" action="/favoris/parametres/supprimer" id="delete-account-form" class="profil-danger-row">
+        <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">Supprimer le compte</button>
+        <p class="profil-danger-hint">Supprime d&eacute;finitivement le compte et tout son contenu. Action irr&eacute;versible.</p>
+      </form>
+    </div>
+
   </div>
 
 </main>
@@ -163,6 +180,28 @@
 
   wireLocalRadio("tag-logic-options", "wiki-tag-logic", "and");
   wireLocalRadio("tag-click-options", "tag-click-mode", "popup");
+
+  // ── Zone dangereuse : double confirmation avant envoi, actions irréversibles ──
+  var resetForm = document.getElementById("reset-account-form");
+  if (resetForm) {
+    resetForm.addEventListener("submit", function (e) {
+      if (!window.confirm("Réinitialiser le compte ? Vos notes, étoiles, j'adore/intéressé, contenus masqués, commentaires et favoris seront définitivement supprimés.")) {
+        e.preventDefault();
+      }
+    });
+  }
+  var deleteForm = document.getElementById("delete-account-form");
+  if (deleteForm) {
+    deleteForm.addEventListener("submit", function (e) {
+      if (!window.confirm("Supprimer définitivement ce compte ? Cette action est irréversible.")) {
+        e.preventDefault();
+        return;
+      }
+      if (!window.confirm("Dernière confirmation : le compte et tout son contenu seront perdus pour toujours. Continuer ?")) {
+        e.preventDefault();
+      }
+    });
+  }
 })();
 </script>
 

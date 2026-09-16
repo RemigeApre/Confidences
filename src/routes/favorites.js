@@ -18,6 +18,9 @@ const {
   getUserCredentials,
   countUserNotes,
   getUserDetail,
+  resetUserContent,
+  deleteUser,
+  listUsers,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -178,7 +181,9 @@ function buildFavoritesRouter(config) {
   });
 
   router.get("/parametres", requireUser, (req, res) => {
-    res.render("profil-parametres", { config, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+    const notice = req.query.reset ? "Contenu réinitialisé : notes, commentaires et favoris supprimés." : null;
+    const error = req.query.err ? decodeURIComponent(req.query.err) : null;
+    res.render("profil-parametres", { config, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user), notice, error });
   });
 
   router.get("/identite", requireUser, (req, res) => {
@@ -228,6 +233,29 @@ function buildFavoritesRouter(config) {
     const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention } = req.body;
     updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention });
     res.json({ ok: true });
+  });
+
+  // ── Réinitialiser le compte : vide le contenu personnel (notes/étoiles/
+  // j'adore/intéressé/à lire plus tard/masqué, commentaires, favoris) sans
+  // toucher à l'identité ni au mot de passe. Voir resetUserContent. ──
+  router.post("/parametres/reinitialiser", requireUser, (req, res) => {
+    resetUserContent(req.user.id);
+    res.redirect("/favoris/parametres?reset=1");
+  });
+
+  // ── Supprimer le compte : self-service, voir deleteUser (aussi utilisé
+  // par l'admin sur un profil tiers). Bloqué si c'est le dernier compte
+  // admin, pour ne jamais se retrouver sans accès à /admin. ──
+  router.post("/parametres/supprimer", requireUser, (req, res) => {
+    if (req.user.isAdmin) {
+      const adminCount = listUsers().filter((u) => u.isAdmin).length;
+      if (adminCount <= 1) {
+        return res.redirect("/favoris/parametres?err=" + encodeURIComponent("Vous êtes le seul compte admin : suppression impossible."));
+      }
+    }
+    const userId = req.user.id;
+    deleteUser(userId);
+    req.session.destroy(() => res.redirect("/"));
   });
 
   router.post("/identite", requireUser, (req, res) => {
