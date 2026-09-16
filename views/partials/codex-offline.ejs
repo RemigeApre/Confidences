@@ -1,0 +1,36 @@
+<%# Codex hors-ligne : service worker + bandeau discret (voir
+    public/codex-sw.js). Inclus UNIQUEMENT sur les pages Codex
+    (wiki-index.ejs, wiki.ejs, wiki-detail.ejs) — jamais sur Galerie, Quizz,
+    Liens ou BD, qui ne doivent jamais être préchargés. %>
+<div id="codex-offline-banner" class="codex-offline-banner" hidden>Hors ligne &middot; version enregistr&eacute;e</div>
+<script>
+(function () {
+  if (!("serviceWorker" in navigator)) return;
+
+  var banner = document.getElementById("codex-offline-banner");
+  function showBanner(show) { if (banner) banner.hidden = !show; }
+
+  // Vide le cache si le profil connecté a changé depuis la dernière visite
+  // (déconnexion, changement de compte sur ce navigateur) : on ne montre
+  // jamais à quelqu'un d'autre une page enregistrée pendant qu'un autre
+  // profil était connecté.
+  var currentMarker = String(window.CURRENT_USER_ID || "guest");
+  var lastMarker = null;
+  try { lastMarker = localStorage.getItem("codex-cache-user"); } catch (_) {}
+
+  navigator.serviceWorker.register("/codex-sw.js", { scope: "/wiki" }).then(function () {
+    if (lastMarker !== null && lastMarker !== currentMarker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: "codex-clear-cache" });
+    }
+    try { localStorage.setItem("codex-cache-user", currentMarker); } catch (_) {}
+  }).catch(function () {});
+
+  navigator.serviceWorker.addEventListener("message", function (event) {
+    if (event.data && event.data.type === "codex-sw-status") showBanner(!event.data.ok);
+  });
+
+  window.addEventListener("offline", function () { showBanner(true); });
+  window.addEventListener("online", function () { showBanner(false); });
+  if (!navigator.onLine) showBanner(true);
+})();
+</script>

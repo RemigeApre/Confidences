@@ -71,6 +71,12 @@
     window.IRREALISTE_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.irrealisteMode : "visible") %>;
     window.IS_ADMIN = <%= (locals.currentUser && locals.currentUser.isAdmin) ? 'true' : 'false' %>;
     window.IS_LOGGED_IN = <%= locals.currentUser ? 'true' : 'false' %>;
+    // Identifie le profil connecté (ou "guest") pour le cache hors-ligne du
+    // Codex (voir partials/codex-offline.ejs) : le cache est vidé si ce
+    // marqueur change d'une visite à l'autre (déconnexion, autre profil sur
+    // ce même navigateur) pour ne jamais montrer une page enregistrée
+    // pendant qu'un autre profil était connecté.
+    window.CURRENT_USER_ID = <%- JSON.stringify(locals.currentUser ? locals.currentUser.id : null) %>;
     // Tags masqués (voir /tags/masques et le bouton "Masquer le tag" de la
     // popup tag) : liste utilisee par wiki.js/gallery.js/bd.js et les pages
     // de notes du profil pour masquer partout le contenu concerné.

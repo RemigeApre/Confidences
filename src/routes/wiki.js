@@ -644,6 +644,7 @@ function buildWikiRouter(config) {
     const blacklist = new Set(listBlacklistedTags(req.user.id).map((r) => r.tag));
     const candidates = listUnexploredWikiPages(req.user.id).filter((p) => {
       if (excludeIds.has(p.id)) return false;
+      if (isOffForUser(p.tags, req.user)) return false; // exclusion "off" : plus forte que la simple bascule, jamais proposée
       if (p.tags.some((t) => blacklist.has(String(t).toLowerCase()))) return false;
       const special = specialTagOf(p.tags);
       if (special === "ultra" && hideUltra) return false;

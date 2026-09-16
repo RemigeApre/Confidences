@@ -617,7 +617,7 @@
     <% if (currentUser) { %>
       <div class="wiki-user-note" data-page-id="<%= page.id %>">
         <h3 class="wiki-pos-section-heading wiki-user-note-heading">Mes notes</h3>
-        <textarea class="wiki-user-note-area" placeholder="Tes notes personnelles sur cette page…" rows="4"><%= locals.userNote || '' %></textarea>
+        <textarea class="wiki-user-note-area" placeholder="Vos notes personnelles sur cette page…" rows="4"><%= locals.userNote || '' %></textarea>
         <p class="wiki-user-note-status" aria-live="polite"></p>
       </div>
     <% } %>
@@ -660,4 +660,5 @@
 })();
 </script>
 <script src="/wiki.js?v=<%= assetVersion %>"></script>
+<%- include('partials/codex-offline') %>
 <%- include('partials/foot') %>

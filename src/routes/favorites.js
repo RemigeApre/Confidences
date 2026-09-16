@@ -17,6 +17,7 @@ const {
   updateUserPassword,
   getUserCredentials,
   countUserNotes,
+  getUserDetail,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -153,6 +154,20 @@ function buildFavoritesRouter(config) {
   router.get("/journal", requireUser, (req, res) => {
     if (!req.user.isAdmin) return res.redirect("/favoris/identite");
     renderJournal(res, req);
+  });
+
+  // ── Historique de consultation (Codex/Images/BD confondus) ──────────────
+  // Réutilise getUserDetail (déjà utilisé côté admin pour la même chose sur
+  // un profil tiers) : ici appliqué à req.user lui-même, en libre accès à
+  // tout profil, pas seulement l'admin.
+  router.get("/historique", requireUser, (req, res) => {
+    const detail = getUserDetail(req.user.id);
+    const feed = [];
+    detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki", title: v.title, id: v.pageId, at: v.createdAt }));
+    detail.recentGalViews.forEach((v) => feed.push({ type: "gallery", title: v.title, id: v.galleryId, at: v.createdAt }));
+    detail.recentBdViews.forEach((v) => feed.push({ type: "bd", title: v.title, id: v.bookId, at: v.createdAt }));
+    feed.sort((a, b) => new Date(b.at) - new Date(a.at));
+    res.render("profil-historique", { config, feed, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {

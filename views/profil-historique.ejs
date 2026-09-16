@@ -1,0 +1,34 @@
+<%- include('partials/head', { title: 'Profil : Historique' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+
+    <%
+      var TYPE_LABEL = { wiki: 'Codex', gallery: 'Images', bd: 'BD' };
+      var TYPE_HREF  = { wiki: '/wiki/', gallery: '/galerie', bd: '/bd/' };
+    %>
+
+    <% if (feed.length) { %>
+      <ul class="profil-history-list">
+        <% feed.forEach(function (f) { %>
+          <li class="profil-history-row">
+            <span class="profil-history-type"><%= TYPE_LABEL[f.type] %></span>
+            <a href="<%= TYPE_HREF[f.type] %><%= f.type === 'gallery' ? '' : f.id %>" class="profil-history-title"><%= f.title || ('#' + f.id) %></a>
+            <span class="profil-history-date"><%= new Date(f.at).toLocaleString('fr-FR') %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <div class="profil-empty">
+        <div class="profil-empty-icon">&#10024;</div>
+        <p>Vous retrouverez ici les pages, images et BD que vous avez consult&eacute;es r&eacute;cemment.</p>
+      </div>
+    <% } %>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

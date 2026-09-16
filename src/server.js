@@ -124,6 +124,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Le service worker (mode hors-ligne du Codex, voir public/codex-sw.js) ne
+// doit jamais être mis en cache longtemps par le navigateur, sinon ses
+// futures mises à jour ne seraient jamais prises en compte — contrairement
+// au reste de /public (1 an, immuable, invalidé via ?v=assetVersion).
+// Route dédiée déclarée avant le static générique pour l'emporter sur lui.
+app.get("/codex-sw.js", (req, res) => {
+  res.set("Cache-Control", "no-cache");
+  res.sendFile(path.join(__dirname, "..", "public", "codex-sw.js"));
+});
+
 app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", immutable: true }));
 
 // Le contenu est personnel : jamais d'indexation, meme sur les pages

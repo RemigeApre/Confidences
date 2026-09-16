@@ -214,6 +214,12 @@ db.exec(`
     created_at TEXT NOT NULL
   )
 `);
+// Tables de logs "append-only" (une ligne par vue/connexion, jamais purgées) :
+// grossissent en continu, donc indexées dès le départ plutôt que d'attendre
+// qu'un scan complet devienne perceptible. Utilisées par les JOIN/GROUP BY
+// des KPI admin (src/db.js ~ligne 1000+) et par les compteurs par page.
+db.exec(`CREATE INDEX IF NOT EXISTS idx_wiki_page_views_page ON wiki_page_views (page_id)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_wiki_page_views_user ON wiki_page_views (user_id)`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS gallery_views (
@@ -223,6 +229,8 @@ db.exec(`
     created_at TEXT NOT NULL
   )
 `);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_gallery_views_gallery ON gallery_views (gallery_id)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_gallery_views_user ON gallery_views (user_id)`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS bd_views (
@@ -232,6 +240,7 @@ db.exec(`
     created_at TEXT NOT NULL
   )
 `);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_bd_views_book ON bd_views (book_id)`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS connection_logs (
@@ -242,6 +251,7 @@ db.exec(`
     created_at TEXT NOT NULL
   )
 `);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_connection_logs_user ON connection_logs (user_id)`);
 
 // Pings de présence discrets (voir recordActivityPing) : contrairement à
 // connection_logs (uniquement à la saisie du mot de passe), permet de savoir

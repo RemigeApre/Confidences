@@ -35,7 +35,7 @@ const {
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
-const { filterOff, specialTagOf } = require("../specialContent");
+const { filterOff, specialTagOf, isOffForUser } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -463,6 +463,7 @@ function buildGalleryRouter(config) {
     const blacklist = new Set(listBlacklistedTags(req.user.id).map((r) => r.tag));
     const candidates = listUnexploredGalleryImages(req.user.id).filter((img) => {
       if (excludeIds.has(img.id)) return false;
+      if (isOffForUser(img.tags, req.user)) return false; // exclusion "off" : plus forte que la simple bascule, jamais proposée
       if (img.tags.some((t) => blacklist.has(String(t).toLowerCase()))) return false;
       const special = specialTagOf(img.tags);
       if (special === "ultra" && hideUltra) return false;
