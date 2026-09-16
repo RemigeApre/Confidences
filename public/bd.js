@@ -441,6 +441,23 @@
       });
     });
 
+    // Flèches haut/bas : équivalent du glisser-déposer au tap, seule façon
+    // de réordonner sur téléphone (pas de drag HTML5 au toucher).
+    sortGrid.addEventListener("click", function(e) {
+      var btn = e.target.closest(".bd-sort-move-btn");
+      if (!btn) return;
+      var item = btn.closest(".bd-sort-item");
+      if (!item) return;
+      if (btn.classList.contains("bd-sort-move-up")) {
+        var prevItem = item.previousElementSibling;
+        if (prevItem) sortGrid.insertBefore(item, prevItem);
+      } else {
+        var nextItem = item.nextElementSibling;
+        if (nextItem) sortGrid.insertBefore(nextItem, item);
+      }
+      syncOrder();
+    });
+
     syncOrder();
   }
 

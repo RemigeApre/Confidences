@@ -172,7 +172,7 @@ function syncPageGalleryImages(pageId, title, imagePaths, meta, oldTitleTag) {
         updateGalleryImage(g.id, {
           title: g.title, category: g.category, tags: updatedTags, notes: g.notes,
           imagePaths: g.imagePaths, wikiPageId: g.wikiPageId, author: g.author,
-          parody: g.parody, contentType: g.contentType,
+          parody: g.parody,
         });
       }
       return;
@@ -193,7 +193,7 @@ function syncPageGalleryImages(pageId, title, imagePaths, meta, oldTitleTag) {
         updateGalleryImage(existing.id, {
           title, category: existing.category, tags: updatedTags, notes: existing.notes,
           imagePaths: existing.imagePaths, wikiPageId: pageId, author: existing.author,
-          parody: existing.parody, contentType: existing.contentType,
+          parody: existing.parody,
         });
       }
       return;

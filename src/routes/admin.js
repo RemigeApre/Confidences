@@ -303,11 +303,8 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
     if (!detail) return res.redirect("/admin#tab-utilisateurs");
-    // BD est traité par sa propre page (listBdBooks) : on exclut ici les
-    // entrées galerie marquées "bd" pour ne pas les compter deux fois.
-    const onlyImages = () => listGalleryImages().filter((img) => img.contentType !== "bd");
-    const items = ratedOrFavorited(id, "gallery", onlyImages);
-    const topViews = withViewCounts(detail.galViewCounts, "galleryId", id, "gallery", onlyImages);
+    const items = ratedOrFavorited(id, "gallery", listGalleryImages);
+    const topViews = withViewCounts(detail.galViewCounts, "galleryId", id, "gallery", listGalleryImages);
     res.render("admin-user-images", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
   });
 

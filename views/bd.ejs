@@ -2,8 +2,11 @@
 <main class="container wide gallery-has-sidebar">
   <%- include('partials/top-nav', { config: config, navTitle: 'BD', navBack: '/' }) %>
 
+  <%- include('partials/mobile-filter-toggle') %>
+
   <%# ── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar gallery-sidebar">
+  <aside class="wiki-cat-sidebar gallery-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
     <div class="wiki-chapter-hero" style="--ch-hue: 28">
       <div class="wiki-chapter-hero-top">
         <span></span>
@@ -102,10 +105,12 @@
   <% } %>
 </main>
 
-<%# ── Données BD pour le modal (JSON embarqué) ── %>
+<%# ── Données BD pour le modal (JSON embarqué) : vignettes, jamais les
+    originaux pleine résolution (aperçu seulement, la lecture réelle passe
+    par /bd/:id qui charge les pages en qualité complète). ── %>
 <script type="application/json" id="bd-data-json"><%- JSON.stringify(books.map(function(b) {
   return { id: b.id, title: b.title, description: b.description, tags: b.tags,
-           imagePaths: b.imagePaths.slice(0, 11), totalPages: b.imagePaths.length,
+           imagePaths: b.imagePaths.slice(0, 11).map(function(p){ return thumbUrl(p); }), totalPages: b.imagePaths.length,
            flame: b.flame, interested: b.interested, rating: b.rating };
 })) %></script>
 

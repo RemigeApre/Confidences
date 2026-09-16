@@ -26,15 +26,6 @@
       <summary class="wiki-sidebar-filter-summary">Filtres</summary>
       <div class="wiki-sidebar-filters">
 
-        <%# Filtre type %>
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label">Type</span>
-          <div class="links-filter" id="notes-ctype-filter">
-            <button type="button" class="tag-chip" data-ctype="image">Images</button>
-            <button type="button" class="tag-chip" data-ctype="bd">BD</button>
-          </div>
-        </div>
-
         <%# Note minimale %>
         <div class="wiki-filter-section">
           <div class="wiki-filter-label-row">
@@ -77,11 +68,9 @@
   </div>
   <div class="gallery-grid" id="notes-grid"<%= items.length ? '' : ' hidden' %>>
     <% items.forEach(function(item) { %>
-      <% var ctype = item.contentType || (item.type === 'bd' ? 'bd' : 'image'); %>
       <div class="gallery-card"
         data-item
         data-tags="<%= (item.tags || []).join(',').toLowerCase() %>"
-        data-ctype="<%= ctype %>"
         data-title="<%= (item.title || '').toLowerCase().replace(/"/g, '') %>"
         data-rating="<%= item.rating || 0 %>">
 
@@ -93,10 +82,6 @@
           <a href="/galerie/<%= item.id %>/edit">
             <img src="<%= thumbUrl(item.filename) %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
           </a>
-        <% } %>
-
-        <% if (ctype === 'bd' && item.title) { %>
-          <div class="gallery-bd-title"><%= item.title %></div>
         <% } %>
 
         <div class="gallery-card-overlay">
@@ -121,7 +106,6 @@
   var emptyEl = document.getElementById('notes-empty');
   var gridEl = document.getElementById('notes-grid');
   var activeTags = [];
-  var activeCtype = '';
   var advMinRating = 0;
   var search = '';
   var hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
@@ -150,15 +134,13 @@
     items.forEach(function(el) {
       var tags = (el.dataset.tags || '').split(',').filter(Boolean);
       var title = (el.dataset.title || '');
-      var ctype = (el.dataset.ctype || '');
       var rating = Number(el.dataset.rating) || 0;
       var matchesTags = activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); });
       var matchesSearch = !search || title.includes(search);
-      var matchesCtype = !activeCtype || ctype === activeCtype;
       var matchesRating = !advMinRating || rating >= advMinRating;
       var matchesUltra = !hideUltra || tags.indexOf('ultra') === -1;
       var matchesBlacklist = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
-      if (matchesTags && matchesSearch && matchesCtype && matchesRating && matchesUltra && matchesBlacklist) { show(el); visible++; }
+      if (matchesTags && matchesSearch && matchesRating && matchesUltra && matchesBlacklist) { show(el); visible++; }
       else { hide(el); }
     });
     if (emptyEl) emptyEl.hidden = visible > 0;
@@ -208,21 +190,6 @@
     });
   }
 
-  document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var ctype = btn.dataset.ctype;
-      if (activeCtype === ctype) {
-        activeCtype = '';
-        btn.classList.remove('active');
-      } else {
-        activeCtype = ctype;
-        document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-      }
-      applyFilters();
-    });
-  });
-
   var searchInput = document.getElementById('notes-search');
   var searchDebounceTimer = null;
   if (searchInput) {
@@ -252,7 +219,6 @@
   if (resetBtn) {
     resetBtn.addEventListener('click', function() {
       activeTags = [];
-      activeCtype = '';
       advMinRating = 0;
       search = '';
       if (searchInput) searchInput.value = '';
@@ -260,7 +226,6 @@
       document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(c) {
         c.classList.remove('active'); c.dataset.state = '0'; c.hidden = false;
       });
-      document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(b) { b.classList.remove('active'); });
       syncStars();
       applyFilters();
     });

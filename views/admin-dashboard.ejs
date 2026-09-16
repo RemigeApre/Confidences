@@ -411,31 +411,6 @@
     </div>
     <% } %>
 
-    <%# ── Top BD ── %>
-    <% if (galleryKPIs.topBd.length) { %>
-    <div class="admin-kpi-top-section">
-      <div class="admin-kpi-top-header">
-        <span class="admin-kpi-top-title">BD les plus consult&eacute;es<% if (galleryKPIs.topBdFallback) { %> <span class="admin-kpi-fallback-label">(par note, suivi pas encore actif)</span><% } %></span>
-        <div class="admin-kpi-limit-toggle" id="gal-bd-limit-toggle">
-          <button class="active" data-limit="10">10</button>
-          <button data-limit="20">20</button>
-        </div>
-      </div>
-      <table class="admin-table admin-kpi-top-table" id="gal-bd-top-table">
-        <thead><tr><th>#</th><th>BD</th><th style="text-align:right">Vues</th></tr></thead>
-        <tbody>
-          <% galleryKPIs.topBd.forEach(function(img, i) { %>
-          <tr data-rank="<%= i + 1 %>"<%= i >= 10 ? ' class="admin-rank-hidden"' : '' %>>
-            <td class="admin-kpi-rank"><%= i + 1 %></td>
-            <td><a href="/galerie/<%= img.id %>/edit"><%= img.title || 'N/A' %></a></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums"><%= img.views %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-    <% } %>
-
     <%# ── Par utilisateur ── %>
     <% if (galleryKPIs.perUser.length) { %>
     <div class="admin-kpi-users">

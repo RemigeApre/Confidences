@@ -13,7 +13,6 @@
 
     <div class="gallery-grid"<%= items.length ? '' : ' hidden' %>>
       <% items.forEach(function(item) { %>
-        <% var ctype = item.contentType || (item.type === 'bd' ? 'bd' : 'image'); %>
         <div class="gallery-card">
           <% if (item.imagePaths && item.imagePaths[0]) { %>
             <a href="/galerie/<%= item.id %>/edit">
@@ -23,10 +22,6 @@
             <a href="/galerie/<%= item.id %>/edit">
               <img src="<%= thumbUrl(item.filename) %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
             </a>
-          <% } %>
-
-          <% if (ctype === 'bd' && item.title) { %>
-            <div class="gallery-bd-title"><%= item.title %></div>
           <% } %>
 
           <div class="gallery-card-overlay">

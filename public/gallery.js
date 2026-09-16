@@ -72,33 +72,25 @@
   // 2. FAB + PANEL UPLOAD
   // ══════════════════════════════════════════════════
   var fabMain     = document.getElementById("gallery-fab-main");
-  var fabMenu     = document.getElementById("gallery-fab-menu");
-  var fabImage    = document.getElementById("gallery-fab-image");
-  var fabBd       = document.getElementById("gallery-fab-bd");
   var uploadPanel = document.getElementById("gallery-upload-panel");
-  var uploadType  = document.getElementById("gallery-upload-type");
-  var uploadLabel = document.getElementById("gallery-upload-type-label");
   var cancelBtn   = document.getElementById("gallery-upload-cancel");
   var fileInput   = uploadPanel ? uploadPanel.querySelector(".gallery-file-input") : null;
   var previewZone = document.getElementById("gallery-upload-previews");
 
   function closeUpload() {
     if (uploadPanel) uploadPanel.hidden = true;
-    if (fabMenu) fabMenu.hidden = true;
     if (fabMain) fabMain.textContent = "+";
   }
 
-  function openUploadAs(type) {
-    if (uploadType) uploadType.value = type;
+  function openUpload() {
     if (uploadPanel) uploadPanel.hidden = false;
-    if (fabMenu) fabMenu.hidden = true;
     if (fabMain) fabMain.textContent = "\u00d7";
   }
 
   if (fabMain) {
     fabMain.addEventListener("click", function () {
       if (uploadPanel && !uploadPanel.hidden) { closeUpload(); return; }
-      openUploadAs("image");
+      openUpload();
     });
   }
   if (cancelBtn) cancelBtn.addEventListener("click", closeUpload);
@@ -285,15 +277,12 @@
   // ══════════════════════════════════════════════════
   var grid           = document.getElementById("gallery-grid");
   var tagFilter      = document.getElementById("gallery-tag-filter");
-  var typeFilter     = document.getElementById("gallery-type-filter");
   var categoryFilter = document.getElementById("gallery-category-filter");
   var searchInput    = document.getElementById("gallery-search");
   var searchClear    = document.getElementById("gallery-search-clear");
   var resultCount    = document.getElementById("gallery-result-count");
   var countHero      = document.getElementById("gallery-count-hero");
 
-  var typeState      = 0;   // 0=neutre, 1=inclure, 2=exclure
-  var typeValue      = "";  // "image" ou "bd"
   var tagStates      = {}; // { "tag": 0|1|2 }
   // Tags masqués (voir /favoris et le bouton "Masquer le tag" de la popup
   // tag) : toute image portant l'un de ces tags reste masquée partout, sans
@@ -339,18 +328,12 @@
     var cards = Array.from(grid.querySelectorAll(".gallery-card"));
     var q = norm(searchQ);
 
-    var typeIncludes = typeState === 1 ? [typeValue] : [];
-    var typeExcludes = typeState === 2 ? [typeValue] : [];
     var tagIncludes  = Object.keys(tagStates).filter(function(t){ return tagStates[t] === 1; });
     var tagExcludes  = Object.keys(tagStates).filter(function(t){ return tagStates[t] === 2; });
 
     filteredCards = [];
     cards.forEach(function(card) {
       var cardTags = (card.dataset.tags || "").split("|").filter(Boolean);
-
-      var okType = true;
-      if (typeIncludes.length) okType = typeIncludes.indexOf(card.dataset.type) !== -1;
-      if (typeExcludes.length) okType = okType && typeExcludes.indexOf(card.dataset.type) === -1;
 
       var okCategory = !activeCategory || card.dataset.category === activeCategory;
       var okSearch   = !q || norm(card.dataset.title).indexOf(q) !== -1 || cardTags.some(function(t){ return norm(t).indexOf(q) !== -1; });
@@ -363,7 +346,7 @@
       if (tagExcludes.length) okTag = okTag && tagExcludes.every(function(t){ return cardTags.indexOf(t) === -1; });
       var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
 
-      var passes = okType && okCategory && okSearch && okUltra && okIrrealiste && okRating && okTag && okBlacklist;
+      var passes = okCategory && okSearch && okUltra && okIrrealiste && okRating && okTag && okBlacklist;
       card.dataset.filtered = passes ? "1" : "0";
       if (passes) filteredCards.push(card);
     });
@@ -382,7 +365,7 @@
 
     var total = filteredCards.length;
     var totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
-    var hasFilter = typeState || Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating;
+    var hasFilter = Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating;
     if (countHero) countHero.textContent = hasFilter ? (total + "/" + cards.length) : cards.length;
     if (resultCount) { resultCount.hidden = !hasFilter; if (hasFilter) resultCount.textContent = total + " / " + cards.length; }
 
@@ -437,25 +420,6 @@
     cards.forEach(function(c) { grid.appendChild(c); });
   }
 
-  // Type filter — 3 états (neutre → inclure → exclure → neutre)
-  if (typeFilter) {
-    typeFilter.querySelectorAll(".tag-chip[data-type]").forEach(function(chip) {
-      chip.addEventListener("click", function() {
-        var t = chip.dataset.type || "";
-        if (typeValue !== t) {
-          typeFilter.querySelectorAll(".tag-chip").forEach(function(c){ c.dataset.state = "0"; c.classList.remove("chip-include","chip-exclude"); });
-          typeValue = t; typeState = 1;
-        } else {
-          typeState = (typeState + 1) % 3;
-          if (typeState === 0) typeValue = "";
-        }
-        chip.dataset.state = typeState;
-        chip.classList.toggle("chip-include", typeState === 1);
-        chip.classList.toggle("chip-exclude", typeState === 2);
-        applyFilters();
-      });
-    });
-  }
 
   // Category filter — toggle
   if (categoryFilter) {
@@ -615,14 +579,6 @@
       hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
       syncUltraBtn();
       syncIrrealisteBtn();
-      // Effacer type
-      typeState = 0; typeValue = "";
-      if (typeFilter) {
-        typeFilter.querySelectorAll(".tag-chip").forEach(function(c) {
-          c.dataset.state = "0";
-          c.classList.remove("chip-include","chip-exclude");
-        });
-      }
       // Effacer catégorie
       activeCategory = "";
       if (categoryFilter) {
@@ -663,7 +619,7 @@
 
     function syncSaveBtn() {
       if (!saveBtn) return;
-      var active = !!(typeState || Object.keys(tagStates).some(function (t) { return tagStates[t]; }) || activeCategory || searchQ || hideUltra || hideIrrealiste);
+      var active = !!(Object.keys(tagStates).some(function (t) { return tagStates[t]; }) || activeCategory || searchQ || hideUltra || hideIrrealiste);
       saveBtn.hidden = !active;
     }
     syncSaveBtn();
@@ -678,7 +634,6 @@
 
     function collectState() {
       return {
-        typeValue: typeValue,
         tagStates: tagStates,
         activeCategory: activeCategory,
         searchQ: searchQ,
@@ -689,17 +644,6 @@
     }
 
     function applyState(state) {
-      // Type
-      typeValue = state.typeValue || "";
-      typeState = typeValue ? 1 : 0;
-      if (typeFilter) {
-        typeFilter.querySelectorAll(".tag-chip").forEach(function (c) {
-          var active = c.dataset.type === typeValue && typeState !== 0;
-          c.dataset.state = active ? "1" : "0";
-          c.classList.toggle("chip-include", active);
-          c.classList.remove("chip-exclude");
-        });
-      }
       // Tags
       tagStates = state.tagStates || {};
       if (tagFilter) {
@@ -1099,17 +1043,10 @@
         }
         // Masquer
         if (lbHideBtn) lbHideBtn.dataset.galleryId = galleryId;
-        // Collections (images uniquement, pas les BD de la galerie)
-        if (lbCollectionBtn) {
-          var isBdItem = card.dataset.type === "bd";
-          lbCollectionBtn.hidden = isBdItem;
-          lbCollectionBtn.dataset.galleryId = galleryId;
-        }
+        // Collections
+        if (lbCollectionBtn) lbCollectionBtn.dataset.galleryId = galleryId;
         // Edit + Processed
-        if (lbEditBtn) {
-          lbEditBtn.dataset.galleryId = galleryId;
-          lbEditBtn.dataset.isBd = card.dataset.type === "bd" ? "1" : "0";
-        }
+        if (lbEditBtn) lbEditBtn.dataset.galleryId = galleryId;
         if (lbProcessBtn) {
           lbProcessBtn.dataset.galleryId = galleryId;
           lbProcessBtn.hidden = !window.GALLERY_CAN_EDIT;
@@ -1415,9 +1352,8 @@
   if (lbEditBtn) {
     lbEditBtn.addEventListener("click", function() {
       var galleryId = Number(lbEditBtn.dataset.galleryId);
-      var isBd = lbEditBtn.dataset.isBd === "1";
       var card = currentCard();
-      openQuickEdit(galleryId, isBd, card);
+      openQuickEdit(galleryId, card);
     });
   }
 
@@ -1602,10 +1538,6 @@
     quickEditPanel.innerHTML = [
       '<div class="gallery-qedit-inner">',
         '<button type="button" class="gallery-qedit-close">&times;</button>',
-        '<div class="gallery-qedit-bd-fields" hidden>',
-          '<input type="text" class="gallery-qedit-title wiki-title-input" placeholder="Titre\u2026" />',
-          '<textarea class="gallery-qedit-notes wiki-textarea" rows="2" placeholder="Notes\u2026"></textarea>',
-        '</div>',
         '<div class="gallery-lb-meta-tags gallery-qedit-tags"></div>',
         '<div class="gallery-lb-meta-tag-edit">',
           '<input type="text" class="gallery-qedit-tag-input wiki-lb-meta-tag-input" placeholder="Ajouter un tag\u2026" autocomplete="off" />',
@@ -1648,12 +1580,7 @@
         var tags = Array.from(qTagsEl.querySelectorAll(".wiki-lb-tag-chip")).map(function(c){ return c.dataset.tag; }).filter(Boolean);
         var author = quickEditPanel.querySelector(".gallery-qedit-author").value.trim();
         var parody = quickEditPanel.querySelector(".gallery-qedit-parody").value.trim();
-        var isBd = quickEditPanel.dataset.isBd === "1";
         var body = { id: quickEditCurrentId, tags: tags, author: author, parody: parody };
-        if (isBd) {
-          body.title = quickEditPanel.querySelector(".gallery-qedit-title").value.trim();
-          body.notes = quickEditPanel.querySelector(".gallery-qedit-notes").value.trim();
-        }
         fetch("/galerie/image-meta", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1681,20 +1608,13 @@
     qTagsEl.appendChild(chip);
   }
 
-  function openQuickEdit(galleryId, isBd, card) {
+  function openQuickEdit(galleryId, card) {
     buildQuickEditPanel();
     quickEditCurrentId = galleryId;
-    quickEditPanel.dataset.isBd = isBd ? "1" : "0";
     var qTagsEl = quickEditPanel.querySelector(".gallery-qedit-tags");
     qTagsEl.innerHTML = "";
     quickEditPanel.querySelector(".gallery-qedit-author").value = "";
     quickEditPanel.querySelector(".gallery-qedit-parody").value = "";
-    var bdFields = quickEditPanel.querySelector(".gallery-qedit-bd-fields");
-    bdFields.hidden = !isBd;
-    if (isBd) {
-      quickEditPanel.querySelector(".gallery-qedit-title").value = card ? (card.dataset.title || "") : "";
-      quickEditPanel.querySelector(".gallery-qedit-notes").value = "";
-    }
     var src = card ? (card.dataset.images || "").split("|")[0] : "";
     if (src) {
       fetch("/galerie/image-meta?src=" + encodeURIComponent(src))
@@ -1715,7 +1635,7 @@
       if (!btn) return;
       e.stopPropagation();
       var card = btn.closest(".gallery-card");
-      openQuickEdit(Number(btn.dataset.galleryId), btn.dataset.isBd === "1", card);
+      openQuickEdit(Number(btn.dataset.galleryId), card);
     });
   }
 

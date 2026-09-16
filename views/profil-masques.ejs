@@ -4,7 +4,7 @@
 
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
-  <% var hasAnything = wikiPages.length || galleryImages.length || bdBooks.length; %>
+  <% var hasAnything = wikiPages.length || galleryImages.length || bdBooks.length || bdPages.length; %>
 
   <div id="masques-empty" class="profil-empty"<%= hasAnything ? ' hidden' : '' %>>
     <div class="profil-empty-icon">&#128065;</div>
@@ -57,14 +57,28 @@
     </div>
   <% } %>
 
+  <% if (bdPages.length) { %>
+    <h2 class="profil-section-title" id="masques-bd-pages-title">Pages de BD masqu&eacute;es (<%= bdPages.length %>)</h2>
+    <div class="profil-fav-grid" id="masques-bd-pages-grid">
+      <% bdPages.forEach(function (p) { %>
+        <a href="/bd/<%= p.bookId %>?start=<%= p.pageIndex %>" class="profil-fav-card" data-hidden-bd-page data-book-id="<%= p.bookId %>" data-page-index="<%= p.pageIndex %>">
+          <div class="profil-fav-card-placeholder">&#128218;</div>
+          <span class="profil-fav-card-title"><%= p.bookTitle %> &mdash; page <%= p.pageIndex + 1 %></span>
+          <button type="button" class="wiki-pl-remove" title="Afficher &agrave; nouveau" aria-label="Afficher &agrave; nouveau">&#8635;</button>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+
 </main>
 <script>
 (function () {
   var emptyMsg = document.getElementById("masques-empty");
   var sections = [
-    { title: document.getElementById("masques-wiki-title"), grid: document.getElementById("masques-wiki-grid") },
-    { title: document.getElementById("masques-images-title"), grid: document.getElementById("masques-images-grid") },
-    { title: document.getElementById("masques-bd-title"), grid: document.getElementById("masques-bd-grid") },
+    { title: document.getElementById("masques-wiki-title"), grid: document.getElementById("masques-wiki-grid"), selector: "[data-hidden-item]" },
+    { title: document.getElementById("masques-images-title"), grid: document.getElementById("masques-images-grid"), selector: "[data-hidden-item]" },
+    { title: document.getElementById("masques-bd-title"), grid: document.getElementById("masques-bd-grid"), selector: "[data-hidden-item]" },
+    { title: document.getElementById("masques-bd-pages-title"), grid: document.getElementById("masques-bd-pages-grid"), selector: "[data-hidden-bd-page]" },
   ];
   var ENDPOINTS = { wiki: "/wiki/", gallery: "/galerie/", bd: "/bd/" };
 
@@ -72,13 +86,39 @@
     var total = 0;
     sections.forEach(function (s) {
       if (!s.grid) return;
-      var visible = s.grid.querySelectorAll("[data-hidden-item]").length;
+      var visible = s.grid.querySelectorAll(s.selector).length;
       if (s.title) s.title.hidden = visible === 0;
       s.grid.hidden = visible === 0;
       total += visible;
     });
     if (emptyMsg) emptyMsg.hidden = total > 0;
   }
+
+  // Pages de BD masquées individuellement : URL différente (livre + index
+  // de page) des autres types, donc géré à part plutôt que via ENDPOINTS.
+  document.querySelectorAll("[data-hidden-bd-page]").forEach(function (item) {
+    var btn = item.querySelector(".wiki-pl-remove");
+    if (!btn) return;
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      btn.disabled = true;
+      var bookId = item.dataset.bookId;
+      var pageIndex = item.dataset.pageIndex;
+      fetch("/bd/" + bookId + "/page/" + pageIndex + "/react", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden: false }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) { btn.disabled = false; return; }
+          item.remove();
+          checkEmpty();
+        })
+        .catch(function () { btn.disabled = false; });
+    });
+  });
 
   document.querySelectorAll("[data-hidden-item]").forEach(function (item) {
     var btn = item.querySelector(".profil-readlater-remove, .wiki-pl-remove");

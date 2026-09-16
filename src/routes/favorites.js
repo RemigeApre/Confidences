@@ -30,6 +30,7 @@ const {
   addToCollection,
   removeFromCollection,
   listCollectionsForImagePopup,
+  listHiddenBdPages,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -352,8 +353,9 @@ function buildFavoritesRouter(config) {
     const wikiPages = mergeUserReactions(listWikiPages(), req.user.id, "wiki").filter((p) => p.hidden);
     const galleryImages = mergeUserReactions(listGalleryImages(), req.user.id, "gallery").filter((img) => img.hidden);
     const bdBooks = mergeUserReactions(listBdBooks(), req.user.id, "bd").filter((b) => b.hidden);
+    const bdPages = listHiddenBdPages(req.user.id);
     res.render("profil-masques", {
-      config, wikiPages, galleryImages, bdBooks,
+      config, wikiPages, galleryImages, bdBooks, bdPages,
       categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user),
     });
   });

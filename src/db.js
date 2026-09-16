@@ -90,6 +90,10 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN image_paths TEXT NOT NULL D
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN author TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN content_type TEXT NOT NULL DEFAULT 'image'"); } catch(_) {}
+// La distinction "bd" dans la Galerie était une tentative abandonnée (le
+// vrai suivi BD vit dans bd_books, voir plus bas) : on referme les quelques
+// fiches restées marquées "bd" en simples images, idempotent sans garde.
+try { db.exec("UPDATE gallery_images SET content_type = 'image' WHERE content_type = 'bd'"); } catch (_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN processed INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 // Distingue une fiche créée automatiquement à partir d'une image de page
@@ -230,6 +234,36 @@ try { db.exec("ALTER TABLE content_reactions ADD COLUMN hidden INTEGER NOT NULL 
 // "Déjà pratiqué" (Codex, voir le carré de 4 boutons sur wiki-detail.ejs) :
 // même table que les autres réactions personnelles, par profil.
 try { db.exec("ALTER TABLE content_reactions ADD COLUMN practiced INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+
+// Note/j'adore/masquer BD, individuels PAR PAGE (et non plus pour le livre
+// entier, voir reactBdPage ci-dessous) : le livre garde malgré tout un
+// agrégat à jour dans content_reactions (item_type='bd') — note = max des
+// pages, j'adore = au moins une page — pour que /bd, les listes "notes" et
+// "masqués" et l'admin continuent de fonctionner sans changement.
+// Clé = chemin de l'image (page_src), jamais l'index de position : un
+// réordonnancement ou un retrait de page (formulaire admin, glisser-déposer
+// existant) décale les positions et aurait sinon mélangé les notes d'une
+// page sur l'autre — le chemin de fichier, lui, ne bouge jamais.
+try {
+  const bdPageCols = db.prepare("PRAGMA table_info(bd_page_reactions)").all();
+  if (bdPageCols.some((c) => c.name === "page_index")) {
+    // Ancien schéma (indexé par position) créé plus tôt dans cette même
+    // session, jamais exposé à un vrai profil : on repart d'une table vide.
+    db.exec("DROP TABLE bd_page_reactions");
+  }
+} catch (_) {}
+db.exec(`
+  CREATE TABLE IF NOT EXISTS bd_page_reactions (
+    user_id INTEGER NOT NULL,
+    book_id INTEGER NOT NULL,
+    page_src TEXT NOT NULL,
+    rating INTEGER NOT NULL DEFAULT 0,
+    flame INTEGER NOT NULL DEFAULT 0,
+    hidden INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, book_id, page_src)
+  )
+`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_views (
@@ -1422,29 +1456,20 @@ function getGalleryKPIs() {
   const weekViews = db.prepare(
     "SELECT COUNT(*) AS v FROM gallery_views WHERE created_at >= datetime('now', '-7 days')"
   ).get().v;
-  // Top images et BD séparés par consultation
-  const topAllRows = db.prepare(
-    `SELECT gi.id, gi.title, gi.content_type, COUNT(*) AS views
+  // Top images par consultation
+  const topImages = db.prepare(
+    `SELECT gi.id, gi.title, COUNT(*) AS views
      FROM gallery_views gv JOIN gallery_images gi ON gi.id = gv.gallery_id
-     GROUP BY gv.gallery_id ORDER BY views DESC LIMIT 60`
+     GROUP BY gv.gallery_id ORDER BY views DESC LIMIT 20`
   ).all();
-  const topImages = topAllRows.filter(function(r) { return r.content_type !== "bd"; }).slice(0, 20);
-  const topBd     = topAllRows.filter(function(r) { return r.content_type === "bd"; }).slice(0, 20);
   // Si pas encore de consultations enregistrées, fallback par somme des
   // notes (content_reactions, tous profils confondus — vue admin agrégée,
   // contrairement aux listes "mes notes" qui restent propres à chaque profil).
   const topImagesFallback = topImages.length === 0
     ? db.prepare(
-        `SELECT gi.id, gi.title, gi.content_type, SUM(cr.rating) AS views
+        `SELECT gi.id, gi.title, SUM(cr.rating) AS views
          FROM gallery_images gi JOIN content_reactions cr ON cr.item_type = 'gallery' AND cr.item_id = gi.id
-         WHERE gi.content_type != 'bd' GROUP BY gi.id HAVING SUM(cr.rating) > 0 ORDER BY views DESC LIMIT 20`
-      ).all()
-    : null;
-  const topBdFallback = topBd.length === 0
-    ? db.prepare(
-        `SELECT gi.id, gi.title, gi.content_type, SUM(cr.rating) AS views
-         FROM gallery_images gi JOIN content_reactions cr ON cr.item_type = 'gallery' AND cr.item_id = gi.id
-         WHERE gi.content_type = 'bd' GROUP BY gi.id HAVING SUM(cr.rating) > 0 ORDER BY views DESC LIMIT 20`
+         GROUP BY gi.id HAVING SUM(cr.rating) > 0 ORDER BY views DESC LIMIT 20`
       ).all()
     : null;
   // Top images par utilisateur
@@ -1473,9 +1498,7 @@ function getGalleryKPIs() {
   return {
     totalViews, monthViews, weekViews,
     topImages: topImages.length ? topImages : (topImagesFallback || []),
-    topBd:     topBd.length     ? topBd     : (topBdFallback     || []),
     topImagesFallback: !!topImagesFallback,
-    topBdFallback:     !!topBdFallback,
     perUser,
   };
 }
@@ -1532,19 +1555,19 @@ function getUserDetail(id) {
     return { pageId: r.page_id, title: r.title, viewCount: r.view_count };
   });
   const recentGalViews = db.prepare(
-    `SELECT gv.created_at, gi.id AS gallery_id, gi.title, gi.content_type
+    `SELECT gv.created_at, gi.id AS gallery_id, gi.title
      FROM gallery_views gv JOIN gallery_images gi ON gi.id = gv.gallery_id
      WHERE gv.user_id = ? ORDER BY gv.id DESC LIMIT 30`
   ).all(id).map(function(r) {
-    return { createdAt: r.created_at, galleryId: r.gallery_id, title: r.title, contentType: r.content_type };
+    return { createdAt: r.created_at, galleryId: r.gallery_id, title: r.title };
   });
   // Top gallery items by view count for this user
   const galViewCounts = db.prepare(
-    `SELECT gi.id AS gallery_id, gi.title, gi.content_type, COUNT(*) AS view_count
+    `SELECT gi.id AS gallery_id, gi.title, COUNT(*) AS view_count
      FROM gallery_views gv JOIN gallery_images gi ON gi.id = gv.gallery_id
      WHERE gv.user_id = ? GROUP BY gv.gallery_id ORDER BY view_count DESC LIMIT 20`
   ).all(id).map(function(r) {
-    return { galleryId: r.gallery_id, title: r.title, contentType: r.content_type, viewCount: r.view_count };
+    return { galleryId: r.gallery_id, title: r.title, viewCount: r.view_count };
   });
   const recentBdViews = db.prepare(
     `SELECT bv.created_at, bb.id AS book_id, bb.title
@@ -1617,17 +1640,98 @@ function insertBdBook({ title, description, tags, imagePaths, langue }) {
 }
 
 function updateBdBook(id, { title, description, tags, imagePaths, langue }) {
+  const newPaths = imagePaths || [];
+  // Une page retirée (checkbox "Supprimer cette page", voir bd-form.ejs)
+  // n'a plus lieu d'avoir une réaction en base, pour aucun profil — sinon
+  // la ligne reste orpheline indéfiniment (page_src ne pointe plus vers
+  // rien dans le livre).
+  const existing = db.prepare("SELECT image_paths FROM bd_books WHERE id = ?").get(id);
+  if (existing) {
+    let oldPaths = [];
+    try { oldPaths = JSON.parse(existing.image_paths || "[]"); } catch (_) {}
+    const newSet = new Set(newPaths);
+    oldPaths.filter((p) => !newSet.has(p)).forEach((src) => {
+      db.prepare("DELETE FROM bd_page_reactions WHERE book_id = ? AND page_src = ?").run(id, src);
+    });
+  }
   db.prepare(
     `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, updated_at = ? WHERE id = ?`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", new Date().toISOString(), id);
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", new Date().toISOString(), id);
 }
 
 function deleteBdBook(id) {
+  db.prepare("DELETE FROM bd_page_reactions WHERE book_id = ?").run(id);
   db.prepare("DELETE FROM bd_books WHERE id = ?").run(id);
 }
 
 function reactBdBook(id, userId, { rating, flame, interested, hidden }) {
   setUserReaction(userId, "bd", id, { rating, flame, interested, hidden });
+}
+
+// { pageIndex: { rating, flame, hidden } } pour un profil donné, indexé par
+// POSITION actuelle dans book.imagePaths (pratique pour le lecteur) mais
+// stocké en base par chemin d'image (page_src, stable) — voir le
+// commentaire sur la table plus haut.
+function getBdPageReactionsMap(userId, book) {
+  if (!userId || !book) return {};
+  const rows = db.prepare(
+    "SELECT page_src, rating, flame, hidden FROM bd_page_reactions WHERE user_id = ? AND book_id = ?"
+  ).all(userId, book.id);
+  const bySrc = {};
+  rows.forEach((r) => { bySrc[r.page_src] = { rating: r.rating, flame: !!r.flame, hidden: !!r.hidden }; });
+  const map = {};
+  book.imagePaths.forEach((src, i) => { if (bySrc[src]) map[i] = bySrc[src]; });
+  return map;
+}
+
+function reactBdPage(book, pageIndex, userId, { rating, flame, hidden }) {
+  const src = book.imagePaths[pageIndex];
+  if (!src) return null;
+  const current = db.prepare(
+    "SELECT rating, flame, hidden FROM bd_page_reactions WHERE user_id = ? AND book_id = ? AND page_src = ?"
+  ).get(userId, book.id, src) || { rating: 0, flame: 0, hidden: 0 };
+  const r = rating !== undefined ? Math.max(0, Math.min(5, Number(rating) || 0)) : current.rating;
+  const f = flame !== undefined ? !!flame : !!current.flame;
+  const h = hidden !== undefined ? !!hidden : !!current.hidden;
+  db.prepare(
+    `INSERT INTO bd_page_reactions (user_id, book_id, page_src, rating, flame, hidden, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, book_id, page_src) DO UPDATE SET
+       rating = excluded.rating, flame = excluded.flame, hidden = excluded.hidden, updated_at = excluded.updated_at`
+  ).run(userId, book.id, src, r, f ? 1 : 0, h ? 1 : 0, new Date().toISOString());
+
+  // Agrégat livre entier dérivé des pages (voir commentaire sur la table
+  // plus haut) : ne touche jamais "interested" ni le "hidden" livre entier,
+  // qui restent gérés indépendamment au niveau du livre. Le favori (🔖,
+  // distinct du j'adore par page) suit le même principe : le livre reste
+  // en favoris tant qu'au moins une de ses pages est aimée.
+  const agg = db.prepare(
+    "SELECT MAX(rating) AS maxRating, MAX(flame) AS anyFlame FROM bd_page_reactions WHERE user_id = ? AND book_id = ?"
+  ).get(userId, book.id);
+  setUserReaction(userId, "bd", book.id, { rating: agg.maxRating || 0, flame: !!agg.anyFlame });
+  if (agg.anyFlame) addFavorite(userId, "bd", book.id);
+  else removeFavorite(userId, "bd", book.id);
+
+  return { rating: r, flame: f, hidden: h };
+}
+
+// Pages masquées individuellement, tous livres confondus, pour /favoris/masques.
+// La page a pu être retirée du livre depuis (voir updateBdBook, qui purge
+// alors sa réaction) : indexOf renvoie -1 dans ce cas, filtré ci-dessous.
+function listHiddenBdPages(userId) {
+  if (!userId) return [];
+  const rows = db.prepare(
+    `SELECT bpr.page_src, bb.id AS book_id, bb.title, bb.image_paths
+     FROM bd_page_reactions bpr JOIN bd_books bb ON bb.id = bpr.book_id
+     WHERE bpr.user_id = ? AND bpr.hidden = 1
+     ORDER BY bpr.updated_at DESC`
+  ).all(userId);
+  return rows.map((r) => {
+    let paths = [];
+    try { paths = JSON.parse(r.image_paths || "[]"); } catch (_) {}
+    const pageIndex = paths.indexOf(r.page_src);
+    return pageIndex === -1 ? null : { bookId: r.book_id, pageIndex, bookTitle: r.title };
+  }).filter(Boolean);
 }
 
 function rowToGalleryImage(row) {
@@ -1651,7 +1755,6 @@ function rowToGalleryImage(row) {
     interested: false,
     wikiPageId: row.wiki_page_id || null,
     wikiSynced: !!row.wiki_synced,
-    contentType: row.content_type || "image",
     processed: !!row.processed,
     featured: !!row.featured,
     createdAt: row.created_at,
@@ -1664,14 +1767,13 @@ function listGalleryImages() {
 }
 
 // Pool d'images "encore à explorer" pour un profil : jamais notées ni mises
-// en favori, BD exclue (a son propre système d'exploration). Utilisé par le
-// bouton "Explorer l'inconnu" (voir routes/gallery.js) — le filtrage
-// ultra/irréaliste (specialTagOf) et blacklist se fait ensuite côté route.
+// en favori. Utilisé par le bouton "Explorer l'inconnu" (voir
+// routes/gallery.js) — le filtrage ultra/irréaliste (specialTagOf) et
+// blacklist se fait ensuite côté route.
 function listUnexploredGalleryImages(userId) {
   return db.prepare(
     `SELECT gi.id, gi.tags FROM gallery_images gi
-     WHERE gi.content_type != 'bd'
-     AND NOT EXISTS (
+     WHERE NOT EXISTS (
        SELECT 1 FROM content_reactions cr
        WHERE cr.user_id = ? AND cr.item_type = 'gallery' AND cr.item_id = gi.id AND cr.rating > 0
      )
@@ -1695,13 +1797,13 @@ function getGalleryImage(id) {
   return row ? rowToGalleryImage(row) : null;
 }
 
-function insertGalleryImage({ imagePaths, title, tags, notes, category, wikiPageId, author, parody, contentType }) {
+function insertGalleryImage({ imagePaths, title, tags, notes, category, wikiPageId, author, parody }) {
   const now = new Date().toISOString();
   const paths = imagePaths || [];
   const info = db.prepare(
-    `INSERT INTO gallery_images (filename, image_paths, title, tags, notes, category, wiki_page_id, author, parody, content_type, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(paths[0] || "", JSON.stringify(paths), title || "", JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", contentType === "bd" ? "bd" : "image", now, now);
+    `INSERT INTO gallery_images (filename, image_paths, title, tags, notes, category, wiki_page_id, author, parody, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(paths[0] || "", JSON.stringify(paths), title || "", JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", now, now);
   return info.lastInsertRowid;
 }
 
@@ -1712,8 +1814,8 @@ function setGalleryImageWikiSynced(id, synced) {
   db.prepare("UPDATE gallery_images SET wiki_synced = ? WHERE id = ?").run(synced ? 1 : 0, id);
 }
 
-function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, contentType }) {
-  const existing = db.prepare("SELECT image_paths, filename, content_type FROM gallery_images WHERE id = ?").get(id);
+function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody }) {
+  const existing = db.prepare("SELECT image_paths, filename FROM gallery_images WHERE id = ?").get(id);
   if (!existing) return false;
   // Si imagePaths n'est pas fourni, conserver les images existantes
   let finalImagePaths = imagePaths;
@@ -1721,11 +1823,10 @@ function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wiki
     finalImagePaths = JSON.parse(existing.image_paths || "[]");
     if (!finalImagePaths.length && existing.filename) finalImagePaths = [existing.filename];
   }
-  const finalContentType = contentType !== undefined ? (contentType === "bd" ? "bd" : "image") : (existing.content_type || "image");
   db.prepare(
-    `UPDATE gallery_images SET title = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, content_type = ?, updated_at = ?
+    `UPDATE gallery_images SET title = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title || "", category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", finalContentType, new Date().toISOString(), id);
+  ).run(title || "", category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", new Date().toISOString(), id);
   return true;
 }
 
@@ -1793,6 +1894,7 @@ function deleteUser(id) {
   deleteUserCollections(id);
   db.prepare("DELETE FROM favorites WHERE user_id = ?").run(id);
   db.prepare("DELETE FROM content_reactions WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM bd_page_reactions WHERE user_id = ?").run(id);
   db.prepare("DELETE FROM wiki_page_user_notes WHERE user_id = ?").run(id);
   db.prepare("DELETE FROM tag_blacklist WHERE user_id = ?").run(id);
   db.prepare("DELETE FROM filter_profiles WHERE user_id = ?").run(id);
@@ -1812,6 +1914,7 @@ function deleteUser(id) {
 // /favoris/parametres > "Réinitialiser le compte".
 function resetUserContent(userId) {
   db.prepare("DELETE FROM content_reactions WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM bd_page_reactions WHERE user_id = ?").run(userId);
   db.prepare("DELETE FROM wiki_page_user_notes WHERE user_id = ?").run(userId);
   db.prepare("DELETE FROM favorites WHERE user_id = ?").run(userId);
 }
@@ -1991,6 +2094,9 @@ module.exports = {
   updateBdBook,
   deleteBdBook,
   reactBdBook,
+  getBdPageReactionsMap,
+  reactBdPage,
+  listHiddenBdPages,
   getUserByUsername,
   getUserCredentials,
   getUserById,

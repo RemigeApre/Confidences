@@ -6116,6 +6116,48 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .bd-nav-prev { left: 0.4rem; }
 .bd-nav-next { right: 0.4rem; }
 
+/* ── BD lecteur sur mobile : encoche/caméra en haut, indicateur d'accueil
+   en bas, cibles tactiles agrandies pour la barre de la page affichée. ── */
+@media (max-width: 640px) {
+  .bd-reader-topbar {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+  .bd-reader-title { font-size: 0.82rem; }
+  .bd-reader-counter { font-size: 0.72rem; }
+
+  /* Flèches plus discrètes : sur un petit écran elles mordent vite sur la
+     case, la BD reste avant tout swipeable/tapable au doigt. */
+  .bd-nav-btn {
+    font-size: 1.7rem;
+    padding: 0.3rem 0.4rem;
+    background: rgba(0,0,0,.35);
+  }
+
+  .bd-page-actions {
+    padding: 0.7rem 0.9rem max(0.7rem, env(safe-area-inset-bottom));
+    padding-left: max(0.9rem, env(safe-area-inset-left));
+    padding-right: max(0.9rem, env(safe-area-inset-right));
+    gap: 1.1rem;
+  }
+  /* Cibles tactiles agrandies (étoiles/j'adore/masquer) — le clic souris
+     n'a pas besoin de marge, le doigt si. */
+  .bd-page-actions .bd-star {
+    font-size: 1.6rem;
+    padding: 0.3rem;
+  }
+  .bd-page-actions .bd-react-btn {
+    font-size: 1.7rem;
+    padding: 0.3rem 0.45rem;
+  }
+  .bd-page-actions .bd-partner-reveal {
+    flex-basis: 100%;
+    text-align: center;
+    order: 1;
+  }
+}
+
 /* ── BD Form ──────────────────────────────────────────────────────────── */
 .bd-form-section {
   margin: 1rem 0;
@@ -6197,6 +6239,32 @@ a.wiki-ql-label:hover .wiki-ql-text {
   font-size: 0.85rem;
   padding: 0 0.3rem;
   cursor: pointer;
+}
+
+/* Flèches haut/bas : réordonner au tap, seule option sur téléphone (pas de
+   glisser-déposer HTML5 au toucher — voir public/bd.js). */
+.bd-sort-move {
+  position: absolute;
+  bottom: 0.2rem;
+  right: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.bd-sort-move-btn {
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  width: 1.5rem;
+  cursor: pointer;
+}
+.bd-sort-move-btn:hover { background: rgba(0,0,0,.8); }
+.bd-sort-item-removed .bd-sort-move { display: none; }
+@media (max-width: 640px) {
+  .bd-sort-move-btn { width: 1.9rem; font-size: 1rem; padding: 0.15rem 0; }
 }
 
 /* ── Wiki : sommaire / chapitres ─────────────────────────────────────── */
@@ -7360,8 +7428,11 @@ a.wiki-ql-label:hover .wiki-ql-text {
   .mobile-tabbar-home:active { transform: scale(0.92); }
   .mobile-tabbar-home.active { box-shadow: 0 0 0 2px #fff, 0 3px 12px rgba(0,0,0,0.35); }
 
-  /* Réserve la place en bas pour ne jamais passer sous la barre fixe. */
-  body { padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0)); }
+  /* Réserve la place en bas pour ne jamais passer sous la barre fixe — mais
+     seulement sur les pages qui l'affichent réellement (le lecteur BD n'a
+     pas de top-nav donc pas de barre du bas, un padding ici pousserait
+     inutilement le bas de son plein écran hors champ). */
+  body:has(.mobile-tabbar) { padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0)); }
 
   /* Les boutons flottants (admin) et la barre de sélection groupée
      remontent d'autant pour ne pas passer sous la barre du bas. */
@@ -8797,43 +8868,6 @@ body.wiki-todo-open { overflow: hidden; }
   align-items: center;
   gap: 0.5rem;
 }
-
-.gallery-fab-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-items: center;
-}
-
-.gallery-fab-option {
-  background: hsl(220, 15%, 22%);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 999px;
-  padding: 0.4rem 1.1rem;
-  font-size: 0.88rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-.gallery-fab-option:hover { background: hsl(220, 15%, 30%); }
-
-/* Titre BD centré en bas de la carte */
-.gallery-bd-title {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.72));
-  color: #fff;
-  text-align: center;
-  padding: 1.8rem 0.5rem 0.5rem;
-  font-size: 0.82rem; font-weight: 600;
-  pointer-events: none;
-  line-height: 1.3;
-}
-
-/* Chips type Image / BD avec couleurs distinctes */
-.gallery-type-chip-image.active { background: hsl(140,55%,38%); border-color: hsl(140,55%,38%); color: #fff; }
-.gallery-type-chip-bd.active    { background: hsl(0,60%,48%);   border-color: hsl(0,60%,48%);   color: #fff; }
 
 /* Volet catégories réduit */
 .gallery-cat-details { margin: 0; }
@@ -12204,6 +12238,26 @@ button.profil-nav-link--danger:hover { background: rgba(220,50,50,0.15); color: 
 }
 .bd-star:hover,
 .bd-star.filled { color: hsl(42, 95%, 62%); }
+
+/* ─── BD : barre d'actions de la page affichée (note/j'adore/masquer,
+   individuels par page — contrairement au favori/intéressé du livre
+   entier, restés dans la topbar) ────────────────────────────────── */
+.bd-page-actions {
+  flex-shrink: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  padding: 0.6rem 0.9rem;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(6px);
+}
+.bd-page-actions .bd-rating-stars { gap: 0.2rem; }
+.bd-page-actions .bd-star { font-size: 1.3rem; }
+.bd-page-actions .bd-react-btn { font-size: 1.4rem; }
+.bd-page-actions .bd-partner-reveal { font-size: 0.8rem; }
 
 /* ─── BD : badges réactions sur les cartes ────────────────────── */
 .bd-card-reactions {
