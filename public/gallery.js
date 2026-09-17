@@ -847,9 +847,17 @@
     var card = currentCard();
     return card ? (card.dataset.images || "").split("|").filter(Boolean) : [];
   }
+  // Vignette devinée par simple transformation de chemin (même suffixe que
+  // src/thumbs.js), sans aucun aller-retour disque côté serveur — la
+  // génération réelle des vignettes se fait à l'upload/au démarrage
+  // (voir generateThumb/backfillThumbs), donc le pari est presque toujours
+  // gagné ; en cas de 404 (page tout juste ajoutée), lbImg.onerror bascule
+  // proprement sur l'original le temps que le fond haute résolution arrive.
+  function guessThumb(src) {
+    return src ? src.replace(/\.[a-zA-Z0-9]+$/, "-thumb.webp") : src;
+  }
   function currentThumbs() {
-    var card = currentCard();
-    return card ? (card.dataset.thumbs || "").split("|").filter(Boolean) : [];
+    return currentImages().map(guessThumb);
   }
 
   // Calcule les indices (carte, image) après un pas dir, en bouclant sur
@@ -935,6 +943,14 @@
       // dataset.targetSrc évite qu'un chargement tardif n'écrase l'image
       // affichée si l'utilisateur a déjà navigué ailleurs entre-temps.
       lbImg.dataset.targetSrc = src;
+      // La vignette devinée peut ne pas exister (page tout juste ajoutée,
+      // génération encore en cours) : on bascule alors directement sur
+      // l'original au lieu d'une icône cassée, le fond ci-dessous n'a plus
+      // qu'à confirmer la même image un peu plus tard.
+      lbImg.onerror = function () {
+        lbImg.onerror = null;
+        if (lbImg.dataset.targetSrc === src) lbImg.src = src;
+      };
       lbImg.src = thumbSrc || src;
       if (src && thumbSrc !== src) {
         var full = new Image();
