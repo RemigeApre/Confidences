@@ -239,6 +239,7 @@ function parseMeta(category, body) {
     stats_pct_hommes:   pct(body.meta_stats_pct_hommes),
     stats_pct_femmes:   pct(body.meta_stats_pct_femmes),
     stats_source:       String(body.meta_stats_source || "").slice(0, 500).trim(),
+    stats_note:         String(body.meta_stats_note   || "").slice(0, 1000).trim(),
   };
 
   let specific = {};

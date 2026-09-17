@@ -385,7 +385,7 @@
         %>
         <div class="wiki-stats-block">
           <h3 class="wiki-stats-title">Statistiques</h3>
-          <p class="wiki-stats-subtitle"><%= pm.stats_type === 'pratique' ? 'Pourcentage de personnes ayant subi ce fantasme' : 'Pourcentage de personnes ayant ce fantasme' %></p>
+          <p class="wiki-stats-subtitle"><%= pm.stats_type === 'pratique' ? 'Pourcentage de personnes ayant réalisé ce fantasme' : 'Pourcentage de personnes ayant particulièrement ce fantasme' %></p>
           <% if (!hasAny) { %>
             <p class="wiki-stats-empty">Aucune donn&eacute;e disponible pour le moment.</p>
           <% } else { %>
@@ -421,6 +421,9 @@
           <% } %>
           <% if (pm.stats_source) { %>
             <a href="<%= pm.stats_source %>" class="wiki-stats-source" target="_blank" rel="noopener noreferrer">Source</a>
+          <% } %>
+          <% if (pm.stats_note) { %>
+            <p class="wiki-stats-ctx-note"><%= pm.stats_note %></p>
           <% } %>
           <p class="wiki-stats-note">Ces &eacute;tudes ont &eacute;t&eacute; faites sur la population commune, int&eacute;grant donc la majorit&eacute; ne s&rsquo;int&eacute;ressant pas au domaine. Les chiffres des personnes int&eacute;ress&eacute;es &agrave; la sexualit&eacute; sont bien plus hauts, en g&eacute;n&eacute;ral.</p>
         </div>
