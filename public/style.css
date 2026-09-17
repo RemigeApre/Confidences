@@ -508,12 +508,34 @@ body.nav-drawer-locked {
 }
 
 .gate-page {
+  position: relative;
   min-height: 80vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
+
+/* Sans elle, la page de connexion n'a aucune issue : ni header, ni menu, ni
+   bouton retour — on y reste bloqué une fois dessus. */
+.gate-back-link {
+  position: absolute;
+  top: max(1.25rem, env(safe-area-inset-top));
+  left: max(1.25rem, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  font-size: 1.3rem;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+.gate-back-link:hover { border-color: var(--accent); color: var(--accent); }
 
 .gate-form {
   display: flex;
@@ -7558,6 +7580,68 @@ a.wiki-ql-label:hover .wiki-ql-text {
     border-radius: 8px;
   }
   #mobile-filter-sidebar .wiki-tag-chip .wtc-count { font-size: 0.75rem; }
+
+  /* Champ recherche centré (1). */
+  #mobile-filter-sidebar .wiki-search-input { text-align: center; }
+
+  /* "Filtres" ne dit rien qu'on ne voie déjà (2). */
+  #mobile-filter-sidebar .wiki-sidebar-filter-summary { display: none; }
+
+  /* Ultra / Irréaliste / Nos objets : plus gros, centrés en rangée (3). Ces
+     règles n'existaient que côté PC (@media min-width:641px), jamais
+     recopiées ici. */
+  #mobile-filter-sidebar .wiki-filter-toggles {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.55rem;
+  }
+  #mobile-filter-sidebar .wiki-ultra-btn,
+  #mobile-filter-sidebar .wiki-filter-toggles .tag-chip-owned {
+    flex: 1 1 auto;
+    text-align: center;
+    font-size: 0.95rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+  }
+
+  /* "Catégorie" / "Notation" centrés (4) — même règle que le PC, jamais
+     recopiée sur mobile. */
+  #mobile-filter-sidebar .wiki-subpanel-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+
+  /* Étoiles de la note minimale centrées et agrandies (5). */
+  #mobile-filter-sidebar .wiki-adv-stars {
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  #mobile-filter-sidebar .wiki-adv-star { font-size: 1.6rem; }
+
+  /* Champ "Chercher un tag" dans le même habillage que le champ de
+     recherche principal (6) — lui aussi n'existait que côté PC. */
+  #mobile-filter-sidebar .wiki-tag-search-input {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--fg);
+    font-weight: 400;
+    font-size: 0.9rem;
+    padding: 0.45rem 0.7rem;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  #mobile-filter-sidebar .wiki-tag-search-input::placeholder { color: var(--muted); }
+  #mobile-filter-sidebar .wiki-tag-search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
 
   .mobile-filter-close {
     display: flex;
