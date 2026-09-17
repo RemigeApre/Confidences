@@ -2642,6 +2642,39 @@ input[type="text"], input[type="password"] {
   position: relative;
   flex: 0 0 auto;
 }
+.wiki-card-stat-donut {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background:
+    conic-gradient(from -90deg, hsl(340,65%,62%) calc(var(--pct) * 1%), hsl(220,16%,14%) 0%);
+  box-shadow: 0 1px 4px rgba(0,0,0,.55);
+  z-index: 3;
+}
+.wiki-card-stat-donut::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: hsl(220,18%,11%);
+}
+.wiki-card-stat-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.56rem;
+  font-weight: 800;
+  color: hsl(340,75%,80%);
+  line-height: 1;
+  z-index: 1;
+}
+.wiki-card-stat-sym { font-size: 0.44rem; font-weight: 700; opacity: .8; }
 .wiki-card-img {
   width: 100%;
   height: 100%;

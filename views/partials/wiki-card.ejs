@@ -45,6 +45,9 @@
   // markup, pas juste l'étoile, pour ne rien laisser voir en vue source.
   var wcCanSeeOwned = !!(currentUser && (currentUser.isAdmin || currentUser.canSeeOwned));
 
+  var wcStatPctF = (page.meta && page.meta.stats_pct_femmes != null && page.meta.stats_pct_femmes !== '')
+    ? parseFloat(page.meta.stats_pct_femmes) : null;
+
   var wcExcerpt = '';
   if (!currentUser && page.content) {
     wcExcerpt = (page.content || '')
@@ -95,6 +98,11 @@
     <div class="wiki-card-image" data-images="<%= page.imagePaths.join('|') %>">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
+      <% if (wcStatPctF !== null) { %>
+        <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes">
+          <span class="wiki-card-stat-val"><%= wcStatPctF %><span class="wiki-card-stat-sym">%</span></span>
+        </div>
+      <% } %>
       <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="" class="wiki-card-img" loading="lazy" />
       <div class="wiki-card-overlay">
         <% if (wcShowBadge) { %><span class="wiki-category-badge" style="background: hsl(<%= cat ? cat.hue : 220 %>, 55%, 45%)"><%= cat ? cat.label : page.category %></span><% } %>
@@ -118,6 +126,11 @@
     <div class="wiki-card-image">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
+      <% if (wcStatPctF !== null) { %>
+        <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes">
+          <span class="wiki-card-stat-val"><%= wcStatPctF %><span class="wiki-card-stat-sym">%</span></span>
+        </div>
+      <% } %>
       <svg class="wiki-card-placeholder-svg" viewBox="0 0 160 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
         <defs>
           <radialGradient id="rg-<%= page.id %>" cx="50%" cy="50%" r="65%">
