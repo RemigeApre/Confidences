@@ -1,0 +1,49 @@
+<%# Volet de navigation "activité utilisateur" (admin uniquement — toutes les
+    routes /admin/utilisateur/:id/* sont derrière requireAdmin). Même
+    esthétique que le volet profil (partials/profil-nav.ejs) : pseudo en
+    en-tête, liens en majuscule avec icône, teinté selon roleHue. Attend :
+    detail (getUserDetail), roleHue (calculé par src/routes/admin.js). %>
+<aside class="aud-nav" style="--ch-hue: <%= roleHue %>">
+  <div class="aud-nav-header">
+    <span class="aud-nav-name">
+      <%= detail.user.displayName %>
+      <% if (detail.user.shareNotesWithAdmin) { %>
+        <span class="admin-share-badge" title="Partage ses notes et favoris avec l'admin" aria-label="Partage ses notes et favoris avec l'admin">&#128065;</span>
+      <% } %>
+    </span>
+  </div>
+  <nav class="aud-nav-links">
+    <a href="/admin/utilisateur/<%= detail.user.id %>" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id ? ' active' : '' %>">
+      <svg class="aud-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Quizz</span>
+    </a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/codex" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/codex' ? ' active' : '' %>">
+      <svg class="aud-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9a2 2 0 0 1 2 2v16l-6.5-4.2L4 21V5a2 2 0 0 1 2-2Z"/></svg>
+      <span>Codex</span>
+    </a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/a-lire-plus-tard" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/a-lire-plus-tard' ? ' active' : '' %>">
+      <svg class="aud-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
+      <span>&Agrave; lire plus tard</span>
+    </a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/images" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/images' ? ' active' : '' %>">
+      <svg class="aud-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <span>Images</span>
+    </a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/bd" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/bd' ? ' active' : '' %>">
+      <svg class="aud-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M7 21h13a2 2 0 0 0 2-2V6"/></svg>
+      <span>BD</span>
+    </a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/collections" class="aud-nav-link<%= currentPath.indexOf('/admin/utilisateur/' + detail.user.id + '/collections') === 0 ? ' active' : '' %>">
+      <svg class="aud-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+      <span>Collections</span>
+    </a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/activite" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/activite' ? ' active' : '' %>">
+      <svg class="aud-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+      <span>Activit&eacute;</span>
+    </a>
+    <a href="/admin/utilisateur/<%= detail.user.id %>/connexions" class="aud-nav-link<%= currentPath === '/admin/utilisateur/' + detail.user.id + '/connexions' ? ' active' : '' %>">
+      <svg class="aud-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M12 14v3l2 1.5"/></svg>
+      <span>Connexions</span>
+    </a>
+  </nav>
+</aside>

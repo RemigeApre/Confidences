@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, isFavorite, addFavorite, removeFavorite, logBdView } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -65,7 +65,9 @@ function buildBdRouter(config) {
   router.use(requireUser);
 
   router.get("/", (req, res) => {
-    const books = filterOff(listBdBooks(), req.user);
+    const userId = req.user ? req.user.id : null;
+    const partnerId = req.user ? req.user.partnerId : null;
+    const books = filterOff(mergePartnerReaction(excludeHidden(mergeUserReactions(listBdBooks(), userId, "bd")), partnerId, "bd"), req.user);
     const tagSet = new Set();
     books.forEach((b) => b.tags.forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
@@ -135,39 +137,59 @@ function buildBdRouter(config) {
     res.redirect(`/bd/${id}`);
   });
 
+  // "Ça m'intéresse" reste au niveau du livre entier (contrairement à la
+  // note/j'adore/masquer, individuels par page — voir POST /:id/page/:page/react).
   router.post("/:id/react", requireUserJson, express.json(), (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.json({ ok: false });
     const book = getBdBook(id);
     if (!book) return res.json({ ok: false });
+    const current = getUserReaction(req.user.id, "bd", id);
+    const interested = req.body.interested !== undefined ? !!req.body.interested : current.interested;
+    reactBdBook(id, req.user.id, { interested });
+    res.json({ ok: true, interested });
+  });
 
-    const rating = req.body.rating !== undefined ? Math.max(0, Math.min(5, Number(req.body.rating) || 0)) : book.rating;
-    const flame = req.body.flame !== undefined ? !!req.body.flame : book.flame;
-    const interested = req.body.interested !== undefined ? !!req.body.interested : book.interested;
+  // Note / j'adore / masquer d'UNE page précise du livre — voir bd-detail.ejs.
+  // Le livre entier reçoit automatiquement un agrégat (voir reactBdPage
+  // dans db.js), donc /bd, les listes "notes" et l'admin continuent de
+  // fonctionner sans changement.
+  router.post("/:id/page/:page/react", requireUserJson, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const page = Number(req.params.page);
+    if (!Number.isInteger(id) || !Number.isInteger(page) || page < 0) return res.json({ ok: false });
+    const book = getBdBook(id);
+    if (!book || page >= book.imagePaths.length) return res.json({ ok: false });
 
-    reactBdBook(id, { rating, flame, interested });
-
-    // Sync flame → favorites
-    if (req.user) {
-      if (flame) addFavorite(req.user.id, "bd", id);
-      else removeFavorite(req.user.id, "bd", id);
-    }
-
-    res.json({ ok: true, rating, flame, interested });
+    const result = reactBdPage(book, page, req.user.id, {
+      rating: req.body.rating,
+      flame: req.body.flame,
+      hidden: req.body.hidden,
+    });
+    res.json({ ok: true, page, rating: result.rating, flame: result.flame, hidden: result.hidden });
   });
 
   router.get("/:id", (req, res) => {
-    const book = getBdBook(Number(req.params.id));
+    const id = Number(req.params.id);
+    const book = getBdBook(id);
     if (!book) return res.redirect("/bd");
     if (isOffForUser(book.tags, req.user)) return res.redirect("/bd");
     logBdView(book.id, req.user ? req.user.id : null);
+    const userId = req.user ? req.user.id : null;
+    Object.assign(book, getUserReaction(userId, "bd", id));
+    mergePartnerReaction([book], req.user ? req.user.partnerId : null, "bd");
     const allBooks = listBdBooks();
     const idx = allBooks.findIndex((b) => b.id === book.id);
     const prevBook = idx < allBooks.length - 1 ? allBooks[idx + 1] : null;
     const nextBook = idx > 0 ? allBooks[idx - 1] : null;
+    const pageReactions = getBdPageReactionsMap(userId, book);
+    const partnerPageReactions = req.user && req.user.partnerId
+      ? getBdPageReactionsMap(req.user.partnerId, book)
+      : {};
     res.render("bd-detail", {
       config, book, prevBook, nextBook,
       isFavorite: isFavorite(req.user.id, "bd", book.id),
+      pageReactions, partnerPageReactions,
     });
   });
 

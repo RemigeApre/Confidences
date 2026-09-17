@@ -1,9 +1,12 @@
-<%- include('partials/head', { title: 'BD — ' + config.title }) %>
+<%- include('partials/head', { title: 'BD' }) %>
 <main class="container wide gallery-has-sidebar">
   <%- include('partials/top-nav', { config: config, navTitle: 'BD', navBack: '/' }) %>
 
+  <%- include('partials/mobile-filter-toggle') %>
+
   <%# ── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar gallery-sidebar">
+  <aside class="wiki-cat-sidebar gallery-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
     <div class="wiki-chapter-hero" style="--ch-hue: 28">
       <div class="wiki-chapter-hero-top">
         <span></span>
@@ -16,7 +19,7 @@
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
           <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="bd-search" class="wiki-search-input" placeholder="Rechercher&hellip;" autocomplete="off" />
+          <input type="search" id="bd-search" class="wiki-search-input" placeholder="Rechercher" autocomplete="off" />
           <button type="button" id="bd-search-clear" class="wiki-search-clear" hidden>&#215;</button>
         </div>
         <span id="bd-result-count" class="wiki-result-count" hidden></span>
@@ -93,6 +96,7 @@
               <% if (book.rating > 0) { %>
                 <span class="bd-card-rating"><%= book.rating %><span class="bd-card-star">&#9733;</span></span>
               <% } %>
+              <% if (book.partnerReaction) { %><span class="bd-card-react-badge" title="Votre partenaire a noté cette BD">&#127800;</span><% } %>
             </div>
           </div>
         </a>
@@ -101,10 +105,12 @@
   <% } %>
 </main>
 
-<%# ── Données BD pour le modal (JSON embarqué) ── %>
+<%# ── Données BD pour le modal (JSON embarqué) : vignettes, jamais les
+    originaux pleine résolution (aperçu seulement, la lecture réelle passe
+    par /bd/:id qui charge les pages en qualité complète). ── %>
 <script type="application/json" id="bd-data-json"><%- JSON.stringify(books.map(function(b) {
   return { id: b.id, title: b.title, description: b.description, tags: b.tags,
-           imagePaths: b.imagePaths.slice(0, 11), totalPages: b.imagePaths.length,
+           imagePaths: b.imagePaths.slice(0, 11).map(function(p){ return thumbUrl(p); }), totalPages: b.imagePaths.length,
            flame: b.flame, interested: b.interested, rating: b.rating };
 })) %></script>
 

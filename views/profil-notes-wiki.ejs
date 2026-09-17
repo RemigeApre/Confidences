@@ -1,14 +1,16 @@
-<%- include('partials/head', { title: 'Pages wiki notées — ' + config.title }) %>
-<main class="container wide gallery-has-sidebar">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Wiki noté', navBack: '/favoris' }) %>
+<%- include('partials/head', { title: 'Profil : Codex' }) %>
+<main class="container wide gallery-has-sidebar profil-notes-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Codex noté', navBack: '/favoris' }) %>
 
-  <%# ─── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar gallery-sidebar">
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <%# ─── VOLET FILTRE (à droite : la navigation du profil garde la gauche) ── %>
+  <aside class="wiki-cat-sidebar gallery-sidebar profil-notes-filter">
     <div class="wiki-chapter-hero" style="--ch-hue: 330">
       <div class="wiki-chapter-hero-top">
         <span></span>
-        <h1 class="wiki-chapter-hero-title">Pages wiki not&eacute;es</h1>
-        <span class="wiki-chapter-hero-count" id="noteswiki-count-hero"><%= pages.length %></span>
+        <h1 class="wiki-chapter-hero-title">Pages codex not&eacute;es</h1>
+        <span></span>
       </div>
     </div>
 
@@ -16,47 +18,54 @@
 
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
-          <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="noteswiki-search" class="wiki-search-input" placeholder="Rechercher&hellip;" autocomplete="off" />
+          <input type="search" id="noteswiki-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
         </div>
       </div>
 
-      <%# Filtre catégorie %>
-      <% if (categories && categories.length) { %>
-      <div class="wiki-filter-section">
-        <div class="links-filter" id="noteswiki-cat-filter">
-          <% categories.forEach(function(c) { %>
-            <button type="button" class="tag-chip" data-cat="<%= c.key %>"><%= c.label %></button>
-          <% }) %>
-        </div>
-      </div>
-      <% } %>
+      <details class="wiki-sidebar-filter-details" open>
+      <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+      <div class="wiki-sidebar-filters">
 
-      <%# Tags %>
-      <% if (allTags.length) { %>
-      <div class="wiki-filter-section">
-        <div class="wiki-tag-cloud" id="noteswiki-tag-filter">
-          <% allTags.forEach(function(t) { %>
-            <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-              <span class="wtc-label"><%= t %></span>
-            </button>
-          <% }) %>
+        <%# Filtre catégorie %>
+        <% if (categories && categories.length) { %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Cat&eacute;gorie</span>
+          <div class="links-filter" id="noteswiki-cat-filter">
+            <% categories.forEach(function(c) { %>
+              <button type="button" class="tag-chip" data-cat="<%= c.key %>"><%= c.label %></button>
+            <% }) %>
+          </div>
         </div>
-      </div>
-      <% } %>
+        <% } %>
 
-      <div class="wiki-filter-section">
-        <button type="button" id="noteswiki-reset-filters" class="wiki-filter-reset-btn">R&eacute;initialiser</button>
+        <%# Tags %>
+        <% if (allTags.length) { %>
+        <div class="wiki-filter-section">
+          <input type="search" id="noteswiki-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
+          <div class="wiki-tag-cloud" id="noteswiki-tag-filter">
+            <% allTags.forEach(function(t) { %>
+              <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
+                <span class="wtc-label"><%= t %></span>
+              </button>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
       </div>
+      </details>
+
+      <button type="button" id="noteswiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
 
     </div>
   </aside>
 
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
-  <div class="wiki-grid" id="noteswiki-grid">
-    <% if (!pages.length) { %>
-      <p class="intro">Aucune page wiki not&eacute;e pour l&apos;instant.</p>
-    <% } %>
+  <div class="profil-empty" id="noteswiki-empty"<%= pages.length ? ' hidden' : '' %>>
+    <div class="profil-empty-icon">&#10024;</div>
+    <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/wiki">Commence &agrave; explorer le codex</a>.</p>
+  </div>
+  <div class="wiki-grid" id="noteswiki-grid"<%= pages.length ? '' : ' hidden' %>>
     <% pages.forEach(function(page) { %>
       <div data-item
         data-tags="<%= (page.tags || []).join(',').toLowerCase() %>"
@@ -71,9 +80,28 @@
 <script>
 (function() {
   var items = document.querySelectorAll('[data-item]');
+  var emptyEl = document.getElementById('noteswiki-empty');
+  var gridEl = document.getElementById('noteswiki-grid');
   var activeTags = [];
   var activeCat = '';
   var search = '';
+  var hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
+  // Tags masqués (voir bouton "Masquer le tag" de la popup tag) : reste
+  // masqué même dans ses propres notes, comme partout ailleurs sur le site.
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Un tag masqué (voir /tags/masques) n'est plus un choix disponible : son
+  // chip est retiré du nuage de tags, pas seulement le contenu qui le porte.
+  function hideBlacklistedTagChips() {
+    document.querySelectorAll('#noteswiki-tag-filter .wiki-tag-chip').forEach(function(chip) {
+      if (blacklistSet.has((chip.dataset.tag || '').toLowerCase())) chip.hidden = true;
+    });
+  }
+  hideBlacklistedTagChips();
+  document.addEventListener('tag-blacklist-change', function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    hideBlacklistedTagChips();
+    applyFilters();
+  });
 
   function show(el) { el.style.display = ''; }
   function hide(el) { el.style.display = 'none'; }
@@ -87,12 +115,19 @@
       var matchesTags = activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); });
       var matchesSearch = !search || title.includes(search);
       var matchesCat = !activeCat || cat === activeCat;
-      if (matchesTags && matchesSearch && matchesCat) { show(el); visible++; }
+      var matchesUltra = !hideUltra || tags.indexOf('ultra') === -1;
+      var matchesBlacklist = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
+      if (matchesTags && matchesSearch && matchesCat && matchesUltra && matchesBlacklist) { show(el); visible++; }
       else { hide(el); }
     });
-    var counter = document.getElementById('noteswiki-count-hero');
-    if (counter) counter.textContent = visible;
+    if (emptyEl) emptyEl.hidden = visible > 0;
+    if (gridEl) gridEl.hidden = visible === 0;
   }
+
+  document.addEventListener('profil-ultra-toggle-change', function() {
+    hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
+    applyFilters();
+  });
 
   document.querySelectorAll('#noteswiki-tag-filter .wiki-tag-chip').forEach(function(chip) {
     chip.addEventListener('click', function() {
@@ -120,10 +155,27 @@
   });
 
   var searchInput = document.getElementById('noteswiki-search');
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener('input', function() {
       search = this.value.toLowerCase().trim();
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
+    });
+  }
+
+  var tagSearchInput = document.getElementById('noteswiki-tag-search');
+  var tagSearchDebounceTimer = null;
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener('input', function() {
+      clearTimeout(tagSearchDebounceTimer);
+      tagSearchDebounceTimer = setTimeout(function() {
+        var q = tagSearchInput.value.trim().toLowerCase();
+        document.querySelectorAll('#noteswiki-tag-filter .wiki-tag-chip').forEach(function(chip) {
+          var tag = (chip.dataset.tag || '').toLowerCase();
+          chip.hidden = q.length > 0 && tag.indexOf(q) === -1;
+        });
+      }, 120);
     });
   }
 
@@ -134,13 +186,16 @@
       activeCat = '';
       search = '';
       if (searchInput) searchInput.value = '';
+      if (tagSearchInput) tagSearchInput.value = '';
       document.querySelectorAll('#noteswiki-tag-filter .wiki-tag-chip').forEach(function(c) {
-        c.classList.remove('active'); c.dataset.state = '0';
+        c.classList.remove('active'); c.dataset.state = '0'; c.hidden = false;
       });
       document.querySelectorAll('#noteswiki-cat-filter .tag-chip').forEach(function(b) { b.classList.remove('active'); });
       applyFilters();
     });
   }
+
+  applyFilters();
 })();
 </script>
 <%- include('partials/foot') %>

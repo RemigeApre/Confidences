@@ -17,6 +17,9 @@ function attachUser(req, res, next) {
   const user = userId ? getUserById(userId) : null;
   req.user = user;
   res.locals.currentUser = user;
+  // Accord du libellé de la réaction "Intéressé(e)" : masculin par défaut,
+  // féminin uniquement si le profil a explicitement déclaré "femme".
+  res.locals.interestedLabel = user && user.sexe === "femme" ? "Intéressée" : "Intéressé";
   next();
 }
 

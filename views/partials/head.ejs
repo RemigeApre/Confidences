@@ -6,6 +6,19 @@
   <meta name="robots" content="noindex, nofollow, noarchive" />
   <meta name="color-scheme" content="dark" />
   <title><%= typeof title !== "undefined" ? title : "Quiz" %></title>
+  <script>
+    // Mode discret (masquer les images, voir bouton dans le header) : appliqué
+    // ici, synchrone et avant tout rendu, pour ne jamais laisser flasher une
+    // image réelle le temps que nav.js (chargé en fin de page) ne s'exécute.
+    try {
+      if (localStorage.getItem("lq-discreet") === "1") {
+        document.documentElement.classList.add("lq-discreet-mode");
+      }
+      if (localStorage.getItem("lq-consent-seen") !== "1") {
+        document.documentElement.classList.add("consent-unseen");
+      }
+    } catch (_) {}
+  </script>
   <% if (locals.preloadImage) { %>
     <%# Demarre le telechargement de l'image principale de la page des le
         <head>, sans attendre que le navigateur la decouvre en parsant le
@@ -56,7 +69,19 @@
     // wiki.js/gallery.js/bd.js pour l'etat initial des bascules Ultra/Irréaliste.
     window.ULTRA_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.ultraMode : "hidden") %>;
     window.IRREALISTE_MODE = <%- JSON.stringify(locals.currentUser ? locals.currentUser.irrealisteMode : "visible") %>;
+    window.HISTORY_RETENTION = <%- JSON.stringify(locals.currentUser ? locals.currentUser.historyRetention : "1mois") %>;
     window.IS_ADMIN = <%= (locals.currentUser && locals.currentUser.isAdmin) ? 'true' : 'false' %>;
+    window.IS_LOGGED_IN = <%= locals.currentUser ? 'true' : 'false' %>;
+    // Identifie le profil connecté (ou "guest") pour le cache hors-ligne du
+    // Codex (voir partials/codex-offline.ejs) : le cache est vidé si ce
+    // marqueur change d'une visite à l'autre (déconnexion, autre profil sur
+    // ce même navigateur) pour ne jamais montrer une page enregistrée
+    // pendant qu'un autre profil était connecté.
+    window.CURRENT_USER_ID = <%- JSON.stringify(locals.currentUser ? locals.currentUser.id : null) %>;
+    // Tags masqués (voir /tags/masques et le bouton "Masquer le tag" de la
+    // popup tag) : liste utilisee par wiki.js/gallery.js/bd.js et les pages
+    // de notes du profil pour masquer partout le contenu concerné.
+    window.TAG_BLACKLIST = <%- JSON.stringify(locals.tagBlacklist || []) %>;
     // Classification de chaque tag connu (type + page wiki associee), pour
     // colorer/rendre cliquable un badge de tag sans requete supplementaire.
     // Voir src/tagRegistry.js. Vide sur les pages qui ne le calculent pas

@@ -15,10 +15,14 @@ const buildGalleryRouter = require("./routes/gallery");
 const buildBdRouter = require("./routes/bd");
 const buildFavoritesRouter = require("./routes/favorites");
 const buildAccountRouter = require("./routes/account");
+const buildCoupleRouter = require("./routes/couple");
 const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
-  listWikiPages, listGalleryImages, listBdBooks,
+  listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
+  listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
+  listFilterProfiles, createFilterProfile, deleteFilterProfile,
+  getUserById,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -123,6 +127,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Le service worker (mode hors-ligne du Codex, voir public/codex-sw.js) ne
+// doit jamais être mis en cache longtemps par le navigateur, sinon ses
+// futures mises à jour ne seraient jamais prises en compte — contrairement
+// au reste de /public (1 an, immuable, invalidé via ?v=assetVersion).
+// Route dédiée déclarée avant le static générique pour l'emporter sur lui.
+app.get("/codex-sw.js", (req, res) => {
+  res.set("Cache-Control", "no-cache");
+  res.sendFile(path.join(__dirname, "..", "public", "codex-sw.js"));
+});
+
 app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", immutable: true }));
 
 // Le contenu est personnel : jamais d'indexation, meme sur les pages
@@ -149,6 +163,14 @@ app.use(
 );
 
 app.use(attachUser);
+
+// Ping de présence discret (throttlé, voir recordActivityPing dans db.js) :
+// contrairement à connection_logs (uniquement à la saisie du mot de passe),
+// permet de savoir quand un profil est simplement en train de naviguer.
+app.use((req, res, next) => {
+  if (req.user) recordActivityPing(req.user.id);
+  next();
+});
 
 // Expose le chemin courant pour que le lien "Se connecter" dans la nav
 // puisse y revenir après connexion (paramètre ?next=).
@@ -185,6 +207,38 @@ app.use((req, res, next) => {
   next();
 });
 
+// Blacklist personnelle de tags (voir /tags/masques) : exposee au client
+// (window.TAG_BLACKLIST, voir partials/head.ejs) pour masquer partout tout
+// contenu portant un de ces tags. Toujours calculee (pas de raccourci
+// /favoris comme tagRegistry ci-dessous) car les sous-pages notes en ont
+// aussi besoin pour filtrer leurs propres cartes.
+app.use((req, res, next) => {
+  res.locals.tagBlacklist = req.user ? listBlacklistedTags(req.user.id).map((r) => r.tag) : [];
+  next();
+});
+
+// Mode couple (lié par l'admin, voir /admin) : expose le/la partenaire pour
+// le lien dans le menu profil (voir partials/top-nav.ejs). Toujours
+// calculé (une seule lecture par PK, négligeable) plutôt que scopé à
+// certaines pages, pour que le lien apparaisse dans le header partout.
+app.use((req, res, next) => {
+  res.locals.partnerUser = (req.user && req.user.partnerId) ? getUserById(req.user.partnerId) : null;
+  next();
+});
+
+// Profils de recherche personnels (voir "Enregistrer le filtre" dans les
+// volets Codex/Galerie) : calculés seulement sur les pages où le bloc
+// "Profils de recherche" peut apparaître, pour ne pas ajouter une requête
+// inutile ailleurs. Strictement privés (filtrés par user_id), jamais
+// visibles par un autre profil — même portée que tagBlacklist ci-dessus.
+app.use((req, res, next) => {
+  res.locals.wikiFilterProfiles = (req.user && req.path.indexOf("/wiki") === 0)
+    ? listFilterProfiles(req.user.id, "wiki") : [];
+  res.locals.galleryFilterProfiles = (req.user && req.path.indexOf("/galerie") === 0)
+    ? listFilterProfiles(req.user.id, "gallery") : [];
+  next();
+});
+
 // Classification de chaque tag (couleur/comportement du badge, voir
 // src/tagRegistry.js) : calculee une fois par requete, exposee a toutes les
 // vues (utilisee par tags.ejs/wiki-detail.ejs) et au client (window.TAG_REGISTRY,
@@ -192,6 +246,12 @@ app.use((req, res, next) => {
 // (galerie/BD). Le contenu prive (galerie/BD) n'entre dans le calcul que
 // pour un visiteur connecte, coherent avec le reste du site.
 app.use((req, res, next) => {
+  // Le profil (/favoris et ses sous-pages) n'affiche jamais de badge de tag :
+  // pas la peine de scanner wiki/galerie/BD à chaque chargement pour rien.
+  // head.ejs retombe déjà sur {} si tagRegistry n'est pas défini.
+  if (req.path === "/favoris" || req.path.startsWith("/favoris/")) {
+    return next();
+  }
   try {
     res.locals.tagRegistry = buildTagRegistry({
       wikiPages: listWikiPages(),
@@ -212,14 +272,19 @@ app.get("/api/search", function (req, res) {
   var ql = q.toLowerCase();
   var pat = "%" + ql + "%";
   var results = {};
+  // Sentinelle : ne correspond à aucun user_id réel, évite de brancher la
+  // requête selon connecté/non connecté pour exclure le contenu masqué
+  // (voir bouton "Masquer" et content_reactions.hidden).
+  var uid = req.user ? req.user.id : -1;
 
   // Wiki — public (texte accessible sans connexion)
   try {
     var wikiRows = db
       .prepare(
-        "SELECT id, title FROM wiki_pages WHERE lower(title) LIKE ? OR lower(content) LIKE ? OR lower(tags) LIKE ? OR lower(meta) LIKE ? LIMIT 6"
+        "SELECT id, title FROM wiki_pages WHERE (lower(title) LIKE ? OR lower(content) LIKE ? OR lower(tags) LIKE ? OR lower(meta) LIKE ?) " +
+        "AND id NOT IN (SELECT item_id FROM content_reactions WHERE user_id = ? AND item_type = 'wiki' AND hidden = 1) LIMIT 6"
       )
-      .all(pat, pat, pat, pat);
+      .all(pat, pat, pat, pat, uid);
     if (wikiRows.length)
       results.wiki = wikiRows.map(function (r) {
         return { title: r.title, url: "/wiki/" + r.id };
@@ -231,9 +296,10 @@ app.get("/api/search", function (req, res) {
     try {
       var galRows = db
         .prepare(
-          "SELECT id, title FROM gallery_images WHERE lower(title) LIKE ? OR lower(notes) LIKE ? OR lower(tags) LIKE ? LIMIT 5"
+          "SELECT id, title FROM gallery_images WHERE (lower(title) LIKE ? OR lower(notes) LIKE ? OR lower(tags) LIKE ?) " +
+          "AND id NOT IN (SELECT item_id FROM content_reactions WHERE user_id = ? AND item_type = 'gallery' AND hidden = 1) LIMIT 5"
         )
-        .all(pat, pat, pat);
+        .all(pat, pat, pat, uid);
       if (galRows.length)
         results.galerie = galRows.map(function (r) {
           return { title: r.title || "Image #" + r.id, url: "/galerie" };
@@ -243,9 +309,10 @@ app.get("/api/search", function (req, res) {
     try {
       var bdRows = db
         .prepare(
-          "SELECT id, title FROM bd_books WHERE lower(title) LIKE ? OR lower(description) LIKE ? OR lower(tags) LIKE ? LIMIT 5"
+          "SELECT id, title FROM bd_books WHERE (lower(title) LIKE ? OR lower(description) LIKE ? OR lower(tags) LIKE ?) " +
+          "AND id NOT IN (SELECT item_id FROM content_reactions WHERE user_id = ? AND item_type = 'bd' AND hidden = 1) LIMIT 5"
         )
-        .all(pat, pat, pat);
+        .all(pat, pat, pat, uid);
       if (bdRows.length)
         results.bd = bdRows.map(function (r) {
           return { title: r.title, url: "/bd" };
@@ -315,6 +382,11 @@ app.get("/tags", function (req, res) {
   var allKeys = new Set(Object.keys(wiki).concat(Object.keys(galerie)).concat(Object.keys(bd)));
   // Tags standalone (dans tag_meta mais pas dans le contenu)
   Object.keys(metaMap).forEach(function (t) { allKeys.add(t); });
+  // Tags masqués (voir /tags/masques) : invisibles sur cette page, comme
+  // partout ailleurs sur le site pour ce profil.
+  if (req.user) {
+    try { listBlacklistedTags(req.user.id).forEach(function (r) { allKeys.delete(r.tag); }); } catch (_) {}
+  }
 
   var tags = Array.from(allKeys).map(function (t) {
     return {
@@ -430,6 +502,52 @@ app.get("/api/tags/results", function (req, res) {
   res.json(result);
 });
 
+// ── Blacklist personnelle de tags ("Masquer le tag" dans la popup tag) ─────
+app.post("/api/tags/blacklist", function (req, res) {
+  if (!req.user) return res.status(403).json({ ok: false, error: "Interdit" });
+  var tag = String(req.body.tag || "").toLowerCase().trim();
+  if (!tag) return res.status(400).json({ ok: false, error: "Tag vide" });
+  addBlacklistedTag(req.user.id, tag);
+  res.json({ ok: true });
+});
+
+app.delete("/api/tags/blacklist", function (req, res) {
+  if (!req.user) return res.status(403).json({ ok: false, error: "Interdit" });
+  var tag = String(req.body.tag || "").toLowerCase().trim();
+  removeBlacklistedTag(req.user.id, tag);
+  res.json({ ok: true });
+});
+
+// ── Sous-page dédiée : gérer la blacklist (retrait uniquement, l'ajout se
+// fait depuis la popup tag partagée, voir partials/tag-popup.ejs) ──────────
+app.get("/tags/masques", function (req, res) {
+  if (!req.user) return res.redirect("/admin/login?next=" + encodeURIComponent("/tags/masques"));
+  res.render("tags-masques", { config, blacklist: listBlacklistedTags(req.user.id) });
+});
+
+// ── Profils de recherche personnels (Codex/Galerie) ─────────────────────────
+// "state" est un blob opaque construit par public/wiki.js ou
+// public/gallery.js (jamais interprété ici) : voir listFilterProfiles/
+// createFilterProfile dans db.js.
+var FILTER_PROFILE_SECTIONS = ["wiki", "gallery"];
+app.post("/api/filter-profils", function (req, res) {
+  if (!req.user) return res.status(403).json({ ok: false, error: "Interdit" });
+  var section = String(req.body.section || "");
+  var name = String(req.body.name || "").trim().slice(0, 60);
+  if (FILTER_PROFILE_SECTIONS.indexOf(section) === -1) return res.status(400).json({ ok: false, error: "Section invalide" });
+  if (!name) return res.status(400).json({ ok: false, error: "Nom vide" });
+  var id = createFilterProfile(req.user.id, section, name, req.body.state || {});
+  res.json({ ok: true, id: id });
+});
+
+app.delete("/api/filter-profils/:id", function (req, res) {
+  if (!req.user) return res.status(403).json({ ok: false, error: "Interdit" });
+  var id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
+  deleteFilterProfile(req.user.id, id);
+  res.json({ ok: true });
+});
+
 app.use("/", buildQuizRouter(config));
 app.use("/admin", buildAdminRouter(config));
 app.use("/liens", buildLinksRouter(config));
@@ -438,6 +556,7 @@ app.use("/galerie", buildGalleryRouter(config));
 app.use("/bd", buildBdRouter(config));
 app.use("/favoris", buildFavoritesRouter(config));
 app.use("/compte", buildAccountRouter(config));
+app.use("/couple", buildCoupleRouter(config));
 
 if (usingHttps) {
   https

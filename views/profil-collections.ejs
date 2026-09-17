@@ -1,0 +1,99 @@
+<%- include('partials/head', { title: 'Profil : Mes collections' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Mes collections', navBack: '/favoris' }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+
+    <div class="profil-page-actions">
+      <button type="button" id="collection-new-btn" class="profil-export-gouts-btn">+ Nouvelle collection</button>
+    </div>
+
+    <div class="profil-empty" id="collections-empty"<%= collections.length ? ' hidden' : '' %>>
+      <div class="profil-empty-icon">&#128193;</div>
+      <p>Vous n&rsquo;avez pas encore de collection.<br>Cr&eacute;ez-en une ici, ou depuis une image de la <a href="/galerie">galerie</a> via &laquo;&nbsp;Ajouter &agrave; une collection&nbsp;&raquo;.</p>
+    </div>
+
+    <div class="collection-grid" id="collections-grid"<%= collections.length ? '' : ' hidden' %>>
+      <% collections.forEach(function (c) { %>
+        <a href="/favoris/collections/<%= c.id %>" class="collection-card">
+          <% if (c.coverImg) { %>
+            <img src="<%= thumbUrl(c.coverImg) %>" alt="" class="collection-card-img" loading="lazy" />
+          <% } else { %>
+            <div class="collection-card-placeholder">&#128193;</div>
+          <% } %>
+          <div class="collection-card-body">
+            <p class="collection-card-title"><%= c.title %></p>
+            <span class="collection-card-count"><%= c.itemCount %> image<%= c.itemCount > 1 ? 's' : '' %></span>
+            <% if (c.tags && c.tags.length) { %>
+              <div class="collection-card-tags">
+                <% c.tags.slice(0, 4).forEach(function (t) { %><span class="collection-card-tag"><%= t %></span><% }) %>
+              </div>
+            <% } %>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+
+  </div>
+
+  <%# ─── Popup création de collection ─────────────────────────────────── %>
+  <div class="filter-profile-modal-overlay" id="collection-new-modal" hidden>
+    <div class="filter-profile-modal collection-modal">
+      <p class="filter-profile-modal-title">Nouvelle collection</p>
+      <input type="text" class="filter-profile-modal-input" id="collection-new-title" placeholder="Titre&hellip;" maxlength="80" autocomplete="off" />
+      <textarea class="collection-modal-textarea" id="collection-new-desc" placeholder="Description (optionnelle)&hellip;" rows="3"></textarea>
+      <input type="text" class="filter-profile-modal-input" id="collection-new-tags" placeholder="Tags, s&eacute;par&eacute;s par des virgules (optionnel)&hellip;" maxlength="200" autocomplete="off" />
+      <div class="filter-profile-modal-actions">
+        <button type="button" class="filter-profile-modal-cancel" id="collection-new-cancel">Annuler</button>
+        <button type="button" class="filter-profile-modal-confirm" id="collection-new-confirm">Cr&eacute;er</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script>
+(function () {
+  var newBtn = document.getElementById("collection-new-btn");
+  var modal = document.getElementById("collection-new-modal");
+  var titleInput = document.getElementById("collection-new-title");
+  var descInput = document.getElementById("collection-new-desc");
+  var tagsInput = document.getElementById("collection-new-tags");
+  var confirmBtn = document.getElementById("collection-new-confirm");
+  var cancelBtn = document.getElementById("collection-new-cancel");
+
+  function openModal() {
+    if (!modal) return;
+    titleInput.value = ""; descInput.value = ""; tagsInput.value = "";
+    modal.hidden = false;
+    titleInput.focus();
+  }
+  function closeModal() { if (modal) modal.hidden = true; }
+
+  if (newBtn) newBtn.addEventListener("click", openModal);
+  if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+  if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", function () {
+      var title = titleInput.value.trim();
+      if (!title) return;
+      confirmBtn.disabled = true;
+      fetch("/favoris/collections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title, description: descInput.value.trim(), tags: tagsInput.value.trim() }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          confirmBtn.disabled = false;
+          if (!d.ok) return;
+          window.location.href = "/favoris/collections/" + d.id;
+        })
+        .catch(function () { confirmBtn.disabled = false; });
+    });
+  }
+})();
+</script>
+<%- include('partials/foot') %>

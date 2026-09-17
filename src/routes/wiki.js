@@ -28,15 +28,21 @@ const {
   getUserNote,
   setUserNote,
   mergeUserReactions,
+  mergePartnerReaction,
+  excludeHidden,
   getUserReaction,
   createStandaloneTag,
   insertGalleryImage,
   updateGalleryImage,
+  deleteGalleryImage,
+  setGalleryImageWikiSynced,
   listGalleryImages,
+  listUnexploredWikiPages,
+  listBlacklistedTags,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
-const { filterOff, isOffForUser } = require("../specialContent");
+const { filterOff, isOffForUser, specialTagOf } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",   label: "Positions",   desc: "Postures, Kama-sutra et toutes leurs variantes.",                               hue: 270 },
@@ -108,62 +114,95 @@ function autoEnrichTags(tags, title, derivedTerms) {
   return result;
 }
 
-// Synchronise le(s) enregistrement(s) galerie liés à une page wiki.
-// Seul le titre (en minuscules) est apposé automatiquement comme tag sur les
-// images — synonymes et tags libres restent entièrement manuels.
+// Synchronise les fiches galerie d'une page wiki : une fiche par image
+// (principales + variantes/sous-variantes + image de scénario), jamais
+// regroupées — chaque image du site doit avoir sa propre fiche, notable/
+// masquable/collectionnable indépendamment des autres. Recalculé à chaque
+// sauvegarde : les fiches dont l'image n'est plus utilisée (retirée/
+// remplacée) sont supprimées, les nouvelles sont créées, celles qui
+// existent déjà (même chemin) sont conservées telles quelles pour ne pas
+// perdre leurs notes/favoris/collections — seul leur tag de titre est
+// resynchronisé (utile en cas de renommage de la page).
+// Ne touche jamais une fiche liée à la main depuis l'upload direct de la
+// Galerie (wikiSynced=false, voir gallery_images.wiki_synced) : celles-ci
+// ne sont pas dérivées du contenu de la page, on ne fait que garder leur
+// tag de titre à jour.
 // oldTitleTag : ancien titre normalisé, fourni lors d'un renommage pour
-//              remplacer le tag périmé dans toutes les images liées.
-function syncGalleryRecord(pageId, title, imagePaths, oldTitleTag) {
-  const newTitleTag = title.trim().toLowerCase();
-  const allLinked = listGalleryImages().filter((g) => g.wikiPageId === pageId);
+//              remplacer le tag périmé dans toutes les images concernées.
+function syncPageGalleryImages(pageId, title, imagePaths, meta, oldTitleTag) {
+  const items = [];
+  (imagePaths || []).forEach((p) => items.push({ path: p, label: "" }));
+  const variantes = (meta && Array.isArray(meta.variantes)) ? meta.variantes : [];
+  variantes.forEach((v) => {
+    (Array.isArray(v.images) ? v.images : []).forEach((p) => items.push({ path: p, label: v.nom || "" }));
+    (Array.isArray(v.variantes) ? v.variantes : []).forEach((sv) => {
+      (Array.isArray(sv.images) ? sv.images : []).forEach((p) => items.push({ path: p, label: sv.nom || "" }));
+    });
+  });
+  if (meta && meta.scenario_image) items.push({ path: meta.scenario_image, label: "" });
 
-  // Applique la logique titre-auto sur un tableau de tags existants :
-  // - remplace oldTitleTag → newTitleTag si le titre a changé
-  // - ajoute newTitleTag s'il est absent
-  // - ne touche à rien d'autre
-  function applyTitleTag(currentTags) {
-    let result = currentTags.map((t) =>
-      (oldTitleTag && oldTitleTag !== newTitleTag && t.toLowerCase() === oldTitleTag)
-        ? newTitleTag
-        : t
+  const seenPaths = new Set();
+  const dedupedItems = items.filter((it) => {
+    if (seenPaths.has(it.path)) return false;
+    seenPaths.add(it.path);
+    return true;
+  });
+  const desiredPaths = new Set(dedupedItems.map((it) => it.path));
+  const titleTag = title.trim().toLowerCase();
+
+  function withTitleTag(tags) {
+    let result = tags.map((t) =>
+      (oldTitleTag && oldTitleTag !== titleTag && t.toLowerCase() === oldTitleTag) ? titleTag : t
     );
-    if (!result.map((t) => t.toLowerCase()).includes(newTitleTag)) result.push(newTitleTag);
+    if (!result.some((t) => t.toLowerCase() === titleTag)) result.push(titleTag);
     return result;
   }
+  function tagsEqual(a, b) {
+    return a.length === b.length && a.every((t, i) => t === b[i]);
+  }
 
-  let primaryId = null;
-  if (imagePaths && imagePaths.length) {
-    const existing = allLinked[0];
-    if (existing) {
-      primaryId = existing.id;
-      updateGalleryImage(existing.id, {
-        title,
-        imagePaths,
-        tags: applyTitleTag(existing.tags),
-        wikiPageId: pageId,
-        notes: existing.notes,
-        category: existing.category,
-        author: existing.author,
-        parody: existing.parody,
-        contentType: existing.contentType,
-      });
-    } else {
-      primaryId = insertGalleryImage({ imagePaths, title, tags: [newTitleTag], notes: "", category: "", wikiPageId: pageId });
+  const linked = listGalleryImages().filter((g) => g.wikiPageId === pageId);
+  const existingByPath = {};
+  linked.forEach((g) => {
+    if (!g.wikiSynced) {
+      // Lien manuel (upload direct Galerie) : on garde juste le tag de
+      // titre à jour, jamais ses images ni sa suppression.
+      const updatedTags = withTitleTag(g.tags);
+      if (!tagsEqual(updatedTags, g.tags)) {
+        updateGalleryImage(g.id, {
+          title: g.title, category: g.category, tags: updatedTags, notes: g.notes,
+          imagePaths: g.imagePaths, wikiPageId: g.wikiPageId, author: g.author,
+          parody: g.parody,
+        });
+      }
+      return;
     }
-  }
+    if (g.imagePaths.length === 1 && desiredPaths.has(g.imagePaths[0])) {
+      existingByPath[g.imagePaths[0]] = g;
+    } else {
+      // Image retirée/remplacée, ou ancienne fiche "album" multi-images.
+      deleteGalleryImage(g.id);
+    }
+  });
 
-  // Images liées manuellement : même traitement (titre auto uniquement)
-  for (const img of allLinked) {
-    if (img.id === primaryId) continue;
-    const updatedTags = applyTitleTag(img.tags);
-    // Pas de changement → skip
-    if (updatedTags.length === img.tags.length && updatedTags.every((t, i) => t === img.tags[i])) continue;
-    updateGalleryImage(img.id, {
-      title: img.title, category: img.category, tags: updatedTags,
-      notes: img.notes, imagePaths: img.imagePaths, wikiPageId: img.wikiPageId,
-      author: img.author, parody: img.parody, contentType: img.contentType,
-    });
-  }
+  dedupedItems.forEach((it) => {
+    const existing = existingByPath[it.path];
+    if (existing) {
+      const updatedTags = withTitleTag(existing.tags);
+      if (existing.title !== title || !tagsEqual(updatedTags, existing.tags)) {
+        updateGalleryImage(existing.id, {
+          title, category: existing.category, tags: updatedTags, notes: existing.notes,
+          imagePaths: existing.imagePaths, wikiPageId: pageId, author: existing.author,
+          parody: existing.parody,
+        });
+      }
+      return;
+    }
+    const tags = [titleTag];
+    if (it.label) tags.push(it.label.toLowerCase());
+    const newId = insertGalleryImage({ imagePaths: [it.path], title, tags, notes: "", category: "", wikiPageId: pageId });
+    setGalleryImageWikiSynced(newId, true);
+  });
 }
 
 // Chaque synonyme peut être marqué "anglais" individuellement (suffixe
@@ -503,7 +542,8 @@ function buildWikiRouter(config) {
   // (elles restent consultables via /wiki/categorie/:key et /wiki/tous).
   router.get("/", (req, res) => {
     const userId = req.user ? req.user.id : null;
-    const pages = filterOff(mergeUserReactions(sortedPages(), userId, "wiki"), req.user);
+    const partnerId = req.user ? req.user.partnerId : null;
+    const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), userId, "wiki")), req.user), partnerId, "wiki");
     const visiblePages = pages.filter((p) => !isUltra(p));
     const chapters = CATEGORIES.map((cat) => {
       const allCatPages = pagesForCategory(visiblePages, cat.key);
@@ -511,7 +551,7 @@ function buildWikiRouter(config) {
       const primaryCount = pages.filter((p) => p.category === cat.key).length;
       return { ...cat, pages: allCatPages, count: primaryCount, preview: allCatPages.slice(0, 6) };
     });
-    const allPages = filterOff(mergeUserReactions(listWikiPages(), userId, "wiki"), req.user);
+    const allPages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(listWikiPages(), userId, "wiki")), req.user), partnerId, "wiki");
     const recentAdded = [...allPages]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 30);
@@ -528,14 +568,15 @@ function buildWikiRouter(config) {
       tagCounts: getTagCounts(pages),
       totalCount: pages.length,
       recentAdded, recentUpdated, popular,
+      hasOwnedItems: pages.some((p) => p.owned),
       ...CTX
     });
   });
 
   // ── Vue "tout" : toutes les pages, toutes categories melangees ──
   router.get("/tous", (req, res) => {
-    const pages = filterOff(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki"), req.user);
-    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, ...CTX });
+    const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki")), req.user), req.user ? req.user.partnerId : null, "wiki");
+    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, hasOwnedItems: pages.some((p) => p.owned), ...CTX });
   });
 
   // ── Vue par categorie : un "chapitre" du livre ──
@@ -543,9 +584,82 @@ function buildWikiRouter(config) {
     const cat = CATEGORIES.find((c) => c.key === req.params.key);
     if (!cat) return res.redirect("/wiki");
     const all = sortedPages();
-    const pages = pagesForCategory(filterOff(mergeUserReactions(all, req.user ? req.user.id : null, "wiki"), req.user), cat.key);
+    const pages = mergePartnerReaction(pagesForCategory(filterOff(excludeHidden(mergeUserReactions(all, req.user ? req.user.id : null, "wiki")), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
     const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
-    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, ...CTX });
+    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), ...CTX });
+  });
+
+  // ── Extraction "Mes goûts" : synthèse .txt des pages notées par le
+  // visiteur, groupées par degré d'appréciation (J'adore d'abord, puis 5
+  // étoiles, 4, 3, 2, 1, puis "Ça m'intéresse" si le seuil choisi va jusque
+  // là). Chaque page n'apparaît que dans son degré le plus haut ; le seuil
+  // "min" fixe jusqu'où descendre, Ultra/Irréaliste s'excluent au choix. ──
+  const GOUTS_ORDER = ["adore", "5", "4", "3", "2", "1", "interesse"];
+  const GOUTS_LABELS = {
+    adore: "J'adore",
+    "5": "Note 5/5",
+    "4": "Note 4/5",
+    "3": "Note 3/5",
+    "2": "Note 2/5",
+    "1": "Note 1/5",
+    interesse: "Ça m'intéresse",
+  };
+  const GOUTS_MIN_INDEX = { flame: 0, "5": 1, "4": 2, "3": 3, "2": 4, "1": 5, all: 6 };
+
+  router.get("/export-gouts", requireUser, (req, res) => {
+    const includeUltra = req.query.ultra !== "0";
+    const includeIrrealiste = req.query.irrealiste !== "0";
+    const minKey = Object.prototype.hasOwnProperty.call(GOUTS_MIN_INDEX, req.query.min) ? req.query.min : "all";
+    const maxIndex = GOUTS_MIN_INDEX[minKey];
+
+    const pages = excludeHidden(mergeUserReactions(listWikiPages(), req.user.id, "wiki"));
+    const buckets = {};
+    GOUTS_ORDER.forEach((k) => { buckets[k] = []; });
+
+    pages.forEach((p) => {
+      const isUltraTag = p.tags.indexOf("ultra") !== -1;
+      const isIrrealisteTag = p.tags.indexOf("irréaliste") !== -1 || p.tags.indexOf("fantaisie") !== -1;
+      if (!includeUltra && isUltraTag) return;
+      if (!includeIrrealiste && isIrrealisteTag) return;
+
+      let bucket = null;
+      if (p.flame) bucket = "adore";
+      else if (p.rating >= 5) bucket = "5";
+      else if (p.rating >= 4) bucket = "4";
+      else if (p.rating >= 3) bucket = "3";
+      else if (p.rating >= 2) bucket = "2";
+      else if (p.rating >= 1) bucket = "1";
+      else if (p.interested) bucket = "interesse";
+      if (!bucket || GOUTS_ORDER.indexOf(bucket) > maxIndex) return;
+
+      buckets[bucket].push(p);
+    });
+
+    const catLabelOf = (key) => {
+      const c = CATEGORIES.find((cat) => cat.key === key);
+      return c ? c.label : key;
+    };
+
+    let out = "Mes goûts — " + config.title + "\n";
+    out += "Généré le " + new Date().toLocaleDateString("fr-FR") + "\n";
+    out += "=".repeat(40) + "\n";
+
+    let hasAny = false;
+    GOUTS_ORDER.forEach((key) => {
+      const items = buckets[key];
+      if (!items.length) return;
+      hasAny = true;
+      const heading = GOUTS_LABELS[key].toUpperCase() + " (" + items.length + ")";
+      out += "\n" + heading + "\n" + "-".repeat(heading.length) + "\n";
+      items
+        .sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }))
+        .forEach((p) => { out += "- " + p.title + " (" + catLabelOf(p.category) + ")\n"; });
+    });
+    if (!hasAny) out += "\nAucun contenu ne correspond à ces critères.\n";
+
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Content-Disposition", "attachment; filename=\"mes-gouts.txt\"");
+    res.send(out);
   });
 
   router.post("/", requireAdmin, upload.any(), (req, res) => {
@@ -573,7 +687,7 @@ function buildWikiRouter(config) {
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
 
     const newId = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
-    if (imagePaths.length) syncGalleryRecord(newId, title, imagePaths);
+    syncPageGalleryImages(newId, title, imagePaths, meta);
     res.redirect(`/wiki/${newId}`);
   });
 
@@ -626,6 +740,33 @@ function buildWikiRouter(config) {
     res.json(results.map((p) => ({ id: p.id, title: p.title, category: p.category })));
   });
 
+  // ── "Explorer l'inconnu" : pioche une page jamais notée ni en favori ────
+  // (voir wiki-index.ejs/wiki.ejs, le bouton, et wiki-detail.ejs, le bandeau
+  // Précédent/Suivant). L'historique de navigation entre pioches successives
+  // vit côté client (sessionStorage) : ici on ne fait que piocher, en
+  // excluant les ids déjà vus (exclude) pour ne pas repasser deux fois par
+  // la même page dans une session d'exploration.
+  router.get("/explorer/aleatoire", requireUser, (req, res) => {
+    const excludeIds = new Set(
+      String(req.query.exclude || "").split(",").map(Number).filter(Number.isInteger)
+    );
+    const hideUltra = req.query.hideUltra === "1";
+    const hideIrrealiste = req.query.hideIrrealiste === "1";
+    const blacklist = new Set(listBlacklistedTags(req.user.id).map((r) => r.tag));
+    const candidates = listUnexploredWikiPages(req.user.id).filter((p) => {
+      if (excludeIds.has(p.id)) return false;
+      if (isOffForUser(p.tags, req.user)) return false; // exclusion "off" : plus forte que la simple bascule, jamais proposée
+      if (p.tags.some((t) => blacklist.has(String(t).toLowerCase()))) return false;
+      const special = specialTagOf(p.tags);
+      if (special === "ultra" && hideUltra) return false;
+      if (special === "irrealiste" && hideIrrealiste) return false;
+      return true;
+    });
+    if (!candidates.length) return res.json({ id: null });
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    res.json({ id: pick.id });
+  });
+
   router.get("/ajouter", requireUser, (req, res) => {
     const preCategory = String(req.query.category || "");
     const preTitle    = String(req.query.title    || "");
@@ -648,6 +789,7 @@ function buildWikiRouter(config) {
     incrementWikiViews(id, req.user ? req.user.id : null);
     const userId = req.user ? req.user.id : null;
     Object.assign(page, getUserReaction(userId, "wiki", id));
+    mergePartnerReaction([page], req.user ? req.user.partnerId : null, "wiki");
     const allPages = filterOff(mergeUserReactions(
       listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" })),
       userId, "wiki"
@@ -671,7 +813,8 @@ function buildWikiRouter(config) {
     // decouvre le <img> en parsant le corps de la page.
     const heroImg = (page.imagePaths && page.imagePaths.length && req.user)
       ? res.locals.thumbUrl(page.imagePaths[0]) : null;
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ...CTX });
+    const exploreMode = req.query.explore === "1";
+    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, exploreMode, ...CTX });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
@@ -711,7 +854,7 @@ function buildWikiRouter(config) {
     const extraCategories = arr(req.body.extra_categories).filter((k) => CATEGORY_KEYS.includes(k) && k !== category);
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
     updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
-    syncGalleryRecord(id, title, imagePaths, existing.title.trim().toLowerCase());
+    syncPageGalleryImages(id, title, imagePaths, meta, existing.title.trim().toLowerCase());
     res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${id}`));
   });
 
@@ -787,8 +930,8 @@ function buildWikiRouter(config) {
   router.post("/:id/react", requireUserJson, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
-    const { rating, flame, interested } = req.body;
-    reactWikiPage(id, req.user.id, { rating, flame, interested });
+    const { rating, flame, interested, readLater, hidden, practiced } = req.body;
+    reactWikiPage(id, req.user.id, { rating, flame, interested, readLater, hidden, practiced });
     // J'adore = favori : synchro avec la table favorites
     if (flame) addFavorite(req.user.id, "wiki", id);
     else removeFavorite(req.user.id, "wiki", id);

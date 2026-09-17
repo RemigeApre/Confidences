@@ -72,33 +72,25 @@
   // 2. FAB + PANEL UPLOAD
   // ══════════════════════════════════════════════════
   var fabMain     = document.getElementById("gallery-fab-main");
-  var fabMenu     = document.getElementById("gallery-fab-menu");
-  var fabImage    = document.getElementById("gallery-fab-image");
-  var fabBd       = document.getElementById("gallery-fab-bd");
   var uploadPanel = document.getElementById("gallery-upload-panel");
-  var uploadType  = document.getElementById("gallery-upload-type");
-  var uploadLabel = document.getElementById("gallery-upload-type-label");
   var cancelBtn   = document.getElementById("gallery-upload-cancel");
   var fileInput   = uploadPanel ? uploadPanel.querySelector(".gallery-file-input") : null;
   var previewZone = document.getElementById("gallery-upload-previews");
 
   function closeUpload() {
     if (uploadPanel) uploadPanel.hidden = true;
-    if (fabMenu) fabMenu.hidden = true;
     if (fabMain) fabMain.textContent = "+";
   }
 
-  function openUploadAs(type) {
-    if (uploadType) uploadType.value = type;
+  function openUpload() {
     if (uploadPanel) uploadPanel.hidden = false;
-    if (fabMenu) fabMenu.hidden = true;
     if (fabMain) fabMain.textContent = "\u00d7";
   }
 
   if (fabMain) {
     fabMain.addEventListener("click", function () {
       if (uploadPanel && !uploadPanel.hidden) { closeUpload(); return; }
-      openUploadAs("image");
+      openUpload();
     });
   }
   if (cancelBtn) cancelBtn.addEventListener("click", closeUpload);
@@ -285,22 +277,34 @@
   // ══════════════════════════════════════════════════
   var grid           = document.getElementById("gallery-grid");
   var tagFilter      = document.getElementById("gallery-tag-filter");
-  var typeFilter     = document.getElementById("gallery-type-filter");
   var categoryFilter = document.getElementById("gallery-category-filter");
   var searchInput    = document.getElementById("gallery-search");
   var searchClear    = document.getElementById("gallery-search-clear");
   var resultCount    = document.getElementById("gallery-result-count");
   var countHero      = document.getElementById("gallery-count-hero");
 
-  var typeState      = 0;   // 0=neutre, 1=inclure, 2=exclure
-  var typeValue      = "";  // "image" ou "bd"
   var tagStates      = {}; // { "tag": 0|1|2 }
+  // Tags masqués (voir /favoris et le bouton "Masquer le tag" de la popup
+  // tag) : toute image portant l'un de ces tags reste masquée partout, sans
+  // bascule possible ici (on les retire depuis /tags/masques).
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Effectif à la fermeture de la popup tag (voir public/nav.js), pas au
+  // clic sur "Masquer le tag" : on ne veut pas faire disparaître le tag
+  // sous les yeux de l'utilisateur pendant qu'il consulte encore la popup.
+  document.addEventListener("tag-blacklist-change", function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    applyFilters();
+  });
   var activeCategory = "";
   var searchQ        = "";
-  // Etat initial derive du reglage de compte (voir /favoris > Parametres),
-  // plus fiable qu'un localStorage par navigateur qui pouvait diverger.
-  var hideUltra      = (window.ULTRA_MODE || "hidden") === "hidden";
-  var hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
+  // Etat initial : le réglage de compte sert de valeur par défaut, mais une
+  // bascule explicite en session (boutons Ultra/Irréaliste) est mémorisée et
+  // prime dessus au rechargement — sinon revenir sur la page annulait
+  // silencieusement le filtre qu'on venait de poser.
+  var storedHideUltra      = localStorage.getItem("gallery-hide-ultra");
+  var storedHideIrrealiste = localStorage.getItem("gallery-hide-irrealiste");
+  var hideUltra      = storedHideUltra !== null ? storedHideUltra === "1" : (window.ULTRA_MODE || "hidden") === "hidden";
+  var hideIrrealiste = storedHideIrrealiste !== null ? storedHideIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") === "hidden";
   var activeRating   = 0;
   var sortMode       = "date-desc";
   var randomSeeds    = null; // Map<card, number> — persistant entre pages
@@ -324,18 +328,12 @@
     var cards = Array.from(grid.querySelectorAll(".gallery-card"));
     var q = norm(searchQ);
 
-    var typeIncludes = typeState === 1 ? [typeValue] : [];
-    var typeExcludes = typeState === 2 ? [typeValue] : [];
     var tagIncludes  = Object.keys(tagStates).filter(function(t){ return tagStates[t] === 1; });
     var tagExcludes  = Object.keys(tagStates).filter(function(t){ return tagStates[t] === 2; });
 
     filteredCards = [];
     cards.forEach(function(card) {
       var cardTags = (card.dataset.tags || "").split("|").filter(Boolean);
-
-      var okType = true;
-      if (typeIncludes.length) okType = typeIncludes.indexOf(card.dataset.type) !== -1;
-      if (typeExcludes.length) okType = okType && typeExcludes.indexOf(card.dataset.type) === -1;
 
       var okCategory = !activeCategory || card.dataset.category === activeCategory;
       var okSearch   = !q || norm(card.dataset.title).indexOf(q) !== -1 || cardTags.some(function(t){ return norm(t).indexOf(q) !== -1; });
@@ -346,23 +344,28 @@
       var okTag = true;
       if (tagIncludes.length) okTag = tagIncludes.every(function(t){ return cardTags.indexOf(t) !== -1; });
       if (tagExcludes.length) okTag = okTag && tagExcludes.every(function(t){ return cardTags.indexOf(t) === -1; });
+      var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
 
-      var passes = okType && okCategory && okSearch && okUltra && okIrrealiste && okRating && okTag;
+      var passes = okCategory && okSearch && okUltra && okIrrealiste && okRating && okTag && okBlacklist;
       card.dataset.filtered = passes ? "1" : "0";
       if (passes) filteredCards.push(card);
     });
 
     var start = currentPage * ITEMS_PER_PAGE;
     var end   = start + ITEMS_PER_PAGE;
+    // Index de rang calculé dans la même boucle plutôt qu'avec indexOf (qui
+    // rescannait filteredCards pour chaque carte, coûteux avec beaucoup
+    // d'images).
+    var rank = 0;
     cards.forEach(function(card) {
       if (card.dataset.filtered !== "1") { card.hidden = true; return; }
-      var idx = filteredCards.indexOf(card);
-      card.hidden = idx < start || idx >= end;
+      card.hidden = rank < start || rank >= end;
+      rank++;
     });
 
     var total = filteredCards.length;
     var totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
-    var hasFilter = typeState || Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating;
+    var hasFilter = Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating;
     if (countHero) countHero.textContent = hasFilter ? (total + "/" + cards.length) : cards.length;
     if (resultCount) { resultCount.hidden = !hasFilter; if (hasFilter) resultCount.textContent = total + " / " + cards.length; }
 
@@ -417,25 +420,6 @@
     cards.forEach(function(c) { grid.appendChild(c); });
   }
 
-  // Type filter — 3 états (neutre → inclure → exclure → neutre)
-  if (typeFilter) {
-    typeFilter.querySelectorAll(".tag-chip[data-type]").forEach(function(chip) {
-      chip.addEventListener("click", function() {
-        var t = chip.dataset.type || "";
-        if (typeValue !== t) {
-          typeFilter.querySelectorAll(".tag-chip").forEach(function(c){ c.dataset.state = "0"; c.classList.remove("chip-include","chip-exclude"); });
-          typeValue = t; typeState = 1;
-        } else {
-          typeState = (typeState + 1) % 3;
-          if (typeState === 0) typeValue = "";
-        }
-        chip.dataset.state = typeState;
-        chip.classList.toggle("chip-include", typeState === 1);
-        chip.classList.toggle("chip-exclude", typeState === 2);
-        applyFilters();
-      });
-    });
-  }
 
   // Category filter — toggle
   if (categoryFilter) {
@@ -476,13 +460,35 @@
   var gTagExpandedCount = GTAG_PAGE;
   var gTagExpandBtn = document.getElementById("gallery-tag-expand-btn");
 
+  // Regroupe visuellement les chips par état : inclus (vert) en premier,
+  // puis exclus (rouge), puis neutres (noir) — dans leur ordre d'origine au
+  // sein de chaque groupe. Purement visuel, ne touche pas au filtrage.
+  function reorderTagChips() {
+    if (!tagFilter) return;
+    var chips = Array.prototype.slice.call(tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]"));
+    var inc = [], exc = [], neu = [];
+    chips.forEach(function (chip) {
+      var s = tagStates[(chip.dataset.tag || "").toLowerCase()] || 0;
+      if (s === 1) inc.push(chip);
+      else if (s === 2) exc.push(chip);
+      else neu.push(chip);
+    });
+    inc.concat(exc, neu).forEach(function (chip) { tagFilter.appendChild(chip); });
+  }
+
   function applyGalleryTagOverflow() {
     if (!tagFilter) return;
+    reorderTagChips();
     var allChips = Array.from(tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]"));
     // Les chips actives (include/exclude) restent toujours visibles
     var neutralIdx = 0;
     allChips.forEach(function(chip) {
-      var isActive = (tagStates[(chip.dataset.tag || "").toLowerCase()] || 0) !== 0;
+      var tag = (chip.dataset.tag || "").toLowerCase();
+      // Un tag masqué (voir /tags/masques) n'est plus un choix disponible :
+      // retiré sans conditions, pas seulement rejeté par le budget d'affichage.
+      if (blacklistSet.has(tag)) { chip.hidden = true; return; }
+      chip.hidden = false;
+      var isActive = (tagStates[tag] || 0) !== 0;
       if (isActive) {
         chip.classList.remove("wiki-tag-overflow-hidden");
       } else {
@@ -492,7 +498,8 @@
     });
     if (gTagExpandBtn) {
       var neutralTotal = allChips.filter(function(c) {
-        return (tagStates[(c.dataset.tag || "").toLowerCase()] || 0) === 0;
+        var t = (c.dataset.tag || "").toLowerCase();
+        return (tagStates[t] || 0) === 0 && !blacklistSet.has(t);
       }).length;
       gTagExpandBtn.hidden = !(neutralTotal > gTagExpandedCount && gTagExpandedCount < GTAG_MAX);
     }
@@ -507,12 +514,15 @@
 
   applyGalleryTagOverflow();
 
-  // Search
+  // Search. applyFilters() refiltre/repagine toute la grille : léger
+  // débounce pour éviter de le refaire à chaque frappe sur une grosse galerie.
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function () {
       searchQ = searchInput.value;
       if (searchClear) searchClear.hidden = !searchQ;
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
   }
   if (searchClear) {
@@ -533,6 +543,7 @@
   if (ultraToggle) {
     ultraToggle.addEventListener("click", function() {
       hideUltra = !hideUltra;
+      localStorage.setItem("gallery-hide-ultra", hideUltra ? "1" : "0");
       syncUltraBtn();
       applyFilters();
     });
@@ -549,6 +560,7 @@
   if (irrealisteToggle) {
     irrealisteToggle.addEventListener("click", function() {
       hideIrrealiste = !hideIrrealiste;
+      localStorage.setItem("gallery-hide-irrealiste", hideIrrealiste ? "1" : "0");
       syncIrrealisteBtn();
       applyFilters();
     });
@@ -559,19 +571,14 @@
   var resetFiltersBtn = document.getElementById("gallery-reset-filters");
   if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener("click", function() {
-      // Revient aux reglages de compte (voir /favoris > Parametres)
+      // Revient aux reglages de compte (voir /favoris > Parametres) et
+      // oublie la bascule mémorisée, sinon elle reviendrait au prochain chargement.
+      localStorage.removeItem("gallery-hide-ultra");
+      localStorage.removeItem("gallery-hide-irrealiste");
       hideUltra = (window.ULTRA_MODE || "hidden") === "hidden";
       hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
       syncUltraBtn();
       syncIrrealisteBtn();
-      // Effacer type
-      typeState = 0; typeValue = "";
-      if (typeFilter) {
-        typeFilter.querySelectorAll(".tag-chip").forEach(function(c) {
-          c.dataset.state = "0";
-          c.classList.remove("chip-include","chip-exclude");
-        });
-      }
       // Effacer catégorie
       activeCategory = "";
       if (categoryFilter) {
@@ -585,6 +592,9 @@
           c.classList.remove("chip-include","chip-exclude");
         });
       }
+      // Niveau d'expansion du nuage de tags (voir "Plus") : sans ça, le
+      // volet restait déplié après réinitialisation (même bug que Codex).
+      gTagExpandedCount = GTAG_PAGE;
       // Effacer recherche
       searchQ = "";
       if (searchInput) { searchInput.value = ""; }
@@ -592,6 +602,155 @@
       applyFilters();
     });
   }
+
+  // ── Profils de recherche (voir partials/filter-profiles.ejs) ────────────
+  // Contrairement au Codex, la galerie ne garde pas tout en localStorage :
+  // on capture donc l'état directement depuis les variables JS en cours, et
+  // on le restitue de la même façon (pas de rechargement de page nécessaire
+  // ici, tout est déjà en mémoire).
+  (function () {
+    var saveBtn    = document.getElementById("gallery-save-filter-btn");
+    var modal      = document.getElementById("gallery-filter-profile-modal");
+    var nameInput  = document.getElementById("gallery-filter-profile-name");
+    var confirmBtn = document.getElementById("gallery-filter-profile-confirm");
+    var cancelBtn  = document.getElementById("gallery-filter-profile-cancel");
+    var listEl     = document.getElementById("gallery-filter-profiles-list");
+    if (!saveBtn && !listEl) return;
+
+    function syncSaveBtn() {
+      if (!saveBtn) return;
+      var active = !!(Object.keys(tagStates).some(function (t) { return tagStates[t]; }) || activeCategory || searchQ || hideUltra || hideIrrealiste);
+      saveBtn.hidden = !active;
+    }
+    syncSaveBtn();
+    // applyFilters est une déclaration de fonction (hoisted) : la
+    // réaffecter après coup est sans risque, voir la même remarque dans
+    // public/wiki.js.
+    var _origApplyFilters = applyFilters;
+    applyFilters = function () {
+      _origApplyFilters();
+      syncSaveBtn();
+    };
+
+    function collectState() {
+      return {
+        tagStates: tagStates,
+        activeCategory: activeCategory,
+        searchQ: searchQ,
+        sortMode: sortMode,
+        hideUltra: hideUltra,
+        hideIrrealiste: hideIrrealiste
+      };
+    }
+
+    function applyState(state) {
+      // Tags
+      tagStates = state.tagStates || {};
+      if (tagFilter) {
+        tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]").forEach(function (c) {
+          var s = tagStates[(c.dataset.tag || "").toLowerCase()] || 0;
+          c.dataset.state = s;
+          c.classList.toggle("chip-include", s === 1);
+          c.classList.toggle("chip-exclude", s === 2);
+        });
+      }
+      // Catégorie
+      activeCategory = state.activeCategory || "";
+      if (categoryFilter) {
+        categoryFilter.querySelectorAll(".tag-chip[data-category]").forEach(function (c) {
+          c.classList.toggle("active", (c.dataset.category || "") === activeCategory && !!activeCategory);
+        });
+      }
+      // Recherche
+      searchQ = state.searchQ || "";
+      if (searchInput) searchInput.value = searchQ;
+      if (searchClear) searchClear.hidden = !searchQ;
+      // Tri
+      sortMode = state.sortMode || "date-desc";
+      if (sortSelect) sortSelect.value = sortMode;
+      // Ultra / Irréaliste
+      hideUltra = !!state.hideUltra;
+      hideIrrealiste = !!state.hideIrrealiste;
+      localStorage.setItem("gallery-hide-ultra", hideUltra ? "1" : "0");
+      localStorage.setItem("gallery-hide-irrealiste", hideIrrealiste ? "1" : "0");
+      if (typeof syncUltraBtn === "function") syncUltraBtn();
+      if (typeof syncIrrealisteBtn === "function") syncIrrealisteBtn();
+
+      applyFilters();
+      window.scrollTo(0, 0);
+    }
+
+    function openModal() {
+      if (!modal) return;
+      if (nameInput) nameInput.value = "";
+      modal.hidden = false;
+      if (nameInput) nameInput.focus();
+    }
+    function closeModal() { if (modal) modal.hidden = true; }
+
+    if (saveBtn) saveBtn.addEventListener("click", openModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+    if (modal) {
+      modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+    }
+    if (nameInput) {
+      nameInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && confirmBtn) confirmBtn.click();
+      });
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", function () {
+        var name = nameInput ? nameInput.value.trim() : "";
+        if (!name) return;
+        confirmBtn.disabled = true;
+        fetch("/api/filter-profils", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section: "gallery", name: name, state: collectState() })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            confirmBtn.disabled = false;
+            if (!d.ok) return;
+            closeModal();
+            window.location.reload();
+          })
+          .catch(function () { confirmBtn.disabled = false; });
+      });
+    }
+
+    if (listEl) {
+      listEl.addEventListener("click", function (e) {
+        var chip = e.target.closest(".filter-profile-chip");
+        if (!chip) return;
+        var id = Number(chip.dataset.profileId);
+
+        if (e.target.closest(".filter-profile-apply")) {
+          var profile = (window.GALLERY_FILTER_PROFILES || []).find(function (p) { return p.id === id; });
+          if (!profile) return;
+          applyState(profile.state || {});
+          return;
+        }
+
+        var removeBtn = e.target.closest(".filter-profile-remove");
+        if (removeBtn) {
+          removeBtn.disabled = true;
+          fetch("/api/filter-profils/" + id, { method: "DELETE" })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (!d.ok) { removeBtn.disabled = false; return; }
+              chip.remove();
+              if (!listEl.querySelector(".filter-profile-chip")) {
+                var details = listEl.closest(".filter-profiles-details");
+                if (details) details.hidden = true;
+              }
+            })
+            .catch(function () { removeBtn.disabled = false; });
+        }
+      });
+    }
+  })();
 
   // Sort
   var sortSelect = document.getElementById("gallery-sort-select");
@@ -646,23 +805,42 @@
   var lbNext    = lightbox ? lightbox.querySelector(".gallery-lb-next")      : null;
   var lbActions    = document.getElementById("gallery-lb-actions");
   var lbRating     = document.getElementById("gallery-lb-rating");
+  var lbPartnerReveal = document.getElementById("gallery-lb-partner-reveal");
   var lbFavBtn     = document.getElementById("gallery-lb-fav-btn");
   var lbEditLink   = document.getElementById("gallery-lb-edit-link");
   var lbDeleteBtn  = document.getElementById("gallery-lb-delete-btn");
+  var lbHideBtn    = document.getElementById("gallery-lb-hide-btn");
+  var lbCollectionBtn = document.getElementById("gallery-lb-collection-btn");
   var lbProcessBtn = document.getElementById("gallery-lb-processed-btn");
   var lbSeriesNav  = document.getElementById("gallery-lb-series-nav");
   var lbSeriesInfo = document.getElementById("gallery-lb-series-info");
   var lbSeriesPrev = document.getElementById("gallery-lb-series-prev");
   var lbSeriesNext = document.getElementById("gallery-lb-series-next");
+  var exploreBtn      = document.getElementById("gallery-explore-btn");
+  var exploreNav      = document.getElementById("gallery-lb-explore-nav");
+  var explorePrevBtn  = document.getElementById("gallery-lb-explore-prev");
+  var exploreNextBtn  = document.getElementById("gallery-lb-explore-next");
+  var exploreExitBtn  = document.getElementById("gallery-lb-explore-exit");
+  var exploreActive = false;
+  var exploreHistory = [];
+  var explorePos = 0;
 
   var lbVisible    = [];
   var lbCardIndex  = 0;
   var lbImgIndex   = 0;
   var lbCurrentSeriesNav = null; // {seriesId, prevId, nextId, position, total, seriesTitle}
 
+  // Tout le contenu filtré (toutes pages confondues, voir renderPage) sert
+  // de base à la navigation lightbox — pas seulement les 10/50 cartes
+  // affichées sur la page courante, sinon le swipe/la boucle s'arrêterait
+  // artificiellement à la pagination visuelle au lieu de tout le résultat.
+  // grid.querySelectorAll (pas filteredCards) pour respecter l'ordre DOM
+  // réel, déjà trié par sortCards().
   function buildVisible() {
     if (!grid) return;
-    lbVisible = Array.from(grid.querySelectorAll(".gallery-card:not([hidden])"));
+    lbVisible = Array.from(grid.querySelectorAll(".gallery-card")).filter(function (c) {
+      return c.dataset.filtered === "1";
+    });
   }
 
   function currentCard() { return lbVisible[lbCardIndex]; }
@@ -670,20 +848,120 @@
     var card = currentCard();
     return card ? (card.dataset.images || "").split("|").filter(Boolean) : [];
   }
+  // Vignette devinée par simple transformation de chemin (même suffixe que
+  // src/thumbs.js), sans aucun aller-retour disque côté serveur — la
+  // génération réelle des vignettes se fait à l'upload/au démarrage
+  // (voir generateThumb/backfillThumbs), donc le pari est presque toujours
+  // gagné ; en cas de 404 (page tout juste ajoutée), lbImg.onerror bascule
+  // proprement sur l'original le temps que le fond haute résolution arrive.
+  function guessThumb(src) {
+    return src ? src.replace(/\.[a-zA-Z0-9]+$/, "-thumb.webp") : src;
+  }
+  function currentThumbs() {
+    return currentImages().map(guessThumb);
+  }
+
+  // Calcule les indices (carte, image) après un pas dir, en bouclant sur
+  // tout le contenu filtré (voir buildVisible) — partagé entre navigate()
+  // et le préchargement de l'image adjacente (voir preloadAdjacent).
+  function stepIndices(dir) {
+    var images = currentImages();
+    var nextImgIdx = lbImgIndex + dir;
+    if (nextImgIdx >= 0 && nextImgIdx < images.length) {
+      return { cardIdx: lbCardIndex, imgIdx: nextImgIdx };
+    }
+    if (!lbVisible.length) return null;
+    var cardIdx = (lbCardIndex + dir + lbVisible.length) % lbVisible.length;
+    var card = lbVisible[cardIdx];
+    var imgs = card ? (card.dataset.images || "").split("|").filter(Boolean) : [];
+    var imgIdx = dir > 0 ? 0 : Math.max(imgs.length - 1, 0);
+    return { cardIdx: cardIdx, imgIdx: imgIdx };
+  }
+
+  // Anti-latence : l'image suivante ET précédente (boucle infinie, donc les
+  // deux sens sont possibles à tout moment) sont chargées en tâche de fond
+  // dès qu'une image s'affiche — la plupart des swipes retombent alors sur
+  // du déjà-en-cache, sans le moindre temps de chargement perceptible.
+  function preloadAdjacent() {
+    [1, -1].forEach(function (dir) {
+      var step = stepIndices(dir);
+      if (!step) return;
+      var card = lbVisible[step.cardIdx];
+      var imgs = card ? (card.dataset.images || "").split("|").filter(Boolean) : [];
+      var src = imgs[step.imgIdx];
+      if (src) { var im = new Image(); im.src = src; }
+    });
+  }
 
   var lastTrackedGalleryId = null;
+
+  // Mode couple : révèle la réaction du/de la partenaire (déjà exposée en
+  // data-partner-* par le serveur, voir mergePartnerReaction) uniquement
+  // une fois que le visiteur a lui-même noté l'image.
+  function syncPartnerReveal(card, rating) {
+    if (!lbPartnerReveal) return;
+    var pRating = card ? Number(card.dataset.partnerRating) || 0 : 0;
+    var pFlame = card ? card.dataset.partnerFlame === "1" : false;
+    var pInterested = card ? card.dataset.partnerInterested === "1" : false;
+    var hasPartnerReaction = pRating > 0 || pFlame || pInterested;
+    if (!rating || !hasPartnerReaction) {
+      lbPartnerReveal.hidden = true;
+      return;
+    }
+    var name = lbPartnerReveal.dataset.partnerName || "Partenaire";
+    var html = "&#127800; " + name + "&nbsp;: ";
+    if (pRating > 0) {
+      html += '<span class="wiki-partner-reveal-stars">';
+      for (var i = 1; i <= 5; i++) {
+        html += '<span class="wiki-card-star' + (i <= pRating ? ' filled' : '') + '">&#9733;</span>';
+      }
+      html += "</span>";
+    }
+    if (pFlame) html += '<span class="wiki-react-icon" title="J\'adore">&#128293;</span>';
+    if (pInterested) html += '<span class="wiki-react-icon" title="&Ccedil;a l\'int&eacute;resse">&#10024;</span>';
+    lbPartnerReveal.innerHTML = html;
+    lbPartnerReveal.hidden = false;
+  }
 
   function renderLightbox() {
     var card = currentCard();
     if (!lightbox || !card) return;
+    lightbox.scrollTop = 0; // chaque nouvelle image se montre d'abord, infos accessibles au scroll
     var images  = currentImages();
+    var thumbs  = currentThumbs();
     var src          = images[lbImgIndex] || "";
+    var thumbSrc     = thumbs[lbImgIndex] || src;
     var displayTitle = card.dataset.displayTitle || card.dataset.title || "";
     var tags         = (card.dataset.tags || "").split("|").filter(Boolean);
     var wikiId       = card.dataset.wikiId || "";
     var galleryId    = card ? Number(card.dataset.galleryId) : 0;
 
-    if (lbImg) lbImg.src = src;
+    if (lbImg) {
+      // Anti-latence : la vignette (déjà en cache la plupart du temps,
+      // c'est elle qui s'affichait dans la grille) apparaît immédiatement,
+      // l'original haute résolution se charge en tâche de fond et prend sa
+      // place dès qu'il est prêt — jamais d'écran vide le temps du réseau.
+      // dataset.targetSrc évite qu'un chargement tardif n'écrase l'image
+      // affichée si l'utilisateur a déjà navigué ailleurs entre-temps.
+      lbImg.dataset.targetSrc = src;
+      // La vignette devinée peut ne pas exister (page tout juste ajoutée,
+      // génération encore en cours) : on bascule alors directement sur
+      // l'original au lieu d'une icône cassée, le fond ci-dessous n'a plus
+      // qu'à confirmer la même image un peu plus tard.
+      lbImg.onerror = function () {
+        lbImg.onerror = null;
+        if (lbImg.dataset.targetSrc === src) lbImg.src = src;
+      };
+      lbImg.src = thumbSrc || src;
+      if (src && thumbSrc !== src) {
+        var full = new Image();
+        full.onload = function () {
+          if (lbImg.dataset.targetSrc === src) lbImg.src = src;
+        };
+        full.src = src;
+      }
+    }
+    preloadAdjacent();
     if (lbTags) {
       lbTags.innerHTML = tags.map(function(t) { return window.buildTagBadgeHTML(t); }).join("");
     }
@@ -691,7 +969,7 @@
       lbLink.hidden = !wikiId;
       if (wikiId) {
         lbLink.href = "/wiki/" + wikiId;
-        lbLink.textContent = displayTitle ? "Wiki : " + displayTitle : "Voir la page wiki";
+        lbLink.textContent = displayTitle ? "Codex : " + displayTitle : "Voir la page codex";
       }
     }
 
@@ -726,10 +1004,15 @@
       });
     }
 
-    var atFirst = lbCardIndex === 0 && lbImgIndex === 0;
-    var atLast  = lbCardIndex === lbVisible.length - 1 && lbImgIndex === images.length - 1;
-    if (lbPrev) lbPrev.hidden = atFirst;
-    if (lbNext) lbNext.hidden = atLast;
+    // En mode exploration, lbVisible ne contient que l'image en cours (voir
+    // openLightboxByGalleryId) : les flèches principales n'ont pas de sens,
+    // c'est la barre dédiée (gallery-lb-explore-nav) qui prend le relais.
+    // Hors exploration, la navigation boucle à l'infini (voir navigate()) :
+    // les flèches restent donc toujours visibles, jamais de bout de liste.
+    if (lbPrev) lbPrev.hidden = exploreActive;
+    if (lbNext) lbNext.hidden = exploreActive;
+    if (exploreNav) exploreNav.hidden = !exploreActive;
+    if (exploreActive && explorePrevBtn) explorePrevBtn.disabled = explorePos <= 0;
 
     // Série : charger la nav si l'image appartient à une série
     lbCurrentSeriesNav = null;
@@ -769,6 +1052,7 @@
             s.classList.toggle("filled", i < rating);
           });
         }
+        syncPartnerReveal(card, rating);
         // Fav
         if (lbFavBtn) {
           lbFavBtn.dataset.itemId = galleryId;
@@ -784,6 +1068,10 @@
           lbDeleteBtn.dataset.galleryId = galleryId;
           lbDeleteBtn.hidden = false;
         }
+        // Masquer
+        if (lbHideBtn) lbHideBtn.dataset.galleryId = galleryId;
+        // Collections
+        if (lbCollectionBtn) lbCollectionBtn.dataset.galleryId = galleryId;
         if (lbProcessBtn) {
           lbProcessBtn.dataset.galleryId = galleryId;
           lbProcessBtn.hidden = !window.GALLERY_CAN_EDIT;
@@ -801,6 +1089,7 @@
     renderLightbox();
     lightbox.hidden = false;
     document.body.style.overflow = "hidden";
+    lightbox.scrollTop = 0; // photo d'abord (voir .gallery-lightbox scrollable, style.css)
   }
 
   function closeLightbox() {
@@ -809,21 +1098,18 @@
     document.body.style.overflow = "";
     lastTrackedGalleryId = null;
     if (lbImg) lbImg.src = "";
+    exploreActive = false;
+    if (exploreNav) exploreNav.hidden = true;
   }
 
+  // Boucle infinie sur tout le contenu visible (déjà filtré, voir
+  // buildVisible) : après la dernière image, on repart sur la première, et
+  // inversement — jamais de bout de liste qui bloque le swipe/la flèche.
   function navigate(dir) {
-    var images = currentImages();
-    var nextImgIdx = lbImgIndex + dir;
-    if (nextImgIdx >= 0 && nextImgIdx < images.length) {
-      lbImgIndex = nextImgIdx;
-      renderLightbox();
-      return;
-    }
-    var nextCardIdx = lbCardIndex + dir;
-    if (nextCardIdx < 0 || nextCardIdx >= lbVisible.length) return;
-    lbCardIndex = nextCardIdx;
-    var nextImages = currentImages();
-    lbImgIndex = dir > 0 ? 0 : Math.max(nextImages.length - 1, 0);
+    var step = stepIndices(dir);
+    if (!step) return;
+    lbCardIndex = step.cardIdx;
+    lbImgIndex = step.imgIdx;
     renderLightbox();
   }
 
@@ -844,6 +1130,8 @@
   }
 
   if (lbClose)  lbClose.addEventListener("click", closeLightbox);
+  var lbMobileClose = lightbox ? lightbox.querySelector(".gallery-lb-mobile-close") : null;
+  if (lbMobileClose) lbMobileClose.addEventListener("click", closeLightbox);
   if (lbPrev)   lbPrev.addEventListener("click", function(){ navigate(-1); });
   if (lbNext)   lbNext.addEventListener("click", function(){ navigate(1);  });
   if (lbSeriesPrev) lbSeriesPrev.addEventListener("click", function () {
@@ -852,6 +1140,60 @@
   if (lbSeriesNext) lbSeriesNext.addEventListener("click", function () {
     if (lbCurrentSeriesNav && lbCurrentSeriesNav.nextId != null) openLightboxByGalleryId(lbCurrentSeriesNav.nextId);
   });
+
+  // ── "Explorer l'inconnu" : image jamais notée ni en favori (pas BD), avec
+  // petit historique de session pour Précédent/Suivant — même principe que
+  // sur le codex, mais tout se passe dans le lightbox (pas de rechargement
+  // de page) : l'historique reste donc de simples variables JS.
+  function exploreFetchRandom(excludeIds, cb) {
+    var params = new URLSearchParams();
+    if (excludeIds.length) params.set("exclude", excludeIds.join(","));
+    if (hideUltra) params.set("hideUltra", "1");
+    if (hideIrrealiste) params.set("hideIrrealiste", "1");
+    fetch("/galerie/explorer/aleatoire?" + params.toString())
+      .then(function (r) { return r.json(); })
+      .then(function (d) { cb(d.id || null); })
+      .catch(function () { cb(null); });
+  }
+
+  if (exploreBtn) {
+    exploreBtn.addEventListener("click", function () {
+      exploreBtn.disabled = true;
+      exploreFetchRandom([], function (id) {
+        exploreBtn.disabled = false;
+        if (!id) { exploreBtn.textContent = "Tout est déjà exploré !"; return; }
+        exploreHistory = [id];
+        explorePos = 0;
+        exploreActive = true;
+        openLightboxByGalleryId(id);
+      });
+    });
+  }
+  if (explorePrevBtn) {
+    explorePrevBtn.addEventListener("click", function () {
+      if (explorePos <= 0) return;
+      explorePos -= 1;
+      openLightboxByGalleryId(exploreHistory[explorePos]);
+    });
+  }
+  if (exploreNextBtn) {
+    exploreNextBtn.addEventListener("click", function () {
+      if (explorePos < exploreHistory.length - 1) {
+        explorePos += 1;
+        openLightboxByGalleryId(exploreHistory[explorePos]);
+        return;
+      }
+      exploreNextBtn.disabled = true;
+      exploreFetchRandom(exploreHistory, function (id) {
+        exploreNextBtn.disabled = false;
+        if (!id) { exploreNextBtn.textContent = "Tout est exploré !"; return; }
+        exploreHistory.push(id);
+        explorePos = exploreHistory.length - 1;
+        openLightboxByGalleryId(id);
+      });
+    });
+  }
+  if (exploreExitBtn) exploreExitBtn.addEventListener("click", closeLightbox);
   if (lightbox) {
     lightbox.addEventListener("click", function(e) {
       if (e.target === lightbox) closeLightbox();
@@ -877,6 +1219,7 @@
           lbRating.querySelectorAll(".gallery-star").forEach(function(s, i){ s.classList.toggle("filled", i < newRating); });
           var card = currentCard();
           if (card) card.dataset.rating = newRating;
+          syncPartnerReveal(card, newRating);
         }
       });
     });
@@ -887,16 +1230,144 @@
     lbFavBtn.addEventListener("click", function() {
       var itemId = Number(lbFavBtn.dataset.itemId);
       if (!itemId) return;
-      var isActive = lbFavBtn.classList.contains("active");
       fetch("/favoris/toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item_type: "gallery", item_id: itemId, action: isActive ? "remove" : "add" }),
+        body: JSON.stringify({ itemType: "gallery", itemId: itemId }),
       }).then(function(r){ return r.json(); }).then(function(data){
         if (data.ok) {
-          lbFavBtn.classList.toggle("active", !isActive);
+          lbFavBtn.classList.toggle("active", data.active);
           var card = currentCard();
-          if (card) card.dataset.fav = isActive ? "0" : "1";
+          if (card) card.dataset.fav = data.active ? "1" : "0";
+        }
+      });
+    });
+  }
+
+  // ── Collections personnelles (images uniquement) ────────────────────────
+  var collectionModal = document.getElementById("collection-picker-modal");
+  var collectionList = document.getElementById("collection-picker-list");
+  var collectionNewToggle = document.getElementById("collection-picker-new-toggle");
+  var collectionNewForm = document.getElementById("collection-picker-new-form");
+  var collectionNewTitle = document.getElementById("collection-picker-new-title");
+  var collectionNewDesc = document.getElementById("collection-picker-new-desc");
+  var collectionNewTags = document.getElementById("collection-picker-new-tags");
+  var collectionNewConfirm = document.getElementById("collection-picker-new-confirm");
+  var collectionClose = document.getElementById("collection-picker-close");
+  var collectionCurrentGalleryId = null;
+
+  function renderCollectionList(collections) {
+    if (!collectionList) return;
+    collectionList.innerHTML = "";
+    if (!collections.length) {
+      var p = document.createElement("p");
+      p.className = "admin-muted";
+      p.textContent = "Aucune collection pour l'instant.";
+      collectionList.appendChild(p);
+      return;
+    }
+    collections.forEach(function (c) {
+      var row = document.createElement("button");
+      row.type = "button";
+      row.className = "collection-picker-row" + (c.contains ? " active" : "");
+      row.dataset.id = c.id;
+      var check = document.createElement("span");
+      check.className = "collection-picker-check";
+      check.innerHTML = c.contains ? "&#10003;" : "";
+      var label = document.createElement("span");
+      label.textContent = c.title;
+      row.appendChild(check);
+      row.appendChild(label);
+      row.addEventListener("click", function () {
+        var willAdd = !row.classList.contains("active");
+        fetch("/favoris/collections/" + c.id + "/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ galleryId: collectionCurrentGalleryId, action: willAdd ? "add" : "remove" }),
+        }).then(function (r) { return r.json(); }).then(function (d) {
+          if (!d.ok) return;
+          row.classList.toggle("active", willAdd);
+          check.innerHTML = willAdd ? "&#10003;" : "";
+        });
+      });
+      collectionList.appendChild(row);
+    });
+  }
+
+  if (lbCollectionBtn) {
+    lbCollectionBtn.addEventListener("click", function () {
+      var galleryId = Number(lbCollectionBtn.dataset.galleryId);
+      if (!galleryId || !collectionModal) return;
+      collectionCurrentGalleryId = galleryId;
+      if (collectionNewForm) collectionNewForm.hidden = true;
+      fetch("/favoris/collections/for-image/" + galleryId)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) return;
+          renderCollectionList(d.collections);
+          collectionModal.hidden = false;
+        });
+    });
+  }
+
+  if (collectionNewToggle) {
+    collectionNewToggle.addEventListener("click", function () {
+      if (collectionNewForm) collectionNewForm.hidden = !collectionNewForm.hidden;
+    });
+  }
+
+  if (collectionNewConfirm) {
+    collectionNewConfirm.addEventListener("click", function () {
+      var title = collectionNewTitle.value.trim();
+      if (!title || !collectionCurrentGalleryId) return;
+      collectionNewConfirm.disabled = true;
+      fetch("/favoris/collections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title,
+          description: collectionNewDesc.value.trim(),
+          tags: collectionNewTags.value.trim(),
+          galleryId: collectionCurrentGalleryId,
+        }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        collectionNewConfirm.disabled = false;
+        if (!d.ok) return;
+        collectionNewTitle.value = "";
+        collectionNewDesc.value = "";
+        collectionNewTags.value = "";
+        if (collectionNewForm) collectionNewForm.hidden = true;
+        fetch("/favoris/collections/for-image/" + collectionCurrentGalleryId)
+          .then(function (r) { return r.json(); })
+          .then(function (d2) { if (d2.ok) renderCollectionList(d2.collections); });
+      }).catch(function () { collectionNewConfirm.disabled = false; });
+    });
+  }
+
+  if (collectionClose) collectionClose.addEventListener("click", function () { collectionModal.hidden = true; });
+  if (collectionModal) {
+    collectionModal.addEventListener("click", function (e) { if (e.target === collectionModal) collectionModal.hidden = true; });
+  }
+
+  // Masquer en lightbox : retire l'image des listings pour ce seul profil
+  // (voir /favoris/masques pour la retrouver et la réafficher). Contrairement
+  // à la note/au favori, il n'y a rien à afficher "actif" ensuite — l'image
+  // disparaît du flux tout de suite, on referme donc la lightbox.
+  if (lbHideBtn) {
+    lbHideBtn.addEventListener("click", function() {
+      var galleryId = Number(lbHideBtn.dataset.galleryId);
+      if (!galleryId) return;
+      fetch("/galerie/" + galleryId + "/react", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden: true }),
+      }).then(function(r){ return r.json(); }).then(function(data){
+        if (!data.ok) return;
+        var card = currentCard();
+        closeLightbox();
+        if (card) {
+          card.remove();
+          buildVisible();
         }
       });
     });
@@ -911,7 +1382,6 @@
       fetch("/galerie/" + gid + "/delete", { method: "POST" })
         .then(function () {
           closeLightbox();
-          // Retirer la carte du DOM et rafraîchir la liste visible
           var card = grid ? grid.querySelector(".gallery-card[data-gallery-id='" + gid + "']") : null;
           if (card) card.remove();
           applyFilters();
@@ -946,19 +1416,74 @@
     });
   }
 
+  // Mode exploration : Entrée/→/swipe droite = suivant, ←/swipe gauche =
+  // précédent (sens volontairement inverse du swipe normal ci-dessous, sur
+  // demande explicite — pense "tirer la carte suivante").
   document.addEventListener("keydown", function (e) {
     if (!lightbox || lightbox.hidden) return;
-    if (e.key === "Escape")     closeLightbox();
+    if (e.key === "Escape") closeLightbox();
+    if (exploreActive) {
+      var tag = document.activeElement && document.activeElement.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "Enter" || e.key === "ArrowRight") {
+        if (exploreNextBtn) { e.preventDefault(); exploreNextBtn.click(); }
+      } else if (e.key === "ArrowLeft") {
+        if (explorePrevBtn && !explorePrevBtn.disabled) { e.preventDefault(); explorePrevBtn.click(); }
+      }
+      return;
+    }
     if (e.key === "ArrowLeft")  navigate(-1);
     if (e.key === "ArrowRight") navigate(1);
   });
 
-  var touchStartX = 0;
+  // Volet d'infos mobile : plus de tiroir déclenché par du JS — tout est un
+  // seul bloc scrollable (voir style.css : .gallery-lightbox devient un
+  // simple overflow-y:auto, image d'abord puis le volet dans le flux
+  // normal). Le scroll natif fait tout le travail, à 100% au doigt : rien
+  // ne s'ouvre ni ne se ferme tout seul, aucun seuil ni animation forcée.
+  var lbPanelEl = lightbox ? lightbox.querySelector(".gallery-lb-panel") : null;
+  var lbImageAreaEl = lightbox ? lightbox.querySelector(".gallery-lb-image-area") : null;
+  var lbPanelHandle = lightbox ? lightbox.querySelector(".gallery-lb-panel-handle") : null;
+  var lbDownHint = lightbox ? lightbox.querySelector(".gallery-lb-down-hint") : null;
+  // La poignée reste un simple raccourci pour remonter voir la photo — un
+  // tap explicite de l'utilisateur, jamais une bascule imposée par le code.
+  if (lbPanelHandle) {
+    lbPanelHandle.addEventListener("click", function () {
+      if (lbImageAreaEl) lbImageAreaEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+  // Même logique dans l'autre sens : raccourci explicite, pas d'ouverture
+  // automatique.
+  if (lbDownHint) {
+    lbDownHint.addEventListener("click", function () {
+      if (lbPanelEl) lbPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  // Navigation horizontale (swipe gauche/droite) uniquement : le vertical
+  // est laissé entièrement au scroll natif, jamais intercepté ici.
+  var touchStartX = 0, touchStartY = 0, touchInPanel = false;
   if (lightbox) {
-    lightbox.addEventListener("touchstart", function(e){ touchStartX = e.touches[0].clientX; }, { passive: true });
-    lightbox.addEventListener("touchend", function(e) {
+    lightbox.addEventListener("touchstart", function (e) {
+      touchInPanel = !!(lbPanelEl && e.target.closest(".gallery-lb-panel"));
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    lightbox.addEventListener("touchend", function (e) {
+      if (touchInPanel) return;
       var dx = e.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(dx) > 50) navigate(dx < 0 ? 1 : -1);
+      var dy = e.changedTouches[0].clientY - touchStartY;
+      // Geste clairement plus horizontal que vertical, sinon on laisse le
+      // scroll de la page faire son travail sans interférer.
+      if (Math.abs(dx) <= 50 || Math.abs(dx) <= Math.abs(dy)) return;
+      if (exploreActive) {
+        if (dx < 0 && exploreNextBtn) exploreNextBtn.click();
+        else if (dx > 0 && explorePrevBtn && !explorePrevBtn.disabled) explorePrevBtn.click();
+        return;
+      }
+      // Façon Tinder : swipe gauche = suivant, swipe droite = précédent.
+      navigate(dx < 0 ? 1 : -1);
     });
   }
 
@@ -1045,10 +1570,6 @@
     quickEditPanel.innerHTML = [
       '<div class="gallery-qedit-inner">',
         '<button type="button" class="gallery-qedit-close">&times;</button>',
-        '<div class="gallery-qedit-bd-fields" hidden>',
-          '<input type="text" class="gallery-qedit-title wiki-title-input" placeholder="Titre\u2026" />',
-          '<textarea class="gallery-qedit-notes wiki-textarea" rows="2" placeholder="Notes\u2026"></textarea>',
-        '</div>',
         '<div class="gallery-lb-meta-tags gallery-qedit-tags"></div>',
         '<div class="gallery-lb-meta-tag-edit">',
           '<input type="text" class="gallery-qedit-tag-input wiki-lb-meta-tag-input" placeholder="Ajouter un tag\u2026" autocomplete="off" />',
@@ -1091,12 +1612,7 @@
         var tags = Array.from(qTagsEl.querySelectorAll(".wiki-lb-tag-chip")).map(function(c){ return c.dataset.tag; }).filter(Boolean);
         var author = quickEditPanel.querySelector(".gallery-qedit-author").value.trim();
         var parody = quickEditPanel.querySelector(".gallery-qedit-parody").value.trim();
-        var isBd = quickEditPanel.dataset.isBd === "1";
         var body = { id: quickEditCurrentId, tags: tags, author: author, parody: parody };
-        if (isBd) {
-          body.title = quickEditPanel.querySelector(".gallery-qedit-title").value.trim();
-          body.notes = quickEditPanel.querySelector(".gallery-qedit-notes").value.trim();
-        }
         fetch("/galerie/image-meta", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1124,20 +1640,13 @@
     qTagsEl.appendChild(chip);
   }
 
-  function openQuickEdit(galleryId, isBd, card) {
+  function openQuickEdit(galleryId, card) {
     buildQuickEditPanel();
     quickEditCurrentId = galleryId;
-    quickEditPanel.dataset.isBd = isBd ? "1" : "0";
     var qTagsEl = quickEditPanel.querySelector(".gallery-qedit-tags");
     qTagsEl.innerHTML = "";
     quickEditPanel.querySelector(".gallery-qedit-author").value = "";
     quickEditPanel.querySelector(".gallery-qedit-parody").value = "";
-    var bdFields = quickEditPanel.querySelector(".gallery-qedit-bd-fields");
-    bdFields.hidden = !isBd;
-    if (isBd) {
-      quickEditPanel.querySelector(".gallery-qedit-title").value = card ? (card.dataset.title || "") : "";
-      quickEditPanel.querySelector(".gallery-qedit-notes").value = "";
-    }
     var src = card ? (card.dataset.images || "").split("|")[0] : "";
     if (src) {
       fetch("/galerie/image-meta?src=" + encodeURIComponent(src))
@@ -1158,7 +1667,7 @@
       if (!btn) return;
       e.stopPropagation();
       var card = btn.closest(".gallery-card");
-      openQuickEdit(Number(btn.dataset.galleryId), btn.dataset.isBd === "1", card);
+      openQuickEdit(Number(btn.dataset.galleryId), card);
     });
   }
 

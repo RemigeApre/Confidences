@@ -1,94 +1,161 @@
-<%- include('partials/head', { title: 'BD not\u00e9es \u2014 ' + config.title }) %>
-<main class="container wide gallery-has-sidebar">
-  <%- include('partials/top-nav', { config: config, navTitle: 'BD not\u00e9es', navBack: '/favoris' }) %>
+<%- include('partials/head', { title: 'Profil : BD' }) %>
+<main class="container wide gallery-has-sidebar profil-notes-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'BD notées', navBack: '/favoris' }) %>
 
-  <aside class="wiki-cat-sidebar gallery-sidebar">
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <%# ─── VOLET FILTRE (à droite : la navigation du profil garde la gauche) ── %>
+  <aside class="wiki-cat-sidebar gallery-sidebar profil-notes-filter">
     <div class="wiki-chapter-hero" style="--ch-hue: 28">
       <div class="wiki-chapter-hero-top">
         <span></span>
         <h1 class="wiki-chapter-hero-title">BD not&eacute;es</h1>
-        <span class="wiki-chapter-hero-count" id="bd-notes-count"><%= books.length %></span>
+        <span></span>
       </div>
     </div>
     <div class="wiki-sidebar-body">
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
-          <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="bd-notes-search" class="wiki-search-input" placeholder="Rechercher&hellip;" autocomplete="off" />
+          <input type="search" id="bd-notes-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
           <button type="button" id="bd-notes-search-clear" class="wiki-search-clear" hidden>&#215;</button>
         </div>
       </div>
-      <% if (allTags.length) { %>
-      <details class="wiki-sidebar-filter-details">
-        <summary class="wiki-sidebar-filter-summary">Tags</summary>
-        <div class="wiki-tag-cloud" id="bd-notes-tags">
-          <% allTags.forEach(function(t) { %>
-            <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-              <span class="wtc-label"><%= t %></span>
-            </button>
-          <% }) %>
+
+      <details class="wiki-sidebar-filter-details" open>
+      <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+      <div class="wiki-sidebar-filters">
+
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Langue</span>
+          <div class="links-filter" id="bd-notes-langue-filter">
+            <button type="button" class="tag-chip" data-langue="francais">&#127467;&#127479; FR</button>
+            <button type="button" class="tag-chip" data-langue="anglais">&#127468;&#127463; EN</button>
+            <button type="button" class="tag-chip" data-langue="japonais">&#127471;&#127477; JP</button>
+            <button type="button" class="tag-chip" data-langue="autre">Autre</button>
+          </div>
         </div>
+
+        <div class="wiki-filter-section">
+          <div class="wiki-filter-label-row">
+            <span class="wiki-filter-label">Note minimale</span>
+            <button type="button" class="wiki-adv-star-reset" id="bd-notes-adv-star-reset">&#10006;</button>
+          </div>
+          <div class="wiki-adv-stars" id="bd-notes-adv-stars">
+            <% for (var si = 1; si <= 5; si++) { %>
+              <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
+            <% } %>
+          </div>
+        </div>
+
+        <% if (allTags.length) { %>
+        <div class="wiki-filter-section">
+          <input type="search" id="bd-notes-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
+          <div class="wiki-tag-cloud" id="bd-notes-tags">
+            <% allTags.forEach(function(t) { %>
+              <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
+                <span class="wtc-label"><%= t %></span>
+              </button>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
+      </div>
       </details>
-      <% } %>
+
+      <button type="button" id="bd-notes-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
     </div>
   </aside>
 
-  <% if (!books.length) { %>
-    <p class="intro">Aucune BD not&eacute;e pour l&apos;instant.</p>
-  <% } else { %>
-    <div class="bd-grid" id="bd-notes-grid">
-      <% books.forEach(function(book) { %>
-        <a href="/bd/<%= book.id %>" class="bd-card"
-           data-tags="<%= book.tags.join(',') %>"
-           data-title="<%= book.title.toLowerCase() %>">
-          <% if (book.imagePaths && book.imagePaths.length) { %>
-            <div class="bd-card-cover">
-              <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
-              <span class="bd-page-count"><%= book.imagePaths.length %>&nbsp;p.</span>
-            </div>
-          <% } else { %>
-            <div class="bd-card-cover bd-card-cover-empty">
-              <span class="bd-card-empty-icon">&#128214;</span>
-            </div>
-          <% } %>
-          <div class="bd-card-body">
-            <p class="bd-card-title"><%= book.title %></p>
-            <div class="bd-card-reactions">
-              <% if (book.flame) { %><span class="bd-card-react-badge">&#128293;</span><% } %>
-              <% if (book.interested) { %><span class="bd-card-react-badge">&#10024;</span><% } %>
-              <% if (book.rating > 0) { %>
-                <span class="bd-card-rating"><%= book.rating %><span class="bd-card-star">&#9733;</span></span>
-              <% } %>
-            </div>
+  <div class="profil-empty" id="bd-notes-empty"<%= books.length ? ' hidden' : '' %>>
+    <div class="profil-empty-icon">&#10024;</div>
+    <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/bd">Commence &agrave; explorer les BD</a>.</p>
+  </div>
+  <div class="bd-grid" id="bd-notes-grid"<%= books.length ? '' : ' hidden' %>>
+    <% books.forEach(function(book) { %>
+      <a href="/bd/<%= book.id %>" class="bd-card"
+         data-tags="<%= book.tags.join(',') %>"
+         data-langue="<%= book.langue || '' %>"
+         data-title="<%= book.title.toLowerCase() %>"
+         data-rating="<%= book.rating || 0 %>">
+        <% if (book.imagePaths && book.imagePaths.length) { %>
+          <div class="bd-card-cover">
+            <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
+            <span class="bd-page-count"><%= book.imagePaths.length %>&nbsp;p.</span>
           </div>
-        </a>
-      <% }) %>
-    </div>
-  <% } %>
+        <% } else { %>
+          <div class="bd-card-cover bd-card-cover-empty">
+            <span class="bd-card-empty-icon">&#128214;</span>
+          </div>
+        <% } %>
+        <div class="bd-card-body">
+          <p class="bd-card-title"><%= book.title %></p>
+          <div class="bd-card-reactions">
+            <% if (book.flame) { %><span class="bd-card-react-badge">&#128293;</span><% } %>
+            <% if (book.interested) { %><span class="bd-card-react-badge">&#10024;</span><% } %>
+            <% if (book.rating > 0) { %>
+              <span class="bd-card-rating"><%= book.rating %><span class="bd-card-star">&#9733;</span></span>
+            <% } %>
+          </div>
+        </div>
+      </a>
+    <% }) %>
+  </div>
 </main>
 
 <script>
 (function() {
   var grid  = document.getElementById("bd-notes-grid");
+  var emptyEl = document.getElementById("bd-notes-empty");
   var cards = grid ? Array.from(grid.querySelectorAll(".bd-card")) : [];
-  var countEl = document.getElementById("bd-notes-count");
   var searchInput = document.getElementById("bd-notes-search");
   var searchClear = document.getElementById("bd-notes-search-clear");
   var tagCloud = document.getElementById("bd-notes-tags");
-  var activeTags = [], searchQ = "";
+  var langueFilter = document.getElementById("bd-notes-langue-filter");
+  var activeTags = [], searchQ = "", activeLangue = "", advMinRating = 0;
+  var hideUltra = localStorage.getItem("profil-hide-ultra") === "1";
+  // Tags masqués (voir bouton "Masquer le tag" de la popup tag) : reste
+  // masqué même dans ses propres notes, comme partout ailleurs sur le site.
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Un tag masqué (voir /tags/masques) n'est plus un choix disponible : son
+  // chip est retiré du nuage de tags, pas seulement le contenu qui le porte.
+  function hideBlacklistedTagChips() {
+    if (!tagCloud) return;
+    tagCloud.querySelectorAll(".wiki-tag-chip").forEach(function(chip) {
+      if (blacklistSet.has((chip.dataset.tag || "").toLowerCase())) chip.hidden = true;
+    });
+  }
+  hideBlacklistedTagChips();
+  document.addEventListener("tag-blacklist-change", function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    hideBlacklistedTagChips();
+    applyFilters();
+  });
 
   function applyFilters() {
     var vis = 0;
     cards.forEach(function(c) {
       var tags  = (c.dataset.tags || "").split(",").filter(Boolean);
       var title = c.dataset.title || "";
+      var langue = c.dataset.langue || "";
+      var rating = Number(c.dataset.rating) || 0;
       var ok = (activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); }))
-            && (!searchQ || title.includes(searchQ));
+            && (!searchQ || title.includes(searchQ))
+            && (!activeLangue || langue === activeLangue)
+            && (!advMinRating || rating >= advMinRating)
+            && (!hideUltra || tags.indexOf("ultra") === -1)
+            && (blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); }));
       c.style.display = ok ? "" : "none";
       if (ok) vis++;
     });
-    if (countEl) countEl.textContent = vis;
+    if (emptyEl) emptyEl.hidden = vis > 0;
+    if (grid) grid.hidden = vis === 0;
   }
+
+  document.addEventListener("profil-ultra-toggle-change", function() {
+    hideUltra = localStorage.getItem("profil-hide-ultra") === "1";
+    applyFilters();
+  });
 
   if (tagCloud) {
     tagCloud.addEventListener("click", function(e) {
@@ -101,11 +168,59 @@
       applyFilters();
     });
   }
+
+  var advStarsWrap = document.getElementById("bd-notes-adv-stars");
+  var advStarReset = document.getElementById("bd-notes-adv-star-reset");
+  function syncStars() {
+    if (!advStarsWrap) return;
+    advStarsWrap.querySelectorAll(".wiki-adv-star").forEach(function(btn) {
+      var v = Number(btn.dataset.value);
+      btn.innerHTML = v <= advMinRating ? "&#9733;" : "&#9734;";
+      btn.classList.toggle("active", v <= advMinRating);
+    });
+  }
+  if (advStarsWrap) {
+    advStarsWrap.querySelectorAll(".wiki-adv-star").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var v = Number(btn.dataset.value);
+        advMinRating = advMinRating === v ? 0 : v;
+        syncStars();
+        applyFilters();
+      });
+    });
+  }
+  if (advStarReset) {
+    advStarReset.addEventListener("click", function() {
+      advMinRating = 0;
+      syncStars();
+      applyFilters();
+    });
+  }
+
+  if (langueFilter) {
+    langueFilter.querySelectorAll(".tag-chip").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var langue = btn.dataset.langue;
+        if (activeLangue === langue) {
+          activeLangue = "";
+          btn.classList.remove("active");
+        } else {
+          activeLangue = langue;
+          langueFilter.querySelectorAll(".tag-chip").forEach(function(b) { b.classList.remove("active"); });
+          btn.classList.add("active");
+        }
+        applyFilters();
+      });
+    });
+  }
+
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function() {
       searchQ = searchInput.value.toLowerCase().trim();
       if (searchClear) searchClear.hidden = !searchQ;
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
     if (searchClear) {
       searchClear.addEventListener("click", function() {
@@ -113,6 +228,38 @@
       });
     }
   }
+
+  var tagSearchInput = document.getElementById("bd-notes-tag-search");
+  var tagSearchDebounceTimer = null;
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener("input", function() {
+      clearTimeout(tagSearchDebounceTimer);
+      tagSearchDebounceTimer = setTimeout(function() {
+        var q = tagSearchInput.value.trim().toLowerCase();
+        document.querySelectorAll("#bd-notes-tags .wiki-tag-chip").forEach(function(chip) {
+          var tag = (chip.dataset.tag || "").toLowerCase();
+          chip.hidden = q.length > 0 && tag.indexOf(q) === -1;
+        });
+      }, 120);
+    });
+  }
+
+  var resetBtn = document.getElementById("bd-notes-reset-filters");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", function() {
+      activeTags = []; searchQ = ""; activeLangue = ""; advMinRating = 0;
+      if (searchInput) searchInput.value = "";
+      if (searchClear) searchClear.hidden = true;
+      if (tagSearchInput) tagSearchInput.value = "";
+      document.querySelectorAll("#bd-notes-tags .wiki-tag-chip").forEach(function(c) {
+        c.classList.remove("active"); c.dataset.state = "0"; c.hidden = false;
+      });
+      if (langueFilter) langueFilter.querySelectorAll(".tag-chip").forEach(function(b) { b.classList.remove("active"); });
+      syncStars();
+      applyFilters();
+    });
+  }
+
   applyFilters();
 })();
 </script>

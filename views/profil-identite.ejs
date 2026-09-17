@@ -1,0 +1,65 @@
+<%- include('partials/head', { title: 'Profil : Identité' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+
+    <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
+    <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
+
+    <form method="POST" action="/favoris/identite" class="profil-form">
+
+      <label class="profil-field">
+        <span class="profil-field-label">Pseudo</span>
+        <input type="text" name="display_name" value="<%= user.displayName %>" required autocomplete="off" class="profil-field-input" />
+      </label>
+
+      <label class="profil-field">
+        <span class="profil-field-label">Orientation</span>
+        <select name="orientation" class="profil-field-input">
+          <option value="" <%= !user.orientation ? 'selected' : '' %>>Non pr&eacute;cis&eacute;e</option>
+          <option value="hetero" <%= user.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
+          <option value="gay" <%= user.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
+          <option value="bi" <%= user.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
+        </select>
+      </label>
+
+      <label class="profil-field">
+        <span class="profil-field-label">Adresse mail</span>
+        <input type="email" name="email" value="<%= user.email || '' %>" placeholder="facultatif" autocomplete="off" class="profil-field-input" />
+      </label>
+
+      <label class="profil-field">
+        <span class="profil-field-label">Sexe</span>
+        <select name="sexe" class="profil-field-input">
+          <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
+          <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
+          <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
+          <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
+        </select>
+      </label>
+
+      <label class="profil-field">
+        <span class="profil-field-label">Ann&eacute;e de naissance</span>
+        <input type="number" name="birth_year" value="<%= user.birthYear || '' %>" placeholder="facultatif" min="1900" max="<%= new Date().getFullYear() %>" class="profil-field-input" />
+      </label>
+
+      <div class="profil-field profil-field-readonly">
+        <span class="profil-field-label">Identifiant</span>
+        <input type="text" value="<%= user.username %>" disabled class="profil-field-input" />
+      </div>
+
+      <div class="profil-field profil-field-readonly">
+        <span class="profil-field-label">Statut</span>
+        <input type="text" value="<%= user.isAdmin ? 'Administrateur' : (user.isTest ? 'Utilisateur (test)' : 'Utilisateur') %>" disabled class="profil-field-input" />
+      </div>
+
+      <button type="submit" class="profil-btn-primary">Enregistrer</button>
+    </form>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

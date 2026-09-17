@@ -1,15 +1,18 @@
-<%- include('partials/head', { title: 'Wiki' }) %>
+<%- include('partials/head', { title: 'Codex' }) %>
 <main class="container wide wiki-locked" style="--ch-hue: 250">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Wiki', navBack: '/' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: 'Codex', navBack: '/' }) %>
+
+  <%- include('partials/mobile-filter-toggle') %>
 
   <%# ─── SIDEBAR ──────────────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar">
+  <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
 
     <%# ─ En-tête ─ %>
     <div class="wiki-chapter-hero">
       <div class="wiki-chapter-hero-top">
         <span class="wiki-chapter-hero-back" aria-hidden="true"></span>
-        <h1 class="wiki-chapter-hero-title">Wiki</h1>
+        <h1 class="wiki-chapter-hero-title">Codex</h1>
         <span class="wiki-chapter-hero-count"><%= totalCount %></span>
       </div>
     </div>
@@ -32,15 +35,15 @@
 
         <div class="wiki-filter-section wiki-sort-cols-row">
           <select id="wiki-cols-select" class="wiki-sort-select wiki-cols-select">
-            <option value="1">1 col</option>
-            <option value="2">2 col</option>
-            <option value="3" selected>3 col</option>
-            <option value="4">4 col</option>
-            <option value="5">5 col</option>
+            <option value="1">1 colonne</option>
+            <option value="2">2 colonnes</option>
+            <option value="3" selected>3 colonnes</option>
+            <option value="4">4 colonnes</option>
+            <option value="5">5 colonnes</option>
           </select>
           <select id="wiki-sort-select" class="wiki-sort-select">
-            <option value="alpha-asc">A &rarr; Z</option>
-            <option value="alpha-desc">Z &rarr; A</option>
+            <option value="alpha-asc">Ordre alphab&eacute;tique</option>
+            <option value="alpha-desc">Ordre alphab&eacute;tique inverse</option>
             <option value="date-desc">Plus r&eacute;cent</option>
             <option value="date-asc">Plus ancien</option>
             <option value="rating-desc">Mieux not&eacute;</option>
@@ -51,20 +54,24 @@
         <div class="wiki-filter-section wiki-filter-toggles">
           <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
           <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
+          <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
+            <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">Nos objets</button>
+          <% } %>
         </div>
 
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label">Cat&eacute;gorie</span>
+        <%# Pas de "Tous" : aucune catégorie cochée = toutes affichées. Volet
+            réduit (fermé par défaut) pour limiter l'espace pris par la liste. %>
+        <details class="wiki-subpanel-details">
+          <summary class="wiki-subpanel-summary">Cat&eacute;gorie</summary>
           <div class="links-filter wiki-index-cat-filter" id="wiki-category-filter">
-            <button type="button" class="tag-chip active" data-category="" data-label="Tous">Tous</button>
             <% categories.forEach(function (c) { %>
               <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"><%= c.label %></button>
             <% }) %>
-            <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">&#9733; Nos objets</button>
           </div>
-        </div>
+        </details>
 
-        <div class="wiki-filter-section">
+        <details class="wiki-subpanel-details">
+          <summary class="wiki-subpanel-summary">Notation</summary>
           <div class="wiki-filter-label-row">
             <span class="wiki-filter-label">Note minimale</span>
             <button type="button" class="wiki-adv-star-reset" id="wiki-adv-star-reset">&#10006;</button>
@@ -74,20 +81,17 @@
               <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
             <% } %>
           </div>
-        </div>
-
-        <div class="wiki-filter-section">
+          <%# "Possédé" retiré : doublon avec la bascule "Nos objets" ci-dessus. %>
           <div class="wiki-prop-grid" id="wiki-prop-grid">
             <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0">Pas encore not&eacute;</button>
-            <button type="button" class="wiki-prop-btn" data-prop="owned" data-state="0">Poss&eacute;d&eacute;</button>
             <button type="button" class="wiki-prop-btn" data-prop="flame" data-state="0">J&apos;adore</button>
-            <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0">Int&eacute;ress&eacute;e</button>
+            <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0"><%= interestedLabel %></button>
           </div>
-        </div>
+        </details>
 
         <% if (allTags.length) { %>
           <div class="wiki-filter-section">
-            <input type="search" id="wiki-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag&hellip;" autocomplete="off" />
+            <input type="search" id="wiki-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
             <div class="wiki-tag-cloud" id="wiki-tag-filter">
               <% allTags.forEach(function (tag) { %>
                 <button type="button" class="wiki-tag-chip" data-tag="<%= tag %>" data-state="0">
@@ -102,10 +106,22 @@
           </div>
         <% } %>
 
+        <% if (currentUser) { %>
+          <%- include('partials/filter-profiles', { section: 'wiki', profiles: locals.wikiFilterProfiles || [] }) %>
+        <% } %>
+
       </div><%# /wiki-sidebar-filters %>
       </details>
 
-      <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+      <div class="wiki-filter-section wiki-filter-bottom-actions">
+        <% if (currentUser) { %>
+          <button type="button" id="wiki-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
+        <% } %>
+        <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+        <% if (currentUser) { %>
+          <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
+        <% } %>
+      </div>
 
     </div><%# /wiki-sidebar-body %>
   </aside>
@@ -118,7 +134,7 @@
     <details class="wiki-intro-details">
       <summary class="wiki-intro-summary">! &Agrave; propos !</summary>
       <div class="wiki-index-intro">
-        <p>Le wiki de Confidence est un espace d&rsquo;encyclop&eacute;die agr&eacute;ment&eacute; par les administrateurs du site. Il vise &agrave; &ecirc;tre exhaustif sur tout ce qui touche &agrave; la sexualit&eacute;, des pratiques aux fantasmes en passant par les objets et les sc&eacute;narios. Tu peux noter, mettre en favoris et explorer &agrave; ton rythme.</p>
+        <p>Le codex de Confidence est un espace d&rsquo;encyclop&eacute;die agr&eacute;ment&eacute; par les administrateurs du site. Il vise &agrave; &ecirc;tre exhaustif sur tout ce qui touche &agrave; la sexualit&eacute;, des pratiques aux fantasmes en passant par les objets et les sc&eacute;narios. Vous pouvez noter, mettre en favoris et explorer &agrave; votre rythme.</p>
         <p>Il existe deux tags sp&eacute;ciaux&nbsp;: <strong>Ultra</strong>, pour les contenus les plus extr&ecirc;mes, et <strong>Irr&eacute;aliste</strong>, pour les sc&eacute;narios qui rel&egrave;vent davantage du fantasme pur. Ces deux tags peuvent &ecirc;tre masqu&eacute;s depuis les filtres.</p>
       </div>
     </details>
@@ -223,4 +239,5 @@
 
 </main>
 <script src="/wiki.js?v=<%= assetVersion %>"></script>
+<%- include('partials/codex-offline') %>
 <%- include('partials/foot') %>

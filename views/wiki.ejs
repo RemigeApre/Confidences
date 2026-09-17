@@ -1,13 +1,16 @@
-<%- include('partials/head', { title: lockedCategory ? lockedCategory.label : 'Toutes les pages' }) %>
+<%- include('partials/head', { title: lockedCategory ? ('Codex : ' + lockedCategory.label) : 'Codex : Recherche' }) %>
 <main class="container wide<%= lockedCategory ? ' wiki-locked' : '' %>"<% if (lockedCategory) { %> style="--ch-hue: <%= lockedCategory.hue %>"<% } %>>
-  <%- include('partials/top-nav', { config: config, navTitle: lockedCategory ? lockedCategory.label : 'Wiki', navBack: lockedCategory ? '/wiki' : '/' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: lockedCategory ? lockedCategory.label : 'Codex', navBack: lockedCategory ? '/wiki' : '/' }) %>
 
   <% if (lockedCategory) { %>
 
+    <%- include('partials/mobile-filter-toggle') %>
+
     <%# ─── SIDEBAR CATÉGORIE ────────────────────────────────────────────── %>
     <%# Sur desktop : panneau fixe à gauche, pleine hauteur, sans pousser  %>
-    <%# la grille centrale. Sur mobile : bloc inline au-dessus de la grille.%>
-    <aside class="wiki-cat-sidebar">
+    <%# la grille centrale. Sur mobile : tiroir rétracté depuis la gauche. %>
+    <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
+      <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
 
       <%# ─ En-tête : flèche retour + nom + nombre ─ %>
       <div class="wiki-chapter-hero">
@@ -37,15 +40,15 @@
 
           <div class="wiki-filter-section wiki-sort-cols-row">
             <select id="wiki-cols-select" class="wiki-sort-select wiki-cols-select">
-              <option value="1">1 col</option>
-              <option value="2">2 col</option>
-              <option value="3" selected>3 col</option>
-              <option value="4">4 col</option>
-              <option value="5">5 col</option>
+              <option value="1">1 colonne</option>
+              <option value="2">2 colonnes</option>
+              <option value="3" selected>3 colonnes</option>
+              <option value="4">4 colonnes</option>
+              <option value="5">5 colonnes</option>
             </select>
             <select id="wiki-sort-select" class="wiki-sort-select">
-              <option value="alpha-asc">A &rarr; Z</option>
-              <option value="alpha-desc">Z &rarr; A</option>
+              <option value="alpha-asc">Ordre alphab&eacute;tique</option>
+              <option value="alpha-desc">Ordre alphab&eacute;tique inverse</option>
               <option value="date-desc">Plus r&eacute;cent</option>
               <option value="date-asc">Plus ancien</option>
               <option value="rating-desc">Mieux not&eacute;</option>
@@ -92,7 +95,8 @@
             </div>
           <% } %>
 
-          <div class="wiki-filter-section">
+          <details class="wiki-subpanel-details">
+            <summary class="wiki-subpanel-summary">Notation</summary>
             <div class="wiki-filter-label-row">
               <span class="wiki-filter-label">Note minimale</span>
               <button type="button" class="wiki-adv-star-reset" id="wiki-adv-star-reset">&#10006;</button>
@@ -102,16 +106,13 @@
                 <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
               <% } %>
             </div>
-          </div>
-
-          <div class="wiki-filter-section">
+            <%# "Possédé" retiré : doublon avec la bascule "Nos objets". %>
             <div class="wiki-prop-grid" id="wiki-prop-grid">
               <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0">Pas encore not&eacute;</button>
-              <button type="button" class="wiki-prop-btn" data-prop="owned" data-state="0">Poss&eacute;d&eacute;</button>
               <button type="button" class="wiki-prop-btn" data-prop="flame" data-state="0">J&apos;adore</button>
-              <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0">Int&eacute;ress&eacute;e</button>
+              <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0"><%= interestedLabel %></button>
             </div>
-          </div>
+          </details>
 
           <% if (currentUser && currentUser.isAdmin) { %>
           <div class="wiki-filter-section">
@@ -129,7 +130,7 @@
 
           <% if (allTags.length) { %>
             <div class="wiki-filter-section">
-              <input type="search" id="wiki-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag&hellip;" autocomplete="off" />
+              <input type="search" id="wiki-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
               <div class="wiki-tag-cloud" id="wiki-tag-filter">
                 <% allTags.forEach(function (tag) { %>
                   <button type="button" class="wiki-tag-chip" data-tag="<%= tag %>" data-state="0">
@@ -144,10 +145,22 @@
             </div>
           <% } %>
 
+          <% if (currentUser) { %>
+            <%- include('partials/filter-profiles', { section: 'wiki', profiles: locals.wikiFilterProfiles || [] }) %>
+          <% } %>
+
         </div><%# /wiki-sidebar-filters %>
         </details>
 
-        <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+        <div class="wiki-filter-section wiki-filter-bottom-actions">
+          <% if (currentUser) { %>
+            <button type="button" id="wiki-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
+          <% } %>
+          <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+          <% if (currentUser) { %>
+            <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
+          <% } %>
+        </div>
 
       </div><%# /wiki-sidebar-body %>
     </aside>
@@ -187,19 +200,19 @@
           </div>
           <div class="wiki-prop-grid" id="wiki-prop-grid">
             <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0">Pas encore not&eacute;</button>
-            <button type="button" class="wiki-prop-btn" data-prop="owned" data-state="0">Poss&eacute;d&eacute;</button>
             <button type="button" class="wiki-prop-btn" data-prop="flame" data-state="0">J&apos;adore</button>
-            <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0">Int&eacute;ress&eacute;e</button>
+            <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0"><%= interestedLabel %></button>
           </div>
         </div>
 
         <div class="wiki-controls">
           <div class="links-filter" id="wiki-category-filter">
-            <button type="button" class="tag-chip active" data-category="" data-label="Tous">Tous</button>
             <% categories.forEach(function (c) { %>
               <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"<% if (c.desc) { %> data-desc="<%= c.desc %>"<% } %>><%= c.label %></button>
             <% }) %>
-            <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">&#9733; Nos objets</button>
+            <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
+              <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">Nos objets</button>
+            <% } %>
           </div>
 
           <% if (allTags.length) { %>
@@ -277,4 +290,5 @@
 </main>
 <script>window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>
 <script src="/wiki.js?v=<%= assetVersion %>"></script>
+<%- include('partials/codex-offline') %>
 <%- include('partials/foot') %>

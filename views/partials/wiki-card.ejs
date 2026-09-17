@@ -39,6 +39,12 @@
     wcVariantes = vcParts.join(' ').toLowerCase().replace(/"/g, '').replace(/\s+/g, ' ').slice(0, 600);
   }
 
+  // "Nos objets" (bouton + étoile "Possédé") : réservé à l'admin et aux
+  // profils que l'admin a explicitement autorisés (voir /admin, fiche
+  // profil > "Peut voir 'Nos objets'"). data-owned masqué aussi côté
+  // markup, pas juste l'étoile, pour ne rien laisser voir en vue source.
+  var wcCanSeeOwned = !!(currentUser && (currentUser.isAdmin || currentUser.canSeeOwned));
+
   var wcExcerpt = '';
   if (!currentUser && page.content) {
     wcExcerpt = (page.content || '')
@@ -51,7 +57,7 @@
 <a href="/wiki/<%= page.id %>" class="wiki-card"
   style="--card-hue: <%= cat ? cat.hue : 220 %>"
   data-category="<%= page.category %>"
-  data-owned="<%= page.owned ? '1' : '0' %>"
+  data-owned="<%= (wcCanSeeOwned && page.owned) ? '1' : '0' %>"
   data-tags="<%= page.tags.join('|').toLowerCase() %>"
   data-title="<%= page.title.toLowerCase() %>"
   data-date="<%= new Date(page.updatedAt).getTime() %>"
@@ -94,9 +100,10 @@
         <% if (wcShowBadge) { %><span class="wiki-category-badge" style="background: hsl(<%= cat ? cat.hue : 220 %>, 55%, 45%)"><%= cat ? cat.label : page.category %></span><% } %>
         <% if (currentUser) { %><span class="wiki-card-badges">
           <% if (page.rating) { %><span class="wiki-card-mini-stars"><% for (var si = 1; si <= 5; si++) { %><span class="wiki-card-star<%= si <= page.rating ? ' filled' : '' %>">&#9733;</span><% } %></span><% } %>
-          <% if (page.owned) { %><span class="wiki-owned-badge" title="Possédé">&#9733;</span><% } %>
+          <% if (wcCanSeeOwned && page.owned) { %><span class="wiki-owned-badge" title="Possédé">&#9733;</span><% } %>
           <% if (page.flame) { %><span class="wiki-card-react-badge" title="J'adore">&#128293;</span><% } %>
           <% if (page.interested) { %><span class="wiki-card-react-badge" title="Ça m'intéresse">&#10024;</span><% } %>
+          <% if (page.partnerReaction) { %><span class="wiki-card-partner-badge" title="Votre partenaire a noté cette page">&#127800;</span><% } %>
         </span><% } %>
       </div>
     </div>
@@ -130,9 +137,10 @@
         <% if (wcShowBadge) { %><span class="wiki-category-badge" style="background: hsl(<%= cat ? cat.hue : 220 %>, 55%, 45%)"><%= cat ? cat.label : page.category %></span><% } %>
         <% if (currentUser) { %><span class="wiki-card-badges">
           <% if (page.rating) { %><span class="wiki-card-mini-stars"><% for (var si2 = 1; si2 <= 5; si2++) { %><span class="wiki-card-star<%= si2 <= page.rating ? ' filled' : '' %>">&#9733;</span><% } %></span><% } %>
-          <% if (page.owned) { %><span class="wiki-owned-badge" title="Possédé">&#9733;</span><% } %>
+          <% if (wcCanSeeOwned && page.owned) { %><span class="wiki-owned-badge" title="Possédé">&#9733;</span><% } %>
           <% if (page.flame) { %><span class="wiki-card-react-badge">&#128293;</span><% } %>
           <% if (page.interested) { %><span class="wiki-card-react-badge">&#10024;</span><% } %>
+          <% if (page.partnerReaction) { %><span class="wiki-card-partner-badge" title="Votre partenaire a noté cette page">&#127800;</span><% } %>
         </span><% } %>
       </div>
     </div>

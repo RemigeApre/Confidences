@@ -10,9 +10,35 @@
 
   var activeTags   = [];
   var searchQ      = "";
-  // Etat initial derive du reglage de compte (voir /favoris > Parametres).
-  var showUltra      = (window.ULTRA_MODE || "hidden") !== "hidden";
-  var showIrrealiste = (window.IRREALISTE_MODE || "visible") !== "hidden";
+  // Tags masqués (voir /favoris et le bouton "Masquer le tag" de la popup
+  // tag) : toute BD portant l'un de ces tags reste masquée partout, sans
+  // bascule possible ici (on les retire depuis /tags/masques).
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Un tag masqué (voir /tags/masques) n'est plus un choix disponible : son
+  // chip est retiré du nuage de tags, pas seulement le contenu qui le porte.
+  function hideBlacklistedTagChips() {
+    if (!tagFilter) return;
+    tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]").forEach(function (chip) {
+      if (blacklistSet.has((chip.dataset.tag || "").toLowerCase())) chip.hidden = true;
+    });
+  }
+
+  // Effectif à la fermeture de la popup tag (voir public/nav.js), pas au
+  // clic sur "Masquer le tag" : on ne veut pas faire disparaître le tag
+  // sous les yeux de l'utilisateur pendant qu'il consulte encore la popup.
+  document.addEventListener("tag-blacklist-change", function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    hideBlacklistedTagChips();
+    applyFilters();
+  });
+  // Etat initial : le réglage de compte sert de valeur par défaut, mais une
+  // bascule explicite en session est mémorisée et prime dessus au
+  // rechargement — sinon revenir sur la page annulait silencieusement le
+  // filtre qu'on venait de poser.
+  var storedShowUltra      = localStorage.getItem("bd-show-ultra");
+  var storedShowIrrealiste = localStorage.getItem("bd-show-irrealiste");
+  var showUltra      = storedShowUltra !== null ? storedShowUltra === "1" : (window.ULTRA_MODE || "hidden") !== "hidden";
+  var showIrrealiste = storedShowIrrealiste !== null ? storedShowIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") !== "hidden";
   var activeLangue = "";
   var showCouleurOnly = false;
 
@@ -48,8 +74,9 @@
       var okIrrealiste = showIrrealiste || !irrealiste;
       var okLangue  = !activeLangue || langue === activeLangue;
       var okCouleur = !showCouleurOnly || couleur;
+      var okBlacklist = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
 
-      if (okTags && okSearch && okUltra && okIrrealiste && okLangue && okCouleur) { card.style.display = ""; visible++; }
+      if (okTags && okSearch && okUltra && okIrrealiste && okLangue && okCouleur && okBlacklist) { card.style.display = ""; visible++; }
       else                                                         { card.style.display = "none"; }
     });
     updateCount(visible);
@@ -68,12 +95,15 @@
     });
   }
 
-  // Search
+  // Search. Léger débounce : l'input reste instantané, seul le filtrage
+  // (potentiellement coûteux sur beaucoup de BD) est différé.
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function() {
       searchQ = searchInput.value.toLowerCase().trim();
       if (searchClear) searchClear.hidden = !searchQ;
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
     if (searchClear) {
       searchClear.addEventListener("click", function() {
@@ -120,6 +150,7 @@
     ultraBtn.textContent = showUltra ? "\uD83D\uDD13 Afficher Ultra" : "\uD83D\uDD12 Masquer Ultra";
     ultraBtn.addEventListener("click", function() {
       showUltra = !showUltra;
+      localStorage.setItem("bd-show-ultra", showUltra ? "1" : "0");
       ultraBtn.textContent = showUltra ? "\uD83D\uDD13 Afficher Ultra" : "\uD83D\uDD12 Masquer Ultra";
       applyFilters();
     });
@@ -131,11 +162,13 @@
     irrealisteBtn.textContent = showIrrealiste ? "\uD83D\uDD13 Afficher Irr\u00E9aliste" : "\uD83D\uDD12 Masquer Irr\u00E9aliste";
     irrealisteBtn.addEventListener("click", function() {
       showIrrealiste = !showIrrealiste;
+      localStorage.setItem("bd-show-irrealiste", showIrrealiste ? "1" : "0");
       irrealisteBtn.textContent = showIrrealiste ? "\uD83D\uDD13 Afficher Irr\u00E9aliste" : "\uD83D\uDD12 Masquer Irr\u00E9aliste";
       applyFilters();
     });
   }
 
+  hideBlacklistedTagChips();
   applyFilters();
 })();
 
@@ -406,6 +439,23 @@
         if (item) item.classList.toggle("bd-sort-item-removed", cb.checked);
         syncOrder();
       });
+    });
+
+    // Flèches haut/bas : équivalent du glisser-déposer au tap, seule façon
+    // de réordonner sur téléphone (pas de drag HTML5 au toucher).
+    sortGrid.addEventListener("click", function(e) {
+      var btn = e.target.closest(".bd-sort-move-btn");
+      if (!btn) return;
+      var item = btn.closest(".bd-sort-item");
+      if (!item) return;
+      if (btn.classList.contains("bd-sort-move-up")) {
+        var prevItem = item.previousElementSibling;
+        if (prevItem) sortGrid.insertBefore(item, prevItem);
+      } else {
+        var nextItem = item.nextElementSibling;
+        if (nextItem) sortGrid.insertBefore(nextItem, item);
+      }
+      syncOrder();
     });
 
     syncOrder();

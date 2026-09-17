@@ -1,9 +1,12 @@
-<%- include('partials/head', { title: 'Images — ' + config.title }) %>
+<%- include('partials/head', { title: 'Images' }) %>
 <main class="container wide gallery-has-sidebar">
   <%- include('partials/top-nav', { config: config, navTitle: 'Galerie', navBack: '/' }) %>
 
+  <%- include('partials/mobile-filter-toggle') %>
+
   <%# ─── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar gallery-sidebar">
+  <aside class="wiki-cat-sidebar gallery-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
     <div class="wiki-chapter-hero" style="--ch-hue: 220">
       <div class="wiki-chapter-hero-top">
         <span></span>
@@ -17,7 +20,7 @@
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
           <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="gallery-search" class="wiki-search-input" placeholder="Rechercher&hellip;" autocomplete="off" />
+          <input type="search" id="gallery-search" class="wiki-search-input" placeholder="Rechercher" autocomplete="off" />
           <button type="button" id="gallery-search-clear" class="wiki-search-clear" hidden>&#215;</button>
         </div>
         <span id="gallery-result-count" class="wiki-result-count" hidden></span>
@@ -38,19 +41,15 @@
       </details>
       <% } %>
 
-      <%# Tags avec X|Y (image | BD) %>
+      <%# Tags avec compteur %>
       <% if (allTags.length) { %>
       <div class="wiki-filter-section">
         <div class="wiki-tag-cloud" id="gallery-tag-filter">
           <% allTags.forEach(function(t) { %>
-            <% var ni = tagImageCounts[t] || 0; var nb = tagBdCounts[t] || 0; %>
+            <% var ni = tagImageCounts[t] || 0; %>
             <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
               <span class="wtc-label"><%= t %></span>
-              <% if (ni || nb) { %>
-                <span class="wiki-tag-xy">
-                  <span class="wiki-tag-xy-pages"><%= ni %></span>|<span class="wiki-tag-xy-imgs"><%= nb %></span>
-                </span>
-              <% } %>
+              <% if (ni) { %><span class="wtc-count"><%= ni %></span><% } %>
             </button>
           <% }) %>
         </div>
@@ -66,9 +65,13 @@
         <button type="button" id="gallery-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
       </div>
 
+      <%- include('partials/filter-profiles', { section: 'gallery', profiles: locals.galleryFilterProfiles || [] }) %>
+
       <%# Réinitialiser %>
       <div class="wiki-filter-section">
-        <button type="button" id="gallery-reset-filters" class="wiki-filter-reset-btn">R&eacute;initialiser les filtres</button>
+        <button type="button" id="gallery-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
+        <button type="button" id="gallery-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+        <button type="button" id="gallery-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
       </div>
 
       <%# Tri %>
@@ -76,7 +79,7 @@
         <select id="gallery-sort-select" class="wiki-sort-select">
           <option value="date-desc">Plus r&eacute;cent</option>
           <option value="date-asc">Plus ancien</option>
-          <option value="alpha-asc">A &rarr; Z</option>
+          <option value="alpha-asc">Ordre alphab&eacute;tique</option>
           <option value="rating-desc">Mieux not&eacute;</option>
           <option value="random">Al&eacute;atoire</option>
         </select>
@@ -125,11 +128,9 @@
       <div class="gallery-card"
         data-idx="<%= idx %>"
         data-tags="<%= item.tags.join('|').toLowerCase() %>"
-        data-type="<%= item.contentType || 'image' %>"
         data-category="<%= item.category || '' %>"
         data-ultra="<%= item.tags.indexOf('ultra') !== -1 ? '1' : '0' %>"
         data-irrealiste="<%= (item.tags.indexOf('irréaliste') !== -1 || item.tags.indexOf('fantaisie') !== -1) ? '1' : '0' %>"
-        data-bd="<%= (item.contentType === 'bd') ? '1' : '0' %>"
         data-title="<%= (item.title || '').toLowerCase() %>"
         data-display-title="<%= (item.title || '').replace(/"/g, '') %>"
         data-images="<%= item.imagePaths.join('|') %>"
@@ -137,6 +138,9 @@
         data-gallery-id="<%= item.id || '' %>"
         data-date="<%= item.date || '' %>"
         data-rating="<%= item.rating || 0 %>"
+        data-partner-rating="<%= (item.partnerReaction && item.partnerReaction.rating) || 0 %>"
+        data-partner-flame="<%= (item.partnerReaction && item.partnerReaction.flame) ? '1' : '0' %>"
+        data-partner-interested="<%= (item.partnerReaction && item.partnerReaction.interested) ? '1' : '0' %>"
         data-fav="<%= favoriteGalleryIds.indexOf(item.id) !== -1 ? '1' : '0' %>"
         data-processed="<%= (item.processed && item.type === 'gallery') ? '1' : '0' %>"
         data-author="<%= (item.author || '').replace(/"/g, '') %>"
@@ -158,14 +162,11 @@
 
         <img src="<%= thumbUrl(item.imagePaths[0]) %>" alt="<%= item.title %>" class="gallery-img" loading="lazy" />
 
-        <% if (item.contentType === 'bd' && item.title) { %>
-          <div class="gallery-bd-title"><%= item.title %></div>
-        <% } %>
-
         <div class="gallery-card-overlay">
           <span class="wiki-card-badges">
             <% if (item.flame) { %><span class="wiki-card-react-badge" title="J'adore">&#128293;</span><% } %>
             <% if (item.interested) { %><span class="wiki-card-react-badge" title="Ça m'intéresse">&#10024;</span><% } %>
+            <% if (item.partnerReaction) { %><span class="wiki-card-partner-badge" title="Votre partenaire a noté ce contenu">&#127800;</span><% } %>
           </span>
           <div class="gallery-card-btns"></div>
         </div>
@@ -191,7 +192,6 @@
       <button type="button" id="gallery-upload-cancel" class="gallery-upload-modal-close" title="Fermer">&#215;</button>
 
       <form method="POST" action="/galerie" enctype="multipart/form-data" class="gallery-upload-form" id="gallery-upload-form">
-        <input type="hidden" name="content_type" id="gallery-upload-type" value="image" />
 
         <%# Titre 3/4 + Catégorie 1/4 %>
         <div class="guf-title-row">
@@ -268,9 +268,10 @@
 
   <%# Zone image : centrée, prend tout l'espace restant %>
   <div class="gallery-lb-image-area">
+    <button type="button" class="gallery-lb-mobile-close" title="Fermer" aria-label="Fermer">&#215;</button>
     <button type="button" class="gallery-lb-prev" title="Pr&eacute;c&eacute;dente">&#8249;</button>
     <button type="button" class="gallery-lb-next" title="Suivante">&#8250;</button>
-    <img class="gallery-lb-img" alt="" />
+    <img class="gallery-lb-img" alt="" decoding="async" />
     <div class="gallery-lb-dots" id="gallery-lb-dots" hidden></div>
 
     <%# Barre de navigation série (superposée en bas) %>
@@ -279,23 +280,52 @@
       <span class="gallery-lb-series-info" id="gallery-lb-series-info"></span>
       <button type="button" class="gallery-lb-series-arrow" id="gallery-lb-series-next" title="Suivant dans la s&eacute;rie">&#8250;</button>
     </div>
+
+    <%# Indice mobile : rappelle qu'il y a plus d'infos en scrollant (voir
+        style.css/nav.js — caché sur desktop où le volet est déjà visible). %>
+    <button type="button" class="gallery-lb-down-hint" aria-label="Voir plus d'informations">&#8249;</button>
+
   </div>
 
-  <%# Volet droit : infos décorrélées de l'image %>
+  <%# Volet droit (desktop) / bloc suivant dans le flux, sous la photo
+      (mobile — on y accède en scrollant, voir style.css) : infos
+      décorrélées de l'image. %>
   <aside class="gallery-lb-panel">
+    <button type="button" class="gallery-lb-panel-handle" aria-label="Remonter voir la photo"></button>
     <button type="button" class="gallery-lb-close" title="Fermer">&#215;</button>
+    <%# Barre "Explorer l'inconnu" (voir gallery.js) : uniquement pendant
+        une session d'exploration démarrée depuis le volet filtre. %>
+    <div id="gallery-lb-explore-nav" class="gallery-lb-explore-nav" hidden>
+      <span class="gallery-lb-explore-label">Mode exploration</span>
+      <div class="gallery-lb-explore-actions">
+        <button type="button" id="gallery-lb-explore-prev" class="wiki-explore-nav-btn" title="Image pr&eacute;c&eacute;dente" aria-label="Image pr&eacute;c&eacute;dente" disabled>&#8592; Pr&eacute;c&eacute;dent</button>
+        <button type="button" id="gallery-lb-explore-next" class="wiki-explore-nav-btn" title="Image suivante" aria-label="Image suivante">Suivant &#8594;</button>
+      </div>
+      <button type="button" id="gallery-lb-explore-exit" class="gallery-lb-explore-exit" title="Quitter le mode exploration" aria-label="Quitter le mode exploration">&times;</button>
+    </div>
     <div class="gallery-lb-tags"></div>
     <a class="gallery-lb-wiki-btn" href="" hidden></a>
     <div class="gallery-lb-notes"></div>
     <div class="gallery-lb-actions" id="gallery-lb-actions" hidden>
-      <div class="gallery-lb-react-row">
-        <div class="gallery-lb-rating" id="gallery-lb-rating">
-          <% for (var lri = 1; lri <= 5; lri++) { %>
-            <span class="gallery-star" data-val="<%= lri %>">&#9733;</span>
-          <% } %>
-        </div>
-        <button type="button" class="gallery-lb-fav-btn" id="gallery-lb-fav-btn" title="Favori">&#10084;</button>
+      <div class="gallery-lb-rating" id="gallery-lb-rating">
+        <% for (var lri = 1; lri <= 5; lri++) { %>
+          <span class="gallery-star" data-val="<%= lri %>">&#9733;</span>
+        <% } %>
       </div>
+      <div class="gallery-lb-react-row">
+        <button type="button" class="gallery-lb-text-btn gallery-lb-fav-btn" id="gallery-lb-fav-btn" title="Favori">
+          <span class="gallery-lb-text-btn-icon">&#10084;</span><span>J&rsquo;adore</span>
+        </button>
+        <button type="button" class="gallery-lb-text-btn gallery-lb-hide-btn" id="gallery-lb-hide-btn" title="Retire cette image de vos listings (voir Profil &gt; Contenus masqu&eacute;s)">
+          <span class="gallery-lb-text-btn-icon">&#128065;</span><span>Masquer</span>
+        </button>
+        <button type="button" class="gallery-lb-text-btn gallery-lb-collection-btn" id="gallery-lb-collection-btn" title="Ajouter &agrave; une collection">
+          <span class="gallery-lb-text-btn-icon">&#128193;</span><span>Collection</span>
+        </button>
+      </div>
+      <%# Mode couple : révélé seulement une fois que le visiteur a lui-même
+          noté (voir gallery.js:syncPartnerReveal). %>
+      <div class="wiki-partner-reveal" id="gallery-lb-partner-reveal" data-partner-name="<%= locals.partnerUser ? partnerUser.displayName : '' %>" hidden></div>
       <% if (currentUser && currentUser.isAdmin) { %>
         <div class="gallery-lb-admin-row">
           <a class="gallery-card-btn gallery-lb-edit-link" id="gallery-lb-edit-link" href="#" title="Modifier" hidden>&#9998;</a>
@@ -306,6 +336,24 @@
     </div>
   </aside>
 
+</div>
+
+<%# ─── Popup "Ajouter à une collection" (voir public/gallery.js) ───────── %>
+<div class="filter-profile-modal-overlay" id="collection-picker-modal" hidden>
+  <div class="filter-profile-modal collection-modal">
+    <p class="filter-profile-modal-title">Ajouter &agrave; une collection</p>
+    <div class="collection-picker-list" id="collection-picker-list"></div>
+    <button type="button" class="link-button" id="collection-picker-new-toggle">+ Nouvelle collection</button>
+    <div class="collection-picker-new-form" id="collection-picker-new-form" hidden>
+      <input type="text" class="filter-profile-modal-input" id="collection-picker-new-title" placeholder="Titre de la nouvelle collection&hellip;" maxlength="80" autocomplete="off" />
+      <textarea class="collection-modal-textarea" id="collection-picker-new-desc" placeholder="Description (optionnelle)&hellip;" rows="2"></textarea>
+      <input type="text" class="filter-profile-modal-input" id="collection-picker-new-tags" placeholder="Tags, s&eacute;par&eacute;s par des virgules (optionnel)&hellip;" maxlength="200" autocomplete="off" />
+      <button type="button" class="filter-profile-modal-confirm" id="collection-picker-new-confirm">Cr&eacute;er et ajouter</button>
+    </div>
+    <div class="filter-profile-modal-actions">
+      <button type="button" class="filter-profile-modal-cancel" id="collection-picker-close">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <script>window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>

@@ -3,4 +3,4 @@
   // toutes les vues, voir src/server.js) pour la classification.
   var tbMeta = (typeof tagRegistry !== "undefined" && tagRegistry[String(tag).toLowerCase().trim()]) || { tier: "normal", wikiPageId: null, pct: 0 };
 %>
-<span class="tag-badge tag-badge--<%= tbMeta.tier %>" data-tag="<%= String(tag).toLowerCase().trim() %>"<% if (tbMeta.tier === 'normal') { %> style="--pct: <%= tbMeta.pct %>"<% } %>><%= tag %><% if (tbMeta.wikiPageId) { %><a class="tag-badge-arrow" href="/wiki/<%= tbMeta.wikiPageId %>" title="Voir la page wiki" aria-label="Voir la page wiki" onclick="event.stopPropagation()">&#8599;</a><% } %></span>
+<span class="tag-badge tag-badge--<%= tbMeta.tier %>" data-tag="<%= String(tag).toLowerCase().trim() %>"<% if (tbMeta.tier === 'normal') { %> style="--pct: <%= tbMeta.pct %>"<% } %>><%= tag %><% if (tbMeta.wikiPageId) { %><a class="tag-badge-arrow" href="/wiki/<%= tbMeta.wikiPageId %>" title="Voir la page codex" aria-label="Voir la page codex" onclick="event.stopPropagation()">&#8599;</a><% } %></span>

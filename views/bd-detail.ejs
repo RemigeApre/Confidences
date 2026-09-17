@@ -1,22 +1,15 @@
-<%- include('partials/head', { title: book.title + ' — BD — ' + config.title }) %>
+<%- include('partials/head', { title: 'BD : ' + book.title }) %>
 <main class="bd-reader-main">
   <div class="bd-reader-topbar">
     <a href="/bd" class="bd-reader-back link-button">&larr; BD</a>
     <span class="bd-reader-title"><%= book.title %></span>
     <span class="bd-reader-counter" id="bd-counter">1 / <%= book.imagePaths.length %></span>
     <div class="bd-reader-actions">
-      <%# Favori %>
+      <%# Favori (livre entier) %>
       <button type="button" class="bd-reader-fav link-button<%= isFavorite ? ' active' : '' %>" id="bd-fav-btn" data-item-id="<%= book.id %>" title="Favori">&#128278;</button>
-      <%# J'adore %>
-      <button type="button" class="bd-react-btn<%= book.flame ? ' active' : '' %>" id="bd-flame-btn" data-id="<%= book.id %>" title="J&rsquo;adore">&#128293;</button>
-      <%# Intéressé %>
+      <%# Ça m'intéresse (livre entier — la note/j'adore/masquer sont
+          individuels par page, voir la barre en bas). %>
       <button type="button" class="bd-react-btn<%= book.interested ? ' active' : '' %>" id="bd-interested-btn" data-id="<%= book.id %>" title="Ça m&rsquo;int&eacute;resse">&#10024;</button>
-      <%# Note %>
-      <span class="bd-rating-stars" id="bd-rating" data-id="<%= book.id %>" data-rating="<%= book.rating %>">
-        <% for (var i = 1; i <= 5; i++) { %>
-          <button type="button" class="bd-star<%= book.rating >= i ? ' filled' : '' %>" data-val="<%= i %>">&#9733;</button>
-        <% } %>
-      </span>
       <% if (currentUser && currentUser.isAdmin) { %><a href="/bd/<%= book.id %>/edit" class="bd-reader-edit link-button">Modifier</a><% } %>
     </div>
   </div>
@@ -34,6 +27,23 @@
 
     <button type="button" class="bd-nav-btn bd-nav-prev" id="bd-prev" title="Page pr&eacute;c&eacute;dente" <%= book.imagePaths.length <= 1 ? 'hidden' : '' %>>&#8249;</button>
     <button type="button" class="bd-nav-btn bd-nav-next" id="bd-next" title="Page suivante" <%= book.imagePaths.length <= 1 ? 'hidden' : '' %>>&#8250;</button>
+
+    <%# Actions de la page affichée : note / j'adore / masquer sont
+        individuels par page (voir routes/bd.js POST /:id/page/:page/react),
+        contrairement au favori et à "Ça m'intéresse" ci-dessus qui restent
+        pour le livre entier. %>
+    <div class="bd-page-actions" id="bd-page-actions">
+      <span class="bd-rating-stars" id="bd-rating">
+        <% for (var i = 1; i <= 5; i++) { %>
+          <button type="button" class="bd-star" data-val="<%= i %>">&#9733;</button>
+        <% } %>
+      </span>
+      <button type="button" class="bd-react-btn" id="bd-flame-btn" title="J&rsquo;adore cette page">&#128293;</button>
+      <button type="button" class="bd-react-btn" id="bd-page-hidden-btn" title="Masquer cette page">&#128065;</button>
+      <% if (partnerUser) { %>
+        <span class="wiki-partner-reveal bd-partner-reveal" id="bd-page-partner-reveal" data-partner-name="<%= partnerUser.displayName %>" hidden></span>
+      <% } %>
+    </div>
   <% } %>
 </main>
 
@@ -44,14 +54,118 @@
   var counter = document.getElementById("bd-counter");
   var prev = document.getElementById("bd-prev");
   var next = document.getElementById("bd-next");
+  var total = pages.length;
+  var bookId = <%= book.id %>;
+
+  // Réactions par page, préchargées côté serveur (voir routes/bd.js) —
+  // évite un fetch à chaque tour de page.
+  var PAGE_REACTIONS = <%- JSON.stringify(pageReactions) %>;
+  var PARTNER_PAGE_REACTIONS = <%- JSON.stringify(partnerPageReactions) %>;
+
+  function pageReaction(n) { return PAGE_REACTIONS[n] || { rating: 0, flame: false, hidden: false }; }
+  function isHidden(n) { return !!pageReaction(n).hidden; }
+
   var startParam = parseInt(new URLSearchParams(window.location.search).get("start")) || 0;
   var current = Math.max(0, Math.min(pages.length - 1, startParam));
-  var total = pages.length;
 
-  // Initialiser à la bonne page si ?start=N
+  // Initialiser à la bonne page si ?start=N (un lien depuis "Contenus
+  // masqués" doit pouvoir atteindre une page masquée directement, sans
+  // être sauté par le anti-saut ci-dessous).
   if (current > 0) {
     pages[0].hidden = true;
     pages[current].hidden = false;
+  }
+
+  // ── Actions de la page affichée (note / j'adore / masquer) ──────────
+  var ratingWrap  = document.getElementById("bd-rating");
+  var stars       = ratingWrap ? ratingWrap.querySelectorAll(".bd-star") : [];
+  var flameBtn    = document.getElementById("bd-flame-btn");
+  var hiddenBtn   = document.getElementById("bd-page-hidden-btn");
+  var partnerReveal = document.getElementById("bd-page-partner-reveal");
+
+  function renderStars(n) {
+    stars.forEach(function (s, i) { s.classList.toggle("filled", i < n); });
+  }
+
+  function syncPagePartnerReveal(n) {
+    if (!partnerReveal) return;
+    var r = PARTNER_PAGE_REACTIONS[n];
+    var mine = pageReaction(n);
+    var hasPartnerReaction = r && (r.rating > 0 || r.flame);
+    if (!mine.rating || !hasPartnerReaction) { partnerReveal.hidden = true; return; }
+    var name = partnerReveal.dataset.partnerName || "Partenaire";
+    var html = "&#127800; " + name + "&nbsp;: ";
+    if (r.rating > 0) {
+      html += '<span class="wiki-partner-reveal-stars">';
+      for (var pi = 1; pi <= 5; pi++) { html += '<span class="wiki-card-star' + (pi <= r.rating ? ' filled' : '') + '">&#9733;</span>'; }
+      html += "</span>";
+    }
+    if (r.flame) html += '<span class="wiki-react-icon" title="J\'adore">&#128293;</span>';
+    partnerReveal.innerHTML = html;
+    partnerReveal.hidden = false;
+  }
+
+  function syncPageActions(n) {
+    var r = pageReaction(n);
+    renderStars(r.rating);
+    if (flameBtn) flameBtn.classList.toggle("active", r.flame);
+    if (hiddenBtn) {
+      hiddenBtn.classList.toggle("active", r.hidden);
+      hiddenBtn.title = r.hidden ? "Réafficher cette page" : "Masquer cette page";
+    }
+    syncPagePartnerReveal(n);
+  }
+
+  function sendPageReact(n, payload) {
+    fetch("/bd/" + bookId + "/page/" + n + "/react", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) return;
+        PAGE_REACTIONS[n] = { rating: d.rating, flame: d.flame, hidden: d.hidden };
+        if (n === current) syncPageActions(n);
+      });
+  }
+
+  stars.forEach(function (star) {
+    star.addEventListener("click", function () {
+      var val = Number(star.dataset.val);
+      var newRating = pageReaction(current).rating === val ? 0 : val;
+      sendPageReact(current, { rating: newRating });
+    });
+  });
+  if (flameBtn) {
+    flameBtn.addEventListener("click", function () {
+      sendPageReact(current, { flame: !pageReaction(current).flame });
+    });
+  }
+  if (hiddenBtn) {
+    hiddenBtn.addEventListener("click", function () {
+      sendPageReact(current, { hidden: !pageReaction(current).hidden });
+    });
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────
+  // Prev/next/swipe sautent les pages masquées (comme partout ailleurs sur
+  // le site) ; un lien direct (?start=N, depuis "Contenus masqués") peut
+  // lui atteindre une page masquée sans problème, voir plus haut.
+  function nextVisible(from, dir) {
+    var n = from + dir;
+    while (n >= 0 && n < total && isHidden(n)) n += dir;
+    return (n >= 0 && n < total) ? n : -1;
+  }
+
+  // Anti-latence : les pages voisines (masquées comprises pour ne pas se
+  // faire piéger par le anti-saut) sont chargées en tâche de fond dès
+  // qu'une page s'affiche — leur <img loading="lazy"> reste tel quel, mais
+  // le cache HTTP est déjà chaud quand on tourne la page.
+  function preloadPageImg(n) {
+    if (n < 0 || n >= total) return;
+    var img = pages[n].querySelector(".bd-reader-img");
+    if (img && img.src) { var pre = new Image(); pre.src = img.src; }
   }
 
   function go(n) {
@@ -63,15 +177,23 @@
     if (counter) counter.textContent = (current + 1) + " / " + total;
     if (prev) prev.hidden = current === 0;
     if (next) next.hidden = current === total - 1;
+    syncPageActions(current);
+    preloadPageImg(current + 1);
+    preloadPageImg(current - 1);
   }
 
-  if (prev) prev.addEventListener("click", function() { go(current - 1); });
-  if (next) next.addEventListener("click", function() { go(current + 1); });
+  function step(dir) {
+    var n = nextVisible(current, dir);
+    if (n !== -1) go(n);
+  }
+
+  if (prev) prev.addEventListener("click", function() { step(-1); });
+  if (next) next.addEventListener("click", function() { step(1); });
 
   // Keyboard
   document.addEventListener("keydown", function(e) {
-    if (e.key === "ArrowLeft")  go(current - 1);
-    if (e.key === "ArrowRight") go(current + 1);
+    if (e.key === "ArrowLeft")  step(-1);
+    if (e.key === "ArrowRight") step(1);
   });
 
   // Click left/right half of stage
@@ -80,8 +202,8 @@
     stage.addEventListener("click", function(e) {
       if (e.target.tagName === "A" || e.target.tagName === "BUTTON") return;
       var x = e.clientX;
-      if (x < window.innerWidth / 2) go(current - 1);
-      else go(current + 1);
+      if (x < window.innerWidth / 2) step(-1);
+      else step(1);
     });
   }
 
@@ -90,13 +212,16 @@
   document.addEventListener("touchstart", function(e) { tx = e.touches[0].clientX; }, { passive: true });
   document.addEventListener("touchend", function(e) {
     var dx = e.changedTouches[0].clientX - tx;
-    if (Math.abs(dx) > 50) go(current + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
   });
 
-  // Init compteur + prev/next
+  // Init compteur + prev/next + actions de la page de départ
   if (counter) counter.textContent = (current + 1) + " / " + total;
   if (prev) prev.hidden = current === 0;
   if (next) next.hidden = current === total - 1 || total <= 1;
+  syncPageActions(current);
+  preloadPageImg(current + 1);
+  preloadPageImg(current - 1);
 })();
 </script>
 <% } %>
@@ -104,7 +229,7 @@
 (function () {
   var bookId = <%= book.id %>;
 
-  // ── Favori ──────────────────────────────────────
+  // ── Favori (livre entier) ──────────────────────────
   var favBtn = document.getElementById("bd-fav-btn");
   if (favBtn) {
     favBtn.addEventListener("click", function () {
@@ -118,50 +243,18 @@
     });
   }
 
-  // ── Réactions (flame / interested / rating) ──────
-  function sendReact(payload) {
-    return fetch("/bd/" + bookId + "/react", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).then(function (r) { return r.json(); });
-  }
-
-  var flameBtn = document.getElementById("bd-flame-btn");
-  if (flameBtn) {
-    flameBtn.addEventListener("click", function () {
-      var next = !flameBtn.classList.contains("active");
-      sendReact({ flame: next }).then(function (d) {
-        if (d.ok) flameBtn.classList.toggle("active", d.flame);
-      });
-    });
-  }
-
+  // ── Ça m'intéresse (livre entier) ───────────────────
   var intBtn = document.getElementById("bd-interested-btn");
   if (intBtn) {
     intBtn.addEventListener("click", function () {
       var next = !intBtn.classList.contains("active");
-      sendReact({ interested: next }).then(function (d) {
-        if (d.ok) intBtn.classList.toggle("active", d.interested);
-      });
-    });
-  }
-
-  var ratingWrap = document.getElementById("bd-rating");
-  if (ratingWrap) {
-    var stars = ratingWrap.querySelectorAll(".bd-star");
-    var currentRating = Number(ratingWrap.dataset.rating) || 0;
-    function renderStars(n) {
-      stars.forEach(function (s, i) { s.classList.toggle("filled", i < n); });
-    }
-    stars.forEach(function (star) {
-      star.addEventListener("click", function () {
-        var val = Number(star.dataset.val);
-        var newRating = currentRating === val ? 0 : val;
-        sendReact({ rating: newRating }).then(function (d) {
-          if (d.ok) { currentRating = d.rating; renderStars(currentRating); }
-        });
-      });
+      fetch("/bd/" + bookId + "/react", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interested: next }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) intBtn.classList.toggle("active", d.interested); });
     });
   }
 })();

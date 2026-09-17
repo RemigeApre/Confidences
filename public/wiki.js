@@ -695,16 +695,22 @@
     var reactRating   = Number((ratingWidget || reactWidget).dataset.rating) || 0;
     var reactFlame    = reactWidget ? reactWidget.dataset.flame === "1" : false;
     var reactInterest = reactWidget ? reactWidget.dataset.interested === "1" : false;
+    var reactReadLater = reactWidget ? reactWidget.dataset.readlater === "1" : false;
+    var reactPracticed = reactWidget ? reactWidget.dataset.practiced === "1" : false;
+    var reactHidden    = reactWidget ? reactWidget.dataset.hidden === "1" : false;
 
     var starBtns = (ratingWidget || reactWidget).querySelectorAll(".wiki-star");
     var flamBtn  = reactWidget ? reactWidget.querySelector("[data-key='flame']") : null;
     var intrBtn  = reactWidget ? reactWidget.querySelector("[data-key='interested']") : null;
+    var rlBtn    = reactWidget ? reactWidget.querySelector("[data-key='readlater']") : null;
+    var pracBtn  = reactWidget ? reactWidget.querySelector("[data-key='practiced']") : null;
+    var hideBtn  = reactWidget ? reactWidget.querySelector("[data-key='hidden']") : null;
 
     function save() {
       fetch("/wiki/" + reactId + "/react", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: reactRating, flame: reactFlame, interested: reactInterest }),
+        body: JSON.stringify({ rating: reactRating, flame: reactFlame, interested: reactInterest, readLater: reactReadLater, practiced: reactPracticed, hidden: reactHidden }),
       });
     }
 
@@ -758,12 +764,46 @@
         save();
       });
     }
+
+    // À lire plus tard
+    if (rlBtn) {
+      rlBtn.addEventListener("click", function () {
+        reactReadLater = !reactReadLater;
+        rlBtn.classList.toggle("active", reactReadLater);
+        save();
+      });
+    }
+
+    // Déjà pratiqué
+    if (pracBtn) {
+      pracBtn.addEventListener("click", function () {
+        reactPracticed = !reactPracticed;
+        pracBtn.classList.toggle("active", reactPracticed);
+        save();
+      });
+    }
+
+    // Masquer (voir /favoris/masques pour retrouver et réafficher) : reste
+    // consultable sur cette page même une fois masquée, seulement retirée
+    // des listings (sommaire, catégories, "tous", extraction des goûts...).
+    if (hideBtn) {
+      hideBtn.addEventListener("click", function () {
+        reactHidden = !reactHidden;
+        hideBtn.classList.toggle("active", reactHidden);
+        hideBtn.title = reactHidden ? "Réafficher cette page" : "Masquer cette page";
+        save();
+      });
+    }
   }
 
   // ══════════════════════════════════════════════════
   // 6. FILTRES + RECHERCHE + TRI DE LA GRILLE
   // ══════════════════════════════════════════════════
   var categoryFilter  = document.getElementById("wiki-category-filter");
+  // Chips de catégorie (dont "Nos objets", hors du conteneur) : figées une
+  // fois pour toutes au chargement — évite de refaire ce querySelectorAll
+  // sur tout le document à chaque applyFilters() (recherche, clic tag...).
+  var catChipEls = document.querySelectorAll(".tag-chip[data-category]");
   var tagFilter       = document.getElementById("wiki-tag-filter");
   var sortSelect      = document.getElementById("wiki-sort-select");
   var ultraToggle      = document.getElementById("wiki-ultra-toggle");
@@ -785,20 +825,39 @@
   var extraCatFilter  = document.getElementById("wiki-extra-cat-filter");
   var indexNative     = document.getElementById("wiki-index-native");
 
-  var activeCategory  = localStorage.getItem("wiki-filter-cat") || "";
+  // Catégories : multi-sélection à 3 états (comme les tags), plus de simple
+  // "Tous" — aucune catégorie cochée revient déjà à "toutes affichées".
+  var includedCategoriesSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-cats-inc") || "[]"));
+  var excludedCategoriesSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-cats-exc") || "[]"));
   var propStates = {
+    // "owned" retiré : doublon avec la bascule "Nos objets".
     "not-rated": Number(localStorage.getItem("wiki-prop-not-rated") || "0"),
-    "owned":     Number(localStorage.getItem("wiki-prop-owned")     || "0"),
     "flame":     Number(localStorage.getItem("wiki-prop-flame")     || "0"),
     "interested":Number(localStorage.getItem("wiki-prop-interested")|| "0")
   };
   var includedTagsSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-tags-inc") || "[]"));
   var excludedTagsSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-tags-exc") || "[]"));
+  // Tags masqués (voir /favoris et le bouton "Masquer le tag" de la popup
+  // tag) : toute page portant l'un de ces tags reste masquée partout, sans
+  // bascule possible ici (on les retire depuis /tags/masques).
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Effectif à la fermeture de la popup tag (voir public/nav.js), pas au
+  // clic sur "Masquer le tag" : on ne veut pas faire disparaître le tag
+  // sous les yeux de l'utilisateur pendant qu'il consulte encore la popup.
+  document.addEventListener("tag-blacklist-change", function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    applyFilters();
+  });
   var activeSort      = localStorage.getItem("wiki-filter-sort") || "alpha-asc";
-  // Etat initial derive du reglage de compte (voir /favoris > Parametres),
-  // plus fiable qu'un localStorage par navigateur qui pouvait diverger.
-  var hideUltra       = (window.ULTRA_MODE || "hidden") === "hidden";
-  var hideIrrealiste  = (window.IRREALISTE_MODE || "visible") === "hidden";
+  // Etat initial : le réglage de compte (voir /favoris > Parametres) sert de
+  // valeur par défaut, mais une bascule explicite en session (via les
+  // boutons Ultra/Irréaliste du volet filtre) est mémorisée et prime dessus
+  // au rechargement — sinon revenir sur la page annulait silencieusement le
+  // filtre qu'on venait de poser.
+  var storedHideUltra      = localStorage.getItem("wiki-hide-ultra");
+  var storedHideIrrealiste = localStorage.getItem("wiki-hide-irrealiste");
+  var hideUltra       = storedHideUltra !== null ? storedHideUltra === "1" : (window.ULTRA_MODE || "hidden") === "hidden";
+  var hideIrrealiste  = storedHideIrrealiste !== null ? storedHideIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") === "hidden";
   var searchQuery     = localStorage.getItem("wiki-filter-search") || "";
   var advMinRating    = Number(localStorage.getItem("wiki-filter-rating")) || 0;
   var activeCols      = Number(localStorage.getItem("wiki-cols")) || 3;
@@ -924,20 +983,43 @@
     return score;
   }
 
+  // Regroupe visuellement les chips par état : inclus (vert) en premier,
+  // puis exclus (rouge), puis neutres (noir) — dans leur ordre d'origine au
+  // sein de chaque groupe. Purement visuel, ne touche pas au filtrage.
+  function reorderTagChips() {
+    if (!tagFilter) return;
+    var chips = Array.prototype.slice.call(tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]"));
+    var inc = [], exc = [], neu = [];
+    chips.forEach(function (chip) {
+      var s = chip.dataset.state || "0";
+      if (s === "1") inc.push(chip);
+      else if (s === "2") exc.push(chip);
+      else neu.push(chip);
+    });
+    inc.concat(exc, neu).forEach(function (chip) { tagFilter.appendChild(chip); });
+  }
+
   function updateTagChipVisibility(baseCards) {
     if (!tagFilter) return;
+    reorderTagChips();
     var chips = tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]");
     if (includedTagsSet.size === 0 && excludedTagsSet.size === 0) {
       chips.forEach(function(chip) {
         var t = (chip.dataset.tag || "").toLowerCase();
+        // Un tag masqué (voir /tags/masques) n'est plus un choix disponible,
+        // pas seulement un choix inutile : on le retire sans même regarder
+        // s'il "rapporterait" des cartes.
+        if (blacklistSet.has(t)) { chip.hidden = true; return; }
         chip.hidden = !baseCards.some(function(c) {
           return (c.dataset.tags || "").split("|").indexOf(t) !== -1;
         });
       });
+      applyTagOverflow();
       return;
     }
     chips.forEach(function(chip) {
       var chipTag = (chip.dataset.tag || "").toLowerCase();
+      if (blacklistSet.has(chipTag)) { chip.hidden = true; return; }
       var chipState = chip.dataset.state || "0";
       if (chipState !== "0") {
         chip.hidden = false; // always show active chips
@@ -964,7 +1046,7 @@
 
   function hasActiveFilters() {
     if (searchQuery) return true;
-    if (activeCategory) return true;
+    if (includedCategoriesSet.size > 0 || excludedCategoriesSet.size > 0) return true;
     if (advMinRating > 0) return true;
     if (includedTagsSet.size > 0 || excludedTagsSet.size > 0) return true;
     for (var _p in propStates) { if (propStates[_p] !== 0) return true; }
@@ -985,9 +1067,19 @@
     // Filtrage
     cards.forEach(function (card) {
       var extraCats = (card.dataset.extraCats || "").split("|").filter(Boolean);
-      var okCat = !activeCategory ||
-        (activeCategory === "__owned__" ? card.dataset.owned === "1"
-          : card.dataset.category === activeCategory || extraCats.indexOf(activeCategory) !== -1);
+      // Catégories : multi-sélection 3 états, OR entre catégories incluses,
+      // exclusion prioritaire (comme les tags / catégories liées).
+      function cardMatchesCat(cat) {
+        return cat === "__owned__" ? card.dataset.owned === "1"
+          : (card.dataset.category === cat || extraCats.indexOf(cat) !== -1);
+      }
+      var okCat = true;
+      if (includedCategoriesSet.size > 0) {
+        okCat = Array.from(includedCategoriesSet).some(cardMatchesCat);
+      }
+      if (okCat && excludedCategoriesSet.size > 0) {
+        okCat = !Array.from(excludedCategoriesSet).some(cardMatchesCat);
+      }
       var cardTags  = (card.dataset.tags || "").split("|");
       var okTag = true;
       if (includedTagsSet.size > 0) {
@@ -1000,6 +1092,7 @@
       if (okTag && excludedTagsSet.size > 0) {
         okTag = !Array.from(excludedTagsSet).some(function(t) { return cardTags.indexOf(t) !== -1; });
       }
+      var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
       // Ultra toggle only applies to cards that are ultra but NOT irréaliste
       var okUltra = !hideUltra || card.dataset.ultra !== "1" || card.dataset.irrealiste === "1";
       // Irréaliste toggle controls all irréaliste cards
@@ -1037,17 +1130,16 @@
       // Prop filters (3-state)
       var isUnrated = !Number(card.dataset.rating);
       var okNotRated   = propStates["not-rated"]  === 0 ? true : (propStates["not-rated"]  === 1 ? isUnrated              : !isUnrated);
-      var okOwned      = propStates["owned"]      === 0 ? true : (propStates["owned"]      === 1 ? card.dataset.owned === "1"      : card.dataset.owned !== "1");
       var okFlame      = propStates["flame"]      === 0 ? true : (propStates["flame"]      === 1 ? card.dataset.flame === "1"      : card.dataset.flame !== "1");
       var okInterested = propStates["interested"] === 0 ? true : (propStates["interested"] === 1 ? card.dataset.interested === "1" : card.dataset.interested !== "1");
       var okMaturity   = activeMaturityFilter < 0 || Number(card.dataset.maturity || 0) === activeMaturityFilter;
       var okSousCat    = !activeSousCat || (card.dataset.sousCat || "") === activeSousCat;
 
       // Track which cards pass all non-tag filters (for smart tag chip visibility)
-      var okNonTag = okCat && okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okOwned && okFlame && okInterested && okMaturity && okSousCat;
+      var okNonTag = okCat && okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okFlame && okInterested && okMaturity && okSousCat && okBlacklist;
       card._passesNonTag = okNonTag;
       // Track which cards pass all filters except the category (for 9/27 chip counts)
-      card._passesNonCat = okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okOwned && okFlame && okInterested && okMaturity && okSousCat && okTag;
+      card._passesNonCat = okUltra && okIrrealiste && okSpecial && okExtraCat && okSearch && okRating && okNotRated && okFlame && okInterested && okMaturity && okSousCat && okTag && okBlacklist;
       card.hidden = !(okNonTag && okTag);
     });
 
@@ -1070,18 +1162,16 @@
         }
       });
       var totalPasses = cards.filter(function(c) { return c._passesNonCat; }).length;
-      categoryFilter.querySelectorAll(".tag-chip[data-category]").forEach(function(chip) {
+      catChipEls.forEach(function(chip) {
         var cat   = chip.dataset.category || "";
         var label = chip.dataset.label || chip.textContent.trim();
         if (!chip.dataset.label) chip.dataset.label = label; // cache on first call
         if (!anyNonCatFilter) {
-          chip.textContent = (cat === "__owned__" ? "\u2605\u00a0" : "") + chip.dataset.label;
-        } else if (cat === "") {
-          chip.textContent = chip.dataset.label + "\u00a0" + totalPasses + "/" + cards.length;
+          chip.textContent = chip.dataset.label;
         } else if (cat === "__owned__") {
           var ownedTotal = cards.filter(function(c) { return c.dataset.owned === "1"; }).length;
           var ownedFilt  = cards.filter(function(c) { return c.dataset.owned === "1" && c._passesNonCat; }).length;
-          chip.textContent = "\u2605\u00a0" + chip.dataset.label + "\u00a0" + ownedFilt + "/" + ownedTotal;
+          chip.textContent = chip.dataset.label + "\u00a0" + ownedFilt + "/" + ownedTotal;
         } else {
           var f = catFiltered[cat] || 0;
           var t = catTotal[cat] || 0;
@@ -1125,7 +1215,7 @@
 
     var heroCountEl = document.querySelector(".wiki-chapter-hero-count");
     if (heroCountEl) {
-      var hasFilter = q || hasAdv || (categoryFilter && activeCategory !== "") || includedTagsSet.size > 0 || excludedTagsSet.size > 0;
+      var hasFilter = q || hasAdv || includedCategoriesSet.size > 0 || excludedCategoriesSet.size > 0 || includedTagsSet.size > 0 || excludedTagsSet.size > 0;
       heroCountEl.textContent = hasFilter ? (visible.length + "/" + cards.length) : cards.length;
     }
 
@@ -1259,13 +1349,17 @@
     });
   }
 
-  // Barre de recherche
+  // Barre de recherche. applyFilters() rescore/trie/repagine toute la
+  // grille : coûteux à chaque frappe sur une grosse collection, donc
+  // léger débounce (l'input reste instantané, seul le filtrage est différé).
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function () {
       searchQuery = searchInput.value;
       localStorage.setItem("wiki-filter-search", searchQuery);
       if (searchClear) searchClear.hidden = !searchQuery;
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
     });
   }
   if (searchClear) {
@@ -1386,26 +1480,39 @@
   }
 
   if (categoryFilter) {
-    categoryFilter.querySelectorAll(".tag-chip").forEach(function (chip) {
+    // "Nos objets" (data-category="__owned__") vit hors de #wiki-category-filter,
+    // sous Ultra/Irréaliste : on cible l'attribut data-category partout sur la
+    // page plutôt que le conteneur, pour qu'il reste synchronisé avec les
+    // vraies catégories. Multi-sélection à 3 états (neutre → inclure (vert)
+    // → exclure (rouge) → neutre), comme les tags.
+    function syncCatChip(chip) {
+      var cat = chip.dataset.category || "";
+      var state = includedCategoriesSet.has(cat) ? "1" : (excludedCategoriesSet.has(cat) ? "2" : "0");
+      chip.dataset.state = state;
+      chip.classList.toggle("chip-include", state === "1");
+      chip.classList.toggle("chip-exclude", state === "2");
+    }
+    catChipEls.forEach(function (chip) {
+      var cat = chip.dataset.category || "";
+      syncCatChip(chip);
       chip.addEventListener("click", function () {
-        categoryFilter.querySelectorAll(".tag-chip").forEach(function (c) { c.classList.remove("active"); });
-        chip.classList.add("active");
-        activeCategory = chip.dataset.category || "";
-        localStorage.setItem("wiki-filter-cat", activeCategory);
+        var state = chip.dataset.state || "0";
+        if (state === "0") {
+          includedCategoriesSet.add(cat);
+          excludedCategoriesSet.delete(cat);
+        } else if (state === "1") {
+          includedCategoriesSet.delete(cat);
+          excludedCategoriesSet.add(cat);
+        } else {
+          includedCategoriesSet.delete(cat);
+          excludedCategoriesSet.delete(cat);
+        }
+        syncCatChip(chip);
+        localStorage.setItem("wiki-filter-cats-inc", JSON.stringify(Array.from(includedCategoriesSet)));
+        localStorage.setItem("wiki-filter-cats-exc", JSON.stringify(Array.from(excludedCategoriesSet)));
         applyFilters();
       });
     });
-    // Restaure la catégorie active visuellement
-    if (activeCategory) {
-      var restoredCatChip = categoryFilter.querySelector('[data-category="' + activeCategory + '"]');
-      if (restoredCatChip) {
-        categoryFilter.querySelectorAll(".tag-chip").forEach(function (c) { c.classList.remove("active"); });
-        restoredCatChip.classList.add("active");
-      } else {
-        activeCategory = "";
-        localStorage.removeItem("wiki-filter-cat");
-      }
-    }
   }
   if (tagFilter) {
     // Restore state from localStorage
@@ -1475,17 +1582,21 @@
   }
 
   // Réinitialise le niveau d'expansion quand la recherche de tag change
+  var tagSearchDebounceTimer = null;
   if (tagSearchInput) {
     tagSearchInput.addEventListener("input", function () {
-      tagExpandedCount = TAG_MAX; // on montre tout lors d'une recherche
-      var q = tagSearchInput.value.trim().toLowerCase();
-      if (tagFilter) {
-        tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function (chip) {
-          var tag = (chip.dataset.tag || "").toLowerCase();
-          chip.hidden = q.length > 0 && (chip.dataset.state || "0") === "0" && tag.indexOf(q) === -1;
-        });
-        applyTagOverflow();
-      }
+      clearTimeout(tagSearchDebounceTimer);
+      tagSearchDebounceTimer = setTimeout(function () {
+        tagExpandedCount = TAG_MAX; // on montre tout lors d'une recherche
+        var q = tagSearchInput.value.trim().toLowerCase();
+        if (tagFilter) {
+          tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function (chip) {
+            var tag = (chip.dataset.tag || "").toLowerCase();
+            chip.hidden = q.length > 0 && (chip.dataset.state || "0") === "0" && tag.indexOf(q) === -1;
+          });
+          applyTagOverflow();
+        }
+      }, 120);
     });
   }
 
@@ -1506,8 +1617,13 @@
   if (ultraToggle) {
     ultraToggle.addEventListener("click", function () {
       hideUltra = !hideUltra;
+      localStorage.setItem("wiki-hide-ultra", hideUltra ? "1" : "0");
       syncUltraBtn();
       applyFilters();
+      // Sans cet appel, les cartes proposées du sommaire (Derniers ajouts,
+      // Mieux notées...) ne reflétaient pas la bascule Ultra — seul le
+      // bouton Irréaliste l'appelait.
+      applyChapterStripFilters();
     });
   }
   syncUltraBtn();
@@ -1529,6 +1645,7 @@
   if (irrealisteToggle) {
     irrealisteToggle.addEventListener("click", function () {
       hideIrrealiste = !hideIrrealiste;
+      localStorage.setItem("wiki-hide-irrealiste", hideIrrealiste ? "1" : "0");
       syncIrralisteBtn();
       applyFilters();
       applyChapterStripFilters();
@@ -1541,19 +1658,23 @@
   var resetFiltersBtn = document.getElementById("wiki-reset-filters");
   if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener("click", function() {
-      // Revient aux reglages de compte (voir /favoris > Parametres)
+      // Revient aux reglages de compte (voir /favoris > Parametres) et
+      // oublie la bascule mémorisée, sinon elle reviendrait au prochain chargement.
+      localStorage.removeItem("wiki-hide-ultra");
+      localStorage.removeItem("wiki-hide-irrealiste");
       hideUltra = (window.ULTRA_MODE || "hidden") === "hidden";
       hideIrrealiste = (window.IRREALISTE_MODE || "visible") === "hidden";
       syncUltraBtn();
       syncIrralisteBtn();
-      // Catégorie : Tous
-      activeCategory = "";
-      localStorage.setItem("wiki-filter-cat", "");
-      if (categoryFilter) {
-        categoryFilter.querySelectorAll(".tag-chip").forEach(function(c) { c.classList.remove("active"); });
-        var allBtn = categoryFilter.querySelector("[data-category='']");
-        if (allBtn) allBtn.classList.add("active");
-      }
+      // Catégories : plus rien inclus/exclu
+      includedCategoriesSet.clear();
+      excludedCategoriesSet.clear();
+      localStorage.setItem("wiki-filter-cats-inc", "[]");
+      localStorage.setItem("wiki-filter-cats-exc", "[]");
+      catChipEls.forEach(function(c) {
+        c.dataset.state = "0";
+        c.classList.remove("chip-include", "chip-exclude");
+      });
       // Tags
       includedTagsSet.clear();
       excludedTagsSet.clear();
@@ -1563,8 +1684,13 @@
         tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function(c) {
           c.dataset.state = "0";
           c.classList.remove("chip-include","chip-exclude");
+          c.hidden = false;
         });
       }
+      // Recherche de tag + niveau d'expansion du nuage (voir "Plus"/"Tous
+      // les tags") : sans ça, le volet restait déplié après réinitialisation.
+      tagExpandedCount = TAG_PAGE;
+      if (tagSearchInput) tagSearchInput.value = "";
       // Propriétés
       for (var pk in propStates) { propStates[pk] = 0; localStorage.setItem("wiki-prop-" + pk, "0"); }
       if (propGrid) {
@@ -1595,6 +1721,133 @@
     });
   }
 
+  // ── Profils de recherche (voir partials/filter-profiles.ejs) ────────────
+  // Toutes les dimensions du filtre Codex vivent déjà dans localStorage (une
+  // clé par dimension, lues plus haut dans ce fichier) : un profil de
+  // recherche n'est donc qu'un instantané nommé de ces clés — l'appliquer
+  // revient à les réécrire puis recharger la page, qui se réinitialise
+  // alors exactement comme un retour normal sur le Codex avec ces réglages.
+  (function () {
+    var WIKI_PROFILE_KEYS = [
+      "wiki-filter-cats-inc", "wiki-filter-cats-exc",
+      "wiki-prop-not-rated", "wiki-prop-flame", "wiki-prop-interested",
+      "wiki-filter-tags-inc", "wiki-filter-tags-exc",
+      "wiki-filter-sort",
+      "wiki-hide-ultra", "wiki-hide-irrealiste",
+      "wiki-filter-search",
+      "wiki-filter-rating",
+      "wiki-filter-special",
+      "wiki-filter-sous-cat"
+    ];
+    var saveBtn    = document.getElementById("wiki-save-filter-btn");
+    var modal      = document.getElementById("wiki-filter-profile-modal");
+    var nameInput  = document.getElementById("wiki-filter-profile-name");
+    var confirmBtn = document.getElementById("wiki-filter-profile-confirm");
+    var cancelBtn  = document.getElementById("wiki-filter-profile-cancel");
+    var listEl     = document.getElementById("wiki-filter-profiles-list");
+    if (!saveBtn && !listEl) return;
+
+    function syncSaveBtn() {
+      if (saveBtn) saveBtn.hidden = !hasActiveFilters();
+    }
+    syncSaveBtn();
+    // hasActiveFilters() dépend de variables mises à jour un peu partout
+    // dans applyFilters() : plus sûr de resynchroniser à chaque appel que
+    // de dupliquer sa logique ici. applyFilters est une déclaration de
+    // fonction (hoisted) : la réaffecter après coup est sans risque, tous
+    // les appelants existants (déclarés plus haut) la référencent par son
+    // nom au moment de l'appel, pas au moment de leur déclaration.
+    var _origApplyFilters = applyFilters;
+    applyFilters = function () {
+      _origApplyFilters();
+      syncSaveBtn();
+    };
+
+    function collectState() {
+      var state = {};
+      WIKI_PROFILE_KEYS.forEach(function (k) {
+        var v = localStorage.getItem(k);
+        if (v !== null) state[k] = v;
+      });
+      return state;
+    }
+
+    function openModal() {
+      if (!modal) return;
+      if (nameInput) nameInput.value = "";
+      modal.hidden = false;
+      if (nameInput) nameInput.focus();
+    }
+    function closeModal() { if (modal) modal.hidden = true; }
+
+    if (saveBtn) saveBtn.addEventListener("click", openModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+    if (modal) {
+      modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+    }
+    if (nameInput) {
+      nameInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && confirmBtn) confirmBtn.click();
+      });
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", function () {
+        var name = nameInput ? nameInput.value.trim() : "";
+        if (!name) return;
+        confirmBtn.disabled = true;
+        fetch("/api/filter-profils", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section: "wiki", name: name, state: collectState() })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            confirmBtn.disabled = false;
+            if (!d.ok) return;
+            closeModal();
+            window.location.reload();
+          })
+          .catch(function () { confirmBtn.disabled = false; });
+      });
+    }
+
+    if (listEl) {
+      listEl.addEventListener("click", function (e) {
+        var chip = e.target.closest(".filter-profile-chip");
+        if (!chip) return;
+        var id = Number(chip.dataset.profileId);
+
+        if (e.target.closest(".filter-profile-apply")) {
+          var profile = (window.WIKI_FILTER_PROFILES || []).find(function (p) { return p.id === id; });
+          if (!profile) return;
+          WIKI_PROFILE_KEYS.forEach(function (k) {
+            if (Object.prototype.hasOwnProperty.call(profile.state, k)) localStorage.setItem(k, profile.state[k]);
+            else localStorage.removeItem(k);
+          });
+          window.location.href = "/wiki";
+          return;
+        }
+
+        var removeBtn = e.target.closest(".filter-profile-remove");
+        if (removeBtn) {
+          removeBtn.disabled = true;
+          fetch("/api/filter-profils/" + id, { method: "DELETE" })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (!d.ok) { removeBtn.disabled = false; return; }
+              chip.remove();
+              if (!listEl.querySelector(".filter-profile-chip")) {
+                var details = listEl.closest(".filter-profiles-details");
+                if (details) details.hidden = true;
+              }
+            })
+            .catch(function () { removeBtn.disabled = false; });
+        }
+      });
+    }
+  })();
+
   // Restaure la barre de recherche
   if (searchInput && searchQuery) {
     searchInput.value = searchQuery;
@@ -1610,7 +1863,8 @@
   }
 
   var filtersPanel = document.getElementById("wiki-filters-panel");
-  if (filtersPanel && (anyAdv || activeCategory || activeSort !== "alpha-asc" || !hideUltra || !hideIrrealiste)) {
+  var anyCatFilter = includedCategoriesSet.size > 0 || excludedCategoriesSet.size > 0;
+  if (filtersPanel && (anyAdv || anyCatFilter || activeSort !== "alpha-asc" || !hideUltra || !hideIrrealiste)) {
     filtersPanel.open = true;
   }
 
@@ -1985,7 +2239,7 @@
       var valueEl = field.querySelector(".wiki-lb-meta-value");
       field.querySelector(".wiki-lb-meta-label").hidden = false;
       valueEl.hidden = false;
-      valueEl.textContent = val || LB_FIELD_PLACEHOLDER[key] || "\u2014";
+      valueEl.textContent = val || LB_FIELD_PLACEHOLDER[key] || "N/A";
       valueEl.classList.toggle("wiki-lb-meta-placeholder", !val);
       field.querySelector(".wiki-lb-meta-edit").hidden = true;
       field.hidden = false;
@@ -2016,7 +2270,7 @@
           var val = (meta && meta[key]) || "";
           var valueEl = field.querySelector(".wiki-lb-meta-value");
           valueEl.hidden = false;
-          valueEl.textContent = val || LB_FIELD_PLACEHOLDER[key] || "\u2014";
+          valueEl.textContent = val || LB_FIELD_PLACEHOLDER[key] || "N/A";
           valueEl.classList.toggle("wiki-lb-meta-placeholder", !val);
           field.querySelector(".wiki-lb-meta-edit").hidden = true;
           field.hidden = false;
@@ -3749,7 +4003,7 @@
       sel.className = "wf-pos-section-sel wf-select";
       var blank = document.createElement("option");
       blank.value = "";
-      blank.textContent = "— Choisir une section —";
+      blank.textContent = "Choisir une section";
       sel.appendChild(blank);
       getHeadings().forEach(function (h) {
         var opt = document.createElement("option");
@@ -4686,6 +4940,133 @@
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !drawer.hidden) closeDrawer();
     });
+  })();
+
+  // ── "Explorer l'inconnu" : page codex aléatoire jamais notée ni en
+  // favori, avec petit historique de session pour Précédent/Suivant.
+  // Bouton dans le volet filtre (wiki.ejs/wiki-index.ejs) et bandeau sur la
+  // fiche (wiki-detail.ejs, ?explore=1) — réutilise hideUltra/hideIrrealiste
+  // du reste du fichier pour piocher parmi ce que l'utilisateur voit déjà.
+  (function () {
+    var exploreBtn = document.getElementById("wiki-explore-btn");
+    var banner     = document.getElementById("wiki-explore-banner");
+    if (!exploreBtn && !banner) return;
+
+    var HKEY = "wiki-explore-history";
+    var PKEY = "wiki-explore-pos";
+
+    function getHistory() {
+      try { return JSON.parse(sessionStorage.getItem(HKEY) || "[]"); } catch (_) { return []; }
+    }
+    function getPos() { return Number(sessionStorage.getItem(PKEY) || "0"); }
+    function saveState(history, pos) {
+      sessionStorage.setItem(HKEY, JSON.stringify(history));
+      sessionStorage.setItem(PKEY, String(pos));
+    }
+    function fetchRandom(excludeIds, cb) {
+      var params = new URLSearchParams();
+      if (excludeIds.length) params.set("exclude", excludeIds.join(","));
+      if (hideUltra) params.set("hideUltra", "1");
+      if (hideIrrealiste) params.set("hideIrrealiste", "1");
+      fetch("/wiki/explorer/aleatoire?" + params.toString())
+        .then(function (r) { return r.json(); })
+        .then(function (d) { cb(d.id || null); })
+        .catch(function () { cb(null); });
+    }
+    function goTo(id) { window.location.href = "/wiki/" + id + "?explore=1"; }
+
+    // Bouton du volet filtre : démarre une nouvelle session d'exploration.
+    if (exploreBtn) {
+      exploreBtn.addEventListener("click", function () {
+        exploreBtn.disabled = true;
+        fetchRandom([], function (id) {
+          if (!id) {
+            exploreBtn.textContent = "Tout est déjà exploré !";
+            return;
+          }
+          saveState([id], 0);
+          goTo(id);
+        });
+      });
+    }
+
+    // Bandeau de la fiche : Précédent/Suivant dans l'historique de session.
+    if (banner) {
+      var currentId = Number(banner.dataset.pageId);
+      var prevBtn = document.getElementById("wiki-explore-prev");
+      var nextBtn = document.getElementById("wiki-explore-next");
+      var history = getHistory();
+      var pos = getPos();
+
+      // Arrivée sur une page en mode exploration sans historique cohérent
+      // (lien partagé, rechargement après un long moment...) : on démarre
+      // un historique à une page plutôt que de planter le bandeau.
+      if (!history.length || history[pos] !== currentId) {
+        history = [currentId];
+        pos = 0;
+        saveState(history, pos);
+      }
+
+      if (prevBtn) {
+        prevBtn.disabled = pos <= 0;
+        prevBtn.addEventListener("click", function () {
+          if (pos <= 0) return;
+          pos -= 1;
+          saveState(history, pos);
+          goTo(history[pos]);
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener("click", function () {
+          if (pos < history.length - 1) {
+            pos += 1;
+            saveState(history, pos);
+            goTo(history[pos]);
+            return;
+          }
+          nextBtn.disabled = true;
+          fetchRandom(history, function (id) {
+            if (!id) {
+              nextBtn.textContent = "Tout est exploré !";
+              return;
+            }
+            history.push(id);
+            pos = history.length - 1;
+            saveState(history, pos);
+            goTo(id);
+          });
+        });
+      }
+
+      // Clavier : Entrée / → = contenu suivant, ← = précédent. Swipe : sens
+      // inverse du clavier (swipe gauche = suivant, swipe droite = précédent),
+      // ignoré si le focus est dans un champ de saisie (ex. "Mes notes"),
+      // pour ne pas voler la touche Entrée.
+      document.addEventListener("keydown", function (e) {
+        var tag = document.activeElement && document.activeElement.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (e.key === "Enter" || e.key === "ArrowRight") {
+          if (nextBtn) { e.preventDefault(); nextBtn.click(); }
+        } else if (e.key === "ArrowLeft") {
+          if (prevBtn && !prevBtn.disabled) { e.preventDefault(); prevBtn.click(); }
+        }
+      });
+
+      var exploreSwipeStartX = 0;
+      var exploreSwipeStartY = 0;
+      document.addEventListener("touchstart", function (e) {
+        exploreSwipeStartX = e.touches[0].clientX;
+        exploreSwipeStartY = e.touches[0].clientY;
+      }, { passive: true });
+      document.addEventListener("touchend", function (e) {
+        var dx = e.changedTouches[0].clientX - exploreSwipeStartX;
+        var dy = e.changedTouches[0].clientY - exploreSwipeStartY;
+        if (Math.abs(dx) > 80 && Math.abs(dy) < 60) {
+          if (dx < 0 && nextBtn) nextBtn.click(); // swipe gauche = suivant
+          else if (dx > 0 && prevBtn && !prevBtn.disabled) prevBtn.click(); // swipe droite = précédent
+        }
+      }, { passive: true });
+    }
   })();
 
 })();

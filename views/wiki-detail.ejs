@@ -1,9 +1,13 @@
-<%- include('partials/head', { title: page.title, preloadImage: preloadImage }) %>
+<%- include('partials/head', { title: 'Codex : ' + page.title, preloadImage: preloadImage }) %>
 <main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: 'Wiki', navBack: '/wiki/categorie/' + page.category }) %>
 
   <% var cat = categories.find(function (c) { return c.key === page.category; }); %>
   <%
+    // "Possédé" (bouton "Nos objets" + étoile) : réservé à l'admin et aux
+    // profils que l'admin a explicitement autorisés (voir /admin, fiche
+    // profil > "Peut voir 'Nos objets'").
+    var wdCanSeeOwned = !!(currentUser && (currentUser.isAdmin || currentUser.canSeeOwned));
     var pm = page.meta || {};
 
     var FSUBS = { jeux_role: 'Jeux de rôle et comportement', hardcore: 'Hardcore', bdsm: 'BDSM', classique: 'Classique', fantaisie: 'Fantaisie' };
@@ -62,15 +66,28 @@
     <div class="wiki-detail-banner">
       <a href="<%= backHref %>" class="wiki-detail-banner-back" title="<%= backLabel %>" aria-label="<%= backLabel %>">&#8592;</a>
       <h1 class="wiki-detail-banner-title"><%= page.title %></h1>
-      <% if ((page.extraCategories && page.extraCategories.length) || page.owned) { %>
+      <% if ((page.extraCategories && page.extraCategories.length) || (wdCanSeeOwned && page.owned)) { %>
         <div class="wiki-detail-banner-sub">
-          <% if (page.owned) { %><span>&#9733; Poss&eacute;d&eacute;</span><% } %>
+          <% if (wdCanSeeOwned && page.owned) { %><span>&#9733; Poss&eacute;d&eacute;</span><% } %>
           <% (page.extraCategories || []).forEach(function (eck) { var ecat = categories.find(function (c) { return c.key === eck; }); %>
             <span><%= ecat ? ecat.label : eck %></span>
           <% }) %>
         </div>
       <% } %>
     </div>
+
+    <%# ─ Bandeau "Explorer l'inconnu" (voir wiki.js) : uniquement quand on
+        arrive ici via le bouton du volet filtre codex (?explore=1). ─ %>
+    <% if (locals.exploreMode) { %>
+      <div class="wiki-explore-banner" id="wiki-explore-banner" data-page-id="<%= page.id %>">
+        <span class="wiki-explore-banner-label">Mode exploration</span>
+        <div class="wiki-explore-banner-actions">
+          <button type="button" id="wiki-explore-prev" class="wiki-explore-nav-btn" title="Page pr&eacute;c&eacute;dente" aria-label="Page pr&eacute;c&eacute;dente" disabled>&#8592; Pr&eacute;c&eacute;dent</button>
+          <button type="button" id="wiki-explore-next" class="wiki-explore-nav-btn" title="Page suivante" aria-label="Page suivante">Suivant &#8594;</button>
+        </div>
+        <a href="/wiki/<%= page.id %>" class="wiki-explore-banner-close" title="Quitter le mode exploration" aria-label="Quitter le mode exploration">&times;</a>
+      </div>
+    <% } %>
 
     <%# ─ Navigation prev/next (mobile — cachée sur PC, remplacée par celle du volet droit) ─ %>
     <nav class="wiki-page-nav wiki-page-nav--mobile" aria-label="Navigation entre pages">
@@ -115,7 +132,7 @@
           <% } %>
         </div>
 
-        <% if (page.owned) { %>
+        <% if (wdCanSeeOwned && page.owned) { %>
           <span class="wiki-left-owned">&#9733;&nbsp;Poss&eacute;d&eacute;</span>
         <% } %>
 
@@ -276,6 +293,8 @@
             <% } %>
           </dl>
         <% } %>
+
+        <p class="wiki-left-updated">Derni&egrave;re modification&nbsp;: <%= new Date(page.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) %></p>
 
       </aside>
 
@@ -443,7 +462,7 @@
               <span class="wiki-right-cat-sep">&middot;</span>
               <a href="/wiki/categorie/<%= eck %>" class="wiki-right-cat-text"><%= ecat.label %></a>
             <% } }) %>
-            <% if (page.owned) { %><span class="wiki-right-owned-tag">&#9733;</span><% } %>
+            <% if (wdCanSeeOwned && page.owned) { %><span class="wiki-right-owned-tag">&#9733;</span><% } %>
           </div>
         </div>
 
@@ -489,6 +508,20 @@
               <button type="button" class="wiki-star wiki-star-lg" data-value="<%= i %>"><%- i <= page.rating ? '&#9733;' : '&#9734;' %></button>
             <% } %>
           </div>
+          <%# Mode couple : révélé seulement une fois que le visiteur a
+              lui-même noté la page — voir mergePartnerReaction. %>
+          <% if (page.rating > 0 && page.partnerReaction) { %>
+            <div class="wiki-partner-reveal">
+              <span class="wiki-partner-reveal-label">&#127800; <%= partnerUser.displayName %>&nbsp;:</span>
+              <% if (page.partnerReaction.rating > 0) { %>
+                <span class="wiki-partner-reveal-stars">
+                  <% for (var pi = 1; pi <= 5; pi++) { %><span class="wiki-card-star<%= pi <= page.partnerReaction.rating ? ' filled' : '' %>">&#9733;</span><% } %>
+                </span>
+              <% } %>
+              <% if (page.partnerReaction.flame) { %><span class="wiki-react-icon" title="J&apos;adore">&#128293;</span><% } %>
+              <% if (page.partnerReaction.interested) { %><span class="wiki-react-icon" title="&Ccedil;a l&apos;int&eacute;resse">&#10024;</span><% } %>
+            </div>
+          <% } %>
         <% } %>
 
         <%# f) Tags : badge unifié (couleur ultra/irréaliste/page dédiée/terme
@@ -546,12 +579,26 @@
           <div class="wiki-react wiki-right-reactions"
                data-id="<%= page.id %>"
                data-flame="<%= (page.flame || isFavorite) ? '1' : '0' %>"
-               data-interested="<%= page.interested ? '1' : '0' %>">
-            <button type="button" class="wiki-react-btn wiki-react-flame<%= (page.flame || isFavorite) ? ' active' : '' %>" data-key="flame">
-              <span class="wiki-react-icon">&#128293;</span><span class="wiki-react-label">J&apos;adore</span>
-            </button>
-            <button type="button" class="wiki-react-btn wiki-react-interest<%= page.interested ? ' active' : '' %>" data-key="interested">
-              <span class="wiki-react-icon">&#10024;</span><span class="wiki-react-label">Int&eacute;ress&eacute;e</span>
+               data-interested="<%= page.interested ? '1' : '0' %>"
+               data-readlater="<%= page.readLater ? '1' : '0' %>"
+               data-practiced="<%= page.practiced ? '1' : '0' %>"
+               data-hidden="<%= page.hidden ? '1' : '0' %>">
+            <div class="wiki-react-square">
+              <button type="button" class="wiki-react-btn wiki-react-flame<%= (page.flame || isFavorite) ? ' active' : '' %>" data-key="flame">
+                <span class="wiki-react-icon">&#128293;</span><span class="wiki-react-label">J&apos;adore</span>
+              </button>
+              <button type="button" class="wiki-react-btn wiki-react-interest<%= page.interested ? ' active' : '' %>" data-key="interested">
+                <span class="wiki-react-icon">&#10024;</span><span class="wiki-react-label"><%= interestedLabel %></span>
+              </button>
+              <button type="button" class="wiki-react-btn wiki-react-readlater<%= page.readLater ? ' active' : '' %>" data-key="readlater">
+                <span class="wiki-react-icon">&#9203;</span><span class="wiki-react-label">&Agrave; lire plus tard</span>
+              </button>
+              <button type="button" class="wiki-react-btn wiki-react-practiced<%= page.practiced ? ' active' : '' %>" data-key="practiced">
+                <span class="wiki-react-icon">&#9989;</span><span class="wiki-react-label">D&eacute;j&agrave; pratiqu&eacute;</span>
+              </button>
+            </div>
+            <button type="button" class="wiki-react-btn wiki-react-hidden wiki-react-standalone<%= page.hidden ? ' active' : '' %>" data-key="hidden" title="<%= page.hidden ? 'Réafficher cette page' : 'Masquer cette page' %>">
+              <span class="wiki-react-icon">&#128065;</span><span class="wiki-react-label"><%= page.hidden ? 'Masquée' : 'Masquer' %></span>
             </button>
           </div>
         <% } %>
@@ -604,7 +651,7 @@
     <% if (currentUser) { %>
       <div class="wiki-user-note" data-page-id="<%= page.id %>">
         <h3 class="wiki-pos-section-heading wiki-user-note-heading">Mes notes</h3>
-        <textarea class="wiki-user-note-area" placeholder="Tes notes personnelles sur cette page…" rows="4"><%= locals.userNote || '' %></textarea>
+        <textarea class="wiki-user-note-area" placeholder="Vos notes personnelles sur cette page…" rows="4"><%= locals.userNote || '' %></textarea>
         <p class="wiki-user-note-status" aria-live="polite"></p>
       </div>
     <% } %>
@@ -647,4 +694,5 @@
 })();
 </script>
 <script src="/wiki.js?v=<%= assetVersion %>"></script>
+<%- include('partials/codex-offline') %>
 <%- include('partials/foot') %>

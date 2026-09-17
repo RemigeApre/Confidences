@@ -1,0 +1,82 @@
+<%# Volet de navigation du profil : même composant que les volets filtre
+    (.wiki-cat-sidebar), teinté selon le rôle du compte (roleHue, calculé
+    par src/routes/favorites.js). Remplace l'ancien panneau droit : Pseudo →
+    accueil favoris, Codex/Images/BD → notes (avec compteur), Paramètres →
+    sous-page dédiée, Profil → sous-pages Identité/Mot de passe/Journal,
+    ULTRA tout en bas. %>
+<aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue: <%= roleHue %>">
+  <div class="profil-nav-header">
+    <a href="/favoris" class="profil-nav-name"><%= currentUser.displayName %></a>
+  </div>
+  <div class="wiki-sidebar-body">
+    <nav class="profil-nav-links">
+      <a href="/favoris/notes/wiki" class="profil-nav-link<%= currentPath === '/favoris/notes/wiki' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9a2 2 0 0 1 2 2v16l-6.5-4.2L4 21V5a2 2 0 0 1 2-2Z"/></svg>
+        <span>Codex</span>
+        <span class="profil-nav-count"><%= notesCounts.wiki %></span>
+      </a>
+      <a href="/favoris/notes/images" class="profil-nav-link<%= currentPath === '/favoris/notes/images' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span>Images</span>
+        <span class="profil-nav-count"><%= notesCounts.gallery %></span>
+      </a>
+      <a href="/favoris/collections" class="profil-nav-link profil-nav-sublink<%= currentPath.indexOf('/favoris/collections') === 0 ? ' active' : '' %>">
+        <span>Mes collections</span>
+      </a>
+      <a href="/favoris/notes/bd" class="profil-nav-link<%= currentPath === '/favoris/notes/bd' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M7 21h13a2 2 0 0 0 2-2V6"/></svg>
+        <span>BD</span>
+        <span class="profil-nav-count"><%= notesCounts.bd %></span>
+      </a>
+      <a href="/favoris/historique" class="profil-nav-link<%= currentPath === '/favoris/historique' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        <span>Historique</span>
+      </a>
+      <a href="/favoris/a-lire-plus-tard" class="profil-nav-link<%= currentPath === '/favoris/a-lire-plus-tard' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
+        <span>&Agrave; lire plus tard</span>
+      </a>
+    </nav>
+    <nav class="profil-nav-links">
+      <a href="/favoris/parametres" class="profil-nav-link<%= currentPath === '/favoris/parametres' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="8" cy="12" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2"/></svg>
+        <span>Param&egrave;tres</span>
+      </a>
+      <a href="/favoris/masques" class="profil-nav-link profil-nav-sublink<%= currentPath === '/favoris/masques' ? ' active' : '' %>">
+        <span>Contenus masqu&eacute;s</span>
+      </a>
+      <a href="/favoris/identite" class="profil-nav-link<%= currentPath === '/favoris/identite' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        <span>Identit&eacute;</span>
+      </a>
+      <a href="/favoris/mot-de-passe" class="profil-nav-link profil-nav-sublink<%= currentPath === '/favoris/mot-de-passe' ? ' active' : '' %>">
+        <span>Mot de passe</span>
+      </a>
+      <% if (currentUser.isAdmin) { %>
+        <a href="/favoris/journal" class="profil-nav-link profil-nav-sublink<%= currentPath === '/favoris/journal' ? ' active' : '' %>">
+          <span>Journal technique</span>
+        </a>
+      <% } %>
+    </nav>
+    <%# Sur mobile, la barre du bas (mobile-tabbar) ne laisse plus de place
+        pour ces liens dans le header — c'est ici, dans le profil, qu'on les
+        retrouve maintenant (même esprit qu'Instagram : compte/déconnexion
+        vivent dans l'onglet profil, pas dans la nav principale). %>
+    <nav class="profil-nav-links">
+      <% if (locals.partnerUser) { %>
+        <a href="/couple" class="profil-nav-link profil-nav-sublink<%= currentPath.indexOf('/couple') === 0 ? ' active' : '' %>">
+          <span>Profil de <%= partnerUser.displayName %></span>
+        </a>
+      <% } %>
+      <% if (currentUser.isAdmin) { %>
+        <a href="/admin" class="profil-nav-link profil-nav-sublink">
+          <span>Admin</span>
+        </a>
+      <% } %>
+      <form method="POST" action="/admin/logout" class="profil-nav-logout-form">
+        <button type="submit" class="profil-nav-link profil-nav-sublink profil-nav-link--danger">D&eacute;connexion</button>
+      </form>
+    </nav>
+    <button type="button" class="profil-ultra-toggle wiki-filter-reset-btn" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">Masquer Ultra</button>
+  </div>
+</aside>

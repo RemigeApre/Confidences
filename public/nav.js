@@ -45,31 +45,41 @@
   });
 })();
 
-// ── Drawer mobile ────────────────────────────────────────────────────────────
+// ── Volet filtre mobile (Codex/Galerie) : rétracté par défaut, s'ouvre en
+// tiroir depuis la gauche (voir partials/mobile-filter-toggle.ejs). Un seul
+// jeu d'ids par page (jamais deux volets filtre en même temps), donc
+// réutilisable tel quel sur wiki-index/wiki/gallery sans dupliquer le JS.
 (function () {
-  var burger = document.getElementById("nav-burger");
-  var drawer = document.getElementById("nav-drawer");
-  var backdrop = document.getElementById("nav-backdrop");
-  var closeBtn = document.getElementById("nav-drawer-close");
-  if (!burger || !drawer || !backdrop) return;
+  var toggle = document.getElementById("mobile-filter-toggle");
+  var sidebar = document.getElementById("mobile-filter-sidebar");
+  var backdrop = document.getElementById("mobile-filter-backdrop");
+  var closeBtn = document.getElementById("mobile-filter-close");
+  if (!toggle || !sidebar || !backdrop) return;
 
-  function openDrawer() {
-    drawer.classList.add("open");
-    backdrop.classList.add("open");
-    drawer.setAttribute("aria-hidden", "false");
-    burger.setAttribute("aria-expanded", "true");
-    document.body.classList.add("nav-drawer-locked");
+  // Sur mobile, les volets internes (Filtres > Catégorie/Notation/...) sont
+  // forcés ouverts une fois pour toutes : un accordéon dans un accordéon
+  // n'apporte qu'un tap superflu avant d'atteindre les tags. Leur summary
+  // est neutralisé en CSS (pointer-events: none) donc ils ne se referment
+  // jamais tout seuls. Le desktop (même élément, sidebar fixe) n'est pas
+  // concerné et garde son repli habituel.
+  if (window.matchMedia && window.matchMedia("(max-width: 640px)").matches) {
+    sidebar.querySelectorAll("details").forEach(function (d) { d.open = true; });
   }
 
+  function openDrawer() {
+    sidebar.classList.add("mobile-filter-open");
+    backdrop.classList.add("open");
+    toggle.setAttribute("aria-expanded", "true");
+    document.body.classList.add("nav-drawer-locked");
+  }
   function closeDrawer() {
-    drawer.classList.remove("open");
+    sidebar.classList.remove("mobile-filter-open");
     backdrop.classList.remove("open");
-    drawer.setAttribute("aria-hidden", "true");
-    burger.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-expanded", "false");
     document.body.classList.remove("nav-drawer-locked");
   }
 
-  burger.addEventListener("click", openDrawer);
+  toggle.addEventListener("click", openDrawer);
   backdrop.addEventListener("click", closeDrawer);
   if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
   document.addEventListener("keydown", function (e) {
@@ -77,32 +87,36 @@
   });
 })();
 
-// ── Recherche globale (overlay desktop) ─────────────────────────────────────
+// ── Recherche globale : champ qui s'agrandit dans le header ─────────────────
 (function () {
-  var overlay  = document.getElementById("pc-search-overlay");
-  var input    = document.getElementById("pc-search-input");
-  var closeBtn = document.getElementById("pc-search-close");
-  var results  = document.getElementById("pc-search-results");
-  var openBtn  = document.getElementById("pc-search-btn");
-  if (!overlay || !input || !results) return;
+  var wrap    = document.getElementById("pc-search-inline");
+  var input   = document.getElementById("pc-search-input");
+  var results = document.getElementById("pc-search-results");
+  var openBtn = document.getElementById("pc-search-btn");
+  if (!wrap || !input || !results || !openBtn) return;
+
+  function isOpen() { return wrap.classList.contains("pc-search-open"); }
 
   function open() {
-    overlay.hidden = false;
+    wrap.classList.add("pc-search-open");
+    openBtn.setAttribute("aria-expanded", "true");
     input.focus();
-    input.select();
   }
 
   function close() {
-    overlay.hidden = true;
+    wrap.classList.remove("pc-search-open");
+    openBtn.setAttribute("aria-expanded", "false");
+    results.hidden = true;
     results.innerHTML = "";
     input.value = "";
   }
 
-  if (openBtn) openBtn.addEventListener("click", open);
-  if (closeBtn) closeBtn.addEventListener("click", close);
+  openBtn.addEventListener("click", function () {
+    if (isOpen()) close(); else open();
+  });
 
-  overlay.addEventListener("click", function (e) {
-    if (e.target === overlay) close();
+  document.addEventListener("click", function (e) {
+    if (isOpen() && !wrap.contains(e.target)) close();
   });
 
   document.addEventListener("keydown", function (e) {
@@ -111,14 +125,14 @@
       e.preventDefault();
       open();
     }
-    if (e.key === "Escape" && !overlay.hidden) close();
+    if (e.key === "Escape" && isOpen()) close();
   });
 
   var timer;
   input.addEventListener("input", function () {
     clearTimeout(timer);
     var q = input.value.trim();
-    if (q.length < 2) { results.innerHTML = ""; return; }
+    if (q.length < 2) { results.hidden = true; results.innerHTML = ""; return; }
     timer = setTimeout(function () { fetchSearch(q); }, 280);
   });
 
@@ -130,7 +144,7 @@
   }
 
   var LABELS = {
-    wiki:    "Wiki",
+    wiki:    "Codex",
     galerie: "Galerie",
     bd:      "BD",
     liens:   "Liens",
@@ -139,6 +153,7 @@
 
   function render(data) {
     while (results.firstChild) results.removeChild(results.firstChild);
+    results.hidden = false;
     var keys = Object.keys(data);
     if (!keys.length) {
       var empty = document.createElement("p");
@@ -169,6 +184,75 @@
       results.appendChild(sec);
     });
   }
+})();
+
+// ── Encarts "survol = aperçu, clic = épinglé, clic dehors = ferme" ──────────
+// (rappel de consentement, menu profil). Pour <details> on pilote .open
+// directement (le natif gère déjà l'affichage/l'accessibilité) ; pour les
+// autres (.pc-has-drop) on pose/enlève .pc-menu-open (voir style.css).
+(function () {
+  var menus = document.querySelectorAll(".pc-hover-menu");
+  if (!menus.length) return;
+
+  menus.forEach(function (menu) {
+    var isDetails = menu.tagName === "DETAILS";
+    var trigger = menu.querySelector(isDetails ? ":scope > summary" : ":scope > button, :scope > a");
+    if (!trigger) return;
+    var pinned = false;
+    var closeTimer = null;
+
+    function setOpen(v) {
+      if (isDetails) menu.open = v;
+      menu.classList.toggle("pc-menu-open", v);
+    }
+
+    menu.addEventListener("mouseenter", function () {
+      clearTimeout(closeTimer);
+      setOpen(true);
+    });
+    menu.addEventListener("mouseleave", function () {
+      if (pinned) return;
+      // Petit délai avant fermeture : un mouvement rapide ou légèrement
+      // diagonal peut faire sortir la souris du menu un instant, pas la
+      // peine de refermer tout de suite.
+      closeTimer = setTimeout(function () { setOpen(false); }, 300);
+    });
+
+    trigger.addEventListener("click", function (e) {
+      if (isDetails) e.preventDefault(); // on gère l'ouverture nous-mêmes
+      clearTimeout(closeTimer);
+      pinned = !pinned;
+      setOpen(pinned);
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!pinned) return;
+      if (!menu.contains(e.target)) {
+        clearTimeout(closeTimer);
+        pinned = false;
+        setOpen(false);
+      }
+    });
+  });
+})();
+
+// ── Rappel de consentement "?" : couleur or tant qu'il n'a jamais été
+// survolé/ouvert, puis couleur normale pour toujours (par navigateur). ───────
+(function () {
+  var details = document.querySelector(".pc-consent-details");
+  if (!details) return;
+  try {
+    if (localStorage.getItem("lq-consent-seen") === "1") return;
+  } catch (_) { return; }
+
+  function markSeen() {
+    try { localStorage.setItem("lq-consent-seen", "1"); } catch (_) {}
+    document.documentElement.classList.remove("consent-unseen");
+    details.removeEventListener("mouseenter", markSeen);
+    details.removeEventListener("click", markSeen);
+  }
+  details.addEventListener("mouseenter", markSeen);
+  details.addEventListener("click", markSeen);
 })();
 
 // ── Chargement des images : toutes les <img> ont en permanence un fond
@@ -215,7 +299,7 @@ window.buildTagBadgeHTML = function (tag) {
     lqEscapeHtml(String(tag).toLowerCase().trim()) + '"' + style + '>' + lqEscapeHtml(tag) + "</span>";
   if (meta.wikiPageId) {
     html += '<a class="tag-badge-arrow" href="/wiki/' + meta.wikiPageId +
-      '" title="Voir la page wiki" aria-label="Voir la page wiki">&#8599;</a>';
+      '" title="Voir la page codex" aria-label="Voir la page codex">&#8599;</a>';
   }
   return html;
 };
@@ -234,12 +318,21 @@ window.buildTagBadgeHTML = function (tag) {
   var renameBtn   = document.getElementById("tag-popup-rename-btn");
   var typeBtnsWrap = document.getElementById("tag-popup-type-btns");
   var feedbackEl  = document.getElementById("tag-popup-admin-feedback");
+  var blacklistBtn = document.getElementById("tag-popup-blacklist-btn");
 
   var currentTag = "";
+  // Un tag masqué depuis cette popup ne doit disparaître des champs de tags
+  // (chips, grille /tags...) qu'à la fermeture — pas pendant qu'on consulte
+  // encore la popup — d'où ce drapeau plutôt qu'un événement au clic.
+  var blacklistChangedSinceOpen = false;
 
   function close() {
     overlay.hidden = true;
     currentTag = "";
+    if (blacklistChangedSinceOpen) {
+      blacklistChangedSinceOpen = false;
+      document.dispatchEvent(new CustomEvent("tag-blacklist-change"));
+    }
   }
 
   function syncTypeBtns() {
@@ -251,9 +344,23 @@ window.buildTagBadgeHTML = function (tag) {
     });
   }
 
+  // "Masquer le tag" : ajoute/retire currentTag de la blacklist personnelle
+  // (voir /tags/masques). Bascule tant que la popup reste ouverte — un clic
+  // accidentel se corrige d'un second clic sans avoir à aller sur la page
+  // dédiée ; l'effet ne se voit sur les autres champs de tags qu'à la
+  // fermeture (voir close()).
+  function syncBlacklistBtn() {
+    if (!blacklistBtn) return;
+    if (!window.IS_LOGGED_IN) { blacklistBtn.hidden = true; return; }
+    blacklistBtn.hidden = false;
+    var isBlacklisted = (window.TAG_BLACKLIST || []).indexOf(currentTag) !== -1;
+    blacklistBtn.textContent = isBlacklisted ? "Ne plus masquer" : "Masquer le tag";
+  }
+
   function open(tag) {
     currentTag = String(tag).toLowerCase().trim();
     if (!currentTag) return;
+    blacklistChangedSinceOpen = false;
     titleEl.textContent = tag;
     pagesEl.innerHTML = "";
     galleryBtn.hidden = true;
@@ -261,6 +368,7 @@ window.buildTagBadgeHTML = function (tag) {
     if (feedbackEl) feedbackEl.textContent = "";
     if (renameInput) renameInput.value = tag;
     syncTypeBtns();
+    syncBlacklistBtn();
     if (adminPanel) adminPanel.hidden = !window.IS_ADMIN;
     overlay.hidden = false;
 
@@ -278,7 +386,7 @@ window.buildTagBadgeHTML = function (tag) {
         if (!data.wiki || !data.wiki.length) {
           var empty = document.createElement("p");
           empty.className = "tag-popup-empty";
-          empty.textContent = "Aucune page wiki avec ce tag.";
+          empty.textContent = "Aucune page codex avec ce tag.";
           pagesEl.appendChild(empty);
         }
         if (data.galerie && data.galerie.length) {
@@ -303,6 +411,36 @@ window.buildTagBadgeHTML = function (tag) {
   closeBtn.addEventListener("click", close);
   overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !overlay.hidden) close(); });
+
+  if (blacklistBtn) {
+    blacklistBtn.addEventListener("click", function () {
+      if (!currentTag || blacklistBtn.disabled) return;
+      var wasBlacklisted = (window.TAG_BLACKLIST || []).indexOf(currentTag) !== -1;
+      blacklistBtn.disabled = true; // évite un double-clic pendant l'aller-retour réseau
+      fetch("/api/tags/blacklist", {
+        method: wasBlacklisted ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag: currentTag }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) return;
+          if (!window.TAG_BLACKLIST) window.TAG_BLACKLIST = [];
+          var idx = window.TAG_BLACKLIST.indexOf(currentTag);
+          if (wasBlacklisted) {
+            if (idx !== -1) window.TAG_BLACKLIST.splice(idx, 1);
+          } else if (idx === -1) {
+            window.TAG_BLACKLIST.push(currentTag);
+          }
+          blacklistChangedSinceOpen = true;
+        })
+        .catch(function () {})
+        .then(function () {
+          blacklistBtn.disabled = false;
+          syncBlacklistBtn();
+        });
+    });
+  }
 
   if (renameBtn) {
     renameBtn.addEventListener("click", function () {
@@ -348,11 +486,75 @@ window.buildTagBadgeHTML = function (tag) {
   }
 
   // Délégation globale : n'importe quel badge de tag, présent ou ajouté plus
-  // tard (lightbox, modale BD...), ouvre cette même popup.
+  // tard (lightbox, modale BD...), ouvre cette même popup — sauf en mode
+  // "accès direct" (réglage /favoris/parametres) qui saute la popup et va
+  // droit à la page codex du tag si elle existe, sinon à la galerie filtrée.
   document.addEventListener("click", function (e) {
     var badge = e.target.closest(".tag-badge[data-tag]");
     if (!badge) return;
     e.preventDefault();
-    open(badge.dataset.tag);
+    var tag = badge.dataset.tag;
+    if (localStorage.getItem("tag-click-mode") === "direct") {
+      var meta = (window.TAG_REGISTRY || {})[tag] || {};
+      window.location.href = meta.wikiPageId
+        ? "/wiki/" + meta.wikiPageId
+        : "/galerie?tag=" + encodeURIComponent(tag);
+      return;
+    }
+    open(tag);
+  });
+})();
+
+// ── Bouton "ULTRA" du volet profil (partials/profil-nav.ejs) ────────────────
+// Présent sur toutes les pages du profil. Cette IIFE ne gère que l'état
+// visuel du bouton lui-même (partagé par toutes) ; chaque page qui a du
+// contenu Ultra à masquer (favoris, notes codex/images/BD) écoute
+// l'évènement "profil-ultra-toggle-change" pour réagir sans dupliquer
+// cette logique ici.
+(function () {
+  var btn = document.getElementById("profil-ultra-toggle");
+  if (!btn) return;
+  var KEY = "profil-hide-ultra";
+  function sync() {
+    var on = localStorage.getItem(KEY) === "1";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.textContent = on ? "Afficher Ultra" : "Masquer Ultra";
+    btn.title = on ? "Afficher les contenus Ultra" : "Masquer les contenus Ultra";
+    btn.setAttribute("aria-label", btn.title);
+  }
+  sync();
+  btn.addEventListener("click", function () {
+    var on = localStorage.getItem(KEY) === "1";
+    localStorage.setItem(KEY, on ? "0" : "1");
+    sync();
+    document.dispatchEvent(new CustomEvent("profil-ultra-toggle-change"));
+  });
+})();
+
+// ── Mode discret (masquer les images) ───────────────────────────────────────
+// La classe est déjà posée au chargement par partials/head.ejs (évite le
+// flash) ; ici on ne fait que synchroniser les boutons et gérer le clic.
+(function () {
+  var KEY = "lq-discreet";
+  var btns = [
+    document.getElementById("pc-discreet-btn"),
+    document.getElementById("nav-mobile-discreet-btn"),
+  ].filter(Boolean);
+  if (!btns.length) return;
+
+  function isOn() { return document.documentElement.classList.contains("lq-discreet-mode"); }
+  function sync() {
+    var on = isOn();
+    btns.forEach(function (btn) { btn.setAttribute("aria-pressed", on ? "true" : "false"); });
+  }
+  sync();
+
+  btns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var on = !isOn();
+      document.documentElement.classList.toggle("lq-discreet-mode", on);
+      try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (_) {}
+      sync();
+    });
   });
 })();

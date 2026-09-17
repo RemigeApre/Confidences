@@ -1,172 +1,37 @@
-<%- include('partials/head', { title: 'Profil — ' + config.title }) %>
-<main class="container wide profil-page">
+<%- include('partials/head', { title: 'Profil' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
   <%- include('partials/top-nav', { config: config }) %>
 
-  <%# ── Panneaux latéraux (desktop : fixe à droite / mobile : accordéons en haut) ── %>
-  <aside class="profil-panels">
-    <div class="profil-panels-name"><%= currentUser.displayName %></div>
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
-    <%# ── Panneau 1 : Paramètres ── %>
-    <details class="profil-panel" open>
-      <summary class="profil-panel-summary">Param&egrave;tres</summary>
-      <div class="profil-panel-body">
-
-        <div class="profil-setting-label">Ultra</div>
-        <div class="user-setting-options" id="ultra-mode-options">
-          <label class="user-setting-radio" data-val="hidden">
-            <input type="radio" name="ultra-mode" value="hidden" /> Masqu&eacute; (bascule)
-          </label>
-          <label class="user-setting-radio" data-val="visible">
-            <input type="radio" name="ultra-mode" value="visible" /> Visible
-          </label>
-          <label class="user-setting-radio" data-val="off">
-            <input type="radio" name="ultra-mode" value="off" /> D&eacute;sactiv&eacute;
-          </label>
-        </div>
-
-        <div class="profil-setting-label">Irr&eacute;aliste</div>
-        <div class="user-setting-options" id="irrealiste-mode-options">
-          <label class="user-setting-radio" data-val="hidden">
-            <input type="radio" name="irrealiste-mode" value="hidden" /> Masqu&eacute; (bascule)
-          </label>
-          <label class="user-setting-radio" data-val="visible">
-            <input type="radio" name="irrealiste-mode" value="visible" /> Visible
-          </label>
-          <label class="user-setting-radio" data-val="off">
-            <input type="radio" name="irrealiste-mode" value="off" /> D&eacute;sactiv&eacute;
-          </label>
-        </div>
-
-        <div class="profil-setting-label">Filtrage des tags</div>
-        <div class="user-setting-options" id="tag-logic-options">
-          <label class="user-setting-radio" data-val="and">
-            <input type="radio" name="tag-logic" value="and" /> ET &mdash; tous les tags
-          </label>
-          <label class="user-setting-radio" data-val="or">
-            <input type="radio" name="tag-logic" value="or" /> OU &mdash; au moins un
-          </label>
-        </div>
-
-      </div>
-    </details>
-
-    <%# ── Panneau 2 : Identité ── %>
-    <details class="profil-panel" id="profil-identite-panel" <%= openIdentite ? 'open' : '' %>>
-      <summary class="profil-panel-summary">Identit&eacute;</summary>
-      <div class="profil-panel-body">
-
-        <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
-        <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
-
-        <form method="POST" action="/favoris/identite" class="profil-form">
-
-          <label class="profil-field">
-            <span class="profil-field-label">Pseudo</span>
-            <input type="text" name="display_name" value="<%= user.displayName %>" required autocomplete="off" class="profil-field-input" />
-          </label>
-
-          <label class="profil-field">
-            <span class="profil-field-label">Orientation</span>
-            <select name="orientation" class="profil-field-input">
-              <option value="" <%= !user.orientation ? 'selected' : '' %>>Non pr&eacute;cis&eacute;e</option>
-              <option value="hetero" <%= user.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
-              <option value="gay" <%= user.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
-              <option value="bi" <%= user.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
-            </select>
-          </label>
-
-          <label class="profil-field">
-            <span class="profil-field-label">Adresse mail</span>
-            <input type="email" name="email" value="<%= user.email || '' %>" placeholder="facultatif" autocomplete="off" class="profil-field-input" />
-          </label>
-
-          <label class="profil-field">
-            <span class="profil-field-label">Sexe</span>
-            <select name="sexe" class="profil-field-input">
-              <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
-              <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
-              <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
-              <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
-            </select>
-          </label>
-
-          <label class="profil-field">
-            <span class="profil-field-label">Ann&eacute;e de naissance</span>
-            <input type="number" name="birth_year" value="<%= user.birthYear || '' %>" placeholder="facultatif" min="1900" max="<%= new Date().getFullYear() %>" class="profil-field-input" />
-          </label>
-
-          <div class="profil-field profil-field-readonly">
-            <span class="profil-field-label">Identifiant</span>
-            <input type="text" value="<%= user.username %>" disabled class="profil-field-input" />
-          </div>
-
-          <div class="profil-field profil-field-readonly">
-            <span class="profil-field-label">Statut</span>
-            <input type="text" value="<%= user.isAdmin ? 'Administrateur' : (user.isTest ? 'Utilisateur (test)' : 'Utilisateur') %>" disabled class="profil-field-input" />
-          </div>
-
-          <button type="submit" class="profil-btn-primary">Enregistrer</button>
-        </form>
-
-        <%# ── Mot de passe ── %>
-        <details class="profil-sub-details">
-          <summary class="profil-sub-summary">Changer le mot de passe</summary>
-          <form method="POST" action="/favoris/mot-de-passe" class="profil-form profil-form-pwd">
-            <label class="profil-field">
-              <span class="profil-field-label">Mot de passe actuel</span>
-              <input type="password" name="current_password" required autocomplete="current-password" class="profil-field-input" />
-            </label>
-            <label class="profil-field">
-              <span class="profil-field-label">Nouveau mot de passe</span>
-              <input type="password" name="new_password" required autocomplete="new-password" class="profil-field-input" />
-            </label>
-            <button type="submit" class="profil-btn-primary">Changer</button>
-          </form>
-        </details>
-
-        <%# ── Journal technique (admin seulement) ── %>
-        <% if (currentUser && currentUser.isAdmin) { %>
-          <details class="profil-sub-details profil-journal-details">
-            <summary class="profil-sub-summary">Journal technique</summary>
-            <ul class="profil-journal">
-              <li>Compte cr&eacute;&eacute; le <%= new Date(user.createdAt).toLocaleDateString('fr-FR') %></li>
-              <% if (user.updatedAt) { %><li>Modifi&eacute; le <%= new Date(user.updatedAt).toLocaleDateString('fr-FR') %></li><% } %>
-              <% if (user.lastLoginAt) { %>
-                <li>Derni&egrave;re connexion le <%= new Date(user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></li>
-              <% } %>
-            </ul>
-            <% if (connectionLogs.length) { %>
-              <details class="profil-history">
-                <summary>Historique des connexions (<%= connectionLogs.length %>)</summary>
-                <ul class="profil-journal">
-                  <% connectionLogs.forEach(function (log) { %>
-                    <li><%= new Date(log.createdAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %> &mdash; <%= log.ip %></li>
-                  <% }) %>
-                </ul>
-              </details>
-            <% } %>
-          </details>
-        <% } %>
-
-      </div>
-    </details>
-  </aside>
+  <div class="profil-export-gouts-block">
+    <p class="profil-export-gouts-text">T&eacute;l&eacute;chargez une synth&egrave;se de vos go&ucirc;ts (codex), class&eacute;e par degr&eacute; d&rsquo;appr&eacute;ciation &mdash; pratique &agrave; garder pour vous ou &agrave; partager.</p>
+    <button type="button" id="wiki-export-gouts-btn" class="profil-export-gouts-btn">Extraire mes go&ucirc;ts</button>
+  </div>
+  <%- include('partials/export-gouts-modal') %>
 
   <%# ── Contenu principal : favoris ── %>
 
+  <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
+  <% var hasAnything = fantasyPages.length || nonFantasyPages.length || galleryImages.length || bdBooks.length; %>
+
+  <div id="profil-empty" class="profil-empty"<%= hasAnything ? ' hidden' : '' %>>
+    <div class="profil-empty-icon">&#10024;</div>
+    <p>Vous retrouverez ici ce que vous pr&eacute;f&eacute;rez.<br>Commencez &agrave; explorer le <a href="/wiki">codex</a>, la <a href="/galerie">galerie</a> ou les <a href="/bd">BD</a> pour ajouter des favoris.</p>
+  </div>
+
   <% if (fantasyPages.length) { %>
-    <h2 class="profil-section-title">Mes fantasmes (<%= fantasyPages.length %>)</h2>
-    <div class="wiki-grid">
+    <h2 class="profil-section-title" id="profil-fantasy-title">Mes fantasmes (<%= fantasyPages.length %>)</h2>
+    <div class="wiki-grid" id="profil-fantasy-grid">
       <% fantasyPages.forEach(function (page) { %>
         <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
       <% }) %>
     </div>
   <% } %>
 
-  <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
   <% if (nonFantasyPages.length) { %>
-    <h2 class="profil-section-title">Pages favorites (<%= nonFantasyPages.length %>)</h2>
-    <div class="wiki-grid">
+    <h2 class="profil-section-title profil-section-title--center" id="profil-pf-title"><%= nonFantasyPages.length > 1 ? 'Pages favorites' : 'Page favorite' %></h2>
+    <div class="wiki-grid" id="profil-pf-grid">
       <% nonFantasyPages.forEach(function (page) { %>
         <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
       <% }) %>
@@ -174,31 +39,31 @@
   <% } %>
 
   <% if (galleryImages.length) { %>
-    <h2 class="profil-section-title">Images favorites (<%= galleryImages.length %>)</h2>
-    <div class="profil-fav-grid">
+    <h2 class="profil-section-title" id="profil-images-title">Images favorites (<%= galleryImages.length %>)</h2>
+    <div class="profil-fav-grid profil-fav-grid--lg" id="profil-images-grid">
       <% galleryImages.forEach(function (img) { %>
         <a href="/galerie/<%= img.id %>/edit"
-           class="profil-fav-card"
-           data-fav-item data-item-type="gallery" data-item-id="<%= img.id %>">
+           class="profil-fav-card profil-fav-card--lg"
+           data-ultra="<%= img.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
           <% if (img.imagePaths && img.imagePaths[0]) { %>
             <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
           <% } else { %>
             <div class="profil-fav-card-placeholder">&#128247;</div>
           <% } %>
           <span class="profil-fav-card-title"><%= img.title || 'Sans titre' %></span>
-          <button type="button" class="wiki-pl-remove" title="Retirer des favoris">&#215;</button>
         </a>
       <% }) %>
     </div>
   <% } %>
 
   <% if (bdBooks.length) { %>
-    <h2 class="profil-section-title">BD favorites (<%= bdBooks.length %>)</h2>
-    <div class="profil-fav-grid">
+    <h2 class="profil-section-title" id="profil-bd-title">BD favorites (<%= bdBooks.length %>)</h2>
+    <div class="profil-fav-grid" id="profil-bd-grid">
       <% bdBooks.forEach(function (book) { %>
         <a href="/bd/<%= book.id %>"
            class="profil-fav-card"
-           data-fav-item data-item-type="bd" data-item-id="<%= book.id %>">
+           data-fav-item data-item-type="bd" data-item-id="<%= book.id %>"
+           data-ultra="<%= book.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
           <% if (book.imagePaths && book.imagePaths[0]) { %>
             <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
           <% } else { %>
@@ -211,79 +76,10 @@
     </div>
   <% } %>
 
-  <% if (!fantasyPages.length && !nonFantasyPages.length && !galleryImages.length && !bdBooks.length) { %>
-    <p class="intro" style="margin-top:2rem">Aucun favori pour l&apos;instant. Utilise les boutons favori sur les pages wiki, images ou BD.</p>
-  <% } %>
-
-  <div class="profil-notes-btns">
-    <a href="/favoris/notes/images" class="profil-notes-btn">Images not&eacute;es</a>
-    <a href="/favoris/notes/wiki" class="profil-notes-btn">Pages wiki not&eacute;es</a>
-    <a href="/favoris/notes/bd" class="profil-notes-btn">BD not&eacute;es</a>
-  </div>
-
 </main>
 
 <script>
 (function () {
-  // ── Paramètres : Ultra / Irréaliste (sauvegarde serveur) ─────────────────
-  function savePref(field, value) {
-    var body = {};
-    body[field] = value;
-    fetch("/favoris/parametres", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }).catch(function () {});
-  }
-
-  function wireServerRadio(containerId, field, initial) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
-    var current = initial;
-    function sync() {
-      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
-    }
-    sync();
-    labels.forEach(function (lbl) {
-      var radio = lbl.querySelector("input");
-      if (radio.value === current) radio.checked = true;
-      radio.addEventListener("change", function () {
-        if (!radio.checked) return;
-        current = radio.value;
-        sync();
-        savePref(field, current);
-      });
-    });
-  }
-
-  wireServerRadio("ultra-mode-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
-  wireServerRadio("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
-
-  // ── Filtrage des tags (localStorage) ─────────────────────────────────────
-  function wireLocalRadio(containerId, lsKey, defaultVal) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
-    var current = localStorage.getItem(lsKey) || defaultVal;
-    function sync() {
-      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
-    }
-    sync();
-    labels.forEach(function (lbl) {
-      var radio = lbl.querySelector("input");
-      if (radio.value === current) radio.checked = true;
-      radio.addEventListener("change", function () {
-        if (!radio.checked) return;
-        current = radio.value;
-        sync();
-        localStorage.setItem(lsKey, current);
-      });
-    });
-  }
-
-  wireLocalRadio("tag-logic-options", "wiki-tag-logic", "and");
-
   // ── Favoris : retirer ────────────────────────────────────────────────────
   document.querySelectorAll("[data-fav-item] .wiki-pl-remove").forEach(function (btn) {
     btn.addEventListener("click", function (e) {
@@ -300,6 +96,72 @@
         });
     });
   });
+
+  // ── Masquer les contenus Ultra (bouton dans partials/profil-nav.ejs, géré
+  // pour son propre état par nav.js) : ici on ne réagit qu'au changement
+  // pour cacher/afficher les cartes de cette page. Une section entière
+  // disparaît si tout ce qu'elle contenait était de l'Ultra désormais masqué,
+  // et le message "rien à voir" apparaît si les 4 sections sont vides.
+  var ultraCards = document.querySelectorAll('[data-ultra="1"]');
+  var emptyMsg = document.getElementById("profil-empty");
+  var sections = [
+    { title: document.getElementById("profil-fantasy-title"), grid: document.getElementById("profil-fantasy-grid"), sel: ".wiki-card" },
+    { title: document.getElementById("profil-pf-title"), grid: document.getElementById("profil-pf-grid"), sel: ".wiki-card", relabel: "Pages favorites", relabelSingle: "Page favorite" },
+    { title: document.getElementById("profil-images-title"), grid: document.getElementById("profil-images-grid"), sel: ".profil-fav-card" },
+    { title: document.getElementById("profil-bd-title"), grid: document.getElementById("profil-bd-grid"), sel: ".profil-fav-card" },
+  ];
+
+  function applyUltraHide() {
+    var on = localStorage.getItem("profil-hide-ultra") === "1";
+    ultraCards.forEach(function (el) { el.hidden = on; });
+
+    var totalVisible = 0;
+    sections.forEach(function (s) {
+      if (!s.title || !s.grid) return;
+      var visible = s.grid.querySelectorAll(s.sel + ":not([hidden])").length;
+      s.title.hidden = visible === 0;
+      s.grid.hidden = visible === 0;
+      if (s.relabel && visible > 0) s.title.textContent = visible > 1 ? s.relabel : s.relabelSingle;
+      totalVisible += visible;
+    });
+    if (emptyMsg) emptyMsg.hidden = totalVisible > 0;
+  }
+  applyUltraHide();
+  document.addEventListener("profil-ultra-toggle-change", applyUltraHide);
+
+  // ── "Extraire mes goûts" : popup de réglages puis téléchargement d'une
+  // synthèse .txt générée côté serveur (voir GET /wiki/export-gouts).
+  var exportBtn = document.getElementById("wiki-export-gouts-btn");
+  var exportModal = document.getElementById("export-gouts-modal");
+  if (exportBtn && exportModal) {
+    var exportUltraCheck = document.getElementById("export-gouts-ultra");
+    var exportIrrealisteCheck = document.getElementById("export-gouts-irrealiste");
+    var exportConfirmBtn = document.getElementById("export-gouts-confirm");
+    var exportCancelBtn = document.getElementById("export-gouts-cancel");
+
+    function openExportModal() { exportModal.hidden = false; }
+    function closeExportModal() { exportModal.hidden = true; }
+
+    exportBtn.addEventListener("click", openExportModal);
+    if (exportCancelBtn) exportCancelBtn.addEventListener("click", closeExportModal);
+    exportModal.addEventListener("click", function (e) { if (e.target === exportModal) closeExportModal(); });
+
+    if (exportConfirmBtn) {
+      exportConfirmBtn.addEventListener("click", function () {
+        var min = "all";
+        exportModal.querySelectorAll('input[name="export-gouts-min"]').forEach(function (r) {
+          if (r.checked) min = r.value;
+        });
+        var params = new URLSearchParams({
+          ultra: exportUltraCheck && exportUltraCheck.checked ? "1" : "0",
+          irrealiste: exportIrrealisteCheck && exportIrrealisteCheck.checked ? "1" : "0",
+          min: min
+        });
+        window.location.href = "/wiki/export-gouts?" + params.toString();
+        closeExportModal();
+      });
+    }
+  }
 })();
 </script>
 

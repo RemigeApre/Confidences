@@ -1,0 +1,27 @@
+<%- include('partials/head', { title: 'Profil : Mot de passe' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+
+    <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
+    <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
+
+    <form method="POST" action="/favoris/mot-de-passe" class="profil-form">
+      <label class="profil-field">
+        <span class="profil-field-label">Mot de passe actuel</span>
+        <input type="password" name="current_password" required autocomplete="current-password" class="profil-field-input" />
+      </label>
+      <label class="profil-field">
+        <span class="profil-field-label">Nouveau mot de passe</span>
+        <input type="password" name="new_password" required autocomplete="new-password" class="profil-field-input" />
+      </label>
+      <button type="submit" class="profil-btn-primary">Changer</button>
+    </form>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

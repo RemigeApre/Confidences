@@ -1,0 +1,129 @@
+<%- include('partials/head', { title: 'Collection : ' + collection.title }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config, navTitle: collection.title, navBack: '/favoris/collections' }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+
+    <div class="collection-detail-header">
+      <div class="collection-detail-heading">
+        <h1 class="collection-detail-title"><%= collection.title %></h1>
+        <div class="collection-detail-actions">
+          <button type="button" id="collection-edit-btn" class="link-button">Modifier</button>
+          <button type="button" id="collection-delete-btn" class="link-button collection-delete-link">Supprimer</button>
+        </div>
+      </div>
+      <% if (collection.description) { %><p class="collection-detail-desc"><%= collection.description %></p><% } %>
+      <% if (collection.tags && collection.tags.length) { %>
+        <div class="collection-card-tags collection-detail-tags">
+          <% collection.tags.forEach(function (t) { %><span class="collection-card-tag"><%= t %></span><% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="profil-empty" id="collection-items-empty"<%= items.length ? ' hidden' : '' %>>
+      <div class="profil-empty-icon">&#10024;</div>
+      <p>Aucune image dans cette collection pour l&rsquo;instant.<br>Ajoutez-en depuis la <a href="/galerie">galerie</a>, via &laquo;&nbsp;Ajouter &agrave; une collection&nbsp;&raquo;.</p>
+    </div>
+
+    <div class="gallery-grid" id="collection-items-grid"<%= items.length ? '' : ' hidden' %>>
+      <% items.forEach(function (img) { %>
+        <div class="gallery-card" data-collection-item data-gallery-id="<%= img.id %>">
+          <% if (img.imagePaths && img.imagePaths[0]) { %>
+            <a href="/galerie/<%= img.id %>/edit">
+              <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" class="gallery-img" loading="lazy" />
+            </a>
+          <% } %>
+          <button type="button" class="profil-readlater-remove" title="Retirer de la collection" aria-label="Retirer de la collection">&times;</button>
+        </div>
+      <% }) %>
+    </div>
+
+  </div>
+
+  <%# ─── Popup modification de collection ─────────────────────────────── %>
+  <div class="filter-profile-modal-overlay" id="collection-edit-modal" hidden>
+    <div class="filter-profile-modal collection-modal">
+      <p class="filter-profile-modal-title">Modifier la collection</p>
+      <input type="text" class="filter-profile-modal-input" id="collection-edit-title" placeholder="Titre&hellip;" maxlength="80" autocomplete="off" value="<%= collection.title %>" />
+      <textarea class="collection-modal-textarea" id="collection-edit-desc" placeholder="Description (optionnelle)&hellip;" rows="3"><%= collection.description %></textarea>
+      <input type="text" class="filter-profile-modal-input" id="collection-edit-tags" placeholder="Tags, s&eacute;par&eacute;s par des virgules (optionnel)&hellip;" maxlength="200" autocomplete="off" value="<%= (collection.tags || []).join(', ') %>" />
+      <div class="filter-profile-modal-actions">
+        <button type="button" class="filter-profile-modal-cancel" id="collection-edit-cancel">Annuler</button>
+        <button type="button" class="filter-profile-modal-confirm" id="collection-edit-confirm">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script>
+(function () {
+  var collectionId = <%= collection.id %>;
+
+  // ── Retirer une image de la collection ──────────────────────────────────
+  var grid = document.getElementById("collection-items-grid");
+  var emptyEl = document.getElementById("collection-items-empty");
+  if (grid) {
+    grid.addEventListener("click", function (e) {
+      var btn = e.target.closest(".profil-readlater-remove");
+      if (!btn) return;
+      e.preventDefault();
+      var item = btn.closest("[data-collection-item]");
+      var galleryId = Number(item.dataset.galleryId);
+      btn.disabled = true;
+      fetch("/favoris/collections/" + collectionId + "/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ galleryId: galleryId, action: "remove" }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) { btn.disabled = false; return; }
+          item.remove();
+          if (!grid.querySelector("[data-collection-item]")) {
+            grid.hidden = true;
+            if (emptyEl) emptyEl.hidden = false;
+          }
+        })
+        .catch(function () { btn.disabled = false; });
+    });
+  }
+
+  // ── Modifier titre/description/tags ──────────────────────────────────────
+  var editBtn = document.getElementById("collection-edit-btn");
+  var editModal = document.getElementById("collection-edit-modal");
+  var editCancel = document.getElementById("collection-edit-cancel");
+  var editConfirm = document.getElementById("collection-edit-confirm");
+  if (editBtn && editModal) {
+    editBtn.addEventListener("click", function () { editModal.hidden = false; });
+    editCancel.addEventListener("click", function () { editModal.hidden = true; });
+    editModal.addEventListener("click", function (e) { if (e.target === editModal) editModal.hidden = true; });
+    editConfirm.addEventListener("click", function () {
+      var title = document.getElementById("collection-edit-title").value.trim();
+      if (!title) return;
+      var params = new URLSearchParams({
+        title: title,
+        description: document.getElementById("collection-edit-desc").value.trim(),
+        tags: document.getElementById("collection-edit-tags").value.trim(),
+      });
+      fetch("/favoris/collections/" + collectionId, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      }).then(function () { window.location.reload(); });
+    });
+  }
+
+  // ── Supprimer la collection ───────────────────────────────────────────────
+  var deleteBtn = document.getElementById("collection-delete-btn");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", function () {
+      if (!window.confirm("Supprimer cette collection ? Les images elles-mêmes ne sont pas supprimées, seulement ce rangement.")) return;
+      fetch("/favoris/collections/" + collectionId + "/delete", { method: "POST" })
+        .then(function () { window.location.href = "/favoris/collections"; });
+    });
+  }
+})();
+</script>
+<%- include('partials/foot') %>

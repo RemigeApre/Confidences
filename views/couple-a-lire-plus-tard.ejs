@@ -1,0 +1,23 @@
+<%- include('partials/head', { title: 'Couple : À lire plus tard de ' + partner.displayName }) %>
+<main class="container wide gallery-has-sidebar profil-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'À lire plus tard de ' + partner.displayName, navBack: '/couple' }) %>
+
+  <%- include('partials/couple-nav', { partner: partner }) %>
+
+  <div class="profil-subpage">
+
+    <div class="profil-empty"<%= pages.length ? ' hidden' : '' %>>
+      <div class="profil-empty-icon">&#10024;</div>
+      <p><%= partner.displayName %> n&rsquo;a encore rien mis de c&ocirc;t&eacute; pour plus tard.</p>
+    </div>
+
+    <div class="wiki-grid"<%= pages.length ? '' : ' hidden' %>>
+      <% pages.forEach(function(page) { %>
+        <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+      <% }) %>
+    </div>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

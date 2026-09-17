@@ -1,0 +1,30 @@
+<%# Volet de navigation du mode couple : même composant visuel que
+    partials/profil-nav.ejs, mais en lecture seule sur le profil du/de la
+    partenaire (pas de Paramètres/Identité/Mot de passe/Journal, pas
+    d'Historique — rien qui s'apparente à un réglage ou un journal).
+    Attend : partner (objet utilisateur). %>
+<aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue: 330">
+  <div class="profil-nav-header">
+    <span class="profil-nav-name">Profil de <%= partner.displayName %></span>
+  </div>
+  <div class="wiki-sidebar-body">
+    <nav class="profil-nav-links">
+      <a href="/couple/notes/wiki" class="profil-nav-link<%= currentPath === '/couple/notes/wiki' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9a2 2 0 0 1 2 2v16l-6.5-4.2L4 21V5a2 2 0 0 1 2-2Z"/></svg>
+        <span>Codex</span>
+      </a>
+      <a href="/couple/notes/images" class="profil-nav-link<%= currentPath === '/couple/notes/images' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span>Images</span>
+      </a>
+      <a href="/couple/notes/bd" class="profil-nav-link<%= currentPath === '/couple/notes/bd' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M7 21h13a2 2 0 0 0 2-2V6"/></svg>
+        <span>BD</span>
+      </a>
+      <a href="/couple/a-lire-plus-tard" class="profil-nav-link<%= currentPath === '/couple/a-lire-plus-tard' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
+        <span>&Agrave; lire plus tard</span>
+      </a>
+    </nav>
+  </div>
+</aside>

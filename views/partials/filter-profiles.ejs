@@ -1,0 +1,46 @@
+<%# Profils de recherche personnels (Codex/Galerie) : enregistrer la
+    combinaison de filtres en cours sous un nom, la retrouver ensuite dans un
+    champ rétracté (fermé par défaut : simple clic pour dérouler la liste).
+    Strictement privé (voir res.locals dans server.js — ce bloc n'existe même
+    pas côté serveur si le profil n'a rien enregistré). Attend : section
+    ('wiki' | 'gallery'), profiles (tableau, potentiellement vide). Le
+    bouton "Enregistrer le filtre" lui-même vit dans la vue appelante (pour
+    rester au plus près de Réinitialiser/Explorer) : ce partial ne fournit
+    que le volet rétracté + la popup de nommage. La logique de collecte/
+    application du filtre vit dans public/wiki.js ou public/gallery.js
+    (différente selon la page). Même composant que les sous-volets
+    "Catégorie"/"Notation" du volet filtre : wiki-subpanel-details côté
+    Codex, gallery-cat-details côté Galerie (styles jumeaux, voir style.css)
+    — pas le volet "Filtres" lui-même. %>
+<script>
+window.<%= section === 'wiki' ? 'WIKI' : 'GALLERY' %>_FILTER_PROFILES = <%- JSON.stringify(profiles || []) %>;
+</script>
+
+<%
+  var fpDetailsClass = section === 'wiki' ? 'wiki-subpanel-details' : 'gallery-cat-details';
+  var fpSummaryClass = section === 'wiki' ? 'wiki-subpanel-summary' : 'gallery-cat-summary';
+%>
+<% if (profiles && profiles.length) { %>
+  <details class="<%= fpDetailsClass %> filter-profiles-details">
+    <summary class="<%= fpSummaryClass %>">Profils de recherche</summary>
+    <div class="filter-profiles-list" id="<%= section %>-filter-profiles-list">
+      <% profiles.forEach(function (p) { %>
+        <div class="filter-profile-chip" data-profile-id="<%= p.id %>">
+          <button type="button" class="filter-profile-apply"><%= p.name %></button>
+          <button type="button" class="filter-profile-remove" title="Supprimer ce profil" aria-label="Supprimer ce profil">&times;</button>
+        </div>
+      <% }) %>
+    </div>
+  </details>
+<% } %>
+
+<div class="filter-profile-modal-overlay" id="<%= section %>-filter-profile-modal" hidden>
+  <div class="filter-profile-modal">
+    <p class="filter-profile-modal-title">Nommer ce profil de recherche</p>
+    <input type="text" class="filter-profile-modal-input" id="<%= section %>-filter-profile-name" placeholder="Ex. : Ultra bien not&eacute;" maxlength="60" autocomplete="off" />
+    <div class="filter-profile-modal-actions">
+      <button type="button" class="filter-profile-modal-cancel" id="<%= section %>-filter-profile-cancel">Annuler</button>
+      <button type="button" class="filter-profile-modal-confirm" id="<%= section %>-filter-profile-confirm">Enregistrer</button>
+    </div>
+  </div>
+</div>

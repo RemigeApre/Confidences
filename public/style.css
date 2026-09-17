@@ -6,7 +6,7 @@
   --accent: #5b4fcf;
   --border: #333;
   --card: #1c1c1c;
-  --topnav-height: 3rem;
+  --topnav-height: 3.4rem;
   --wiki-gold: #c9a227;
 }
 
@@ -59,7 +59,21 @@ img.lq-img-error { background-image: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg);
+  /* Isole le header du reste de la page : sa hauteur est fixe et ne dépend
+     jamais de son contenu, donc les animations internes (recherche qui
+     s'agrandit, dropdowns) ne doivent jamais forcer un recalcul de mise en
+     page du reste du site. */
+  contain: layout style;
+  /* Se détache du fond de page sans couleur franche (évite l'effet kitsch) :
+     un ton à peine plus clair + un grain très discret pour une texture
+     plutôt qu'une teinte. Vignette PNG 16x16 précalculée (au lieu d'un
+     filtre SVG feTurbulence) : le filtre devait être recalculé par le
+     navigateur à chaque affichage, ce qui coûte cher sur un header sticky
+     présent sur toutes les pages ; une image figée se décode une fois et ne
+     coûte quasiment rien. */
+  background-color: #18181b;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAA8klEQVR42i3RQXFrQQxE0eNvl1daGIIgBIKgDIRAeBAMYSAEgiAYgiAEwl9kVqqSqm63uu2o6BAZGTvECpHR0ZGxIuOR2rJsrSxbKVxI6ZZRyoWxXMYotDHGo7TUWtkK+xC3Uf61S+pzYkljHUq77VhG20ZLS55JKo99tNi2NtIYS6I8UhqttEu5jDq8gb+PJzrEiowVE3UyyRC3inFZUlkuddB/Jrn3cx3ljy8vy+Xt1zK+vdx/ns5jpI/28vYx3r58ewzq2CxOyH0kNismxMSOjIw+Jjt2ZHRMPJZSFkZJg3W6Kek+z7fx8nOWTm1tbJf/dbhyfchyg7EAAAAASUVORK5CYII=");
+  background-repeat: repeat;
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
@@ -363,26 +377,41 @@ body.nav-drawer-locked {
   font-size: 0.93rem;
 }
 
-/* ── Home intro / categories ─────────────────────────────────────────── */
-.home-intro {
-  margin-bottom: 1.75rem;
+/* ── Home : slogan / 4 catégories / actions ───────────────────────────────
+   Page d'accueil = première impression pour un nouveau profil. Volontai-
+   rement minimale : un slogan, les 4 catégories de fantasmes affichées en
+   une fois (pas de carrousel : aucun JS, aucune animation, juste une grille
+   statique — le rendu le plus léger possible), puis 3 accès directs. */
+.home-hero {
+  text-align: center;
+  padding: 2.75rem 1rem 2.25rem;
 }
 
-.home-intro-lead {
-  font-size: 1rem;
-  line-height: 1.75;
+.home-hero-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  letter-spacing: 0.01em;
+  margin: 0;
   color: var(--fg);
-  opacity: 0.85;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border);
+}
+
+.home-hero-rule {
+  width: 2.75rem;
+  height: 2px;
+  margin: 1.15rem auto 0;
+  background: var(--wiki-gold);
+  opacity: 0.7;
+  border-radius: 2px;
 }
 
 .home-cats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-bottom: 0;
+  gap: 0.9rem;
+  max-width: 760px;
+  margin: 0 auto 2rem;
 }
 
 .home-cat {
@@ -435,216 +464,51 @@ body.nav-drawer-locked {
   margin: 0;
 }
 
-.home-cta {
-  font-size: 0.95rem;
-  font-style: italic;
-  color: var(--fg);
-  opacity: 0.65;
-  margin: 1.25rem 0;
-  text-align: center;
-  padding: 0.9rem 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+@media (max-width: 640px) {
+  /* Numéro centré au-dessus du titre, lui aussi centré, avant le texte. */
+  .home-cat-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.2rem;
+  }
+  .home-cat-num { min-width: 0; }
 }
 
-.home-about {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.1rem 1.3rem;
-  margin-bottom: 0.5rem;
+.home-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 0 2.5rem;
 }
 
-.home-about p {
-  font-size: 0.875rem;
-  line-height: 1.7;
-  color: var(--fg);
-  opacity: 0.85;
-  margin: 0 0 0.8rem;
+.home-action {
+  padding: 0.85rem 2.1rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--nav-color, var(--border));
+  color: var(--nav-color, var(--fg));
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
 }
-
-.home-about p:last-child {
-  margin-bottom: 0;
+.home-action:hover {
+  background: var(--nav-color, var(--accent));
+  color: #0d0d0f;
 }
+.home-action--wiki    { --nav-color: hsl(252, 70%, 70%); }
+.home-action--galerie { --nav-color: hsl(28, 82%, 62%); }
+.home-action--quizz   { --nav-color: hsl(175, 58%, 52%); }
 
 @media (max-width: 640px) {
   .home-cats {
     grid-template-columns: 1fr;
   }
-  .home-cta {
-    margin: 1rem 0;
-  }
-}
-
-.home-shortcuts {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.home-shortcut {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--card);
-  color: var(--fg);
-  font-weight: 600;
-  font-size: 1rem;
-  text-decoration: none;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.home-shortcut:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* ── Featured strip on home page ─────────────────────────────────────── */
-.home-featured {
-  margin: 1.5rem 0 1.25rem;
-}
-
-.home-featured-heading {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin: 0 0 0.75rem;
-  letter-spacing: .02em;
-}
-
-.home-featured-strip {
-  display: flex;
-  gap: 0.75rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
-
-.home-featured-strip::-webkit-scrollbar { height: 4px; }
-.home-featured-strip::-webkit-scrollbar-track { background: transparent; }
-.home-featured-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-.home-featured-card {
-  flex: 0 0 130px;
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-  text-decoration: none;
-  color: var(--text);
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  transition: border-color .15s, box-shadow .15s;
-}
-
-.home-featured-card:hover {
-  border-color: var(--accent);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 20%, transparent);
-}
-
-.home-featured-img-wrap {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  background: var(--border);
-}
-
-.home-featured-img-placeholder {
-  background: color-mix(in srgb, var(--accent) 12%, var(--card));
-}
-
-.home-featured-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.home-featured-title {
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-align: center;
-  padding: 0 0.5rem 0.5rem;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* ── Admin featured list ──────────────────────────────────────────────── */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-.section-cards {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.85rem;
-}
-
-@media (min-width: 640px) {
-  .section-cards {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.section-card {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 1rem 1.1rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  border-left: 6px solid var(--card-color, var(--accent));
-  background: var(--card);
-  color: var(--fg);
-  text-decoration: none;
-  transition: transform 0.1s ease;
-}
-
-.section-card:hover {
-  transform: translateX(2px);
-  border-color: var(--card-color, var(--accent));
-}
-
-.section-card-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: var(--card-color, var(--accent));
-  color: #fff;
-  font-weight: 700;
-}
-
-.section-card-title {
-  font-weight: 600;
 }
 
 .gate-page {
+  position: relative;
   min-height: 80vh;
   display: flex;
   flex-direction: column;
@@ -652,15 +516,39 @@ body.nav-drawer-locked {
   justify-content: center;
 }
 
-.gate-form {
+/* Sans elle, la page de connexion n'a aucune issue : ni header, ni menu, ni
+   bouton retour — on y reste bloqué une fois dessus. */
+.gate-back-link {
+  position: absolute;
+  top: max(1.25rem, env(safe-area-inset-top));
+  left: max(1.25rem, env(safe-area-inset-left));
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  font-size: 1.3rem;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+.gate-back-link:hover { border-color: var(--accent); color: var(--accent); }
+
+.gate-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
   width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
 }
 
 .gate-form input {
-  flex: 1;
+  width: 100%;
   border: none;
   border-bottom: 2px solid var(--border);
   background: transparent;
@@ -691,6 +579,7 @@ body.nav-drawer-locked {
   border-radius: 999px;
   font-size: 1.2rem;
   padding: 0;
+  margin-top: 0.3rem;
 }
 
 .gate-error {
@@ -1194,6 +1083,58 @@ h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
 h2 { font-size: 1.1rem; margin-top: 2rem; }
 
 .intro { color: var(--muted); margin-bottom: 2rem; }
+.intro a { color: var(--accent); text-decoration: none; }
+.intro a:hover { text-decoration: underline; }
+
+/* État vide : centré, plus posé qu'une simple ligne de texte perdue à
+   gauche. Réutilisé partout où une liste peut être vide (profil et ses
+   sous-pages). */
+.profil-empty {
+  max-width: 380px;
+  margin: 3.5rem auto;
+  padding: 0 1rem;
+  text-align: center;
+  color: var(--muted);
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+.profil-empty-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.85rem;
+  opacity: 0.7;
+}
+.profil-empty a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.profil-empty a:hover { text-decoration: underline; }
+
+/* "À lire plus tard" (voir profil-a-lire-plus-tard.ejs) : réutilise la
+   carte codex standard (partials/wiki-card), juste enveloppée pour poser
+   une croix de retrait par-dessus sans imbriquer un bouton dans le lien. */
+.profil-readlater-item { position: relative; }
+.profil-readlater-remove {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 5;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.profil-readlater-remove:hover { background: #c0392b; }
 
 .extra-cards {
   display: flex;
@@ -1849,14 +1790,222 @@ input[type="text"], input[type="password"] {
 }
 .wiki-filter-reset-btn--danger {
   margin-top: auto;
-  border-color: #c0392b44;
-  color: #c0392b;
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+  font-weight: 600;
 }
 .wiki-filter-reset-btn--danger:hover {
-  border-color: #c0392b;
-  background: #c0392b12;
-  color: #c0392b;
+  background: #a8301f;
+  border-color: #a8301f;
+  color: #fff;
 }
+
+/* ── "Explorer l'inconnu" : juste sous réinitialiser, distinct (accent
+   plutôt que rouge) puisque ce n'est pas une action destructive ── */
+.wiki-explore-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.wiki-explore-btn:hover {
+  background: #4a3fb8;
+  border-color: #4a3fb8;
+  color: #fff;
+}
+.wiki-explore-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ── Profils de recherche (Codex/Galerie) — voir partials/filter-profiles.ejs,
+   public/wiki.js, public/gallery.js ── */
+.filter-profile-save-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+}
+/* Appartient au même groupe que Réinitialiser/Explorer (voir
+   .wiki-filter-section, gap:0.4rem) : ancre tout le groupe en bas du volet,
+   comme le faisait auparavant .wiki-filter-reset-btn--danger seul. */
+.wiki-filter-bottom-actions { margin-top: auto; }
+.filter-profile-save-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+.filter-profiles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.2rem 0 0.4rem;
+}
+.filter-profile-chip {
+  display: flex;
+  align-items: stretch;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #111;
+}
+.filter-profile-apply {
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filter-profile-apply:hover { color: #fff; }
+.filter-profile-remove {
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+}
+.filter-profile-remove:hover { color: #f87171; }
+
+.filter-profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 1rem;
+}
+.filter-profile-modal {
+  width: 100%;
+  max-width: 340px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  padding: 1.1rem;
+}
+.filter-profile-modal-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+.filter-profile-modal-input {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.88rem;
+}
+.filter-profile-modal-input:focus { outline: none; border-color: var(--accent); }
+.filter-profile-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.filter-profile-modal-cancel,
+.filter-profile-modal-confirm {
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.filter-profile-modal-cancel {
+  background: transparent;
+  color: var(--muted);
+}
+.filter-profile-modal-cancel:hover { color: var(--fg); }
+.filter-profile-modal-confirm {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.filter-profile-modal-confirm:hover { background: #4a3fb8; }
+.filter-profile-modal-confirm:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Popup "Extraire mes goûts" (Codex) : mêmes classes de base que la
+   popup profils de recherche (overlay/titre/actions), élargie pour le
+   formulaire cases + radios. ── */
+.export-gouts-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 1rem;
+}
+.export-gouts-modal {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  padding: 1.1rem;
+}
+.export-gouts-section { margin-top: 0.9rem; }
+.export-gouts-section:first-of-type { margin-top: 0; }
+.export-gouts-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.export-gouts-check,
+.export-gouts-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0;
+  font-size: 0.85rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.export-gouts-radios { display: flex; flex-direction: column; }
+
+/* ── Bloc "Extraire mes goûts" sur l'accueil du profil (favoris.ejs) : hors
+   du volet filtre, centré avec un court texte d'accroche. ── */
+.profil-export-gouts-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+  max-width: 420px;
+  margin: 0 auto 1.5rem;
+}
+.profil-export-gouts-text {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0;
+}
+.profil-export-gouts-btn {
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.profil-export-gouts-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ── Popup avertissement quizz ──────────────────────────────── */
 .quiz-warning-overlay {
@@ -2819,6 +2968,52 @@ input[type="text"], input[type="password"] {
   .wiki-detail-banner-title { font-size: 1.15rem; }
 }
 
+/* ── Bandeau "Explorer l'inconnu" (mode exploration, ?explore=1) ─────
+   Distinct du bandeau de catégorie ci-dessus (teinte accent plutôt que
+   --ch-hue) pour bien signaler qu'on n'est plus dans une navigation
+   normale. */
+.wiki-explore-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.55rem 1rem;
+  margin: 0 -1.25rem;
+  background: color-mix(in srgb, var(--accent) 25%, var(--bg));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  font-size: 0.82rem;
+}
+.wiki-explore-banner-label {
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+.wiki-explore-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+.wiki-explore-nav-btn {
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wiki-explore-nav-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.22); }
+.wiki-explore-nav-btn:disabled { opacity: 0.4; cursor: default; }
+.wiki-explore-banner-close {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+}
+.wiki-explore-banner-close:hover { color: #fff; }
+
 /* ── Note : grosse, centrée, fonctionnelle, juste au-dessus de l'image ── */
 .wiki-detail-rating {
   display: flex;
@@ -3555,6 +3750,24 @@ input[type="text"], input[type="password"] {
   color: #b090ff;
 }
 
+.wiki-react-readlater.active {
+  background: #1a2c40;
+  border-color: #2080c0;
+  color: #70c0ff;
+}
+
+.wiki-react-hidden.active {
+  background: #2a2a2a;
+  border-color: #808080;
+  color: #d0d0d0;
+}
+
+.wiki-react-practiced.active {
+  background: #0f3320;
+  border-color: #20a060;
+  color: #6ee0a0;
+}
+
 /* ── Indicateurs sur les cartes ─────────────── */
 .wiki-card-badges {
   display: flex;
@@ -3564,6 +3777,13 @@ input[type="text"], input[type="password"] {
 }
 
 .wiki-card-react-badge {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+/* Mode couple : signale que le/la partenaire a noté ce contenu, sans révéler
+   sa note (voir mergePartnerReaction côté serveur). */
+.wiki-card-partner-badge {
   font-size: 0.85rem;
   line-height: 1;
 }
@@ -4733,50 +4953,177 @@ a.wiki-ql-label:hover .wiki-ql-text {
   border-bottom: 1px solid var(--border);
 }
 
-/* ancien grid de favoris conservé pour compat */
-.aud-fav-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 520px) { .aud-fav-cols { grid-template-columns: 1fr; } }
-.aud-fav-type-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.4rem; }
-
-/* ── Rail de cartes favoris ────────────────────────────── */
-.aud-fav-rail {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 0.5rem;
+/* ── Activité utilisateur (admin) : volet gauche + contenu ──────────────
+   Layout autonome, pas basé sur .wiki-cat-sidebar (dont le positionnement
+   fixe suppose le conteneur .container.wide de 900px du site public — les
+   pages admin utilisent .admin-main, plus simple) : ici un simple flex à
+   deux colonnes, largement plus robuste sans pouvoir tester visuellement. */
+.aud-layout {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
 }
-.aud-fav-card {
+.aud-content { min-width: 0; }
+
+/* Même esthétique que le volet profil (.profil-nav-sidebar) et les volets
+   filtre codex/galerie (.wiki-cat-sidebar) : dégradé teinté par --ch-hue
+   (roleHue), pseudo centré en en-tête, liens en majuscule avec icône. En
+   dessous du seuil (contenu 960px + 2 × 220px de volet), il reste un bloc
+   normal empilé au-dessus du contenu ; au-delà, il sort du flux central en
+   position:fixed, exactement comme les volets filtre. */
+.aud-nav {
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(160deg,
+    hsl(var(--ch-hue, 220), 52%, 20%) 0%,
+    hsl(var(--ch-hue, 220), 44%, 16%) 100%
+  );
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+}
+.aud-nav-header {
+  padding: 1.4rem 1.1rem 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.aud-nav-name {
+  display: block;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #fff;
+}
+.aud-nav-links {
   display: flex;
   flex-direction: column;
-  width: 110px;
-  border-radius: 8px;
+  gap: 0.15rem;
+  padding: 0.6rem;
+}
+.aud-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.65rem;
+  border-radius: 6px;
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: background 0.12s, color 0.12s;
+}
+.aud-nav-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.aud-nav-link:hover,
+.aud-nav-link.active {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+.aud-nav-link.active { background: rgba(255,255,255,0.18); }
+
+/* Hors du flux central : volet plein hauteur, plaqué au bord gauche, comme
+   .wiki-cat-sidebar. Seuil choisi pour que le volet (220 à 320px) ne
+   chevauche jamais le contenu centré (960px). */
+@media (min-width: 1401px) {
+  .aud-nav {
+    position: fixed;
+    left: 0;
+    top: 3.25rem;
+    bottom: 0;
+    width: calc((100vw - 960px) / 2);
+    min-width: 220px;
+    max-width: 320px;
+    overflow-y: auto;
+    border-radius: 0;
+    margin-bottom: 0;
+    z-index: 5;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+}
+
+.aud-content { flex: 1; min-width: 0; }
+
+.aud-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.aud-section-header .aud-section-title {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* ── Cartes contenu (Codex/Images/BD) : image, titre, vues, note, j'adore ── */
+.aud-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 2rem;
+}
+.aud-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
   overflow: hidden;
-  background: var(--card-bg, #1a1a2e);
+  background: var(--card);
   border: 1px solid var(--border);
   text-decoration: none;
   transition: border-color 0.15s, transform 0.15s;
-  flex-shrink: 0;
 }
-.aud-fav-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-.aud-fav-card-img {
+.aud-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.aud-card-img-wrap {
+  position: relative;
   width: 100%;
-  height: 80px;
+  aspect-ratio: 1 / 1;
+}
+.aud-card-img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   display: block;
 }
-.aud-fav-card-placeholder {
+.aud-card-placeholder {
   width: 100%;
-  height: 80px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   background: linear-gradient(135deg, #1e1e3a, #2a2a4a);
   color: rgba(255,255,255,0.3);
 }
-.aud-fav-card-title {
-  padding: 5px 7px 6px;
-  font-size: 0.72rem;
+.aud-card-flame {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  font-size: 1rem;
+  filter: drop-shadow(0 0 4px rgba(255,140,0,0.9));
+}
+.aud-card--flame {
+  border-color: #d97706;
+  box-shadow: 0 0 0 1px #d97706, 0 0 14px rgba(217,119,6,0.35);
+}
+.aud-card-body {
+  padding: 0.5rem 0.6rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.aud-card-title {
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--fg);
   line-height: 1.3;
   overflow: hidden;
@@ -4784,76 +5131,60 @@ a.wiki-ql-label:hover .wiki-ql-text {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.aud-fav-card--img .aud-fav-card-img { height: 100px; }
-.aud-fav-card--img { width: 100px; }
-
-.aud-list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.aud-list a {
-  font-size: 0.85rem;
-  color: var(--accent);
-  text-decoration: none;
-}
-.aud-list a:hover { text-decoration: underline; }
-
-.aud-notes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.aud-note-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.7rem 0.9rem;
-}
-
-.aud-note-header {
+.aud-card-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--muted);
 }
+.aud-card-rating { color: var(--wiki-gold); font-weight: 700; }
+.aud-card-views { font-variant-numeric: tabular-nums; }
 
-.aud-note-page {
-  font-size: 0.85rem;
-  font-weight: 600;
+/* ── Activité / connexions : liste chronologique simple ──────────────── */
+.aud-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.aud-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+.aud-activity-row:hover { background: var(--card); }
+.aud-activity-icon { flex-shrink: 0; }
+.aud-activity-type {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  width: 3.5rem;
+}
+.aud-activity-title {
+  flex: 1;
+  min-width: 0;
   color: var(--accent);
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.aud-note-page:hover { text-decoration: underline; }
-
-.aud-note-content {
-  font-size: 0.85rem;
-  color: var(--fg);
-  white-space: pre-wrap;
-  margin: 0;
-  opacity: 0.85;
+.aud-activity-title:hover { text-decoration: underline; }
+.aud-activity-date {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
-
-
-
-/* KPI top table */
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -5183,10 +5514,11 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
 /* Volet droit : fixe, scrollable, décorrélé du centrage de l'image */
 .gallery-lb-panel {
-  width: 280px;
+  width: 340px;
   flex-shrink: 0;
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   background: rgba(0,0,0,0.45);
   border-left: 1px solid rgba(255,255,255,0.1);
   padding: 1rem;
@@ -5344,11 +5676,13 @@ a.wiki-ql-label:hover .wiki-ql-text {
   margin-top: 0.75rem;
 }
 
-/* Rangée étoiles + cœur */
+/* Rangée de boutons texte (J'adore / Masquer / Collection) */
 .gallery-lb-react-row {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
 }
 
 .gallery-lb-rating {
@@ -5363,33 +5697,47 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 .gallery-lb-rating .gallery-star:hover { transform: scale(1.15); }
 .gallery-lb-rating .gallery-star.filled { color: var(--wiki-gold); }
-.gallery-lb-rating:hover .gallery-star { color: rgba(255,255,255,0.15); }
-.gallery-lb-rating:hover .gallery-star:hover,
-.gallery-lb-rating:hover .gallery-star:hover ~ .gallery-star { color: rgba(255,255,255,0.15); }
 
 /* Bouton favori cœur */
-.gallery-lb-fav-btn {
-  flex-shrink: 0;
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.45);
-  font-size: 1.15rem;
-  cursor: pointer;
+/* Boutons texte (J'adore / Masquer / Collection) : de vrais boutons avec
+   libellé, pas de simples icônes — plus lisible et moins ambigu au clic. */
+.gallery-lb-text-btn {
+  flex: 1 1 96px;
+  min-width: 0;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  gap: 0.35rem;
+  padding: 0.42rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.gallery-lb-fav-btn:hover { background: rgba(220,50,80,0.2); border-color: rgba(220,50,80,0.5); color: #ff7090; transform: scale(1.1); }
-.gallery-lb-fav-btn.active { background: rgba(220,50,80,0.3); border-color: rgba(220,50,80,0.7); color: #ff5070; }
-.gallery-lb-fav-btn.active:hover { background: rgba(220,50,80,0.15); color: rgba(255,255,255,0.5); }
+.gallery-lb-text-btn:hover { background: rgba(255,255,255,0.14); }
+.gallery-lb-text-btn-icon { font-size: 1rem; line-height: 1; }
+
+.gallery-lb-fav-btn.active {
+  background: rgba(220,50,80,0.3);
+  border-color: rgba(220,50,80,0.7);
+  color: #ff8fa8;
+  font-weight: 600;
+}
+.gallery-lb-hide-btn.active {
+  background: rgba(150,150,150,0.3);
+  border-color: #a0a0a0;
+  color: #e0e0e0;
+  font-weight: 600;
+}
 
 /* Rangée admin (edit + traité) */
 .gallery-lb-admin-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
@@ -5445,12 +5793,132 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .gallery-wiki-link-current .wiki-pl-card { flex: 1; min-width: 0; }
 .gallery-wiki-link-search-wrap { position: relative; }
 
+/* Masquée par défaut (desktop) : n'existe que sur mobile, voir ci-dessous. */
+.gallery-lb-mobile-close,
+.gallery-lb-panel-handle,
+.gallery-lb-down-hint { display: none; }
+
 @media (max-width: 640px) {
   .gallery-grid { --gallery-card-min: 140px; }
-  /* Mobile : volet sous l'image */
-  .gallery-lightbox { flex-direction: column; }
-  .gallery-lb-image-area { flex: 1 1 auto; padding: 1.5rem 2.5rem; }
-  .gallery-lb-panel { width: 100%; height: auto; max-height: 40vh; border-left: none; border-top: 1px solid rgba(255,255,255,0.1); }
+
+  /* ── Lightbox : un seul bloc scrollable, entièrement au doigt ─────────
+     Photo d'abord (pleine hauteur d'écran), volet d'infos juste après dans
+     le flux normal — on y accède en scrollant, comme une page, jamais par
+     une bascule ouverte/fermée décidée par du code. Swipe gauche/droite =
+     image suivante/précédente (voir gallery.js), vertical = scroll natif. */
+  .gallery-lightbox {
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* flex: 1 1 0 côté desktop fixe le flex-basis à 0, ce qui rend la
+     hauteur explicite ci-dessous inerte pour l'algorithme flex (basis
+     prime sur height) — l'image rétrécissait pour laisser toute la place
+     au volet, qui devenait visible sans scroll. flex: 0 0 auto redonne la
+     main à height : l'image prend exactement l'écran, jamais plus, jamais
+     moins, et le volet reste hors champ tant qu'on ne scrolle pas. */
+  .gallery-lb-image-area {
+    flex: 0 0 auto;
+    height: 100vh;
+    height: 100dvh;
+    padding: 1.25rem;
+  }
+
+  /* Chevrons discrets sur les bords : incitent à swiper sans encombrer
+     l'image, restent tapables en secours (même navigate() que le swipe). */
+  .gallery-lb-prev,
+  .gallery-lb-next {
+    font-size: 1.8rem;
+    opacity: 0.4;
+    padding: 0.5rem 0.35rem;
+  }
+  .gallery-lb-prev { left: 0; }
+  .gallery-lb-next { right: 0; }
+
+  /* Rappel discret en bas de l'image : quelque chose à voir en scrollant
+     (chevron du même style que prev/next, tourné vers le bas). */
+  .gallery-lb-down-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 50%;
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    transform: translateX(-50%) rotate(-90deg);
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.8rem;
+    opacity: 0.5;
+    line-height: 1;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+  }
+  .gallery-lb-down-hint:active { opacity: 0.9; }
+
+  .gallery-lb-prev:active,
+  .gallery-lb-next:active { opacity: 0.85; }
+
+  .gallery-lb-mobile-close {
+    display: flex;
+    position: absolute;
+    top: max(1rem, env(safe-area-inset-top));
+    right: 1rem;
+    z-index: 6;
+    width: 2.5rem;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: none;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  /* Le volet redevient un bloc normal dans le flux (plus de position
+     fixed/transform) : c'est le scroll de .gallery-lightbox ci-dessus qui
+     l'amène à l'écran, au rythme du doigt, sans aucune animation forcée. */
+  .gallery-lb-panel {
+    flex-shrink: 0;
+    width: 100%;
+    max-height: none;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px 18px 0 0;
+    background-color: #18181b; /* opaque sur mobile (semi-transparent en volet latéral desktop) */
+    padding: 0.6rem 1.1rem max(1.1rem, env(safe-area-inset-bottom));
+    gap: 0.85rem;
+  }
+
+  .gallery-lb-panel-handle {
+    display: block;
+    width: 2.75rem;
+    height: 0.32rem;
+    margin: 0.2rem auto 0.4rem;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Croix "Fermer" interne masquée sur mobile : la croix flottante sur
+     l'image (.gallery-lb-mobile-close) suffit, toujours accessible en
+     remontant le volet grâce au scroll. */
+  .gallery-lb-panel > .gallery-lb-close { display: none; }
+
+  /* Notation centrée juste sous l'image, étoiles et tags agrandis pour
+     rester lisibles/tapables au doigt. */
+  .gallery-lb-rating { justify-content: center; gap: 0.5rem; }
+  .gallery-lb-rating .gallery-star { font-size: 2.2rem; }
+  .gallery-lb-tags { gap: 0.5rem; }
+  .gallery-lb-tags .tag-badge { font-size: 1rem; padding: 0.35rem 0.85rem; }
 }
 
 /* ── BD ───────────────────────────────────────────────────────────────── */
@@ -5672,6 +6140,48 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .bd-nav-prev { left: 0.4rem; }
 .bd-nav-next { right: 0.4rem; }
 
+/* ── BD lecteur sur mobile : encoche/caméra en haut, indicateur d'accueil
+   en bas, cibles tactiles agrandies pour la barre de la page affichée. ── */
+@media (max-width: 640px) {
+  .bd-reader-topbar {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+  .bd-reader-title { font-size: 0.82rem; }
+  .bd-reader-counter { font-size: 0.72rem; }
+
+  /* Flèches plus discrètes : sur un petit écran elles mordent vite sur la
+     case, la BD reste avant tout swipeable/tapable au doigt. */
+  .bd-nav-btn {
+    font-size: 1.7rem;
+    padding: 0.3rem 0.4rem;
+    background: rgba(0,0,0,.35);
+  }
+
+  .bd-page-actions {
+    padding: 0.7rem 0.9rem max(0.7rem, env(safe-area-inset-bottom));
+    padding-left: max(0.9rem, env(safe-area-inset-left));
+    padding-right: max(0.9rem, env(safe-area-inset-right));
+    gap: 1.1rem;
+  }
+  /* Cibles tactiles agrandies (étoiles/j'adore/masquer) — le clic souris
+     n'a pas besoin de marge, le doigt si. */
+  .bd-page-actions .bd-star {
+    font-size: 1.6rem;
+    padding: 0.3rem;
+  }
+  .bd-page-actions .bd-react-btn {
+    font-size: 1.7rem;
+    padding: 0.3rem 0.45rem;
+  }
+  .bd-page-actions .bd-partner-reveal {
+    flex-basis: 100%;
+    text-align: center;
+    order: 1;
+  }
+}
+
 /* ── BD Form ──────────────────────────────────────────────────────────── */
 .bd-form-section {
   margin: 1rem 0;
@@ -5753,6 +6263,32 @@ a.wiki-ql-label:hover .wiki-ql-text {
   font-size: 0.85rem;
   padding: 0 0.3rem;
   cursor: pointer;
+}
+
+/* Flèches haut/bas : réordonner au tap, seule option sur téléphone (pas de
+   glisser-déposer HTML5 au toucher — voir public/bd.js). */
+.bd-sort-move {
+  position: absolute;
+  bottom: 0.2rem;
+  right: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.bd-sort-move-btn {
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  width: 1.5rem;
+  cursor: pointer;
+}
+.bd-sort-move-btn:hover { background: rgba(0,0,0,.8); }
+.bd-sort-item-removed .bd-sort-move { display: none; }
+@media (max-width: 640px) {
+  .bd-sort-move-btn { width: 1.9rem; font-size: 1rem; padding: 0.15rem 0; }
 }
 
 /* ── Wiki : sommaire / chapitres ─────────────────────────────────────── */
@@ -6810,17 +7346,449 @@ a.wiki-ql-label:hover .wiki-ql-text {
   color: var(--fg);
 }
 
+/* Bouton burger + croix de fermeture du volet filtre : strictement mobile,
+   invisibles par défaut (la version PC garde le volet fixe, sans tiroir ni
+   bouton). Les règles d'affichage réelles sont dans le media query mobile
+   ci-dessous, qui gagne le cascade quand il s'applique. */
+.mobile-filter-toggle,
+.mobile-filter-close { display: none; }
+
 @media (max-width: 640px) {
-  /* Top-nav : grid 3 colonnes symétriques */
-  .top-nav {
-    display: grid;
-    grid-template-columns: 2.5rem 1fr 2.5rem;
-    gap: 0.25rem;
-    justify-items: center;
+  /* Pas de header en haut sur mobile : la barre du bas (.mobile-tabbar)
+     est l'unique navigation. Ni titre, ni rappel consentement, ni bascule
+     "masquer les images" — tout ce bloc top-nav disparaît. On garde un peu
+     d'air en haut (encoche/caméra) puisque le header ne le fait plus. */
+  .top-nav { display: none; }
+  .container { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+
+  .nav-mobile-utils {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .nav-mobile-util-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    cursor: pointer;
+    list-style: none;
+  }
+  .nav-mobile-util-btn::-webkit-details-marker { display: none; }
+  .nav-mobile-util-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+  .nav-mobile-consent { position: relative; }
+  .nav-mobile-consent-panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    width: 260px;
+    max-width: 78vw;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    z-index: 30;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--fg);
+  }
+  .nav-mobile-consent-panel p { margin: 0 0 0.5rem; }
+  .nav-mobile-consent-panel p:last-child { margin-bottom: 0; }
+
+  /* ── Barre de navigation principale, fixée en bas (façon TikTok/
+     Instagram) : toujours visible, pas de menu à ouvrir. ────────────── */
+  .mobile-tabbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 3.75rem;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background-color: #18181b;
+    border-top: 1px solid var(--border);
+    z-index: 50;
+  }
+  .mobile-tabbar-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+  }
+  .mobile-tabbar-link svg { width: 1.5rem; height: 1.5rem; }
+  .mobile-tabbar-link.active { color: var(--accent); }
+  .mobile-tabbar-home {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 800;
+    font-size: 1.35rem;
+    text-decoration: none;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+    transition: transform 0.12s;
+  }
+  .mobile-tabbar-home:active { transform: scale(0.92); }
+  .mobile-tabbar-home.active { box-shadow: 0 0 0 2px #fff, 0 3px 12px rgba(0,0,0,0.35); }
+
+  /* Réserve la place en bas pour ne jamais passer sous la barre fixe — mais
+     seulement sur les pages qui l'affichent réellement (le lecteur BD n'a
+     pas de top-nav donc pas de barre du bas, un padding ici pousserait
+     inutilement le bas de son plein écran hors champ). */
+  body:has(.mobile-tabbar) { padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0)); }
+
+  /* Les boutons flottants (admin) et la barre de sélection groupée
+     remontent d'autant pour ne pas passer sous la barre du bas. */
+  .wiki-fab-add,
+  .gallery-fab-wrap {
+    bottom: calc(1.75rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
+  .wiki-fab-list {
+    bottom: calc(1.75rem + 3.2rem + 0.65rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
+  .gallery-bulk-bar {
+    bottom: calc(3.75rem + env(safe-area-inset-bottom, 0));
   }
 
   /* ── Wiki sidebar sur mobile : masquer le hero (titre dans le header) ── */
   .wiki-cat-sidebar .wiki-chapter-hero { display: none; }
+
+  /* ── Volet filtre (Codex/Galerie) : rétracté par défaut, tiroir depuis la
+     gauche (voir partials/mobile-filter-toggle.ejs + public/nav.js). Le
+     desktop n'est pas concerné (le volet y reste fixe comme avant). ────── */
+  .mobile-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    margin: 0.6rem 0 0.85rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mobile-filter-toggle svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+
+  /* Opaque et organisé comme le volet desktop (même dégradé teinté par
+     catégorie, même corps flex + scroll) — jamais transparent sur le
+     contenu de la page qui reste dessous. */
+  #mobile-filter-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(85vw, 340px);
+    max-width: none;
+    z-index: 95;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    overflow: hidden;
+    margin-top: 0;
+    padding: 0;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--ch-hue, 220), 52%, 20%) 0%,
+      hsl(var(--ch-hue, 220), 44%, 16%) 100%
+    );
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.45);
+  }
+  #mobile-filter-sidebar.mobile-filter-open { transform: translateX(0); }
+
+  #mobile-filter-sidebar .wiki-chapter-hero {
+    display: block;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: max(1rem, env(safe-area-inset-top)) 3.2rem 0.8rem 1.1rem;
+  }
+  /* Le nombre d'éléments chevauchait la croix de fermeture (toutes deux en
+     haut à droite) : inutile ici, on le retire simplement sur mobile. */
+  #mobile-filter-sidebar .wiki-chapter-hero-count { display: none; }
+
+  /* Corps scrollable : search + filtres, même rythme que le desktop. */
+  #mobile-filter-sidebar .wiki-sidebar-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem 1.1rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* Espacement entre sections de filtres : existait déjà côté PC
+     (.wiki-sidebar-filters/.wiki-filter-section), jamais recopié ici — tout
+     se retrouvait collé les uns aux autres sur mobile. */
+  #mobile-filter-sidebar .wiki-sidebar-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: 0.75rem 0 0;
+  }
+  #mobile-filter-sidebar .wiki-filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  #mobile-filter-sidebar .wiki-filter-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+  }
+
+  /* Champ de recherche principal : même habillage violet que le PC (fond
+     plein sur le dégradé, jamais transparent/générique). */
+  #mobile-filter-sidebar .wiki-search-wrap { margin-bottom: 0; }
+  #mobile-filter-sidebar .wiki-search-bar {
+    background: #1c1638;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.18);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  #mobile-filter-sidebar .wiki-search-bar:focus-within {
+    background: #2a2154;
+    border-color: var(--wiki-gold);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25);
+  }
+  #mobile-filter-sidebar .wiki-search-input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: none !important;
+  }
+  #mobile-filter-sidebar .wiki-search-input:focus { border: none; box-shadow: none !important; }
+  #mobile-filter-sidebar .wiki-search-input::placeholder { color: rgba(255,255,255,0.45); }
+  #mobile-filter-sidebar .wiki-search-icon { opacity: 0.55; }
+  #mobile-filter-sidebar .wiki-search-clear { color: rgba(255,255,255,0.6); }
+  #mobile-filter-sidebar .wiki-search-clear:hover { color: #fff; }
+  #mobile-filter-sidebar .wiki-result-count { color: rgba(255,255,255,0.7); font-size: 0.78rem; }
+
+  /* Chips (catégories, langue BD...) et menus déroulants : même noir plein
+     + texte blanc affirmé que le PC, jamais le gris terne par défaut. */
+  #mobile-filter-sidebar .links-filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  #mobile-filter-sidebar .tag-chip {
+    background: #111;
+    border-color: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+  }
+  #mobile-filter-sidebar .tag-chip.chip-include {
+    background: hsl(140, 55%, 30%);
+    border-color: hsl(140, 55%, 40%);
+    color: #fff;
+  }
+  #mobile-filter-sidebar .tag-chip.chip-exclude {
+    background: hsl(0, 58%, 40%);
+    border-color: hsl(0, 58%, 50%);
+    color: #fff;
+  }
+  #mobile-filter-sidebar .wiki-sort-select {
+    background: #111;
+    border-color: rgba(255,255,255,0.2);
+    color: #fff;
+    font-weight: 700;
+    width: 100%;
+    text-align: center;
+  }
+  #mobile-filter-sidebar .wiki-sort-select option { background-color: #1c1030; color: #fff; }
+
+  /* Volets rétractables imbriqués (Filtres > Catégorie/Notation/...) : sur
+     mobile, une fois le tiroir déjà ouvert, un accordéon en plus n'apporte
+     rien qu'un tap superflu pour atteindre des micro-tags — le contenu est
+     forcé ouvert en JS (voir nav.js) et reste toujours visible, sans second
+     niveau de repli. Le summary devient un simple intitulé, non cliquable. */
+  #mobile-filter-sidebar .wiki-sidebar-filter-details {
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+  #mobile-filter-sidebar .wiki-sidebar-filter-summary,
+  #mobile-filter-sidebar .gallery-cat-summary,
+  #mobile-filter-sidebar .wiki-subpanel-summary {
+    pointer-events: none;
+    cursor: default;
+  }
+  #mobile-filter-sidebar .wiki-sidebar-filter-summary::before,
+  #mobile-filter-sidebar .wiki-sidebar-filter-summary::after,
+  #mobile-filter-sidebar .gallery-cat-summary::before,
+  #mobile-filter-sidebar .wiki-subpanel-summary::before {
+    display: none;
+  }
+  #mobile-filter-sidebar .wiki-sidebar-filter-details[open] .wiki-sidebar-filter-summary {
+    border-bottom: none;
+  }
+
+  /* Tags à cocher : trop petits pour un doigt (pensés pour un volet fixe
+     étroit sur PC) — on les agrandit et on passe à 2 colonnes sur mobile. */
+  #mobile-filter-sidebar .wiki-tag-chip {
+    flex-basis: calc(50% - 0.25rem);
+    padding: 0.55rem 0.7rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+  }
+  #mobile-filter-sidebar .wiki-tag-chip .wtc-count { font-size: 0.75rem; }
+
+  /* Champ recherche centré (1). */
+  #mobile-filter-sidebar .wiki-search-input { text-align: center; }
+
+  /* "Filtres" ne dit rien qu'on ne voie déjà (2). */
+  #mobile-filter-sidebar .wiki-sidebar-filter-summary { display: none; }
+
+  /* Ultra / Irréaliste / Nos objets : plus gros, centrés en rangée (3). Ces
+     règles n'existaient que côté PC (@media min-width:641px), jamais
+     recopiées ici. */
+  #mobile-filter-sidebar .wiki-filter-toggles {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.55rem;
+  }
+  #mobile-filter-sidebar .wiki-ultra-btn,
+  #mobile-filter-sidebar .wiki-filter-toggles .tag-chip-owned {
+    flex: 1 1 auto;
+    text-align: center;
+    font-size: 0.95rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+  }
+  /* Vert = pas encore masqué / rouge = masqué : même code couleur que le
+     PC, jamais recopié ici (bouton resté gris terne sur mobile). */
+  #mobile-filter-sidebar .wiki-ultra-btn {
+    background: #1a5c1a;
+    color: #e0ffe0;
+    border-color: #2a7a2a;
+  }
+  #mobile-filter-sidebar .wiki-ultra-btn.active {
+    background: #6a1515;
+    color: #ffe0e0;
+    border-color: #8a2020;
+  }
+
+  /* "Catégorie" / "Notation" centrés (4) — même règle que le PC, jamais
+     recopiée sur mobile. */
+  #mobile-filter-sidebar .wiki-subpanel-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+  #mobile-filter-sidebar .wiki-subpanel-details {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 0.7rem;
+  }
+  #mobile-filter-sidebar .wiki-subpanel-details .links-filter,
+  #mobile-filter-sidebar .wiki-subpanel-details .wiki-filter-label-row,
+  #mobile-filter-sidebar .wiki-subpanel-details .wiki-adv-stars,
+  #mobile-filter-sidebar .wiki-subpanel-details .wiki-prop-grid,
+  #mobile-filter-sidebar .wiki-subpanel-details .filter-profiles-list {
+    margin-top: 0.6rem;
+  }
+
+  /* Étoiles de la note minimale centrées et agrandies (5), même teinte or
+     au survol/actif que le PC plutôt que la couleur par défaut. */
+  #mobile-filter-sidebar .wiki-adv-stars {
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  #mobile-filter-sidebar .wiki-adv-star {
+    font-size: 1.6rem;
+    color: rgba(255,255,255,0.6);
+  }
+  #mobile-filter-sidebar .wiki-adv-star.active,
+  #mobile-filter-sidebar .wiki-adv-star:hover { color: var(--wiki-gold); }
+  #mobile-filter-sidebar .wiki-adv-star-reset { color: rgba(255,255,255,0.45); }
+
+  /* Champ "Chercher un tag" dans le même habillage violet que le champ de
+     recherche principal (6) — même couleurs que le PC, jamais recopiées. */
+  #mobile-filter-sidebar .wiki-tag-search-input {
+    background: #1c1638;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.7rem;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  #mobile-filter-sidebar .wiki-tag-search-input::placeholder { color: rgba(255,255,255,0.45); }
+  #mobile-filter-sidebar .wiki-tag-search-input:focus {
+    outline: none;
+    background: #2a2154;
+    border-color: var(--wiki-gold);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25);
+  }
+
+  .mobile-filter-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: 0.75rem;
+    z-index: 2;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+  }
 
   /* ── Pousser le contenu sous le header sticky ───────────────────────── */
   /* Le margin-top: -1.5rem global est conçu pour le desktop ; sur mobile  */
@@ -6890,16 +7858,11 @@ a.wiki-ql-label:hover .wiki-ql-text {
   /* ── Cols select : caché sur mobile ─────────────────────────────────── */
   .wiki-cols-select { display: none !important; }
 
-  /* ── Tags : grille 2 colonnes sur mobile ───────────────────────────── */
-  .wiki-cat-sidebar .wiki-tag-cloud,
-  .gallery-sidebar .wiki-tag-cloud {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.25rem;
-  }
+  /* ── Tags sur mobile : le flex-wrap de base s'adapte déjà à la largeur
+     (plus besoin d'une grille figée à 2 colonnes qui retronquait les tags
+     longs — voir .wiki-tag-cloud/.wiki-tag-chip). ────────────────────── */
   .wiki-cat-sidebar .wiki-tag-chip,
   .gallery-sidebar .wiki-tag-chip {
-    width: 100%;
     text-align: center;
   }
 
@@ -6942,7 +7905,9 @@ a.wiki-ql-label:hover .wiki-ql-text {
   /* nav-back/placeholder hidden on desktop (pc-nav handles navigation) */
   .nav-back-btn,
   .nav-back-placeholder,
-  .top-nav-page-title { display: none; }
+  .top-nav-page-title,
+  .nav-mobile-utils,
+  .mobile-tabbar { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -6993,38 +7958,39 @@ a.wiki-ql-label:hover .wiki-ql-text {
     height: 100%;
   }
 
-  /* Colonne gauche : liens vers la gauche, mais poussés vers le centre */
-  .pc-nav-left {
-    display: flex;
-    align-items: center;
-    gap: 0.1rem;
-    flex: 1;
-    justify-content: flex-end;
-  }
-
-  /* Brand centré */
+  /* Brand à gauche ; les liens de pages restent l'élément central du header. */
   .pc-nav-brand-link {
     flex-shrink: 0;
     font-family: Georgia, "Times New Roman", serif;
     font-weight: 700;
     font-style: italic;
-    font-size: 1.2rem;
+    font-size: 2.1rem;
     letter-spacing: 0.03em;
     color: var(--fg);
     text-decoration: none;
-    padding: 0 1.75rem;
-    transition: color 0.15s;
+    transition: color 0.15s, text-shadow 0.15s, transform 0.15s;
     white-space: nowrap;
+    text-shadow: none;
   }
-  .pc-nav-brand-link:hover { color: var(--wiki-gold); }
+  .pc-nav-brand-link:hover {
+    color: var(--wiki-gold);
+    transform: translateY(-1px);
+    /* "Relief" : reflet clair au-dessus, ombre portée en dessous. */
+    text-shadow:
+      0 1px 0 rgba(255,255,255,0.18),
+      0 2px 1px rgba(255,255,255,0.08),
+      0 3px 6px rgba(0,0,0,0.5),
+      0 -1px 0 rgba(0,0,0,0.35);
+  }
 
-  /* Colonne droite : liens vers la droite, poussés vers le centre */
-  .pc-nav-right {
+  /* Liens de pages : restent l'élément central du header (le titre est à
+     gauche, les icônes à droite, tout le reste de l'espace leur revient). */
+  .pc-nav-links {
     display: flex;
     align-items: center;
-    gap: 0.1rem;
+    justify-content: center;
+    gap: 0.3rem;
     flex: 1;
-    justify-content: flex-start;
   }
 
   /* Liens de navigation */
@@ -7036,14 +8002,30 @@ a.wiki-ql-label:hover .wiki-ql-text {
     border-radius: 6px;
     color: var(--fg);
     text-decoration: none;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 1.05rem;
+    font-weight: 700;
     white-space: nowrap;
     transition: background 0.15s, color 0.15s;
   }
   .pc-nav-link:hover {
     background: var(--bg);
     color: var(--accent);
+  }
+  /* Une couleur par page : au survol et quand la page est active. */
+  .pc-nav-link--wiki    { --nav-color: hsl(252, 70%, 70%); }
+  .pc-nav-link--galerie { --nav-color: hsl(28, 82%, 62%); }
+  .pc-nav-link--quizz   { --nav-color: hsl(175, 58%, 52%); }
+  .pc-nav-link--wiki:hover,
+  .pc-nav-link--galerie:hover,
+  .pc-nav-link--quizz:hover {
+    color: var(--nav-color);
+    background: var(--bg);
+  }
+  /* Page active : uniquement la couleur du texte, pas de fond (pas de
+     "renfoncement" façon bouton enfoncé). */
+  .pc-nav-link--active {
+    color: var(--nav-color);
+    background: none;
   }
   .pc-nav-link-disabled {
     opacity: 0.45;
@@ -7057,39 +8039,64 @@ a.wiki-ql-label:hover .wiki-ql-text {
   /* Conteneur d'un lien avec dropdown */
   .pc-nav-item { position: relative; }
 
-  /* Dropdown */
+  /* Dropdown — carte flottante avec ouverture en fondu + léger glissement,
+     plus raffinée que l'ancien "display:none/flex" abrupt. */
   .pc-drop {
     position: absolute;
     top: 100%;
     left: 50%;
-    transform: translateX(-50%);
-    min-width: 175px;
+    min-width: 190px;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.13);
-    padding: 0.35rem;
-    display: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18), 0 18px 40px rgba(0, 0, 0, 0.28);
+    padding: 0.4rem;
+    display: flex;
     flex-direction: column;
+    gap: 0.1rem;
     z-index: 200;
-    /* Pont invisible entre le lien et le menu pour ne pas perdre le hover */
-    margin-top: 0;
+    margin-top: 0.7rem;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(-4px) scale(0.97);
+    transform-origin: top center;
+    /* Petit délai avant que la fermeture ne démarre : laisse le temps de
+       traverser la zone de pontage sans que le menu se referme trop vite. */
+    transition: opacity 0.16s ease 0.12s, transform 0.16s ease 0.12s, visibility 0s linear 0.28s;
   }
   .pc-has-drop::after {
-    /* zone de pontage hover entre le lien et le dropdown */
+    /* zone de pontage hover entre le lien et le dropdown : couvre toute la
+       marge (0.7rem ≈ 11px) avec un peu de marge pour l'imprécision souris */
     content: "";
     position: absolute;
-    bottom: -8px;
+    bottom: -16px;
     left: 0;
     right: 0;
-    height: 8px;
+    height: 16px;
   }
-  .pc-has-drop:hover .pc-drop { display: flex; }
+  .pc-has-drop:hover .pc-drop,
+  /* Épinglé par clic (voir nav.js) : reste ouvert même sans survol. */
+  .pc-has-drop.pc-menu-open .pc-drop {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0s;
+  }
+  .pc-has-drop:hover .pc-drop:not(.pc-drop-right),
+  .pc-has-drop.pc-menu-open .pc-drop:not(.pc-drop-right) {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
 
   .pc-drop-right {
     left: auto;
     right: 0;
-    transform: none;
+    transform: translateY(-4px) scale(0.97);
+    transform-origin: top right;
+  }
+  .pc-has-drop:hover .pc-drop-right,
+  .pc-has-drop.pc-menu-open .pc-drop-right {
+    transform: translateY(0) scale(1);
   }
 
   .pc-drop-link-btn {
@@ -7105,16 +8112,46 @@ a.wiki-ql-label:hover .wiki-ql-text {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.45rem 0.7rem;
-    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
     color: var(--fg);
     text-decoration: none;
-    font-size: 0.84rem;
+    font-size: 0.86rem;
     white-space: nowrap;
     transition: background 0.12s, color 0.12s;
   }
   .pc-drop-link:hover {
     background: var(--bg);
+    color: var(--accent);
+  }
+
+  /* Séparateur fin en bas d'un dropdown, avant un lien annexe (ex. "Labels"
+     sous les catégories Codex / sous Galerie·BD). */
+  .pc-drop-sep {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.3rem 0.2rem;
+  }
+
+  /* Dropdowns de pages (Wiki/Galerie/Quizz) : texte centré, "+" à gauche (pas
+     collé au texte). Le menu profil (.pc-drop-right, ce sont des actions,
+     pas des pages) garde son alignement normal, sans "+". */
+  .pc-drop:not(.pc-drop-right) .pc-drop-link {
+    position: relative;
+    justify-content: center;
+    text-align: center;
+  }
+  .pc-drop:not(.pc-drop-right) .pc-drop-link::before {
+    content: "+";
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-weight: 700;
+    transition: color 0.12s;
+  }
+  .pc-drop:not(.pc-drop-right) .pc-drop-link:hover::before {
     color: var(--accent);
   }
 
@@ -7129,9 +8166,9 @@ a.wiki-ql-label:hover .wiki-ql-text {
   .pc-nav-actions {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.7rem;
     margin-left: auto;
-    padding-left: 0.75rem;
+    padding-left: 1rem;
     border-left: 1px solid var(--border);
   }
 
@@ -7141,19 +8178,37 @@ a.wiki-ql-label:hover .wiki-ql-text {
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--fg);
-    font-size: 1rem;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 1.15rem;
     text-decoration: none;
     cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    padding: 0;
+    transition: color 0.15s;
   }
   .pc-icon-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--bg);
+    color: var(--fg);
+  }
+  .pc-discreet-btn[aria-pressed="true"] {
+    color: #ef4444;
+  }
+  .pc-svg-icon { width: 1.15rem; height: 1.15rem; }
+  /* Icônes du header en "gras" : trait plus épais. */
+  .pc-svg-icon path, .pc-svg-icon circle,
+  .eye-icon path, .eye-icon circle {
+    stroke-width: 2.3;
+  }
+
+  /* Icône clé : couleur selon le rôle du profil connecté. */
+  .pc-icon-btn.pc-key-admin, .pc-icon-btn.pc-key-admin:hover { color: #7c3aed; }
+  .pc-icon-btn.pc-key-test,  .pc-icon-btn.pc-key-test:hover  { color: #d97706; }
+  .pc-icon-btn.pc-key-user,  .pc-icon-btn.pc-key-user:hover  { color: #3b82f6; }
+
+  /* "?" jamais consulté : couleur or jusqu'au premier survol/clic (voir nav.js). */
+  html.consent-unseen .pc-consent-btn,
+  html.consent-unseen .pc-consent-btn:hover {
+    color: var(--wiki-gold);
   }
 }
 
@@ -7202,67 +8257,53 @@ a.wiki-ql-label:hover .wiki-ql-text {
   margin-top: 0.6rem !important;
 }
 
-/* ── Overlay de recherche globale ────────────────────────────────────────── */
-.pc-search-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 400;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 4.5rem;
-}
-/* [hidden] est déjà géré globalement par `[hidden] { display:none!important }` */
-
-.pc-search-box {
-  background: var(--card);
-  border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-  width: min(580px, 92vw);
-  overflow: hidden;
-}
-
-.pc-search-bar {
+/* ── Recherche en ligne dans le header (s'agrandit au clic) ──────────────── */
+.pc-search-inline {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.8rem 1rem;
-  border-bottom: 1px solid var(--border);
 }
 
-.pc-search-icon { font-size: 1.1rem; color: var(--muted); }
-
-.pc-search-input {
-  flex: 1;
+.pc-search-inline-input {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  margin-left: 0;
   border: none;
   background: transparent;
-  font-size: 1rem;
+  font-size: 0.88rem;
   color: var(--fg);
   outline: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: width 0.22s ease, opacity 0.15s ease, margin-left 0.22s ease;
 }
-.pc-search-input::placeholder { color: var(--muted); }
+.pc-search-inline-input::placeholder { color: var(--muted); }
 
-.pc-search-close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.8rem;
-  height: 1.8rem;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--muted);
-  font-size: 1rem;
-  cursor: pointer;
-  transition: color 0.12s, border-color 0.12s;
+.pc-search-inline.pc-search-open .pc-search-inline-input {
+  width: 13rem;
+  margin-left: 0.4rem;
+  opacity: 1;
+  pointer-events: auto;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.15rem;
 }
-.pc-search-close-btn:hover { color: var(--fg); border-color: var(--fg); }
 
 .pc-search-results {
-  max-height: 55vh;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.6rem;
+  width: 18rem;
+  max-width: min(18rem, 90vw);
+  max-height: 60vh;
   overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
   padding: 0.4rem;
+  z-index: 250;
 }
 
 .pc-search-section { margin-bottom: 0.4rem; }
@@ -7345,7 +8386,9 @@ a.wiki-ql-label:hover .wiki-ql-text {
     margin-top: 0;
   }
 
-  /* En-tête de la sidebar : hero sans son propre fond */
+  /* En-tête de la sidebar : hero sans son propre fond. Padding vertical
+     réduit (le bandeau n'a qu'un titre + compteur, pas de description) et
+     titre agrandi pour bien identifier "Codex" en un coup d'œil. */
   .wiki-cat-sidebar .wiki-chapter-hero {
     flex-shrink: 0;
     background: none;
@@ -7354,7 +8397,10 @@ a.wiki-ql-label:hover .wiki-ql-text {
     border-radius: 0;
     box-shadow: none;
     margin: 0;
-    padding: 1.4rem 1.1rem 1.25rem;
+    padding: 0.8rem 1.1rem;
+  }
+  .wiki-cat-sidebar .wiki-chapter-hero-title {
+    font-size: 2rem;
   }
 
   /* Corps scrollable : search + filtres */
@@ -7369,19 +8415,32 @@ a.wiki-ql-label:hover .wiki-ql-text {
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   }
 
-  /* Search bar : fond semi-transparent sur fond sombre */
+  /* Search bar : même principe que les boutons (fond plein, texte blanc
+     affirmé) mais dans une variante de couleur distincte — violet profond
+     plutôt que noir — pour rester identifiable comme un champ de saisie. */
   .wiki-cat-sidebar .wiki-search-wrap {
     margin-bottom: 0;
   }
   .wiki-cat-sidebar .wiki-search-bar {
-    background: rgba(255, 255, 255, 0.1);
+    background: #1c1638;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.18);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  /* On doit bien voir qu'on est dans le champ : la bordure/le fond de
+     .wiki-search-bar réagit (l'input lui-même reste transparent, sans
+     bordure propre). */
+  .wiki-cat-sidebar .wiki-search-bar:focus-within {
+    background: #2a2154;
+    border-color: var(--wiki-gold);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25);
   }
   .wiki-cat-sidebar .wiki-search-input {
     background: transparent;
     border: none;
     color: #fff;
+    font-weight: 700;
+    text-align: center;
     box-shadow: none !important;
   }
   .wiki-cat-sidebar .wiki-search-input:focus {
@@ -7451,16 +8510,30 @@ a.wiki-ql-label:hover .wiki-ql-text {
     border-color: rgba(255, 255, 255, 0.5);
     color: #fff;
   }
+  /* Boutons du volet filtre : noir plein + texte blanc bien affirmé plutôt
+     que le blanc translucide sur fond violet (rendu terne, peu contrasté). */
   .wiki-cat-sidebar .tag-chip {
-    background: rgba(255, 255, 255, 0.08);
+    background: #111;
     border-color: rgba(255, 255, 255, 0.18);
-    color: rgba(255, 255, 255, 0.8);
+    color: #fff;
     font-size: 0.76rem;
+    font-weight: 700;
   }
-  .wiki-cat-sidebar .tag-chip.active,
   .wiki-cat-sidebar .tag-chip:hover {
-    background: rgba(255, 255, 255, 0.22);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: #000;
+    border-color: rgba(255, 255, 255, 0.55);
+    color: #fff;
+  }
+  /* Catégories : multi-sélection 3 états, comme les tags — un clic inclut
+     (vert), deux clics excluent (rouge), trois clics reviennent à neutre. */
+  .wiki-cat-sidebar .tag-chip.chip-include {
+    background: hsl(140, 55%, 30%);
+    border-color: hsl(140, 55%, 40%);
+    color: #fff;
+  }
+  .wiki-cat-sidebar .tag-chip.chip-exclude {
+    background: hsl(0, 58%, 40%);
+    border-color: hsl(0, 58%, 50%);
     color: #fff;
   }
   .wiki-ultra-btn {
@@ -7489,9 +8562,10 @@ a.wiki-ql-label:hover .wiki-ql-text {
   }
   .wiki-cat-sidebar .wiki-sort-label { color: rgba(255, 255, 255, 0.7); font-size: 0.78rem; }
   .wiki-cat-sidebar .wiki-sort-select {
-    background: rgba(255, 255, 255, 0.1);
+    background: #111;
     border-color: rgba(255, 255, 255, 0.2);
     color: #fff;
+    font-weight: 700;
     font-size: 0.82rem;
     width: 100%;
     text-align: center;
@@ -7500,7 +8574,17 @@ a.wiki-ql-label:hover .wiki-ql-text {
     background-color: #1c1030;
     color: #fff;
   }
-  .wiki-cat-sidebar .links-filter { flex-wrap: wrap; gap: 0.3rem; }
+  /* Chips de catégorie (codex, galerie, tags, notes...) : grille régulière
+     (2 colonnes) plutôt qu'un flex-wrap aux largeurs inégales — rendu plus
+     équilibré, commun à tous les volets de filtres. */
+  .wiki-cat-sidebar .links-filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+  }
+  .wiki-cat-sidebar .links-filter .tag-chip {
+    text-align: center;
+  }
 
   /* ── Nouveau layout filtres sidebar ──────────────────── */
   .wiki-sidebar-filters {
@@ -7520,6 +8604,37 @@ a.wiki-ql-label:hover .wiki-ql-text {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.5);
+    text-align: center;
+  }
+  /* Volet interne réduit (Catégorie, Notation...) : replié par défaut,
+     libellé centré avec petit triangle — même esprit que .gallery-cat-details. */
+  .wiki-subpanel-details {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 0.6rem;
+  }
+  .wiki-subpanel-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  .wiki-subpanel-summary::-webkit-details-marker { display: none; }
+  .wiki-subpanel-summary::before { content: "▸"; font-size: 0.75rem; }
+  .wiki-subpanel-details[open] .wiki-subpanel-summary::before { content: "▾"; }
+  .wiki-subpanel-details .links-filter,
+  .wiki-subpanel-details .wiki-filter-label-row,
+  .wiki-subpanel-details .wiki-adv-stars,
+  .wiki-subpanel-details .wiki-prop-grid,
+  .wiki-subpanel-details .filter-profiles-list {
+    margin-top: 0.5rem;
   }
   .wiki-filter-toggles {
     flex-direction: row;
@@ -7527,19 +8642,38 @@ a.wiki-ql-label:hover .wiki-ql-text {
     gap: 0.4rem;
   }
   .wiki-filter-toggles .wiki-ultra-btn { flex: 1 1 auto; }
+  /* "Nos objets" rejoint Ultra/Irréaliste dans la même rangée de bascules :
+     alignée sur leur gabarit plutôt que sur celui (pilule) des chips de
+     catégorie qu'elle vient de quitter. */
+  .wiki-filter-toggles .tag-chip-owned {
+    flex: 1 1 auto;
+    border-radius: 5px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.76rem;
+    text-align: center;
+  }
   .wiki-tag-search-input {
-    background: rgba(255,255,255,0.08);
+    background: #1c1638;
     border: 1px solid rgba(255,255,255,0.18);
     border-radius: 6px;
     color: #fff;
+    font-weight: 700;
     font-size: 0.8rem;
     padding: 0.3rem 0.6rem;
     width: 100%;
+    text-align: center;
     box-sizing: border-box;
   }
   .wiki-tag-search-input::placeholder { color: rgba(255,255,255,0.35); }
-  .wiki-tag-search-input:focus { outline: none; border-color: rgba(255,255,255,0.4); }
-  .wiki-tag-cloud { flex-wrap: wrap; gap: 0.3rem; }
+  .wiki-tag-search-input {
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .wiki-tag-search-input:focus {
+    outline: none;
+    background: #2a2154;
+    border-color: var(--wiki-gold);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25);
+  }
   .wiki-notrated-opt { margin-top: 0.25rem; }
   .wiki-cat-sidebar .wiki-adv-checks { gap: 0.3rem; }
 
@@ -7553,7 +8687,7 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
 .wiki-prop-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.35rem;
 }
 .wiki-prop-btn {
@@ -7573,16 +8707,14 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .wiki-prop-btn[data-state="2"] { background: #6a1515; color: #ffe0e0; border-color: #8a2020; }
 
 /* ── Tag chips 3-state ────────────────────────────── */
+/* Flex plutôt qu'une grille à 3 colonnes fixes : un tag court reste
+   compact (~3 par ligne), mais un tag trop long pour tenir dans 1/3 de la
+   largeur (min-width: max-content l'empêche de rétrécir en dessous de son
+   texte) passe naturellement à 2 ou 1 par ligne au lieu d'être tronqué. */
 .wiki-tag-cloud {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.3rem;
-}
-@media (max-width: 900px) {
-  .wiki-tag-cloud { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 500px) {
-  .wiki-tag-cloud { grid-template-columns: 1fr; }
 }
 .wiki-tag-chip {
   display: flex;
@@ -7591,18 +8723,22 @@ a.wiki-ql-label:hover .wiki-ql-text {
   padding: 0.25rem 0.45rem;
   border-radius: 5px;
   font-size: 0.72rem;
+  font-weight: 700;
   cursor: pointer;
   border: 1px solid rgba(255,255,255,0.15);
   background: #111;
-  color: rgba(255,255,255,0.6);
+  color: #fff;
   transition: background 0.12s;
   gap: 0.2rem;
-  min-width: 0;
+  flex-basis: calc(33.33% - 0.2rem);
+  flex-grow: 1;
+  min-width: max-content;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
 }
 .wiki-tag-chip .wtc-label { overflow: hidden; text-overflow: ellipsis; flex: 1; }
-.wiki-tag-chip .wtc-count { font-size: 0.65rem; opacity: 0.6; flex-shrink: 0; }
+.wiki-tag-chip .wtc-count { font-size: 0.65rem; opacity: 0.75; flex-shrink: 0; }
 .wiki-tag-chip[data-state="1"] { background: #1a5c1a; color: #e0ffe0; border-color: #2a7a2a; }
 .wiki-tag-chip[data-state="2"] { background: #6a1515; color: #ffe0e0; border-color: #8a2020; }
 .wiki-tag-chip[hidden] { display: none; }
@@ -7627,9 +8763,21 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 .wiki-tag-all-link:hover { color: #fff; }
 
-/* ── Note min : titre + croix sur même ligne ─────── */
+/* Lien "Tags masqués" (page /tags, volet gauche) : entrée vers la blacklist
+   personnelle, teinté rouge pour rester cohérent avec le reste du système
+   (exclusion = rouge). */
+.tags-masked-link {
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f87171;
+  text-decoration: none;
+}
+.tags-masked-link:hover { color: #fca5a5; text-decoration: underline; }
+
+/* ── Note min : titre + croix, centrés en groupe ─────── */
 .wiki-filter-label-row {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
 }
 .wiki-filter-label-row .wiki-adv-star-reset {
   border: none; background: none;
@@ -7932,43 +9080,6 @@ body.wiki-todo-open { overflow: hidden; }
   gap: 0.5rem;
 }
 
-.gallery-fab-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-items: center;
-}
-
-.gallery-fab-option {
-  background: hsl(220, 15%, 22%);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 999px;
-  padding: 0.4rem 1.1rem;
-  font-size: 0.88rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-.gallery-fab-option:hover { background: hsl(220, 15%, 30%); }
-
-/* Titre BD centré en bas de la carte */
-.gallery-bd-title {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.72));
-  color: #fff;
-  text-align: center;
-  padding: 1.8rem 0.5rem 0.5rem;
-  font-size: 0.82rem; font-weight: 600;
-  pointer-events: none;
-  line-height: 1.3;
-}
-
-/* Chips type Image / BD avec couleurs distinctes */
-.gallery-type-chip-image.active { background: hsl(140,55%,38%); border-color: hsl(140,55%,38%); color: #fff; }
-.gallery-type-chip-bd.active    { background: hsl(0,60%,48%);   border-color: hsl(0,60%,48%);   color: #fff; }
-
 /* Volet catégories réduit */
 .gallery-cat-details { margin: 0; }
 .gallery-cat-summary {
@@ -7979,7 +9090,8 @@ body.wiki-todo-open { overflow: hidden; }
 .gallery-cat-summary::-webkit-details-marker { display: none; }
 .gallery-cat-summary::before { content: "▸ "; }
 .gallery-cat-details[open] .gallery-cat-summary::before { content: "▾ "; }
-.gallery-cat-details .links-filter { margin-top: 0.4rem; }
+.gallery-cat-details .links-filter,
+.gallery-cat-details .filter-profiles-list { margin-top: 0.4rem; }
 
 /* Chip de type dans le formulaire upload */
 .gallery-upload-type-chip {
@@ -8121,14 +9233,13 @@ body.wiki-todo-open { overflow: hidden; }
 .tags-item-name { font-weight: 600; }
 .tags-item-right { display: flex; align-items: center; gap: 0.35rem; }
 .tags-item-wiki-link {
-  font-size: 0.75rem; line-height: 1;
-  color: rgba(120,230,140,0.85);
+  font-size: 0.85em; line-height: 1;
+  color: inherit;
   text-decoration: none;
-  padding: 0.1rem 0.2rem;
-  border-radius: 3px;
-  transition: color 0.12s, background 0.12s;
+  opacity: 0.75;
+  transition: opacity 0.12s;
 }
-.tags-item-wiki-link:hover { color: #fff; background: rgba(120,230,140,0.25); }
+.tags-item-wiki-link:hover { opacity: 1; }
 .tags-item--wiki-page {
   background: color-mix(in oklab, hsl(138, 52%, 28%) 100%, transparent) !important;
   border-color: hsl(138, 45%, 38%) !important;
@@ -8141,6 +9252,44 @@ body.wiki-todo-open { overflow: hidden; }
   padding: 0.1rem 0.3rem; min-width: 1.2rem; text-align: center;
 }
 .tags-empty { color: var(--muted); text-align: center; margin-top: 2rem; }
+
+/* ── Tags masqués (/tags/masques) : liste de la blacklist personnelle ── */
+.tags-blacklist-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+.tags-blacklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid #7f1d1d;
+  color: #f87171;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.tags-blacklist-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.tags-blacklist-remove:hover { background: #dc2626; color: #fff; }
+.tags-blacklist-empty { color: var(--muted); text-align: center; margin-top: 2rem; }
 
 /* Tooltip répartition */
 .tags-tooltip {
@@ -8264,6 +9413,28 @@ body.wiki-todo-open { overflow: hidden; }
   letter-spacing: 0.08em;
   color: var(--muted);
   margin-bottom: 0.6rem;
+}
+
+/* PC : titres de strips centrés ; grille de cartes de catégorie centrée en
+   tant que groupe (cartes à largeur naturelle plutôt qu'étirées edge-to-edge,
+   dernière ligne incomplète centrée elle aussi) — taille des cartes et
+   contenu inchangés sinon. Numéro en bas à droite, simple texte contrasté,
+   sans bulle, poussé par flex (pas de position absolute ni de surcroît de
+   hauteur). */
+@media (min-width: 641px) {
+  .wiki-index-strip-title {
+    text-align: center;
+  }
+  .wiki-index-cats {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 150px));
+    justify-content: center;
+  }
+  .wiki-index-cat-count {
+    margin-top: auto;
+    align-self: flex-end;
+    color: #fff;
+    font-weight: 700;
+  }
 }
 
 /* La sidebar n'a pas de back-link sur la page d'accueil */
@@ -8598,6 +9769,13 @@ body.wiki-todo-open { overflow: hidden; }
     scrollbar-color: rgba(255,255,255,0.1) transparent;
     z-index: 4;
   }
+  .wiki-left-updated {
+    margin: auto 0 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.4);
+  }
 
   .wiki-detail-actions-mobile { display: none; }
 }
@@ -8877,8 +10055,34 @@ body.wiki-todo-open { overflow: hidden; }
 .wiki-right-rating .wiki-star.active,
 .wiki-right-rating .wiki-star.filled { color: var(--wiki-gold); }
 
+/* ── Mode couple : note du/de la partenaire révélée ──── */
+.wiki-partner-reveal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 105, 180, 0.1);
+  border: 1px solid rgba(255, 105, 180, 0.3);
+  font-size: 0.85rem;
+  color: #ffb3d9;
+  width: fit-content;
+  max-width: 100%;
+}
+.wiki-partner-reveal-stars { display: flex; gap: 0.05rem; color: var(--wiki-gold); }
+.wiki-partner-reveal-stars .wiki-card-star { color: rgba(255,255,255,0.25); font-size: 0.85rem; }
+.wiki-partner-reveal-stars .wiki-card-star.filled { color: var(--wiki-gold); }
+.bd-partner-reveal { margin-top: 0; white-space: nowrap; }
+
 /* ── Réactions côte à côte ──────────────────────────── */
-.wiki-right-reactions { display: flex; gap: 0.5rem; }
+.wiki-right-reactions { display: flex; flex-direction: column; gap: 0.5rem; }
+.wiki-react-square {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
 .wiki-right-reactions .wiki-react-btn {
   flex: 1; justify-content: center;
   font-size: 0.78rem; padding: 0.38rem 0.4rem;
@@ -8890,6 +10094,10 @@ body.wiki-todo-open { overflow: hidden; }
 .wiki-right-reactions .wiki-react-btn:hover {
   background: rgba(255,255,255,0.18);
 }
+.wiki-react-standalone {
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
 .wiki-right-reactions .wiki-react-flame.active {
   background: rgba(240,100,30,0.35);
   border-color: #e06020;
@@ -8900,6 +10108,24 @@ body.wiki-todo-open { overflow: hidden; }
   background: rgba(130,80,220,0.35);
   border-color: #9060d0;
   color: #cc99ff;
+  font-weight: 600;
+}
+.wiki-right-reactions .wiki-react-readlater.active {
+  background: rgba(30,140,220,0.35);
+  border-color: #2090d0;
+  color: #90d0ff;
+  font-weight: 600;
+}
+.wiki-right-reactions .wiki-react-hidden.active {
+  background: rgba(150,150,150,0.3);
+  border-color: #a0a0a0;
+  color: #e0e0e0;
+  font-weight: 600;
+}
+.wiki-right-reactions .wiki-react-practiced.active {
+  background: rgba(30,160,90,0.3);
+  border-color: #20a060;
+  color: #6ee0a0;
   font-weight: 600;
 }
 
@@ -10049,6 +11275,7 @@ body.wiki-todo-open { overflow: hidden; }
 .user-setting-options {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.4rem;
 }
 .user-setting-radio {
@@ -10071,6 +11298,51 @@ body.wiki-todo-open { overflow: hidden; }
   background: var(--accent);
   color: #fff;
   border-color: transparent;
+}
+
+/* Case à cocher simple (ex. "Partage avec l'admin") : même logique visuelle
+   que .user-setting-radio (pilule centrée) mais pour un choix binaire seul. */
+.profil-checkbox-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+.profil-checkbox-row input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* ── Paramètres : zone dangereuse (réinitialiser / supprimer le compte) ── */
+.profil-danger-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.profil-danger-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+.profil-danger-row .wiki-filter-reset-btn--danger {
+  width: auto;
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+}
+.profil-danger-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -10478,85 +11750,173 @@ body.wiki-todo-open { overflow: hidden; }
 .pc-drop-link--danger:hover { color: #dc2626 !important; background: rgba(239,68,68,0.08) !important; }
 .nav-drawer-link--danger { color: #ef4444 !important; }
 
-/* ─── Profil : panneaux latéraux ─── */
-
-/* Mobile : accordéons en flux normal */
-.profil-panels {
+/* ─── Profil : volet de navigation gauche ───────────────────────────────
+   Même composant que les volets filtre (.wiki-cat-sidebar), teinté avec la
+   couleur du rôle du compte (--ch-hue posée en inline par la vue). */
+.profil-nav-sidebar .wiki-sidebar-body {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 0 0.25rem;
 }
-
-/* Desktop : colonne fixe à droite */
-@media (min-width: 1340px) {
-  .profil-panels {
-    position: fixed;
-    right: 0;
-    top: var(--topnav-height);
-    bottom: 0;
-    width: calc((100vw - 900px) / 2);
-    min-width: 220px;
-    max-width: 320px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding: 0;
-    background: hsl(220, 12%, 16%);
-    color: rgba(255,255,255,0.9);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.15) transparent;
-    z-index: 5;
-    border-left: 1px solid rgba(255,255,255,0.07);
-  }
-}
-
-.profil-panels-name {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #fff;
-  padding: 1rem 1rem 0.75rem;
+.profil-nav-header {
+  padding: 1.4rem 1.1rem 1.1rem;
   border-bottom: 1px solid rgba(255,255,255,0.1);
-  display: none;
 }
-@media (min-width: 1340px) {
-  .profil-panels-name { display: block; }
+.profil-nav-name {
+  display: block;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #fff;
+  text-decoration: none;
 }
-
-/* Chaque panneau = <details> */
-.profil-panel {
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+.profil-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
-@media (max-width: 1339px) {
-  .profil-panel {
-    background: hsl(220, 12%, 14%);
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.08);
-    overflow: hidden;
-    color: rgba(255,255,255,0.9);
-  }
+.profil-nav-links + .profil-nav-links {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
 }
-
-.profil-panel-summary {
-  padding: 0.7rem 1rem;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.45);
-  cursor: pointer;
-  user-select: none;
-  list-style: none;
+.profil-nav-link {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: background 0.12s, color 0.12s;
 }
-.profil-panel-summary::-webkit-details-marker { display: none; }
-.profil-panel-summary::after { content: "▸"; transition: transform 0.18s; }
-.profil-panel[open] > .profil-panel-summary::after { transform: rotate(90deg); }
+.profil-nav-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.profil-nav-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+.profil-nav-link:hover,
+.profil-nav-link.active {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+.profil-nav-link.active {
+  background: rgba(255,255,255,0.16);
+}
+.profil-nav-link:hover .profil-nav-count,
+.profil-nav-link.active .profil-nav-count {
+  opacity: 0.9;
+}
 
-.profil-panel-body {
-  padding: 0 1rem 1rem;
+/* Sous-liens de "Profil" (Mot de passe, Journal technique) : même liste,
+   légèrement en retrait et plus discrets que les entrées principales. */
+.profil-nav-sublink {
+  padding-left: 2.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.profil-nav-sublink:hover,
+.profil-nav-sublink.active {
+  opacity: 1;
+}
+
+.profil-nav-logout-form { margin: 0; }
+button.profil-nav-link--danger {
+  display: flex;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: #ff8080;
+}
+button.profil-nav-link--danger:hover { background: rgba(220,50,50,0.15); color: #ff5050; }
+
+/* Bouton ULTRA : vert quand les contenus Ultra sont visibles, rouge une
+   fois masqués — tout en bas du volet. */
+.profil-ultra-toggle {
+  margin-top: auto;
+  background: #1a5c1a;
+  border-color: #1a5c1a;
+  color: #fff;
+  font-weight: 600;
+}
+.profil-ultra-toggle:hover {
+  background: #226b22;
+  border-color: #226b22;
+  color: #fff;
+}
+.profil-ultra-toggle[aria-pressed="true"] {
+  background: #c0392b;
+  border-color: #c0392b;
+}
+.profil-ultra-toggle[aria-pressed="true"]:hover {
+  background: #a8301f;
+  border-color: #a8301f;
+}
+
+/* ─── Sous-pages "notes" du profil : deux volets à la fois ───────────────
+   La navigation garde la gauche (comme sur le reste du profil), le volet
+   filtre passe à droite. Le palier "intermédiaire" existant (641–1100px, un
+   seul volet redevenu statique) ne suffit pas à deux volets fixes : on
+   l'étend jusqu'à 1339px pour ces deux-là spécifiquement, et ils ne
+   redeviennent fixes qu'à partir de 1340px — comme l'ancien panneau profil,
+   qui avait la même contrainte de place. */
+@media (min-width: 1101px) and (max-width: 1339px) {
+  .profil-notes-page .profil-nav-sidebar,
+  .profil-notes-page .profil-notes-filter {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    z-index: auto;
+    overflow: visible;
+    border-radius: 0.75rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    flex-direction: column;
+  }
+  .profil-notes-page .profil-nav-sidebar .wiki-sidebar-body,
+  .profil-notes-page .profil-notes-filter .wiki-sidebar-body {
+    flex: none;
+    overflow: visible;
+    max-height: none;
+    padding: 0.5rem 1rem 0.75rem;
+  }
+  .profil-notes-page .profil-notes-filter .wiki-chapter-hero {
+    display: flex !important;
+    flex-shrink: 0;
+  }
+  .profil-notes-page .profil-notes-filter .wiki-sidebar-filter-details > .wiki-sidebar-filter-summary {
+    display: flex;
+  }
+}
+@media (min-width: 1340px) {
+  .profil-notes-page .profil-notes-filter {
+    left: auto;
+    right: 0;
+  }
 }
 
 /* Champs de la sidebar */
@@ -10582,8 +11942,11 @@ body.wiki-todo-open { overflow: hidden; }
 }
 
 .profil-field-label {
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.45);
+  display: block;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--fg);
 }
 
 .profil-field-input {
@@ -10622,23 +11985,6 @@ body.wiki-todo-open { overflow: hidden; }
 .profil-msg-error { background: rgba(239,68,68,0.15); color: #f87171; }
 .profil-msg-ok { background: rgba(34,197,94,0.12); color: #4ade80; }
 
-/* Sous-sections (mot de passe / journal) */
-.profil-sub-details {
-  margin-top: 0.75rem;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  padding-top: 0.5rem;
-}
-.profil-sub-summary {
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.4);
-  cursor: pointer;
-  user-select: none;
-  list-style: none;
-}
-.profil-sub-summary::-webkit-details-marker { display: none; }
-.profil-sub-details[open] > .profil-sub-summary { color: rgba(255,255,255,0.65); }
-.profil-form-pwd { margin-top: 0.5rem; }
-
 /* Journal technique */
 .profil-journal {
   list-style: none;
@@ -10658,6 +12004,106 @@ body.wiki-todo-open { overflow: hidden; }
 }
 .profil-history .profil-journal { margin-top: 0.35rem; }
 
+/* ── Historique de consultation (Codex/Images/BD) — voir profil-historique.ejs
+   Groupé par période (Aujourd'hui, Hier, ...), titre centré en délimitation
+   au-dessus de chaque grille. Cartes de taille identique, mise en page
+   interne différente par type pour les distinguer d'un coup d'œil : Codex =
+   bandeau icône teinté par catégorie (jamais de photo), Images = photo plein
+   cadre avec légende incrustée, BD = couverture avec légende en dessous
+   (façon étagère). Pas de date/heure sur les cartes elles-mêmes. ── */
+.profil-history-period { margin-bottom: 2rem; }
+.profil-history-period-title {
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--fg);
+  margin: 0 0 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border);
+}
+.profil-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.9rem;
+}
+.profil-history-card {
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--fg);
+  position: relative;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.profil-history-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+/* Toujours plein d'espace disponible (pas de proportion fixe par type) :
+   c'est le contenu de la couverture (icône vs photo) qui différencie, pas
+   un ratio différent qui laissait un grand vide sous les cartes Codex. */
+.profil-history-cover { position: relative; overflow: hidden; background: #1c1c1c; flex: 1; }
+.profil-history-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profil-history-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #1e1e3a, #2a2a4a);
+  color: rgba(255, 255, 255, 0.3);
+}
+.profil-history-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.4rem 0.6rem 0.55rem;
+  flex: 0 0 auto;
+}
+.profil-history-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.profil-history-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Codex : bandeau icône teinté par catégorie, pas de photo */
+.profil-history-card--wiki .profil-history-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, hsl(var(--ch-hue, 220), 45%, 22%), hsl(var(--ch-hue, 220), 42%, 32%));
+}
+.profil-history-card--wiki .profil-history-icon { width: 3rem; height: 3rem; color: rgba(255, 255, 255, 0.8); }
+
+/* Images : photo plein cadre, légende incrustée en dégradé par-dessus */
+.profil-history-card--gallery .profil-history-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-top: 1.6rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85) 45%);
+}
+.profil-history-card--gallery .profil-history-badge,
+.profil-history-card--gallery .profil-history-title { color: #fff; }
+
+/* BD : couverture puis légende en dessous, dans le flux (façon étagère) */
+.profil-history-card--bd .profil-history-cover { flex: 1 1 auto; }
+
 /* ─── Profil : sections favorites ─── */
 .profil-section-title {
   font-size: 1rem;
@@ -10666,6 +12112,83 @@ body.wiki-todo-open { overflow: hidden; }
   margin: 2rem 0 0.75rem;
   padding-bottom: 0.4rem;
   border-bottom: 1px solid var(--border);
+}
+.profil-section-title--center {
+  text-align: center;
+}
+
+/* Sous-pages Paramètres / Profil : contenu à largeur lisible, centré dans
+   l'espace laissé par le volet de navigation (pas de titre "Paramètres" /
+   "Profil" — ça ferait doublon avec le volet, qui porte déjà ces libellés). */
+.profil-subpage {
+  max-width: 460px;
+  margin: 0 auto;
+  padding-top: 2rem;
+}
+
+/* Titre de section (Ultra / Irréaliste / Filtrage des tags / Identité /
+   Mot de passe / Journal technique...), centré et bien lisible — bulle "!"
+   d'explication au survol quand il y en a une. */
+.profil-setting-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--fg);
+  text-align: center;
+  margin: 2rem 0 1rem;
+}
+.profil-setting-heading:first-child {
+  margin-top: 0;
+}
+.profil-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  position: relative;
+}
+.profil-info-icon:hover,
+.profil-info-icon:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+.profil-info-icon::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: hsl(220, 12%, 18%);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.4;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  width: 220px;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 50;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.profil-info-icon:hover::after,
+.profil-info-icon:focus::after {
+  opacity: 1;
 }
 
 .profil-fav-grid {
@@ -10716,34 +12239,171 @@ body.wiki-todo-open { overflow: hidden; }
   -webkit-box-orient: vertical;
 }
 
-/* ─── Profil : boutons CTA notes ─── */
-.profil-notes-btns {
+/* Images favorites de l'accueil profil (favoris.ejs) : cartes agrandies,
+   sans croix de retrait (on ne retire pas un favori depuis cette vue-là). */
+.profil-fav-grid--lg { gap: 1.1rem; }
+.profil-fav-card--lg { width: 160px; }
+.profil-fav-card--lg .profil-fav-card-img,
+.profil-fav-card--lg .profil-fav-card-placeholder {
+  width: 160px;
+  height: 160px;
+}
+.profil-fav-card--lg .profil-fav-card-placeholder { font-size: 2.4rem; }
+.profil-fav-card--lg .profil-fav-card-title {
+  font-size: 0.82rem;
+  max-width: 160px;
+}
+
+/* ─── Collections personnelles (Galerie, images) ──────────────────────── */
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.1rem;
+  margin-top: 1rem;
+}
+.collection-card {
   display: flex;
-  gap: 1rem;
-  margin: 2.5rem 0 1.5rem;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+}
+.collection-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+.collection-card-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--surface2);
+}
+.collection-card-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  font-size: 2.2rem;
+  background: var(--surface2);
+  color: var(--muted);
+}
+.collection-card-body {
+  padding: 0.6rem 0.7rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.collection-card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collection-card-count {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.collection-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+.collection-card-tag {
+  font-size: 0.68rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: var(--muted);
+}
+
+/* Popup création/édition : champs empilés, réutilise les classes de
+   filter-profile-modal (overlay/titre/actions) avec un peu plus de largeur. */
+.collection-modal { max-width: 400px; display: flex; flex-direction: column; gap: 0.6rem; }
+.collection-modal .filter-profile-modal-title { margin-bottom: 0; }
+.collection-modal-textarea {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+}
+.collection-modal-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* Page détail d'une collection */
+.collection-detail-header { margin-bottom: 1.2rem; }
+.collection-detail-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1rem;
   flex-wrap: wrap;
 }
-
-.profil-notes-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.7rem 1.5rem;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background 0.15s, border-color 0.15s;
+.collection-detail-title { margin: 0; font-size: 1.4rem; text-align: center; }
+.collection-detail-actions { display: flex; gap: 0.7rem; font-size: 0.8rem; }
+.collection-delete-link:hover { color: #e53; }
+.collection-detail-desc {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.5rem auto 0;
+  max-width: 520px;
 }
+.collection-detail-tags { justify-content: center; margin-top: 0.6rem; }
 
-.profil-notes-btn:hover {
-  background: var(--surface3, var(--surface2));
+/* Popup "Ajouter à une collection" (lightbox galerie) : liste des
+   collections existantes avec coche togglable + repli "nouvelle collection". */
+.collection-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.collection-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+.collection-picker-row:hover { border-color: var(--accent); }
+.collection-picker-row.active {
   border-color: var(--accent);
+  background: rgba(124, 58, 237, 0.12);
+  font-weight: 600;
+}
+.collection-picker-check {
+  width: 1.1rem;
+  flex: 0 0 auto;
   color: var(--accent);
+  font-weight: 700;
+}
+.collection-picker-new-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
 }
 
 /* ─── BD : réactions dans la topbar ─────────────────────────── */
@@ -10789,6 +12449,26 @@ body.wiki-todo-open { overflow: hidden; }
 }
 .bd-star:hover,
 .bd-star.filled { color: hsl(42, 95%, 62%); }
+
+/* ─── BD : barre d'actions de la page affichée (note/j'adore/masquer,
+   individuels par page — contrairement au favori/intéressé du livre
+   entier, restés dans la topbar) ────────────────────────────────── */
+.bd-page-actions {
+  flex-shrink: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  padding: 0.6rem 0.9rem;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(6px);
+}
+.bd-page-actions .bd-rating-stars { gap: 0.2rem; }
+.bd-page-actions .bd-star { font-size: 1.3rem; }
+.bd-page-actions .bd-react-btn { font-size: 1.4rem; }
+.bd-page-actions .bd-partner-reveal { font-size: 0.8rem; }
 
 /* ─── BD : badges réactions sur les cartes ────────────────────── */
 .bd-card-reactions {
@@ -11105,22 +12785,19 @@ body.wiki-todo-open { overflow: hidden; }
 }
 .tag-badge:hover { filter: brightness(1.15); }
 
+/* Intégrée au badge (même couleur, pas de forme séparée) plutôt qu'un petit
+   bouton rond en plus, qui donnait l'impression de deux éléments distincts. */
 .tag-badge-arrow {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-left: 0.3rem;
-  margin-right: -0.2rem;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.1);
+  margin-left: 0.35rem;
   color: inherit;
-  font-size: 0.72rem;
+  font-size: 0.85em;
   text-decoration: none;
+  opacity: 0.75;
   flex-shrink: 0;
 }
-.tag-badge-arrow:hover { background: rgba(255,255,255,0.22); }
+.tag-badge-arrow:hover { opacity: 1; }
 
 .tag-popup-overlay {
   position: fixed; inset: 0; z-index: 200;
@@ -11153,6 +12830,7 @@ body.wiki-todo-open { overflow: hidden; }
   position: absolute;
   top: 0.5rem; right: 0.5rem;
   width: 2rem; height: 2rem;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--fg);
@@ -11189,6 +12867,17 @@ body.wiki-todo-open { overflow: hidden; }
   cursor: pointer;
 }
 .tag-popup-action:hover { background: rgba(255,255,255,0.08); }
+.tag-popup-action--danger {
+  width: 100%;
+  border-color: #7f1d1d;
+  color: #f87171;
+}
+.tag-popup-action--danger:hover { background: rgba(239,68,68,0.12); }
+.tag-popup-action--danger:disabled {
+  opacity: 0.55;
+  cursor: default;
+  background: none;
+}
 
 .tag-popup-admin { border-top: 1px solid var(--border); padding-top: 0.6rem; }
 .tag-popup-admin > summary {
@@ -11485,6 +13174,41 @@ body.wiki-todo-open { overflow: hidden; }
   max-width: 260px;
 }
 
+/* ── Lightbox : barre "Explorer l'inconnu" (voir gallery.js) ─────────
+   Dans le volet droit plutôt que superposée à l'image (déjà pris par la
+   barre de série ci-dessus) — les boutons Précédent/Suivant réutilisent
+   .wiki-explore-nav-btn (même style que sur le codex). */
+.gallery-lb-explore-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.gallery-lb-explore-label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #fff;
+}
+.gallery-lb-explore-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+.gallery-lb-explore-exit {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.2rem;
+}
+.gallery-lb-explore-exit:hover { color: #fff; }
+
 /* ── Page liste des séries ── */
 .gs-create-form {
   display: flex;
@@ -11622,3 +13346,40 @@ body.wiki-todo-open { overflow: hidden; }
 .gs-form-rm { font-size: 0.82rem; margin-left: auto; }
 .gs-form-add-row { display: flex; gap: 0.6rem; align-items: center; }
 .gs-form-select { flex: 1; }
+
+/* ── Mode discret : masque toutes les images (bouton dans le header) ────────
+   Remplace le contenu rendu de chaque <img> par un pictogramme sobre — un
+   simple œil barré, cohérent avec l'icône du bouton — plutôt qu'une icône
+   "image cassée". Couvre aussi la visionneuse/lightbox et les modales (ce
+   sont aussi des <img>), sans rien casser d'interactif. */
+html.lq-discreet-mode img {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23181820'/%3E%3Cg transform='translate(20,20) scale(2.5)' fill='none' stroke='%23555b6e' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.9 4.24A10.6 10.6 0 0 1 12 4c7 0 10.6 8 10.6 8a17.3 17.3 0 0 1-3.13 4.34M6.6 6.6C3.4 8.6 1.4 12 1.4 12s3.6 8 10.6 8a10.4 10.4 0 0 0 4.34-.92'/%3E%3Cpath d='M9.9 9.9a3 3 0 0 0 4.24 4.24'/%3E%3Cpath d='M2.5 2.5l19 19'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background: #181820 !important;
+}
+
+/* Bouton "masquer les images" : icône œil/œil-barré (voir partials/eye-icon.ejs) */
+.eye-icon { width: 1.15rem; height: 1.15rem; display: block; }
+.pc-discreet-btn .eye-icon--off,
+.nav-mobile-discreet-btn .eye-icon--off { display: none; }
+.pc-discreet-btn[aria-pressed="true"] .eye-icon--open,
+.nav-mobile-discreet-btn[aria-pressed="true"] .eye-icon--open { display: none; }
+.pc-discreet-btn[aria-pressed="true"] .eye-icon--off,
+.nav-mobile-discreet-btn[aria-pressed="true"] .eye-icon--off { display: block; }
+.nav-drawer-discreet-btn[aria-pressed="true"] { color: var(--accent); }
+
+/* ── Codex hors-ligne (voir partials/codex-offline.ejs) : bandeau discret,
+   signale qu'une page vient du cache plutôt que d'un chargement frais ── */
+.codex-offline-banner {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  z-index: 500;
+  pointer-events: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}

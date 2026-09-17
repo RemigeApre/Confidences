@@ -1,21 +1,10 @@
-<%- include('partials/head', { title: 'Modifier l\'image — ' + config.title }) %>
+<%- include('partials/head', { title: 'Images : Modifier l\'image' }) %>
 <main class="container">
   <%- include('partials/top-nav', { config: config }) %>
   <a href="/galerie" class="link-button">&larr; Retour à la galerie</a>
 
   <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form">
     <h2 class="wiki-detail-title">Modifier l&apos;image</h2>
-
-    <div class="wiki-filter-section">
-      <label class="chip-option">
-        <input type="radio" name="content_type" value="image" <%= (image.contentType !== 'bd') ? 'checked' : '' %> />
-        <span>Image</span>
-      </label>
-      <label class="chip-option">
-        <input type="radio" name="content_type" value="bd" <%= (image.contentType === 'bd') ? 'checked' : '' %> />
-        <span>BD</span>
-      </label>
-    </div>
 
     <div class="wiki-form-top-row">
       <select name="category" class="wiki-cat-inline-select">
@@ -66,13 +55,13 @@
       </label>
       <label class="chip-option">
         <input type="checkbox" name="interested" <%= image.interested ? 'checked' : '' %> />
-        <span>&#10024;&nbsp;Int&eacute;ress&eacute;e</span>
+        <span>&#10024;&nbsp;<%= interestedLabel %></span>
       </label>
     </div>
 
     <%# ─ Page wiki liée ─ %>
     <div class="gallery-wiki-link-field">
-      <p class="wiki-meta-label">Page wiki li&eacute;e</p>
+      <p class="wiki-meta-label">Page codex li&eacute;e</p>
       <input type="hidden" name="wiki_page_id" id="gallery-wiki-link-hidden" value="<%= image.wikiPageId || '' %>" />
       <div class="gallery-wiki-link-current" id="gallery-wiki-link-current" <%= linkedPage ? '' : 'hidden' %>>
         <% if (linkedPage) { %>
@@ -85,7 +74,7 @@
         <% } %>
       </div>
       <div class="gallery-wiki-link-search-wrap" id="gallery-wiki-link-search-wrap" <%= linkedPage ? 'hidden' : '' %>>
-        <input type="text" class="wiki-pl-search" id="gallery-wiki-link-search" placeholder="Lier une page wiki&hellip;" autocomplete="off" />
+        <input type="text" class="wiki-pl-search" id="gallery-wiki-link-search" placeholder="Lier une page codex&hellip;" autocomplete="off" />
         <ul class="wiki-pl-results" id="gallery-wiki-link-results"></ul>
       </div>
     </div>
@@ -97,17 +86,16 @@
 
     <textarea name="notes" class="wiki-textarea gallery-notes-input" rows="4" placeholder="Notes&hellip;"><%= image.notes %></textarea>
 
-    <%# ─ Images de l'album ─ %>
+    <%# ─ Image(s) de cette fiche — chaque image est indépendante : les
+        nouveaux fichiers ajoutés ci-dessous deviennent chacun leur propre
+        fiche, jamais fusionnés ici (voir routes/gallery.js). Les vignettes
+        listées ne servent qu'à retirer une image d'une fiche existante. ─ %>
     <div class="wiki-image-field">
       <% if (image.imagePaths && image.imagePaths.length) { %>
         <div class="wiki-images-existing">
-          <% image.imagePaths.forEach(function(src, idx) { %>
+          <% image.imagePaths.forEach(function(src) { %>
             <div class="wiki-existing-img-wrap">
               <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
-              <label class="wiki-cover-radio-label" title="D&eacute;finir comme couverture">
-                <input type="radio" name="cover_image" value="<%= src %>" class="wiki-cover-radio" <%= idx === 0 ? 'checked' : '' %> />
-                <span class="wiki-cover-badge-icon">&#9733;</span>
-              </label>
               <label class="wiki-img-remove-label">
                 <input type="checkbox" name="remove_image" value="<%= src %>" />
                 <span>&#215;</span>
@@ -117,7 +105,7 @@
         </div>
       <% } %>
       <label class="wiki-image-add-label">
-        <span>+ Ajouter des images &agrave; cet album</span>
+        <span>+ Ajouter d&rsquo;autres images (fiches ind&eacute;pendantes)</span>
         <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
       </label>
       <div class="wiki-new-previews"></div>
@@ -148,7 +136,7 @@
     <% } %>
     <div class="gs-form-add-row">
       <select id="gf-series-select" class="gb-select gs-form-select">
-        <option value="">— Ajouter &agrave; une s&eacute;rie —</option>
+        <option value="">Ajouter &agrave; une s&eacute;rie</option>
         <% allSeries.forEach(function(s) { %>
           <% if (!imageSeries.find(function(is){ return is.id === s.id; })) { %>
             <option value="<%= s.id %>"><%= s.title %></option>

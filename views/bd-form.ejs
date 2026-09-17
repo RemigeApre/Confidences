@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: (book ? 'Modifier — ' + book.title : 'Nouvelle BD') + ' — ' + config.title }) %>
+<%- include('partials/head', { title: 'BD : ' + (book ? 'Modifier ' + book.title : 'Nouvelle BD') }) %>
 <main class="container">
   <%- include('partials/top-nav', { config: config }) %>
   <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="link-button">&larr; Retour</a>
@@ -48,13 +48,19 @@
     <%# Tri + images existantes %>
     <% if (book && book.imagePaths && book.imagePaths.length) { %>
       <div class="bd-form-section">
-        <p class="wiki-meta-label">Pages &mdash; glisser pour r&eacute;ordonner</p>
+        <p class="wiki-meta-label">Pages (glisser pour r&eacute;ordonner &mdash; ou les fl&egrave;ches sur t&eacute;l&eacute;phone)</p>
         <div class="bd-sort-grid" id="bd-sort-grid">
           <% book.imagePaths.forEach(function(src, i) { %>
             <div class="bd-sort-item" draggable="true" data-src="<%= src %>">
               <div class="bd-sort-handle">&#8597;</div>
               <img src="<%= thumbUrl(src) %>" alt="" class="bd-sort-img" loading="lazy" />
               <span class="bd-sort-num"><%= i + 1 %></span>
+              <%# Déplacement au tap : le drag HTML5 n'existe pas au toucher
+                  sur mobile, ces flèches sont la seule façon d'y réordonner. %>
+              <div class="bd-sort-move">
+                <button type="button" class="bd-sort-move-btn bd-sort-move-up" title="D&eacute;placer vers le haut" aria-label="D&eacute;placer vers le haut">&#8593;</button>
+                <button type="button" class="bd-sort-move-btn bd-sort-move-down" title="D&eacute;placer vers le bas" aria-label="D&eacute;placer vers le bas">&#8595;</button>
+              </div>
               <label class="bd-sort-remove" title="Supprimer cette page">
                 <input type="checkbox" name="remove_image" value="<%= src %>" class="bd-remove-cb" />
                 <span>&#215;</span>

@@ -1,0 +1,31 @@
+<%- include('partials/head', { title: 'Profil : Journal technique' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+
+    <ul class="profil-journal">
+      <li>Compte cr&eacute;&eacute; le <%= new Date(user.createdAt).toLocaleDateString('fr-FR') %></li>
+      <% if (user.updatedAt) { %><li>Modifi&eacute; le <%= new Date(user.updatedAt).toLocaleDateString('fr-FR') %></li><% } %>
+      <% if (user.lastLoginAt) { %>
+        <li>Derni&egrave;re connexion le <%= new Date(user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></li>
+      <% } %>
+    </ul>
+
+    <% if (connectionLogs.length) { %>
+      <details class="profil-history">
+        <summary>Historique des connexions (<%= connectionLogs.length %>)</summary>
+        <ul class="profil-journal">
+          <% connectionLogs.forEach(function (log) { %>
+            <li><%= new Date(log.createdAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %>, <%= log.ip %></li>
+          <% }) %>
+        </ul>
+      </details>
+    <% } %>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

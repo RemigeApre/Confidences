@@ -1,0 +1,59 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Connexions', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= config.title %></span>
+</div>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <%
+      function fmtDuration(min) {
+        if (min < 60) return min + ' min';
+        var h = Math.floor(min / 60), m = min % 60;
+        return h + 'h' + (m ? ' ' + m + 'min' : '');
+      }
+    %>
+
+    <div class="aud-section">
+      <h2 class="aud-section-title">Pr&eacute;sence sur le site (<%= sessions.length %> derni&egrave;res sessions)</h2>
+      <p class="admin-muted" style="margin:-0.25rem 0 0.75rem">D&eacute;tect&eacute;e &agrave; chaque navigation sur le site, pas seulement &agrave; la connexion. Une session regroupe l'activit&eacute; tant que l'&eacute;cart entre deux passages reste sous 30&nbsp;min.</p>
+      <% if (sessions.length) { %>
+        <ul class="aud-activity-list">
+          <% sessions.forEach(function(s) { %>
+            <li class="aud-activity-row">
+              <span class="aud-activity-date"><%= new Date(s.start).toLocaleString('fr-FR') %></span>
+              <% if (s.end !== s.start) { %>
+                <span class="admin-muted">&rarr; <%= new Date(s.end).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
+              <% } %>
+              <span class="aud-card-views" style="margin-left:auto">&#8987; <%= fmtDuration(s.durationMinutes) %></span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="admin-muted">Aucune session enregistr&eacute;e.</p>
+      <% } %>
+    </div>
+
+    <div class="aud-section">
+      <h2 class="aud-section-title">Connexions par mot de passe (<%= connectionLogs.length %> derni&egrave;res)</h2>
+      <% if (connectionLogs.length) { %>
+        <ul class="aud-activity-list">
+          <% connectionLogs.forEach(function(log) { %>
+            <li class="aud-activity-row">
+              <span class="aud-activity-date"><%= new Date(log.createdAt).toLocaleString('fr-FR') %></span>
+              <span class="admin-muted"><%= log.ip %></span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="admin-muted">Aucune connexion enregistr&eacute;e.</p>
+      <% } %>
+    </div>
+
+  </main>
+</div>
+<%- include('partials/foot') %>

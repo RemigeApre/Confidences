@@ -1,0 +1,147 @@
+<%- include('partials/head', { title: 'Profil : Contenus masqués' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Contenus masqués', navBack: '/favoris/parametres' }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <% var hasAnything = wikiPages.length || galleryImages.length || bdBooks.length || bdPages.length; %>
+
+  <div id="masques-empty" class="profil-empty"<%= hasAnything ? ' hidden' : '' %>>
+    <div class="profil-empty-icon">&#128065;</div>
+    <p>Rien de masqu&eacute; pour l&rsquo;instant.<br>Le bouton &laquo;&nbsp;Masquer&nbsp;&raquo; (codex, images, BD) retire un contenu pr&eacute;cis de vos listings, sans le supprimer.</p>
+  </div>
+
+  <% if (wikiPages.length) { %>
+    <h2 class="profil-section-title" id="masques-wiki-title">Codex masqu&eacute; (<%= wikiPages.length %>)</h2>
+    <div class="wiki-grid" id="masques-wiki-grid">
+      <% wikiPages.forEach(function (page) { %>
+        <div class="profil-readlater-item" data-hidden-item data-item-type="wiki" data-item-id="<%= page.id %>">
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+          <button type="button" class="profil-readlater-remove" title="Afficher &agrave; nouveau" aria-label="Afficher &agrave; nouveau">&#8635;</button>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (galleryImages.length) { %>
+    <h2 class="profil-section-title" id="masques-images-title">Images masqu&eacute;es (<%= galleryImages.length %>)</h2>
+    <div class="profil-fav-grid" id="masques-images-grid">
+      <% galleryImages.forEach(function (img) { %>
+        <div class="profil-fav-card" data-hidden-item data-item-type="gallery" data-item-id="<%= img.id %>">
+          <% if (img.imagePaths && img.imagePaths[0]) { %>
+            <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
+          <% } else { %>
+            <div class="profil-fav-card-placeholder">&#128247;</div>
+          <% } %>
+          <span class="profil-fav-card-title"><%= img.title || 'Sans titre' %></span>
+          <button type="button" class="wiki-pl-remove" title="Afficher &agrave; nouveau" aria-label="Afficher &agrave; nouveau">&#8635;</button>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (bdBooks.length) { %>
+    <h2 class="profil-section-title" id="masques-bd-title">BD masqu&eacute;es (<%= bdBooks.length %>)</h2>
+    <div class="profil-fav-grid" id="masques-bd-grid">
+      <% bdBooks.forEach(function (book) { %>
+        <div class="profil-fav-card" data-hidden-item data-item-type="bd" data-item-id="<%= book.id %>">
+          <% if (book.imagePaths && book.imagePaths[0]) { %>
+            <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
+          <% } else { %>
+            <div class="profil-fav-card-placeholder">&#128218;</div>
+          <% } %>
+          <span class="profil-fav-card-title"><%= book.title %></span>
+          <button type="button" class="wiki-pl-remove" title="Afficher &agrave; nouveau" aria-label="Afficher &agrave; nouveau">&#8635;</button>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (bdPages.length) { %>
+    <h2 class="profil-section-title" id="masques-bd-pages-title">Pages de BD masqu&eacute;es (<%= bdPages.length %>)</h2>
+    <div class="profil-fav-grid" id="masques-bd-pages-grid">
+      <% bdPages.forEach(function (p) { %>
+        <a href="/bd/<%= p.bookId %>?start=<%= p.pageIndex %>" class="profil-fav-card" data-hidden-bd-page data-book-id="<%= p.bookId %>" data-page-index="<%= p.pageIndex %>">
+          <div class="profil-fav-card-placeholder">&#128218;</div>
+          <span class="profil-fav-card-title"><%= p.bookTitle %> &mdash; page <%= p.pageIndex + 1 %></span>
+          <button type="button" class="wiki-pl-remove" title="Afficher &agrave; nouveau" aria-label="Afficher &agrave; nouveau">&#8635;</button>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+
+</main>
+<script>
+(function () {
+  var emptyMsg = document.getElementById("masques-empty");
+  var sections = [
+    { title: document.getElementById("masques-wiki-title"), grid: document.getElementById("masques-wiki-grid"), selector: "[data-hidden-item]" },
+    { title: document.getElementById("masques-images-title"), grid: document.getElementById("masques-images-grid"), selector: "[data-hidden-item]" },
+    { title: document.getElementById("masques-bd-title"), grid: document.getElementById("masques-bd-grid"), selector: "[data-hidden-item]" },
+    { title: document.getElementById("masques-bd-pages-title"), grid: document.getElementById("masques-bd-pages-grid"), selector: "[data-hidden-bd-page]" },
+  ];
+  var ENDPOINTS = { wiki: "/wiki/", gallery: "/galerie/", bd: "/bd/" };
+
+  function checkEmpty() {
+    var total = 0;
+    sections.forEach(function (s) {
+      if (!s.grid) return;
+      var visible = s.grid.querySelectorAll(s.selector).length;
+      if (s.title) s.title.hidden = visible === 0;
+      s.grid.hidden = visible === 0;
+      total += visible;
+    });
+    if (emptyMsg) emptyMsg.hidden = total > 0;
+  }
+
+  // Pages de BD masquées individuellement : URL différente (livre + index
+  // de page) des autres types, donc géré à part plutôt que via ENDPOINTS.
+  document.querySelectorAll("[data-hidden-bd-page]").forEach(function (item) {
+    var btn = item.querySelector(".wiki-pl-remove");
+    if (!btn) return;
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      btn.disabled = true;
+      var bookId = item.dataset.bookId;
+      var pageIndex = item.dataset.pageIndex;
+      fetch("/bd/" + bookId + "/page/" + pageIndex + "/react", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden: false }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) { btn.disabled = false; return; }
+          item.remove();
+          checkEmpty();
+        })
+        .catch(function () { btn.disabled = false; });
+    });
+  });
+
+  document.querySelectorAll("[data-hidden-item]").forEach(function (item) {
+    var btn = item.querySelector(".profil-readlater-remove, .wiki-pl-remove");
+    if (!btn) return;
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      btn.disabled = true;
+      var itemType = item.dataset.itemType;
+      var itemId = item.dataset.itemId;
+      fetch(ENDPOINTS[itemType] + itemId + "/react", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden: false }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) { btn.disabled = false; return; }
+          item.remove();
+          checkEmpty();
+        })
+        .catch(function () { btn.disabled = false; });
+    });
+  });
+})();
+</script>
+<%- include('partials/foot') %>

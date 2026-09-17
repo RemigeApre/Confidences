@@ -17,6 +17,8 @@ const {
   listFavoriteRows,
   logGalleryView,
   mergeUserReactions,
+  mergePartnerReaction,
+  excludeHidden,
   getUserReaction,
   createSeries,
   deleteSeries,
@@ -30,10 +32,12 @@ const {
   removeFromSeries,
   reorderSeries,
   getSeriesMapForIds,
+  listUnexploredGalleryImages,
+  listBlacklistedTags,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
-const { filterOff } = require("../specialContent");
+const { filterOff, specialTagOf, isOffForUser } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -124,38 +128,14 @@ function buildItems(galleryImages, wikiPages) {
           rating: page.rating || 0,
           flame: !!page.flame,
           interested: !!page.interested,
-          contentType: "image",
           date: page.updatedAt,
         });
       });
     }
-    // Images des variantes : une carte par image
-    const variantes = (page.meta && Array.isArray(page.meta.variantes)) ? page.meta.variantes : [];
-    variantes.forEach((v) => {
-      const allSubs = Array.isArray(v.variantes) ? v.variantes : [];
-      const varianteSources = [v, ...allSubs];
-      varianteSources.forEach((vv) => {
-        if (!Array.isArray(vv.images) || !vv.images.length) return;
-        const extraTag = vv.nom ? [vv.nom.toLowerCase()] : [];
-        vv.images.forEach((imgPath) => {
-          wikiItems.push({
-            type: "wiki",
-            id: null,
-            wikiPageId: page.id,
-            imagePaths: [imgPath],
-            title: page.title,
-            category: page.category,
-            tags: [...page.tags, ...extraTag],
-            notes: "",
-            rating: page.rating || 0,
-            flame: !!page.flame,
-            interested: !!page.interested,
-            contentType: "image",
-            date: page.updatedAt,
-          });
-        });
-      });
-    });
+    // Images de variantes/sous-variantes et de scénario : plus synthétisées
+    // ici, elles ont désormais leur propre fiche gallery_images (voir
+    // syncExtraGalleryImages dans routes/wiki.js), donc déjà présentes dans
+    // galleryItems ci-dessous — les resynthétiser ferait un doublon.
   });
 
   const galleryItems = galleryImages.map((img) => ({
@@ -170,7 +150,7 @@ function buildItems(galleryImages, wikiPages) {
     rating: img.rating,
     flame: img.flame,
     interested: img.interested,
-    contentType: img.contentType || "image",
+    partnerReaction: img.partnerReaction || null,
     processed: !!img.processed,
     date: img.createdAt,
   }));
@@ -180,8 +160,9 @@ function buildItems(galleryImages, wikiPages) {
 
 function getCtx(user) {
   const userId = user ? user.id : null;
-  const wikiPages = mergeUserReactions(listWikiPages(), userId, "wiki");
-  const galleryImages = mergeUserReactions(listGalleryImages(), userId, "gallery");
+  const partnerId = user ? user.partnerId : null;
+  const wikiPages = excludeHidden(mergeUserReactions(listWikiPages(), userId, "wiki"));
+  const galleryImages = mergePartnerReaction(excludeHidden(mergeUserReactions(listGalleryImages(), userId, "gallery")), partnerId, "gallery");
   const items = filterOff(buildItems(galleryImages, wikiPages), user);
   const tagTotalCounts = {};
   items.forEach((item) => {
@@ -202,13 +183,8 @@ function buildGalleryRouter(config) {
   router.get("/", (req, res) => {
     const { items, allTags } = getCtx(req.user);
     const tagImageCounts = {};
-    const tagBdCounts = {};
     items.forEach((item) => {
-      const isBd = item.contentType === "bd";
-      item.tags.forEach((t) => {
-        if (isBd) tagBdCounts[t] = (tagBdCounts[t] || 0) + 1;
-        else tagImageCounts[t] = (tagImageCounts[t] || 0) + 1;
-      });
+      item.tags.forEach((t) => { tagImageCounts[t] = (tagImageCounts[t] || 0) + 1; });
     });
     const favoriteGalleryIds = listFavoriteRows(req.user.id)
       .filter((r) => r.item_type === "gallery")
@@ -216,9 +192,14 @@ function buildGalleryRouter(config) {
     const topTags = allTags.slice(0, 20);
     const galleryIds = items.filter((i) => i.id).map((i) => i.id);
     const seriesMap = galleryIds.length ? getSeriesMapForIds(galleryIds) : {};
-    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, tagBdCounts, seriesMap });
+    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap });
   });
 
+  // Chaque image est sa propre fiche, jamais regroupées automatiquement —
+  // même en sélectionnant plusieurs fichiers d'un coup dans ce formulaire,
+  // chacun devient une fiche indépendante (notable/masquable/collectionnable
+  // séparément). Le seul regroupement possible reste manuel et explicite,
+  // via les Séries (voir /galerie/series) — jamais automatique à l'upload.
   router.post("/", requireAdmin, upload.array("images", 30), (req, res) => {
     const files = req.files || [];
     if (!files.length) return res.redirect("/galerie");
@@ -228,10 +209,11 @@ function buildGalleryRouter(config) {
     const notes = String(req.body.notes || "").trim();
     const author = String(req.body.author || "").trim();
     const parody = String(req.body.parody || "").trim();
-    const contentType = req.body.content_type === "bd" ? "bd" : "image";
-    const imagePaths = files.map((f) => `/uploads/gallery/${f.filename}`);
-    imagePaths.forEach((p) => generateThumb(p));
-    insertGalleryImage({ imagePaths, title, tags, notes, category, author, parody, contentType });
+    files.forEach((f) => {
+      const p = `/uploads/gallery/${f.filename}`;
+      generateThumb(p);
+      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, author, parody });
+    });
     res.redirect("/galerie");
   });
 
@@ -321,7 +303,6 @@ function buildGalleryRouter(config) {
     const commonCategory = normalizeCategory(req.body.common_category);
     const commonAuthor   = String(req.body.common_author  || "").trim();
     const commonParody   = String(req.body.common_parody  || "").trim();
-    const commonType     = req.body.common_content_type === "bd" ? "bd" : "image";
 
     let batchMeta = {};
     try { batchMeta = JSON.parse(req.body.batch_meta || "{}"); } catch {}
@@ -354,7 +335,6 @@ function buildGalleryRouter(config) {
         wikiPageId:  null,
         author:      finalAuthor,
         parody:      commonParody,
-        contentType: commonType,
       });
     });
 
@@ -448,6 +428,31 @@ function buildGalleryRouter(config) {
     res.json(getImageSeries(galleryId));
   });
 
+  // ── "Explorer l'inconnu" : pioche une image (pas BD) jamais notée ni en
+  // favori — voir gallery.ejs (le bouton) et public/gallery.js (le mode
+  // exploration du lightbox, avec son historique de session). Même logique
+  // que /wiki/explorer/aleatoire.
+  router.get("/explorer/aleatoire", requireUser, (req, res) => {
+    const excludeIds = new Set(
+      String(req.query.exclude || "").split(",").map(Number).filter(Number.isInteger)
+    );
+    const hideUltra = req.query.hideUltra === "1";
+    const hideIrrealiste = req.query.hideIrrealiste === "1";
+    const blacklist = new Set(listBlacklistedTags(req.user.id).map((r) => r.tag));
+    const candidates = listUnexploredGalleryImages(req.user.id).filter((img) => {
+      if (excludeIds.has(img.id)) return false;
+      if (isOffForUser(img.tags, req.user)) return false; // exclusion "off" : plus forte que la simple bascule, jamais proposée
+      if (img.tags.some((t) => blacklist.has(String(t).toLowerCase()))) return false;
+      const special = specialTagOf(img.tags);
+      if (special === "ultra" && hideUltra) return false;
+      if (special === "irrealiste" && hideIrrealiste) return false;
+      return true;
+    });
+    if (!candidates.length) return res.json({ id: null });
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    res.json({ id: pick.id });
+  });
+
   router.get("/:id/edit", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
@@ -478,40 +483,34 @@ function buildGalleryRouter(config) {
     res.json({ ok: true, processed });
   });
 
+  // Même principe que POST / ci-dessus : on ne fusionne jamais un nouveau
+  // fichier dans la fiche éditée, il devient sa propre fiche indépendante
+  // (mêmes métadonnées que celle en cours d'édition). Cette fiche-ci ne
+  // fait que retirer les images décochées, jamais en accueillir de nouvelles.
   router.post("/:id", requireAdmin, upload.array("images", 30), (req, res) => {
     const id = Number(req.params.id);
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
     if (!image) return res.redirect("/galerie");
 
-    // Images : on part des existantes, on retire celles cochées, on ajoute
-    // les nouvelles, puis on remet la couverture choisie en tête.
     const toRemove = [].concat(req.body.remove_image || []);
-    const kept = image.imagePaths.filter((p) => !toRemove.includes(p));
-    const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
-    added.forEach((p) => generateThumb(p));
-    let imagePaths = [...kept, ...added];
-    const cover = req.body.cover_image;
-    if (cover && imagePaths.includes(cover) && imagePaths[0] !== cover) {
-      imagePaths = [cover, ...imagePaths.filter((p) => p !== cover)];
-    }
+    const imagePaths = image.imagePaths.filter((p) => !toRemove.includes(p));
     unlinkFiles(toRemove);
 
     const tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
     const category = normalizeCategory(req.body.category);
     const wikiPageIdRaw = Number(req.body.wiki_page_id);
     const wikiPageId = Number.isInteger(wikiPageIdRaw) && wikiPageIdRaw > 0 ? wikiPageIdRaw : null;
-    const contentType = req.body.content_type === "bd" ? "bd" : "image";
+    const title = String(req.body.title || "").trim();
+    const notes = String(req.body.notes || "").trim();
+    const author = String(req.body.author || "").trim();
+    const parody = String(req.body.parody || "").trim();
 
-    updateGalleryImage(id, {
-      title: String(req.body.title || "").trim(),
-      category,
-      tags,
-      notes: String(req.body.notes || "").trim(),
-      imagePaths,
-      wikiPageId,
-      author: String(req.body.author || "").trim(),
-      parody: String(req.body.parody || "").trim(),
-      contentType,
+    updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody });
+
+    const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
+    added.forEach((p) => {
+      generateThumb(p);
+      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, wikiPageId, author, parody });
     });
 
     const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
@@ -528,9 +527,11 @@ function buildGalleryRouter(config) {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.json({ ok: false });
     if (!getGalleryImage(id)) return res.json({ ok: false });
-    const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
-    reactGalleryImage(id, req.user.id, { rating });
-    res.json({ ok: true });
+    const payload = {};
+    if (req.body.rating !== undefined) payload.rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
+    if (req.body.hidden !== undefined) payload.hidden = !!req.body.hidden;
+    reactGalleryImage(id, req.user.id, payload);
+    res.json({ ok: true, hidden: !!req.body.hidden });
   });
 
   router.post("/:id/delete", requireAdmin, (req, res) => {

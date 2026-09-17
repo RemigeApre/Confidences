@@ -1,0 +1,78 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : BD', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= config.title %></span>
+</div>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <div class="aud-section-header">
+      <h2 class="aud-section-title">Notes &amp; favoris BD (<%= items.length %>)</h2>
+    </div>
+
+    <div class="aud-card-grid" id="aud-bd-items">
+      <% if (!items.length) { %>
+        <p class="admin-muted">Aucune note ni favori BD.</p>
+      <% } %>
+      <% items.forEach(function(b) { %>
+        <%- include('partials/admin-content-card', {
+          href: '/bd/' + b.id,
+          coverImg: b.imagePaths && b.imagePaths[0],
+          title: b.title,
+          viewCount: undefined,
+          rating: b.rating || 0,
+          flame: !!b.flame,
+          placeholderIcon: '&#128214;',
+        }) %>
+      <% }) %>
+    </div>
+
+    <% if (topViews.length) { %>
+      <div class="aud-section-header" id="aud-bd-views-header" hidden>
+        <h2 class="aud-section-title">BD les plus visit&eacute;es</h2>
+      </div>
+      <div class="aud-card-grid" id="aud-bd-views" hidden>
+        <% topViews.forEach(function(b) { %>
+          <%- include('partials/admin-content-card', {
+            href: '/bd/' + b.id,
+            coverImg: b.imagePaths && b.imagePaths[0],
+            title: b.title,
+            viewCount: b.viewCount,
+            rating: b.rating || 0,
+            flame: !!b.flame,
+            placeholderIcon: '&#128214;',
+          }) %>
+        <% }) %>
+      </div>
+      <button type="button" class="aud-view-toggle" id="aud-bd-toggle-views">
+        <span aria-hidden="true">&#128065;</span>
+        <span id="aud-bd-toggle-label">Voir les vues</span>
+      </button>
+    <% } %>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById("aud-bd-toggle-views");
+  if (!btn) return;
+  var items = document.getElementById("aud-bd-items");
+  var viewsHeader = document.getElementById("aud-bd-views-header");
+  var views = document.getElementById("aud-bd-views");
+  var label = document.getElementById("aud-bd-toggle-label");
+  var showingViews = false;
+  btn.addEventListener("click", function () {
+    showingViews = !showingViews;
+    items.hidden = showingViews;
+    viewsHeader.hidden = !showingViews;
+    views.hidden = !showingViews;
+    label.textContent = showingViews ? "Voir notes & favoris" : "Voir les vues";
+  });
+})();
+</script>
+<%- include('partials/foot') %>

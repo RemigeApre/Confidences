@@ -1,46 +1,63 @@
 <div class="top-nav">
 
-  <%# ─── Mobile : retour + titre + burger (masqués sur desktop) ────────── %>
+  <%# ─── Mobile : retour + titre + utilitaires (masqués sur desktop) ───── %>
   <% if (locals.navBack) { %>
     <a href="<%= locals.navBack %>" class="nav-back-btn" aria-label="Retour">&#8592;</a>
   <% } else { %>
     <span class="nav-back-placeholder"></span>
   <% } %>
   <span class="top-nav-page-title"><%= locals.navTitle || config.title %></span>
-  <button type="button" class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false" aria-controls="nav-drawer">
-    &#9776;
-  </button>
+  <div class="nav-mobile-utils">
+    <% if (currentUser) { %>
+      <button type="button" class="nav-mobile-util-btn nav-mobile-discreet-btn" id="nav-mobile-discreet-btn" aria-pressed="false" title="Masquer les images" aria-label="Masquer les images"><%- include('eye-icon') %></button>
+    <% } %>
+    <details class="nav-mobile-consent">
+      <summary class="nav-mobile-util-btn" title="Rappel consentement" aria-label="Rappel sur le consentement">?</summary>
+      <div class="nav-mobile-consent-panel">
+        <p class="pc-consent-title">Consentement</p>
+        <p>Un fantasme n&rsquo;est pas un accord. Une discussion n&rsquo;est pas un accord. Le consentement se donne librement, clairement, et il est r&eacute;vocable &agrave; tout moment par chacun des partenaires.</p>
+        <p class="pc-consent-legal">Certains fantasmes abord&eacute;s sont ill&eacute;gaux dans leur pratique. Nous le rappelons sur les fiches individuelles. Nous soutenons le droit au fantasme, mais condamnons et d&eacute;courageons toute pratique ill&eacute;gale ou dangereuse.</p>
+      </div>
+    </details>
+  </div>
 
   <%# ─── Desktop : barre pleine largeur (masquée sur mobile) ──────────── %>
+  <%
+    var _path = locals.currentPath || "";
+    var _onWiki    = _path.indexOf("/wiki") === 0 || _path.indexOf("/tags") === 0;
+    var _onGalerie = _path.indexOf("/galerie") === 0 || _path.indexOf("/bd") === 0;
+    var _onQuizz   = _path.indexOf("/section") === 0 || _path.indexOf("/results") === 0;
+    var _onGalerieOnly = _path.indexOf("/galerie") === 0;
+    var _onBd     = _path.indexOf("/bd") === 0;
+    var _onProfil = _path.indexOf("/favoris") === 0;
+  %>
   <div class="pc-nav" id="pc-nav">
 
-    <div class="pc-nav-left">
+    <a href="/" class="pc-nav-brand-link"><%= config.title %></a>
+
+    <div class="pc-nav-links">
       <div class="pc-nav-item pc-has-drop">
-        <a href="/wiki" class="pc-nav-link">Wiki &#9662;</a>
+        <a href="/wiki" class="pc-nav-link pc-nav-link--wiki<%= _onWiki ? ' pc-nav-link--active' : '' %>">Codex</a>
         <div class="pc-drop">
           <% (locals.wikiCategories || []).forEach(function(c) { %>
             <a href="/wiki/categorie/<%= c.key %>" class="pc-drop-link"><%= c.label %></a>
           <% }) %>
+          <hr class="pc-drop-sep" />
+          <a href="/tags" class="pc-drop-link">Labels</a>
         </div>
       </div>
       <% if (currentUser) { %>
         <div class="pc-nav-item pc-has-drop">
-          <a href="/galerie" class="pc-nav-link">Galerie &#9662;</a>
+          <a href="/galerie" class="pc-nav-link pc-nav-link--galerie<%= _onGalerie ? ' pc-nav-link--active' : '' %>">Galerie</a>
           <div class="pc-drop">
             <a href="/galerie" class="pc-drop-link">Galerie</a>
             <a href="/bd" class="pc-drop-link">BD</a>
+            <hr class="pc-drop-sep" />
+            <a href="/tags" class="pc-drop-link">Labels</a>
           </div>
         </div>
-      <% } %>
-    </div>
-
-    <a href="/" class="pc-nav-brand-link"><%= config.title %></a>
-
-    <div class="pc-nav-right">
-      <% if (currentUser) { %>
-        <span class="pc-nav-link pc-nav-link-disabled" title="Bient&ocirc;t disponible">Liens</span>
         <div class="pc-nav-item pc-has-drop">
-          <a href="/" class="pc-nav-link">Quizz &#9662;</a>
+          <a href="/" class="pc-nav-link pc-nav-link--quizz<%= _onQuizz ? ' pc-nav-link--active' : '' %>">Quizz</a>
           <div class="pc-drop">
             <% (config.sections || []).forEach(function(s, i) { %>
               <a href="/section/<%= i %>" class="pc-drop-link">
@@ -51,8 +68,10 @@
           </div>
         </div>
       <% } %>
-      <div class="pc-nav-actions">
-        <details class="pc-consent-details">
+    </div>
+
+    <div class="pc-nav-actions">
+        <details class="pc-consent-details pc-hover-menu">
           <summary class="pc-icon-btn pc-consent-btn" title="Rappel consentement" aria-label="Rappel sur le consentement">?</summary>
           <div class="pc-consent-panel">
             <p class="pc-consent-title">Consentement</p>
@@ -60,12 +79,23 @@
             <p class="pc-consent-legal">Certains fantasmes abord&eacute;s sont ill&eacute;gaux dans leur pratique. Nous le rappelons sur les fiches individuelles. Nous soutenons le droit au fantasme, mais condamnons et d&eacute;courageons toute pratique ill&eacute;gale ou dangereuse.</p>
           </div>
         </details>
-        <button type="button" class="pc-icon-btn" id="pc-search-btn" aria-label="Rechercher sur tout le site">&#128269;</button>
         <% if (currentUser) { %>
-          <div class="pc-nav-item pc-has-drop">
-            <button type="button" class="pc-icon-btn" title="<%= currentUser.displayName %>">&#128273;</button>
+        <button type="button" class="pc-icon-btn pc-discreet-btn" id="pc-discreet-btn" aria-pressed="false" title="Masquer les images" aria-label="Masquer les images"><%- include('eye-icon') %></button>
+        <% } %>
+        <div class="pc-search-inline" id="pc-search-inline">
+          <button type="button" class="pc-icon-btn" id="pc-search-btn" aria-label="Rechercher sur tout le site" aria-expanded="false"><%- include('search-icon') %></button>
+          <input type="search" id="pc-search-input" class="pc-search-inline-input" placeholder="Rechercher&hellip;" autocomplete="off" aria-label="Rechercher sur tout le site" />
+          <div class="pc-search-results" id="pc-search-results" hidden></div>
+        </div>
+        <% if (currentUser) { %>
+          <% var _roleClass = currentUser.isAdmin ? 'pc-key-admin' : (currentUser.isTest ? 'pc-key-test' : 'pc-key-user'); %>
+          <div class="pc-nav-item pc-has-drop pc-hover-menu">
+            <button type="button" class="pc-icon-btn <%= _roleClass %>" title="<%= currentUser.displayName %>"><%- include('key-icon') %></button>
             <div class="pc-drop pc-drop-right">
               <a href="/favoris" class="pc-drop-link">Profil</a>
+              <% if (locals.partnerUser) { %>
+                <a href="/couple" class="pc-drop-link">Profil de <%= partnerUser.displayName %></a>
+              <% } %>
               <% if (currentUser.isAdmin) { %>
                 <a href="/admin" class="pc-drop-link">Admin</a>
               <% } %>
@@ -76,76 +106,37 @@
           </div>
         <% } else { %>
           <a href="/admin/login?next=<%= encodeURIComponent(locals.currentPath || '/') %>"
-             class="pc-icon-btn" title="Connexion">&#128273;</a>
+             class="pc-icon-btn" title="Connexion"><%- include('key-icon') %></a>
         <% } %>
       </div>
-    </div>
 
   </div>
 </div>
 
-<%# ─── Overlay de recherche globale ─────────────────────────────────────── %>
-<div class="pc-search-overlay" id="pc-search-overlay" hidden>
-  <div class="pc-search-box">
-    <div class="pc-search-bar">
-      <span class="pc-search-icon">&#128269;</span>
-      <input type="search" id="pc-search-input" class="pc-search-input"
-             placeholder="Rechercher partout&hellip;" autocomplete="off" />
-      <button type="button" id="pc-search-close" class="pc-search-close-btn">&#215;</button>
-    </div>
-    <div class="pc-search-results" id="pc-search-results"></div>
-  </div>
-</div>
-
-<div class="nav-backdrop" id="nav-backdrop"></div>
-
-<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">
-  <div class="nav-drawer-header">
-    <button type="button" class="nav-drawer-close" id="nav-drawer-close" aria-label="Fermer">&#10005;</button>
-    <a href="/" class="nav-drawer-home">Accueil</a>
-  </div>
-
-  <nav class="nav-drawer-body">
-    <a href="/wiki" class="nav-drawer-link">Wiki</a>
-    <% if (currentUser) { %>
-      <a href="/galerie" class="nav-drawer-link">Galerie</a>
-      <a href="/bd" class="nav-drawer-link">BD</a>
-      <span class="nav-drawer-link nav-drawer-link-disabled" title="Bient&ocirc;t disponible">Liens</span>
-      <a href="/favoris" class="nav-drawer-link">Mes favoris</a>
-
-      <details class="nav-drawer-group" open>
-        <summary class="nav-drawer-group-summary">Quizz</summary>
-        <div class="nav-drawer-sublist">
-          <% config.sections.forEach(function (s, i) { %>
-            <a href="/section/<%= i %>" class="nav-drawer-link">
-              <span class="nav-drawer-dot" style="background: <%= s.color || 'var(--accent)' %>"></span> <%= s.title %>
-            </a>
-          <% }) %>
-        </div>
-      </details>
-    <% } %>
-  </nav>
-
-  <details class="nav-consent-details">
-    <summary class="nav-consent-summary">? Consentement</summary>
-    <div class="nav-consent-body">
-      <p>Un fantasme n&rsquo;est pas un accord. Une discussion n&rsquo;est pas un accord. Le consentement se donne librement, clairement, et il est r&eacute;vocable &agrave; tout moment par chacun des partenaires.</p>
-      <p>Certains fantasmes abord&eacute;s sont ill&eacute;gaux dans leur pratique. Nous le rappelons sur les fiches individuelles. Nous soutenons le droit au fantasme, mais condamnons et d&eacute;courageons toute pratique ill&eacute;gale ou dangereuse.</p>
-    </div>
-  </details>
-
-  <div class="nav-drawer-footer">
-    <% if (currentUser) { %>
-      <a href="/favoris" class="nav-drawer-link">Profil</a>
-      <% if (currentUser.isAdmin) { %>
-        <a href="/admin" class="nav-drawer-link">Admin</a>
-      <% } %>
-      <form method="POST" action="/admin/logout" style="margin:0">
-        <button type="submit" class="nav-drawer-link nav-drawer-link-btn nav-drawer-link--danger">D&eacute;connexion</button>
-      </form>
-    <% } else { %>
-      <a href="/admin/login?next=<%= encodeURIComponent(locals.currentPath || '/') %>"
-         class="nav-drawer-admin" title="Connexion">&#128273;</a>
-    <% } %>
-  </div>
-</aside>
+<%# ─── Barre de navigation mobile (bas d'écran, façon TikTok/Instagram) ──
+    Toujours visible, pas de menu qui s'ouvre : chaque icône mène
+    directement à sa section. Masquée sur desktop (la pc-nav ci-dessus
+    prend le relais). ─────────────────────────────────────────────────── %>
+<nav class="mobile-tabbar" aria-label="Navigation principale">
+  <a href="/wiki" class="mobile-tabbar-link<%= _onWiki ? ' active' : '' %>" aria-label="Codex" title="Codex">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9a2 2 0 0 1 2 2v16l-6.5-4.2L4 21V5a2 2 0 0 1 2-2Z"/></svg>
+  </a>
+  <% if (currentUser) { %>
+    <a href="/galerie" class="mobile-tabbar-link<%= _onGalerieOnly ? ' active' : '' %>" aria-label="Images" title="Images">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+    </a>
+  <% } %>
+  <a href="/" class="mobile-tabbar-home<%= _path === '/' ? ' active' : '' %>" aria-label="Accueil" title="Accueil">C</a>
+  <% if (currentUser) { %>
+    <a href="/bd" class="mobile-tabbar-link<%= _onBd ? ' active' : '' %>" aria-label="BD" title="BD">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M7 21h13a2 2 0 0 0 2-2V6"/></svg>
+    </a>
+    <a href="/favoris" class="mobile-tabbar-link<%= _onProfil ? ' active' : '' %>" aria-label="Profil" title="Profil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    </a>
+  <% } else { %>
+    <a href="/admin/login?next=<%= encodeURIComponent(locals.currentPath || '/') %>" class="mobile-tabbar-link" aria-label="Connexion" title="Connexion">
+      <%- include('key-icon') %>
+    </a>
+  <% } %>
+</nav>

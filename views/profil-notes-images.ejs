@@ -1,14 +1,16 @@
-<%- include('partials/head', { title: 'Images notées — ' + config.title }) %>
-<main class="container wide gallery-has-sidebar">
+<%- include('partials/head', { title: 'Profil : Images' }) %>
+<main class="container wide gallery-has-sidebar profil-notes-page">
   <%- include('partials/top-nav', { config: config, navTitle: 'Images notées', navBack: '/favoris' }) %>
 
-  <%# ─── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar gallery-sidebar">
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <%# ─── VOLET FILTRE (à droite : la navigation du profil garde la gauche) ── %>
+  <aside class="wiki-cat-sidebar gallery-sidebar profil-notes-filter">
     <div class="wiki-chapter-hero" style="--ch-hue: 220">
       <div class="wiki-chapter-hero-top">
         <span></span>
         <h1 class="wiki-chapter-hero-title">Images not&eacute;es</h1>
-        <span class="wiki-chapter-hero-count" id="notes-count-hero"><%= items.length %></span>
+        <span></span>
       </div>
     </div>
 
@@ -16,50 +18,59 @@
 
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
-          <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="notes-search" class="wiki-search-input" placeholder="Rechercher&hellip;" autocomplete="off" />
+          <input type="search" id="notes-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
         </div>
       </div>
 
-      <%# Filtre type %>
-      <div class="wiki-filter-section">
-        <div class="links-filter" id="notes-ctype-filter">
-          <button type="button" class="tag-chip" data-ctype="image">Images</button>
-          <button type="button" class="tag-chip" data-ctype="bd">BD</button>
-        </div>
-      </div>
+      <details class="wiki-sidebar-filter-details" open>
+      <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+      <div class="wiki-sidebar-filters">
 
-      <%# Tags %>
-      <% if (allTags.length) { %>
-      <div class="wiki-filter-section">
-        <div class="wiki-tag-cloud" id="notes-tag-filter">
-          <% allTags.forEach(function(t) { %>
-            <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-              <span class="wtc-label"><%= t %></span>
-            </button>
-          <% }) %>
+        <%# Note minimale %>
+        <div class="wiki-filter-section">
+          <div class="wiki-filter-label-row">
+            <span class="wiki-filter-label">Note minimale</span>
+            <button type="button" class="wiki-adv-star-reset" id="notes-adv-star-reset">&#10006;</button>
+          </div>
+          <div class="wiki-adv-stars" id="notes-adv-stars">
+            <% for (var si = 1; si <= 5; si++) { %>
+              <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
+            <% } %>
+          </div>
         </div>
-      </div>
-      <% } %>
 
-      <div class="wiki-filter-section">
-        <button type="button" id="notes-reset-filters" class="wiki-filter-reset-btn">R&eacute;initialiser</button>
+        <%# Tags %>
+        <% if (allTags.length) { %>
+        <div class="wiki-filter-section">
+          <input type="search" id="notes-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
+          <div class="wiki-tag-cloud" id="notes-tag-filter">
+            <% allTags.forEach(function(t) { %>
+              <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
+                <span class="wtc-label"><%= t %></span>
+              </button>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
       </div>
+      </details>
+
+      <button type="button" id="notes-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
 
     </div>
   </aside>
 
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
-  <div class="gallery-grid" id="notes-grid">
-    <% if (!items.length) { %>
-      <p class="intro">Aucune image not&eacute;e pour l&apos;instant.</p>
-    <% } %>
+  <div class="profil-empty" id="notes-empty"<%= items.length ? ' hidden' : '' %>>
+    <div class="profil-empty-icon">&#10024;</div>
+    <p>Aucune donn&eacute;e pour l&apos;instant.<br><a href="/galerie">Commence &agrave; explorer la galerie</a>.</p>
+  </div>
+  <div class="gallery-grid" id="notes-grid"<%= items.length ? '' : ' hidden' %>>
     <% items.forEach(function(item) { %>
-      <% var ctype = item.contentType || (item.type === 'bd' ? 'bd' : 'image'); %>
       <div class="gallery-card"
         data-item
         data-tags="<%= (item.tags || []).join(',').toLowerCase() %>"
-        data-ctype="<%= ctype %>"
         data-title="<%= (item.title || '').toLowerCase().replace(/"/g, '') %>"
         data-rating="<%= item.rating || 0 %>">
 
@@ -71,10 +82,6 @@
           <a href="/galerie/<%= item.id %>/edit">
             <img src="<%= thumbUrl(item.filename) %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
           </a>
-        <% } %>
-
-        <% if (ctype === 'bd' && item.title) { %>
-          <div class="gallery-bd-title"><%= item.title %></div>
         <% } %>
 
         <div class="gallery-card-overlay">
@@ -96,9 +103,28 @@
 <script>
 (function() {
   var items = document.querySelectorAll('[data-item]');
+  var emptyEl = document.getElementById('notes-empty');
+  var gridEl = document.getElementById('notes-grid');
   var activeTags = [];
-  var activeCtype = '';
+  var advMinRating = 0;
   var search = '';
+  var hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
+  // Tags masqués (voir bouton "Masquer le tag" de la popup tag) : reste
+  // masqué même dans ses propres notes, comme partout ailleurs sur le site.
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  // Un tag masqué (voir /tags/masques) n'est plus un choix disponible : son
+  // chip est retiré du nuage de tags, pas seulement le contenu qui le porte.
+  function hideBlacklistedTagChips() {
+    document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(chip) {
+      if (blacklistSet.has((chip.dataset.tag || '').toLowerCase())) chip.hidden = true;
+    });
+  }
+  hideBlacklistedTagChips();
+  document.addEventListener('tag-blacklist-change', function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+    hideBlacklistedTagChips();
+    applyFilters();
+  });
 
   function show(el) { el.style.display = ''; }
   function hide(el) { el.style.display = 'none'; }
@@ -108,16 +134,23 @@
     items.forEach(function(el) {
       var tags = (el.dataset.tags || '').split(',').filter(Boolean);
       var title = (el.dataset.title || '');
-      var ctype = (el.dataset.ctype || '');
+      var rating = Number(el.dataset.rating) || 0;
       var matchesTags = activeTags.length === 0 || activeTags.every(function(t) { return tags.includes(t); });
       var matchesSearch = !search || title.includes(search);
-      var matchesCtype = !activeCtype || ctype === activeCtype;
-      if (matchesTags && matchesSearch && matchesCtype) { show(el); visible++; }
+      var matchesRating = !advMinRating || rating >= advMinRating;
+      var matchesUltra = !hideUltra || tags.indexOf('ultra') === -1;
+      var matchesBlacklist = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
+      if (matchesTags && matchesSearch && matchesRating && matchesUltra && matchesBlacklist) { show(el); visible++; }
       else { hide(el); }
     });
-    var counter = document.getElementById('notes-count-hero');
-    if (counter) counter.textContent = visible;
+    if (emptyEl) emptyEl.hidden = visible > 0;
+    if (gridEl) gridEl.hidden = visible === 0;
   }
+
+  document.addEventListener('profil-ultra-toggle-change', function() {
+    hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
+    applyFilters();
+  });
 
   document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(chip) {
     chip.addEventListener('click', function() {
@@ -129,26 +162,56 @@
     });
   });
 
-  document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var ctype = btn.dataset.ctype;
-      if (activeCtype === ctype) {
-        activeCtype = '';
-        btn.classList.remove('active');
-      } else {
-        activeCtype = ctype;
-        document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-      }
+  var advStarsWrap = document.getElementById('notes-adv-stars');
+  var advStarReset = document.getElementById('notes-adv-star-reset');
+  function syncStars() {
+    if (!advStarsWrap) return;
+    advStarsWrap.querySelectorAll('.wiki-adv-star').forEach(function(btn) {
+      var v = Number(btn.dataset.value);
+      btn.innerHTML = v <= advMinRating ? '&#9733;' : '&#9734;';
+      btn.classList.toggle('active', v <= advMinRating);
+    });
+  }
+  if (advStarsWrap) {
+    advStarsWrap.querySelectorAll('.wiki-adv-star').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var v = Number(btn.dataset.value);
+        advMinRating = advMinRating === v ? 0 : v;
+        syncStars();
+        applyFilters();
+      });
+    });
+  }
+  if (advStarReset) {
+    advStarReset.addEventListener('click', function() {
+      advMinRating = 0;
+      syncStars();
       applyFilters();
     });
-  });
+  }
 
   var searchInput = document.getElementById('notes-search');
+  var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener('input', function() {
       search = this.value.toLowerCase().trim();
-      applyFilters();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(applyFilters, 120);
+    });
+  }
+
+  var tagSearchInput = document.getElementById('notes-tag-search');
+  var tagSearchDebounceTimer = null;
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener('input', function() {
+      clearTimeout(tagSearchDebounceTimer);
+      tagSearchDebounceTimer = setTimeout(function() {
+        var q = tagSearchInput.value.trim().toLowerCase();
+        document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(chip) {
+          var tag = (chip.dataset.tag || '').toLowerCase();
+          chip.hidden = q.length > 0 && tag.indexOf(q) === -1;
+        });
+      }, 120);
     });
   }
 
@@ -156,16 +219,19 @@
   if (resetBtn) {
     resetBtn.addEventListener('click', function() {
       activeTags = [];
-      activeCtype = '';
+      advMinRating = 0;
       search = '';
       if (searchInput) searchInput.value = '';
+      if (tagSearchInput) tagSearchInput.value = '';
       document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(c) {
-        c.classList.remove('active'); c.dataset.state = '0';
+        c.classList.remove('active'); c.dataset.state = '0'; c.hidden = false;
       });
-      document.querySelectorAll('#notes-ctype-filter .tag-chip').forEach(function(b) { b.classList.remove('active'); });
+      syncStars();
       applyFilters();
     });
   }
+
+  applyFilters();
 })();
 </script>
 <%- include('partials/foot') %>

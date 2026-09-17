@@ -1,0 +1,34 @@
+<%# Extraction "Mes goûts" (Codex) : popup pour choisir quoi inclure avant de
+    télécharger une synthèse .txt des pages notées, groupées par degré
+    d'appréciation. Tout le filtrage/regroupement se fait côté serveur (voir
+    GET /wiki/export-gouts) : cette popup construit juste l'URL et laisse le
+    navigateur télécharger le fichier (voir public/wiki.js). %>
+<div class="export-gouts-modal-overlay" id="export-gouts-modal" hidden>
+  <div class="export-gouts-modal">
+    <p class="filter-profile-modal-title">Extraire mes go&ucirc;ts</p>
+
+    <div class="export-gouts-section">
+      <span class="export-gouts-label">Tags sp&eacute;ciaux</span>
+      <label class="export-gouts-check"><input type="checkbox" id="export-gouts-ultra" checked /> Inclure Ultra</label>
+      <label class="export-gouts-check"><input type="checkbox" id="export-gouts-irrealiste" checked /> Inclure Irr&eacute;aliste</label>
+    </div>
+
+    <div class="export-gouts-section">
+      <span class="export-gouts-label">Degr&eacute; minimum</span>
+      <div class="export-gouts-radios">
+        <label class="export-gouts-radio"><input type="radio" name="export-gouts-min" value="flame" /> Seulement J&rsquo;adore</label>
+        <label class="export-gouts-radio"><input type="radio" name="export-gouts-min" value="5" /> 5 &eacute;toiles</label>
+        <label class="export-gouts-radio"><input type="radio" name="export-gouts-min" value="4" /> 4 &eacute;toiles et plus</label>
+        <label class="export-gouts-radio"><input type="radio" name="export-gouts-min" value="3" /> 3 &eacute;toiles et plus</label>
+        <label class="export-gouts-radio"><input type="radio" name="export-gouts-min" value="2" /> 2 &eacute;toiles et plus</label>
+        <label class="export-gouts-radio"><input type="radio" name="export-gouts-min" value="1" /> 1 &eacute;toile et plus</label>
+        <label class="export-gouts-radio"><input type="radio" name="export-gouts-min" value="all" checked /> Tout (y compris &laquo;&nbsp;&Ccedil;a m&rsquo;int&eacute;resse&nbsp;&raquo;)</label>
+      </div>
+    </div>
+
+    <div class="filter-profile-modal-actions">
+      <button type="button" class="filter-profile-modal-cancel" id="export-gouts-cancel">Annuler</button>
+      <button type="button" class="filter-profile-modal-confirm" id="export-gouts-confirm">T&eacute;l&eacute;charger</button>
+    </div>
+  </div>
+</div>

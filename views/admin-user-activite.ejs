@@ -1,0 +1,39 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Activité', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= config.title %></span>
+</div>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <%
+      var TYPE_LABEL = { wiki: 'Codex', gallery: 'Images', bd: 'BD' };
+      var TYPE_HREF  = { wiki: '/wiki/', gallery: '/galerie/', bd: '/bd/' };
+      var TYPE_ICON  = { wiki: '&#128214;', gallery: '&#128247;', bd: '&#128214;' };
+    %>
+
+    <div class="aud-section">
+      <h2 class="aud-section-title">Activit&eacute; r&eacute;cente (<%= feed.length %> derni&egrave;res consultations)</h2>
+      <% if (feed.length) { %>
+        <ul class="aud-activity-list">
+          <% feed.forEach(function(f) { %>
+            <li class="aud-activity-row">
+              <span class="aud-activity-icon"><%- TYPE_ICON[f.type] %></span>
+              <span class="aud-activity-type"><%= TYPE_LABEL[f.type] %></span>
+              <a href="<%= TYPE_HREF[f.type] %><%= f.id %><%= f.type === 'gallery' ? '/edit' : '' %>" class="aud-activity-title"><%= f.title || ('#' + f.id) %></a>
+              <span class="aud-activity-date"><%= new Date(f.at).toLocaleString('fr-FR') %></span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="admin-muted">Aucune activit&eacute; enregistr&eacute;e.</p>
+      <% } %>
+    </div>
+
+  </main>
+</div>
+<%- include('partials/foot') %>

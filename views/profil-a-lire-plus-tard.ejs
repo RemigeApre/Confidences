@@ -1,0 +1,55 @@
+<%- include('partials/head', { title: 'Profil : À lire plus tard' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+
+    <div class="profil-empty" id="readlater-empty"<%= pages.length ? ' hidden' : '' %>>
+      <div class="profil-empty-icon">&#10024;</div>
+      <p>Vous retrouverez ici les pages du codex mises de c&ocirc;t&eacute; pour plus tard.<br>Depuis une page du codex, utilisez le bouton &laquo;&nbsp;&Agrave; lire plus tard&nbsp;&raquo;.</p>
+    </div>
+
+    <div class="wiki-grid" id="readlater-grid"<%= pages.length ? '' : ' hidden' %>>
+      <% pages.forEach(function (page) { %>
+        <div class="profil-readlater-item" data-page-id="<%= page.id %>">
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+          <button type="button" class="profil-readlater-remove" title="Retirer de la liste" aria-label="Retirer de la liste">&times;</button>
+        </div>
+      <% }) %>
+    </div>
+
+  </div>
+
+</main>
+<script>
+(function () {
+  var grid = document.getElementById('readlater-grid');
+  var emptyEl = document.getElementById('readlater-empty');
+  if (!grid) return;
+  grid.addEventListener('click', function (e) {
+    var btn = e.target.closest('.profil-readlater-remove');
+    if (!btn) return;
+    var item = btn.closest('.profil-readlater-item');
+    var pageId = item.dataset.pageId;
+    btn.disabled = true;
+    fetch('/wiki/' + pageId + '/react', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ readLater: false }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { btn.disabled = false; return; }
+        item.remove();
+        if (!grid.querySelector('.profil-readlater-item')) {
+          grid.hidden = true;
+          if (emptyEl) emptyEl.hidden = false;
+        }
+      })
+      .catch(function () { btn.disabled = false; });
+  });
+})();
+</script>
+<%- include('partials/foot') %>
