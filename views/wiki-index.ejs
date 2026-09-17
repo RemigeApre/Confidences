@@ -54,7 +54,7 @@
         <div class="wiki-filter-section wiki-filter-toggles">
           <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
           <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
-          <% if (hasOwnedItems) { %>
+          <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
             <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">Nos objets</button>
           <% } %>
         </div>

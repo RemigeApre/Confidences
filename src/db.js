@@ -191,6 +191,10 @@ try { db.exec("ALTER TABLE users ADD COLUMN history_retention TEXT NOT NULL DEFA
 // jointure OR coûteuse. setCouplePartners()/clearCouplePartner() ci-dessous
 // garantissent qu'un profil n'a jamais plus d'un·e partenaire à la fois.
 try { db.exec("ALTER TABLE users ADD COLUMN partner_id INTEGER"); } catch (_) {}
+// Visibilité de "Nos objets" (bouton + étoiles "Possédé" sur le Codex) :
+// réservée par défaut à l'admin, activable au cas par cas pour un profil
+// depuis sa fiche admin — jamais réglable par le profil lui-même.
+try { db.exec("ALTER TABLE users ADD COLUMN can_see_owned INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 // "Ouverture des tags" (ask/wiki/gallery) retire : le clic sur un tag a
 // desormais un seul comportement partout (popup unifiee), plus de choix a
 // faire. Colonne supprimee si le moteur SQLite le permet (>= 3.35), sinon
@@ -433,6 +437,7 @@ function rowToUser(row) {
     shareNotesWithAdmin: !!row.share_notes_with_admin,
     historyRetention: row.history_retention || "1mois",
     partnerId: row.partner_id || null,
+    canSeeOwned: !!row.can_see_owned,
   };
 }
 
@@ -464,10 +469,12 @@ function createUser({ username, displayName, passwordHash, isAdmin, isTest }) {
 // Modifie un profil existant cote admin (identite, role, sexe). Le pseudo et
 // le sexe sont aussi modifiables par l'utilisateur lui-meme, voir
 // updateOwnProfile. Le mot de passe se change a part via updateUserPassword.
-function updateUser(id, { username, displayName, isAdmin, isTest, sexe }) {
+function updateUser(id, { username, displayName, isAdmin, isTest, sexe, canSeeOwned }) {
+  const current = canSeeOwned === undefined ? getUserById(id) : null;
+  const cso = canSeeOwned !== undefined ? (canSeeOwned ? 1 : 0) : (current && current.canSeeOwned ? 1 : 0);
   db.prepare(
-    "UPDATE users SET username = ?, display_name = ?, is_admin = ?, is_test = ?, sexe = ?, updated_at = ? WHERE id = ?"
-  ).run(username, displayName, isAdmin ? 1 : 0, isTest ? 1 : 0, sexe || "", new Date().toISOString(), id);
+    "UPDATE users SET username = ?, display_name = ?, is_admin = ?, is_test = ?, sexe = ?, can_see_owned = ?, updated_at = ? WHERE id = ?"
+  ).run(username, displayName, isAdmin ? 1 : 0, isTest ? 1 : 0, sexe || "", cso, new Date().toISOString(), id);
 }
 
 // Modifie les champs que l'utilisateur peut changer lui-meme sur son propre

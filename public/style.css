@@ -7545,6 +7545,94 @@ a.wiki-ql-label:hover .wiki-ql-text {
     gap: 0.75rem;
   }
 
+  /* Espacement entre sections de filtres : existait déjà côté PC
+     (.wiki-sidebar-filters/.wiki-filter-section), jamais recopié ici — tout
+     se retrouvait collé les uns aux autres sur mobile. */
+  #mobile-filter-sidebar .wiki-sidebar-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: 0.75rem 0 0;
+  }
+  #mobile-filter-sidebar .wiki-filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  #mobile-filter-sidebar .wiki-filter-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+  }
+
+  /* Champ de recherche principal : même habillage violet que le PC (fond
+     plein sur le dégradé, jamais transparent/générique). */
+  #mobile-filter-sidebar .wiki-search-wrap { margin-bottom: 0; }
+  #mobile-filter-sidebar .wiki-search-bar {
+    background: #1c1638;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.18);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  #mobile-filter-sidebar .wiki-search-bar:focus-within {
+    background: #2a2154;
+    border-color: var(--wiki-gold);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25);
+  }
+  #mobile-filter-sidebar .wiki-search-input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: none !important;
+  }
+  #mobile-filter-sidebar .wiki-search-input:focus { border: none; box-shadow: none !important; }
+  #mobile-filter-sidebar .wiki-search-input::placeholder { color: rgba(255,255,255,0.45); }
+  #mobile-filter-sidebar .wiki-search-icon { opacity: 0.55; }
+  #mobile-filter-sidebar .wiki-search-clear { color: rgba(255,255,255,0.6); }
+  #mobile-filter-sidebar .wiki-search-clear:hover { color: #fff; }
+  #mobile-filter-sidebar .wiki-result-count { color: rgba(255,255,255,0.7); font-size: 0.78rem; }
+
+  /* Chips (catégories, langue BD...) et menus déroulants : même noir plein
+     + texte blanc affirmé que le PC, jamais le gris terne par défaut. */
+  #mobile-filter-sidebar .links-filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  #mobile-filter-sidebar .tag-chip {
+    background: #111;
+    border-color: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+  }
+  #mobile-filter-sidebar .tag-chip.chip-include {
+    background: hsl(140, 55%, 30%);
+    border-color: hsl(140, 55%, 40%);
+    color: #fff;
+  }
+  #mobile-filter-sidebar .tag-chip.chip-exclude {
+    background: hsl(0, 58%, 40%);
+    border-color: hsl(0, 58%, 50%);
+    color: #fff;
+  }
+  #mobile-filter-sidebar .wiki-sort-select {
+    background: #111;
+    border-color: rgba(255,255,255,0.2);
+    color: #fff;
+    font-weight: 700;
+    width: 100%;
+    text-align: center;
+  }
+  #mobile-filter-sidebar .wiki-sort-select option { background-color: #1c1030; color: #fff; }
+
   /* Volets rétractables imbriqués (Filtres > Catégorie/Notation/...) : sur
      mobile, une fois le tiroir déjà ouvert, un accordéon en plus n'apporte
      rien qu'un tap superflu pour atteindre des micro-tags — le contenu est
@@ -7605,6 +7693,18 @@ a.wiki-ql-label:hover .wiki-ql-text {
     padding: 0.55rem 0.9rem;
     border-radius: 8px;
   }
+  /* Vert = pas encore masqué / rouge = masqué : même code couleur que le
+     PC, jamais recopié ici (bouton resté gris terne sur mobile). */
+  #mobile-filter-sidebar .wiki-ultra-btn {
+    background: #1a5c1a;
+    color: #e0ffe0;
+    border-color: #2a7a2a;
+  }
+  #mobile-filter-sidebar .wiki-ultra-btn.active {
+    background: #6a1515;
+    color: #ffe0e0;
+    border-color: #8a2020;
+  }
 
   /* "Catégorie" / "Notation" centrés (4) — même règle que le PC, jamais
      recopiée sur mobile. */
@@ -7613,34 +7713,59 @@ a.wiki-ql-label:hover .wiki-ql-text {
     align-items: center;
     justify-content: center;
     gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+  #mobile-filter-sidebar .wiki-subpanel-details {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 0.7rem;
+  }
+  #mobile-filter-sidebar .wiki-subpanel-details .links-filter,
+  #mobile-filter-sidebar .wiki-subpanel-details .wiki-filter-label-row,
+  #mobile-filter-sidebar .wiki-subpanel-details .wiki-adv-stars,
+  #mobile-filter-sidebar .wiki-subpanel-details .wiki-prop-grid,
+  #mobile-filter-sidebar .wiki-subpanel-details .filter-profiles-list {
+    margin-top: 0.6rem;
   }
 
-  /* Étoiles de la note minimale centrées et agrandies (5). */
+  /* Étoiles de la note minimale centrées et agrandies (5), même teinte or
+     au survol/actif que le PC plutôt que la couleur par défaut. */
   #mobile-filter-sidebar .wiki-adv-stars {
     justify-content: center;
     gap: 0.4rem;
   }
-  #mobile-filter-sidebar .wiki-adv-star { font-size: 1.6rem; }
+  #mobile-filter-sidebar .wiki-adv-star {
+    font-size: 1.6rem;
+    color: rgba(255,255,255,0.6);
+  }
+  #mobile-filter-sidebar .wiki-adv-star.active,
+  #mobile-filter-sidebar .wiki-adv-star:hover { color: var(--wiki-gold); }
+  #mobile-filter-sidebar .wiki-adv-star-reset { color: rgba(255,255,255,0.45); }
 
-  /* Champ "Chercher un tag" dans le même habillage que le champ de
-     recherche principal (6) — lui aussi n'existait que côté PC. */
+  /* Champ "Chercher un tag" dans le même habillage violet que le champ de
+     recherche principal (6) — même couleurs que le PC, jamais recopiées. */
   #mobile-filter-sidebar .wiki-tag-search-input {
-    background: var(--card);
-    border: 1px solid var(--border);
+    background: #1c1638;
+    border: 1px solid rgba(255,255,255,0.18);
     border-radius: 8px;
-    color: var(--fg);
-    font-weight: 400;
+    color: #fff;
+    font-weight: 700;
     font-size: 0.9rem;
-    padding: 0.45rem 0.7rem;
+    padding: 0.5rem 0.7rem;
     width: 100%;
     text-align: center;
     box-sizing: border-box;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   }
-  #mobile-filter-sidebar .wiki-tag-search-input::placeholder { color: var(--muted); }
+  #mobile-filter-sidebar .wiki-tag-search-input::placeholder { color: rgba(255,255,255,0.45); }
   #mobile-filter-sidebar .wiki-tag-search-input:focus {
     outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+    background: #2a2154;
+    border-color: var(--wiki-gold);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25);
   }
 
   .mobile-filter-close {

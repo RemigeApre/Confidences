@@ -4,6 +4,10 @@
 
   <% var cat = categories.find(function (c) { return c.key === page.category; }); %>
   <%
+    // "Possédé" (bouton "Nos objets" + étoile) : réservé à l'admin et aux
+    // profils que l'admin a explicitement autorisés (voir /admin, fiche
+    // profil > "Peut voir 'Nos objets'").
+    var wdCanSeeOwned = !!(currentUser && (currentUser.isAdmin || currentUser.canSeeOwned));
     var pm = page.meta || {};
 
     var FSUBS = { jeux_role: 'Jeux de rôle et comportement', hardcore: 'Hardcore', bdsm: 'BDSM', classique: 'Classique', fantaisie: 'Fantaisie' };
@@ -62,9 +66,9 @@
     <div class="wiki-detail-banner">
       <a href="<%= backHref %>" class="wiki-detail-banner-back" title="<%= backLabel %>" aria-label="<%= backLabel %>">&#8592;</a>
       <h1 class="wiki-detail-banner-title"><%= page.title %></h1>
-      <% if ((page.extraCategories && page.extraCategories.length) || page.owned) { %>
+      <% if ((page.extraCategories && page.extraCategories.length) || (wdCanSeeOwned && page.owned)) { %>
         <div class="wiki-detail-banner-sub">
-          <% if (page.owned) { %><span>&#9733; Poss&eacute;d&eacute;</span><% } %>
+          <% if (wdCanSeeOwned && page.owned) { %><span>&#9733; Poss&eacute;d&eacute;</span><% } %>
           <% (page.extraCategories || []).forEach(function (eck) { var ecat = categories.find(function (c) { return c.key === eck; }); %>
             <span><%= ecat ? ecat.label : eck %></span>
           <% }) %>
@@ -128,7 +132,7 @@
           <% } %>
         </div>
 
-        <% if (page.owned) { %>
+        <% if (wdCanSeeOwned && page.owned) { %>
           <span class="wiki-left-owned">&#9733;&nbsp;Poss&eacute;d&eacute;</span>
         <% } %>
 
@@ -458,7 +462,7 @@
               <span class="wiki-right-cat-sep">&middot;</span>
               <a href="/wiki/categorie/<%= eck %>" class="wiki-right-cat-text"><%= ecat.label %></a>
             <% } }) %>
-            <% if (page.owned) { %><span class="wiki-right-owned-tag">&#9733;</span><% } %>
+            <% if (wdCanSeeOwned && page.owned) { %><span class="wiki-right-owned-tag">&#9733;</span><% } %>
           </div>
         </div>
 

@@ -67,6 +67,7 @@
                   data-edit-orientation="<%= state.user.orientation || '' %>"
                   data-edit-email="<%= state.user.email || '' %>"
                   data-edit-partner="<%= state.user.partnerId || '' %>"
+                  data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>"
                   data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>">Modifier</button>
                 <button type="button" class="admin-utile-menu-item"
                   data-pwd-id="<%= state.user.id %>"
@@ -221,6 +222,10 @@
                     <option value="<%= s.user.id %>"><%= s.user.displayName %></option>
                   <% }) %>
                 </select>
+              </label>
+              <label class="admin-modal-checkbox-field">
+                <input type="checkbox" name="can_see_owned" id="edit-owned" />
+                <span>Peut voir &laquo;&nbsp;Nos objets&nbsp;&raquo; (Codex)</span>
               </label>
             </div>
           </details>
@@ -609,6 +614,7 @@
           });
           partnerSelect.value = btn.dataset.editPartner || "";
         }
+        document.getElementById("edit-owned").checked = btn.dataset.editOwned === "1";
         openModal("admin-edit-modal");
       });
     });

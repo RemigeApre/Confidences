@@ -208,7 +208,8 @@ function buildAdminRouter(config) {
     const isTest = id !== req.session.userId && role === "test";
     const sexeRaw = String(req.body.sexe || "");
     const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";
-    updateUser(id, { username, displayName, isAdmin, isTest, sexe });
+    const canSeeOwned = req.body.can_see_owned === "on";
+    updateUser(id, { username, displayName, isAdmin, isTest, sexe, canSeeOwned });
 
     const email = String(req.body.email || "").trim();
     const birthYear = req.body.birth_year ? Number(req.body.birth_year) || null : null;

@@ -210,7 +210,9 @@
             <% categories.forEach(function (c) { %>
               <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"<% if (c.desc) { %> data-desc="<%= c.desc %>"<% } %>><%= c.label %></button>
             <% }) %>
-            <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">Nos objets</button>
+            <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
+              <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">Nos objets</button>
+            <% } %>
           </div>
 
           <% if (allTags.length) { %>

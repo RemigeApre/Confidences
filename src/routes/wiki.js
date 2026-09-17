@@ -576,7 +576,7 @@ function buildWikiRouter(config) {
   // ── Vue "tout" : toutes les pages, toutes categories melangees ──
   router.get("/tous", (req, res) => {
     const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki")), req.user), req.user ? req.user.partnerId : null, "wiki");
-    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, ...CTX });
+    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, hasOwnedItems: pages.some((p) => p.owned), ...CTX });
   });
 
   // ── Vue par categorie : un "chapitre" du livre ──
@@ -586,7 +586,7 @@ function buildWikiRouter(config) {
     const all = sortedPages();
     const pages = mergePartnerReaction(pagesForCategory(filterOff(excludeHidden(mergeUserReactions(all, req.user ? req.user.id : null, "wiki")), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
     const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
-    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, ...CTX });
+    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), ...CTX });
   });
 
   // ── Extraction "Mes goûts" : synthèse .txt des pages notées par le
