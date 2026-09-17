@@ -10,7 +10,8 @@
     var wdCanSeeOwned = !!(currentUser && (currentUser.isAdmin || currentUser.canSeeOwned));
     var pm = page.meta || {};
 
-    var FSUBS = { jeux_role: 'Jeux de rôle et comportement', hardcore: 'Hardcore', bdsm: 'BDSM', classique: 'Classique', fantaisie: 'Fantaisie', sperme: 'Sperme', autre: 'Autre' };
+    var FSUBS = { jeux_role: 'Jeux de rôle et comportement', hardcore: 'Hardcore', bdsm: 'BDSM', classique: 'Classique', fantaisie: 'Fantaisie' };
+    var PRATIQUES_SOUS = { sperme: 'Sperme', autre: 'Autre' };
     var nbTotal   = pm.nb_total    || '';
     var nbFem     = pm.nb_feminin  || pm.nb_femmes || '';
     var nbMasc    = pm.nb_masculin || pm.nb_hommes || '';
@@ -105,9 +106,10 @@
     <div class="wiki-detail-layout">
       <%
         var hasMetaRows = hasPartMeta || hasPosMeta
-          || (page.category === 'objets' && pm.sous_cat && OBJETS_SOUS[pm.sous_cat])
-          || (page.category === 'lieux'  && pm.type_lieu  && LIEU[pm.type_lieu])
-          || (page.category === 'fantasmes' && pm.sous_cat && FSUBS[pm.sous_cat]);
+          || (page.category === 'objets'    && pm.sous_cat  && OBJETS_SOUS[pm.sous_cat])
+          || (page.category === 'lieux'     && pm.type_lieu && LIEU[pm.type_lieu])
+          || (page.category === 'fantasmes' && pm.sous_cat  && FSUBS[pm.sous_cat])
+          || (page.category === 'pratique'  && pm.sous_cat  && PRATIQUES_SOUS[pm.sous_cat]);
       %>
 
       <%# ─ VOLET GAUCHE : métadonnées page (PC) ─ %>
@@ -273,6 +275,9 @@
         <% } else if (hasMetaRows) { %>
           <%# Autres catégories : dl existant %>
           <dl class="wiki-left-meta">
+            <% if (page.category === 'pratique' && pm.sous_cat && PRATIQUES_SOUS[pm.sous_cat]) { %>
+              <div class="wiki-left-meta-row"><dt>Sous-cat&eacute;gorie</dt><dd><%= PRATIQUES_SOUS[pm.sous_cat] %></dd></div>
+            <% } %>
             <% if (page.category === 'fantasmes' && pm.sous_cat && FSUBS[pm.sous_cat]) { %>
               <div class="wiki-left-meta-row"><dt>Sous-cat&eacute;gorie</dt><dd><%= FSUBS[pm.sous_cat] %></dd></div>
             <% } %>

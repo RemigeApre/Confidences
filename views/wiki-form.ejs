@@ -90,6 +90,17 @@
       </div>
     </div>
 
+    <div class="wiki-pratiques-meta" <%= page.category === 'pratique' ? '' : 'hidden' %>>
+      <div class="wf-section-title">Cat&eacute;gorie</div>
+      <div class="wiki-meta-group">
+        <div class="wiki-meta-options">
+          <% pratiquesSubs.forEach(function(s) { %>
+            <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
     <div class="wiki-objets-meta" <%= page.category === 'objets' ? '' : 'hidden' %>>
       <div class="wf-section-title">Cat&eacute;gorie</div>
       <div class="wiki-meta-group">

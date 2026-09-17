@@ -61,6 +61,8 @@ const FANTASMES_SUBCATS = [
   { key: "hardcore",   label: "Hardcore" },
   { key: "bdsm",       label: "BDSM" },
   { key: "classique",  label: "Classique" },
+];
+const PRATIQUES_SUBCATS = [
   { key: "sperme",     label: "Sperme" },
   { key: "autre",      label: "Autre" },
 ];
@@ -342,6 +344,10 @@ function parseMeta(category, body) {
       milieu_vie:        oneof(body.meta_milieu_vie,       ["terrestre","aerien","aquatique_mer","dulcaquicole","semi_aquatique","souterrain","inconnu"]),
       structure_sociale: oneof(body.meta_structure_sociale,["monogame","polygame","polyandrie","promiscuite","sans_lien","harem","coloniale","saisonniere","variable","inconnu"]),
     };
+  } else if (category === "pratique") {
+    const validSubs = PRATIQUES_SUBCATS.map((s) => s.key);
+    const sub = body.meta_sous_cat;
+    specific = { sous_cat: validSubs.includes(sub) ? sub : "" };
   } else if (category === "lieux") {
     const t = body.meta_type_lieu;
     specific = { type_lieu: ["prive","public","cache"].includes(t) ? t : "" };
@@ -500,7 +506,7 @@ function buildWikiRouter(config) {
   const router = express.Router();
   const ALL_QUESTIONS = buildQuestionIndex(config);
 
-  const CTX = { categories: CATEGORIES, fantasmesSubs: FANTASMES_SUBCATS, objetsSubs: OBJETS_SUBCATS };
+  const CTX = { categories: CATEGORIES, fantasmesSubs: FANTASMES_SUBCATS, pratiquesSubs: PRATIQUES_SUBCATS, objetsSubs: OBJETS_SUBCATS };
 
   function sortedPages() {
     return listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));

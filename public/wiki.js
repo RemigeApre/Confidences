@@ -612,6 +612,7 @@
   var editOwned          = document.getElementById("wiki-owned-field");
   var editPosMeta        = document.querySelector("#wiki-edit-form .wiki-position-meta");
   var editFantasMeta     = document.querySelector("#wiki-edit-form .wiki-fantasmes-meta");
+  var editPratiqueMeta   = document.querySelector("#wiki-edit-form .wiki-pratiques-meta");
   var editPartSousCat    = document.getElementById("wf-partenaires-sous-cat");
   var editPartParams     = document.getElementById("wf-partenaires-params");
   var editLieuxMeta      = document.querySelector("#wiki-edit-form .wiki-lieux-meta");
@@ -657,6 +658,7 @@
     var cat = editCatSelect.value;
     if (editOwned)         editOwned.hidden         = cat !== "objets" && cat !== "tenues";
     if (editFantasMeta)    editFantasMeta.hidden     = cat !== "fantasmes";
+    if (editPratiqueMeta)  editPratiqueMeta.hidden   = cat !== "pratique";
     if (editPartSousCat)   editPartSousCat.hidden    = cat !== "partenaires";
     if (editPartParams)    editPartParams.hidden     = cat !== "partenaires";
     if (editLieuxMeta)     editLieuxMeta.hidden      = cat !== "lieux";
