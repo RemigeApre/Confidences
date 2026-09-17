@@ -231,11 +231,15 @@
           <label class="wf-stats-pct-label">Femmes</label>
           <input type="number" name="meta_stats_pct_femmes"  class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctF %>" placeholder="—" />
           <span class="wf-stats-pct-unit">%</span>
+          <button type="button" class="wf-stats-dir-btn<%= pm.stats_dir_femmes === 'donne' ? ' donne' : '' %> wf-stats-dir-pratique" data-inp="wf-dir-femmes"><%= pm.stats_dir_femmes === 'donne' ? 'Donné' : 'Reçu' %></button>
+          <input type="hidden" name="meta_stats_dir_femmes" id="wf-dir-femmes" value="<%= pm.stats_dir_femmes || '' %>" />
         </div>
         <div class="wf-stats-pct-row">
           <label class="wf-stats-pct-label">Hommes</label>
           <input type="number" name="meta_stats_pct_hommes"  class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctH %>" placeholder="—" />
           <span class="wf-stats-pct-unit">%</span>
+          <button type="button" class="wf-stats-dir-btn<%= pm.stats_dir_hommes === 'donne' ? ' donne' : '' %> wf-stats-dir-pratique" data-inp="wf-dir-hommes"><%= pm.stats_dir_hommes === 'donne' ? 'Donné' : 'Reçu' %></button>
+          <input type="hidden" name="meta_stats_dir_hommes" id="wf-dir-hommes" value="<%= pm.stats_dir_hommes || '' %>" />
         </div>
         <input type="url" name="meta_stats_source" class="wf-stats-source-input" value="<%= stSrc %>" placeholder="Lien source (optionnel)&hellip;" />
         <textarea name="meta_stats_note" class="wf-stats-note-input" rows="2" placeholder="Note contextuelle (optionnelle)&hellip;"><%= pm.stats_note || '' %></textarea>
@@ -688,11 +692,14 @@
   var btnF   = document.getElementById("wf-stat-fantasme");
   if (!inp || !btnP || !btnF || !fields) return;
 
+  var dirBtns = document.querySelectorAll(".wf-stats-dir-pratique");
+
   function sync() {
     var v = inp.value;
     fields.hidden = !v;
     btnP.classList.toggle("active", v === "pratique");
     btnF.classList.toggle("active", v === "fantasme");
+    dirBtns.forEach(function(b) { b.hidden = (v !== "pratique"); });
   }
 
   btnP.addEventListener("click", function () {
@@ -702,6 +709,17 @@
   btnF.addEventListener("click", function () {
     inp.value = inp.value === "fantasme" ? "" : "fantasme";
     sync();
+  });
+
+  dirBtns.forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var hidden = document.getElementById(btn.dataset.inp);
+      if (!hidden) return;
+      var isDonne = hidden.value === "donne";
+      hidden.value = isDonne ? "" : "donne";
+      btn.textContent = isDonne ? "Reçu" : "Donné";
+      btn.classList.toggle("donne", !isDonne);
+    });
   });
 })();
 </script>

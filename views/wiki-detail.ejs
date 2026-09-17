@@ -400,18 +400,20 @@
                 </li>
               <% } %>
               <% if (stPctF !== null) { %>
+                <% var stDirF = pm.stats_type === 'pratique' ? (pm.stats_dir_femmes === 'donne' ? 'ont donn\u00e9' : 'ont re\u00e7u') : null; %>
                 <li class="wiki-stats-item">
                   <div class="wiki-stats-item-header">
-                    <span class="wiki-stats-lbl">Femmes</span>
+                    <span class="wiki-stats-lbl">Femmes<% if (stDirF) { %> <span class="wiki-stats-dir-badge"><%= stDirF %></span><% } %></span>
                     <span class="wiki-stats-pct"><%= stPctF %>&nbsp;%</span>
                   </div>
                   <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar wiki-stats-bar--f" style="width:<%= stPctF %>%"></span></span>
                 </li>
               <% } %>
               <% if (stPctH !== null) { %>
+                <% var stDirH = pm.stats_type === 'pratique' ? (pm.stats_dir_hommes === 'donne' ? 'ont donn\u00e9' : 'ont re\u00e7u') : null; %>
                 <li class="wiki-stats-item">
                   <div class="wiki-stats-item-header">
-                    <span class="wiki-stats-lbl">Hommes</span>
+                    <span class="wiki-stats-lbl">Hommes<% if (stDirH) { %> <span class="wiki-stats-dir-badge"><%= stDirH %></span><% } %></span>
                     <span class="wiki-stats-pct"><%= stPctH %>&nbsp;%</span>
                   </div>
                   <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar wiki-stats-bar--h" style="width:<%= stPctH %>%"></span></span>
