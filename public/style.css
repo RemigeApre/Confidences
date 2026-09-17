@@ -7116,43 +7116,56 @@ a.wiki-ql-label:hover .wiki-ql-text {
   font-style: italic;
 }
 .wiki-stats-empty { font-size: 0.82rem; color: var(--muted); margin: 0; text-align: center; }
-.wiki-stats-list {
-  list-style: none;
-  padding: 0;
+.wiki-stats-donuts {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin: 0 0 0.7rem;
+  padding: 0.25rem 0;
+}
+.wiki-stats-donut-wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1;
 }
-.wiki-stats-item {
+.wiki-stats-donut {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--clr) calc(var(--pct) * 1%), transparent 0%),
+    hsl(220,14%,17%);
+}
+.wiki-stats-donut::before {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: hsl(220,12%,11%);
+}
+.wiki-stats-donut-val {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  line-height: 1;
+  z-index: 1;
 }
-.wiki-stats-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 0.8rem;
+.wiki-stats-donut-sym { font-size: 0.6rem; font-weight: 700; margin-top: 1px; }
+.wiki-stats-donut-lbl {
+  font-size: 0.74rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.3;
 }
-.wiki-stats-bar-wrap {
-  width: 100%;
-  height: 7px;
-  background: hsl(220,15%,20%);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.wiki-stats-bar {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, hsl(220,55%,40%), hsl(220,65%,62%));
-  border-radius: 4px;
-  transition: width .5s ease;
-}
-.wiki-stats-bar--h { background: linear-gradient(90deg, hsl(200,55%,38%), hsl(200,65%,58%)); }
-.wiki-stats-bar--f { background: linear-gradient(90deg, hsl(330,48%,38%), hsl(340,58%,62%)); }
-.wiki-stats-pct { font-weight: 700; font-size: 0.84rem; color: var(--fg); }
-.wiki-stats-lbl { color: var(--muted); font-size: 0.8rem; }
 .wiki-stats-source {
   display: inline-flex;
   align-items: center;
@@ -7175,14 +7188,13 @@ a.wiki-ql-label:hover .wiki-ql-text {
   border-radius: 0 6px 6px 0;
 }
 .wiki-stats-dir-badge {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--muted);
   background: hsl(220,15%,20%);
   border-radius: 4px;
-  padding: 0.05rem 0.35rem;
-  margin-left: 0.3rem;
-  vertical-align: middle;
+  padding: 0.05rem 0.3rem;
+  display: inline-block;
 }
 .wiki-stats-note {
   font-size: 0.73rem;
