@@ -61,6 +61,8 @@ const FANTASMES_SUBCATS = [
   { key: "hardcore",   label: "Hardcore" },
   { key: "bdsm",       label: "BDSM" },
   { key: "classique",  label: "Classique" },
+  { key: "sperme",     label: "Sperme" },
+  { key: "autre",      label: "Autre" },
 ];
 const OBJETS_SUBCATS = [
   { key: "substance", label: "Substance" },
