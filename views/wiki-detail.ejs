@@ -376,6 +376,52 @@
           </details>
         <% } %>
 
+        <%# Statistiques pratique / fantasme (transversal) ─ %>
+        <% if (pm.stats_type) {
+             var stVerbe = pm.stats_type === 'pratique' ? 'pratiqué' : 'fantasmé';
+             var stPctG = pm.stats_pct_general != null && pm.stats_pct_general !== '' ? pm.stats_pct_general : null;
+             var stPctH = pm.stats_pct_hommes  != null && pm.stats_pct_hommes  !== '' ? pm.stats_pct_hommes  : null;
+             var stPctF = pm.stats_pct_femmes  != null && pm.stats_pct_femmes  !== '' ? pm.stats_pct_femmes  : null;
+             var hasAny = stPctG !== null || stPctH !== null || stPctF !== null;
+        %>
+        <div class="wiki-stats-block">
+          <h3 class="wiki-stats-title">
+            <span class="wiki-stats-icon">&#128200;</span>
+            Statistiques &mdash; <span class="wiki-stats-type-badge wiki-stats-type-badge--<%= pm.stats_type %>"><%= pm.stats_type === 'pratique' ? 'Pratiqué' : 'Fantasmé' %></span>
+          </h3>
+          <% if (!hasAny) { %>
+            <p class="wiki-stats-empty">Aucune donn&eacute;e disponible pour le moment.</p>
+          <% } else { %>
+            <ul class="wiki-stats-list">
+              <% if (stPctG !== null) { %>
+                <li class="wiki-stats-item">
+                  <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar" style="width:<%= stPctG %>%"></span></span>
+                  <span class="wiki-stats-pct"><%= stPctG %>&nbsp;%</span>
+                  <span class="wiki-stats-lbl">des personnes l&apos;ont <strong><%= stVerbe %></strong></span>
+                </li>
+              <% } %>
+              <% if (stPctH !== null) { %>
+                <li class="wiki-stats-item">
+                  <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar wiki-stats-bar--h" style="width:<%= stPctH %>%"></span></span>
+                  <span class="wiki-stats-pct"><%= stPctH %>&nbsp;%</span>
+                  <span class="wiki-stats-lbl">des <strong>hommes</strong></span>
+                </li>
+              <% } %>
+              <% if (stPctF !== null) { %>
+                <li class="wiki-stats-item">
+                  <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar wiki-stats-bar--f" style="width:<%= stPctF %>%"></span></span>
+                  <span class="wiki-stats-pct"><%= stPctF %>&nbsp;%</span>
+                  <span class="wiki-stats-lbl">des <strong>femmes</strong></span>
+                </li>
+              <% } %>
+            </ul>
+          <% } %>
+          <% if (pm.stats_source) { %>
+            <a href="<%= pm.stats_source %>" class="wiki-stats-source" target="_blank" rel="noopener noreferrer">&#128279;&nbsp;Source</a>
+          <% } %>
+        </div>
+        <% } %>
+
         <%# Informations utiles (positions) ─ %>
         <% if (page.category === 'position' && pm.infos_utiles) { %>
           <div class="wiki-pos-section wiki-pos-infos">

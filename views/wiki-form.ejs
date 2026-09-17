@@ -204,6 +204,43 @@
     </div>
 
     <%# ── Orce ── %>
+    <%# ── Statistiques pratique / fantasme (transversal) ── %>
+    <%
+      var stType = pm.stats_type || '';
+      var stPctG = pm.stats_pct_general != null ? pm.stats_pct_general : '';
+      var stPctH = pm.stats_pct_hommes  != null ? pm.stats_pct_hommes  : '';
+      var stPctF = pm.stats_pct_femmes  != null ? pm.stats_pct_femmes  : '';
+      var stSrc  = pm.stats_source || '';
+    %>
+    <div class="wf-stats-block">
+      <p class="wiki-meta-label">Statistiques</p>
+
+      <div class="wf-stats-toggle-wrap">
+        <button type="button" class="wf-stats-pill<%= stType === 'pratique'  ? ' active' : '' %>" id="wf-stat-pratique">Pratiqué</button>
+        <button type="button" class="wf-stats-pill wf-stats-pill--f<%= stType === 'fantasme' ? ' active' : '' %>" id="wf-stat-fantasme">Fantasmé</button>
+        <input type="hidden" name="meta_stats_type" id="wf-stats-type" value="<%= stType %>" />
+      </div>
+
+      <div class="wf-stats-fields" id="wf-stats-fields" <%= stType ? '' : 'hidden' %>>
+        <div class="wf-stats-pct-row">
+          <label class="wf-stats-pct-label">Général</label>
+          <input type="number" name="meta_stats_pct_general" class="wf-stats-pct-input" min="0" max="100" value="<%= stPctG %>" placeholder="—" />
+          <span class="wf-stats-pct-unit">%</span>
+        </div>
+        <div class="wf-stats-pct-row">
+          <label class="wf-stats-pct-label">Hommes</label>
+          <input type="number" name="meta_stats_pct_hommes"  class="wf-stats-pct-input" min="0" max="100" value="<%= stPctH %>" placeholder="—" />
+          <span class="wf-stats-pct-unit">%</span>
+        </div>
+        <div class="wf-stats-pct-row">
+          <label class="wf-stats-pct-label">Femmes</label>
+          <input type="number" name="meta_stats_pct_femmes"  class="wf-stats-pct-input" min="0" max="100" value="<%= stPctF %>" placeholder="—" />
+          <span class="wf-stats-pct-unit">%</span>
+        </div>
+        <input type="url" name="meta_stats_source" class="wf-stats-source-input" value="<%= stSrc %>" placeholder="Lien source (optionnel)&hellip;" />
+      </div>
+    </div>
+
     <div class="wf-section-title wf-orce-title">Orce <span class="wf-orce-badge">univers</span></div>
     <div class="wf-orce-section">
       <input type="text"
@@ -642,6 +679,31 @@
   </div>
   <% } %>
 </main>
+<script>
+(function () {
+  var inp    = document.getElementById("wf-stats-type");
+  var fields = document.getElementById("wf-stats-fields");
+  var btnP   = document.getElementById("wf-stat-pratique");
+  var btnF   = document.getElementById("wf-stat-fantasme");
+  if (!inp || !btnP || !btnF || !fields) return;
+
+  function sync() {
+    var v = inp.value;
+    fields.hidden = !v;
+    btnP.classList.toggle("active", v === "pratique");
+    btnF.classList.toggle("active", v === "fantasme");
+  }
+
+  btnP.addEventListener("click", function () {
+    inp.value = inp.value === "pratique" ? "" : "pratique";
+    sync();
+  });
+  btnF.addEventListener("click", function () {
+    inp.value = inp.value === "fantasme" ? "" : "fantasme";
+    sync();
+  });
+})();
+</script>
 <script>window._wikiEditContent = <%- JSON.stringify(page.content || '') %>;</script>
 <script src="/wiki.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

@@ -229,10 +229,16 @@ function arr(v) { return Array.isArray(v) ? v : v ? [v] : []; }
 
 function parseMeta(category, body) {
   // Champs transversaux (toutes catégories)
+  const pct = (v) => { const n = parseInt(v, 10); return (!isNaN(n) && n >= 0 && n <= 100) ? String(n) : ""; };
   const base = {
-    termes_derives: parseDerivedTerms(body.meta_termes_derives || ""),
-    orce_name:    String(body.meta_orce_name    || "").slice(0, 200).trim(),
-    orce_content: String(body.meta_orce_content || "").slice(0, 10000).trim(),
+    termes_derives:     parseDerivedTerms(body.meta_termes_derives || ""),
+    orce_name:          String(body.meta_orce_name    || "").slice(0, 200).trim(),
+    orce_content:       String(body.meta_orce_content || "").slice(0, 10000).trim(),
+    stats_type:         ["pratique","fantasme"].includes(body.meta_stats_type) ? body.meta_stats_type : "",
+    stats_pct_general:  pct(body.meta_stats_pct_general),
+    stats_pct_hommes:   pct(body.meta_stats_pct_hommes),
+    stats_pct_femmes:   pct(body.meta_stats_pct_femmes),
+    stats_source:       String(body.meta_stats_source || "").slice(0, 500).trim(),
   };
 
   let specific = {};

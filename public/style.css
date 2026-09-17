@@ -7016,6 +7016,137 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .wf-scenario-img-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ── Orce — form ───────────────────────────────────────── */
+/* ── Stats pratique/fantasme — formulaire ── */
+.wf-stats-block {
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1rem;
+  background: hsl(220,12%,13%);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.wf-stats-toggle-wrap {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0.75rem;
+  border-radius: 20px;
+  overflow: hidden;
+  width: fit-content;
+  border: 1px solid var(--border);
+}
+.wf-stats-pill {
+  padding: 0.3rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.wf-stats-pill.active                { background: hsl(220,55%,45%); color: #fff; }
+.wf-stats-pill.wf-stats-pill--f.active { background: hsl(330,50%,45%); color: #fff; }
+.wf-stats-fields { display: flex; flex-direction: column; gap: 0.55rem; }
+.wf-stats-pct-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wf-stats-pct-label { font-size: 0.82rem; color: var(--muted); min-width: 64px; }
+.wf-stats-pct-input {
+  width: 64px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-card);
+  color: var(--fg);
+  font-size: 0.88rem;
+}
+.wf-stats-pct-unit { font-size: 0.82rem; color: var(--muted); }
+.wf-stats-source-input {
+  width: 100%;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--fg);
+  font-size: 0.82rem;
+  margin-top: 0.2rem;
+}
+
+/* ── Stats pratique/fantasme — détail ── */
+.wiki-stats-block {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem 0.75rem;
+  background: hsl(220,12%,12%);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.wiki-stats-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.wiki-stats-icon { font-size: 1rem; }
+.wiki-stats-type-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+}
+.wiki-stats-type-badge--pratique { background: hsl(220,55%,35%); color: hsl(220,80%,85%); }
+.wiki-stats-type-badge--fantasme { background: hsl(330,45%,35%); color: hsl(330,70%,85%); }
+.wiki-stats-empty { font-size: 0.82rem; color: var(--muted); margin: 0; }
+.wiki-stats-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.wiki-stats-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.84rem;
+}
+.wiki-stats-bar-wrap {
+  flex: 1;
+  max-width: 140px;
+  height: 6px;
+  background: hsl(220,15%,22%);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.wiki-stats-bar {
+  display: block;
+  height: 100%;
+  background: hsl(220,55%,55%);
+  border-radius: 3px;
+  transition: width .4s ease;
+}
+.wiki-stats-bar--h { background: hsl(200,60%,55%); }
+.wiki-stats-bar--f { background: hsl(340,55%,60%); }
+.wiki-stats-pct { font-weight: 700; font-size: 0.9rem; min-width: 36px; text-align: right; }
+.wiki-stats-lbl { color: var(--muted); }
+.wiki-stats-lbl strong { color: var(--fg); }
+.wiki-stats-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.35rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.wiki-stats-source:hover { color: var(--fg); }
+
 .wf-orce-title { display: flex; align-items: center; gap: 8px; }
 .wf-orce-badge {
   font-size: 0.65rem;
