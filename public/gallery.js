@@ -647,7 +647,8 @@
   var lbActions    = document.getElementById("gallery-lb-actions");
   var lbRating     = document.getElementById("gallery-lb-rating");
   var lbFavBtn     = document.getElementById("gallery-lb-fav-btn");
-  var lbEditBtn    = document.getElementById("gallery-lb-edit-btn");
+  var lbEditLink   = document.getElementById("gallery-lb-edit-link");
+  var lbDeleteBtn  = document.getElementById("gallery-lb-delete-btn");
   var lbProcessBtn = document.getElementById("gallery-lb-processed-btn");
   var lbSeriesNav  = document.getElementById("gallery-lb-series-nav");
   var lbSeriesInfo = document.getElementById("gallery-lb-series-info");
@@ -773,10 +774,15 @@
           lbFavBtn.dataset.itemId = galleryId;
           lbFavBtn.classList.toggle("active", card.dataset.fav === "1");
         }
-        // Edit + Processed
-        if (lbEditBtn) {
-          lbEditBtn.dataset.galleryId = galleryId;
-          lbEditBtn.dataset.isBd = card.dataset.type === "bd" ? "1" : "0";
+        // Lien vers la page d'édition complète
+        if (lbEditLink) {
+          lbEditLink.href = "/galerie/" + galleryId + "/edit";
+          lbEditLink.hidden = false;
+        }
+        // Bouton suppression
+        if (lbDeleteBtn) {
+          lbDeleteBtn.dataset.galleryId = galleryId;
+          lbDeleteBtn.hidden = false;
         }
         if (lbProcessBtn) {
           lbProcessBtn.dataset.galleryId = galleryId;
@@ -896,13 +902,20 @@
     });
   }
 
-  // Edit in lightbox — ouvre le quick-edit panel
-  if (lbEditBtn) {
-    lbEditBtn.addEventListener("click", function() {
-      var galleryId = Number(lbEditBtn.dataset.galleryId);
-      var isBd = lbEditBtn.dataset.isBd === "1";
-      var card = currentCard();
-      openQuickEdit(galleryId, isBd, card);
+  // Suppression depuis le lightbox
+  if (lbDeleteBtn) {
+    lbDeleteBtn.addEventListener("click", function () {
+      var gid = Number(lbDeleteBtn.dataset.galleryId);
+      if (!gid) return;
+      if (!confirm("Supprimer cette image d\u00e9finitivement\u00a0?")) return;
+      fetch("/galerie/" + gid + "/delete", { method: "POST" })
+        .then(function () {
+          closeLightbox();
+          // Retirer la carte du DOM et rafraîchir la liste visible
+          var card = grid ? grid.querySelector(".gallery-card[data-gallery-id='" + gid + "']") : null;
+          if (card) card.remove();
+          applyFilters();
+        });
     });
   }
 
