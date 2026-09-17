@@ -41,19 +41,15 @@
       </details>
       <% } %>
 
-      <%# Tags avec X|Y (image | BD) %>
+      <%# Tags avec compteur %>
       <% if (allTags.length) { %>
       <div class="wiki-filter-section">
         <div class="wiki-tag-cloud" id="gallery-tag-filter">
           <% allTags.forEach(function(t) { %>
-            <% var ni = tagImageCounts[t] || 0; var nb = tagBdCounts[t] || 0; %>
+            <% var ni = tagImageCounts[t] || 0; %>
             <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
               <span class="wtc-label"><%= t %></span>
-              <% if (ni || nb) { %>
-                <span class="wiki-tag-xy">
-                  <span class="wiki-tag-xy-pages"><%= ni %></span>|<span class="wiki-tag-xy-imgs"><%= nb %></span>
-                </span>
-              <% } %>
+              <% if (ni) { %><span class="wtc-count"><%= ni %></span><% } %>
             </button>
           <% }) %>
         </div>
