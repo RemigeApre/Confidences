@@ -378,47 +378,51 @@
 
         <%# Statistiques pratique / fantasme (transversal) ─ %>
         <% if (pm.stats_type) {
-             var stVerbe = pm.stats_type === 'pratique' ? 'pratiqué' : 'fantasmé';
              var stPctG = pm.stats_pct_general != null && pm.stats_pct_general !== '' ? pm.stats_pct_general : null;
              var stPctH = pm.stats_pct_hommes  != null && pm.stats_pct_hommes  !== '' ? pm.stats_pct_hommes  : null;
              var stPctF = pm.stats_pct_femmes  != null && pm.stats_pct_femmes  !== '' ? pm.stats_pct_femmes  : null;
              var hasAny = stPctG !== null || stPctH !== null || stPctF !== null;
         %>
         <div class="wiki-stats-block">
-          <h3 class="wiki-stats-title">
-            <span class="wiki-stats-icon">&#128200;</span>
-            Statistiques &mdash; <span class="wiki-stats-type-badge wiki-stats-type-badge--<%= pm.stats_type %>"><%= pm.stats_type === 'pratique' ? 'Pratiqué' : 'Fantasmé' %></span>
-          </h3>
+          <h3 class="wiki-stats-title">Statistiques</h3>
+          <p class="wiki-stats-subtitle"><%= pm.stats_type === 'pratique' ? 'Pourcentage de personnes ayant subi ce fantasme' : 'Pourcentage de personnes ayant ce fantasme' %></p>
           <% if (!hasAny) { %>
             <p class="wiki-stats-empty">Aucune donn&eacute;e disponible pour le moment.</p>
           <% } else { %>
             <ul class="wiki-stats-list">
               <% if (stPctG !== null) { %>
                 <li class="wiki-stats-item">
+                  <div class="wiki-stats-item-header">
+                    <span class="wiki-stats-lbl">G&eacute;n&eacute;ral</span>
+                    <span class="wiki-stats-pct"><%= stPctG %>&nbsp;%</span>
+                  </div>
                   <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar" style="width:<%= stPctG %>%"></span></span>
-                  <span class="wiki-stats-pct"><%= stPctG %>&nbsp;%</span>
-                  <span class="wiki-stats-lbl">des personnes l&apos;ont <strong><%= stVerbe %></strong></span>
-                </li>
-              <% } %>
-              <% if (stPctH !== null) { %>
-                <li class="wiki-stats-item">
-                  <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar wiki-stats-bar--h" style="width:<%= stPctH %>%"></span></span>
-                  <span class="wiki-stats-pct"><%= stPctH %>&nbsp;%</span>
-                  <span class="wiki-stats-lbl">des <strong>hommes</strong></span>
                 </li>
               <% } %>
               <% if (stPctF !== null) { %>
                 <li class="wiki-stats-item">
+                  <div class="wiki-stats-item-header">
+                    <span class="wiki-stats-lbl">Femmes</span>
+                    <span class="wiki-stats-pct"><%= stPctF %>&nbsp;%</span>
+                  </div>
                   <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar wiki-stats-bar--f" style="width:<%= stPctF %>%"></span></span>
-                  <span class="wiki-stats-pct"><%= stPctF %>&nbsp;%</span>
-                  <span class="wiki-stats-lbl">des <strong>femmes</strong></span>
+                </li>
+              <% } %>
+              <% if (stPctH !== null) { %>
+                <li class="wiki-stats-item">
+                  <div class="wiki-stats-item-header">
+                    <span class="wiki-stats-lbl">Hommes</span>
+                    <span class="wiki-stats-pct"><%= stPctH %>&nbsp;%</span>
+                  </div>
+                  <span class="wiki-stats-bar-wrap"><span class="wiki-stats-bar wiki-stats-bar--h" style="width:<%= stPctH %>%"></span></span>
                 </li>
               <% } %>
             </ul>
           <% } %>
           <% if (pm.stats_source) { %>
-            <a href="<%= pm.stats_source %>" class="wiki-stats-source" target="_blank" rel="noopener noreferrer">&#128279;&nbsp;Source</a>
+            <a href="<%= pm.stats_source %>" class="wiki-stats-source" target="_blank" rel="noopener noreferrer">Source</a>
           <% } %>
+          <p class="wiki-stats-note">Ces &eacute;tudes ont &eacute;t&eacute; faites sur la population commune, int&eacute;grant donc la majorit&eacute; ne s&rsquo;int&eacute;ressant pas au domaine. Les chiffres des personnes int&eacute;ress&eacute;es &agrave; la sexualit&eacute; sont bien plus hauts, en g&eacute;n&eacute;ral.</p>
         </div>
         <% } %>
 

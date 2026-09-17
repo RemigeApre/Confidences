@@ -7076,76 +7076,83 @@ a.wiki-ql-label:hover .wiki-ql-text {
 /* ── Stats pratique/fantasme — détail ── */
 .wiki-stats-block {
   margin: 1rem 0;
-  padding: 0.9rem 1rem 0.75rem;
-  background: hsl(220,12%,12%);
+  padding: 1rem 1.1rem 0.9rem;
+  background: hsl(220,12%,11%);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
 }
 .wiki-stats-title {
-  font-size: 0.88rem;
-  font-weight: 600;
-  margin: 0 0 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-.wiki-stats-icon { font-size: 1rem; }
-.wiki-stats-type-badge {
-  font-size: 0.72rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  padding: 0.15rem 0.5rem;
-  border-radius: 20px;
+  text-align: center;
+  margin: 0 0 0.2rem;
+  letter-spacing: .03em;
 }
-.wiki-stats-type-badge--pratique { background: hsl(220,55%,35%); color: hsl(220,80%,85%); }
-.wiki-stats-type-badge--fantasme { background: hsl(330,45%,35%); color: hsl(330,70%,85%); }
-.wiki-stats-empty { font-size: 0.82rem; color: var(--muted); margin: 0; }
+.wiki-stats-subtitle {
+  font-size: 0.77rem;
+  color: var(--muted);
+  text-align: center;
+  margin: 0 0 0.9rem;
+  font-style: italic;
+}
+.wiki-stats-empty { font-size: 0.82rem; color: var(--muted); margin: 0; text-align: center; }
 .wiki-stats-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.7rem;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.7rem;
 }
 .wiki-stats-item {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.84rem;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wiki-stats-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8rem;
 }
 .wiki-stats-bar-wrap {
-  flex: 1;
-  max-width: 140px;
-  height: 6px;
-  background: hsl(220,15%,22%);
-  border-radius: 3px;
+  width: 100%;
+  height: 7px;
+  background: hsl(220,15%,20%);
+  border-radius: 4px;
   overflow: hidden;
 }
 .wiki-stats-bar {
   display: block;
   height: 100%;
-  background: hsl(220,55%,55%);
-  border-radius: 3px;
-  transition: width .4s ease;
+  background: linear-gradient(90deg, hsl(220,55%,40%), hsl(220,65%,62%));
+  border-radius: 4px;
+  transition: width .5s ease;
 }
-.wiki-stats-bar--h { background: hsl(200,60%,55%); }
-.wiki-stats-bar--f { background: hsl(340,55%,60%); }
-.wiki-stats-pct { font-weight: 700; font-size: 0.9rem; min-width: 36px; text-align: right; }
-.wiki-stats-lbl { color: var(--muted); }
-.wiki-stats-lbl strong { color: var(--fg); }
+.wiki-stats-bar--h { background: linear-gradient(90deg, hsl(200,55%,38%), hsl(200,65%,58%)); }
+.wiki-stats-bar--f { background: linear-gradient(90deg, hsl(330,48%,38%), hsl(340,58%,62%)); }
+.wiki-stats-pct { font-weight: 700; font-size: 0.84rem; color: var(--fg); }
+.wiki-stats-lbl { color: var(--muted); font-size: 0.8rem; }
 .wiki-stats-source {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--muted);
-  margin-top: 0.35rem;
+  margin-top: 0.25rem;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 .wiki-stats-source:hover { color: var(--fg); }
+.wiki-stats-note {
+  font-size: 0.73rem;
+  color: var(--muted);
+  font-style: italic;
+  margin: 0.65rem 0 0;
+  line-height: 1.55;
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
 
 .wf-orce-title { display: flex; align-items: center; gap: 8px; }
 .wf-orce-badge {

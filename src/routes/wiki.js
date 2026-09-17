@@ -229,7 +229,7 @@ function arr(v) { return Array.isArray(v) ? v : v ? [v] : []; }
 
 function parseMeta(category, body) {
   // Champs transversaux (toutes catégories)
-  const pct = (v) => { const n = parseInt(v, 10); return (!isNaN(n) && n >= 0 && n <= 100) ? String(n) : ""; };
+  const pct = (v) => { const n = parseFloat(v); return (!isNaN(n) && n >= 0 && n <= 100) ? String(Math.round(n * 100) / 100) : ""; };
   const base = {
     termes_derives:     parseDerivedTerms(body.meta_termes_derives || ""),
     orce_name:          String(body.meta_orce_name    || "").slice(0, 200).trim(),
