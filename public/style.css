@@ -2628,10 +2628,21 @@ input[type="text"], input[type="password"] {
 
 /* ── Filet d'accent (identité couleur en bas) ──── */
 .wiki-card-accent {
-  display: block;
-  height: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
   flex-shrink: 0;
   margin-top: auto;
+}
+.wiki-card-accent-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: rgba(255,255,255,0.82);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  pointer-events: none;
 }
 
 /* ── Carte AVEC image ──────────────────────────── */
@@ -2690,7 +2701,6 @@ input[type="text"], input[type="password"] {
   justify-content: space-between;
   gap: 0.4rem;
 }
-.wiki-card-overlay .wiki-category-badge { font-size: 0.66rem; }
 .wiki-card-overlay .wiki-card-react-badge,
 .wiki-card-overlay .wiki-owned-badge {
   color: #fff;
