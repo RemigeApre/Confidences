@@ -13814,14 +13814,88 @@ html.lq-discreet-mode img {
 .quiz-detail-title { font-size: 1.4rem; font-weight: 800; margin: 0 0 0.5rem; }
 .quiz-detail-desc { color: var(--muted); font-size: 0.88rem; margin: 0 0 1rem; }
 .quiz-detail-done-badge { font-size: 0.78rem; font-weight: 700; color: hsl(140,60%,55%); margin: 0 0 1rem; }
-.quiz-q-block { margin-bottom: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
-.quiz-q-num { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: hsl(270,45%,30%); color: hsl(270,80%,85%); font-size: 0.68rem; font-weight: 700; margin-right: 0.5rem; flex-shrink: 0; }
-.quiz-q-text { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.85rem; display: flex; align-items: flex-start; gap: 0; }
-.quiz-gradient-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.quiz-grad-opt { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; cursor: pointer; }
-.quiz-grad-opt input { display: none; }
-.quiz-grad-label { font-size: 0.72rem; color: var(--muted); padding: 0.35rem 0.7rem; border: 1px solid var(--border); border-radius: 20px; transition: background .15s, color .15s, border-color .15s; }
-.quiz-grad-opt input:checked + .quiz-grad-label { background: hsl(270,50%,32%); border-color: hsl(270,60%,50%); color: hsl(270,80%,85%); }
+/* ── Bloc question ───────────────────────────────────────────────────────── */
+.quiz-detail-wrap { padding-left: 2.8rem; }
+@media (max-width: 520px) { .quiz-detail-wrap { padding-left: .5rem; } }
+
+.quiz-q-block {
+  margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.75rem;
+}
+.quiz-q-header {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem;
+  margin-bottom: .9rem; position: relative;
+}
+.quiz-q-num {
+  position: absolute;
+  right: calc(100% + .65rem);
+  top: .1rem;
+  font-size: .72rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: hsl(270,55%,65%); white-space: nowrap; letter-spacing: .01em;
+  opacity: .85;
+}
+@media (max-width: 520px) {
+  .quiz-q-num { position: static; margin-right: .4rem; }
+}
+.quiz-q-text {
+  font-size: .96rem; font-weight: 600; margin: 0; flex: 1; line-height: 1.45;
+}
+
+/* ── Select Donner/Subir ─────────────────────────────────────────────────── */
+.quiz-sides-select {
+  appearance: none; -webkit-appearance: none;
+  background: hsl(270,28%,15%) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239b7ec8'/%3E%3C/svg%3E") no-repeat right .55rem center;
+  border: 1px solid hsl(270,30%,30%); border-radius: 20px;
+  color: hsl(270,60%,75%); font-size: .72rem; font-weight: 600;
+  padding: .2rem 1.6rem .2rem .65rem; cursor: pointer;
+  flex-shrink: 0; align-self: center;
+  transition: border-color .15s, background .15s;
+}
+.quiz-sides-select:hover, .quiz-sides-select:focus {
+  border-color: hsl(270,50%,48%); outline: none;
+  background-color: hsl(270,32%,18%);
+}
+
+/* ── Barre gradient ──────────────────────────────────────────────────────── */
+.quiz-grad-bar { padding: .5rem 0 1rem; }
+.quiz-grad-track {
+  position: relative; height: 5px; border-radius: 3px;
+  background: hsl(220,14%,18%); margin: 0 calc(100%/10);
+  overflow: visible;
+}
+.quiz-grad-fill {
+  position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, hsl(0,72%,55%), hsl(25,80%,55%), hsl(50,78%,52%), hsl(90,60%,48%), hsl(140,55%,46%));
+  transition: width .25s ease, opacity .2s;
+  pointer-events: none;
+}
+.quiz-grad-jalons {
+  display: flex; justify-content: space-between;
+  margin-top: -10px; /* overlap the track */
+}
+.quiz-grad-jal {
+  display: flex; flex-direction: column; align-items: center; gap: .45rem;
+  cursor: pointer; flex: 1; min-width: 0;
+}
+.quiz-grad-jal input { display: none; }
+.quiz-grad-jal-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid hsl(220,14%,30%);
+  background: hsl(220,14%,14%);
+  transition: border-color .2s, background .2s, transform .15s;
+  flex-shrink: 0;
+}
+.quiz-grad-jal--active .quiz-grad-jal-dot {
+  border-color: var(--jcol);
+  background: var(--jcol);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--jcol) 60%, transparent);
+}
+.quiz-grad-jal:hover .quiz-grad-jal-dot { transform: scale(1.25); border-color: var(--jcol); }
+.quiz-grad-jal-lbl {
+  font-size: .62rem; color: var(--muted); text-align: center;
+  transition: color .2s; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 100%; padding: 0 .1rem;
+}
+.quiz-grad-jal--active .quiz-grad-jal-lbl { color: var(--jcol); font-weight: 600; }
 .quiz-choice-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .quiz-choice-opt { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.88rem; padding: 0.4rem 0.6rem; border-radius: 8px; border: 1px solid transparent; transition: border-color .15s; }
 .quiz-choice-opt:hover { border-color: var(--border); }
@@ -14082,6 +14156,10 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   font-size: 1.3rem; font-weight: 800; margin: 0 0 1.5rem;
   padding-bottom: .5rem; border-bottom: 2px solid hsl(260,40%,32%);
   color: hsl(260,70%,85%);
+}
+.quiz-step-roman {
+  opacity: .6; margin-right: .4rem; font-size: .85em;
+  font-variant-numeric: normal;
 }
 
 /* ── Actions navigation ──────────────────────────────────────────────────── */
