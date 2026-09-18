@@ -13777,3 +13777,152 @@ html.lq-discreet-mode img {
   color: hsl(260,70%,80%); margin: 2rem 0 .75rem;
   padding-bottom: .4rem; border-bottom: 2px solid hsl(260,40%,32%);
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Quiz Editor (qe-)
+   ════════════════════════════════════════════════════════════════════════════ */
+.qe-layout { padding-bottom: 6rem; }
+.qe-content { max-width: 720px; margin: 0 auto; padding: 0 1rem 2rem; }
+
+/* Titre principal */
+.qe-title-input {
+  display: block; width: 100%; box-sizing: border-box;
+  font-size: 1.5rem; font-weight: 800;
+  background: transparent; border: none; border-bottom: 2px solid var(--border);
+  color: #fff; padding: .35rem 0; margin: 1.5rem 0 1rem;
+  outline: none; transition: border-color .15s;
+}
+.qe-title-input:focus { border-color: var(--accent); }
+.qe-new-hint { font-size: .82rem; color: var(--muted); margin: 0 0 1rem; }
+.qe-field-label { display: block; font-size: .75rem; color: var(--muted); margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .06em; }
+.qe-desc-input { width: 100%; box-sizing: border-box; }
+
+/* Panneaux rétractables */
+.qe-panel {
+  border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: .75rem; overflow: hidden;
+  background: hsl(220,14%,11%);
+}
+.qe-panel-summary {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .7rem 1rem; cursor: pointer;
+  font-weight: 700; font-size: .88rem;
+  list-style: none; user-select: none;
+}
+.qe-panel-summary::-webkit-details-marker { display: none; }
+.qe-panel-summary::before {
+  content: '▶'; font-size: .6rem; color: var(--muted);
+  transition: transform .15s; flex-shrink: 0;
+}
+details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
+.qe-panel-summary-text { flex: 1; }
+.qe-panel-body { padding: .75rem 1rem 1rem; border-top: 1px solid var(--border); }
+
+/* Panneau partie */
+.qe-panel--part { border-color: hsl(260,30%,28%); }
+.qe-part-summary { gap: .6rem; }
+.qe-part-title {
+  flex: 1; font-size: .9rem; font-weight: 700;
+  outline: none; border-radius: 4px; padding: .1rem .25rem;
+  cursor: text; transition: background .15s;
+}
+.qe-part-title:focus { background: hsl(220,14%,18%); }
+.qe-part-del {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 1rem; padding: .1rem .3rem;
+  border-radius: 4px; transition: color .15s, background .15s;
+  flex-shrink: 0; line-height: 1;
+}
+.qe-part-del:hover { color: hsl(0,70%,65%); background: hsl(0,30%,18%); }
+
+/* Section sans partie */
+.qe-section { margin-bottom: .75rem; }
+
+/* Zone de drop */
+.qe-drop-zone {
+  min-height: 2rem; border-radius: 6px;
+  transition: background .1s;
+}
+.qe-drop-zone:empty { min-height: 2.5rem; }
+
+/* Question item */
+.qe-question {
+  display: flex; align-items: flex-start; gap: .6rem;
+  padding: .6rem .5rem; border-radius: 8px;
+  background: hsl(220,14%,14%); border: 1px solid var(--border);
+  margin-bottom: .35rem; cursor: default;
+  transition: opacity .15s, box-shadow .15s;
+}
+.qe-question:hover { border-color: hsl(220,20%,30%); }
+.qe-question.qe-q-dragging { opacity: .4; }
+.qe-q-handle {
+  color: var(--muted); cursor: grab; font-size: .9rem;
+  padding-top: .15rem; flex-shrink: 0; user-select: none;
+}
+.qe-q-handle:active { cursor: grabbing; }
+.qe-q-body { flex: 1; min-width: 0; }
+.qe-q-text { margin: 0 0 .3rem; font-size: .85rem; font-weight: 600; }
+.qe-q-del {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 1rem; padding: .15rem .3rem;
+  border-radius: 4px; flex-shrink: 0; line-height: 1;
+  transition: color .15s, background .15s;
+}
+.qe-q-del:hover { color: hsl(0,70%,65%); background: hsl(0,30%,18%); }
+
+/* Drop indicator */
+.qe-drop-indicator {
+  height: 3px; border-radius: 2px;
+  background: var(--accent); margin: 2px 0;
+  pointer-events: none;
+}
+
+/* Bouton "+ Question" */
+.qe-add-q-btn {
+  margin-top: .5rem; background: none; border: 1px dashed var(--border);
+  color: var(--muted); font-size: .8rem; padding: .35rem .75rem;
+  border-radius: 6px; cursor: pointer; transition: color .15s, border-color .15s;
+  width: 100%;
+}
+.qe-add-q-btn:hover { color: #fff; border-color: var(--accent); }
+
+/* Formulaire inline ajout question */
+.qe-inline-form {
+  margin-top: .6rem; padding: .75rem; border-radius: 8px;
+  background: hsl(220,14%,10%); border: 1px solid var(--border);
+}
+.qea-actions { display: flex; align-items: center; gap: .6rem; margin-top: .6rem; }
+
+/* Bouton "+ Nouvelle partie" */
+.qe-add-part-row { margin-top: .5rem; }
+.qe-add-part-btn {
+  background: none; border: 2px dashed hsl(260,30%,35%);
+  color: hsl(260,60%,72%); font-size: .82rem; font-weight: 600;
+  padding: .5rem 1.2rem; border-radius: 8px; cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s; width: 100%;
+}
+.qe-add-part-btn:hover { background: hsl(260,30%,16%); border-color: hsl(260,50%,50%); color: #fff; }
+.qe-add-part-form {
+  display: flex; gap: .5rem; margin-top: .5rem; align-items: center; flex-wrap: wrap;
+}
+
+/* Boutons fixes */
+.qe-save-fab {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 50;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 2rem; padding: .65rem 1.5rem;
+  font-size: .88rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  transition: background .15s, transform .15s;
+}
+.qe-save-fab:hover { background: color-mix(in srgb, var(--accent) 80%, #fff); transform: translateY(-2px); }
+
+.qe-delete-form { position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 50; }
+.qe-delete-fab {
+  background: hsl(220,14%,18%); color: hsl(0,60%,65%);
+  border: 1px solid hsl(0,30%,30%); border-radius: 2rem;
+  padding: .6rem 1rem; font-size: .88rem; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  transition: background .15s, color .15s;
+}
+.qe-delete-fab:hover { background: hsl(0,40%,22%); color: hsl(0,70%,75%); }

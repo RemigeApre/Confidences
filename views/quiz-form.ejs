@@ -1,431 +1,609 @@
 <%- include('partials/head', { title: quiz ? 'Modifier ' + quiz.title : 'Nouveau quizz' }) %>
-<main class="container">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Quizz', navBack: '/quizz' }) %>
+<main class="container qe-layout">
+  <%- include('partials/top-nav', { config: config, navTitle: quiz ? quiz.title : 'Nouveau quizz', navBack: '/quizz' }) %>
 
-  <a href="/quizz" class="wf-back-btn">← Retour</a>
+  <div class="qe-content">
 
-  <h1 class="wf-section-title" style="margin-top:3rem"><%= quiz ? 'Modifier le quizz' : 'Nouveau quizz' %></h1>
+    <%# ── Titre ───────────────────────────────────────────────────────────── %>
+    <form id="qe-meta-form" method="POST"
+      action="<%= quiz ? '/quizz/' + quiz.id + '/update' : '/quizz/new' %>">
 
-  <form method="POST" action="<%= quiz ? '/quizz/' + quiz.id + '/update' : '/quizz/new' %>" class="quiz-form">
-    <div class="wf-stats-pct-row" style="flex-direction:column;gap:.5rem">
-      <label class="wiki-meta-label">Titre</label>
-      <input type="text" name="title" class="wf-orce-name-input" required maxlength="200" value="<%= quiz ? quiz.title : '' %>" placeholder="Titre du quizz…" />
-    </div>
-    <div class="wf-stats-pct-row" style="flex-direction:column;gap:.5rem;margin-top:.75rem">
-      <label class="wiki-meta-label">Description</label>
-      <textarea name="description" class="wf-stats-note-input" rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz ? quiz.description : '' %></textarea>
-    </div>
-    <% if (quiz) { %>
-    <label class="wiki-display-opt-label" style="margin-top:.75rem">
-      <input type="checkbox" name="featured" value="1" <%= quiz.featured ? 'checked' : '' %> hidden />
-      <span class="wiki-display-opt-track"></span>
-      <span class="wiki-display-opt-text">Mettre en avant</span>
-    </label>
-    <% } %>
-    <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center">
-      <button type="submit" class="wf-save-btn" style="position:static">Enregistrer</button>
-      <% if (quiz) { %>
-        <a href="/quizz/<%= quiz.id %>" class="wf-cancel-link">Voir le quizz</a>
-        <form method="POST" action="/quizz/<%= quiz.id %>/delete" style="margin:0">
-          <button type="submit" class="wf-delete-btn-fixed" style="position:static;font-size:.8rem" onclick="return confirm('Supprimer ce quizz ?')">🗑</button>
-        </form>
+      <input type="text" name="title" class="qe-title-input" required maxlength="200"
+        value="<%= quiz ? quiz.title : '' %>" placeholder="Titre du quizz…" />
+
+      <% if (!quiz) { %>
+        <p class="qe-new-hint">Renseignez un titre et sauvegardez pour commencer à ajouter des questions.</p>
       <% } %>
-    </div>
-  </form>
+    </form>
 
-  <% if (quiz) { %>
-  <div class="quiz-qlist" id="quiz-qlist">
+    <% if (quiz) { %>
 
-    <%# ── Parties ─────────────────────────────────────────────────────── %>
-    <div class="quiz-parts-section">
-      <div class="quiz-parts-header">
-        <h2 class="wf-section-title" style="margin:0">Parties</h2>
-        <button type="button" id="qp-add-btn" class="wf-stats-pill">+ Nouvelle partie</button>
+    <%# ── Paramètres ──────────────────────────────────────────────────────── %>
+    <details class="qe-panel" id="qe-params">
+      <summary class="qe-panel-summary">
+        <span class="qe-panel-summary-text">Paramètres</span>
+      </summary>
+      <div class="qe-panel-body">
+        <label class="qe-field-label">Description</label>
+        <textarea name="description" form="qe-meta-form" class="wf-stats-note-input qe-desc-input"
+          rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz.description %></textarea>
+        <label class="wiki-display-opt-label" style="margin-top:.65rem">
+          <input type="checkbox" name="featured" value="1" form="qe-meta-form"
+            <%= quiz.featured ? 'checked' : '' %> hidden />
+          <span class="wiki-display-opt-track"></span>
+          <span class="wiki-display-opt-text">Mettre en avant</span>
+        </label>
       </div>
+    </details>
 
-      <div id="quiz-parts-list">
-        <% parts.forEach(function(p) { %>
-          <div class="quiz-part-item" data-id="<%= p.id %>">
-            <span class="quiz-part-drag">⠿</span>
-            <span class="quiz-part-title" data-id="<%= p.id %>"><%= p.title %></span>
-            <button type="button" class="quiz-part-edit-btn" data-id="<%= p.id %>" title="Renommer">✎</button>
-            <button type="button" class="quiz-part-del-btn" data-id="<%= p.id %>" title="Supprimer">✕</button>
+    <%# ── Section sans partie ─────────────────────────────────────────────── %>
+    <div class="qe-section" id="qe-root-section">
+      <div class="qe-drop-zone" id="qe-zone-root" data-part-id="">
+        <%
+          var rootQs = questions.filter(function(q){ return !q.part_id; });
+          rootQs.forEach(function(q) {
+        %>
+          <div class="qe-question" draggable="true" data-qid="<%= q.id %>">
+            <span class="qe-q-handle">&#11835;</span>
+            <div class="qe-q-body">
+              <p class="qe-q-text"><%= q.text %></p>
+              <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
+                <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : 'Choix multiple' %>
+              </span>
+              <% if (q.options && q.options.length) { %>
+                <div class="quiz-qitem-opts">
+                  <% q.options.forEach(function(o){ %>
+                    <span class="quiz-qitem-opt"><%= o %></span>
+                  <% }) %>
+                </div>
+              <% } %>
+            </div>
+            <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
           </div>
         <% }) %>
-        <% if (!parts.length) { %>
-          <p class="quiz-parts-empty" id="quiz-parts-empty">Aucune partie — les questions seront sans section.</p>
-        <% } %>
       </div>
-
-      <div id="qp-add-form" hidden style="margin-top:.6rem;display:flex;gap:.5rem">
-        <input type="text" id="qp-title-input" class="wf-orce-name-input" placeholder="Nom de la partie…" maxlength="200" style="flex:1" />
-        <button type="button" id="qp-confirm-btn" class="wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
-        <button type="button" id="qp-cancel-btn" class="wf-cancel-link">Annuler</button>
+      <button type="button" class="qe-add-q-btn" data-part-id="">+ Question</button>
+      <div class="qe-inline-form" data-part-id="" hidden>
+        <textarea class="wf-stats-note-input qea-text" rows="2" placeholder="Texte de la question…" style="resize:vertical"></textarea>
+        <div class="quiz-qadd-type-row">
+          <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient"><input type="radio" name="qa-type" value="gradient" checked style="display:none"/><span>Gradient</span></label>
+          <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qa-type" value="single" style="display:none"/><span>Choix unique</span></label>
+          <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qa-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
+        </div>
+        <div class="qea-options-wrap" hidden>
+          <div class="qea-options-list"></div>
+          <button type="button" class="qea-add-opt wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
+        </div>
+        <div class="qea-actions">
+          <button type="button" class="qea-submit wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
+          <button type="button" class="qea-cancel wf-cancel-link">Annuler</button>
+        </div>
       </div>
     </div>
 
-    <%# ── Questions ───────────────────────────────────────────────────── %>
-    <h2 class="wf-section-title" style="margin-top:2rem">Questions (<span id="quiz-q-count"><%= questions.length %></span>)</h2>
-    <div id="quiz-questions-container">
-      <% questions.forEach(function(q, i) { %>
-        <div class="quiz-qitem" data-id="<%= q.id %>">
-          <span class="quiz-qitem-num"><%= i+1 %>.</span>
-          <div class="quiz-qitem-body">
-            <p class="quiz-qitem-text"><%= q.text %></p>
-            <div class="quiz-qitem-meta">
-              <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : 'Choix multiple' %></span>
-              <% if (q.part_id) {
-                var qpart = parts.find(function(p){ return p.id === q.part_id; });
-                if (qpart) { %>
-                  <span class="quiz-qitem-part-badge"><%= qpart.title %></span>
-              <% } } %>
+    <%# ── Parties ─────────────────────────────────────────────────────────── %>
+    <div id="qe-parts-container">
+      <% parts.forEach(function(part) {
+        var partQs = questions.filter(function(q){ return q.part_id === part.id; });
+      %>
+        <details class="qe-panel qe-panel--part" data-part-id="<%= part.id %>" open>
+          <summary class="qe-panel-summary qe-part-summary">
+            <span class="qe-part-title" contenteditable="true"
+              data-part-id="<%= part.id %>"><%= part.title %></span>
+            <button type="button" class="qe-part-del" data-part-id="<%= part.id %>"
+              title="Supprimer la partie">&#215;</button>
+          </summary>
+          <div class="qe-panel-body">
+            <div class="qe-drop-zone" data-part-id="<%= part.id %>">
+              <% partQs.forEach(function(q) { %>
+                <div class="qe-question" draggable="true" data-qid="<%= q.id %>">
+                  <span class="qe-q-handle">&#11835;</span>
+                  <div class="qe-q-body">
+                    <p class="qe-q-text"><%= q.text %></p>
+                    <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
+                      <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : 'Choix multiple' %>
+                    </span>
+                    <% if (q.options && q.options.length) { %>
+                      <div class="quiz-qitem-opts">
+                        <% q.options.forEach(function(o){ %>
+                          <span class="quiz-qitem-opt"><%= o %></span>
+                        <% }) %>
+                      </div>
+                    <% } %>
+                  </div>
+                  <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
+                </div>
+              <% }) %>
             </div>
-            <% if (q.options && q.options.length) { %>
-              <div class="quiz-qitem-opts"><% q.options.forEach(function(o){ %><span class="quiz-qitem-opt"><%= o %></span><% }) %></div>
-            <% } %>
+            <button type="button" class="qe-add-q-btn" data-part-id="<%= part.id %>">+ Question</button>
+            <div class="qe-inline-form" data-part-id="<%= part.id %>" hidden>
+              <textarea class="wf-stats-note-input qea-text" rows="2" placeholder="Texte de la question…" style="resize:vertical"></textarea>
+              <div class="quiz-qadd-type-row">
+                <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient"><input type="radio" name="qa-type" value="gradient" checked style="display:none"/><span>Gradient</span></label>
+                <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qa-type" value="single" style="display:none"/><span>Choix unique</span></label>
+                <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qa-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
+              </div>
+              <div class="qea-options-wrap" hidden>
+                <div class="qea-options-list"></div>
+                <button type="button" class="qea-add-opt wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
+              </div>
+              <div class="qea-actions">
+                <button type="button" class="qea-submit wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
+                <button type="button" class="qea-cancel wf-cancel-link">Annuler</button>
+              </div>
+            </div>
           </div>
-          <button type="button" class="quiz-qitem-del" data-id="<%= q.id %>">✕</button>
-        </div>
+        </details>
       <% }) %>
     </div>
 
-    <div class="quiz-qadd-panel" id="quiz-qadd-panel">
-      <h3 class="wf-section-title" style="font-size:.85rem;margin:.75rem 0 .5rem">Nouvelle question</h3>
-      <textarea id="qa-text" class="wf-stats-note-input" rows="2" placeholder="Texte de la question…" style="resize:vertical"></textarea>
-
-      <% if (parts.length) { %>
-      <div style="margin-top:.5rem">
-        <label class="wiki-meta-label" style="font-size:.75rem;margin-bottom:.25rem">Partie (optionnel)</label>
-        <select id="qa-part" class="wiki-sort-select" style="width:100%">
-          <option value="">— Sans partie —</option>
-          <% parts.forEach(function(p) { %>
-            <option value="<%= p.id %>"><%= p.title %></option>
-          <% }) %>
-        </select>
+    <%# ── Ajouter une partie ───────────────────────────────────────────────── %>
+    <div class="qe-add-part-row">
+      <button type="button" class="qe-add-part-btn" id="qe-add-part-btn">+ Nouvelle partie</button>
+      <div class="qe-add-part-form" id="qe-add-part-form" hidden>
+        <input type="text" id="qe-part-input" class="wf-orce-name-input"
+          placeholder="Nom de la partie…" maxlength="200" style="flex:1" />
+        <button type="button" id="qe-part-confirm" class="wf-save-btn"
+          style="position:static;font-size:.82rem">Créer</button>
+        <button type="button" id="qe-part-cancel" class="wf-cancel-link">Annuler</button>
       </div>
-      <% } %>
-
-      <div class="quiz-qadd-type-row">
-        <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient">
-          <input type="radio" name="qa-type" value="gradient" checked style="display:none" />
-          <span>Gradient (pas du tout → énormément)</span>
-        </label>
-        <label class="chip-option quiz-type-chip" data-type="single">
-          <input type="radio" name="qa-type" value="single" style="display:none" />
-          <span>Réponse unique</span>
-        </label>
-        <label class="chip-option quiz-type-chip" data-type="multiple">
-          <input type="radio" name="qa-type" value="multiple" style="display:none" />
-          <span>Réponses multiples</span>
-        </label>
-      </div>
-      <div id="qa-options-wrap" hidden>
-        <div id="qa-options-list"></div>
-        <button type="button" id="qa-add-option" class="wf-stats-pill" style="margin-top:.4rem;font-size:.78rem">+ Option</button>
-      </div>
-      <button type="button" id="qa-submit" class="wf-save-btn" style="position:static;margin-top:.75rem;font-size:.85rem">Ajouter la question</button>
     </div>
-  </div>
 
+    <% } %>
+  </div><%# /qe-content %>
+
+  <%# ── Boutons fixes ───────────────────────────────────────────────────────── %>
+  <button type="submit" form="qe-meta-form" class="qe-save-fab">Enregistrer</button>
+  <% if (quiz) { %>
+    <form method="POST" action="/quizz/<%= quiz.id %>/delete" class="qe-delete-form">
+      <button type="submit" class="qe-delete-fab"
+        onclick="return confirm('Supprimer ce quizz définitivement ?')">&#128465;</button>
+    </form>
+  <% } %>
+
+  <% if (quiz) { %>
   <script>
   (function() {
     var quizId = <%= quiz.id %>;
-    var container = document.getElementById("quiz-questions-container");
-    var qCount = document.getElementById("quiz-q-count");
-    var qaText = document.getElementById("qa-text");
-    var qaSubmit = document.getElementById("qa-submit");
-    var qaOptionsWrap = document.getElementById("qa-options-wrap");
-    var qaOptionsList = document.getElementById("qa-options-list");
-    var qaAddOption = document.getElementById("qa-add-option");
-    var qaPart = document.getElementById("qa-part");
-    var typeChips = document.querySelectorAll(".quiz-type-chip");
-    var currentType = "gradient";
+    var draggingEl = null;
+    var dropIndicator = null;
 
-    // ── Type chips ────────────────────────────────────────────────────────
-    typeChips.forEach(function(chip) {
-      chip.addEventListener("click", function() {
-        typeChips.forEach(function(c) { c.classList.remove("quiz-type-chip--active"); });
-        chip.classList.add("quiz-type-chip--active");
-        chip.querySelector("input").checked = true;
-        currentType = chip.dataset.type;
-        qaOptionsWrap.hidden = (currentType === "gradient");
-      });
-    });
-
-    qaAddOption.addEventListener("click", function() {
-      var row = document.createElement("div");
-      row.className = "quiz-option-row";
-      var optInput = document.createElement("input");
-      optInput.type = "text";
-      optInput.className = "wf-orce-name-input";
-      optInput.placeholder = "Option…";
-      optInput.style.cssText = "flex:1;font-size:.82rem";
-      var optDel = document.createElement("button");
-      optDel.type = "button";
-      optDel.className = "quiz-qitem-del";
-      optDel.style.flexShrink = "0";
-      optDel.textContent = "✕";
-      optDel.addEventListener("click", function() { row.remove(); });
-      row.appendChild(optInput);
-      row.appendChild(optDel);
-      qaOptionsList.appendChild(row);
-    });
-
-    // ── Ajouter une question ──────────────────────────────────────────────
-    qaSubmit.addEventListener("click", function() {
-      var text = (qaText.value || "").trim();
-      if (!text) return;
-      var options = [];
-      if (currentType !== "gradient") {
-        options = Array.from(qaOptionsList.querySelectorAll("input")).map(function(i) { return i.value.trim(); }).filter(Boolean);
+    function indicator() {
+      if (!dropIndicator) {
+        dropIndicator = document.createElement('div');
+        dropIndicator.className = 'qe-drop-indicator';
       }
-      var partId = qaPart ? (qaPart.value || null) : null;
-      fetch("/quizz/" + quizId + "/questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (!data.ok) return;
-        renderQuestions(data.questions);
-        qaText.value = "";
-        qaOptionsList.innerHTML = "";
-      });
-    });
+      return dropIndicator;
+    }
 
-    // ── Supprimer une question ────────────────────────────────────────────
+    // ── Drag & drop ───────────────────────────────────────────────────────
+    function initQuestion(el) {
+      el.addEventListener('dragstart', function(e) {
+        draggingEl = el;
+        el.classList.add('qe-q-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      el.addEventListener('dragend', function() {
+        el.classList.remove('qe-q-dragging');
+        if (dropIndicator && dropIndicator.parentNode) dropIndicator.remove();
+        draggingEl = null;
+      });
+      el.querySelector('.qe-q-del').addEventListener('click', function() {
+        deleteQuestion(Number(el.dataset.qid));
+      });
+    }
+
+    function initDropZone(zone) {
+      zone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        var after = afterElement(zone, e.clientY);
+        var ind = indicator();
+        if (!after) zone.appendChild(ind);
+        else zone.insertBefore(ind, after);
+      });
+      zone.addEventListener('dragleave', function(e) {
+        if (!zone.contains(e.relatedTarget)) {
+          if (dropIndicator && dropIndicator.parentNode === zone) dropIndicator.remove();
+        }
+      });
+      zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        if (dropIndicator && dropIndicator.parentNode) dropIndicator.remove();
+        if (!draggingEl) return;
+        var after = afterElement(zone, e.clientY);
+        if (!after) zone.appendChild(draggingEl);
+        else zone.insertBefore(draggingEl, after);
+        saveOrder();
+      });
+    }
+
+    function afterElement(zone, y) {
+      var items = Array.from(zone.querySelectorAll('.qe-question:not(.qe-q-dragging)'));
+      return items.reduce(function(closest, el) {
+        var box = el.getBoundingClientRect();
+        var offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) return { offset: offset, el: el };
+        return closest;
+      }, { offset: -Infinity, el: null }).el;
+    }
+
+    function saveOrder() {
+      var sections = [];
+      document.querySelectorAll('.qe-drop-zone').forEach(function(zone) {
+        var partId = zone.dataset.partId ? Number(zone.dataset.partId) : null;
+        var ids = Array.from(zone.querySelectorAll('.qe-question')).map(function(el) {
+          return Number(el.dataset.qid);
+        });
+        sections.push({ part_id: partId, ids: ids });
+      });
+      fetch('/quizz/' + quizId + '/questions/reorder-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections: sections })
+      });
+    }
+
+    // ── Question element factory ──────────────────────────────────────────
+    var typeLabels = { gradient: 'Gradient', single: 'Choix unique', multiple: 'Choix multiple' };
+
+    function makeQuestion(q) {
+      var div = document.createElement('div');
+      div.className = 'qe-question';
+      div.draggable = true;
+      div.dataset.qid = q.id;
+
+      var handle = document.createElement('span');
+      handle.className = 'qe-q-handle';
+      handle.textContent = '⠿';
+
+      var body = document.createElement('div');
+      body.className = 'qe-q-body';
+
+      var txt = document.createElement('p');
+      txt.className = 'qe-q-text';
+      txt.textContent = q.text;
+
+      var badge = document.createElement('span');
+      badge.className = 'quiz-qitem-type quiz-qtype--' + q.type;
+      badge.textContent = typeLabels[q.type] || q.type;
+
+      body.appendChild(txt);
+      body.appendChild(badge);
+
+      if (q.options && q.options.length) {
+        var opts = document.createElement('div');
+        opts.className = 'quiz-qitem-opts';
+        q.options.forEach(function(o) {
+          var s = document.createElement('span');
+          s.className = 'quiz-qitem-opt';
+          s.textContent = o;
+          opts.appendChild(s);
+        });
+        body.appendChild(opts);
+      }
+
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'qe-q-del';
+      del.title = 'Supprimer';
+      del.textContent = '×';
+
+      div.appendChild(handle);
+      div.appendChild(body);
+      div.appendChild(del);
+      return div;
+    }
+
     function deleteQuestion(id) {
-      fetch("/quizz/" + quizId + "/questions/" + id + "/delete", { method: "POST", headers: { "Content-Type": "application/json" } })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (!data.ok) return;
-        var el = container.querySelector("[data-id='" + id + "']");
+      if (!confirm('Supprimer cette question ?')) return;
+      fetch('/quizz/' + quizId + '/questions/' + id + '/delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) return;
+        var el = document.querySelector('.qe-question[data-qid="' + id + '"]');
         if (el) el.remove();
-        updateCount();
       });
     }
 
-    function updateCount() {
-      if (qCount) qCount.textContent = container.querySelectorAll(".quiz-qitem").length;
-    }
+    // ── Inline add-question form ──────────────────────────────────────────
+    function initInlineForm(formEl) {
+      var partId = formEl.dataset.partId || null;
+      var textarea   = formEl.querySelector('.qea-text');
+      var chips      = formEl.querySelectorAll('.quiz-type-chip');
+      var optsWrap   = formEl.querySelector('.qea-options-wrap');
+      var optsList   = formEl.querySelector('.qea-options-list');
+      var addOptBtn  = formEl.querySelector('.qea-add-opt');
+      var submitBtn  = formEl.querySelector('.qea-submit');
+      var cancelBtn  = formEl.querySelector('.qea-cancel');
+      var currentType = 'gradient';
 
-    var partTitles = {};
-    document.querySelectorAll(".quiz-part-item").forEach(function(el) {
-      partTitles[el.dataset.id] = el.querySelector(".quiz-part-title").textContent;
-    });
+      chips.forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          chips.forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
+          chip.classList.add('quiz-type-chip--active');
+          currentType = chip.dataset.type;
+          optsWrap.hidden = currentType === 'gradient';
+        });
+      });
 
-    function renderQuestions(qs) {
-      container.innerHTML = "";
-      var typeLabels = { gradient: "Gradient", single: "Choix unique", multiple: "Choix multiple" };
-      qs.forEach(function(q, i) {
-        var div = document.createElement("div");
-        div.className = "quiz-qitem";
-        div.dataset.id = q.id;
+      addOptBtn.addEventListener('click', function() {
+        var row = document.createElement('div');
+        row.className = 'quiz-option-row';
+        var inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'wf-orce-name-input';
+        inp.placeholder = 'Option…';
+        inp.style.cssText = 'flex:1;font-size:.82rem';
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'quiz-qitem-del';
+        del.style.flexShrink = '0';
+        del.textContent = '×';
+        del.addEventListener('click', function() { row.remove(); });
+        row.appendChild(inp);
+        row.appendChild(del);
+        optsList.appendChild(row);
+      });
 
-        var numSpan = document.createElement("span");
-        numSpan.className = "quiz-qitem-num";
-        numSpan.textContent = (i + 1) + ".";
+      cancelBtn.addEventListener('click', function() {
+        formEl.hidden = true;
+        textarea.value = '';
+        optsList.innerHTML = '';
+      });
 
-        var body = document.createElement("div");
-        body.className = "quiz-qitem-body";
-
-        var textP = document.createElement("p");
-        textP.className = "quiz-qitem-text";
-        textP.textContent = q.text;
-
-        var meta = document.createElement("div");
-        meta.className = "quiz-qitem-meta";
-
-        var typeSpan = document.createElement("span");
-        typeSpan.className = "quiz-qitem-type quiz-qtype--" + q.type;
-        typeSpan.textContent = typeLabels[q.type] || q.type;
-        meta.appendChild(typeSpan);
-
-        if (q.part_id && partTitles[q.part_id]) {
-          var badge = document.createElement("span");
-          badge.className = "quiz-qitem-part-badge";
-          badge.textContent = partTitles[q.part_id];
-          meta.appendChild(badge);
+      submitBtn.addEventListener('click', function() {
+        var text = (textarea.value || '').trim();
+        if (!text) return;
+        var options = [];
+        if (currentType !== 'gradient') {
+          options = Array.from(optsList.querySelectorAll('input')).map(function(i) {
+            return i.value.trim();
+          }).filter(Boolean);
         }
-
-        body.appendChild(textP);
-        body.appendChild(meta);
-
-        if (q.options && q.options.length) {
-          var optsDiv = document.createElement("div");
-          optsDiv.className = "quiz-qitem-opts";
-          q.options.forEach(function(o) {
-            var s = document.createElement("span");
-            s.className = "quiz-qitem-opt";
-            s.textContent = o;
-            optsDiv.appendChild(s);
-          });
-          body.appendChild(optsDiv);
-        }
-
-        var delBtn = document.createElement("button");
-        delBtn.type = "button";
-        delBtn.className = "quiz-qitem-del";
-        delBtn.dataset.id = q.id;
-        delBtn.textContent = "✕";
-        delBtn.addEventListener("click", function() { deleteQuestion(q.id); });
-
-        div.appendChild(numSpan);
-        div.appendChild(body);
-        div.appendChild(delBtn);
-        container.appendChild(div);
+        fetch('/quizz/' + quizId + '/questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (!d.ok) return;
+          var zone = document.querySelector('.qe-drop-zone[data-part-id="' + (partId || '') + '"]');
+          if (zone) {
+            var el = makeQuestion(d.question);
+            zone.appendChild(el);
+            initQuestion(el);
+          }
+          textarea.value = '';
+          optsList.innerHTML = '';
+          formEl.hidden = true;
+          chips.forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
+          chips[0].classList.add('quiz-type-chip--active');
+          currentType = 'gradient';
+          optsWrap.hidden = true;
+        });
       });
-      updateCount();
     }
 
-    container.addEventListener("click", function(e) {
-      var btn = e.target.closest(".quiz-qitem-del");
-      if (!btn || !btn.dataset.id) return;
-      deleteQuestion(Number(btn.dataset.id));
-    });
-
-    // ── Parties ───────────────────────────────────────────────────────────
-    var qpAddBtn   = document.getElementById("qp-add-btn");
-    var qpAddForm  = document.getElementById("qp-add-form");
-    var qpTitleInput = document.getElementById("qp-title-input");
-    var qpConfirm  = document.getElementById("qp-confirm-btn");
-    var qpCancel   = document.getElementById("qp-cancel-btn");
-    var qpList     = document.getElementById("quiz-parts-list");
-    var qpEmpty    = document.getElementById("quiz-parts-empty");
-
-    if (qpAddBtn) {
-      qpAddBtn.addEventListener("click", function() {
-        qpAddForm.hidden = false;
-        qpTitleInput.focus();
+    // ── "+ Question" buttons ──────────────────────────────────────────────
+    function initAddQBtn(btn) {
+      btn.addEventListener('click', function() {
+        var pid = btn.dataset.partId || '';
+        var form = document.querySelector('.qe-inline-form[data-part-id="' + pid + '"]');
+        if (!form) return;
+        form.hidden = !form.hidden;
+        if (!form.hidden) form.querySelector('textarea').focus();
       });
-      qpCancel.addEventListener("click", function() {
-        qpAddForm.hidden = true;
-        qpTitleInput.value = "";
+    }
+
+    // ── Part : renommer (contenteditable) ─────────────────────────────────
+    function initPartTitle(span) {
+      span.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); span.blur(); }
+        if (e.key === 'Escape') { span.textContent = span.dataset.orig || ''; span.blur(); }
       });
-      qpConfirm.addEventListener("click", function() {
-        var title = (qpTitleInput.value || "").trim();
-        if (!title) return;
-        fetch("/quizz/" + quizId + "/parts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+      span.addEventListener('focus', function() {
+        span.dataset.orig = span.textContent;
+      });
+      span.addEventListener('blur', function() {
+        var title = span.textContent.trim();
+        if (!title) { span.textContent = span.dataset.orig || 'Partie'; return; }
+        if (title === span.dataset.orig) return;
+        fetch('/quizz/' + quizId + '/parts/' + span.dataset.partId + '/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title: title })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.ok) return;
-          qpTitleInput.value = "";
-          qpAddForm.hidden = true;
-          renderParts(data.parts);
-          // Ajouter l'option dans le select de questions
-          if (qaPart) {
-            var opt = document.createElement("option");
-            opt.value = data.partId;
-            opt.textContent = title;
-            qaPart.appendChild(opt);
-          }
         });
       });
     }
 
-    function renderParts(parts) {
-      qpList.innerHTML = "";
-      if (!parts.length) {
-        var p = document.createElement("p");
-        p.className = "quiz-parts-empty";
-        p.id = "quiz-parts-empty";
-        p.textContent = "Aucune partie — les questions seront sans section.";
-        qpList.appendChild(p);
-        return;
-      }
-      parts.forEach(function(part) {
-        partTitles[part.id] = part.title;
-        var div = document.createElement("div");
-        div.className = "quiz-part-item";
-        div.dataset.id = part.id;
-
-        var drag = document.createElement("span");
-        drag.className = "quiz-part-drag";
-        drag.textContent = "⠿";
-
-        var titleSpan = document.createElement("span");
-        titleSpan.className = "quiz-part-title";
-        titleSpan.dataset.id = part.id;
-        titleSpan.textContent = part.title;
-
-        var editBtn = document.createElement("button");
-        editBtn.type = "button";
-        editBtn.className = "quiz-part-edit-btn";
-        editBtn.dataset.id = part.id;
-        editBtn.title = "Renommer";
-        editBtn.textContent = "✎";
-
-        var delBtn = document.createElement("button");
-        delBtn.type = "button";
-        delBtn.className = "quiz-part-del-btn";
-        delBtn.dataset.id = part.id;
-        delBtn.title = "Supprimer";
-        delBtn.textContent = "✕";
-
-        div.appendChild(drag);
-        div.appendChild(titleSpan);
-        div.appendChild(editBtn);
-        div.appendChild(delBtn);
-        qpList.appendChild(div);
+    // ── Part : supprimer ─────────────────────────────────────────────────
+    function initPartDelBtn(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var pid = btn.dataset.partId;
+        if (!confirm('Supprimer cette partie ?\nLes questions resteront sans partie.')) return;
+        fetch('/quizz/' + quizId + '/parts/' + pid + '/delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }
+        }).then(function(r) { return r.json(); }).then(function(d) {
+          if (!d.ok) return;
+          var panel = document.querySelector('.qe-panel--part[data-part-id="' + pid + '"]');
+          var rootZone = document.getElementById('qe-zone-root');
+          if (panel && rootZone) {
+            var pz = panel.querySelector('.qe-drop-zone');
+            if (pz) Array.from(pz.querySelectorAll('.qe-question')).forEach(function(el) {
+              rootZone.appendChild(el);
+            });
+            panel.remove();
+          }
+          saveOrder();
+        });
       });
     }
 
-    qpList.addEventListener("click", function(e) {
-      var editBtn = e.target.closest(".quiz-part-edit-btn");
-      var delBtn  = e.target.closest(".quiz-part-del-btn");
+    // ── Add part ──────────────────────────────────────────────────────────
+    var addPartBtn  = document.getElementById('qe-add-part-btn');
+    var addPartForm = document.getElementById('qe-add-part-form');
+    var partInput   = document.getElementById('qe-part-input');
+    var partConfirm = document.getElementById('qe-part-confirm');
+    var partCancel  = document.getElementById('qe-part-cancel');
+    var partsContainer = document.getElementById('qe-parts-container');
 
-      if (editBtn) {
-        var pid = editBtn.dataset.id;
-        var titleSpan = qpList.querySelector(".quiz-part-title[data-id='" + pid + "']");
-        var current = titleSpan.textContent;
-        var newTitle = prompt("Renommer la partie :", current);
-        if (!newTitle || !newTitle.trim() || newTitle.trim() === current) return;
-        fetch("/quizz/" + quizId + "/parts/" + pid + "/update", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: newTitle.trim() })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.ok) return;
-          titleSpan.textContent = newTitle.trim();
-          partTitles[pid] = newTitle.trim();
-          if (qaPart) {
-            var opt = qaPart.querySelector("option[value='" + pid + "']");
-            if (opt) opt.textContent = newTitle.trim();
-          }
-          // Mettre à jour les badges dans les questions
-          document.querySelectorAll(".quiz-qitem-part-badge").forEach(function(b) {
-            if (b.closest(".quiz-qitem") && b.closest(".quiz-qitem").dataset.partId == pid) {
-              b.textContent = newTitle.trim();
-            }
-          });
-        });
-      }
-
-      if (delBtn) {
-        var pid = delBtn.dataset.id;
-        if (!confirm("Supprimer cette partie ? Les questions associées resteront mais seront sans partie.")) return;
-        fetch("/quizz/" + quizId + "/parts/" + pid + "/delete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" }
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.ok) return;
-          renderParts(data.parts);
-          if (qaPart) {
-            var opt = qaPart.querySelector("option[value='" + pid + "']");
-            if (opt) opt.remove();
-          }
-        });
-      }
+    addPartBtn.addEventListener('click', function() {
+      addPartForm.hidden = false;
+      partInput.focus();
     });
+    partCancel.addEventListener('click', function() {
+      addPartForm.hidden = true;
+      partInput.value = '';
+    });
+    partInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); partConfirm.click(); }
+      if (e.key === 'Escape') { partCancel.click(); }
+    });
+    partConfirm.addEventListener('click', function() {
+      var title = partInput.value.trim();
+      if (!title) return;
+      fetch('/quizz/' + quizId + '/parts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) return;
+        partInput.value = '';
+        addPartForm.hidden = true;
+        var panel = makePartPanel(d.partId, title);
+        partsContainer.appendChild(panel);
+      });
+    });
+
+    function makePartPanel(partId, title) {
+      var details = document.createElement('details');
+      details.className = 'qe-panel qe-panel--part';
+      details.dataset.partId = partId;
+      details.open = true;
+
+      var summary = document.createElement('summary');
+      summary.className = 'qe-panel-summary qe-part-summary';
+
+      var titleSpan = document.createElement('span');
+      titleSpan.className = 'qe-part-title';
+      titleSpan.contentEditable = 'true';
+      titleSpan.dataset.partId = partId;
+      titleSpan.textContent = title;
+      initPartTitle(titleSpan);
+
+      var delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'qe-part-del';
+      delBtn.dataset.partId = partId;
+      delBtn.title = 'Supprimer la partie';
+      delBtn.textContent = '×';
+      initPartDelBtn(delBtn);
+
+      summary.appendChild(titleSpan);
+      summary.appendChild(delBtn);
+
+      var body = document.createElement('div');
+      body.className = 'qe-panel-body';
+
+      var zone = document.createElement('div');
+      zone.className = 'qe-drop-zone';
+      zone.dataset.partId = String(partId);
+      initDropZone(zone);
+
+      var addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'qe-add-q-btn';
+      addBtn.dataset.partId = String(partId);
+      addBtn.textContent = '+ Question';
+
+      var inlineForm = makeInlineForm(String(partId));
+      initInlineForm(inlineForm);
+
+      addBtn.addEventListener('click', function() {
+        inlineForm.hidden = !inlineForm.hidden;
+        if (!inlineForm.hidden) inlineForm.querySelector('textarea').focus();
+      });
+
+      body.appendChild(zone);
+      body.appendChild(addBtn);
+      body.appendChild(inlineForm);
+      details.appendChild(summary);
+      details.appendChild(body);
+      return details;
+    }
+
+    function makeInlineForm(partId) {
+      var div = document.createElement('div');
+      div.className = 'qe-inline-form';
+      div.dataset.partId = partId;
+      div.hidden = true;
+
+      var ta = document.createElement('textarea');
+      ta.className = 'wf-stats-note-input qea-text';
+      ta.rows = 2;
+      ta.placeholder = 'Texte de la question…';
+      ta.style.resize = 'vertical';
+
+      var typeRow = document.createElement('div');
+      typeRow.className = 'quiz-qadd-type-row';
+      [['gradient','Gradient'],['single','Choix unique'],['multiple','Choix multiple']].forEach(function(t, i) {
+        var lbl = document.createElement('label');
+        lbl.className = 'chip-option quiz-type-chip' + (i === 0 ? ' quiz-type-chip--active' : '');
+        lbl.dataset.type = t[0];
+        var inp = document.createElement('input');
+        inp.type = 'radio'; inp.name = 'qa-type'; inp.value = t[0];
+        inp.style.display = 'none';
+        if (i === 0) inp.checked = true;
+        var s = document.createElement('span');
+        s.textContent = t[1];
+        lbl.appendChild(inp); lbl.appendChild(s);
+        typeRow.appendChild(lbl);
+      });
+
+      var optsWrap = document.createElement('div');
+      optsWrap.className = 'qea-options-wrap';
+      optsWrap.hidden = true;
+      var optsList = document.createElement('div');
+      optsList.className = 'qea-options-list';
+      var addOpt = document.createElement('button');
+      addOpt.type = 'button';
+      addOpt.className = 'qea-add-opt wf-stats-pill';
+      addOpt.style.cssText = 'font-size:.76rem;margin-top:.3rem';
+      addOpt.textContent = '+ Option';
+      optsWrap.appendChild(optsList);
+      optsWrap.appendChild(addOpt);
+
+      var actions = document.createElement('div');
+      actions.className = 'qea-actions';
+      var submit = document.createElement('button');
+      submit.type = 'button';
+      submit.className = 'qea-submit wf-save-btn';
+      submit.style.cssText = 'position:static;font-size:.82rem';
+      submit.textContent = 'Ajouter';
+      var cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'qea-cancel wf-cancel-link';
+      cancel.textContent = 'Annuler';
+      actions.appendChild(submit);
+      actions.appendChild(cancel);
+
+      div.appendChild(ta);
+      div.appendChild(typeRow);
+      div.appendChild(optsWrap);
+      div.appendChild(actions);
+      return div;
+    }
+
+    // ── Init all existing elements ────────────────────────────────────────
+    document.querySelectorAll('.qe-question').forEach(initQuestion);
+    document.querySelectorAll('.qe-drop-zone').forEach(initDropZone);
+    document.querySelectorAll('.qe-inline-form').forEach(initInlineForm);
+    document.querySelectorAll('.qe-add-q-btn').forEach(initAddQBtn);
+    document.querySelectorAll('.qe-part-title').forEach(initPartTitle);
+    document.querySelectorAll('.qe-part-del').forEach(initPartDelBtn);
   })();
   </script>
   <% } %>

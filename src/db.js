@@ -2130,6 +2130,16 @@ function deleteQuizPart(partId) {
   db.prepare(`UPDATE custom_quiz_questions SET part_id=NULL WHERE part_id=?`).run(partId);
   db.prepare(`DELETE FROM custom_quiz_parts WHERE id=?`).run(partId);
 }
+function reorderAllQuizQuestions(quizId, sections) {
+  const stmt = db.prepare(`UPDATE custom_quiz_questions SET part_id=?, position=? WHERE id=? AND quiz_id=?`);
+  db.transaction(() => {
+    sections.forEach(({ part_id, ids }) => {
+      (ids || []).forEach((qid, i) => {
+        stmt.run(part_id || null, i, qid, quizId);
+      });
+    });
+  })();
+}
 function deleteCustomQuizQuestion(id) {
   db.prepare(`DELETE FROM custom_quiz_questions WHERE id=?`).run(id);
 }
@@ -2298,4 +2308,5 @@ module.exports = {
   createQuizPart,
   updateQuizPart,
   deleteQuizPart,
+  reorderAllQuizQuestions,
 };

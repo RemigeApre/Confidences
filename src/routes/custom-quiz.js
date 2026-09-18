@@ -14,12 +14,10 @@ function buildCustomQuizRouter(config) {
     );
     const now = Math.floor(Date.now() / 1000);
     const weekAgo = now - 7 * 86400;
-
     const featured = all.filter(q => q.featured);
     const newest   = all.filter(q => q.created_at >= weekAgo).slice(0, 10);
     const updated  = all.filter(q => q.updated_at > q.created_at && q.updated_at >= weekAgo).slice(0, 10);
     const notDone  = all.filter(q => !completedIds.has(q.id)).slice(0, 10);
-
     res.render("quiz-home", { config, featured, newest, updated, notDone, all, completedIds });
   });
 
@@ -30,7 +28,7 @@ function buildCustomQuizRouter(config) {
   router.post("/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const title = String(req.body.title || "").slice(0, 200).trim();
     if (!title) return res.redirect("/quizz/new");
-    const desc  = String(req.body.description || "").slice(0, 2000).trim();
+    const desc = String(req.body.description || "").slice(0, 2000).trim();
     const id = db.createCustomQuiz(title, desc);
     res.redirect(`/quizz/${id}/edit`);
   });
@@ -58,16 +56,15 @@ function buildCustomQuizRouter(config) {
     res.redirect("/quizz");
   });
 
-  // ── Parties (admin, JSON) ────────────────────────────────────────────────
+  // ── Parties ──────────────────────────────────────────────────────────────
   router.post("/:id/parts", requireAdmin, express.json(), (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.status(404).json({ ok: false });
     const title = String(req.body.title || "").slice(0, 200).trim();
-    if (!title) return res.status(400).json({ ok: false, error: "title required" });
+    if (!title) return res.status(400).json({ ok: false });
     const existing = db.getQuizParts(quiz.id);
     const partId = db.createQuizPart(quiz.id, title, existing.length);
-    const parts = db.getQuizParts(quiz.id);
-    res.json({ ok: true, partId, parts });
+    res.json({ ok: true, partId, parts: db.getQuizParts(quiz.id) });
   });
   router.post("/:id/parts/:pid/update", requireAdmin, express.json(), (req, res) => {
     const title = String(req.body.title || "").slice(0, 200).trim();
@@ -77,32 +74,34 @@ function buildCustomQuizRouter(config) {
   });
   router.post("/:id/parts/:pid/delete", requireAdmin, express.json(), (req, res) => {
     db.deleteQuizPart(req.params.pid);
-    const parts = db.getQuizParts(req.params.id);
-    res.json({ ok: true, parts });
+    res.json({ ok: true, parts: db.getQuizParts(req.params.id) });
   });
 
-  // ── Questions (admin, JSON) ──────────────────────────────────────────────
+  // ── Questions ─────────────────────────────────────────────────────────────
+  router.post("/:id/questions/reorder-all", requireAdmin, express.json(), (req, res) => {
+    const quiz = db.getCustomQuiz(req.params.id);
+    if (!quiz) return res.status(404).json({ ok: false });
+    const sections = Array.isArray(req.body.sections) ? req.body.sections : [];
+    db.reorderAllQuizQuestions(quiz.id, sections);
+    res.json({ ok: true });
+  });
   router.post("/:id/questions", requireAdmin, express.json(), (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.status(404).json({ ok: false });
     const text = String(req.body.text || "").slice(0, 500).trim();
-    if (!text) return res.status(400).json({ ok: false, error: "text required" });
+    if (!text) return res.status(400).json({ ok: false });
     const type = ["gradient","single","multiple"].includes(req.body.type) ? req.body.type : "gradient";
-    const options = Array.isArray(req.body.options) ? req.body.options.map(o => String(o).slice(0,200)) : [];
+    const options = Array.isArray(req.body.options) ? req.body.options.map(o => String(o).slice(0, 200)) : [];
     const partId = req.body.part_id ? Number(req.body.part_id) : null;
     const existing = db.getCustomQuizQuestions(quiz.id);
     db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length, partId);
     const newQs = db.getCustomQuizQuestions(quiz.id);
     newQs.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
-    res.json({ ok: true, questions: newQs });
+    const added = newQs[newQs.length - 1];
+    res.json({ ok: true, question: added });
   });
   router.post("/:id/questions/:qid/delete", requireAdmin, express.json(), (req, res) => {
     db.deleteCustomQuizQuestion(req.params.qid);
-    res.json({ ok: true });
-  });
-  router.post("/:id/questions/reorder", requireAdmin, express.json(), (req, res) => {
-    const ids = Array.isArray(req.body.ids) ? req.body.ids.map(Number) : [];
-    db.updateCustomQuizQuestionsOrder(req.params.id, ids);
     res.json({ ok: true });
   });
 
