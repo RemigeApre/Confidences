@@ -48,7 +48,7 @@
             <div class="qe-q-body">
               <p class="qe-q-text"><%= q.text %></p>
               <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
-                <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : 'Choix multiple' %>
+                <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : 'Mise en ordre' %>
               </span>
               <% if (q.options && q.options.length) { %>
                 <div class="quiz-qitem-opts">
@@ -69,6 +69,7 @@
           <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient"><input type="radio" name="qa-type" value="gradient" checked style="display:none"/><span>Gradient</span></label>
           <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qa-type" value="single" style="display:none"/><span>Choix unique</span></label>
           <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qa-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
+          <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qa-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
         </div>
         <div class="qea-options-wrap" hidden>
           <div class="qea-options-list"></div>
@@ -101,7 +102,7 @@
                   <div class="qe-q-body">
                     <p class="qe-q-text"><%= q.text %></p>
                     <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
-                      <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : 'Choix multiple' %>
+                      <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : 'Mise en ordre' %>
                     </span>
                     <% if (q.options && q.options.length) { %>
                       <div class="quiz-qitem-opts">
@@ -245,7 +246,7 @@
     }
 
     // ── Question element factory ──────────────────────────────────────────
-    var typeLabels = { gradient: 'Gradient', single: 'Choix unique', multiple: 'Choix multiple' };
+    var typeLabels = { gradient: 'Gradient', single: 'Choix unique', multiple: 'Choix multiple', ranking: 'Mise en ordre' };
 
     function makeQuestion(q) {
       var div = document.createElement('div');
@@ -399,6 +400,9 @@
 
     // ── Part : renommer (contenteditable) ─────────────────────────────────
     function initPartTitle(span) {
+      span.addEventListener('click', function(e) {
+        e.stopPropagation(); // empêche le <details> de se replier
+      });
       span.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') { e.preventDefault(); span.blur(); }
         if (e.key === 'Escape') { span.textContent = span.dataset.orig || ''; span.blur(); }
@@ -549,7 +553,7 @@
 
       var typeRow = document.createElement('div');
       typeRow.className = 'quiz-qadd-type-row';
-      [['gradient','Gradient'],['single','Choix unique'],['multiple','Choix multiple']].forEach(function(t, i) {
+      [['gradient','Gradient'],['single','Choix unique'],['multiple','Choix multiple'],['ranking','Mise en ordre']].forEach(function(t, i) {
         var lbl = document.createElement('label');
         lbl.className = 'chip-option quiz-type-chip' + (i === 0 ? ' quiz-type-chip--active' : '');
         lbl.dataset.type = t[0];

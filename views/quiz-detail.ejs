@@ -58,7 +58,7 @@
                   </label>
                 <% }) %>
               </div>
-            <% } else { %>
+            <% } else if (q.type === 'multiple') { %>
               <div class="quiz-choice-list">
                 <% q.options.forEach(function(opt, oi) { %>
                   <label class="quiz-choice-opt">
@@ -68,6 +68,22 @@
                   </label>
                 <% }) %>
               </div>
+            <% } else if (q.type === 'ranking') { %>
+              <%
+                var rankOrder = (Array.isArray(answers[q.id]) && answers[q.id].length)
+                  ? answers[q.id].map(Number)
+                  : q.options.map(function(_, i){ return i; });
+              %>
+              <div class="quiz-rank-list" id="qrank-<%= q.id %>">
+                <% rankOrder.forEach(function(idx) { if (!q.options[idx]) return; %>
+                  <div class="quiz-rank-item" draggable="true" data-idx="<%= idx %>">
+                    <span class="quiz-rank-handle">&#11835;</span>
+                    <span class="quiz-rank-label"><%= q.options[idx] %></span>
+                  </div>
+                <% }) %>
+              </div>
+              <input type="hidden" name="q_<%= q.id %>_rank"
+                id="qrank-input-<%= q.id %>" value="<%= rankOrder.join(',') %>" />
             <% } %>
           </div>
         <% }) %>
@@ -99,7 +115,7 @@
                   </label>
                 <% }) %>
               </div>
-            <% } else { %>
+            <% } else if (q.type === 'multiple') { %>
               <div class="quiz-choice-list">
                 <% q.options.forEach(function(opt, oi) { %>
                   <label class="quiz-choice-opt">
@@ -109,6 +125,22 @@
                   </label>
                 <% }) %>
               </div>
+            <% } else if (q.type === 'ranking') { %>
+              <%
+                var rankOrder = (Array.isArray(answers[q.id]) && answers[q.id].length)
+                  ? answers[q.id].map(Number)
+                  : q.options.map(function(_, i){ return i; });
+              %>
+              <div class="quiz-rank-list" id="qrank-<%= q.id %>">
+                <% rankOrder.forEach(function(idx) { if (!q.options[idx]) return; %>
+                  <div class="quiz-rank-item" draggable="true" data-idx="<%= idx %>">
+                    <span class="quiz-rank-handle">&#11835;</span>
+                    <span class="quiz-rank-label"><%= q.options[idx] %></span>
+                  </div>
+                <% }) %>
+              </div>
+              <input type="hidden" name="q_<%= q.id %>_rank"
+                id="qrank-input-<%= q.id %>" value="<%= rankOrder.join(',') %>" />
             <% } %>
           </div>
         <% }) %>
@@ -127,5 +159,54 @@
       </div>
     <% } %>
   </div>
+<script>
+(function() {
+  document.querySelectorAll('.quiz-rank-list').forEach(function(list) {
+    var qid = list.id.replace('qrank-', '');
+    var hidden = document.getElementById('qrank-input-' + qid);
+    var dragging = null;
+    var indicator = null;
+
+    function getInd() {
+      if (!indicator) { indicator = document.createElement('div'); indicator.className = 'qe-drop-indicator'; }
+      return indicator;
+    }
+    function updateHidden() {
+      var order = Array.from(list.querySelectorAll('.quiz-rank-item')).map(function(el) { return el.dataset.idx; });
+      if (hidden) hidden.value = order.join(',');
+    }
+    function afterEl(y) {
+      return Array.from(list.querySelectorAll('.quiz-rank-item:not(.qe-q-dragging)')).reduce(function(c, el) {
+        var b = el.getBoundingClientRect(), off = y - b.top - b.height / 2;
+        return (off < 0 && off > c.off) ? { off: off, el: el } : c;
+      }, { off: -Infinity, el: null }).el;
+    }
+    list.querySelectorAll('.quiz-rank-item').forEach(function(item) {
+      item.addEventListener('dragstart', function(e) {
+        dragging = item; item.classList.add('qe-q-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      item.addEventListener('dragend', function() {
+        item.classList.remove('qe-q-dragging');
+        if (indicator && indicator.parentNode) indicator.remove();
+        dragging = null; updateHidden();
+      });
+    });
+    list.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      var after = afterEl(e.clientY), ind = getInd();
+      if (!after) list.appendChild(ind); else list.insertBefore(ind, after);
+    });
+    list.addEventListener('drop', function(e) {
+      e.preventDefault();
+      if (indicator && indicator.parentNode) indicator.remove();
+      if (!dragging) return;
+      var after = afterEl(e.clientY);
+      if (!after) list.appendChild(dragging); else list.insertBefore(dragging, after);
+      updateHidden();
+    });
+  });
+})();
+</script>
 </main>
 <%- include('partials/foot') %>

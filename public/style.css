@@ -13926,3 +13926,19 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   transition: background .15s, color .15s;
 }
 .qe-delete-fab:hover { background: hsl(0,40%,22%); color: hsl(0,70%,75%); }
+
+/* ── Quiz : type ranking ─────────────────────────────────────────────────── */
+.quiz-qtype--ranking { background: hsl(30,40%,22%); color: hsl(30,70%,72%); }
+.quiz-rank-list { margin: .6rem 0; }
+.quiz-rank-item {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .5rem .65rem; border-radius: 8px;
+  background: hsl(220,14%,14%); border: 1px solid var(--border);
+  margin-bottom: .35rem; cursor: grab;
+  transition: opacity .15s, border-color .15s;
+  user-select: none;
+}
+.quiz-rank-item:hover { border-color: hsl(220,20%,32%); }
+.quiz-rank-item.qe-q-dragging { opacity: .35; }
+.quiz-rank-handle { color: var(--muted); font-size: .9rem; flex-shrink: 0; }
+.quiz-rank-label { flex: 1; font-size: .88rem; }

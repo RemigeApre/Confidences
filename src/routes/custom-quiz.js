@@ -128,6 +128,9 @@ function buildCustomQuizRouter(config) {
         answers[q.id] = Object.keys(req.body)
           .filter(k => k === `q_${q.id}[]` || k.startsWith(`q_${q.id}_`))
           .flatMap(k => Array.isArray(req.body[k]) ? req.body[k] : [req.body[k]]);
+      } else if (q.type === "ranking") {
+        const v = req.body[`q_${q.id}_rank`];
+        answers[q.id] = v ? v.split(',').filter(Boolean).map(Number) : [];
       } else {
         const v = req.body[`q_${q.id}`];
         answers[q.id] = v !== undefined ? v : null;
