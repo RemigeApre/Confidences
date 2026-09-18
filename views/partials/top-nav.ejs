@@ -27,7 +27,7 @@
     var _path = locals.currentPath || "";
     var _onWiki    = _path.indexOf("/wiki") === 0 || _path.indexOf("/tags") === 0;
     var _onGalerie = _path.indexOf("/galerie") === 0 || _path.indexOf("/bd") === 0;
-    var _onQuizz   = _path.indexOf("/section") === 0 || _path.indexOf("/results") === 0;
+    var _onQuizz   = _path.indexOf("/quizz") === 0 || _path.indexOf("/section") === 0 || _path.indexOf("/results") === 0;
     var _onGalerieOnly = _path.indexOf("/galerie") === 0;
     var _onBd     = _path.indexOf("/bd") === 0;
     var _onProfil = _path.indexOf("/favoris") === 0;
@@ -57,17 +57,7 @@
             <a href="/tags" class="pc-drop-link">Labels</a>
           </div>
         </div>
-        <div class="pc-nav-item pc-has-drop">
-          <a href="/" class="pc-nav-link pc-nav-link--quizz<%= _onQuizz ? ' pc-nav-link--active' : '' %>">Quizz</a>
-          <div class="pc-drop">
-            <% (config.sections || []).forEach(function(s, i) { %>
-              <a href="/section/<%= i %>" class="pc-drop-link">
-                <span class="pc-drop-dot" style="background:<%= s.color || 'var(--accent)' %>"></span>
-                <%= s.title %>
-              </a>
-            <% }) %>
-          </div>
-        </div>
+        <a href="/quizz" class="pc-nav-link pc-nav-link--quizz<%= _onQuizz ? ' pc-nav-link--active' : '' %>">Quizz</a>
       <% } %>
     </div>
 
