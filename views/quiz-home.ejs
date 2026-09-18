@@ -23,74 +23,92 @@
   <%# ─── CONTENU PRINCIPAL ─────────────────────────────────────────────── %>
   <div class="quiz-hub">
 
-    <% if (featured.length) { %>
-    <section class="quiz-hub-strip">
-      <h2 class="quiz-hub-strip-title">Mis en avant</h2>
-      <div class="quiz-hub-cards">
-        <% featured.forEach(function(q) { %>
-          <a href="/quizz/<%= q.id %>" class="quiz-hub-card<%= completedIds.has(q.id) ? ' quiz-hub-card--done' : '' %>">
-            <p class="quiz-hub-card-title"><%= q.title %></p>
-            <% if (q.description) { %><p class="quiz-hub-card-desc"><%= q.description %></p><% } %>
-            <span class="quiz-hub-card-meta"><%= q.question_count %> question<%= q.question_count !== 1 ? 's' : '' %></span>
-            <% if (completedIds.has(q.id)) { %><span class="quiz-hub-card-done">&#10003;</span><% } %>
-          </a>
-        <% }) %>
-      </div>
-    </section>
-    <% } %>
-
-    <% if (newest.length) { %>
-    <section class="quiz-hub-strip">
-      <h2 class="quiz-hub-strip-title">Nouveaux quizz</h2>
-      <div class="quiz-hub-cards">
-        <% newest.forEach(function(q) { %>
-          <a href="/quizz/<%= q.id %>" class="quiz-hub-card<%= completedIds.has(q.id) ? ' quiz-hub-card--done' : '' %>">
-            <p class="quiz-hub-card-title"><%= q.title %></p>
-            <% if (q.description) { %><p class="quiz-hub-card-desc"><%= q.description %></p><% } %>
-            <span class="quiz-hub-card-meta"><%= q.question_count %> question<%= q.question_count !== 1 ? 's' : '' %></span>
-            <% if (completedIds.has(q.id)) { %><span class="quiz-hub-card-done">&#10003;</span><% } %>
-          </a>
-        <% }) %>
-      </div>
-    </section>
-    <% } %>
-
-    <% if (updated.length) { %>
-    <section class="quiz-hub-strip">
-      <h2 class="quiz-hub-strip-title">Mis à jour</h2>
-      <div class="quiz-hub-cards">
-        <% updated.forEach(function(q) { %>
-          <a href="/quizz/<%= q.id %>" class="quiz-hub-card<%= completedIds.has(q.id) ? ' quiz-hub-card--done' : '' %>">
-            <p class="quiz-hub-card-title"><%= q.title %></p>
-            <% if (q.description) { %><p class="quiz-hub-card-desc"><%= q.description %></p><% } %>
-            <span class="quiz-hub-card-meta"><%= q.question_count %> question<%= q.question_count !== 1 ? 's' : '' %></span>
-            <% if (completedIds.has(q.id)) { %><span class="quiz-hub-card-done">&#10003;</span><% } %>
-          </a>
-        <% }) %>
-      </div>
-    </section>
-    <% } %>
-
-    <% if (notDone.length) { %>
-    <section class="quiz-hub-strip">
-      <h2 class="quiz-hub-strip-title">Non encore complétés</h2>
-      <div class="quiz-hub-cards">
-        <% notDone.forEach(function(q) { %>
-          <a href="/quizz/<%= q.id %>" class="quiz-hub-card<%= completedIds.has(q.id) ? ' quiz-hub-card--done' : '' %>">
-            <p class="quiz-hub-card-title"><%= q.title %></p>
-            <% if (q.description) { %><p class="quiz-hub-card-desc"><%= q.description %></p><% } %>
-            <span class="quiz-hub-card-meta"><%= q.question_count %> question<%= q.question_count !== 1 ? 's' : '' %></span>
-            <% if (completedIds.has(q.id)) { %><span class="quiz-hub-card-done">&#10003;</span><% } %>
-          </a>
-        <% }) %>
-      </div>
-    </section>
-    <% } %>
+    <%
+      /* Helper EJS pour rendre une strip de cartes */
+      function quizStrip(title, list) {
+        if (!list.length) return '';
+        var out = '<section class="quiz-hub-strip">';
+        out += '<h2 class="quiz-hub-strip-title">' + title + '</h2>';
+        out += '<div class="quiz-hub-cards">';
+        list.forEach(function(q) {
+          var prog = progressMap[q.id];
+          var pct  = prog ? prog.pct : 0;
+          var done = completedIds.has(q.id);
+          out += '<button type="button" class="qhc' + (done ? ' qhc--done' : '') + '"'
+              + ' data-qid="' + q.id + '"'
+              + ' data-title="' + q.title.replace(/"/g, '&quot;') + '"'
+              + ' data-desc="' + (q.description || '').replace(/"/g, '&quot;') + '"'
+              + ' data-questions="' + q.question_count + '"'
+              + ' data-parts="' + q.parts_count + '"'
+              + ' data-duration="' + (q.duration || '') + '"'
+              + ' data-pct="' + pct + '"'
+              + ' data-done="' + (done ? '1' : '0') + '"'
+              + ' data-completed-at="' + (prog && prog.completedAt ? prog.completedAt : '') + '"'
+              + '>';
+          // SVG placeholder header
+          out += '<div class="qhc-img">';
+          out += '<svg viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid slice" class="qhc-svg">';
+          out += '<defs><radialGradient id="qg' + q.id + '" cx="50%" cy="50%" r="65%">';
+          out += '<stop offset="0%" stop-color="hsl(260,42%,26%)"/>';
+          out += '<stop offset="100%" stop-color="hsl(260,32%,11%)"/>';
+          out += '</radialGradient></defs>';
+          out += '<rect width="200" height="110" fill="url(#qg' + q.id + ')"/>';
+          out += '<circle cx="100" cy="55" r="34" fill="none" stroke="hsl(270,58%,60%)" stroke-width="1.4" opacity="0.45"/>';
+          out += '<circle cx="100" cy="55" r="18" fill="hsl(265,52%,34%)" opacity="0.35"/>';
+          out += '<polygon points="100,30 122,68 78,68" fill="none" stroke="hsl(280,62%,66%)" stroke-width="1.1" opacity="0.5"/>';
+          out += '<line x1="10" y1="55" x2="60" y2="55" stroke="hsl(260,38%,55%)" stroke-width="0.8" opacity="0.4"/>';
+          out += '<line x1="140" y1="55" x2="190" y2="55" stroke="hsl(260,38%,55%)" stroke-width="0.8" opacity="0.4"/>';
+          out += '<circle cx="100" cy="55" r="4" fill="hsl(270,70%,70%)" opacity="0.65"/>';
+          out += '</svg>';
+          // Progress ring or done badge
+          if (done) {
+            out += '<span class="qhc-done-badge">&#10003;</span>';
+          } else if (pct > 0) {
+            out += '<div class="qhc-progress-ring" style="--pct:' + pct + '" title="' + pct + '% complété"></div>';
+          }
+          out += '</div>';
+          out += '<div class="qhc-body">';
+          out += '<p class="qhc-title">' + q.title + '</p>';
+          out += '<p class="qhc-meta">' + q.question_count + ' question' + (q.question_count !== 1 ? 's' : '');
+          if (q.parts_count > 0) out += ' · ' + q.parts_count + ' partie' + (q.parts_count !== 1 ? 's' : '');
+          if (q.duration) out += ' · ~' + q.duration + ' min';
+          out += '</p>';
+          out += '</div>';
+          out += '<div class="qhc-accent"></div>';
+          out += '</button>';
+        });
+        out += '</div></section>';
+        return out;
+      }
+    %>
+    <%- quizStrip('Mis en avant', featured) %>
+    <%- quizStrip('Nouveaux quizz', newest) %>
+    <%- quizStrip('Mis à jour', updated) %>
+    <%- quizStrip('Non encore complétés', notDone) %>
 
     <% if (!featured.length && !newest.length && !updated.length && !notDone.length) { %>
       <p class="quiz-hub-empty">Aucun quizz disponible pour le moment.</p>
     <% } %>
 
+  </div>
+
+  <%# ─── POPUP ─────────────────────────────────────────────────────────── %>
+  <div class="qhp-overlay" id="qhp-overlay" hidden></div>
+  <div class="qhp-modal" id="qhp-modal" hidden role="dialog" aria-modal="true">
+    <button type="button" class="qhp-close" id="qhp-close" aria-label="Fermer">&#215;</button>
+    <div class="qhp-img-wrap" id="qhp-img-wrap"></div>
+    <div class="qhp-body">
+      <h2 class="qhp-title" id="qhp-title"></h2>
+      <p class="qhp-desc" id="qhp-desc"></p>
+      <div class="qhp-stats" id="qhp-stats"></div>
+      <div class="qhp-progress-wrap" id="qhp-progress-wrap" hidden>
+        <div class="qhp-progress-bar"><div class="qhp-progress-fill" id="qhp-progress-fill"></div></div>
+        <span class="qhp-progress-label" id="qhp-progress-label"></span>
+      </div>
+      <div class="qhp-actions">
+        <a class="qhp-start-btn" id="qhp-start-btn" href="#">Commencer</a>
+      </div>
+    </div>
   </div>
 
   <% if (currentUser && currentUser.isAdmin) { %>
@@ -106,6 +124,89 @@
       <div class="wiki-todo-body" id="quiz-todo-body"></div>
     </aside>
   <% } %>
+
+  <script>
+  (function() {
+    var overlay = document.getElementById('qhp-overlay');
+    var modal   = document.getElementById('qhp-modal');
+    var closeBtn = document.getElementById('qhp-close');
+    var titleEl = document.getElementById('qhp-title');
+    var descEl  = document.getElementById('qhp-desc');
+    var statsEl = document.getElementById('qhp-stats');
+    var progressWrap = document.getElementById('qhp-progress-wrap');
+    var progressFill = document.getElementById('qhp-progress-fill');
+    var progressLabel = document.getElementById('qhp-progress-label');
+    var startBtn = document.getElementById('qhp-start-btn');
+    var imgWrap = document.getElementById('qhp-img-wrap');
+
+    function openPopup(btn) {
+      var qid = btn.dataset.qid;
+      var title = btn.dataset.title;
+      var desc  = btn.dataset.desc;
+      var questions = btn.dataset.questions;
+      var parts = btn.dataset.parts;
+      var duration = btn.dataset.duration;
+      var pct  = parseInt(btn.dataset.pct, 10) || 0;
+      var done = btn.dataset.done === '1';
+      var completedAt = btn.dataset.completedAt;
+
+      titleEl.textContent = title;
+      descEl.textContent = desc;
+      descEl.hidden = !desc;
+
+      // Stats
+      var statsHTML = '<span class="qhp-stat">' + questions + ' question' + (questions != 1 ? 's' : '') + '</span>';
+      if (parseInt(parts) > 0) statsHTML += '<span class="qhp-stat">' + parts + ' partie' + (parts != 1 ? 's' : '') + '</span>';
+      if (duration) statsHTML += '<span class="qhp-stat">~' + duration + ' min</span>';
+      statsEl.innerHTML = statsHTML;
+
+      // Progress
+      if (done) {
+        progressWrap.hidden = false;
+        progressFill.style.width = '100%';
+        if (completedAt) {
+          var d = new Date(parseInt(completedAt) * 1000);
+          progressLabel.textContent = 'Terminé le ' + d.toLocaleDateString('fr-FR');
+        } else {
+          progressLabel.textContent = 'Terminé ✓';
+        }
+        startBtn.textContent = 'Reprendre / Voir les résultats';
+      } else if (pct > 0) {
+        progressWrap.hidden = false;
+        progressFill.style.width = pct + '%';
+        progressLabel.textContent = pct + '% complété';
+        startBtn.textContent = 'Continuer';
+      } else {
+        progressWrap.hidden = true;
+        startBtn.textContent = 'Commencer';
+      }
+
+      startBtn.href = '/quizz/' + qid;
+
+      // SVG header clone
+      imgWrap.innerHTML = '';
+      var svg = btn.querySelector('.qhc-svg');
+      if (svg) {
+        var clone = svg.cloneNode(true);
+        clone.removeAttribute('class');
+        clone.style.cssText = 'width:100%;height:100%;display:block';
+        imgWrap.appendChild(clone);
+      }
+
+      overlay.hidden = false;
+      modal.hidden = false;
+    }
+
+    function closePopup() { overlay.hidden = true; modal.hidden = true; }
+
+    document.querySelectorAll('.qhc').forEach(function(btn) {
+      btn.addEventListener('click', function() { openPopup(btn); });
+    });
+    closeBtn.addEventListener('click', closePopup);
+    overlay.addEventListener('click', closePopup);
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !modal.hidden) closePopup(); });
+  })();
+  </script>
 
   <% if (currentUser && currentUser.isAdmin) { %>
   <script>
@@ -126,7 +227,6 @@
       var items = load();
       bodyEl.innerHTML = '';
 
-      // ── Formulaire d'ajout ─────────────────────────────────────────────
       var addBlock = document.createElement('div');
       addBlock.className = 'qtodo-add-block';
 
@@ -165,7 +265,6 @@
       addBlock.appendChild(addBtn);
       bodyEl.appendChild(addBlock);
 
-      // ── Liste ──────────────────────────────────────────────────────────
       if (!items.length) {
         var empty = document.createElement('p');
         empty.className = 'qtodo-empty';

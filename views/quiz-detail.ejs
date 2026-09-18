@@ -56,61 +56,140 @@
       <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
         <input type="hidden" name="_step" value="<%= stepIdx %>" />
 
-        <% stepData.questions.forEach(function(q, qi) { %>
+        <% stepData.questions.forEach(function(q, qi) {
+          var savedAns = answers[q.id];
+          // Pour les questions has_sides, savedAns est un objet {side, give, receive}
+          var savedSide = (q.has_sides && savedAns && typeof savedAns === 'object') ? (savedAns.side || 'both') : 'both';
+          var savedGive    = (q.has_sides && savedAns && typeof savedAns === 'object') ? savedAns.give    : savedAns;
+          var savedReceive = (q.has_sides && savedAns && typeof savedAns === 'object') ? savedAns.receive : null;
+        %>
           <div class="quiz-q-block">
             <p class="quiz-q-text">
               <span class="quiz-q-num"><%= qi + 1 %></span><%= q.text %>
             </p>
 
-            <% if (q.type === 'gradient') { %>
-              <div class="quiz-gradient-row">
-                <% GRAD_LEVELS.forEach(function(lvl) { %>
-                  <label class="quiz-grad-opt">
-                    <input type="radio" name="q_<%= q.id %>" value="<%= lvl.k %>"
-                      <%= (answers[q.id] == lvl.k) ? 'checked' : '' %> />
-                    <span class="quiz-grad-label"><%= lvl.l %></span>
-                  </label>
-                <% }) %>
+            <% if (q.has_sides) { %>
+              <%# ── Toggle Donner / Subir ───────────────────────────────────── %>
+              <div class="quiz-sides-toggle" id="qsides-<%= q.id %>">
+                <button type="button" class="quiz-side-btn<%= savedSide === 'both'    ? ' quiz-side-btn--active' : '' %>" data-side="both">Les deux</button>
+                <button type="button" class="quiz-side-btn<%= savedSide === 'give'    ? ' quiz-side-btn--active' : '' %>" data-side="give">Donner</button>
+                <button type="button" class="quiz-side-btn<%= savedSide === 'receive' ? ' quiz-side-btn--active' : '' %>" data-side="receive">Recevoir</button>
               </div>
+              <input type="hidden" name="q_<%= q.id %>_side" id="qside-input-<%= q.id %>" value="<%= savedSide %>" />
+            <% } %>
 
-            <% } else if (q.type === 'single') { %>
-              <div class="quiz-choice-list">
-                <% q.options.forEach(function(opt, oi) { %>
-                  <label class="quiz-choice-opt">
-                    <input type="radio" name="q_<%= q.id %>" value="<%= oi %>"
-                      <%= (String(answers[q.id]) == String(oi)) ? 'checked' : '' %> />
-                    <span><%= opt %></span>
-                  </label>
-                <% }) %>
-              </div>
+            <%
+              /* Helper pour rendre les inputs d'un côté donné */
+              function renderInputs(suffix, savedVal) {
+                var html = '';
+                if (q.type === 'gradient') {
+                  html += '<div class="quiz-gradient-row">';
+                  GRAD_LEVELS.forEach(function(lvl) {
+                    html += '<label class="quiz-grad-opt">'
+                      + '<input type="radio" name="q_' + q.id + '_' + suffix + '" value="' + lvl.k + '"'
+                      + (savedVal == lvl.k ? ' checked' : '') + ' />'
+                      + '<span class="quiz-grad-label">' + lvl.l + '</span>'
+                      + '</label>';
+                  });
+                  html += '</div>';
+                } else if (q.type === 'single') {
+                  html += '<div class="quiz-choice-list">';
+                  q.options.forEach(function(opt, oi) {
+                    html += '<label class="quiz-choice-opt">'
+                      + '<input type="radio" name="q_' + q.id + '_' + suffix + '" value="' + oi + '"'
+                      + (String(savedVal) == String(oi) ? ' checked' : '') + ' />'
+                      + '<span>' + opt + '</span></label>';
+                  });
+                  html += '</div>';
+                } else if (q.type === 'multiple') {
+                  html += '<div class="quiz-choice-list">';
+                  q.options.forEach(function(opt, oi) {
+                    var checked = Array.isArray(savedVal) && savedVal.indexOf(String(oi)) !== -1;
+                    html += '<label class="quiz-choice-opt">'
+                      + '<input type="checkbox" name="q_' + q.id + '_' + suffix + '_' + oi + '" value="' + oi + '"'
+                      + (checked ? ' checked' : '') + ' />'
+                      + '<span>' + opt + '</span></label>';
+                  });
+                  html += '</div>';
+                } else if (q.type === 'ranking') {
+                  var rankOrder = (Array.isArray(savedVal) && savedVal.length)
+                    ? savedVal.map(Number)
+                    : q.options.map(function(_, i){ return i; });
+                  html += '<div class="quiz-rank-list" id="qrank-' + q.id + '-' + suffix + '">';
+                  rankOrder.forEach(function(idx) {
+                    if (!q.options[idx]) return;
+                    html += '<div class="quiz-rank-item" draggable="true" data-idx="' + idx + '">'
+                      + '<span class="quiz-rank-handle">&#11835;</span>'
+                      + '<span class="quiz-rank-label">' + q.options[idx] + '</span>'
+                      + '</div>';
+                  });
+                  html += '</div>';
+                  html += '<input type="hidden" name="q_' + q.id + '_' + suffix + '_rank" id="qrank-input-' + q.id + '-' + suffix + '" value="' + rankOrder.join(',') + '" />';
+                }
+                return html;
+              }
+            %>
 
-            <% } else if (q.type === 'multiple') { %>
-              <div class="quiz-choice-list">
-                <% q.options.forEach(function(opt, oi) { %>
-                  <label class="quiz-choice-opt">
-                    <input type="checkbox" name="q_<%= q.id %>_<%= oi %>" value="<%= oi %>"
-                      <%= (Array.isArray(answers[q.id]) && answers[q.id].indexOf(String(oi)) !== -1) ? 'checked' : '' %> />
-                    <span><%= opt %></span>
-                  </label>
-                <% }) %>
-              </div>
+            <% if (!q.has_sides) { %>
+              <%# ── Question normale ──────────────────────────────────────── %>
+              <% if (q.type === 'gradient') { %>
+                <div class="quiz-gradient-row">
+                  <% GRAD_LEVELS.forEach(function(lvl) { %>
+                    <label class="quiz-grad-opt">
+                      <input type="radio" name="q_<%= q.id %>" value="<%= lvl.k %>"
+                        <%= (savedAns == lvl.k) ? 'checked' : '' %> />
+                      <span class="quiz-grad-label"><%= lvl.l %></span>
+                    </label>
+                  <% }) %>
+                </div>
+              <% } else if (q.type === 'single') { %>
+                <div class="quiz-choice-list">
+                  <% q.options.forEach(function(opt, oi) { %>
+                    <label class="quiz-choice-opt">
+                      <input type="radio" name="q_<%= q.id %>" value="<%= oi %>"
+                        <%= (String(savedAns) == String(oi)) ? 'checked' : '' %> />
+                      <span><%= opt %></span>
+                    </label>
+                  <% }) %>
+                </div>
+              <% } else if (q.type === 'multiple') { %>
+                <div class="quiz-choice-list">
+                  <% q.options.forEach(function(opt, oi) { %>
+                    <label class="quiz-choice-opt">
+                      <input type="checkbox" name="q_<%= q.id %>_<%= oi %>" value="<%= oi %>"
+                        <%= (Array.isArray(savedAns) && savedAns.indexOf(String(oi)) !== -1) ? 'checked' : '' %> />
+                      <span><%= opt %></span>
+                    </label>
+                  <% }) %>
+                </div>
+              <% } else if (q.type === 'ranking') { %>
+                <%
+                  var rankOrder = (Array.isArray(savedAns) && savedAns.length)
+                    ? savedAns.map(Number)
+                    : q.options.map(function(_, i){ return i; });
+                %>
+                <div class="quiz-rank-list" id="qrank-<%= q.id %>">
+                  <% rankOrder.forEach(function(idx) { if (!q.options[idx]) return; %>
+                    <div class="quiz-rank-item" draggable="true" data-idx="<%= idx %>">
+                      <span class="quiz-rank-handle">&#11835;</span>
+                      <span class="quiz-rank-label"><%= q.options[idx] %></span>
+                    </div>
+                  <% }) %>
+                </div>
+                <input type="hidden" name="q_<%= q.id %>_rank"
+                  id="qrank-input-<%= q.id %>" value="<%= rankOrder.join(',') %>" />
+              <% } %>
 
-            <% } else if (q.type === 'ranking') { %>
-              <%
-                var rankOrder = (Array.isArray(answers[q.id]) && answers[q.id].length)
-                  ? answers[q.id].map(Number)
-                  : q.options.map(function(_, i){ return i; });
-              %>
-              <div class="quiz-rank-list" id="qrank-<%= q.id %>">
-                <% rankOrder.forEach(function(idx) { if (!q.options[idx]) return; %>
-                  <div class="quiz-rank-item" draggable="true" data-idx="<%= idx %>">
-                    <span class="quiz-rank-handle">&#11835;</span>
-                    <span class="quiz-rank-label"><%= q.options[idx] %></span>
-                  </div>
-                <% }) %>
+            <% } else { %>
+              <%# ── Question avec côtés Donner / Subir ───────────────────── %>
+              <div class="quiz-side-row quiz-side-row--give<%= savedSide === 'receive' ? ' quiz-side-row--hidden' : '' %>" id="qside-give-<%= q.id %>">
+                <span class="quiz-side-label">Donner</span>
+                <%- renderInputs('give', savedGive) %>
               </div>
-              <input type="hidden" name="q_<%= q.id %>_rank"
-                id="qrank-input-<%= q.id %>" value="<%= rankOrder.join(',') %>" />
+              <div class="quiz-side-row quiz-side-row--receive<%= savedSide === 'give' ? ' quiz-side-row--hidden' : '' %>" id="qside-receive-<%= q.id %>">
+                <span class="quiz-side-label">Recevoir</span>
+                <%- renderInputs('receive', savedReceive) %>
+              </div>
             <% } %>
           </div>
         <% }) %>
@@ -142,16 +221,17 @@
 
   <script>
   (function() {
+    // ── Ranking drag & drop ───────────────────────────────────────────────
     document.querySelectorAll('.quiz-rank-list').forEach(function(list) {
-      var qid = list.id.replace('qrank-', '');
-      var hidden = document.getElementById('qrank-input-' + qid);
+      var key = list.id.replace('qrank-', ''); // "qid" or "qid-give" / "qid-receive"
+      var hidden = document.getElementById('qrank-input-' + key);
       var dragging = null, indicator = null;
       function getInd() {
         if (!indicator) { indicator = document.createElement('div'); indicator.className = 'qe-drop-indicator'; }
         return indicator;
       }
       function updateHidden() {
-        hidden.value = Array.from(list.querySelectorAll('.quiz-rank-item')).map(function(el) { return el.dataset.idx; }).join(',');
+        if (hidden) hidden.value = Array.from(list.querySelectorAll('.quiz-rank-item')).map(function(el) { return el.dataset.idx; }).join(',');
       }
       function afterEl(y) {
         return Array.from(list.querySelectorAll('.quiz-rank-item:not(.qe-q-dragging)')).reduce(function(c, el) {
@@ -165,6 +245,25 @@
       });
       list.addEventListener('dragover', function(e) { e.preventDefault(); var after = afterEl(e.clientY), ind = getInd(); if (!after) list.appendChild(ind); else list.insertBefore(ind, after); });
       list.addEventListener('drop', function(e) { e.preventDefault(); if (indicator && indicator.parentNode) indicator.remove(); if (!dragging) return; var after = afterEl(e.clientY); if (!after) list.appendChild(dragging); else list.insertBefore(dragging, after); updateHidden(); });
+    });
+
+    // ── Toggle Donner / Subir ─────────────────────────────────────────────
+    document.querySelectorAll('.quiz-sides-toggle').forEach(function(toggle) {
+      var qid = toggle.id.replace('qsides-', '');
+      var hiddenSide = document.getElementById('qside-input-' + qid);
+      var giveRow    = document.getElementById('qside-give-' + qid);
+      var receiveRow = document.getElementById('qside-receive-' + qid);
+
+      toggle.querySelectorAll('.quiz-side-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var side = btn.dataset.side;
+          toggle.querySelectorAll('.quiz-side-btn').forEach(function(b) { b.classList.remove('quiz-side-btn--active'); });
+          btn.classList.add('quiz-side-btn--active');
+          if (hiddenSide) hiddenSide.value = side;
+          if (giveRow)    giveRow.classList.toggle('quiz-side-row--hidden', side === 'receive');
+          if (receiveRow) receiveRow.classList.toggle('quiz-side-row--hidden', side === 'give');
+        });
+      });
     });
   })();
   </script>

@@ -2091,10 +2091,17 @@ db.exec(`
 if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE name='part_id'").get()) {
   db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN part_id INTEGER REFERENCES custom_quiz_parts(id) ON DELETE SET NULL");
 }
+if (!db.prepare("SELECT * FROM pragma_table_info('custom_quizzes') WHERE name='duration'").get()) {
+  db.exec("ALTER TABLE custom_quizzes ADD COLUMN duration INTEGER DEFAULT NULL");
+}
+if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE name='has_sides'").get()) {
+  db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN has_sides INTEGER DEFAULT 0");
+}
 
 function listCustomQuizzes() {
   return db.prepare(`SELECT q.*,
-    (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count
+    (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count,
+    (SELECT COUNT(*) FROM custom_quiz_parts WHERE quiz_id = q.id) as parts_count
     FROM custom_quizzes q ORDER BY q.updated_at DESC`).all();
 }
 function getCustomQuiz(id) {
@@ -2104,8 +2111,9 @@ function createCustomQuiz(title, description) {
   const r = db.prepare(`INSERT INTO custom_quizzes (title, description) VALUES (?, ?)`).run(title, description);
   return r.lastInsertRowid;
 }
-function updateCustomQuiz(id, title, description, featured) {
-  db.prepare(`UPDATE custom_quizzes SET title=?, description=?, featured=?, updated_at=unixepoch() WHERE id=?`).run(title, description, featured ? 1 : 0, id);
+function updateCustomQuiz(id, title, description, featured, duration) {
+  db.prepare(`UPDATE custom_quizzes SET title=?, description=?, featured=?, duration=?, updated_at=unixepoch() WHERE id=?`)
+    .run(title, description, featured ? 1 : 0, duration != null ? Number(duration) : null, id);
 }
 function deleteCustomQuiz(id) {
   db.prepare(`DELETE FROM custom_quizzes WHERE id=?`).run(id);
@@ -2113,8 +2121,9 @@ function deleteCustomQuiz(id) {
 function getCustomQuizQuestions(quizId) {
   return db.prepare(`SELECT * FROM custom_quiz_questions WHERE quiz_id=? ORDER BY position`).all(quizId);
 }
-function addCustomQuizQuestion(quizId, text, type, options, position, partId) {
-  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position, part_id) VALUES (?,?,?,?,?,?)`).run(quizId, text, type, JSON.stringify(options || []), position || 0, partId || null);
+function addCustomQuizQuestion(quizId, text, type, options, position, partId, hasSides) {
+  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position, part_id, has_sides) VALUES (?,?,?,?,?,?,?)`)
+    .run(quizId, text, type, JSON.stringify(options || []), position || 0, partId || null, hasSides ? 1 : 0);
 }
 function getQuizParts(quizId) {
   return db.prepare(`SELECT * FROM custom_quiz_parts WHERE quiz_id=? ORDER BY position`).all(quizId);
@@ -2140,8 +2149,9 @@ function reorderAllQuizQuestions(quizId, sections) {
     });
   })();
 }
-function updateCustomQuizQuestion(id, text, type, options) {
-  db.prepare(`UPDATE custom_quiz_questions SET text=?, type=?, options=? WHERE id=?`).run(text, type, JSON.stringify(options || []), id);
+function updateCustomQuizQuestion(id, text, type, options, hasSides) {
+  db.prepare(`UPDATE custom_quiz_questions SET text=?, type=?, options=?, has_sides=? WHERE id=?`)
+    .run(text, type, JSON.stringify(options || []), hasSides ? 1 : 0, id);
 }
 function deleteCustomQuizQuestion(id) {
   db.prepare(`DELETE FROM custom_quiz_questions WHERE id=?`).run(id);
@@ -2166,6 +2176,15 @@ function listQuizzesNotCompleted(userId) {
     FROM custom_quizzes q
     WHERE q.id NOT IN (SELECT quiz_id FROM custom_quiz_answers WHERE user_id=? AND completed=1)
     ORDER BY q.updated_at DESC`).all(userId);
+}
+function getAllQuizAnswers(quizId) {
+  return db.prepare(`
+    SELECT a.*, u.username
+    FROM custom_quiz_answers a
+    JOIN users u ON u.id = a.user_id
+    WHERE a.quiz_id = ?
+    ORDER BY a.updated_at DESC
+  `).all(quizId);
 }
 
 module.exports = {
@@ -2313,4 +2332,5 @@ module.exports = {
   updateQuizPart,
   deleteQuizPart,
   reorderAllQuizQuestions,
+  getAllQuizAnswers,
 };

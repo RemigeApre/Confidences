@@ -33,6 +33,10 @@
           <span class="wiki-display-opt-track"></span>
           <span class="wiki-display-opt-text">Mettre en avant</span>
         </label>
+        <label class="qe-field-label" style="margin-top:.75rem">Durée estimée (minutes)</label>
+        <input type="number" name="duration" form="qe-meta-form" min="1" max="999"
+          class="wf-orce-name-input" style="width:6rem"
+          value="<%= quiz.duration != null ? quiz.duration : '' %>" placeholder="—" />
       </div>
     </details>
 
@@ -43,13 +47,14 @@
           var rootQs = questions.filter(function(q){ return !q.part_id; });
           rootQs.forEach(function(q) {
         %>
-          <div class="qe-question" draggable="true" data-qid="<%= q.id %>">
+          <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>">
             <span class="qe-q-handle">&#11835;</span>
             <div class="qe-q-body">
               <p class="qe-q-text"><%= q.text %></p>
               <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
                 <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : 'Mise en ordre' %>
               </span>
+              <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
               <% if (q.options && q.options.length) { %>
                 <div class="quiz-qitem-opts">
                   <% q.options.forEach(function(o){ %>
@@ -76,6 +81,10 @@
           <div class="qea-options-list"></div>
           <button type="button" class="qea-add-opt wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
         </div>
+        <label class="qea-sides-toggle">
+          <input type="checkbox" class="qea-sides-chk" />
+          <span class="qea-sides-label">Donner / Subir</span>
+        </label>
         <div class="qea-actions">
           <button type="button" class="qea-submit wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
           <button type="button" class="qea-cancel wf-cancel-link">Annuler</button>
@@ -172,6 +181,10 @@
         <div id="qe-edit-opts-list"></div>
         <button type="button" id="qe-edit-add-opt" class="wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
       </div>
+      <label class="qea-sides-toggle" style="margin-top:.6rem">
+        <input type="checkbox" id="qe-edit-sides" />
+        <span class="qea-sides-label">Donner / Subir</span>
+      </label>
       <div class="qea-actions" style="margin-top:.75rem">
         <button type="button" id="qe-edit-save" class="wf-save-btn" style="position:static">Enregistrer</button>
         <button type="button" id="qe-edit-cancel" class="wf-cancel-link">Annuler</button>
@@ -182,6 +195,9 @@
 
   <%# ── Boutons fixes ───────────────────────────────────────────────────────── %>
   <button type="submit" form="qe-meta-form" class="qe-save-fab">Enregistrer</button>
+  <% if (quiz) { %>
+    <a href="/quizz/<%= quiz.id %>/export" class="qe-export-fab" title="Exporter les données CSV">&#8615; CSV</a>
+  <% } %>
   <% if (quiz) { %>
     <form method="POST" action="/quizz/<%= quiz.id %>/delete" class="qe-delete-form">
       <button type="submit" class="qe-delete-fab"
@@ -239,6 +255,10 @@
       editOptsList.innerHTML = '';
       currentOpts.forEach(function(o) { addEditOptRow(o); });
 
+      // Donner/Subir
+      var editSidesChk = document.getElementById('qe-edit-sides');
+      editSidesChk.checked = el.dataset.hasSides === '1';
+
       editOverlay.hidden = false;
       editText.focus();
     }
@@ -278,18 +298,26 @@
       if (currentEditType !== 'gradient') {
         options = Array.from(editOptsList.querySelectorAll('input')).map(function(i) { return i.value.trim(); }).filter(Boolean);
       }
+      var hasSidesVal = document.getElementById('qe-edit-sides').checked ? 1 : 0;
       fetch('/quizz/' + quizId + '/questions/' + editingQid + '/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, type: currentEditType, options: options })
+        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal })
       }).then(function(r) { return r.json(); }).then(function(d) {
         if (!d.ok) return;
         // Mettre à jour le DOM de la question
+        editingEl.dataset.hasSides = d.question.has_sides ? '1' : '0';
         var body = editingEl.querySelector('.qe-q-body');
         body.querySelector('.qe-q-text').textContent = d.question.text;
         var badge = body.querySelector('.quiz-qitem-type');
         badge.className = 'quiz-qitem-type quiz-qtype--' + d.question.type;
         badge.textContent = typeLabels[d.question.type] || d.question.type;
+        var existingBadge = body.querySelector('.qe-sides-badge');
+        if (existingBadge) existingBadge.remove();
+        if (d.question.has_sides) {
+          var sb = document.createElement('span'); sb.className = 'qe-sides-badge'; sb.textContent = '⇅ Donner/Subir';
+          badge.insertAdjacentElement('afterend', sb);
+        }
         var existing = body.querySelector('.quiz-qitem-opts');
         if (existing) existing.remove();
         if (d.question.options && d.question.options.length) {
@@ -505,7 +533,7 @@
         fetch('/quizz/' + quizId + '/questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId })
+          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId, has_sides: formEl.querySelector('.qea-sides-chk').checked ? 1 : 0 })
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
@@ -522,6 +550,7 @@
           chips[0].classList.add('quiz-type-chip--active');
           currentType = 'gradient';
           optsWrap.hidden = true;
+          formEl.querySelector('.qea-sides-chk').checked = false;
           if (keepOpen) {
             textarea.focus();
           } else {
