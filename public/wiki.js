@@ -831,6 +831,39 @@
   // "Tous" — aucune catégorie cochée revient déjà à "toutes affichées".
   var includedCategoriesSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-cats-inc") || "[]"));
   var excludedCategoriesSet = new Set(JSON.parse(localStorage.getItem("wiki-filter-cats-exc") || "[]"));
+
+  // ── Options d'affichage des cartes ──────────────────────────────────
+  var optStatFemme  = document.getElementById("wiki-opt-stat-femme");
+  var optMaturity   = document.getElementById("wiki-opt-maturity");
+
+  function applyDisplayOpts() {
+    var showStat     = !optStatFemme || optStatFemme.checked;
+    var showMaturity = !optMaturity  || optMaturity.checked;
+    document.querySelectorAll(".wiki-card-stat-donut").forEach(function(el) {
+      el.style.display = showStat ? "" : "none";
+    });
+    document.querySelectorAll(".wiki-maturity-badge").forEach(function(el) {
+      el.style.display = showMaturity ? "" : "none";
+    });
+  }
+
+  if (optStatFemme) {
+    var _savedStat = localStorage.getItem("wiki-opt-stat-femme");
+    if (_savedStat === "0") optStatFemme.checked = false;
+    optStatFemme.addEventListener("change", function() {
+      localStorage.setItem("wiki-opt-stat-femme", optStatFemme.checked ? "1" : "0");
+      applyDisplayOpts();
+    });
+  }
+  if (optMaturity) {
+    var _savedMat = localStorage.getItem("wiki-opt-maturity");
+    if (_savedMat === "0") optMaturity.checked = false;
+    optMaturity.addEventListener("change", function() {
+      localStorage.setItem("wiki-opt-maturity", optMaturity.checked ? "1" : "0");
+      applyDisplayOpts();
+    });
+  }
+  applyDisplayOpts();
   var propStates = {
     // "owned" retiré : doublon avec la bascule "Nos objets".
     "not-rated": Number(localStorage.getItem("wiki-prop-not-rated") || "0"),
@@ -1232,6 +1265,8 @@
         if (paginationTopEl) paginationTopEl.hidden = true;
       }
     }
+
+    applyDisplayOpts();
   }
 
   // ── Pagination ─────────────────────────────────────────────────────────────

@@ -145,6 +145,22 @@
             </div>
           <% } %>
 
+          <details class="wiki-subpanel-details">
+            <summary class="wiki-subpanel-summary">Affichage des cartes</summary>
+            <div class="wiki-display-opts" id="wiki-display-opts">
+              <label class="wiki-display-opt-label">
+                <input type="checkbox" id="wiki-opt-stat-femme" checked />
+                <span>Indicateur statistique femmes</span>
+              </label>
+              <% if (currentUser && currentUser.isAdmin) { %>
+              <label class="wiki-display-opt-label">
+                <input type="checkbox" id="wiki-opt-maturity" checked />
+                <span>Pastille de version</span>
+              </label>
+              <% } %>
+            </div>
+          </details>
+
           <% if (currentUser) { %>
             <%- include('partials/filter-profiles', { section: 'wiki', profiles: locals.wikiFilterProfiles || [] }) %>
           <% } %>
