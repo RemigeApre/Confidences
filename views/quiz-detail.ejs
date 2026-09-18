@@ -13,43 +13,105 @@
       <p class="quiz-hub-empty">Ce quizz n'a pas encore de questions.</p>
     <% } else { %>
     <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
-      <% questions.forEach(function(q, i) { %>
-        <div class="quiz-q-block">
-          <p class="quiz-q-text"><span class="quiz-q-num"><%= i+1 %></span><%= q.text %></p>
 
-          <% if (q.type === 'gradient') { %>
-            <div class="quiz-gradient-row">
-              <% var LEVELS = [{k:'1',l:'Pas du tout'},{k:'2',l:'Un peu'},{k:'3',l:'Neutre'},{k:'4',l:'Beaucoup'},{k:'5',l:'Énormément'}]; %>
-              <% LEVELS.forEach(function(lvl) { %>
-                <label class="quiz-grad-opt">
-                  <input type="radio" name="q_<%= q.id %>" value="<%= lvl.k %>" <%= (answers[q.id] == lvl.k) ? 'checked' : '' %> />
-                  <span class="quiz-grad-label"><%= lvl.l %></span>
-                </label>
-              <% }) %>
-            </div>
+      <%
+        // Grouper les questions par partie
+        var GRAD_LEVELS = [
+          {k:'1',l:'Pas du tout'},
+          {k:'2',l:'Un peu'},
+          {k:'3',l:'Neutre'},
+          {k:'4',l:'Beaucoup'},
+          {k:'5',l:'Énormément'}
+        ];
 
-          <% } else if (q.type === 'single') { %>
-            <div class="quiz-choice-list">
-              <% q.options.forEach(function(opt, oi) { %>
-                <label class="quiz-choice-opt">
-                  <input type="radio" name="q_<%= q.id %>" value="<%= oi %>" <%= (String(answers[q.id]) == String(oi)) ? 'checked' : '' %> />
-                  <span><%= opt %></span>
-                </label>
-              <% }) %>
-            </div>
+        // Questions sans partie d'abord (part_id null), puis par partie dans l'ordre
+        var partIds = [];
+        questions.forEach(function(q) {
+          if (q.part_id && partIds.indexOf(q.part_id) === -1) partIds.push(q.part_id);
+        });
 
-          <% } else { %>
-            <div class="quiz-choice-list">
-              <% q.options.forEach(function(opt, oi) { %>
-                <label class="quiz-choice-opt">
-                  <input type="checkbox" name="q_<%= q.id %>_<%= oi %>" value="<%= oi %>"
-                    <%= (Array.isArray(answers[q.id]) && answers[q.id].indexOf(String(oi)) !== -1) ? 'checked' : '' %> />
-                  <span><%= opt %></span>
-                </label>
-              <% }) %>
-            </div>
-          <% } %>
-        </div>
+        var unassigned = questions.filter(function(q) { return !q.part_id; });
+        var qIndex = 0;
+
+        function renderQuestion(q) { /* handled inline below */ }
+      %>
+
+      <% if (unassigned.length) { %>
+        <% unassigned.forEach(function(q) { qIndex++; %>
+          <div class="quiz-q-block">
+            <p class="quiz-q-text"><span class="quiz-q-num"><%= qIndex %></span><%= q.text %></p>
+            <% if (q.type === 'gradient') { %>
+              <div class="quiz-gradient-row">
+                <% GRAD_LEVELS.forEach(function(lvl) { %>
+                  <label class="quiz-grad-opt">
+                    <input type="radio" name="q_<%= q.id %>" value="<%= lvl.k %>" <%= (answers[q.id] == lvl.k) ? 'checked' : '' %> />
+                    <span class="quiz-grad-label"><%= lvl.l %></span>
+                  </label>
+                <% }) %>
+              </div>
+            <% } else if (q.type === 'single') { %>
+              <div class="quiz-choice-list">
+                <% q.options.forEach(function(opt, oi) { %>
+                  <label class="quiz-choice-opt">
+                    <input type="radio" name="q_<%= q.id %>" value="<%= oi %>" <%= (String(answers[q.id]) == String(oi)) ? 'checked' : '' %> />
+                    <span><%= opt %></span>
+                  </label>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <div class="quiz-choice-list">
+                <% q.options.forEach(function(opt, oi) { %>
+                  <label class="quiz-choice-opt">
+                    <input type="checkbox" name="q_<%= q.id %>_<%= oi %>" value="<%= oi %>"
+                      <%= (Array.isArray(answers[q.id]) && answers[q.id].indexOf(String(oi)) !== -1) ? 'checked' : '' %> />
+                    <span><%= opt %></span>
+                  </label>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        <% }) %>
+      <% } %>
+
+      <% parts.forEach(function(part) {
+        var partQs = questions.filter(function(q) { return q.part_id === part.id; });
+        if (!partQs.length) return;
+      %>
+        <h2 class="quiz-part-heading"><%= part.title %></h2>
+        <% partQs.forEach(function(q) { qIndex++; %>
+          <div class="quiz-q-block">
+            <p class="quiz-q-text"><span class="quiz-q-num"><%= qIndex %></span><%= q.text %></p>
+            <% if (q.type === 'gradient') { %>
+              <div class="quiz-gradient-row">
+                <% GRAD_LEVELS.forEach(function(lvl) { %>
+                  <label class="quiz-grad-opt">
+                    <input type="radio" name="q_<%= q.id %>" value="<%= lvl.k %>" <%= (answers[q.id] == lvl.k) ? 'checked' : '' %> />
+                    <span class="quiz-grad-label"><%= lvl.l %></span>
+                  </label>
+                <% }) %>
+              </div>
+            <% } else if (q.type === 'single') { %>
+              <div class="quiz-choice-list">
+                <% q.options.forEach(function(opt, oi) { %>
+                  <label class="quiz-choice-opt">
+                    <input type="radio" name="q_<%= q.id %>" value="<%= oi %>" <%= (String(answers[q.id]) == String(oi)) ? 'checked' : '' %> />
+                    <span><%= opt %></span>
+                  </label>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <div class="quiz-choice-list">
+                <% q.options.forEach(function(opt, oi) { %>
+                  <label class="quiz-choice-opt">
+                    <input type="checkbox" name="q_<%= q.id %>_<%= oi %>" value="<%= oi %>"
+                      <%= (Array.isArray(answers[q.id]) && answers[q.id].indexOf(String(oi)) !== -1) ? 'checked' : '' %> />
+                    <span><%= opt %></span>
+                  </label>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        <% }) %>
       <% }) %>
 
       <div class="quiz-answer-actions">

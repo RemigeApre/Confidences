@@ -17,11 +17,12 @@
     </div>
     <% if (quiz) { %>
     <label class="wiki-display-opt-label" style="margin-top:.75rem">
-      <input type="checkbox" name="featured" value="1" <%= quiz.featured ? 'checked' : '' %> />
-      <span>Mettre en avant</span>
+      <input type="checkbox" name="featured" value="1" <%= quiz.featured ? 'checked' : '' %> hidden />
+      <span class="wiki-display-opt-track"></span>
+      <span class="wiki-display-opt-text">Mettre en avant</span>
     </label>
     <% } %>
-    <div style="margin-top:1rem;display:flex;gap:.75rem">
+    <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center">
       <button type="submit" class="wf-save-btn" style="position:static">Enregistrer</button>
       <% if (quiz) { %>
         <a href="/quizz/<%= quiz.id %>" class="wf-cancel-link">Voir le quizz</a>
@@ -34,6 +35,36 @@
 
   <% if (quiz) { %>
   <div class="quiz-qlist" id="quiz-qlist">
+
+    <%# ── Parties ─────────────────────────────────────────────────────── %>
+    <div class="quiz-parts-section">
+      <div class="quiz-parts-header">
+        <h2 class="wf-section-title" style="margin:0">Parties</h2>
+        <button type="button" id="qp-add-btn" class="wf-stats-pill">+ Nouvelle partie</button>
+      </div>
+
+      <div id="quiz-parts-list">
+        <% parts.forEach(function(p) { %>
+          <div class="quiz-part-item" data-id="<%= p.id %>">
+            <span class="quiz-part-drag">⠿</span>
+            <span class="quiz-part-title" data-id="<%= p.id %>"><%= p.title %></span>
+            <button type="button" class="quiz-part-edit-btn" data-id="<%= p.id %>" title="Renommer">✎</button>
+            <button type="button" class="quiz-part-del-btn" data-id="<%= p.id %>" title="Supprimer">✕</button>
+          </div>
+        <% }) %>
+        <% if (!parts.length) { %>
+          <p class="quiz-parts-empty" id="quiz-parts-empty">Aucune partie — les questions seront sans section.</p>
+        <% } %>
+      </div>
+
+      <div id="qp-add-form" hidden style="margin-top:.6rem;display:flex;gap:.5rem">
+        <input type="text" id="qp-title-input" class="wf-orce-name-input" placeholder="Nom de la partie…" maxlength="200" style="flex:1" />
+        <button type="button" id="qp-confirm-btn" class="wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
+        <button type="button" id="qp-cancel-btn" class="wf-cancel-link">Annuler</button>
+      </div>
+    </div>
+
+    <%# ── Questions ───────────────────────────────────────────────────── %>
     <h2 class="wf-section-title" style="margin-top:2rem">Questions (<span id="quiz-q-count"><%= questions.length %></span>)</h2>
     <div id="quiz-questions-container">
       <% questions.forEach(function(q, i) { %>
@@ -41,7 +72,14 @@
           <span class="quiz-qitem-num"><%= i+1 %>.</span>
           <div class="quiz-qitem-body">
             <p class="quiz-qitem-text"><%= q.text %></p>
-            <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : 'Choix multiple' %></span>
+            <div class="quiz-qitem-meta">
+              <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : 'Choix multiple' %></span>
+              <% if (q.part_id) {
+                var qpart = parts.find(function(p){ return p.id === q.part_id; });
+                if (qpart) { %>
+                  <span class="quiz-qitem-part-badge"><%= qpart.title %></span>
+              <% } } %>
+            </div>
             <% if (q.options && q.options.length) { %>
               <div class="quiz-qitem-opts"><% q.options.forEach(function(o){ %><span class="quiz-qitem-opt"><%= o %></span><% }) %></div>
             <% } %>
@@ -54,6 +92,19 @@
     <div class="quiz-qadd-panel" id="quiz-qadd-panel">
       <h3 class="wf-section-title" style="font-size:.85rem;margin:.75rem 0 .5rem">Nouvelle question</h3>
       <textarea id="qa-text" class="wf-stats-note-input" rows="2" placeholder="Texte de la question…" style="resize:vertical"></textarea>
+
+      <% if (parts.length) { %>
+      <div style="margin-top:.5rem">
+        <label class="wiki-meta-label" style="font-size:.75rem;margin-bottom:.25rem">Partie (optionnel)</label>
+        <select id="qa-part" class="wiki-sort-select" style="width:100%">
+          <option value="">— Sans partie —</option>
+          <% parts.forEach(function(p) { %>
+            <option value="<%= p.id %>"><%= p.title %></option>
+          <% }) %>
+        </select>
+      </div>
+      <% } %>
+
       <div class="quiz-qadd-type-row">
         <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient">
           <input type="radio" name="qa-type" value="gradient" checked style="display:none" />
@@ -86,9 +137,11 @@
     var qaOptionsWrap = document.getElementById("qa-options-wrap");
     var qaOptionsList = document.getElementById("qa-options-list");
     var qaAddOption = document.getElementById("qa-add-option");
+    var qaPart = document.getElementById("qa-part");
     var typeChips = document.querySelectorAll(".quiz-type-chip");
     var currentType = "gradient";
 
+    // ── Type chips ────────────────────────────────────────────────────────
     typeChips.forEach(function(chip) {
       chip.addEventListener("click", function() {
         typeChips.forEach(function(c) { c.classList.remove("quiz-type-chip--active"); });
@@ -100,14 +153,25 @@
     });
 
     qaAddOption.addEventListener("click", function() {
-      var inp = document.createElement("div");
-      inp.className = "quiz-option-row";
-      inp.innerHTML = '<input type="text" class="wf-orce-name-input" placeholder="Option…" style="flex:1;font-size:.82rem" />'
-        + '<button type="button" class="quiz-qitem-del" style="flex-shrink:0">✕</button>';
-      inp.querySelector("button").addEventListener("click", function() { inp.remove(); });
-      qaOptionsList.appendChild(inp);
+      var row = document.createElement("div");
+      row.className = "quiz-option-row";
+      var optInput = document.createElement("input");
+      optInput.type = "text";
+      optInput.className = "wf-orce-name-input";
+      optInput.placeholder = "Option…";
+      optInput.style.cssText = "flex:1;font-size:.82rem";
+      var optDel = document.createElement("button");
+      optDel.type = "button";
+      optDel.className = "quiz-qitem-del";
+      optDel.style.flexShrink = "0";
+      optDel.textContent = "✕";
+      optDel.addEventListener("click", function() { row.remove(); });
+      row.appendChild(optInput);
+      row.appendChild(optDel);
+      qaOptionsList.appendChild(row);
     });
 
+    // ── Ajouter une question ──────────────────────────────────────────────
     qaSubmit.addEventListener("click", function() {
       var text = (qaText.value || "").trim();
       if (!text) return;
@@ -115,10 +179,11 @@
       if (currentType !== "gradient") {
         options = Array.from(qaOptionsList.querySelectorAll("input")).map(function(i) { return i.value.trim(); }).filter(Boolean);
       }
+      var partId = qaPart ? (qaPart.value || null) : null;
       fetch("/quizz/" + quizId + "/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text, type: currentType, options: options })
+        body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId })
       })
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -129,6 +194,7 @@
       });
     });
 
+    // ── Supprimer une question ────────────────────────────────────────────
     function deleteQuestion(id) {
       fetch("/quizz/" + quizId + "/questions/" + id + "/delete", { method: "POST", headers: { "Content-Type": "application/json" } })
       .then(function(r) { return r.json(); })
@@ -143,6 +209,11 @@
     function updateCount() {
       if (qCount) qCount.textContent = container.querySelectorAll(".quiz-qitem").length;
     }
+
+    var partTitles = {};
+    document.querySelectorAll(".quiz-part-item").forEach(function(el) {
+      partTitles[el.dataset.id] = el.querySelector(".quiz-part-title").textContent;
+    });
 
     function renderQuestions(qs) {
       container.innerHTML = "";
@@ -163,12 +234,23 @@
         textP.className = "quiz-qitem-text";
         textP.textContent = q.text;
 
+        var meta = document.createElement("div");
+        meta.className = "quiz-qitem-meta";
+
         var typeSpan = document.createElement("span");
         typeSpan.className = "quiz-qitem-type quiz-qtype--" + q.type;
         typeSpan.textContent = typeLabels[q.type] || q.type;
+        meta.appendChild(typeSpan);
+
+        if (q.part_id && partTitles[q.part_id]) {
+          var badge = document.createElement("span");
+          badge.className = "quiz-qitem-part-badge";
+          badge.textContent = partTitles[q.part_id];
+          meta.appendChild(badge);
+        }
 
         body.appendChild(textP);
-        body.appendChild(typeSpan);
+        body.appendChild(meta);
 
         if (q.options && q.options.length) {
           var optsDiv = document.createElement("div");
@@ -201,6 +283,148 @@
       var btn = e.target.closest(".quiz-qitem-del");
       if (!btn || !btn.dataset.id) return;
       deleteQuestion(Number(btn.dataset.id));
+    });
+
+    // ── Parties ───────────────────────────────────────────────────────────
+    var qpAddBtn   = document.getElementById("qp-add-btn");
+    var qpAddForm  = document.getElementById("qp-add-form");
+    var qpTitleInput = document.getElementById("qp-title-input");
+    var qpConfirm  = document.getElementById("qp-confirm-btn");
+    var qpCancel   = document.getElementById("qp-cancel-btn");
+    var qpList     = document.getElementById("quiz-parts-list");
+    var qpEmpty    = document.getElementById("quiz-parts-empty");
+
+    if (qpAddBtn) {
+      qpAddBtn.addEventListener("click", function() {
+        qpAddForm.hidden = false;
+        qpTitleInput.focus();
+      });
+      qpCancel.addEventListener("click", function() {
+        qpAddForm.hidden = true;
+        qpTitleInput.value = "";
+      });
+      qpConfirm.addEventListener("click", function() {
+        var title = (qpTitleInput.value || "").trim();
+        if (!title) return;
+        fetch("/quizz/" + quizId + "/parts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: title })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.ok) return;
+          qpTitleInput.value = "";
+          qpAddForm.hidden = true;
+          renderParts(data.parts);
+          // Ajouter l'option dans le select de questions
+          if (qaPart) {
+            var opt = document.createElement("option");
+            opt.value = data.partId;
+            opt.textContent = title;
+            qaPart.appendChild(opt);
+          }
+        });
+      });
+    }
+
+    function renderParts(parts) {
+      qpList.innerHTML = "";
+      if (!parts.length) {
+        var p = document.createElement("p");
+        p.className = "quiz-parts-empty";
+        p.id = "quiz-parts-empty";
+        p.textContent = "Aucune partie — les questions seront sans section.";
+        qpList.appendChild(p);
+        return;
+      }
+      parts.forEach(function(part) {
+        partTitles[part.id] = part.title;
+        var div = document.createElement("div");
+        div.className = "quiz-part-item";
+        div.dataset.id = part.id;
+
+        var drag = document.createElement("span");
+        drag.className = "quiz-part-drag";
+        drag.textContent = "⠿";
+
+        var titleSpan = document.createElement("span");
+        titleSpan.className = "quiz-part-title";
+        titleSpan.dataset.id = part.id;
+        titleSpan.textContent = part.title;
+
+        var editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "quiz-part-edit-btn";
+        editBtn.dataset.id = part.id;
+        editBtn.title = "Renommer";
+        editBtn.textContent = "✎";
+
+        var delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "quiz-part-del-btn";
+        delBtn.dataset.id = part.id;
+        delBtn.title = "Supprimer";
+        delBtn.textContent = "✕";
+
+        div.appendChild(drag);
+        div.appendChild(titleSpan);
+        div.appendChild(editBtn);
+        div.appendChild(delBtn);
+        qpList.appendChild(div);
+      });
+    }
+
+    qpList.addEventListener("click", function(e) {
+      var editBtn = e.target.closest(".quiz-part-edit-btn");
+      var delBtn  = e.target.closest(".quiz-part-del-btn");
+
+      if (editBtn) {
+        var pid = editBtn.dataset.id;
+        var titleSpan = qpList.querySelector(".quiz-part-title[data-id='" + pid + "']");
+        var current = titleSpan.textContent;
+        var newTitle = prompt("Renommer la partie :", current);
+        if (!newTitle || !newTitle.trim() || newTitle.trim() === current) return;
+        fetch("/quizz/" + quizId + "/parts/" + pid + "/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle.trim() })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.ok) return;
+          titleSpan.textContent = newTitle.trim();
+          partTitles[pid] = newTitle.trim();
+          if (qaPart) {
+            var opt = qaPart.querySelector("option[value='" + pid + "']");
+            if (opt) opt.textContent = newTitle.trim();
+          }
+          // Mettre à jour les badges dans les questions
+          document.querySelectorAll(".quiz-qitem-part-badge").forEach(function(b) {
+            if (b.closest(".quiz-qitem") && b.closest(".quiz-qitem").dataset.partId == pid) {
+              b.textContent = newTitle.trim();
+            }
+          });
+        });
+      }
+
+      if (delBtn) {
+        var pid = delBtn.dataset.id;
+        if (!confirm("Supprimer cette partie ? Les questions associées resteront mais seront sans partie.")) return;
+        fetch("/quizz/" + quizId + "/parts/" + pid + "/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.ok) return;
+          renderParts(data.parts);
+          if (qaPart) {
+            var opt = qaPart.querySelector("option[value='" + pid + "']");
+            if (opt) opt.remove();
+          }
+        });
+      }
     });
   })();
   </script>

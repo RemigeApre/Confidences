@@ -25,7 +25,7 @@ function buildCustomQuizRouter(config) {
 
   // Créer (admin)
   router.get("/new", requireAdmin, (req, res) => {
-    res.render("quiz-form", { config, quiz: null, questions: [] });
+    res.render("quiz-form", { config, quiz: null, questions: [], parts: [] });
   });
   router.post("/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const title = String(req.body.title || "").slice(0, 200).trim();
@@ -39,9 +39,10 @@ function buildCustomQuizRouter(config) {
   router.get("/:id/edit", requireAdmin, (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.redirect("/quizz");
+    const parts = db.getQuizParts(quiz.id);
     const questions = db.getCustomQuizQuestions(quiz.id);
     questions.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
-    res.render("quiz-form", { config, quiz, questions });
+    res.render("quiz-form", { config, quiz, questions, parts });
   });
   router.post("/:id/update", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
@@ -57,7 +58,30 @@ function buildCustomQuizRouter(config) {
     res.redirect("/quizz");
   });
 
-  // Questions (admin, JSON)
+  // ── Parties (admin, JSON) ────────────────────────────────────────────────
+  router.post("/:id/parts", requireAdmin, express.json(), (req, res) => {
+    const quiz = db.getCustomQuiz(req.params.id);
+    if (!quiz) return res.status(404).json({ ok: false });
+    const title = String(req.body.title || "").slice(0, 200).trim();
+    if (!title) return res.status(400).json({ ok: false, error: "title required" });
+    const existing = db.getQuizParts(quiz.id);
+    const partId = db.createQuizPart(quiz.id, title, existing.length);
+    const parts = db.getQuizParts(quiz.id);
+    res.json({ ok: true, partId, parts });
+  });
+  router.post("/:id/parts/:pid/update", requireAdmin, express.json(), (req, res) => {
+    const title = String(req.body.title || "").slice(0, 200).trim();
+    if (!title) return res.status(400).json({ ok: false });
+    db.updateQuizPart(req.params.pid, title);
+    res.json({ ok: true });
+  });
+  router.post("/:id/parts/:pid/delete", requireAdmin, express.json(), (req, res) => {
+    db.deleteQuizPart(req.params.pid);
+    const parts = db.getQuizParts(req.params.id);
+    res.json({ ok: true, parts });
+  });
+
+  // ── Questions (admin, JSON) ──────────────────────────────────────────────
   router.post("/:id/questions", requireAdmin, express.json(), (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.status(404).json({ ok: false });
@@ -65,8 +89,9 @@ function buildCustomQuizRouter(config) {
     if (!text) return res.status(400).json({ ok: false, error: "text required" });
     const type = ["gradient","single","multiple"].includes(req.body.type) ? req.body.type : "gradient";
     const options = Array.isArray(req.body.options) ? req.body.options.map(o => String(o).slice(0,200)) : [];
+    const partId = req.body.part_id ? Number(req.body.part_id) : null;
     const existing = db.getCustomQuizQuestions(quiz.id);
-    db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length);
+    db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length, partId);
     const newQs = db.getCustomQuizQuestions(quiz.id);
     newQs.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
     res.json({ ok: true, questions: newQs });
@@ -85,11 +110,12 @@ function buildCustomQuizRouter(config) {
   router.get("/:id", requireUser, (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.redirect("/quizz");
+    const parts = db.getQuizParts(quiz.id);
     const questions = db.getCustomQuizQuestions(quiz.id);
     questions.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
     const existing = db.getCustomQuizAnswer(quiz.id, req.user.id);
     const answers = existing ? JSON.parse(existing.answers) : {};
-    res.render("quiz-detail", { config, quiz, questions, answers, completed: existing ? existing.completed : 0 });
+    res.render("quiz-detail", { config, quiz, parts, questions, answers, completed: existing ? existing.completed : 0 });
   });
 
   // Sauvegarder les réponses

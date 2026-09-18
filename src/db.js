@@ -2062,9 +2062,16 @@ db.exec(`
     created_at INTEGER DEFAULT (unixepoch()),
     updated_at INTEGER DEFAULT (unixepoch())
   );
+  CREATE TABLE IF NOT EXISTS custom_quiz_parts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quiz_id INTEGER NOT NULL REFERENCES custom_quizzes(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0
+  );
   CREATE TABLE IF NOT EXISTS custom_quiz_questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     quiz_id INTEGER NOT NULL REFERENCES custom_quizzes(id) ON DELETE CASCADE,
+    part_id INTEGER REFERENCES custom_quiz_parts(id) ON DELETE SET NULL,
     position INTEGER NOT NULL DEFAULT 0,
     text TEXT NOT NULL,
     type TEXT NOT NULL DEFAULT 'gradient',
@@ -2080,6 +2087,10 @@ db.exec(`
     UNIQUE(quiz_id, user_id)
   );
 `);
+// Migration : ajouter part_id si la colonne n'existe pas encore
+if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE name='part_id'").get()) {
+  db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN part_id INTEGER REFERENCES custom_quiz_parts(id) ON DELETE SET NULL");
+}
 
 function listCustomQuizzes() {
   return db.prepare(`SELECT q.*,
@@ -2102,8 +2113,22 @@ function deleteCustomQuiz(id) {
 function getCustomQuizQuestions(quizId) {
   return db.prepare(`SELECT * FROM custom_quiz_questions WHERE quiz_id=? ORDER BY position`).all(quizId);
 }
-function addCustomQuizQuestion(quizId, text, type, options, position) {
-  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position) VALUES (?,?,?,?,?)`).run(quizId, text, type, JSON.stringify(options || []), position || 0);
+function addCustomQuizQuestion(quizId, text, type, options, position, partId) {
+  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position, part_id) VALUES (?,?,?,?,?,?)`).run(quizId, text, type, JSON.stringify(options || []), position || 0, partId || null);
+}
+function getQuizParts(quizId) {
+  return db.prepare(`SELECT * FROM custom_quiz_parts WHERE quiz_id=? ORDER BY position`).all(quizId);
+}
+function createQuizPart(quizId, title, position) {
+  const r = db.prepare(`INSERT INTO custom_quiz_parts (quiz_id, title, position) VALUES (?,?,?)`).run(quizId, title, position || 0);
+  return r.lastInsertRowid;
+}
+function updateQuizPart(partId, title) {
+  db.prepare(`UPDATE custom_quiz_parts SET title=? WHERE id=?`).run(title, partId);
+}
+function deleteQuizPart(partId) {
+  db.prepare(`UPDATE custom_quiz_questions SET part_id=NULL WHERE part_id=?`).run(partId);
+  db.prepare(`DELETE FROM custom_quiz_parts WHERE id=?`).run(partId);
 }
 function deleteCustomQuizQuestion(id) {
   db.prepare(`DELETE FROM custom_quiz_questions WHERE id=?`).run(id);
@@ -2269,4 +2294,8 @@ module.exports = {
   getCustomQuizAnswer,
   saveCustomQuizAnswer,
   listQuizzesNotCompleted,
+  getQuizParts,
+  createQuizPart,
+  updateQuizPart,
+  deleteQuizPart,
 };
