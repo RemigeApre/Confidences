@@ -58,6 +58,7 @@
                 </div>
               <% } %>
             </div>
+            <button type="button" class="qe-q-edit" title="Modifier">&#9998;</button>
             <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
           </div>
         <% }) %>
@@ -153,6 +154,30 @@
     <% } %>
   </div><%# /qe-content %>
 
+  <%# ── Modale édition question ──────────────────────────────────────────────── %>
+  <% if (quiz) { %>
+  <div class="qe-modal-overlay" id="qe-edit-overlay" hidden>
+    <div class="qe-modal" role="dialog" aria-modal="true" aria-label="Modifier la question">
+      <h3 class="qe-modal-title">Modifier la question</h3>
+      <textarea id="qe-edit-text" class="wf-stats-note-input" rows="3" style="resize:vertical;width:100%;box-sizing:border-box"></textarea>
+      <div class="quiz-qadd-type-row" id="qe-edit-type-row">
+        <label class="chip-option quiz-type-chip" data-type="gradient"><input type="radio" name="qe-edit-type" value="gradient" style="display:none"/><span>Gradient</span></label>
+        <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qe-edit-type" value="single" style="display:none"/><span>Choix unique</span></label>
+        <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qe-edit-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
+        <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qe-edit-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
+      </div>
+      <div id="qe-edit-opts-wrap">
+        <div id="qe-edit-opts-list"></div>
+        <button type="button" id="qe-edit-add-opt" class="wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
+      </div>
+      <div class="qea-actions" style="margin-top:.75rem">
+        <button type="button" id="qe-edit-save" class="wf-save-btn" style="position:static">Enregistrer</button>
+        <button type="button" id="qe-edit-cancel" class="wf-cancel-link">Annuler</button>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
   <%# ── Boutons fixes ───────────────────────────────────────────────────────── %>
   <button type="submit" form="qe-meta-form" class="qe-save-fab">Enregistrer</button>
   <% if (quiz) { %>
@@ -177,6 +202,107 @@
       return dropIndicator;
     }
 
+    // ── Modale édition ────────────────────────────────────────────────────
+    var editOverlay   = document.getElementById('qe-edit-overlay');
+    var editText      = document.getElementById('qe-edit-text');
+    var editTypeRow   = document.getElementById('qe-edit-type-row');
+    var editOptsWrap  = document.getElementById('qe-edit-opts-wrap');
+    var editOptsList  = document.getElementById('qe-edit-opts-list');
+    var editAddOpt    = document.getElementById('qe-edit-add-opt');
+    var editSaveBtn   = document.getElementById('qe-edit-save');
+    var editCancelBtn = document.getElementById('qe-edit-cancel');
+    var editingQid    = null;
+    var editingEl     = null;
+
+    function openEditModal(qid, el) {
+      editingQid = qid;
+      editingEl  = el;
+      var body   = el.querySelector('.qe-q-body');
+      var currentText = body.querySelector('.qe-q-text').textContent;
+      var currentType = (body.querySelector('.quiz-qitem-type').className.match(/quiz-qtype--(\w+)/) || [])[1] || 'gradient';
+      var currentOpts = Array.from(body.querySelectorAll('.quiz-qitem-opt')).map(function(s) { return s.textContent; });
+
+      editText.value = currentText;
+
+      // Type chips
+      Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(chip) {
+        chip.classList.toggle('quiz-type-chip--active', chip.dataset.type === currentType);
+        var inp = chip.querySelector('input');
+        inp.checked = chip.dataset.type === currentType;
+      });
+      currentEditType = currentType;
+      editOptsWrap.style.display = (currentType === 'gradient') ? 'none' : '';
+
+      // Options
+      editOptsList.innerHTML = '';
+      currentOpts.forEach(function(o) { addEditOptRow(o); });
+
+      editOverlay.hidden = false;
+      editText.focus();
+    }
+
+    function addEditOptRow(value) {
+      var row = document.createElement('div');
+      row.className = 'quiz-option-row';
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'wf-orce-name-input';
+      inp.placeholder = 'Option…'; inp.style.cssText = 'flex:1;font-size:.82rem';
+      inp.value = value || '';
+      var del = document.createElement('button');
+      del.type = 'button'; del.className = 'quiz-qitem-del'; del.style.flexShrink = '0';
+      del.textContent = '×';
+      del.addEventListener('click', function() { row.remove(); });
+      row.appendChild(inp); row.appendChild(del);
+      editOptsList.appendChild(row);
+    }
+
+    var currentEditType = 'gradient';
+    Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
+        chip.classList.add('quiz-type-chip--active');
+        currentEditType = chip.dataset.type;
+        editOptsWrap.style.display = (currentEditType === 'gradient') ? 'none' : '';
+      });
+    });
+    editAddOpt.addEventListener('click', function() { addEditOptRow(''); });
+    editCancelBtn.addEventListener('click', function() { editOverlay.hidden = true; });
+    editOverlay.addEventListener('click', function(e) { if (e.target === editOverlay) editOverlay.hidden = true; });
+
+    editSaveBtn.addEventListener('click', function() {
+      var text = editText.value.trim();
+      if (!text) return;
+      var options = [];
+      if (currentEditType !== 'gradient') {
+        options = Array.from(editOptsList.querySelectorAll('input')).map(function(i) { return i.value.trim(); }).filter(Boolean);
+      }
+      fetch('/quizz/' + quizId + '/questions/' + editingQid + '/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text, type: currentEditType, options: options })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) return;
+        // Mettre à jour le DOM de la question
+        var body = editingEl.querySelector('.qe-q-body');
+        body.querySelector('.qe-q-text').textContent = d.question.text;
+        var badge = body.querySelector('.quiz-qitem-type');
+        badge.className = 'quiz-qitem-type quiz-qtype--' + d.question.type;
+        badge.textContent = typeLabels[d.question.type] || d.question.type;
+        var existing = body.querySelector('.quiz-qitem-opts');
+        if (existing) existing.remove();
+        if (d.question.options && d.question.options.length) {
+          var opts = document.createElement('div');
+          opts.className = 'quiz-qitem-opts';
+          d.question.options.forEach(function(o) {
+            var s = document.createElement('span'); s.className = 'quiz-qitem-opt'; s.textContent = o;
+            opts.appendChild(s);
+          });
+          body.appendChild(opts);
+        }
+        editOverlay.hidden = true;
+      });
+    });
+
     // ── Drag & drop ───────────────────────────────────────────────────────
     function initQuestion(el) {
       el.addEventListener('dragstart', function(e) {
@@ -188,6 +314,9 @@
         el.classList.remove('qe-q-dragging');
         if (dropIndicator && dropIndicator.parentNode) dropIndicator.remove();
         draggingEl = null;
+      });
+      el.querySelector('.qe-q-edit').addEventListener('click', function() {
+        openEditModal(Number(el.dataset.qid), el);
       });
       el.querySelector('.qe-q-del').addEventListener('click', function() {
         deleteQuestion(Number(el.dataset.qid));
@@ -284,6 +413,12 @@
         body.appendChild(opts);
       }
 
+      var edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'qe-q-edit';
+      edit.title = 'Modifier';
+      edit.textContent = '✎';
+
       var del = document.createElement('button');
       del.type = 'button';
       del.className = 'qe-q-del';
@@ -292,6 +427,7 @@
 
       div.appendChild(handle);
       div.appendChild(body);
+      div.appendChild(edit);
       div.appendChild(del);
       return div;
     }

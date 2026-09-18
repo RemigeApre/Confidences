@@ -2140,6 +2140,9 @@ function reorderAllQuizQuestions(quizId, sections) {
     });
   })();
 }
+function updateCustomQuizQuestion(id, text, type, options) {
+  db.prepare(`UPDATE custom_quiz_questions SET text=?, type=?, options=? WHERE id=?`).run(text, type, JSON.stringify(options || []), id);
+}
 function deleteCustomQuizQuestion(id) {
   db.prepare(`DELETE FROM custom_quiz_questions WHERE id=?`).run(id);
 }
@@ -2299,6 +2302,7 @@ module.exports = {
   deleteCustomQuiz,
   getCustomQuizQuestions,
   addCustomQuizQuestion,
+  updateCustomQuizQuestion,
   deleteCustomQuizQuestion,
   updateCustomQuizQuestionsOrder,
   getCustomQuizAnswer,
