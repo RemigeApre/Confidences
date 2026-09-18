@@ -548,6 +548,8 @@ app.delete("/api/filter-profils/:id", function (req, res) {
   res.json({ ok: true });
 });
 
+const customQuizRouter = require("./routes/custom-quiz");
+app.use("/quizz", customQuizRouter);
 app.use("/", buildQuizRouter(config));
 app.use("/admin", buildAdminRouter(config));
 app.use("/liens", buildLinksRouter(config));

@@ -1,0 +1,209 @@
+<%- include('partials/head', { title: quiz ? 'Modifier ' + quiz.title : 'Nouveau quizz' }) %>
+<main class="container">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Quizz', navBack: '/quizz' }) %>
+
+  <a href="/quizz" class="wf-back-btn">← Retour</a>
+
+  <h1 class="wf-section-title" style="margin-top:3rem"><%= quiz ? 'Modifier le quizz' : 'Nouveau quizz' %></h1>
+
+  <form method="POST" action="<%= quiz ? '/quizz/' + quiz.id + '/update' : '/quizz/new' %>" class="quiz-form">
+    <div class="wf-stats-pct-row" style="flex-direction:column;gap:.5rem">
+      <label class="wiki-meta-label">Titre</label>
+      <input type="text" name="title" class="wf-orce-name-input" required maxlength="200" value="<%= quiz ? quiz.title : '' %>" placeholder="Titre du quizz…" />
+    </div>
+    <div class="wf-stats-pct-row" style="flex-direction:column;gap:.5rem;margin-top:.75rem">
+      <label class="wiki-meta-label">Description</label>
+      <textarea name="description" class="wf-stats-note-input" rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz ? quiz.description : '' %></textarea>
+    </div>
+    <% if (quiz) { %>
+    <label class="wiki-display-opt-label" style="margin-top:.75rem">
+      <input type="checkbox" name="featured" value="1" <%= quiz.featured ? 'checked' : '' %> />
+      <span>Mettre en avant</span>
+    </label>
+    <% } %>
+    <div style="margin-top:1rem;display:flex;gap:.75rem">
+      <button type="submit" class="wf-save-btn" style="position:static">Enregistrer</button>
+      <% if (quiz) { %>
+        <a href="/quizz/<%= quiz.id %>" class="wf-cancel-link">Voir le quizz</a>
+        <form method="POST" action="/quizz/<%= quiz.id %>/delete" style="margin:0">
+          <button type="submit" class="wf-delete-btn-fixed" style="position:static;font-size:.8rem" onclick="return confirm('Supprimer ce quizz ?')">🗑</button>
+        </form>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (quiz) { %>
+  <div class="quiz-qlist" id="quiz-qlist">
+    <h2 class="wf-section-title" style="margin-top:2rem">Questions (<span id="quiz-q-count"><%= questions.length %></span>)</h2>
+    <div id="quiz-questions-container">
+      <% questions.forEach(function(q, i) { %>
+        <div class="quiz-qitem" data-id="<%= q.id %>">
+          <span class="quiz-qitem-num"><%= i+1 %>.</span>
+          <div class="quiz-qitem-body">
+            <p class="quiz-qitem-text"><%= q.text %></p>
+            <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : 'Choix multiple' %></span>
+            <% if (q.options && q.options.length) { %>
+              <div class="quiz-qitem-opts"><% q.options.forEach(function(o){ %><span class="quiz-qitem-opt"><%= o %></span><% }) %></div>
+            <% } %>
+          </div>
+          <button type="button" class="quiz-qitem-del" data-id="<%= q.id %>">✕</button>
+        </div>
+      <% }) %>
+    </div>
+
+    <div class="quiz-qadd-panel" id="quiz-qadd-panel">
+      <h3 class="wf-section-title" style="font-size:.85rem;margin:.75rem 0 .5rem">Nouvelle question</h3>
+      <textarea id="qa-text" class="wf-stats-note-input" rows="2" placeholder="Texte de la question…" style="resize:vertical"></textarea>
+      <div class="quiz-qadd-type-row">
+        <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient">
+          <input type="radio" name="qa-type" value="gradient" checked style="display:none" />
+          <span>Gradient (pas du tout → énormément)</span>
+        </label>
+        <label class="chip-option quiz-type-chip" data-type="single">
+          <input type="radio" name="qa-type" value="single" style="display:none" />
+          <span>Réponse unique</span>
+        </label>
+        <label class="chip-option quiz-type-chip" data-type="multiple">
+          <input type="radio" name="qa-type" value="multiple" style="display:none" />
+          <span>Réponses multiples</span>
+        </label>
+      </div>
+      <div id="qa-options-wrap" hidden>
+        <div id="qa-options-list"></div>
+        <button type="button" id="qa-add-option" class="wf-stats-pill" style="margin-top:.4rem;font-size:.78rem">+ Option</button>
+      </div>
+      <button type="button" id="qa-submit" class="wf-save-btn" style="position:static;margin-top:.75rem;font-size:.85rem">Ajouter la question</button>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    var quizId = <%= quiz.id %>;
+    var container = document.getElementById("quiz-questions-container");
+    var qCount = document.getElementById("quiz-q-count");
+    var qaText = document.getElementById("qa-text");
+    var qaSubmit = document.getElementById("qa-submit");
+    var qaOptionsWrap = document.getElementById("qa-options-wrap");
+    var qaOptionsList = document.getElementById("qa-options-list");
+    var qaAddOption = document.getElementById("qa-add-option");
+    var typeChips = document.querySelectorAll(".quiz-type-chip");
+    var currentType = "gradient";
+
+    typeChips.forEach(function(chip) {
+      chip.addEventListener("click", function() {
+        typeChips.forEach(function(c) { c.classList.remove("quiz-type-chip--active"); });
+        chip.classList.add("quiz-type-chip--active");
+        chip.querySelector("input").checked = true;
+        currentType = chip.dataset.type;
+        qaOptionsWrap.hidden = (currentType === "gradient");
+      });
+    });
+
+    qaAddOption.addEventListener("click", function() {
+      var inp = document.createElement("div");
+      inp.className = "quiz-option-row";
+      inp.innerHTML = '<input type="text" class="wf-orce-name-input" placeholder="Option…" style="flex:1;font-size:.82rem" />'
+        + '<button type="button" class="quiz-qitem-del" style="flex-shrink:0">✕</button>';
+      inp.querySelector("button").addEventListener("click", function() { inp.remove(); });
+      qaOptionsList.appendChild(inp);
+    });
+
+    qaSubmit.addEventListener("click", function() {
+      var text = (qaText.value || "").trim();
+      if (!text) return;
+      var options = [];
+      if (currentType !== "gradient") {
+        options = Array.from(qaOptionsList.querySelectorAll("input")).map(function(i) { return i.value.trim(); }).filter(Boolean);
+      }
+      fetch("/quizz/" + quizId + "/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text, type: currentType, options: options })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.ok) return;
+        renderQuestions(data.questions);
+        qaText.value = "";
+        qaOptionsList.innerHTML = "";
+      });
+    });
+
+    function deleteQuestion(id) {
+      fetch("/quizz/" + quizId + "/questions/" + id + "/delete", { method: "POST", headers: { "Content-Type": "application/json" } })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.ok) return;
+        var el = container.querySelector("[data-id='" + id + "']");
+        if (el) el.remove();
+        updateCount();
+      });
+    }
+
+    function updateCount() {
+      if (qCount) qCount.textContent = container.querySelectorAll(".quiz-qitem").length;
+    }
+
+    function renderQuestions(qs) {
+      container.innerHTML = "";
+      var typeLabels = { gradient: "Gradient", single: "Choix unique", multiple: "Choix multiple" };
+      qs.forEach(function(q, i) {
+        var div = document.createElement("div");
+        div.className = "quiz-qitem";
+        div.dataset.id = q.id;
+
+        var numSpan = document.createElement("span");
+        numSpan.className = "quiz-qitem-num";
+        numSpan.textContent = (i + 1) + ".";
+
+        var body = document.createElement("div");
+        body.className = "quiz-qitem-body";
+
+        var textP = document.createElement("p");
+        textP.className = "quiz-qitem-text";
+        textP.textContent = q.text;
+
+        var typeSpan = document.createElement("span");
+        typeSpan.className = "quiz-qitem-type quiz-qtype--" + q.type;
+        typeSpan.textContent = typeLabels[q.type] || q.type;
+
+        body.appendChild(textP);
+        body.appendChild(typeSpan);
+
+        if (q.options && q.options.length) {
+          var optsDiv = document.createElement("div");
+          optsDiv.className = "quiz-qitem-opts";
+          q.options.forEach(function(o) {
+            var s = document.createElement("span");
+            s.className = "quiz-qitem-opt";
+            s.textContent = o;
+            optsDiv.appendChild(s);
+          });
+          body.appendChild(optsDiv);
+        }
+
+        var delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "quiz-qitem-del";
+        delBtn.dataset.id = q.id;
+        delBtn.textContent = "✕";
+        delBtn.addEventListener("click", function() { deleteQuestion(q.id); });
+
+        div.appendChild(numSpan);
+        div.appendChild(body);
+        div.appendChild(delBtn);
+        container.appendChild(div);
+      });
+      updateCount();
+    }
+
+    container.addEventListener("click", function(e) {
+      var btn = e.target.closest(".quiz-qitem-del");
+      if (!btn || !btn.dataset.id) return;
+      deleteQuestion(Number(btn.dataset.id));
+    });
+  })();
+  </script>
+  <% } %>
+</main>
+<%- include('partials/foot') %>

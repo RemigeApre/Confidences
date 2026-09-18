@@ -2052,6 +2052,84 @@ function renameTagEverywhere(oldTag, newTag) {
   }
 }
 
+// ── Custom Quizzes ───────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS custom_quizzes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    featured INTEGER DEFAULT 0,
+    created_at INTEGER DEFAULT (unixepoch()),
+    updated_at INTEGER DEFAULT (unixepoch())
+  );
+  CREATE TABLE IF NOT EXISTS custom_quiz_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quiz_id INTEGER NOT NULL REFERENCES custom_quizzes(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 0,
+    text TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'gradient',
+    options TEXT DEFAULT '[]'
+  );
+  CREATE TABLE IF NOT EXISTS custom_quiz_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quiz_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    answers TEXT DEFAULT '{}',
+    completed INTEGER DEFAULT 0,
+    updated_at INTEGER DEFAULT (unixepoch()),
+    UNIQUE(quiz_id, user_id)
+  );
+`);
+
+function listCustomQuizzes() {
+  return db.prepare(`SELECT q.*,
+    (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count
+    FROM custom_quizzes q ORDER BY q.updated_at DESC`).all();
+}
+function getCustomQuiz(id) {
+  return db.prepare(`SELECT * FROM custom_quizzes WHERE id = ?`).get(id);
+}
+function createCustomQuiz(title, description) {
+  const r = db.prepare(`INSERT INTO custom_quizzes (title, description) VALUES (?, ?)`).run(title, description);
+  return r.lastInsertRowid;
+}
+function updateCustomQuiz(id, title, description, featured) {
+  db.prepare(`UPDATE custom_quizzes SET title=?, description=?, featured=?, updated_at=unixepoch() WHERE id=?`).run(title, description, featured ? 1 : 0, id);
+}
+function deleteCustomQuiz(id) {
+  db.prepare(`DELETE FROM custom_quizzes WHERE id=?`).run(id);
+}
+function getCustomQuizQuestions(quizId) {
+  return db.prepare(`SELECT * FROM custom_quiz_questions WHERE quiz_id=? ORDER BY position`).all(quizId);
+}
+function addCustomQuizQuestion(quizId, text, type, options, position) {
+  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position) VALUES (?,?,?,?,?)`).run(quizId, text, type, JSON.stringify(options || []), position || 0);
+}
+function deleteCustomQuizQuestion(id) {
+  db.prepare(`DELETE FROM custom_quiz_questions WHERE id=?`).run(id);
+}
+function updateCustomQuizQuestionsOrder(quizId, orderedIds) {
+  const stmt = db.prepare(`UPDATE custom_quiz_questions SET position=? WHERE id=? AND quiz_id=?`);
+  const tx = db.transaction(() => { orderedIds.forEach((qid, i) => stmt.run(i, qid, quizId)); });
+  tx();
+}
+function getCustomQuizAnswer(quizId, userId) {
+  return db.prepare(`SELECT * FROM custom_quiz_answers WHERE quiz_id=? AND user_id=?`).get(quizId, userId);
+}
+function saveCustomQuizAnswer(quizId, userId, answers, completed) {
+  db.prepare(`INSERT INTO custom_quiz_answers (quiz_id, user_id, answers, completed, updated_at)
+    VALUES (?,?,?,?,unixepoch())
+    ON CONFLICT(quiz_id, user_id) DO UPDATE SET answers=excluded.answers, completed=excluded.completed, updated_at=unixepoch()`)
+    .run(quizId, userId, JSON.stringify(answers), completed ? 1 : 0);
+}
+function listQuizzesNotCompleted(userId) {
+  return db.prepare(`SELECT q.*,
+    (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count
+    FROM custom_quizzes q
+    WHERE q.id NOT IN (SELECT quiz_id FROM custom_quiz_answers WHERE user_id=? AND completed=1)
+    ORDER BY q.updated_at DESC`).all(userId);
+}
+
 module.exports = {
   db,
   insertSubmission,
@@ -2179,4 +2257,16 @@ module.exports = {
   removeFromCollection,
   listCollectionsForImagePopup,
   deleteUserCollections,
+  listCustomQuizzes,
+  getCustomQuiz,
+  createCustomQuiz,
+  updateCustomQuiz,
+  deleteCustomQuiz,
+  getCustomQuizQuestions,
+  addCustomQuizQuestion,
+  deleteCustomQuizQuestion,
+  updateCustomQuizQuestionsOrder,
+  getCustomQuizAnswer,
+  saveCustomQuizAnswer,
+  listQuizzesNotCompleted,
 };

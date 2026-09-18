@@ -1,0 +1,69 @@
+<%- include('partials/head', { title: quiz.title }) %>
+<main class="container">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Quizz', navBack: '/quizz' }) %>
+
+  <a href="/quizz" class="wf-back-btn">← Retour</a>
+
+  <div class="quiz-detail-wrap">
+    <h1 class="quiz-detail-title"><%= quiz.title %></h1>
+    <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
+    <% if (completed) { %><p class="quiz-detail-done-badge">✓ Complété</p><% } %>
+
+    <% if (!questions.length) { %>
+      <p class="quiz-hub-empty">Ce quizz n'a pas encore de questions.</p>
+    <% } else { %>
+    <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
+      <% questions.forEach(function(q, i) { %>
+        <div class="quiz-q-block">
+          <p class="quiz-q-text"><span class="quiz-q-num"><%= i+1 %></span><%= q.text %></p>
+
+          <% if (q.type === 'gradient') { %>
+            <div class="quiz-gradient-row">
+              <% var LEVELS = [{k:'1',l:'Pas du tout'},{k:'2',l:'Un peu'},{k:'3',l:'Neutre'},{k:'4',l:'Beaucoup'},{k:'5',l:'Énormément'}]; %>
+              <% LEVELS.forEach(function(lvl) { %>
+                <label class="quiz-grad-opt">
+                  <input type="radio" name="q_<%= q.id %>" value="<%= lvl.k %>" <%= (answers[q.id] == lvl.k) ? 'checked' : '' %> />
+                  <span class="quiz-grad-label"><%= lvl.l %></span>
+                </label>
+              <% }) %>
+            </div>
+
+          <% } else if (q.type === 'single') { %>
+            <div class="quiz-choice-list">
+              <% q.options.forEach(function(opt, oi) { %>
+                <label class="quiz-choice-opt">
+                  <input type="radio" name="q_<%= q.id %>" value="<%= oi %>" <%= (String(answers[q.id]) == String(oi)) ? 'checked' : '' %> />
+                  <span><%= opt %></span>
+                </label>
+              <% }) %>
+            </div>
+
+          <% } else { %>
+            <div class="quiz-choice-list">
+              <% q.options.forEach(function(opt, oi) { %>
+                <label class="quiz-choice-opt">
+                  <input type="checkbox" name="q_<%= q.id %>_<%= oi %>" value="<%= oi %>"
+                    <%= (Array.isArray(answers[q.id]) && answers[q.id].indexOf(String(oi)) !== -1) ? 'checked' : '' %> />
+                  <span><%= opt %></span>
+                </label>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      <% }) %>
+
+      <div class="quiz-answer-actions">
+        <button type="submit" name="complete" value="0" class="wf-cancel-link" style="border:1px solid var(--border);padding:.5rem 1rem;border-radius:8px">Sauvegarder</button>
+        <button type="submit" name="complete" value="1" class="wf-save-btn" style="position:static">Terminer le quizz</button>
+      </div>
+    </form>
+    <% } %>
+
+    <% if (currentUser && currentUser.isAdmin) { %>
+      <div style="margin-top:1.5rem;text-align:center">
+        <a href="/quizz/<%= quiz.id %>/edit" class="wiki-edit-icon-btn">✎</a>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('partials/foot') %>
