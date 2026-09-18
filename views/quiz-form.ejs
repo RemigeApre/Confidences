@@ -113,6 +113,7 @@
                       </div>
                     <% } %>
                   </div>
+                  <button type="button" class="qe-q-edit" title="Modifier">&#9998;</button>
                   <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
                 </div>
               <% }) %>
@@ -124,6 +125,7 @@
                 <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient"><input type="radio" name="qa-type" value="gradient" checked style="display:none"/><span>Gradient</span></label>
                 <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qa-type" value="single" style="display:none"/><span>Choix unique</span></label>
                 <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qa-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
+                <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qa-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
               </div>
               <div class="qea-options-wrap" hidden>
                 <div class="qea-options-list"></div>
@@ -315,10 +317,12 @@
         if (dropIndicator && dropIndicator.parentNode) dropIndicator.remove();
         draggingEl = null;
       });
-      el.querySelector('.qe-q-edit').addEventListener('click', function() {
+      var editBtn = el.querySelector('.qe-q-edit');
+      if (editBtn) editBtn.addEventListener('click', function() {
         openEditModal(Number(el.dataset.qid), el);
       });
-      el.querySelector('.qe-q-del').addEventListener('click', function() {
+      var delBtn = el.querySelector('.qe-q-del');
+      if (delBtn) delBtn.addEventListener('click', function() {
         deleteQuestion(Number(el.dataset.qid));
       });
     }
