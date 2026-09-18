@@ -9,7 +9,7 @@
       action="<%= quiz ? '/quizz/' + quiz.id + '/update' : '/quizz/new' %>">
 
       <input type="text" name="title" class="qe-title-input" required maxlength="200"
-        value="<%= quiz ? quiz.title : '' %>" placeholder="Titre du quizz…" />
+        value="<%= quiz ? quiz.title : (prefill ? prefill.title : '') %>" placeholder="Titre du quizz…" />
 
       <% if (!quiz) { %>
         <p class="qe-new-hint">Renseignez un titre et sauvegardez pour commencer à ajouter des questions.</p>
@@ -26,7 +26,7 @@
       <div class="qe-panel-body">
         <label class="qe-field-label">Description</label>
         <textarea name="description" form="qe-meta-form" class="wf-stats-note-input qe-desc-input"
-          rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz.description %></textarea>
+          rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz ? quiz.description : (prefill ? prefill.description : '') %></textarea>
         <label class="wiki-display-opt-label" style="margin-top:.65rem">
           <input type="checkbox" name="featured" value="1" form="qe-meta-form"
             <%= quiz.featured ? 'checked' : '' %> hidden />
@@ -489,7 +489,7 @@
         optsList.innerHTML = '';
       });
 
-      submitBtn.addEventListener('click', function() {
+      function doSubmit(keepOpen) {
         var text = (textarea.value || '').trim();
         if (!text) return;
         var options = [];
@@ -514,12 +514,25 @@
           }
           textarea.value = '';
           optsList.innerHTML = '';
-          formEl.hidden = true;
           chips.forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
           chips[0].classList.add('quiz-type-chip--active');
           currentType = 'gradient';
           optsWrap.hidden = true;
+          if (keepOpen) {
+            textarea.focus();
+          } else {
+            formEl.hidden = true;
+          }
         });
+      }
+
+      submitBtn.addEventListener('click', function() { doSubmit(false); });
+
+      textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          doSubmit(true);
+        }
       });
     }
 

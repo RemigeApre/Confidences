@@ -94,7 +94,157 @@
   </div>
 
   <% if (currentUser && currentUser.isAdmin) { %>
+    <button type="button" class="wiki-fab-list" id="quiz-todo-btn" title="Quizz à créer">&#9776;</button>
     <a href="/quizz/new" class="wiki-fab-add" title="Nouveau quizz">+</a>
+
+    <div class="wiki-todo-overlay" id="quiz-todo-overlay" hidden></div>
+    <aside class="wiki-todo-drawer" id="quiz-todo-drawer" hidden aria-label="Quizz à créer">
+      <div class="wiki-todo-header">
+        <span class="wiki-todo-title">Quizz à créer</span>
+        <button type="button" class="wiki-todo-close" id="quiz-todo-close" aria-label="Fermer">&#215;</button>
+      </div>
+      <div class="wiki-todo-body" id="quiz-todo-body"></div>
+    </aside>
+  <% } %>
+
+  <% if (currentUser && currentUser.isAdmin) { %>
+  <script>
+  (function() {
+    var btn     = document.getElementById('quiz-todo-btn');
+    var overlay = document.getElementById('quiz-todo-overlay');
+    var drawer  = document.getElementById('quiz-todo-drawer');
+    var closeBtn = document.getElementById('quiz-todo-close');
+    var bodyEl  = document.getElementById('quiz-todo-body');
+    if (!btn || !drawer) return;
+
+    var TODO_KEY = 'quiz-todo-list';
+
+    function load() { try { return JSON.parse(localStorage.getItem(TODO_KEY) || '[]'); } catch(e) { return []; } }
+    function save(d) { localStorage.setItem(TODO_KEY, JSON.stringify(d)); }
+
+    function render() {
+      var items = load();
+      bodyEl.innerHTML = '';
+
+      // ── Formulaire d'ajout ─────────────────────────────────────────────
+      var addBlock = document.createElement('div');
+      addBlock.className = 'qtodo-add-block';
+
+      var titleInp = document.createElement('input');
+      titleInp.type = 'text';
+      titleInp.placeholder = 'Titre du quizz…';
+      titleInp.className = 'wiki-todo-add-input';
+      titleInp.style.marginBottom = '.3rem';
+
+      var descInp = document.createElement('textarea');
+      descInp.placeholder = 'Description (optionnelle)…';
+      descInp.className = 'wiki-todo-add-input qtodo-desc-inp';
+      descInp.rows = 2;
+
+      var addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'wiki-todo-add-btn qtodo-add-full-btn';
+      addBtn.textContent = '+ Ajouter';
+
+      function doAdd() {
+        var title = titleInp.value.trim();
+        if (!title) return;
+        var desc = descInp.value.trim();
+        var d = load();
+        d.push({ title: title, desc: desc });
+        save(d);
+        titleInp.value = '';
+        descInp.value = '';
+        render();
+      }
+      addBtn.addEventListener('click', doAdd);
+      titleInp.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doAdd(); } });
+
+      addBlock.appendChild(titleInp);
+      addBlock.appendChild(descInp);
+      addBlock.appendChild(addBtn);
+      bodyEl.appendChild(addBlock);
+
+      // ── Liste ──────────────────────────────────────────────────────────
+      if (!items.length) {
+        var empty = document.createElement('p');
+        empty.className = 'qtodo-empty';
+        empty.textContent = 'Aucun quizz prévu pour l\'instant.';
+        bodyEl.appendChild(empty);
+        return;
+      }
+
+      var ul = document.createElement('ul');
+      ul.className = 'wiki-todo-list qtodo-list';
+
+      items.forEach(function(item, idx) {
+        var li = document.createElement('li');
+        li.className = 'wiki-todo-item qtodo-item';
+
+        var info = document.createElement('div');
+        info.className = 'qtodo-item-info';
+
+        var titleEl = document.createElement('span');
+        titleEl.className = 'wiki-todo-item-text qtodo-item-title';
+        titleEl.textContent = item.title;
+        info.appendChild(titleEl);
+
+        if (item.desc) {
+          var descEl = document.createElement('span');
+          descEl.className = 'qtodo-item-desc';
+          descEl.textContent = item.desc;
+          info.appendChild(descEl);
+        }
+
+        var actions = document.createElement('div');
+        actions.className = 'wiki-todo-item-actions';
+
+        var goBtn = document.createElement('a');
+        goBtn.href = '/quizz/new?title=' + encodeURIComponent(item.title) + '&desc=' + encodeURIComponent(item.desc || '');
+        goBtn.className = 'wiki-todo-go-btn';
+        goBtn.title = 'Créer ce quizz';
+        goBtn.textContent = '→';
+        (function(i) {
+          goBtn.addEventListener('click', function() {
+            var d = load();
+            d.splice(i, 1);
+            save(d);
+          });
+        })(idx);
+
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'wiki-todo-del-btn';
+        delBtn.title = 'Supprimer';
+        delBtn.textContent = '×';
+        (function(i) {
+          delBtn.addEventListener('click', function() {
+            var d = load();
+            d.splice(i, 1);
+            save(d);
+            render();
+          });
+        })(idx);
+
+        actions.appendChild(goBtn);
+        actions.appendChild(delBtn);
+        li.appendChild(info);
+        li.appendChild(actions);
+        ul.appendChild(li);
+      });
+
+      bodyEl.appendChild(ul);
+    }
+
+    function open() { render(); overlay.hidden = false; drawer.hidden = false; }
+    function close() { overlay.hidden = true; drawer.hidden = true; }
+
+    btn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !drawer.hidden) close(); });
+  })();
+  </script>
   <% } %>
 
 </main>

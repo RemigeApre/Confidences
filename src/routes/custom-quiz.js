@@ -23,7 +23,11 @@ function buildCustomQuizRouter(config) {
 
   // Créer (admin)
   router.get("/new", requireAdmin, (req, res) => {
-    res.render("quiz-form", { config, quiz: null, questions: [], parts: [] });
+    const prefill = {
+      title: String(req.query.title || "").slice(0, 200),
+      description: String(req.query.desc || "").slice(0, 2000)
+    };
+    res.render("quiz-form", { config, quiz: null, questions: [], parts: [], prefill });
   });
   router.post("/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const title = String(req.body.title || "").slice(0, 200).trim();
@@ -49,7 +53,7 @@ function buildCustomQuizRouter(config) {
     const desc  = String(req.body.description || "").slice(0, 2000).trim();
     const featured = req.body.featured === "1" ? 1 : 0;
     db.updateCustomQuiz(quiz.id, title || quiz.title, desc, featured);
-    res.redirect(`/quizz/${quiz.id}/edit`);
+    res.redirect(`/quizz/${quiz.id}`);
   });
   router.post("/:id/delete", requireAdmin, (req, res) => {
     db.deleteCustomQuiz(req.params.id);

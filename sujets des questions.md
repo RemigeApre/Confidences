@@ -21,31 +21,14 @@ I - Fondamentaux
 
 A| Conventionnel et position
 
-Missionnaire
-Levrette
-Prone bone
-cow girl
-cow girl inversé
-anal
-69
-positions plus acrobatiques
-Positions debout
-Positions assises
-Positions acrobatiques
+
+
 Double pénétration manuelle ou avec objets
-Cuillère
 
 Masturbation solitaire
 Masturbation mutuelle
 Stimulation manuelle donnée
 Stimulation manuelle reçue
-sexe oral subit
-Sexe oral donné 
-Frottement habillé
-Sexe intercrural, entre les cuisses
-Anulingus donné
-Anulingus reçu
-
 
 Rapport lent et tendre
 Rapport intense ou brutal
