@@ -1,0 +1,82 @@
+<%- include('partials/head', { title: 'Nouvelles' }) %>
+<main class="container wide wiki-locked" style="--ch-hue: 340">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Nouvelles', navBack: '/' }) %>
+
+  <%- include('partials/mobile-filter-toggle') %>
+
+  <%# ── Sidebar ─────────────────────────────────────────────────────────── %>
+  <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
+    <div class="wiki-chapter-hero">
+      <div class="wiki-chapter-hero-top">
+        <span class="wiki-chapter-hero-back"></span>
+        <h1 class="wiki-chapter-hero-title">Nouvelles</h1>
+      </div>
+    </div>
+    <div class="wiki-sidebar-body">
+      <div class="wf-filter-section">
+        <p class="wf-filter-label">Catégorie</p>
+        <div class="nv-cat-filters" id="nv-cat-filters">
+          <button type="button" class="nv-cat-btn nv-cat-btn--active" data-cat="">Toutes</button>
+          <% categories.forEach(function(c) { %>
+            <button type="button" class="nv-cat-btn" data-cat="<%= c.key %>"
+              style="--nv-hue: <%= c.hue %>"><%= c.label %></button>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <%# ── Contenu principal ───────────────────────────────────────────────── %>
+  <div class="nv-hub">
+
+    <% if (featured.length) { %>
+    <section class="nv-strip">
+      <h2 class="nv-strip-title">Mises en avant</h2>
+      <div class="nv-cards" id="nv-cards-featured">
+        <% featured.forEach(function(n) { %>
+          <%- include('partials/nouvelle-card', { n: n, categories: categories }) %>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <section class="nv-strip">
+      <h2 class="nv-strip-title">Toutes les nouvelles</h2>
+      <div class="nv-cards" id="nv-cards-all">
+        <% all.forEach(function(n) { %>
+          <%- include('partials/nouvelle-card', { n: n, categories: categories }) %>
+        <% }) %>
+      </div>
+      <% if (!all.length) { %>
+        <p class="nv-empty">Aucune nouvelle pour le moment.</p>
+      <% } %>
+    </section>
+
+  </div>
+
+  <%# ── FABs admin ──────────────────────────────────────────────────────── %>
+  <% if (currentUser && currentUser.isAdmin) { %>
+    <a href="/nouvelles/new" class="wiki-fab-add" title="Nouvelle histoire">+</a>
+  <% } %>
+
+</main>
+
+<script>
+(function() {
+  var catBtns = document.querySelectorAll('.nv-cat-btn');
+  var cards   = document.querySelectorAll('.nv-card');
+  catBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      catBtns.forEach(function(b) { b.classList.remove('nv-cat-btn--active'); });
+      btn.classList.add('nv-cat-btn--active');
+      var cat = btn.dataset.cat;
+      cards.forEach(function(card) {
+        card.hidden = cat && card.dataset.category !== cat;
+      });
+    });
+  });
+})();
+</script>
+
+<%- include('partials/foot') %>

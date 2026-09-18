@@ -16,6 +16,7 @@ const buildBdRouter = require("./routes/bd");
 const buildFavoritesRouter = require("./routes/favorites");
 const buildAccountRouter = require("./routes/account");
 const buildCoupleRouter = require("./routes/couple");
+const buildNouvellesRouter = require("./routes/nouvelles");
 const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
@@ -559,6 +560,7 @@ app.use("/bd", buildBdRouter(config));
 app.use("/favoris", buildFavoritesRouter(config));
 app.use("/compte", buildAccountRouter(config));
 app.use("/couple", buildCoupleRouter(config));
+app.use("/nouvelles", buildNouvellesRouter(config));
 
 if (usingHttps) {
   https

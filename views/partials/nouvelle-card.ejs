@@ -1,0 +1,39 @@
+<%
+  var cat = categories.find(function(c) { return c.key === n.category; });
+  var hue = cat ? cat.hue : 340;
+  var wc  = n.word_count || 0;
+  var readMin = Math.max(1, Math.round(wc / 200));
+%>
+<article class="nv-card" data-id="<%= n.id %>" data-category="<%= n.category %>">
+  <div class="nv-card-header" style="--nv-hue: <%= hue %>">
+    <svg class="nv-card-deco" viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id="nvg<%= n.id %>" cx="30%" cy="50%" r="75%">
+          <stop offset="0%" stop-color="hsl(<%= hue %>,40%,22%)"/>
+          <stop offset="100%" stop-color="hsl(<%= hue %>,28%,10%)"/>
+        </radialGradient>
+      </defs>
+      <rect width="200" height="90" fill="url(#nvg<%= n.id %>)"/>
+      <text x="20" y="52" font-size="36" fill="hsl(<%= hue %>,55%,55%)" opacity="0.18" font-family="Georgia,serif" font-style="italic">&#8220;</text>
+      <line x1="0" y1="80" x2="200" y2="80" stroke="hsl(<%= hue %>,45%,40%)" stroke-width="0.6" opacity="0.3"/>
+    </svg>
+    <% if (cat) { %>
+      <span class="nv-card-cat-badge" style="--nv-hue: <%= hue %>"><%= cat.label %></span>
+    <% } %>
+    <% if (n.featured) { %><span class="nv-card-featured-badge">★</span><% } %>
+  </div>
+  <div class="nv-card-body">
+    <h3 class="nv-card-title"><%= n.title %></h3>
+    <% if (n.author) { %><p class="nv-card-author">par <%= n.author %></p><% } %>
+    <% if (n.summary) { %><p class="nv-card-summary"><%= n.summary %></p><% } %>
+  </div>
+  <div class="nv-card-foot">
+    <span class="nv-card-meta"><%= wc.toLocaleString('fr-FR') %> mots · ~<%= readMin %> min</span>
+    <div class="nv-card-actions">
+      <a href="/nouvelles/<%= n.id %>" class="nv-card-read-btn">Lire</a>
+      <% if (currentUser && currentUser.isAdmin) { %>
+        <a href="/nouvelles/<%= n.id %>/edit" class="nv-card-edit-btn" title="Modifier">&#9998;</a>
+      <% } %>
+    </div>
+  </div>
+</article>

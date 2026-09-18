@@ -2098,6 +2098,22 @@ if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE 
   db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN has_sides INTEGER DEFAULT 0");
 }
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS nouvelles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    content TEXT NOT NULL DEFAULT '',
+    summary TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    category TEXT NOT NULL DEFAULT '',
+    author TEXT NOT NULL DEFAULT '',
+    featured INTEGER NOT NULL DEFAULT 0,
+    word_count INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER DEFAULT (unixepoch()),
+    updated_at INTEGER DEFAULT (unixepoch())
+  )
+`);
+
 function listCustomQuizzes() {
   return db.prepare(`SELECT q.*,
     (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count,
@@ -2333,4 +2349,31 @@ module.exports = {
   deleteQuizPart,
   reorderAllQuizQuestions,
   getAllQuizAnswers,
+  listNouvelles,
+  getNouvelleById,
+  createNouvelle,
+  updateNouvelle,
+  deleteNouvelle,
 };
+
+// ── Nouvelles ──────────────────────────────────────────────────────────────
+function listNouvelles() {
+  return db.prepare(`SELECT id, title, summary, tags, category, author, featured, word_count, created_at, updated_at FROM nouvelles ORDER BY updated_at DESC`).all();
+}
+function getNouvelleById(id) {
+  return db.prepare(`SELECT * FROM nouvelles WHERE id=?`).get(id);
+}
+function createNouvelle({ title, content, summary, tags, category, author, featured }) {
+  const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
+  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, featured, word_count) VALUES (?,?,?,?,?,?,?,?)`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount);
+  return r.lastInsertRowid;
+}
+function updateNouvelle(id, { title, content, summary, tags, category, author, featured }) {
+  const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
+  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, featured=?, word_count=?, updated_at=unixepoch() WHERE id=?`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, id);
+}
+function deleteNouvelle(id) {
+  db.prepare(`DELETE FROM nouvelles WHERE id=?`).run(id);
+}

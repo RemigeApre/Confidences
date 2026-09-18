@@ -1,0 +1,39 @@
+<%- include('partials/head', { title: nouvelle.title }) %>
+<main class="container nv-reader-main">
+  <%- include('partials/top-nav', { config: config, navTitle: nouvelle.title, navBack: '/nouvelles' }) %>
+
+  <article class="nv-reader">
+    <%
+      var cat = categories.find(function(c) { return c.key === nouvelle.category; });
+      var hue = cat ? cat.hue : 340;
+      var wc  = nouvelle.word_count || 0;
+      var readMin = Math.max(1, Math.round(wc / 200));
+    %>
+
+    <header class="nv-reader-header" style="--nv-hue: <%= hue %>">
+      <% if (cat) { %><span class="nv-reader-cat"><%= cat.label %></span><% } %>
+      <h1 class="nv-reader-title"><%= nouvelle.title %></h1>
+      <% if (nouvelle.author) { %><p class="nv-reader-author">par <%= nouvelle.author %></p><% } %>
+      <p class="nv-reader-meta"><%= wc.toLocaleString('fr-FR') %> mots · ~<%= readMin %> min de lecture</p>
+      <% if (nouvelle.tags && nouvelle.tags.length) { %>
+        <div class="nv-reader-tags">
+          <% nouvelle.tags.forEach(function(t) { %><span class="nv-reader-tag"><%= t %></span><% }) %>
+        </div>
+      <% } %>
+    </header>
+
+    <div class="nv-reader-content"><%- nouvelle.content.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
+
+    <% if (currentUser && currentUser.isAdmin) { %>
+      <div class="nv-reader-admin-bar">
+        <a href="/nouvelles/<%= nouvelle.id %>/edit" class="wf-save-btn" style="position:static;display:inline-block">&#9998; Modifier</a>
+        <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" style="display:inline"
+          onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
+          <button type="submit" class="wf-cancel-link">Supprimer</button>
+        </form>
+      </div>
+    <% } %>
+  </article>
+
+</main>
+<%- include('partials/foot') %>

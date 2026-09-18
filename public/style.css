@@ -14184,3 +14184,166 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   display: block; font-size: .7rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .06em; color: hsl(270,45%,60%); margin-bottom: .35rem;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NOUVELLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Hub / index ──────────────────────────────────────────────────────────── */
+.nv-hub { padding: 1.5rem 1rem 3rem; max-width: 100%; }
+.nv-strip { margin-bottom: 2.5rem; }
+.nv-strip-title {
+  font-size: .75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); margin: 0 0 1rem;
+}
+.nv-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.nv-empty { color: var(--muted); font-size: .88rem; padding: 2rem 0; }
+
+/* ── Filtres sidebar ──────────────────────────────────────────────────────── */
+.nv-cat-filters { display: flex; flex-wrap: wrap; gap: .4rem; }
+.nv-cat-btn {
+  padding: .25rem .65rem; border-radius: 20px;
+  border: 1px solid var(--border); background: none;
+  color: var(--muted); font-size: .75rem; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.nv-cat-btn--active,
+.nv-cat-btn:hover {
+  background: hsl(var(--nv-hue, 340), 40%, 18%);
+  color: hsl(var(--nv-hue, 340), 55%, 72%);
+  border-color: hsl(var(--nv-hue, 340), 35%, 30%);
+}
+
+/* ── Carte nouvelle ───────────────────────────────────────────────────────── */
+.nv-card {
+  background: var(--card, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  box-shadow: 0 1px 6px rgba(0,0,0,.07);
+}
+.nv-card:hover {
+  border-color: hsl(340, 45%, 40%);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(140,30,80,.18), 0 2px 8px rgba(0,0,0,.06);
+}
+.nv-card-header {
+  height: 80px; position: relative; overflow: hidden; flex-shrink: 0;
+}
+.nv-card-deco { width: 100%; height: 100%; display: block; }
+.nv-card-cat-badge {
+  position: absolute; bottom: 8px; left: 10px;
+  font-size: .62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em;
+  background: hsl(var(--nv-hue, 340), 35%, 20%);
+  color: hsl(var(--nv-hue, 340), 55%, 70%);
+  border: 1px solid hsl(var(--nv-hue, 340), 30%, 30%);
+  border-radius: 4px; padding: .1rem .4rem;
+}
+.nv-card-featured-badge {
+  position: absolute; top: 8px; right: 10px;
+  color: hsl(45, 90%, 65%); font-size: .85rem;
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+.nv-card-body { padding: .75rem .85rem .5rem; flex: 1; }
+.nv-card-title { font-size: .9rem; font-weight: 700; margin: 0 0 .2rem; line-height: 1.3; }
+.nv-card-author { font-size: .72rem; color: var(--muted); margin: 0 0 .45rem; font-style: italic; }
+.nv-card-summary {
+  font-size: .76rem; color: var(--muted); margin: 0; line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.nv-card-foot {
+  padding: .55rem .85rem .7rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .5rem; border-top: 1px solid var(--border);
+}
+.nv-card-meta { font-size: .65rem; color: var(--muted); }
+.nv-card-actions { display: flex; gap: .4rem; align-items: center; }
+.nv-card-read-btn {
+  display: inline-block; padding: .25rem .7rem;
+  background: hsl(340, 45%, 22%); color: hsl(340, 60%, 75%);
+  border: 1px solid hsl(340, 35%, 32%); border-radius: 6px;
+  font-size: .74rem; font-weight: 600; text-decoration: none;
+  transition: background .15s;
+}
+.nv-card-read-btn:hover { background: hsl(340, 50%, 28%); }
+.nv-card-edit-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  background: hsl(220, 30%, 18%); color: hsl(220, 55%, 68%);
+  border: 1px solid hsl(220, 20%, 28%); border-radius: 6px;
+  font-size: .8rem; text-decoration: none;
+  transition: background .15s;
+}
+.nv-card-edit-btn:hover { background: hsl(220, 45%, 26%); color: #fff; }
+
+/* ── Lecteur ──────────────────────────────────────────────────────────────── */
+.nv-reader-main { max-width: 720px; margin: 0 auto; }
+.nv-reader { padding: 0 1rem 4rem; }
+.nv-reader-header {
+  padding: 2rem 0 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+.nv-reader-cat {
+  display: inline-block; font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: hsl(var(--nv-hue, 340), 60%, 68%);
+  margin-bottom: .6rem;
+}
+.nv-reader-title { font-size: 1.8rem; font-weight: 800; margin: 0 0 .4rem; line-height: 1.2; }
+.nv-reader-author { font-size: .85rem; color: var(--muted); font-style: italic; margin: 0 0 .5rem; }
+.nv-reader-meta { font-size: .74rem; color: var(--muted); margin: 0 0 .75rem; }
+.nv-reader-tags { display: flex; flex-wrap: wrap; gap: .3rem; }
+.nv-reader-tag {
+  font-size: .68rem; padding: .15rem .5rem;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; color: var(--muted);
+}
+.nv-reader-content {
+  font-size: 1rem; line-height: 1.85; color: var(--fg);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.nv-reader-content p { margin: 0 0 1.2em; }
+.nv-reader-admin-bar {
+  margin-top: 3rem; padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 1rem; align-items: center;
+}
+
+/* ── Formulaire d'édition ─────────────────────────────────────────────────── */
+.nv-form-wrap { padding: 1rem 0 5rem; }
+.nv-form-title-input {
+  width: 100%; box-sizing: border-box;
+  font-size: 1.5rem; font-weight: 700;
+  background: none; border: none; border-bottom: 2px solid var(--border);
+  color: var(--fg); padding: .4rem 0; margin-bottom: 1rem;
+  outline: none;
+}
+.nv-form-title-input:focus { border-bottom-color: hsl(340, 55%, 50%); }
+.nv-form-meta-row {
+  display: flex; flex-wrap: wrap; gap: .6rem;
+  align-items: center; margin-bottom: .75rem;
+}
+.nv-form-tags-row { display: flex; gap: .5rem; margin-bottom: .75rem; }
+.nv-wordcount-bar {
+  display: flex; justify-content: flex-end; gap: 1rem;
+  font-size: .7rem; color: var(--muted); margin-bottom: .35rem;
+}
+.nv-form-content {
+  width: 100%; box-sizing: border-box;
+  background: hsl(220, 12%, 10%); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--fg);
+  font-size: .95rem; line-height: 1.7;
+  font-family: Georgia, 'Times New Roman', serif;
+  padding: 1rem; outline: none;
+  transition: border-color .15s;
+}
+.nv-form-content:focus { border-color: hsl(340, 45%, 40%); }

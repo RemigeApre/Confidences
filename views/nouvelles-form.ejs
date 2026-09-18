@@ -1,0 +1,77 @@
+<%- include('partials/head', { title: nouvelle ? 'Modifier : ' + nouvelle.title : 'Nouvelle histoire' }) %>
+<main class="container" style="max-width: 860px; margin: 0 auto">
+  <%- include('partials/top-nav', { config: config, navTitle: nouvelle ? nouvelle.title : 'Nouvelle histoire', navBack: '/nouvelles' }) %>
+
+  <div class="nv-form-wrap">
+    <form method="POST" action="<%= nouvelle ? '/nouvelles/' + nouvelle.id + '/update' : '/nouvelles/new' %>"
+      class="nv-form" id="nv-form">
+
+      <input type="text" name="title" class="nv-form-title-input" required maxlength="300"
+        value="<%= nouvelle ? nouvelle.title : '' %>" placeholder="Titre de la nouvelle…" />
+
+      <div class="nv-form-meta-row">
+        <input type="text" name="author" class="wf-orce-name-input" maxlength="200"
+          value="<%= nouvelle ? nouvelle.author : '' %>" placeholder="Auteur (fictif)…" style="flex:1" />
+
+        <select name="category" class="wf-orce-name-input" style="flex:0 0 auto">
+          <option value="">— Catégorie —</option>
+          <% categories.forEach(function(c) { %>
+            <option value="<%= c.key %>" <%= nouvelle && nouvelle.category === c.key ? 'selected' : '' %>><%= c.label %></option>
+          <% }) %>
+        </select>
+
+        <label class="wiki-display-opt-label">
+          <input type="checkbox" name="featured" value="1" hidden
+            <%= nouvelle && nouvelle.featured ? 'checked' : '' %> />
+          <span class="wiki-display-opt-track"></span>
+          <span class="wiki-display-opt-text">Mise en avant</span>
+        </label>
+      </div>
+
+      <textarea name="summary" class="wf-stats-note-input" rows="2" maxlength="500"
+        placeholder="Résumé / accroche (max 500 caractères)…"
+        style="resize:vertical"><%= nouvelle ? nouvelle.summary : '' %></textarea>
+
+      <div class="nv-form-tags-row">
+        <input type="text" name="tags" class="wf-orce-name-input" style="flex:1"
+          value="<%= nouvelle && nouvelle.tags ? nouvelle.tags.join(', ') : '' %>"
+          placeholder="Tags séparés par des virgules…" />
+      </div>
+
+      <div class="nv-wordcount-bar">
+        <span class="nv-wc-label" id="nv-wc">0 mot</span>
+        <span class="nv-wc-time" id="nv-wc-time">~0 min</span>
+      </div>
+
+      <textarea name="content" class="nv-form-content" id="nv-content" rows="30"
+        placeholder="Écrivez votre nouvelle ici…"
+        style="resize:vertical"><%= nouvelle ? nouvelle.content : '' %></textarea>
+
+    </form>
+  </div>
+
+  <button type="submit" form="nv-form" class="qe-save-fab">Enregistrer</button>
+  <% if (nouvelle) { %>
+    <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" class="qe-delete-form"
+      onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
+      <button type="submit" class="qe-delete-fab">&#128465;</button>
+    </form>
+  <% } %>
+
+  <script>
+  (function() {
+    var ta = document.getElementById('nv-content');
+    var wcEl = document.getElementById('nv-wc');
+    var wtEl = document.getElementById('nv-wc-time');
+    function update() {
+      var words = ta.value.trim().split(/\s+/).filter(Boolean).length;
+      wcEl.textContent = words.toLocaleString('fr-FR') + ' mot' + (words !== 1 ? 's' : '');
+      wtEl.textContent = '~' + Math.max(1, Math.round(words / 200)) + ' min';
+    }
+    ta.addEventListener('input', update);
+    update();
+  })();
+  </script>
+
+</main>
+<%- include('partials/foot') %>
