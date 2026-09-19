@@ -61,7 +61,7 @@
         <div class="wiki-chapter-hero-top">
           <span></span>
           <h1 class="wiki-chapter-hero-title"><%= quiz.title %></h1>
-          <span class="wiki-chapter-hero-count"><%= stepIdx + 1 %>/<%= steps.length %></span>
+          <span></span>
         </div>
       </div>
       <div class="wiki-sidebar-body">
@@ -88,12 +88,10 @@
 
     <%# ─── COLONNE PRINCIPALE : étape courante ────────────────────────────── %>
     <div class="quiz-detail-wrap">
-      <%# ── En-tête étape ─────────────────────────────────────────────── %>
-      <% if (stepData.part) { %>
-        <h1 class="quiz-step-title">
-          <span class="quiz-step-roman"><%= partRomanNum %></span><%= stepData.part.title %>
-        </h1>
-      <% } else { %>
+      <%# ── En-tête étape : le titre de partie ("I - ...") est retiré ici,
+          déjà donné par la frise du volet gauche — seule l'étape sans
+          partie garde le titre du quizz + sa description. ────────────── %>
+      <% if (!stepData.part) { %>
         <h1 class="quiz-detail-title"><%= quiz.title %></h1>
         <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
       <% } %>
