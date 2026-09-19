@@ -49,40 +49,44 @@
         var isLastStep = stepIdx >= steps.length - 1;
       %>
 
-      <%# ── Progression ─────────────────────────────────────────────────── %>
-      <% if (steps.length > 1) { %>
-      <div class="quiz-progress">
-        <%
-          var _progPartCounter = 0;
-          steps.forEach(function(s, i) {
-            var _progLabel;
-            if (s.part) { _progPartCounter++; _progLabel = toRoman(_progPartCounter); }
-            else { _progLabel = '·'; }
-        %>
-          <a href="/quizz/<%= quiz.id %>?step=<%= i %>"
-            class="quiz-progress-step<%= i === stepIdx ? ' quiz-progress-step--active' : '' %><%= i < stepIdx ? ' quiz-progress-step--done' : '' %>"
-            title="<%= s.part ? s.part.title : quiz.title %>">
-            <span class="quiz-progress-num"><%= i < stepIdx ? '&#10003;' : _progLabel %></span>
-            <span class="quiz-progress-label"><%= s.part ? s.part.title : quiz.title %></span>
-          </a>
-          <% if (i < steps.length - 1) { %><span class="quiz-progress-sep"></span><% } %>
-        <% }) %>
-      </div>
-      <% } %>
+      <div class="quiz-detail-layout">
+        <%# ── Bandeau gauche : titre + frise chronologique verticale ─────── %>
+        <aside class="quiz-detail-sidebar">
+          <h2 class="quiz-sidebar-title"><%= quiz.title %></h2>
+          <% if (steps.length > 1) { %>
+          <div class="quiz-timeline">
+            <%
+              var _progPartCounter = 0;
+              steps.forEach(function(s, i) {
+                var _progLabel;
+                if (s.part) { _progPartCounter++; _progLabel = toRoman(_progPartCounter); }
+                else { _progLabel = '·'; }
+            %>
+              <a href="/quizz/<%= quiz.id %>?step=<%= i %>"
+                class="quiz-timeline-step<%= i === stepIdx ? ' quiz-timeline-step--active' : '' %><%= i < stepIdx ? ' quiz-timeline-step--done' : '' %>"
+                title="<%= s.part ? s.part.title : quiz.title %>">
+                <span class="quiz-timeline-dot"><%= i < stepIdx ? '&#10003;' : _progLabel %></span>
+                <span class="quiz-timeline-label"><%= s.part ? s.part.title : quiz.title %></span>
+              </a>
+            <% }) %>
+          </div>
+          <% } %>
+        </aside>
 
-      <%# ── En-tête étape ───────────────────────────────────────────────── %>
-      <% if (stepData.part) { %>
-        <h1 class="quiz-step-title">
-          <span class="quiz-step-roman"><%= partRomanNum %></span><%= stepData.part.title %>
-        </h1>
-      <% } else { %>
-        <h1 class="quiz-detail-title"><%= quiz.title %></h1>
-        <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
-      <% } %>
+        <div class="quiz-detail-main">
+          <%# ── En-tête étape ─────────────────────────────────────────────── %>
+          <% if (stepData.part) { %>
+            <h1 class="quiz-step-title">
+              <span class="quiz-step-roman"><%= partRomanNum %></span><%= stepData.part.title %>
+            </h1>
+          <% } else { %>
+            <h1 class="quiz-detail-title"><%= quiz.title %></h1>
+            <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
+          <% } %>
 
-      <%# ── Questions de l'étape ────────────────────────────────────────── %>
-      <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
-        <input type="hidden" name="_step" value="<%= stepIdx %>" />
+          <%# ── Questions de l'étape ──────────────────────────────────────── %>
+          <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
+            <input type="hidden" name="_step" value="<%= stepIdx %>" />
 
         <% stepData.questions.forEach(function(q, qi) {
           var savedAns = answers[q.id];
@@ -191,7 +195,9 @@
             <button type="submit" name="complete" value="0" class="quiz-step-next">Suivant &#8594;</button>
           <% } %>
         </div>
-      </form>
+          </form>
+        </div>
+      </div>
     <% } %>
 
     <% if (currentUser && currentUser.isAdmin) { %>
