@@ -2186,6 +2186,15 @@ function saveCustomQuizAnswer(quizId, userId, answers, completed) {
     ON CONFLICT(quiz_id, user_id) DO UPDATE SET answers=excluded.answers, completed=excluded.completed, updated_at=unixepoch()`)
     .run(quizId, userId, JSON.stringify(answers), completed ? 1 : 0);
 }
+function clearCustomQuizAnswer(quizId, userId, questionId) {
+  const existing = db.prepare(`SELECT answers, completed FROM custom_quiz_answers WHERE quiz_id=? AND user_id=?`).get(quizId, userId);
+  if (!existing) return;
+  let answers = {};
+  try { answers = JSON.parse(existing.answers || '{}'); } catch {}
+  delete answers[questionId];
+  db.prepare(`UPDATE custom_quiz_answers SET answers=?, updated_at=unixepoch() WHERE quiz_id=? AND user_id=?`)
+    .run(JSON.stringify(answers), quizId, userId);
+}
 function listQuizzesNotCompleted(userId) {
   return db.prepare(`SELECT q.*,
     (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count
@@ -2342,6 +2351,7 @@ module.exports = {
   updateCustomQuizQuestionsOrder,
   getCustomQuizAnswer,
   saveCustomQuizAnswer,
+  clearCustomQuizAnswer,
   listQuizzesNotCompleted,
   getQuizParts,
   createQuizPart,

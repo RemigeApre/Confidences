@@ -136,6 +136,16 @@ function buildCustomQuizRouter(config) {
     res.json({ ok: true });
   });
 
+  // Efface la réponse d'une seule question (petite croix discrète, voir
+  // quiz-detail.ejs) — retire juste cette clé de l'objet réponses, sans
+  // toucher aux autres ni au statut "terminé" du quizz.
+  router.post("/:id/questions/:qid/clear-answer", requireUser, express.json(), (req, res) => {
+    const quiz = db.getCustomQuiz(req.params.id);
+    if (!quiz) return res.status(404).json({ ok: false });
+    db.clearCustomQuizAnswer(quiz.id, req.user.id, req.params.qid);
+    res.json({ ok: true });
+  });
+
   // Helper : construit les étapes (unassigned si non vide, puis parties avec questions)
   function buildSteps(parts, questions) {
     const steps = [];

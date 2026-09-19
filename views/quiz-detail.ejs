@@ -148,7 +148,7 @@
           }
         %>
 
-          <div class="quiz-q-block">
+          <div class="quiz-q-block" id="qblock-<%= q.id %>">
             <div class="quiz-q-header">
               <span class="quiz-q-num"><%= qNum %></span>
               <p class="quiz-q-text"><%= q.text %></p>
@@ -160,6 +160,7 @@
                 </select>
                 <input type="hidden" name="q_<%= q.id %>_side" id="qside-input-<%= q.id %>" value="<%= savedSide %>" />
               <% } %>
+              <button type="button" class="quiz-q-clear-btn" data-qid="<%= q.id %>" title="Effacer ma r&eacute;ponse" aria-label="Effacer ma r&eacute;ponse">&times;</button>
             </div>
 
             <% if (!q.has_sides) { %>
@@ -257,6 +258,43 @@
         if (hiddenSide)  hiddenSide.value = side;
         if (giveRow)     giveRow.classList.toggle('quiz-side-row--hidden',    side === 'receive');
         if (receiveRow)  receiveRow.classList.toggle('quiz-side-row--hidden', side === 'give');
+      });
+    });
+
+    /* ── Effacer ma réponse (petite croix discrète) ─────────────────────── */
+    function resetQuestionBlock(qid) {
+      var block = document.getElementById('qblock-' + qid);
+      if (!block) return;
+      block.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(function(el) { el.checked = false; });
+      block.querySelectorAll('.quiz-grad-bar').forEach(function(bar) {
+        var fill = bar.querySelector('.quiz-grad-fill');
+        if (fill) { fill.style.width = '0%'; fill.style.opacity = '0'; }
+        bar.querySelectorAll('.quiz-grad-jal').forEach(function(jal) { jal.classList.remove('quiz-grad-jal--active'); });
+      });
+      block.querySelectorAll('.quiz-rank-list').forEach(function(list) {
+        var items = Array.from(list.querySelectorAll('.quiz-rank-item'));
+        items.sort(function(a, b) { return Number(a.dataset.idx) - Number(b.dataset.idx); });
+        items.forEach(function(item) { list.appendChild(item); });
+        var hidden = document.getElementById('qrank-input-' + list.id.replace('qrank-', ''));
+        if (hidden) hidden.value = items.map(function(el) { return el.dataset.idx; }).join(',');
+      });
+      var sidesSel = document.getElementById('qsides-' + qid);
+      if (sidesSel) {
+        sidesSel.value = 'both';
+        var hiddenSide = document.getElementById('qside-input-' + qid);
+        if (hiddenSide) hiddenSide.value = 'both';
+        var giveRow2    = document.getElementById('qside-give-' + qid);
+        var receiveRow2 = document.getElementById('qside-receive-' + qid);
+        if (giveRow2)    giveRow2.classList.remove('quiz-side-row--hidden');
+        if (receiveRow2) receiveRow2.classList.remove('quiz-side-row--hidden');
+      }
+    }
+    document.querySelectorAll('.quiz-q-clear-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var qid = btn.dataset.qid;
+        fetch('/quizz/<%= quiz.id %>/questions/' + qid + '/clear-answer', { method: 'POST' })
+          .then(function() { resetQuestionBlock(qid); })
+          .catch(function() {});
       });
     });
   })();
