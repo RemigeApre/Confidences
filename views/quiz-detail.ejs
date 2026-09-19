@@ -1,92 +1,106 @@
 <%- include('partials/head', { title: quiz.title }) %>
-<main class="container">
+<main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: quiz.title, navBack: '/quizz' }) %>
 
-  <div class="quiz-detail-wrap">
-    <% if (locals.completed && !stepData) { %>
-      <%# ── Écran de fin ───────────────────────────────────────────────── %>
+  <% if (locals.completed && !stepData) { %>
+    <%# ── Écran de fin ───────────────────────────────────────────────── %>
+    <div class="quiz-detail-wrap">
       <div class="quiz-done-screen">
         <div class="quiz-done-check">&#10003;</div>
         <h1 class="quiz-detail-title"><%= quiz.title %></h1>
         <p class="quiz-done-msg">Quizz complété&nbsp;!</p>
         <a href="/quizz" class="wf-save-btn" style="position:static;display:inline-block;margin-top:1rem">Retour aux quizz</a>
       </div>
+    </div>
 
-    <% } else if (!steps.length || !stepData) { %>
-      <%# ── Quizz vide ─────────────────────────────────────────────────── %>
+  <% } else if (!steps.length || !stepData) { %>
+    <%# ── Quizz vide ─────────────────────────────────────────────────── %>
+    <div class="quiz-detail-wrap">
       <h1 class="quiz-detail-title"><%= quiz.title %></h1>
       <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
       <p class="quiz-hub-empty">Ce quizz n'a pas encore de questions.</p>
+    </div>
 
-    <% } else { %>
-      <%
-        /* ── Helpers ──────────────────────────────────────────────────── */
-        function toRoman(n) {
-          var vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
-          var syms = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
-          var r = '';
-          for (var i = 0; i < vals.length; i++) { while (n >= vals[i]) { r += syms[i]; n -= vals[i]; } }
-          return r;
+  <% } else { %>
+    <%
+      /* ── Helpers ──────────────────────────────────────────────────── */
+      function toRoman(n) {
+        var vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+        var syms = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
+        var r = '';
+        for (var i = 0; i < vals.length; i++) { while (n >= vals[i]) { r += syms[i]; n -= vals[i]; } }
+        return r;
+      }
+
+      /* Numéro romain de la partie courante (parmi les steps avec part) */
+      var partRomanNum = null;
+      if (stepData.part) {
+        var _pc = 0;
+        for (var _si = 0; _si <= stepIdx; _si++) {
+          if (steps[_si] && steps[_si].part) _pc++;
         }
+        partRomanNum = toRoman(_pc);
+      }
 
-        /* Numéro romain de la partie courante (parmi les steps avec part) */
-        var partRomanNum = null;
-        if (stepData.part) {
-          var _pc = 0;
-          for (var _si = 0; _si <= stepIdx; _si++) {
-            if (steps[_si] && steps[_si].part) _pc++;
-          }
-          partRomanNum = toRoman(_pc);
-        }
+      var GRAD_LEVELS = [
+        { k: '1', l: 'Pas du tout',  col: 'hsl(0,72%,55%)'   },
+        { k: '2', l: 'Un peu',       col: 'hsl(25,80%,55%)'  },
+        { k: '3', l: 'Neutre',       col: 'hsl(50,78%,52%)'  },
+        { k: '4', l: 'Beaucoup',     col: 'hsl(90,60%,48%)'  },
+        { k: '5', l: 'Énormément',   col: 'hsl(140,55%,46%)' }
+      ];
+      var isLastStep = stepIdx >= steps.length - 1;
+    %>
 
-        var GRAD_LEVELS = [
-          { k: '1', l: 'Pas du tout',  col: 'hsl(0,72%,55%)'   },
-          { k: '2', l: 'Un peu',       col: 'hsl(25,80%,55%)'  },
-          { k: '3', l: 'Neutre',       col: 'hsl(50,78%,52%)'  },
-          { k: '4', l: 'Beaucoup',     col: 'hsl(90,60%,48%)'  },
-          { k: '5', l: 'Énormément',   col: 'hsl(140,55%,46%)' }
-        ];
-        var isLastStep = stepIdx >= steps.length - 1;
-      %>
+    <%- include('partials/mobile-filter-toggle') %>
 
-      <div class="quiz-detail-layout">
-        <%# ── Bandeau gauche : titre + frise chronologique verticale ─────── %>
-        <aside class="quiz-detail-sidebar">
-          <h2 class="quiz-sidebar-title"><%= quiz.title %></h2>
-          <% if (steps.length > 1) { %>
-          <div class="quiz-timeline">
-            <%
-              var _progPartCounter = 0;
-              steps.forEach(function(s, i) {
-                var _progLabel;
-                if (s.part) { _progPartCounter++; _progLabel = toRoman(_progPartCounter); }
-                else { _progLabel = '·'; }
-            %>
-              <a href="/quizz/<%= quiz.id %>?step=<%= i %>"
-                class="quiz-timeline-step<%= i === stepIdx ? ' quiz-timeline-step--active' : '' %><%= i < stepIdx ? ' quiz-timeline-step--done' : '' %>"
-                title="<%= s.part ? s.part.title : quiz.title %>">
-                <span class="quiz-timeline-dot"><%= i < stepIdx ? '&#10003;' : _progLabel %></span>
-                <span class="quiz-timeline-label"><%= s.part ? s.part.title : quiz.title %></span>
-              </a>
-            <% }) %>
-          </div>
-          <% } %>
-        </aside>
+    <%# ─── VOLET GAUCHE : titre + frise chronologique verticale des étapes ─── %>
+    <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
+      <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
+      <div class="wiki-chapter-hero">
+        <div class="wiki-chapter-hero-top">
+          <span></span>
+          <h1 class="wiki-chapter-hero-title"><%= quiz.title %></h1>
+          <span class="wiki-chapter-hero-count"><%= stepIdx + 1 %>/<%= steps.length %></span>
+        </div>
+      </div>
+      <div class="wiki-sidebar-body">
+        <% if (steps.length > 1) { %>
+        <div class="quiz-timeline">
+          <%
+            var _progPartCounter = 0;
+            steps.forEach(function(s, i) {
+              var _progLabel;
+              if (s.part) { _progPartCounter++; _progLabel = toRoman(_progPartCounter); }
+              else { _progLabel = '·'; }
+          %>
+            <a href="/quizz/<%= quiz.id %>?step=<%= i %>"
+              class="quiz-timeline-step<%= i === stepIdx ? ' quiz-timeline-step--active' : '' %><%= i < stepIdx ? ' quiz-timeline-step--done' : '' %>"
+              title="<%= s.part ? s.part.title : quiz.title %>">
+              <span class="quiz-timeline-dot"><%= i < stepIdx ? '&#10003;' : _progLabel %></span>
+              <span class="quiz-timeline-label"><%= s.part ? s.part.title : quiz.title %></span>
+            </a>
+          <% }) %>
+        </div>
+        <% } %>
+      </div>
+    </aside>
 
-        <div class="quiz-detail-main">
-          <%# ── En-tête étape ─────────────────────────────────────────────── %>
-          <% if (stepData.part) { %>
-            <h1 class="quiz-step-title">
-              <span class="quiz-step-roman"><%= partRomanNum %></span><%= stepData.part.title %>
-            </h1>
-          <% } else { %>
-            <h1 class="quiz-detail-title"><%= quiz.title %></h1>
-            <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
-          <% } %>
+    <%# ─── COLONNE PRINCIPALE : étape courante ────────────────────────────── %>
+    <div class="quiz-detail-wrap">
+      <%# ── En-tête étape ─────────────────────────────────────────────── %>
+      <% if (stepData.part) { %>
+        <h1 class="quiz-step-title">
+          <span class="quiz-step-roman"><%= partRomanNum %></span><%= stepData.part.title %>
+        </h1>
+      <% } else { %>
+        <h1 class="quiz-detail-title"><%= quiz.title %></h1>
+        <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
+      <% } %>
 
-          <%# ── Questions de l'étape ──────────────────────────────────────── %>
-          <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
-            <input type="hidden" name="_step" value="<%= stepIdx %>" />
+      <%# ── Questions de l'étape ──────────────────────────────────────── %>
+      <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
+        <input type="hidden" name="_step" value="<%= stepIdx %>" />
 
         <% stepData.questions.forEach(function(q, qi) {
           var savedAns = answers[q.id];
@@ -195,15 +209,13 @@
             <button type="submit" name="complete" value="0" class="quiz-step-next">Suivant &#8594;</button>
           <% } %>
         </div>
-          </form>
-        </div>
-      </div>
-    <% } %>
+      </form>
+    </div>
+  <% } %>
 
-    <% if (currentUser && currentUser.isAdmin) { %>
-      <a href="/quizz/<%= quiz.id %>/edit" class="quiz-admin-edit-fab" title="Modifier le quizz">&#9998;</a>
-    <% } %>
-  </div>
+  <% if (currentUser && currentUser.isAdmin) { %>
+    <a href="/quizz/<%= quiz.id %>/edit" class="quiz-admin-edit-fab" title="Modifier le quizz">&#9998;</a>
+  <% } %>
 
   <script>
   (function() {

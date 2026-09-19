@@ -13810,53 +13810,43 @@ html.lq-discreet-mode img {
 .quiz-hub-empty { color: var(--muted); font-size: 0.88rem; text-align: center; margin-top: 2rem; }
 
 /* ── Quiz detail ────────────────────────────────────── */
-.quiz-detail-wrap { max-width: 980px; margin: 3rem auto 4rem; }
+/* Colonne de questions : le volet gauche est désormais le vrai composant
+   sidebar du site (.wiki-cat-sidebar, fixe sur PC / tiroir sur mobile —
+   voir plus bas), pas un panneau maison plaqué dans la colonne centrale. */
+.quiz-detail-wrap { max-width: 680px; margin: 3rem auto 4rem; padding-left: 2.8rem; }
+@media (max-width: 520px) { .quiz-detail-wrap { padding-left: .5rem; } }
 .quiz-detail-title { font-size: 1.4rem; font-weight: 800; margin: 0 0 0.5rem; }
 .quiz-detail-desc { color: var(--muted); font-size: 0.88rem; margin: 0 0 1rem; }
 .quiz-detail-done-badge { font-size: 0.78rem; font-weight: 700; color: hsl(140,60%,55%); margin: 0 0 1rem; }
 
-/* ── Bandeau gauche : titre + frise chronologique verticale ──────────────── */
-.quiz-detail-layout { display: flex; align-items: flex-start; gap: 2.5rem; }
-.quiz-detail-sidebar { flex: 0 0 200px; position: sticky; top: 1.5rem; }
-.quiz-sidebar-title {
-  font-size: 1.05rem; font-weight: 800; line-height: 1.3;
-  margin: 0 0 1.3rem; padding-bottom: .85rem;
-  border-bottom: 1px solid var(--border);
-}
+/* ── Frise chronologique verticale des étapes (dans .wiki-sidebar-body) ──── */
 .quiz-timeline { display: flex; flex-direction: column; }
 .quiz-timeline-step {
   position: relative;
   display: flex; align-items: flex-start; gap: .65rem;
   padding: .4rem 0 .55rem;
-  text-decoration: none; color: var(--muted); font-size: .82rem;
+  text-decoration: none; color: rgba(255,255,255,.6); font-size: .82rem;
   transition: color .15s;
 }
 .quiz-timeline-step:not(:last-child)::before {
   content: ""; position: absolute;
   left: .64rem; top: 1.7rem; bottom: -.15rem; width: 2px;
-  background: var(--border);
+  background: rgba(255,255,255,.18);
 }
-.quiz-timeline-step--done:not(:last-child)::before { background: hsl(140,45%,30%); }
+.quiz-timeline-step--done:not(:last-child)::before { background: hsl(140,45%,40%); }
 .quiz-timeline-dot {
   position: relative; z-index: 1;
   display: flex; align-items: center; justify-content: center;
   width: 1.3rem; height: 1.3rem; border-radius: 50%; flex-shrink: 0;
-  background: hsl(220,14%,18%); font-size: .68rem; font-weight: 800;
+  background: rgba(255,255,255,.1); color: rgba(255,255,255,.75);
+  font-size: .68rem; font-weight: 800;
 }
 .quiz-timeline-step--active .quiz-timeline-dot { background: var(--accent); color: #fff; }
-.quiz-timeline-step--done .quiz-timeline-dot { background: hsl(140,45%,22%); color: hsl(140,65%,62%); }
+.quiz-timeline-step--done .quiz-timeline-dot { background: hsl(140,45%,28%); color: hsl(140,65%,72%); }
 .quiz-timeline-step--active { color: #fff; font-weight: 700; }
-.quiz-timeline-step--done { color: hsl(140,55%,55%); }
+.quiz-timeline-step--done { color: hsl(140,55%,68%); }
 .quiz-timeline-step:hover { color: #fff; }
 .quiz-timeline-label { padding-top: .12rem; line-height: 1.3; }
-
-/* ── Colonne principale : questions ───────────────────────────────────────── */
-.quiz-detail-main { flex: 1; min-width: 0; max-width: 680px; padding-left: 2.8rem; }
-@media (max-width: 520px) { .quiz-detail-main { padding-left: .5rem; } }
-@media (max-width: 780px) {
-  .quiz-detail-layout { flex-direction: column; gap: 1.5rem; }
-  .quiz-detail-sidebar { position: static; flex: none; width: 100%; }
-}
 
 .quiz-q-block {
   margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.75rem;
