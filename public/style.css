@@ -13889,24 +13889,36 @@ html.lq-discreet-mode img {
   color: #fff;
 }
 
-/* ── Donner / Subir : 3 boutons puis croix rouge pour revenir ────────────── */
+/* ── Donner / Subir : 3 boutons centrés (Donner · Les deux · Recevoir),
+   puis croix rouge pour revenir — couleur d'accent du site, pas un violet
+   arbitraire sans rapport. ────────────────────────────────────────────── */
 .quiz-sides-row {
-  display: flex; align-items: center; gap: .6rem;
+  display: flex; align-items: center; justify-content: center; gap: .6rem;
   margin: 0 0 .8rem;
 }
-.quiz-sides-picker { display: flex; flex-wrap: wrap; gap: .5rem; }
+.quiz-sides-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
 .quiz-sides-picker--hidden { display: none; }
 .quiz-sides-btn {
   appearance: none;
-  background: hsl(270,28%,15%);
-  border: 1px solid hsl(270,30%,30%); border-radius: 20px;
-  color: hsl(270,60%,80%); font-size: .82rem; font-weight: 600;
+  background: color-mix(in srgb, var(--accent) 16%, hsl(220,14%,12%));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 20px;
+  color: color-mix(in srgb, var(--accent) 35%, #fff); font-size: .82rem; font-weight: 600;
   padding: .4rem 1rem; cursor: pointer;
   transition: border-color .15s, background .15s, color .15s;
 }
 .quiz-sides-btn:hover {
-  border-color: hsl(270,50%,48%); background-color: hsl(270,32%,20%); color: #fff;
+  border-color: var(--accent);
+  background-color: color-mix(in srgb, var(--accent) 32%, hsl(220,14%,12%));
+  color: #fff;
 }
+.quiz-sides-btn--both {
+  background: color-mix(in srgb, var(--accent) 28%, hsl(220,14%,12%));
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+.quiz-sides-btn--both:hover { background: color-mix(in srgb, var(--accent) 44%, hsl(220,14%,12%)); }
 .quiz-sides-reset {
   display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
