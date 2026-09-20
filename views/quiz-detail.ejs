@@ -32,16 +32,6 @@
         return r;
       }
 
-      /* Numéro romain de la partie courante (parmi les steps avec part) */
-      var partRomanNum = null;
-      if (stepData.part) {
-        var _pc = 0;
-        for (var _si = 0; _si <= stepIdx; _si++) {
-          if (steps[_si] && steps[_si].part) _pc++;
-        }
-        partRomanNum = toRoman(_pc);
-      }
-
       var GRAD_LEVELS = [
         { k: '1', l: 'Pas du tout',  col: 'hsl(0,72%,55%)'   },
         { k: '2', l: 'Un peu',       col: 'hsl(25,80%,55%)'  },
@@ -102,10 +92,15 @@
 
         <% stepData.questions.forEach(function(q, qi) {
           var savedAns = answers[q.id];
-          var savedSide    = (q.has_sides && savedAns && typeof savedAns === 'object') ? (savedAns.side || 'both') : 'both';
+          var hasSideAnswer = q.has_sides && savedAns && typeof savedAns === 'object' && savedAns.side;
+          // null tant que la personne n'a pas choisi de perspective : les
+          // réponses give/receive restent cachées et les 3 boutons de choix
+          // affichés, plutôt qu'un "Les deux" par défaut qui montrait tout
+          // de suite les deux jeux de réponses.
+          var savedSide    = hasSideAnswer ? savedAns.side : null;
           var savedGive    = (q.has_sides && savedAns && typeof savedAns === 'object') ? savedAns.give    : savedAns;
           var savedReceive = (q.has_sides && savedAns && typeof savedAns === 'object') ? savedAns.receive : null;
-          var qNum = (partRomanNum ? partRomanNum + '.' : '') + (qi + 1);
+          var qNum = qi + 1;
 
           /* ── Render gradient bar ────────────────────────────────────── */
           function renderGradBar(name, savedVal) {
@@ -168,25 +163,29 @@
             <div class="quiz-q-header">
               <span class="quiz-q-num"><%= qNum %></span>
               <p class="quiz-q-text"><%= q.text %></p>
-              <% if (q.has_sides) { %>
-                <select class="quiz-sides-select" id="qsides-<%= q.id %>" aria-label="Perspective">
-                  <option value="both"    <%= savedSide === 'both'    ? 'selected' : '' %>>Les deux</option>
-                  <option value="give"    <%= savedSide === 'give'    ? 'selected' : '' %>>Donner</option>
-                  <option value="receive" <%= savedSide === 'receive' ? 'selected' : '' %>>Recevoir</option>
-                </select>
-                <input type="hidden" name="q_<%= q.id %>_side" id="qside-input-<%= q.id %>" value="<%= savedSide %>" />
-              <% } %>
               <button type="button" class="quiz-q-clear-btn" data-qid="<%= q.id %>" title="Effacer ma r&eacute;ponse" aria-label="Effacer ma r&eacute;ponse">&times;</button>
             </div>
+
+            <% if (q.has_sides) { %>
+              <div class="quiz-sides-row">
+                <div class="quiz-sides-picker<%= savedSide ? ' quiz-sides-picker--hidden' : '' %>" id="qsidespicker-<%= q.id %>">
+                  <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="both">Les deux</button>
+                  <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="give">Donner</button>
+                  <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="receive">Recevoir</button>
+                </div>
+                <button type="button" class="quiz-sides-reset<%= savedSide ? '' : ' quiz-sides-reset--hidden' %>" id="qsidesreset-<%= q.id %>" data-qid="<%= q.id %>" title="Changer de perspective" aria-label="Changer de perspective">&times;</button>
+              </div>
+              <input type="hidden" name="q_<%= q.id %>_side" id="qside-input-<%= q.id %>" value="<%= savedSide || '' %>" />
+            <% } %>
 
             <% if (!q.has_sides) { %>
               <%- renderInputs(null, savedAns) %>
             <% } else { %>
-              <div class="quiz-side-row quiz-side-row--give<%= savedSide === 'receive' ? ' quiz-side-row--hidden' : '' %>" id="qside-give-<%= q.id %>">
+              <div class="quiz-side-row quiz-side-row--give<%= (!savedSide || savedSide === 'receive') ? ' quiz-side-row--hidden' : '' %>" id="qside-give-<%= q.id %>">
                 <span class="quiz-side-label">Donner</span>
                 <%- renderInputs('give', savedGive) %>
               </div>
-              <div class="quiz-side-row quiz-side-row--receive<%= savedSide === 'give' ? ' quiz-side-row--hidden' : '' %>" id="qside-receive-<%= q.id %>">
+              <div class="quiz-side-row quiz-side-row--receive<%= (!savedSide || savedSide === 'give') ? ' quiz-side-row--hidden' : '' %>" id="qside-receive-<%= q.id %>">
                 <span class="quiz-side-label">Recevoir</span>
                 <%- renderInputs('receive', savedReceive) %>
               </div>
@@ -263,18 +262,36 @@
       list.addEventListener('drop',     function(e) { e.preventDefault(); if (indicator && indicator.parentNode) indicator.remove(); if (!dragging) return; var after = afterEl(e.clientY); if (!after) list.appendChild(dragging); else list.insertBefore(dragging, after); updateHidden(); });
     });
 
-    /* ── Select Donner / Subir ───────────────────────────────────────────── */
-    document.querySelectorAll('.quiz-sides-select').forEach(function(sel) {
-      var qid        = sel.id.replace('qsides-', '');
+    /* ── Donner / Subir : 3 boutons puis croix rouge pour revenir ────────── */
+    function selectSide(qid, side) {
       var hiddenSide = document.getElementById('qside-input-' + qid);
       var giveRow    = document.getElementById('qside-give-' + qid);
       var receiveRow = document.getElementById('qside-receive-' + qid);
-      sel.addEventListener('change', function() {
-        var side = sel.value;
-        if (hiddenSide)  hiddenSide.value = side;
-        if (giveRow)     giveRow.classList.toggle('quiz-side-row--hidden',    side === 'receive');
-        if (receiveRow)  receiveRow.classList.toggle('quiz-side-row--hidden', side === 'give');
-      });
+      var picker     = document.getElementById('qsidespicker-' + qid);
+      var resetBtn   = document.getElementById('qsidesreset-' + qid);
+      if (hiddenSide) hiddenSide.value = side;
+      if (giveRow)    giveRow.classList.toggle('quiz-side-row--hidden',    side === 'receive');
+      if (receiveRow) receiveRow.classList.toggle('quiz-side-row--hidden', side === 'give');
+      if (picker)     picker.classList.add('quiz-sides-picker--hidden');
+      if (resetBtn)   resetBtn.classList.remove('quiz-sides-reset--hidden');
+    }
+    function resetSide(qid) {
+      var hiddenSide = document.getElementById('qside-input-' + qid);
+      var giveRow    = document.getElementById('qside-give-' + qid);
+      var receiveRow = document.getElementById('qside-receive-' + qid);
+      var picker     = document.getElementById('qsidespicker-' + qid);
+      var resetBtn   = document.getElementById('qsidesreset-' + qid);
+      if (hiddenSide) hiddenSide.value = '';
+      if (giveRow)    giveRow.classList.add('quiz-side-row--hidden');
+      if (receiveRow) receiveRow.classList.add('quiz-side-row--hidden');
+      if (picker)     picker.classList.remove('quiz-sides-picker--hidden');
+      if (resetBtn)   resetBtn.classList.add('quiz-sides-reset--hidden');
+    }
+    document.querySelectorAll('.quiz-sides-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { selectSide(btn.dataset.qid, btn.dataset.side); });
+    });
+    document.querySelectorAll('.quiz-sides-reset').forEach(function(btn) {
+      btn.addEventListener('click', function() { resetSide(btn.dataset.qid); });
     });
 
     /* ── Effacer ma réponse (petite croix discrète) ─────────────────────── */
@@ -294,16 +311,7 @@
         var hidden = document.getElementById('qrank-input-' + list.id.replace('qrank-', ''));
         if (hidden) hidden.value = items.map(function(el) { return el.dataset.idx; }).join(',');
       });
-      var sidesSel = document.getElementById('qsides-' + qid);
-      if (sidesSel) {
-        sidesSel.value = 'both';
-        var hiddenSide = document.getElementById('qside-input-' + qid);
-        if (hiddenSide) hiddenSide.value = 'both';
-        var giveRow2    = document.getElementById('qside-give-' + qid);
-        var receiveRow2 = document.getElementById('qside-receive-' + qid);
-        if (giveRow2)    giveRow2.classList.remove('quiz-side-row--hidden');
-        if (receiveRow2) receiveRow2.classList.remove('quiz-side-row--hidden');
-      }
+      if (document.getElementById('qsidespicker-' + qid)) resetSide(qid);
     }
     document.querySelectorAll('.quiz-q-clear-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
