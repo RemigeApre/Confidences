@@ -113,7 +113,7 @@
             var initVal = parseInt(savedVal, 10) || 0;
             var initPct = initVal > 0 ? ((initVal - 1) / 4 * 100) : -1;
             var html = '<div class="quiz-grad-bar" data-name="' + name + '">';
-            html += '<div class="quiz-grad-track"><div class="quiz-grad-fill" style="width:' + (initPct >= 0 ? initPct : 0) + '%;opacity:' + (initPct >= 0 ? 1 : 0) + '"></div></div>';
+            html += '<div class="quiz-grad-track"><div class="quiz-grad-fill" style="width:' + (initPct >= 0 ? (100 - initPct) : 100) + '%"></div></div>';
             html += '<div class="quiz-grad-jalons">';
             GRAD_LEVELS.forEach(function(lvl) {
               var active = initVal >= parseInt(lvl.k);
@@ -270,9 +270,8 @@
       var radios  = bar.querySelectorAll('input[type="radio"]');
 
       function setVal(val) {
-        var pct = val > 0 ? ((val - 1) / 4 * 100) : 0;
-        fill.style.width   = pct + '%';
-        fill.style.opacity = val > 0 ? '1' : '0';
+        var pct = val > 0 ? ((val - 1) / 4 * 100) : -1;
+        fill.style.width = (pct >= 0 ? (100 - pct) : 100) + '%';
         jalons.forEach(function(jal, i) {
           jal.classList.toggle('quiz-grad-jal--active', (i + 1) <= val);
         });
@@ -346,7 +345,7 @@
       block.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(function(el) { el.checked = false; });
       block.querySelectorAll('.quiz-grad-bar').forEach(function(bar) {
         var fill = bar.querySelector('.quiz-grad-fill');
-        if (fill) { fill.style.width = '0%'; fill.style.opacity = '0'; }
+        if (fill) { fill.style.width = '100%'; }
         bar.querySelectorAll('.quiz-grad-jal').forEach(function(jal) { jal.classList.remove('quiz-grad-jal--active'); });
       });
       block.querySelectorAll('.quiz-rank-list').forEach(function(list) {

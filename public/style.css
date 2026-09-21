@@ -3251,14 +3251,17 @@ input[type="text"], input[type="password"] {
 .wiki-page-nav {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 .wiki-page-nav-btn {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  flex: 1 1 0;
+  flex: 0 1 250px;
   min-width: 0;
   padding: 0.3rem 0.6rem;
   border-radius: 7px;
@@ -13930,13 +13933,18 @@ html.lq-discreet-mode img {
 .quiz-grad-bar { padding: .5rem 0 1rem; }
 .quiz-grad-track {
   position: relative; height: 5px; border-radius: 3px;
-  background: hsl(220,14%,18%); margin: 0 calc(100%/10);
-  overflow: visible;
+  background: linear-gradient(90deg, hsl(0,72%,55%), hsl(25,80%,55%), hsl(50,78%,52%), hsl(90,60%,48%), hsl(140,55%,46%));
+  margin: 0 calc(100%/10);
+  overflow: hidden;
 }
 .quiz-grad-fill {
-  position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px;
-  background: linear-gradient(90deg, hsl(0,72%,55%), hsl(25,80%,55%), hsl(50,78%,52%), hsl(90,60%,48%), hsl(140,55%,46%));
-  transition: width .25s ease, opacity .2s;
+  /* Masque le reste non atteint du dégradé fixe du track : ainsi la couleur
+     visible à la pointe du remplissage correspond toujours à la vraie
+     position sur le dégradé (ex. "neutre" = jaune), plutôt qu'un dégradé
+     recalculé sur la largeur variable du fill. */
+  position: absolute; right: 0; top: 0; height: 100%; border-radius: 3px;
+  background: hsl(220,14%,18%);
+  transition: width .25s ease;
   pointer-events: none;
 }
 .quiz-grad-jalons {
