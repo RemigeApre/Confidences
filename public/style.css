@@ -7750,16 +7750,6 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
   .gallery-bulk-bar {
     bottom: calc(3.75rem + env(safe-area-inset-bottom, 0));
   }
-  /* Éditeur de quizz / nouvelles (admin) : mêmes bulles flottantes, même
-     remontée pour ne jamais passer sous la barre du bas. */
-  .qe-save-fab,
-  .qe-delete-form,
-  .quiz-admin-edit-fab {
-    bottom: calc(1.5rem + 3.75rem + env(safe-area-inset-bottom, 0));
-  }
-  .qe-export-fab {
-    bottom: calc(5rem + 3.75rem + env(safe-area-inset-bottom, 0));
-  }
 
   /* ── Wiki sidebar sur mobile : masquer le hero (titre dans le header) ── */
   .wiki-cat-sidebar .wiki-chapter-hero { display: none; }
@@ -14258,6 +14248,22 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   transition: background .15s, color .15s, transform .15s;
 }
 .quiz-admin-edit-fab:hover { background: var(--accent); color: #fff; transform: scale(1.08); }
+
+/* Téléphone uniquement : remonte ces bulles admin au-dessus de la barre de
+   navigation du bas (.mobile-tabbar, 3.75rem) — placé ici, APRÈS les règles
+   de base ci-dessus, car à spécificité égale c'est l'ordre dans le fichier
+   qui tranche la cascade (un @media placé avant les règles de base, comme
+   dans une précédente tentative, se faisait donc écraser malgré lui). */
+@media (max-width: 640px) {
+  .qe-save-fab,
+  .qe-delete-form,
+  .quiz-admin-edit-fab {
+    bottom: calc(1.5rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
+  .qe-export-fab {
+    bottom: calc(5rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
+}
 
 /* ── Quiz editor : bouton modifier question ─────────────────────────────── */
 .qe-q-edit {
