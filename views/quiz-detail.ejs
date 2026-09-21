@@ -169,6 +169,10 @@
             <div class="quiz-q-header">
               <span class="quiz-q-num"><%= qNum %></span>
               <p class="quiz-q-text"><%= q.text %></p>
+              <%# Croix unique pour effacer la réponse — sur la même ligne
+                  que la question, juste derrière — jamais dupliquée avec un
+                  bouton "changer de perspective". ── %>
+              <button type="button" class="quiz-sides-reset<%= hasAnyAnswer ? '' : ' quiz-sides-reset--hidden' %>" id="qclear-<%= q.id %>" data-qid="<%= q.id %>" title="Effacer ma r&eacute;ponse" aria-label="Effacer ma r&eacute;ponse">&times;</button>
             </div>
 
             <% if (q.has_sides) { %>
@@ -192,12 +196,6 @@
                 <%- renderInputs('receive', savedReceive) %>
               </div>
             <% } %>
-
-            <%# Croix unique pour effacer la réponse — une seule, centrée,
-                jamais dupliquée avec un bouton "changer de perspective". ── %>
-            <div class="quiz-q-clear-row">
-              <button type="button" class="quiz-sides-reset<%= hasAnyAnswer ? '' : ' quiz-sides-reset--hidden' %>" id="qclear-<%= q.id %>" data-qid="<%= q.id %>" title="Effacer ma r&eacute;ponse" aria-label="Effacer ma r&eacute;ponse">&times;</button>
-            </div>
           </div>
 
         <% }) %>

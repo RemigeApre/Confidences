@@ -13869,11 +13869,15 @@ html.lq-discreet-mode img {
 .quiz-q-text {
   font-size: .96rem; font-weight: 600; margin: 0; flex: 1; line-height: 1.45;
 }
+/* La croix "effacer ma réponse" (.quiz-sides-reset, définie plus bas) vit
+   ici, sur la même ligne que la question, juste derrière le texte — pas
+   alignée sur la baseline du texte comme le reste de l'en-tête. */
+.quiz-q-header .quiz-sides-reset { align-self: center; flex-shrink: 0; }
 
 /* ── Donner / Subir : 3 boutons centrés (Donner · Les deux · Recevoir) —
    couleur d'accent du site, pas un violet arbitraire sans rapport. Une
-   seule croix pour tout effacer, partagée avec les autres types de
-   question (voir .quiz-q-clear-row plus bas), jamais dupliquée. ────────── */
+   seule croix pour tout effacer (voir .quiz-q-header ci-dessus), partagée
+   avec les autres types de question, jamais dupliquée. ─────────────────── */
 .quiz-sides-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin: 0 0 .8rem; }
 .quiz-sides-picker--hidden { display: none; }
 .quiz-sides-btn {
@@ -13921,7 +13925,6 @@ html.lq-discreet-mode img {
 }
 .quiz-sides-reset:hover { background: hsl(0,68%,50%); }
 .quiz-sides-reset--hidden { display: none; }
-.quiz-q-clear-row { display: flex; justify-content: center; margin-top: .9rem; }
 
 /* ── Barre gradient ──────────────────────────────────────────────────────── */
 .quiz-grad-bar { padding: .5rem 0 1rem; }
