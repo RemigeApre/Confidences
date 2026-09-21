@@ -13900,25 +13900,38 @@ html.lq-discreet-mode img {
 .quiz-sides-picker--hidden { display: none; }
 .quiz-sides-btn {
   appearance: none;
-  background: color-mix(in srgb, var(--accent) 16%, hsl(220,14%,12%));
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: hsl(220,14%,13%);
+  border: 1px solid hsl(220,14%,26%);
   border-radius: 20px;
-  color: color-mix(in srgb, var(--accent) 35%, #fff); font-size: .82rem; font-weight: 600;
-  padding: .4rem 1rem; cursor: pointer;
-  transition: border-color .15s, background .15s, color .15s;
+  color: rgba(255,255,255,.78); font-size: .82rem; font-weight: 600;
+  padding: .4rem 1.1rem; cursor: pointer;
+  transition: border-color .2s, background .2s, color .2s, box-shadow .2s, transform .2s;
 }
-.quiz-sides-btn:hover {
-  border-color: var(--accent);
-  background-color: color-mix(in srgb, var(--accent) 32%, hsl(220,14%,12%));
-  color: #fff;
+.quiz-sides-btn:hover { transform: translateY(-1px); }
+/* Donner : chaleureux/sortant — Recevoir : frais/entrant — Les deux :
+   dégradé des deux au survol, seule façon élégante de représenter "les deux
+   à la fois" plutôt qu'une 3e teinte arbitraire. */
+.quiz-sides-btn[data-side="give"] { border-color: hsl(28,45%,32%); }
+.quiz-sides-btn[data-side="give"]:hover {
+  background: hsl(28,70%,42%); border-color: hsl(28,85%,62%); color: #fff;
+  box-shadow: 0 5px 16px hsla(28,80%,50%,.35);
+}
+.quiz-sides-btn[data-side="receive"] { border-color: hsl(200,45%,32%); }
+.quiz-sides-btn[data-side="receive"]:hover {
+  background: hsl(200,70%,42%); border-color: hsl(200,85%,66%); color: #fff;
+  box-shadow: 0 5px 16px hsla(200,80%,55%,.35);
 }
 .quiz-sides-btn--both {
-  background: color-mix(in srgb, var(--accent) 28%, hsl(220,14%,12%));
+  background: color-mix(in srgb, var(--accent) 24%, hsl(220,14%,12%));
   border-color: var(--accent);
   color: #fff;
   font-weight: 700;
 }
-.quiz-sides-btn--both:hover { background: color-mix(in srgb, var(--accent) 44%, hsl(220,14%,12%)); }
+.quiz-sides-btn--both:hover {
+  background: linear-gradient(90deg, hsl(28,70%,42%), var(--accent) 50%, hsl(200,70%,45%));
+  border-color: transparent;
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--accent) 45%, transparent);
+}
 .quiz-sides-reset {
   display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;

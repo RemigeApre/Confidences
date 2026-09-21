@@ -101,6 +101,12 @@
           var savedGive    = (q.has_sides && savedAns && typeof savedAns === 'object') ? savedAns.give    : savedAns;
           var savedReceive = (q.has_sides && savedAns && typeof savedAns === 'object') ? savedAns.receive : null;
           var qNum = qi + 1;
+          // Croix "effacer ma réponse" : masquée tant qu'il n'y a rien à
+          // effacer — pour une question Donner/Subir, dès que la perspective
+          // est choisie ; sinon, dès qu'une vraie réponse existe déjà.
+          var hasAnyAnswer = q.has_sides
+            ? !!savedSide
+            : (savedAns !== undefined && savedAns !== null && savedAns !== '' && !(Array.isArray(savedAns) && savedAns.length === 0));
 
           /* ── Render gradient bar ────────────────────────────────────── */
           function renderGradBar(name, savedVal) {
@@ -159,11 +165,11 @@
           }
         %>
 
-          <div class="quiz-q-block" id="qblock-<%= q.id %>">
+          <div class="quiz-q-block" id="qblock-<%= q.id %>" data-qid="<%= q.id %>">
             <div class="quiz-q-header">
               <span class="quiz-q-num"><%= qNum %></span>
               <p class="quiz-q-text"><%= q.text %></p>
-              <button type="button" class="quiz-q-clear-btn" data-qid="<%= q.id %>" title="Effacer ma r&eacute;ponse" aria-label="Effacer ma r&eacute;ponse">&times;</button>
+              <button type="button" class="quiz-q-clear-btn" data-qid="<%= q.id %>" title="Effacer ma r&eacute;ponse" aria-label="Effacer ma r&eacute;ponse"<%= hasAnyAnswer ? '' : ' hidden' %>>&times;</button>
             </div>
 
             <% if (q.has_sides) { %>
@@ -216,6 +222,22 @@
 
   <script>
   (function() {
+    /* ── Croix "effacer ma réponse" : n'apparaît qu'une fois qu'il y a
+       vraiment quelque chose à effacer (voir hasAnyAnswer côté serveur pour
+       l'état initial). ─────────────────────────────────────────────────── */
+    function revealClearBtn(qid) {
+      var btn = document.querySelector('.quiz-q-clear-btn[data-qid="' + qid + '"]');
+      if (btn) btn.hidden = false;
+    }
+    var quizAnswerForm = document.querySelector('.quiz-answer-form');
+    if (quizAnswerForm) {
+      quizAnswerForm.addEventListener('change', function(e) {
+        if (!e.target.matches('input[type="radio"], input[type="checkbox"]')) return;
+        var block = e.target.closest('.quiz-q-block');
+        if (block) revealClearBtn(block.dataset.qid);
+      });
+    }
+
     /* ── Gradient bar ────────────────────────────────────────────────────── */
     document.querySelectorAll('.quiz-grad-bar').forEach(function(bar) {
       var fill    = bar.querySelector('.quiz-grad-fill');
@@ -239,6 +261,7 @@
     /* ── Ranking drag & drop ─────────────────────────────────────────────── */
     document.querySelectorAll('.quiz-rank-list').forEach(function(list) {
       var key     = list.id.replace('qrank-', '');
+      var rankQid = key.split('-')[0];
       var hidden  = document.getElementById('qrank-input-' + key);
       var dragging = null, indicator = null;
       function getInd() {
@@ -256,7 +279,7 @@
       }
       list.querySelectorAll('.quiz-rank-item').forEach(function(item) {
         item.addEventListener('dragstart', function(e) { dragging = item; item.classList.add('qe-q-dragging'); e.dataTransfer.effectAllowed = 'move'; });
-        item.addEventListener('dragend',   function()  { item.classList.remove('qe-q-dragging'); if (indicator && indicator.parentNode) indicator.remove(); dragging = null; updateHidden(); });
+        item.addEventListener('dragend',   function()  { item.classList.remove('qe-q-dragging'); if (indicator && indicator.parentNode) indicator.remove(); dragging = null; updateHidden(); revealClearBtn(rankQid); });
       });
       list.addEventListener('dragover', function(e) { e.preventDefault(); var after = afterEl(e.clientY), ind = getInd(); if (!after) list.appendChild(ind); else list.insertBefore(ind, after); });
       list.addEventListener('drop',     function(e) { e.preventDefault(); if (indicator && indicator.parentNode) indicator.remove(); if (!dragging) return; var after = afterEl(e.clientY); if (!after) list.appendChild(dragging); else list.insertBefore(dragging, after); updateHidden(); });
@@ -274,6 +297,7 @@
       if (receiveRow) receiveRow.classList.toggle('quiz-side-row--hidden', side === 'give');
       if (picker)     picker.classList.add('quiz-sides-picker--hidden');
       if (resetBtn)   resetBtn.classList.remove('quiz-sides-reset--hidden');
+      revealClearBtn(qid);
     }
     function resetSide(qid) {
       var hiddenSide = document.getElementById('qside-input-' + qid);
@@ -312,6 +336,8 @@
         if (hidden) hidden.value = items.map(function(el) { return el.dataset.idx; }).join(',');
       });
       if (document.getElementById('qsidespicker-' + qid)) resetSide(qid);
+      var clearBtn = document.querySelector('.quiz-q-clear-btn[data-qid="' + qid + '"]');
+      if (clearBtn) clearBtn.hidden = true;
     }
     document.querySelectorAll('.quiz-q-clear-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
