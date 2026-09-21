@@ -169,17 +169,13 @@
             <div class="quiz-q-header">
               <span class="quiz-q-num"><%= qNum %></span>
               <p class="quiz-q-text"><%= q.text %></p>
-              <button type="button" class="quiz-q-clear-btn" data-qid="<%= q.id %>" title="Effacer ma r&eacute;ponse" aria-label="Effacer ma r&eacute;ponse"<%= hasAnyAnswer ? '' : ' hidden' %>>&times;</button>
             </div>
 
             <% if (q.has_sides) { %>
-              <div class="quiz-sides-row">
-                <div class="quiz-sides-picker<%= savedSide ? ' quiz-sides-picker--hidden' : '' %>" id="qsidespicker-<%= q.id %>">
-                  <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="give">Donner</button>
-                  <button type="button" class="quiz-sides-btn quiz-sides-btn--both" data-qid="<%= q.id %>" data-side="both">Les deux</button>
-                  <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="receive">Recevoir</button>
-                </div>
-                <button type="button" class="quiz-sides-reset<%= savedSide ? '' : ' quiz-sides-reset--hidden' %>" id="qsidesreset-<%= q.id %>" data-qid="<%= q.id %>" title="Changer de perspective" aria-label="Changer de perspective">&times;</button>
+              <div class="quiz-sides-picker<%= savedSide ? ' quiz-sides-picker--hidden' : '' %>" id="qsidespicker-<%= q.id %>">
+                <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="give">Donner</button>
+                <button type="button" class="quiz-sides-btn quiz-sides-btn--both" data-qid="<%= q.id %>" data-side="both">Les deux</button>
+                <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="receive">Recevoir</button>
               </div>
               <input type="hidden" name="q_<%= q.id %>_side" id="qside-input-<%= q.id %>" value="<%= savedSide || '' %>" />
             <% } %>
@@ -196,6 +192,12 @@
                 <%- renderInputs('receive', savedReceive) %>
               </div>
             <% } %>
+
+            <%# Croix unique pour effacer la réponse — une seule, centrée,
+                jamais dupliquée avec un bouton "changer de perspective". ── %>
+            <div class="quiz-q-clear-row">
+              <button type="button" class="quiz-sides-reset<%= hasAnyAnswer ? '' : ' quiz-sides-reset--hidden' %>" id="qclear-<%= q.id %>" data-qid="<%= q.id %>" title="Effacer ma r&eacute;ponse" aria-label="Effacer ma r&eacute;ponse">&times;</button>
+            </div>
           </div>
 
         <% }) %>
@@ -222,12 +224,12 @@
 
   <script>
   (function() {
-    /* ── Croix "effacer ma réponse" : n'apparaît qu'une fois qu'il y a
-       vraiment quelque chose à effacer (voir hasAnyAnswer côté serveur pour
-       l'état initial). ─────────────────────────────────────────────────── */
+    /* ── Croix "effacer ma réponse" : une seule par question, centrée sous
+       la réponse — n'apparaît qu'une fois qu'il y a vraiment quelque chose à
+       effacer (voir hasAnyAnswer côté serveur pour l'état initial). ────── */
     function revealClearBtn(qid) {
-      var btn = document.querySelector('.quiz-q-clear-btn[data-qid="' + qid + '"]');
-      if (btn) btn.hidden = false;
+      var btn = document.getElementById('qclear-' + qid);
+      if (btn) btn.classList.remove('quiz-sides-reset--hidden');
     }
     var quizAnswerForm = document.querySelector('.quiz-answer-form');
     if (quizAnswerForm) {
@@ -285,40 +287,36 @@
       list.addEventListener('drop',     function(e) { e.preventDefault(); if (indicator && indicator.parentNode) indicator.remove(); if (!dragging) return; var after = afterEl(e.clientY); if (!after) list.appendChild(dragging); else list.insertBefore(dragging, after); updateHidden(); });
     });
 
-    /* ── Donner / Subir : 3 boutons puis croix rouge pour revenir ────────── */
+    /* ── Donner / Subir : 3 boutons, la croix du bas fait tout le reste ──── */
     function selectSide(qid, side) {
       var hiddenSide = document.getElementById('qside-input-' + qid);
       var giveRow    = document.getElementById('qside-give-' + qid);
       var receiveRow = document.getElementById('qside-receive-' + qid);
       var picker     = document.getElementById('qsidespicker-' + qid);
-      var resetBtn   = document.getElementById('qsidesreset-' + qid);
       if (hiddenSide) hiddenSide.value = side;
       if (giveRow)    giveRow.classList.toggle('quiz-side-row--hidden',    side === 'receive');
       if (receiveRow) receiveRow.classList.toggle('quiz-side-row--hidden', side === 'give');
       if (picker)     picker.classList.add('quiz-sides-picker--hidden');
-      if (resetBtn)   resetBtn.classList.remove('quiz-sides-reset--hidden');
       revealClearBtn(qid);
     }
+    // Ramène juste le sélecteur de perspective à son état initial (utilisé
+    // par la croix unique ci-dessous) — ne touche pas au serveur, voir
+    // resetQuestionBlock pour l'effacement complet.
     function resetSide(qid) {
       var hiddenSide = document.getElementById('qside-input-' + qid);
       var giveRow    = document.getElementById('qside-give-' + qid);
       var receiveRow = document.getElementById('qside-receive-' + qid);
       var picker     = document.getElementById('qsidespicker-' + qid);
-      var resetBtn   = document.getElementById('qsidesreset-' + qid);
       if (hiddenSide) hiddenSide.value = '';
       if (giveRow)    giveRow.classList.add('quiz-side-row--hidden');
       if (receiveRow) receiveRow.classList.add('quiz-side-row--hidden');
       if (picker)     picker.classList.remove('quiz-sides-picker--hidden');
-      if (resetBtn)   resetBtn.classList.add('quiz-sides-reset--hidden');
     }
     document.querySelectorAll('.quiz-sides-btn').forEach(function(btn) {
       btn.addEventListener('click', function() { selectSide(btn.dataset.qid, btn.dataset.side); });
     });
-    document.querySelectorAll('.quiz-sides-reset').forEach(function(btn) {
-      btn.addEventListener('click', function() { resetSide(btn.dataset.qid); });
-    });
 
-    /* ── Effacer ma réponse (petite croix discrète) ─────────────────────── */
+    /* ── Effacer ma réponse (croix rouge unique, centrée) ─────────────────── */
     function resetQuestionBlock(qid) {
       var block = document.getElementById('qblock-' + qid);
       if (!block) return;
@@ -336,10 +334,10 @@
         if (hidden) hidden.value = items.map(function(el) { return el.dataset.idx; }).join(',');
       });
       if (document.getElementById('qsidespicker-' + qid)) resetSide(qid);
-      var clearBtn = document.querySelector('.quiz-q-clear-btn[data-qid="' + qid + '"]');
-      if (clearBtn) clearBtn.hidden = true;
+      var clearBtn = document.getElementById('qclear-' + qid);
+      if (clearBtn) clearBtn.classList.add('quiz-sides-reset--hidden');
     }
-    document.querySelectorAll('.quiz-q-clear-btn').forEach(function(btn) {
+    document.querySelectorAll('.quiz-sides-reset').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var qid = btn.dataset.qid;
         fetch('/quizz/<%= quiz.id %>/questions/' + qid + '/clear-answer', { method: 'POST' })
