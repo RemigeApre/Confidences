@@ -47,7 +47,7 @@
           var rootQs = questions.filter(function(q){ return !q.part_id; });
           rootQs.forEach(function(q) {
         %>
-          <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>">
+          <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>">
             <span class="qe-q-handle">&#11835;</span>
             <div class="qe-q-body">
               <p class="qe-q-text"><%= q.text %></p>
@@ -55,6 +55,8 @@
                 <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : 'Mise en ordre' %>
               </span>
               <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
+              <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive" title="Tendance positive">&#9650;</span><% } %>
+              <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative" title="Tendance négative">&#9660;</span><% } %>
               <% if (q.options && q.options.length) { %>
                 <div class="quiz-qitem-opts">
                   <% q.options.forEach(function(o){ %>
@@ -85,6 +87,11 @@
           <input type="checkbox" class="qea-sides-chk" />
           <span class="qea-sides-label">Donner / Subir</span>
         </label>
+        <div class="qea-tendency-row">
+          <label class="qe-tendency-chip qe-tendency-chip--active" data-tendency="">Aucune</label>
+          <label class="qe-tendency-chip qe-tendency-chip--positive" data-tendency="positive">&#9650; Positive</label>
+          <label class="qe-tendency-chip qe-tendency-chip--negative" data-tendency="negative">&#9660; Négative</label>
+        </div>
         <div class="qea-actions">
           <button type="button" class="qea-submit wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
           <button type="button" class="qea-cancel wf-cancel-link">Annuler</button>
@@ -107,13 +114,16 @@
           <div class="qe-panel-body">
             <div class="qe-drop-zone" data-part-id="<%= part.id %>">
               <% partQs.forEach(function(q) { %>
-                <div class="qe-question" draggable="true" data-qid="<%= q.id %>">
+                <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>">
                   <span class="qe-q-handle">&#11835;</span>
                   <div class="qe-q-body">
                     <p class="qe-q-text"><%= q.text %></p>
                     <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
                       <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : 'Mise en ordre' %>
                     </span>
+                    <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
+                    <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive" title="Tendance positive">&#9650;</span><% } %>
+                    <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative" title="Tendance négative">&#9660;</span><% } %>
                     <% if (q.options && q.options.length) { %>
                       <div class="quiz-qitem-opts">
                         <% q.options.forEach(function(o){ %>
@@ -139,6 +149,15 @@
               <div class="qea-options-wrap" hidden>
                 <div class="qea-options-list"></div>
                 <button type="button" class="qea-add-opt wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
+              </div>
+              <label class="qea-sides-toggle">
+                <input type="checkbox" class="qea-sides-chk" />
+                <span class="qea-sides-label">Donner / Subir</span>
+              </label>
+              <div class="qea-tendency-row">
+                <label class="qe-tendency-chip qe-tendency-chip--active" data-tendency="">Aucune</label>
+                <label class="qe-tendency-chip qe-tendency-chip--positive" data-tendency="positive">&#9650; Positive</label>
+                <label class="qe-tendency-chip qe-tendency-chip--negative" data-tendency="negative">&#9660; Négative</label>
               </div>
               <div class="qea-actions">
                 <button type="button" class="qea-submit wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
@@ -185,6 +204,11 @@
         <input type="checkbox" id="qe-edit-sides" />
         <span class="qea-sides-label">Donner / Subir</span>
       </label>
+      <div class="qea-tendency-row" id="qe-edit-tendency-row">
+        <label class="qe-tendency-chip qe-tendency-chip--active" data-tendency="">Aucune</label>
+        <label class="qe-tendency-chip qe-tendency-chip--positive" data-tendency="positive">&#9650; Positive</label>
+        <label class="qe-tendency-chip qe-tendency-chip--negative" data-tendency="negative">&#9660; Négative</label>
+      </div>
       <div class="qea-actions" style="margin-top:.75rem">
         <button type="button" id="qe-edit-save" class="wf-save-btn" style="position:static">Enregistrer</button>
         <button type="button" id="qe-edit-cancel" class="wf-cancel-link">Annuler</button>
@@ -229,6 +253,8 @@
     var editAddOpt    = document.getElementById('qe-edit-add-opt');
     var editSaveBtn   = document.getElementById('qe-edit-save');
     var editCancelBtn = document.getElementById('qe-edit-cancel');
+    var editTendencyRow = document.getElementById('qe-edit-tendency-row');
+    var currentEditTendency = '';
     var editingQid    = null;
     var editingEl     = null;
 
@@ -259,6 +285,12 @@
       var editSidesChk = document.getElementById('qe-edit-sides');
       editSidesChk.checked = el.dataset.hasSides === '1';
 
+      // Tendance
+      currentEditTendency = el.dataset.tendency || '';
+      Array.from(editTendencyRow.querySelectorAll('.qe-tendency-chip')).forEach(function(chip) {
+        chip.classList.toggle('qe-tendency-chip--active', chip.dataset.tendency === currentEditTendency);
+      });
+
       editOverlay.hidden = false;
       editText.focus();
     }
@@ -288,6 +320,13 @@
       });
     });
     editAddOpt.addEventListener('click', function() { addEditOptRow(''); });
+    Array.from(editTendencyRow.querySelectorAll('.qe-tendency-chip')).forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        Array.from(editTendencyRow.querySelectorAll('.qe-tendency-chip')).forEach(function(c) { c.classList.remove('qe-tendency-chip--active'); });
+        chip.classList.add('qe-tendency-chip--active');
+        currentEditTendency = chip.dataset.tendency;
+      });
+    });
     editCancelBtn.addEventListener('click', function() { editOverlay.hidden = true; });
     editOverlay.addEventListener('click', function(e) { if (e.target === editOverlay) editOverlay.hidden = true; });
 
@@ -302,11 +341,12 @@
       fetch('/quizz/' + quizId + '/questions/' + editingQid + '/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal })
+        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal, tendency: currentEditTendency || null })
       }).then(function(r) { return r.json(); }).then(function(d) {
         if (!d.ok) return;
         // Mettre à jour le DOM de la question
         editingEl.dataset.hasSides = d.question.has_sides ? '1' : '0';
+        editingEl.dataset.tendency = d.question.tendency || '';
         var body = editingEl.querySelector('.qe-q-body');
         body.querySelector('.qe-q-text').textContent = d.question.text;
         var badge = body.querySelector('.quiz-qitem-type');
@@ -317,6 +357,15 @@
         if (d.question.has_sides) {
           var sb = document.createElement('span'); sb.className = 'qe-sides-badge'; sb.textContent = '⇅ Donner/Subir';
           badge.insertAdjacentElement('afterend', sb);
+        }
+        var existingTendency = body.querySelector('.qe-tendency-badge');
+        if (existingTendency) existingTendency.remove();
+        if (d.question.tendency === 'positive' || d.question.tendency === 'negative') {
+          var tb = document.createElement('span');
+          tb.className = 'qe-tendency-badge qe-tendency-badge--' + d.question.tendency;
+          tb.title = d.question.tendency === 'positive' ? 'Tendance positive' : 'Tendance négative';
+          tb.textContent = d.question.tendency === 'positive' ? '▲' : '▼';
+          badge.insertAdjacentElement('afterend', tb);
         }
         var existing = body.querySelector('.quiz-qitem-opts');
         if (existing) existing.remove();
@@ -414,6 +463,8 @@
       div.className = 'qe-question';
       div.draggable = true;
       div.dataset.qid = q.id;
+      div.dataset.hasSides = q.has_sides ? '1' : '0';
+      div.dataset.tendency = q.tendency || '';
 
       var handle = document.createElement('span');
       handle.className = 'qe-q-handle';
@@ -432,6 +483,20 @@
 
       body.appendChild(txt);
       body.appendChild(badge);
+
+      if (q.has_sides) {
+        var sb = document.createElement('span');
+        sb.className = 'qe-sides-badge';
+        sb.textContent = '⇅ Donner/Subir';
+        body.appendChild(sb);
+      }
+      if (q.tendency === 'positive' || q.tendency === 'negative') {
+        var tb = document.createElement('span');
+        tb.className = 'qe-tendency-badge qe-tendency-badge--' + q.tendency;
+        tb.title = q.tendency === 'positive' ? 'Tendance positive' : 'Tendance négative';
+        tb.textContent = q.tendency === 'positive' ? '▲' : '▼';
+        body.appendChild(tb);
+      }
 
       if (q.options && q.options.length) {
         var opts = document.createElement('div');
@@ -485,7 +550,9 @@
       var addOptBtn  = formEl.querySelector('.qea-add-opt');
       var submitBtn  = formEl.querySelector('.qea-submit');
       var cancelBtn  = formEl.querySelector('.qea-cancel');
+      var tendencyChips = formEl.querySelectorAll('.qe-tendency-chip');
       var currentType = 'gradient';
+      var currentTendency = '';
 
       chips.forEach(function(chip) {
         chip.addEventListener('click', function() {
@@ -493,6 +560,14 @@
           chip.classList.add('quiz-type-chip--active');
           currentType = chip.dataset.type;
           optsWrap.hidden = currentType === 'gradient';
+        });
+      });
+
+      tendencyChips.forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          tendencyChips.forEach(function(c) { c.classList.remove('qe-tendency-chip--active'); });
+          chip.classList.add('qe-tendency-chip--active');
+          currentTendency = chip.dataset.tendency;
         });
       });
 
@@ -519,7 +594,13 @@
         formEl.hidden = true;
         textarea.value = '';
         optsList.innerHTML = '';
+        resetTendencyChips();
       });
+
+      function resetTendencyChips() {
+        currentTendency = '';
+        tendencyChips.forEach(function(c) { c.classList.toggle('qe-tendency-chip--active', c.dataset.tendency === ''); });
+      }
 
       function doSubmit(keepOpen) {
         var text = (textarea.value || '').trim();
@@ -533,7 +614,7 @@
         fetch('/quizz/' + quizId + '/questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId, has_sides: formEl.querySelector('.qea-sides-chk').checked ? 1 : 0 })
+          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId, has_sides: formEl.querySelector('.qea-sides-chk').checked ? 1 : 0, tendency: currentTendency || null })
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
@@ -551,6 +632,7 @@
           currentType = 'gradient';
           optsWrap.hidden = true;
           formEl.querySelector('.qea-sides-chk').checked = false;
+          resetTendencyChips();
           if (keepOpen) {
             textarea.focus();
           } else {

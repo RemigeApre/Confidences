@@ -169,6 +169,8 @@
             <div class="quiz-q-header">
               <span class="quiz-q-num"><%= qNum %></span>
               <p class="quiz-q-text"><%= q.text %></p>
+              <% if (q.tendency === 'positive') { %><span class="quiz-q-tendency quiz-q-tendency--positive" title="Tendance positive (aimer)">&#9650;</span><% } %>
+              <% if (q.tendency === 'negative') { %><span class="quiz-q-tendency quiz-q-tendency--negative" title="Tendance négative (ne pas aimer)">&#9660;</span><% } %>
               <%# Croix unique pour effacer la réponse — sur la même ligne
                   que la question, juste derrière — jamais dupliquée avec un
                   bouton "changer de perspective". ── %>
@@ -203,8 +205,6 @@
         <div class="quiz-step-actions">
           <% if (stepIdx > 0) { %>
             <a href="/quizz/<%= quiz.id %>?step=<%= stepIdx - 1 %>" class="quiz-step-prev">&#8592; Précédent</a>
-          <% } else { %>
-            <span></span>
           <% } %>
           <% if (isLastStep) { %>
             <button type="submit" name="complete" value="1" class="wf-save-btn" style="position:static">Terminer le quizz</button>

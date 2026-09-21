@@ -113,8 +113,9 @@ function buildCustomQuizRouter(config) {
     const options = Array.isArray(req.body.options) ? req.body.options.map(o => String(o).slice(0, 200)) : [];
     const partId = req.body.part_id ? Number(req.body.part_id) : null;
     const hasSides = req.body.has_sides ? 1 : 0;
+    const tendency = ["positive", "negative"].includes(req.body.tendency) ? req.body.tendency : null;
     const existing = db.getCustomQuizQuestions(quiz.id);
-    db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length, partId, hasSides);
+    db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length, partId, hasSides, tendency);
     const newQs = db.getCustomQuizQuestions(quiz.id);
     newQs.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
     const added = newQs[newQs.length - 1];
@@ -126,7 +127,8 @@ function buildCustomQuizRouter(config) {
     const type = ["gradient","single","multiple","ranking"].includes(req.body.type) ? req.body.type : "gradient";
     const options = Array.isArray(req.body.options) ? req.body.options.map(o => String(o).slice(0, 200)) : [];
     const hasSides = req.body.has_sides ? 1 : 0;
-    db.updateCustomQuizQuestion(req.params.qid, text, type, options, hasSides);
+    const tendency = ["positive", "negative"].includes(req.body.tendency) ? req.body.tendency : null;
+    db.updateCustomQuizQuestion(req.params.qid, text, type, options, hasSides, tendency);
     const q = db.db.prepare("SELECT * FROM custom_quiz_questions WHERE id=?").get(req.params.qid);
     try { q.options = JSON.parse(q.options); } catch { q.options = []; }
     res.json({ ok: true, question: q });

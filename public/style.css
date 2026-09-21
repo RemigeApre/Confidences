@@ -13872,6 +13872,11 @@ html.lq-discreet-mode img {
 .quiz-q-text {
   font-size: .96rem; font-weight: 600; margin: 0; flex: 1; line-height: 1.45;
 }
+/* Flèche de tendance (positive/négative) : lève l'ambiguïté du sens de la
+   question sans avoir à la reformuler — voir "tendency" côté éditeur. */
+.quiz-q-tendency { font-size: 1rem; flex-shrink: 0; align-self: center; line-height: 1; }
+.quiz-q-tendency--positive { color: hsl(140,60%,52%); }
+.quiz-q-tendency--negative { color: hsl(0,65%,58%); }
 /* La croix "effacer ma réponse" (.quiz-sides-reset, définie plus bas) vit
    ici, sur la même ligne que la question, juste derrière le texte — pas
    alignée sur la baseline du texte comme le reste de l'en-tête. */
@@ -13950,6 +13955,7 @@ html.lq-discreet-mode img {
 .quiz-grad-jalons {
   display: flex; justify-content: space-between;
   margin-top: -10px; /* overlap the track */
+  position: relative; z-index: 1; /* toujours au-dessus du track/mask, jamais coupées */
 }
 .quiz-grad-jal {
   display: flex; flex-direction: column; align-items: center; gap: .45rem;
@@ -14204,7 +14210,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* ── Actions navigation ──────────────────────────────────────────────────── */
 .quiz-step-actions {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; justify-content: center; align-items: center; gap: 1rem;
   margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);
 }
 .quiz-step-prev {
@@ -14280,6 +14286,24 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-radius: 20px; background: hsl(270,30%,18%); color: hsl(270,55%,68%);
   border: 1px solid hsl(270,25%,28%); margin-left: .3rem; vertical-align: middle;
 }
+
+/* ── Tendance (positive/négative) — éditeur ──────────────────────────────── */
+.qea-tendency-row { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .55rem; }
+.qe-tendency-chip {
+  font-size: .75rem; padding: .35rem .75rem; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+  cursor: pointer; user-select: none; transition: border-color .15s, background .15s, color .15s;
+}
+.qe-tendency-chip:hover { border-color: var(--accent); }
+.qe-tendency-chip--active[data-tendency=""] { background: hsl(220,14%,24%); border-color: hsl(220,14%,38%); color: #fff; }
+.qe-tendency-chip--active.qe-tendency-chip--positive { background: hsl(140,45%,20%); border-color: hsl(140,55%,42%); color: hsl(140,65%,75%); }
+.qe-tendency-chip--active.qe-tendency-chip--negative { background: hsl(0,45%,22%); border-color: hsl(0,60%,48%); color: hsl(0,70%,78%); }
+.qe-tendency-badge {
+  display: inline-block; font-size: .7rem; padding: .1rem .4rem;
+  border-radius: 20px; margin-left: .3rem; vertical-align: middle; font-weight: 700;
+}
+.qe-tendency-badge--positive { background: hsl(140,40%,18%); color: hsl(140,65%,68%); border: 1px solid hsl(140,45%,30%); }
+.qe-tendency-badge--negative { background: hsl(0,40%,20%); color: hsl(0,65%,72%); border: 1px solid hsl(0,45%,32%); }
 
 /* ── Donner/Subir — vue utilisateur ─────────────────────────────────────── */
 .quiz-sides-toggle {
