@@ -7738,15 +7738,10 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
      inutilement le bas de son plein écran hors champ). */
   body:has(.mobile-tabbar) { padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0)); }
 
-  /* Les boutons flottants (admin) et la barre de sélection groupée
-     remontent d'autant pour ne pas passer sous la barre du bas. */
-  .wiki-fab-add,
-  .gallery-fab-wrap {
-    bottom: calc(1.75rem + 3.75rem + env(safe-area-inset-bottom, 0));
-  }
-  .wiki-fab-list {
-    bottom: calc(1.75rem + 3.2rem + 0.65rem + 3.75rem + env(safe-area-inset-bottom, 0));
-  }
+  /* Barre de sélection groupée : remonte pour ne pas passer sous la barre du
+     bas (les bulles flottantes .wiki-fab-add/.wiki-fab-list/.gallery-fab-wrap
+     ont le même traitement, mais placé après leurs règles de base plus bas
+     dans ce fichier — sinon la cascade CSS les écrase, voir ces règles). */
   .gallery-bulk-bar {
     bottom: calc(3.75rem + env(safe-area-inset-bottom, 0));
   }
@@ -9111,6 +9106,19 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
   transform: scale(1.07);
 }
 
+/* Téléphone uniquement : remonte ces bulles admin au-dessus de la barre de
+   navigation du bas (.mobile-tabbar, 3.75rem) — placé APRÈS les règles de
+   base ci-dessus (voir la note sur .qe-save-fab plus bas dans ce fichier :
+   à spécificité égale, l'ordre dans le fichier tranche la cascade). */
+@media (max-width: 640px) {
+  .wiki-fab-add {
+    bottom: calc(1.75rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
+  .wiki-fab-list {
+    bottom: calc(1.75rem + 3.2rem + 0.65rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
+}
+
 /* ── Overlay + drawer TODO ── */
 .wiki-todo-overlay {
   position: fixed;
@@ -9358,6 +9366,15 @@ body.wiki-todo-open { overflow: hidden; }
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* Téléphone uniquement : remonte au-dessus de la barre de navigation du bas
+   (voir la note sur .wiki-fab-add plus haut — placé après la règle de base
+   pour de bon, l'ordre dans le fichier tranche la cascade à spécificité égale). */
+@media (max-width: 640px) {
+  .gallery-fab-wrap {
+    bottom: calc(1.75rem + 3.75rem + env(safe-area-inset-bottom, 0));
+  }
 }
 
 /* Volet catégories réduit */
