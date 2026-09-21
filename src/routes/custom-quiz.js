@@ -146,6 +146,55 @@ function buildCustomQuizRouter(config) {
     res.json({ ok: true });
   });
 
+  // Extrait la valeur d'UNE question depuis un body form-encoded (mêmes noms
+  // de champs que le formulaire, voir quiz-detail.ejs) — partagé entre la
+  // sauvegarde de l'étape entière et l'autosave par question ci-dessous, pour
+  // ne jamais avoir deux logiques d'extraction qui divergent.
+  function extractAnswerForQuestion(q, body) {
+    if (q.has_sides) {
+      const side = body[`q_${q.id}_side`] || 'both';
+      const obj = { side };
+      const extractSide = prefix => {
+        if (q.type === 'multiple') {
+          return (q.options || []).map((_, oi) => body[`q_${q.id}_${prefix}_${oi}`] ? String(oi) : null).filter(v => v !== null);
+        } else if (q.type === 'ranking') {
+          const v = body[`q_${q.id}_${prefix}_rank`];
+          return v ? String(v).split(',').filter(Boolean).map(Number) : [];
+        } else {
+          return body[`q_${q.id}_${prefix}`];
+        }
+      };
+      if (side !== 'receive') obj.give = extractSide('give');
+      if (side !== 'give')    obj.receive = extractSide('receive');
+      return obj;
+    } else if (q.type === "multiple") {
+      return Object.keys(body)
+        .filter(k => k === `q_${q.id}[]` || k.startsWith(`q_${q.id}_`))
+        .flatMap(k => Array.isArray(body[k]) ? body[k] : [body[k]]);
+    } else if (q.type === "ranking") {
+      const v = body[`q_${q.id}_rank`];
+      return v ? String(v).split(',').filter(Boolean).map(Number) : [];
+    } else {
+      return body[`q_${q.id}`];
+    }
+  }
+
+  // Autosave d'une seule question, à chaque sélection (voir quiz-detail.ejs)
+  // — sans ça, une réponse n'était enregistrée qu'en cliquant "Suivant"/
+  // "Terminer", et se perdait si la personne fermait l'onglet avant.
+  router.post("/:id/questions/:qid/save", requireUser, express.urlencoded({ extended: false }), (req, res) => {
+    const quiz = db.getCustomQuiz(req.params.id);
+    if (!quiz) return res.status(404).json({ ok: false });
+    const qid = Number(req.params.qid);
+    const q = db.getCustomQuizQuestions(quiz.id).find(qq => qq.id === qid);
+    if (!q) return res.status(404).json({ ok: false });
+    try { q.options = JSON.parse(q.options); } catch { q.options = []; }
+
+    const value = extractAnswerForQuestion(q, req.body);
+    db.saveOneQuizAnswer(quiz.id, req.user.id, qid, value);
+    res.json({ ok: true });
+  });
+
   // Helper : construit les étapes (unassigned si non vide, puis parties avec questions)
   function buildSteps(parts, questions) {
     const steps = [];
@@ -197,33 +246,8 @@ function buildCustomQuizRouter(config) {
     const stepIdx = parseInt(req.body._step, 10) || 0;
     const stepQs = (steps[stepIdx] ? steps[stepIdx].questions : allQuestions);
     stepQs.forEach(q => {
-      if (q.has_sides) {
-        const side = req.body[`q_${q.id}_side`] || 'both';
-        const obj = { side };
-        const extractSide = prefix => {
-          if (q.type === 'multiple') {
-            return (q.options || []).map((_, oi) => req.body[`q_${q.id}_${prefix}_${oi}`] ? String(oi) : null).filter(v => v !== null);
-          } else if (q.type === 'ranking') {
-            const v = req.body[`q_${q.id}_${prefix}_rank`];
-            return v ? v.split(',').filter(Boolean).map(Number) : [];
-          } else {
-            return req.body[`q_${q.id}_${prefix}`];
-          }
-        };
-        if (side !== 'receive') obj.give = extractSide('give');
-        if (side !== 'give')    obj.receive = extractSide('receive');
-        answers[q.id] = obj;
-      } else if (q.type === "multiple") {
-        answers[q.id] = Object.keys(req.body)
-          .filter(k => k === `q_${q.id}[]` || k.startsWith(`q_${q.id}_`))
-          .flatMap(k => Array.isArray(req.body[k]) ? req.body[k] : [req.body[k]]);
-      } else if (q.type === "ranking") {
-        const v = req.body[`q_${q.id}_rank`];
-        answers[q.id] = v ? v.split(',').filter(Boolean).map(Number) : [];
-      } else {
-        const v = req.body[`q_${q.id}`];
-        if (v !== undefined) answers[q.id] = v;
-      }
+      if (!q.has_sides && q.type !== "multiple" && q.type !== "ranking" && req.body[`q_${q.id}`] === undefined) return;
+      answers[q.id] = extractAnswerForQuestion(q, req.body);
     });
 
     const isLast = stepIdx >= steps.length - 1;

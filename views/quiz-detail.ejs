@@ -229,12 +229,37 @@
       var btn = document.getElementById('qclear-' + qid);
       if (btn) btn.classList.remove('quiz-sides-reset--hidden');
     }
+
+    /* ── Sauvegarde auto, dès qu'une question a une réponse — sinon une
+       réponse n'était écrite en base qu'en cliquant "Suivant"/"Terminer",
+       et se perdait si la personne devait s'arrêter avant. ────────────── */
+    var autosaveTimers = {};
+    function autosaveQuestion(qid) {
+      clearTimeout(autosaveTimers[qid]);
+      autosaveTimers[qid] = setTimeout(function() {
+        var block = document.getElementById('qblock-' + qid);
+        if (!block) return;
+        var re = new RegExp('^q_' + qid + '(_|$)');
+        var params = new URLSearchParams();
+        block.querySelectorAll('input[name]').forEach(function(el) {
+          if (!re.test(el.name)) return;
+          if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+          params.append(el.name, el.value);
+        });
+        fetch('/quizz/<%= quiz.id %>/questions/' + qid + '/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        }).catch(function() {});
+      }, 250);
+    }
+
     var quizAnswerForm = document.querySelector('.quiz-answer-form');
     if (quizAnswerForm) {
       quizAnswerForm.addEventListener('change', function(e) {
         if (!e.target.matches('input[type="radio"], input[type="checkbox"]')) return;
         var block = e.target.closest('.quiz-q-block');
-        if (block) revealClearBtn(block.dataset.qid);
+        if (block) { revealClearBtn(block.dataset.qid); autosaveQuestion(block.dataset.qid); }
       });
     }
 
@@ -279,7 +304,7 @@
       }
       list.querySelectorAll('.quiz-rank-item').forEach(function(item) {
         item.addEventListener('dragstart', function(e) { dragging = item; item.classList.add('qe-q-dragging'); e.dataTransfer.effectAllowed = 'move'; });
-        item.addEventListener('dragend',   function()  { item.classList.remove('qe-q-dragging'); if (indicator && indicator.parentNode) indicator.remove(); dragging = null; updateHidden(); revealClearBtn(rankQid); });
+        item.addEventListener('dragend',   function()  { item.classList.remove('qe-q-dragging'); if (indicator && indicator.parentNode) indicator.remove(); dragging = null; updateHidden(); revealClearBtn(rankQid); autosaveQuestion(rankQid); });
       });
       list.addEventListener('dragover', function(e) { e.preventDefault(); var after = afterEl(e.clientY), ind = getInd(); if (!after) list.appendChild(ind); else list.insertBefore(ind, after); });
       list.addEventListener('drop',     function(e) { e.preventDefault(); if (indicator && indicator.parentNode) indicator.remove(); if (!dragging) return; var after = afterEl(e.clientY); if (!after) list.appendChild(dragging); else list.insertBefore(dragging, after); updateHidden(); });
@@ -338,6 +363,7 @@
     document.querySelectorAll('.quiz-sides-reset').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var qid = btn.dataset.qid;
+        clearTimeout(autosaveTimers[qid]);
         fetch('/quizz/<%= quiz.id %>/questions/' + qid + '/clear-answer', { method: 'POST' })
           .then(function() { resetQuestionBlock(qid); })
           .catch(function() {});

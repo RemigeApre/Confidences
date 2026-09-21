@@ -2186,6 +2186,16 @@ function saveCustomQuizAnswer(quizId, userId, answers, completed) {
     ON CONFLICT(quiz_id, user_id) DO UPDATE SET answers=excluded.answers, completed=excluded.completed, updated_at=unixepoch()`)
     .run(quizId, userId, JSON.stringify(answers), completed ? 1 : 0);
 }
+function saveOneQuizAnswer(quizId, userId, questionId, value) {
+  const existing = db.prepare(`SELECT answers, completed FROM custom_quiz_answers WHERE quiz_id=? AND user_id=?`).get(quizId, userId);
+  let answers = {};
+  try { answers = existing ? JSON.parse(existing.answers || '{}') : {}; } catch {}
+  answers[questionId] = value;
+  db.prepare(`INSERT INTO custom_quiz_answers (quiz_id, user_id, answers, completed, updated_at)
+    VALUES (?,?,?,?,unixepoch())
+    ON CONFLICT(quiz_id, user_id) DO UPDATE SET answers=excluded.answers, updated_at=unixepoch()`)
+    .run(quizId, userId, JSON.stringify(answers), existing ? existing.completed : 0);
+}
 function clearCustomQuizAnswer(quizId, userId, questionId) {
   const existing = db.prepare(`SELECT answers, completed FROM custom_quiz_answers WHERE quiz_id=? AND user_id=?`).get(quizId, userId);
   if (!existing) return;
@@ -2351,6 +2361,7 @@ module.exports = {
   updateCustomQuizQuestionsOrder,
   getCustomQuizAnswer,
   saveCustomQuizAnswer,
+  saveOneQuizAnswer,
   clearCustomQuizAnswer,
   listQuizzesNotCompleted,
   getQuizParts,
