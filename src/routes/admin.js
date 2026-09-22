@@ -150,12 +150,12 @@ function buildAdminRouter(config) {
     const submissions = listSubmissions();
     const wikiKPIs = getWikiKPIs();
     const galleryKPIs = getGalleryKPIs();
-    const aiProfiles = listAiProfiles().map((p) => ({
-      ...p,
-      fantasmes: JSON.parse(p.fantasmes || '[]'),
-    }));
+    const aiProfiles = listAiProfiles().map((p) => {
+      let phys = {};
+      try { phys = p.physical_desc ? JSON.parse(p.physical_desc) : {}; } catch(_) { phys = { extras: p.physical_desc || '' }; }
+      return { ...p, fantasmes: JSON.parse(p.fantasmes || '[]'), physical_desc: phys };
+    });
     const fantasyWikiPages = listWikiPages()
-      .filter((p) => p.category === 'fantasmes' || (p.extra_categories && JSON.parse(p.extra_categories || '[]').includes('fantasmes')))
       .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
     res.render("admin-dashboard", {
       config, userStates, matrixSections, submissions,
@@ -395,7 +395,17 @@ function buildAdminRouter(config) {
     const description = String(req.body.description  || "").trim();
     const age         = String(req.body.age          || "").trim();
     const sexe        = String(req.body.sexe         || "").trim();
-    const physical_desc  = String(req.body.physical_desc  || "").trim();
+    const physical_desc  = JSON.stringify({
+      skin:        String(req.body.phys_skin        || '').trim(),
+      hair_color:  String(req.body.phys_hair_color  || '').trim(),
+      hair_length: String(req.body.phys_hair_length || '').trim(),
+      hair_style:  String(req.body.phys_hair_style  || '').trim(),
+      eyes_color:  String(req.body.phys_eyes_color  || '').trim(),
+      eyes_style:  String(req.body.phys_eyes_style  || '').trim(),
+      height:      String(req.body.phys_height      || '').trim(),
+      body:        String(req.body.phys_body        || '').trim(),
+      extras:      String(req.body.phys_extras      || '').trim(),
+    });
     const relation_type  = String(req.body.relation_type  || "").trim();
     const fantasmes   = [].concat(req.body.fantasmes || []).filter(Boolean);
     if (name) createAiProfile({ name, description, fantasmes, age, sexe, physical_desc, relation_type });
@@ -408,7 +418,17 @@ function buildAdminRouter(config) {
     const description = String(req.body.description  || "").trim();
     const age         = String(req.body.age          || "").trim();
     const sexe        = String(req.body.sexe         || "").trim();
-    const physical_desc  = String(req.body.physical_desc  || "").trim();
+    const physical_desc  = JSON.stringify({
+      skin:        String(req.body.phys_skin        || '').trim(),
+      hair_color:  String(req.body.phys_hair_color  || '').trim(),
+      hair_length: String(req.body.phys_hair_length || '').trim(),
+      hair_style:  String(req.body.phys_hair_style  || '').trim(),
+      eyes_color:  String(req.body.phys_eyes_color  || '').trim(),
+      eyes_style:  String(req.body.phys_eyes_style  || '').trim(),
+      height:      String(req.body.phys_height      || '').trim(),
+      body:        String(req.body.phys_body        || '').trim(),
+      extras:      String(req.body.phys_extras      || '').trim(),
+    });
     const relation_type  = String(req.body.relation_type  || "").trim();
     const fantasmes   = [].concat(req.body.fantasmes || []).filter(Boolean);
     if (name) updateAiProfile(id, { name, description, fantasmes, age, sexe, physical_desc, relation_type });

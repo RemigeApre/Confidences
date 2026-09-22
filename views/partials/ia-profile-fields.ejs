@@ -1,7 +1,7 @@
 <div class="ia-form-row">
   <label class="admin-modal-field" style="flex:2">
     <span>Nom</span>
-    <input type="text" name="name" id="ia-field-name" required autocomplete="off" maxlength="80" />
+    <input type="text" name="name" required autocomplete="off" maxlength="80" />
   </label>
   <label class="admin-modal-field" style="flex:1">
     <span>Âge</span>
@@ -17,10 +17,76 @@
     </select>
   </label>
 </div>
-<label class="admin-modal-field">
-  <span>Description physique</span>
-  <textarea name="physical_desc" rows="2" class="ia-desc-textarea" placeholder="Cheveux, silhouette, traits particuliers…"></textarea>
-</label>
+
+<details class="ia-phys-details">
+  <summary class="ia-phys-summary">Description physique</summary>
+  <div class="ia-phys-body">
+
+    <div class="ia-phys-group">
+      <span class="ia-phys-group-label">Peau</span>
+      <div class="ia-phys-row">
+        <label class="admin-modal-field">
+          <span>Couleur</span>
+          <input type="text" name="phys_skin" placeholder="claire, mate, foncée, hâlée…" autocomplete="off" />
+        </label>
+      </div>
+    </div>
+
+    <div class="ia-phys-group">
+      <span class="ia-phys-group-label">Cheveux</span>
+      <div class="ia-phys-row">
+        <label class="admin-modal-field">
+          <span>Couleur</span>
+          <input type="text" name="phys_hair_color" placeholder="bruns, blonds, roux…" autocomplete="off" />
+        </label>
+        <label class="admin-modal-field">
+          <span>Longueur</span>
+          <input type="text" name="phys_hair_length" placeholder="courts, mi-longs, longs…" autocomplete="off" />
+        </label>
+        <label class="admin-modal-field">
+          <span>Style</span>
+          <input type="text" name="phys_hair_style" placeholder="bouclés, lisses, ondulés…" autocomplete="off" />
+        </label>
+      </div>
+    </div>
+
+    <div class="ia-phys-group">
+      <span class="ia-phys-group-label">Yeux</span>
+      <div class="ia-phys-row">
+        <label class="admin-modal-field">
+          <span>Couleur</span>
+          <input type="text" name="phys_eyes_color" placeholder="bleus, verts, noisette…" autocomplete="off" />
+        </label>
+        <label class="admin-modal-field">
+          <span>Forme / style</span>
+          <input type="text" name="phys_eyes_style" placeholder="en amande, grands, expressifs…" autocomplete="off" />
+        </label>
+      </div>
+    </div>
+
+    <div class="ia-phys-group">
+      <span class="ia-phys-group-label">Silhouette</span>
+      <div class="ia-phys-row">
+        <label class="admin-modal-field">
+          <span>Taille</span>
+          <input type="text" name="phys_height" placeholder="1m65, grande, petite…" autocomplete="off" />
+        </label>
+        <label class="admin-modal-field">
+          <span>Morphologie</span>
+          <input type="text" name="phys_body" placeholder="mince, athlétique, pulpeuse…" autocomplete="off" />
+        </label>
+      </div>
+    </div>
+
+    <label class="admin-modal-field">
+      <span>Particularités supplémentaires</span>
+      <textarea name="phys_extras" rows="2" class="ia-desc-textarea"
+        placeholder="tatouages, cicatrices, grain de beauté, fossettes, voix particulière…"></textarea>
+    </label>
+
+  </div>
+</details>
+
 <label class="admin-modal-field">
   <span>Personnalité / contexte</span>
   <textarea name="description" rows="4" class="ia-desc-textarea" placeholder="Caractère, histoire, particularités…"></textarea>
@@ -29,13 +95,17 @@
   <span>Type de relation avec l'utilisateur</span>
   <input type="text" name="relation_type" placeholder="ex. amante, maîtresse, inconnue de passage…" autocomplete="off" maxlength="120" />
 </label>
+
 <fieldset class="ia-fantasmes-fieldset">
-  <legend>Fantasmes (pages Codex)</legend>
+  <legend>Fantasmes / int&eacute;r&ecirc;ts (Codex)</legend>
   <% if (!fantasyWikiPages || !fantasyWikiPages.length) { %>
     <p style="font-size:.78rem;color:#fca5a5;opacity:.6;margin:.25rem 0">
-      Aucune page Codex dans la cat&eacute;gorie «&nbsp;Fantasmes&nbsp;» pour l&apos;instant.
+      Aucune page Codex disponible pour l&apos;instant.
     </p>
   <% } else { %>
+    <div class="ia-fant-search-wrap">
+      <input type="text" class="ia-fant-search" placeholder="Filtrer…" autocomplete="off" />
+    </div>
     <div class="ia-fant-items">
       <% fantasyWikiPages.forEach(function(wp) { %>
         <label class="ia-fant-item">

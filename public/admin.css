@@ -1093,3 +1093,43 @@
 }
 .ia-meta-rel { background: hsl(330,30%,18%); }
 .ia-card-desc--phys { opacity: .6; font-style: italic; }
+
+/* ── Détails physique ────────────────────────────────────────────────────── */
+.ia-phys-details {
+  border: 1px solid hsl(0,30%,30%); border-radius: 8px; padding: 0;
+}
+.ia-phys-summary {
+  font-size: .8rem; font-weight: 700; color: #fca5a5;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: .6rem .9rem; cursor: pointer; list-style: none;
+  display: flex; align-items: center; gap: .45rem;
+  user-select: none;
+}
+.ia-phys-summary::before {
+  content: '▶'; font-size: .65rem; transition: transform .18s;
+  display: inline-block;
+}
+.ia-phys-details[open] .ia-phys-summary::before { transform: rotate(90deg); }
+.ia-phys-summary::-webkit-details-marker { display: none; }
+.ia-phys-body {
+  padding: .75rem .9rem 1rem;
+  display: flex; flex-direction: column; gap: .75rem;
+  border-top: 1px solid hsl(0,30%,25%);
+}
+.ia-phys-group { display: flex; flex-direction: column; gap: .35rem; }
+.ia-phys-group-label {
+  font-size: .7rem; font-weight: 700; color: #f87171;
+  text-transform: uppercase; letter-spacing: .06em; opacity: .8;
+}
+.ia-phys-row { display: flex; gap: .65rem; flex-wrap: wrap; }
+.ia-phys-row .admin-modal-field { flex: 1; min-width: 110px; }
+
+/* ── Recherche fantasmes ─────────────────────────────────────────────────── */
+.ia-fant-search-wrap { padding: .35rem 0 .5rem; }
+.ia-fant-search {
+  width: 100%; background: #1a0a0a; border: 1px solid #7f1d1d; border-radius: 6px;
+  color: #fca5a5; font-size: .8rem; padding: .3rem .6rem;
+  outline: none;
+}
+.ia-fant-search:focus { border-color: #f87171; }
+.ia-fant-item--hidden { display: none !important; }

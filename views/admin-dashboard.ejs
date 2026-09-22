@@ -489,7 +489,7 @@
             description: p.description || '',
             age: p.age || '',
             sexe: p.sexe || '',
-            physical_desc: p.physical_desc || '',
+            phys: p.physical_desc,
             relation_type: p.relation_type || '',
             fantasmes: p.fantasmes
           })) %>">
@@ -515,8 +515,20 @@
             <% if (p.age)  { %><span class="ia-meta-chip"><%= p.age %> ans</span><% } %>
             <% if (p.relation_type) { %><span class="ia-meta-chip ia-meta-rel"><%= p.relation_type %></span><% } %>
           </div>
-          <% if (p.physical_desc) { %>
-            <p class="ia-card-desc ia-card-desc--phys"><%= p.physical_desc %></p>
+          <%
+            var physParts = [];
+            var ph = p.physical_desc || {};
+            if (ph.skin) physParts.push(ph.skin);
+            var hairParts = [ph.hair_color, ph.hair_length, ph.hair_style].filter(Boolean);
+            if (hairParts.length) physParts.push('cheveux ' + hairParts.join(' '));
+            var eyeParts = [ph.eyes_color, ph.eyes_style].filter(Boolean);
+            if (eyeParts.length) physParts.push('yeux ' + eyeParts.join(', '));
+            if (ph.height) physParts.push(ph.height);
+            if (ph.body)   physParts.push(ph.body);
+            if (ph.extras) physParts.push(ph.extras);
+          %>
+          <% if (physParts.length) { %>
+            <p class="ia-card-desc ia-card-desc--phys"><%= physParts.join(' · ') %></p>
           <% } %>
           <% if (p.description) { %>
             <p class="ia-card-desc"><%= p.description %></p>
@@ -756,14 +768,28 @@
       try { return JSON.parse(decodeURIComponent(card.dataset.profile)); } catch(_) { return {}; }
     }
 
+    function buildPhysText(ph) {
+      if (!ph || typeof ph !== 'object') return '';
+      var parts = [];
+      if (ph.skin) parts.push(ph.skin + ' de peau');
+      var h = [ph.hair_color, ph.hair_length, ph.hair_style].filter(Boolean);
+      if (h.length) parts.push('cheveux ' + h.join(', '));
+      var e = [ph.eyes_color, ph.eyes_style].filter(Boolean);
+      if (e.length) parts.push('yeux ' + e.join(', '));
+      if (ph.height) parts.push(ph.height);
+      if (ph.body)   parts.push(ph.body);
+      if (ph.extras) parts.push(ph.extras);
+      return parts.length ? parts.join(', ') + '.' : '';
+    }
+
     function buildPromptText(d) {
       var parts = [];
       parts.push('Tu te nommes ' + d.name + '.');
       if (d.sexe || d.age) {
-        var ident = 'Tu es ' + [d.sexe, d.age ? d.age + '\u00a0ans' : ''].filter(Boolean).join(', ') + '.';
-        parts.push(ident);
+        parts.push('Tu es ' + [d.sexe, d.age ? d.age + '\u00a0ans' : ''].filter(Boolean).join(', ') + '.');
       }
-      if (d.physical_desc) parts.push(d.physical_desc);
+      var physText = buildPhysText(d.phys);
+      if (physText) parts.push('Physiquement\u00a0: ' + physText);
       if (d.description)   parts.push(d.description);
       if (d.relation_type) parts.push('Ta relation avec l\u2019utilisateur\u00a0: ' + d.relation_type + '.');
       if (d.fantasmes && d.fantasmes.length) parts.push('Tes fantasmes sont\u00a0: ' + d.fantasmes.join(', ') + '.');
@@ -794,13 +820,23 @@
       document.body.removeChild(ta);
     }
 
+    var PHYS_FIELDS = ['phys_skin','phys_hair_color','phys_hair_length','phys_hair_style','phys_eyes_color','phys_eyes_style','phys_height','phys_body','phys_extras'];
+
+    function resetPhys(modal, ph) {
+      ph = ph || {};
+      PHYS_FIELDS.forEach(function(f) {
+        var el = modal.querySelector("[name=" + f + "]");
+        if (el) el.value = ph[f.replace('phys_','')] || '';
+      });
+    }
+
     document.getElementById("ia-create-btn").addEventListener("click", function () {
       createModal.querySelector("[name=name]").value = "";
       createModal.querySelector("[name=description]").value = "";
       createModal.querySelector("[name=age]").value = "";
       createModal.querySelector("[name=sexe]").value = "";
-      createModal.querySelector("[name=physical_desc]").value = "";
       createModal.querySelector("[name=relation_type]").value = "";
+      resetPhys(createModal);
       createModal.querySelectorAll(".ia-fant-chk").forEach(function (c) { c.checked = false; });
       openModal("ia-create-modal");
     });
@@ -809,6 +845,16 @@
 
     document.getElementById("ia-edit-modal-close").addEventListener("click", function () { closeModal("ia-edit-modal"); });
     editModal.addEventListener("click", function (e) { if (e.target === this) closeModal("ia-edit-modal"); });
+
+    // Filtre recherche dans les checkboxes fantasmes
+    document.querySelectorAll(".ia-fant-search").forEach(function (input) {
+      input.addEventListener("input", function () {
+        var q = input.value.trim().toLowerCase();
+        input.closest(".ia-fantasmes-fieldset").querySelectorAll(".ia-fant-item").forEach(function (lbl) {
+          lbl.classList.toggle("ia-fant-item--hidden", q.length > 0 && lbl.textContent.toLowerCase().indexOf(q) === -1);
+        });
+      });
+    });
 
     document.querySelectorAll(".ia-card").forEach(function (card) {
       var d = getProfileData(card);
@@ -819,8 +865,8 @@
         editModal.querySelector("[name=description]").value   = d.description   || "";
         editModal.querySelector("[name=age]").value           = d.age           || "";
         editModal.querySelector("[name=sexe]").value          = d.sexe          || "";
-        editModal.querySelector("[name=physical_desc]").value = d.physical_desc || "";
         editModal.querySelector("[name=relation_type]").value = d.relation_type || "";
+        resetPhys(editModal, d.phys || {});
         var fantasmes = d.fantasmes || [];
         editModal.querySelectorAll(".ia-fant-chk").forEach(function (c) {
           c.checked = fantasmes.indexOf(c.value) !== -1;
