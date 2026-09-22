@@ -767,51 +767,94 @@
     var editModal   = document.getElementById("ia-edit-modal");
     if (!createModal) return;
 
+    // ── Utilitaires ─────────────────────────────────────────────────────────
+
     function getProfileData(card) {
       try { return JSON.parse(decodeURIComponent(card.dataset.profile)); } catch(_) { return {}; }
     }
 
-    function buildPhysText(ph) {
-      if (!ph || typeof ph !== 'object') return '';
-      var parts = [];
-      if (ph.skin) parts.push(ph.skin + ' de peau');
-      var h = [ph.hair_color, ph.hair_length, ph.hair_style].filter(Boolean);
-      if (h.length) parts.push('cheveux ' + h.join(', '));
-      var e = [ph.eyes_color, ph.eyes_style].filter(Boolean);
-      if (e.length) parts.push('yeux ' + e.join(', '));
-      if (ph.height) parts.push(ph.height);
-      if (ph.body)   parts.push(ph.body);
-      if (ph.extras) parts.push(ph.extras);
-      return parts.length ? parts.join(', ') + '.' : '';
+    // Collecte les champs d'un formulaire en un objet profil
+    function collectFormData(form) {
+      function v(n) { var el = form.querySelector('[name=' + n + ']'); return el ? el.value.trim() : ''; }
+      return {
+        name:          v('name'),
+        age:           v('age'),
+        sexe:          v('sexe'),
+        relation_type: v('relation_type'),
+        description:   v('description'),
+        sex_fantasmes: v('sex_fantasmes'),
+        sex_practiced: v('sex_practiced'),
+        sex_details:   v('sex_details'),
+        phys: {
+          skin:        v('phys_skin'),
+          hair_color:  v('phys_hair_color'),
+          hair_length: v('phys_hair_length'),
+          hair_style:  v('phys_hair_style'),
+          eyes_color:  v('phys_eyes_color'),
+          eyes_style:  v('phys_eyes_style'),
+          height:      v('phys_height'),
+          body:        v('phys_body'),
+          extras:      v('phys_extras'),
+        },
+        fantasmes: Array.from(form.querySelectorAll('[name=fantasmes]:checked')).map(function(c){ return c.value; }),
+      };
     }
 
+    // Construit le texte du prompt en paragraphes propres
     function buildPromptText(d) {
-      var parts = [];
-      parts.push('Tu te nommes ' + d.name + '.');
-      if (d.sexe || d.age) {
-        parts.push('Tu es ' + [d.sexe, d.age ? d.age + '\u00a0ans' : ''].filter(Boolean).join(', ') + '.');
+      var paragraphs = [];
+
+      // ── Identité ──────────────────────────────────────────────────────────
+      if (d.name) {
+        var id = 'Tu t\u2019appelles ' + d.name;
+        if (d.sexe && d.age)   id += ', une ' + d.sexe + ' de ' + d.age + '\u00a0ans';
+        else if (d.sexe)       id += '\u00a0; tu es ' + d.sexe;
+        else if (d.age)        id += '\u00a0; tu as ' + d.age + '\u00a0ans';
+        id += '.';
+        if (d.relation_type)   id += ' ' + d.relation_type + '.';
+        paragraphs.push(id);
       }
-      var physText = buildPhysText(d.phys);
-      if (physText) parts.push('Physiquement\u00a0: ' + physText);
-      if (d.description)   parts.push(d.description);
-      if (d.relation_type) parts.push('Ta relation avec l\u2019utilisateur\u00a0: ' + d.relation_type + '.');
-      if (d.sex_fantasmes || d.sex_practiced || d.sex_details) {
-        var sexParts = [];
-        if (d.sex_fantasmes) sexParts.push('Ses fantasmes\u00a0: ' + d.sex_fantasmes);
-        if (d.sex_practiced) sexParts.push('Elle a d\u00e9j\u00e0 pratiqu\u00e9\u00a0: ' + d.sex_practiced);
-        if (d.sex_details)   sexParts.push(d.sex_details);
-        parts.push('Sexuellement\u00a0: ' + sexParts.join('. ') + '.');
+
+      // ── Apparence physique ────────────────────────────────────────────────
+      var ph = d.phys || {};
+      var physS = [];
+      if (ph.skin)                                   physS.push('Tu as la peau ' + ph.skin + '.');
+      var hair = [ph.hair_color, ph.hair_length, ph.hair_style].filter(Boolean);
+      if (hair.length)                               physS.push('Tes cheveux sont ' + hair.join(', ') + '.');
+      var eyes = [ph.eyes_color, ph.eyes_style].filter(Boolean);
+      if (eyes.length)                               physS.push('Tes yeux sont ' + eyes.join(', ') + '.');
+      if (ph.height && ph.body)  physS.push('Tu mesures ' + ph.height + ' et tu as une silhouette ' + ph.body + '.');
+      else if (ph.height)        physS.push('Tu mesures ' + ph.height + '.');
+      else if (ph.body)          physS.push('Ta silhouette est ' + ph.body + '.');
+      if (ph.extras)             physS.push(ph.extras.replace(/\.?\s*$/, '.'));
+      if (physS.length) paragraphs.push(physS.join(' '));
+
+      // ── Personnalité ──────────────────────────────────────────────────────
+      if (d.description) paragraphs.push(d.description.replace(/\.?\s*$/, '.'));
+
+      // ── Sexualité ─────────────────────────────────────────────────────────
+      var sexS = [];
+      if (d.sex_fantasmes) sexS.push('Tes fantasmes\u00a0: ' + d.sex_fantasmes.replace(/\.?\s*$/, '.'));
+      if (d.sex_practiced) sexS.push('Tu as d\u00e9j\u00e0 explor\u00e9\u00a0: ' + d.sex_practiced.replace(/\.?\s*$/, '.'));
+      if (d.sex_details)   sexS.push(d.sex_details.replace(/\.?\s*$/, '.'));
+      if (sexS.length) paragraphs.push(sexS.join(' '));
+
+      // ── Intérêts (Codex) ──────────────────────────────────────────────────
+      if (d.fantasmes && d.fantasmes.length) {
+        paragraphs.push('Parmi tes centres d\u2019int\u00e9r\u00eat et d\u00e9sirs\u00a0: ' + d.fantasmes.join(', ') + '.');
       }
-      if (d.fantasmes && d.fantasmes.length) parts.push('Tes fantasmes sont\u00a0: ' + d.fantasmes.join(', ') + '.');
-      return parts.join(' ');
+
+      return paragraphs.join('\n\n');
     }
+
+    // ── Copier / télécharger ─────────────────────────────────────────────────
 
     function copyText(text, btn) {
       function flashOk() {
-        var orig = btn.innerHTML;
-        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        var orig = btn.innerHTML; var origC = btn.style.color;
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copié\u00a0!';
         btn.style.color = 'hsl(140,60%,55%)';
-        setTimeout(function () { btn.innerHTML = orig; btn.style.color = ''; }, 1800);
+        setTimeout(function () { btn.innerHTML = orig; btn.style.color = origC; }, 2000);
       }
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(flashOk).catch(function () { fallbackCopy(text); flashOk(); });
@@ -820,92 +863,131 @@
       }
     }
 
+    function downloadText(text, name) {
+      var a = document.createElement('a');
+      a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+      a.download = (name || 'profil').toLowerCase().replace(/\s+/g, '-') + '.txt';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
     function fallbackCopy(text) {
       var ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
-      document.body.appendChild(ta);
-      ta.select();
+      ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.appendChild(ta); ta.select();
       try { document.execCommand('copy'); } catch(_) {}
       document.body.removeChild(ta);
     }
 
-    var PHYS_FIELDS = ['phys_skin','phys_hair_color','phys_hair_length','phys_hair_style','phys_eyes_color','phys_eyes_style','phys_height','phys_body','phys_extras'];
+    // ── Formulaire → remplissage ─────────────────────────────────────────────
 
-    function resetPhys(modal, ph) {
-      ph = ph || {};
-      PHYS_FIELDS.forEach(function(f) {
-        var el = modal.querySelector("[name=" + f + "]");
-        if (el) el.value = ph[f.replace('phys_','')] || '';
+    var PHYS_MAP = {
+      phys_skin:'skin', phys_hair_color:'hair_color', phys_hair_length:'hair_length',
+      phys_hair_style:'hair_style', phys_eyes_color:'eyes_color', phys_eyes_style:'eyes_style',
+      phys_height:'height', phys_body:'body', phys_extras:'extras'
+    };
+
+    function fillForm(modal, d) {
+      function set(n, v) { var el = modal.querySelector('[name=' + n + ']'); if (el) el.value = v || ''; }
+      set('name',          d.name);
+      set('age',           d.age);
+      set('sexe',          d.sexe);
+      set('relation_type', d.relation_type);
+      set('description',   d.description);
+      set('sex_fantasmes', d.sex_fantasmes);
+      set('sex_practiced', d.sex_practiced);
+      set('sex_details',   d.sex_details);
+      var ph = d.phys || {};
+      Object.keys(PHYS_MAP).forEach(function(f) {
+        set(f, ph[PHYS_MAP[f]]);
+      });
+      var fantasmes = d.fantasmes || [];
+      modal.querySelectorAll('.ia-fant-chk').forEach(function(c) {
+        c.checked = fantasmes.indexOf(c.value) !== -1;
       });
     }
 
-    document.getElementById("ia-create-btn").addEventListener("click", function () {
-      createModal.querySelector("[name=name]").value = "";
-      createModal.querySelector("[name=description]").value = "";
-      createModal.querySelector("[name=age]").value = "";
-      createModal.querySelector("[name=sexe]").value = "";
-      createModal.querySelector("[name=relation_type]").value  = "";
-      createModal.querySelector("[name=sex_fantasmes]").value  = "";
-      createModal.querySelector("[name=sex_practiced]").value  = "";
-      createModal.querySelector("[name=sex_details]").value    = "";
-      resetPhys(createModal);
-      createModal.querySelectorAll(".ia-fant-chk").forEach(function (c) { c.checked = false; });
-      openModal("ia-create-modal");
-    });
-    document.getElementById("ia-create-modal-close").addEventListener("click", function () { closeModal("ia-create-modal"); });
-    createModal.addEventListener("click", function (e) { if (e.target === this) closeModal("ia-create-modal"); });
+    function clearForm(modal) { fillForm(modal, {}); }
 
-    document.getElementById("ia-edit-modal-close").addEventListener("click", function () { closeModal("ia-edit-modal"); });
-    editModal.addEventListener("click", function (e) { if (e.target === this) closeModal("ia-edit-modal"); });
+    // ── Preview live ─────────────────────────────────────────────────────────
 
-    // Filtre recherche dans les checkboxes fantasmes
-    document.querySelectorAll(".ia-fant-search").forEach(function (input) {
-      input.addEventListener("input", function () {
+    function initPreview(modal) {
+      var form    = modal.querySelector('.ia-form');
+      var preview = modal.querySelector('.ia-preview-text');
+      var copyBtn = modal.querySelector('.ia-preview-copy-btn');
+      var dlBtn   = modal.querySelector('.ia-preview-dl-btn');
+      if (!preview) return;
+
+      function refresh() {
+        var d = collectFormData(form);
+        var text = buildPromptText(d);
+        preview.textContent = text || 'Remplis les champs ci-dessus\u2026';
+      }
+
+      form.addEventListener('input',  refresh);
+      form.addEventListener('change', refresh);
+      refresh();
+
+      if (copyBtn) copyBtn.addEventListener('click', function() {
+        copyText(preview.textContent, copyBtn);
+      });
+      if (dlBtn) dlBtn.addEventListener('click', function() {
+        var name = form.querySelector('[name=name]').value.trim() || 'profil';
+        downloadText(preview.textContent, name);
+      });
+    }
+
+    // ── Filtres checkboxes Codex ─────────────────────────────────────────────
+
+    document.querySelectorAll('.ia-fant-search').forEach(function(input) {
+      input.addEventListener('input', function() {
         var q = input.value.trim().toLowerCase();
-        input.closest(".ia-fantasmes-fieldset").querySelectorAll(".ia-fant-item").forEach(function (lbl) {
-          lbl.classList.toggle("ia-fant-item--hidden", q.length > 0 && lbl.textContent.toLowerCase().indexOf(q) === -1);
+        input.closest('.ia-details-body').querySelectorAll('.ia-fant-item').forEach(function(lbl) {
+          lbl.classList.toggle('ia-fant-item--hidden', q.length > 0 && lbl.textContent.toLowerCase().indexOf(q) === -1);
         });
       });
     });
 
-    document.querySelectorAll(".ia-card").forEach(function (card) {
+    // ── Modal Créer ──────────────────────────────────────────────────────────
+
+    document.getElementById('ia-create-btn').addEventListener('click', function() {
+      clearForm(createModal);
+      openModal('ia-create-modal');
+    });
+    document.getElementById('ia-create-modal-close').addEventListener('click', function() { closeModal('ia-create-modal'); });
+    createModal.addEventListener('click', function(e) { if (e.target === this) closeModal('ia-create-modal'); });
+    initPreview(createModal);
+
+    // ── Modal Éditer ─────────────────────────────────────────────────────────
+
+    document.getElementById('ia-edit-modal-close').addEventListener('click', function() { closeModal('ia-edit-modal'); });
+    editModal.addEventListener('click', function(e) { if (e.target === this) closeModal('ia-edit-modal'); });
+    initPreview(editModal);
+
+    // ── Cartes ───────────────────────────────────────────────────────────────
+
+    document.querySelectorAll('.ia-card').forEach(function(card) {
       var d = getProfileData(card);
 
-      card.querySelector(".ia-edit-btn").addEventListener("click", function () {
-        document.getElementById("ia-edit-form").action = "/admin/ia/" + d.id + "/update";
-        editModal.querySelector("[name=name]").value           = d.name          || "";
-        editModal.querySelector("[name=description]").value   = d.description   || "";
-        editModal.querySelector("[name=age]").value           = d.age           || "";
-        editModal.querySelector("[name=sexe]").value          = d.sexe          || "";
-        editModal.querySelector("[name=relation_type]").value  = d.relation_type  || "";
-        editModal.querySelector("[name=sex_fantasmes]").value  = d.sex_fantasmes  || "";
-        editModal.querySelector("[name=sex_practiced]").value  = d.sex_practiced  || "";
-        editModal.querySelector("[name=sex_details]").value    = d.sex_details    || "";
-        resetPhys(editModal, d.phys || {});
-        var fantasmes = d.fantasmes || [];
-        editModal.querySelectorAll(".ia-fant-chk").forEach(function (c) {
-          c.checked = fantasmes.indexOf(c.value) !== -1;
-        });
-        openModal("ia-edit-modal");
+      card.querySelector('.ia-edit-btn').addEventListener('click', function() {
+        document.getElementById('ia-edit-form').action = '/admin/ia/' + d.id + '/update';
+        fillForm(editModal, d);
+        // Force refresh de la preview avec les données chargées
+        editModal.querySelector('.ia-form').dispatchEvent(new Event('input'));
+        openModal('ia-edit-modal');
       });
 
-      card.querySelector(".ia-del-btn").addEventListener("click", function () {
-        if (!confirm("Supprimer le profil \u00ab\u00a0" + d.name + "\u00a0\u00bb ?")) return;
-        document.getElementById("ia-del-form").action = "/admin/ia/" + d.id + "/delete";
-        document.getElementById("ia-del-form").submit();
+      card.querySelector('.ia-del-btn').addEventListener('click', function() {
+        if (!confirm('Supprimer le profil \u00ab\u00a0' + d.name + '\u00a0\u00bb ?')) return;
+        document.getElementById('ia-del-form').action = '/admin/ia/' + d.id + '/delete';
+        document.getElementById('ia-del-form').submit();
       });
 
-      card.querySelector(".ia-copy-btn").addEventListener("click", function () {
-        copyText(buildPromptText(d), card.querySelector(".ia-copy-btn"));
+      card.querySelector('.ia-copy-btn').addEventListener('click', function() {
+        copyText(buildPromptText(d), card.querySelector('.ia-copy-btn'));
       });
 
-      card.querySelector(".ia-dl-btn").addEventListener("click", function () {
-        var text = buildPromptText(d);
-        var a = document.createElement("a");
-        a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
-        a.download = d.name.toLowerCase().replace(/\s+/g, "-") + ".txt";
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      card.querySelector('.ia-dl-btn').addEventListener('click', function() {
+        downloadText(buildPromptText(d), d.name);
       });
     });
   })();

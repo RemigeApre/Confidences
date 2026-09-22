@@ -1,13 +1,17 @@
+<%# ─────────────────────────────────────────────────────────────
+    Identité
+───────────────────────────────────────────────────────────── %>
+<div class="ia-section-label">Identité</div>
 <div class="ia-form-row">
   <label class="admin-modal-field" style="flex:2">
     <span>Nom</span>
     <input type="text" name="name" required autocomplete="off" maxlength="80"
-      placeholder="Tu te nommes [réponse]." />
+      placeholder="Tu t'appelles [réponse]." />
   </label>
   <label class="admin-modal-field" style="flex:1">
     <span>Âge</span>
     <input type="text" name="age" autocomplete="off" maxlength="20"
-      placeholder="Tu es … [réponse] ans." />
+      placeholder="…de [réponse] ans." />
   </label>
   <label class="admin-modal-field" style="flex:1">
     <span>Sexe</span>
@@ -19,18 +23,26 @@
     </select>
   </label>
 </div>
+<label class="admin-modal-field">
+  <span>Relation avec l'utilisateur</span>
+  <input type="text" name="relation_type" autocomplete="off" maxlength="160"
+    placeholder="Sa relation avec l'utilisateur : [réponse]." />
+</label>
 
-<details class="ia-phys-details">
-  <summary class="ia-phys-summary">Description physique</summary>
-  <div class="ia-phys-body">
+<%# ─────────────────────────────────────────────────────────────
+    Apparence physique
+───────────────────────────────────────────────────────────── %>
+<details class="ia-details-block">
+  <summary class="ia-details-summary">Apparence physique</summary>
+  <div class="ia-details-body">
 
     <div class="ia-phys-group">
       <span class="ia-phys-group-label">Peau</span>
       <div class="ia-phys-row">
         <label class="admin-modal-field">
-          <span>Couleur</span>
+          <span>Couleur / teint</span>
           <input type="text" name="phys_skin" autocomplete="off"
-            placeholder="…[réponse] de peau…" />
+            placeholder="Elle a la peau [réponse]." />
         </label>
       </div>
     </div>
@@ -41,17 +53,17 @@
         <label class="admin-modal-field">
           <span>Couleur</span>
           <input type="text" name="phys_hair_color" autocomplete="off"
-            placeholder="cheveux [réponse]…" />
+            placeholder="Ses cheveux sont [réponse]…" />
         </label>
         <label class="admin-modal-field">
           <span>Longueur</span>
           <input type="text" name="phys_hair_length" autocomplete="off"
-            placeholder="cheveux …, [réponse]…" />
+            placeholder="…[réponse]…" />
         </label>
         <label class="admin-modal-field">
           <span>Style</span>
           <input type="text" name="phys_hair_style" autocomplete="off"
-            placeholder="cheveux …, …, [réponse]" />
+            placeholder="…et [réponse]." />
         </label>
       </div>
     </div>
@@ -62,12 +74,12 @@
         <label class="admin-modal-field">
           <span>Couleur</span>
           <input type="text" name="phys_eyes_color" autocomplete="off"
-            placeholder="yeux [réponse]…" />
+            placeholder="Ses yeux sont [réponse]…" />
         </label>
         <label class="admin-modal-field">
           <span>Forme / style</span>
           <input type="text" name="phys_eyes_style" autocomplete="off"
-            placeholder="yeux …, [réponse]" />
+            placeholder="…[réponse]." />
         </label>
       </div>
     </div>
@@ -78,12 +90,12 @@
         <label class="admin-modal-field">
           <span>Taille</span>
           <input type="text" name="phys_height" autocomplete="off"
-            placeholder="Physiquement : [réponse]…" />
+            placeholder="Elle mesure [réponse]…" />
         </label>
         <label class="admin-modal-field">
           <span>Morphologie</span>
           <input type="text" name="phys_body" autocomplete="off"
-            placeholder="…[réponse]…" />
+            placeholder="…et a une silhouette [réponse]." />
         </label>
       </div>
     </div>
@@ -91,15 +103,27 @@
     <label class="admin-modal-field">
       <span>Particularités supplémentaires</span>
       <textarea name="phys_extras" rows="2" class="ia-desc-textarea"
-        placeholder="…[réponse]."></textarea>
+        placeholder="[réponse] — ajouté tel quel à la description physique."></textarea>
     </label>
 
   </div>
 </details>
 
-<details class="ia-phys-details">
-  <summary class="ia-phys-summary">Sexualité</summary>
-  <div class="ia-phys-body">
+<%# ─────────────────────────────────────────────────────────────
+    Personnalité
+───────────────────────────────────────────────────────────── %>
+<div class="ia-section-label">Personnalité</div>
+<label class="admin-modal-field">
+  <textarea name="description" rows="5" class="ia-desc-textarea"
+    placeholder="[réponse] — inséré tel quel comme paragraphe de personnalité."></textarea>
+</label>
+
+<%# ─────────────────────────────────────────────────────────────
+    Sexualité
+───────────────────────────────────────────────────────────── %>
+<details class="ia-details-block">
+  <summary class="ia-details-summary">Sexualité</summary>
+  <div class="ia-details-body">
 
     <label class="admin-modal-field">
       <span>Fantasmes</span>
@@ -110,7 +134,7 @@
     <label class="admin-modal-field">
       <span>Déjà pratiqué</span>
       <textarea name="sex_practiced" rows="3" class="ia-desc-textarea"
-        placeholder="Elle a déjà pratiqué [réponse]."></textarea>
+        placeholder="Elle a déjà exploré : [réponse]."></textarea>
     </label>
 
     <label class="admin-modal-field">
@@ -122,34 +146,46 @@
   </div>
 </details>
 
-<label class="admin-modal-field">
-  <span>Personnalité / contexte</span>
-  <textarea name="description" rows="4" class="ia-desc-textarea"
-    placeholder="[réponse] — inséré tel quel dans le prompt."></textarea>
-</label>
-<label class="admin-modal-field">
-  <span>Type de relation avec l'utilisateur</span>
-  <input type="text" name="relation_type" autocomplete="off" maxlength="120"
-    placeholder="Ta relation avec l'utilisateur : [réponse]." />
-</label>
+<%# ─────────────────────────────────────────────────────────────
+    Intérêts / Codex
+───────────────────────────────────────────────────────────── %>
+<details class="ia-details-block">
+  <summary class="ia-details-summary">Intérêts &amp; désirs (Codex)</summary>
+  <div class="ia-details-body">
+    <% if (!fantasyWikiPages || !fantasyWikiPages.length) { %>
+      <p class="ia-empty-hint">Aucune page Codex disponible pour l&apos;instant.</p>
+    <% } else { %>
+      <div class="ia-fant-search-wrap">
+        <input type="text" class="ia-fant-search" placeholder="Filtrer les pages…" autocomplete="off" />
+      </div>
+      <div class="ia-fant-items">
+        <% fantasyWikiPages.forEach(function(wp) { %>
+          <label class="ia-fant-item">
+            <input type="checkbox" name="fantasmes" value="<%= wp.title %>" class="ia-fant-chk" />
+            <span><%= wp.title %></span>
+          </label>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</details>
 
-<fieldset class="ia-fantasmes-fieldset">
-  <legend>Fantasmes / int&eacute;r&ecirc;ts (Codex)</legend>
-  <% if (!fantasyWikiPages || !fantasyWikiPages.length) { %>
-    <p style="font-size:.78rem;color:#fca5a5;opacity:.6;margin:.25rem 0">
-      Aucune page Codex disponible pour l&apos;instant.
-    </p>
-  <% } else { %>
-    <div class="ia-fant-search-wrap">
-      <input type="text" class="ia-fant-search" placeholder="Filtrer…" autocomplete="off" />
+<%# ─────────────────────────────────────────────────────────────
+    Aperçu du prompt (live)
+───────────────────────────────────────────────────────────── %>
+<div class="ia-preview-section">
+  <div class="ia-preview-header">
+    <span class="ia-preview-label">Aperçu du prompt</span>
+    <div class="ia-preview-btns">
+      <button type="button" class="ia-preview-copy-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copier
+      </button>
+      <button type="button" class="ia-preview-dl-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        .txt
+      </button>
     </div>
-    <div class="ia-fant-items">
-      <% fantasyWikiPages.forEach(function(wp) { %>
-        <label class="ia-fant-item">
-          <input type="checkbox" name="fantasmes" value="<%= wp.title %>" class="ia-fant-chk" />
-          <span><%= wp.title %></span>
-        </label>
-      <% }) %>
-    </div>
-  <% } %>
-</fieldset>
+  </div>
+  <pre class="ia-preview-text">Remplis les champs ci-dessus…</pre>
+</div>
