@@ -834,14 +834,13 @@
 
       // ── Sexualité ─────────────────────────────────────────────────────────
       var sexS = [];
-      if (d.sex_fantasmes) sexS.push('Tes fantasmes\u00a0: ' + d.sex_fantasmes.replace(/\.?\s*$/, '.'));
       if (d.sex_practiced) sexS.push('Tu as d\u00e9j\u00e0 explor\u00e9\u00a0: ' + d.sex_practiced.replace(/\.?\s*$/, '.'));
       if (d.sex_details)   sexS.push(d.sex_details.replace(/\.?\s*$/, '.'));
       if (sexS.length) paragraphs.push(sexS.join(' '));
 
-      // ── Intérêts (Codex) ──────────────────────────────────────────────────
+      // ── Fantasmes & intérêts (Codex) ──────────────────────────────────────
       if (d.fantasmes && d.fantasmes.length) {
-        paragraphs.push('Parmi tes centres d\u2019int\u00e9r\u00eat et d\u00e9sirs\u00a0: ' + d.fantasmes.join(', ') + '.');
+        paragraphs.push('Tes fantasmes et int\u00e9r\u00eats\u00a0: ' + d.fantasmes.join(', ') + '.');
       }
 
       return paragraphs.join('\n\n');
@@ -893,7 +892,6 @@
       set('sexe',          d.sexe);
       set('relation_type', d.relation_type);
       set('description',   d.description);
-      set('sex_fantasmes', d.sex_fantasmes);
       set('sex_practiced', d.sex_practiced);
       set('sex_details',   d.sex_details);
       var ph = d.phys || {};
