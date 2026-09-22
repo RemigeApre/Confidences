@@ -153,7 +153,14 @@ function buildAdminRouter(config) {
     const aiProfiles = listAiProfiles().map((p) => {
       let phys = {};
       try { phys = p.physical_desc ? JSON.parse(p.physical_desc) : {}; } catch(_) { phys = { extras: p.physical_desc || '' }; }
-      return { ...p, fantasmes: JSON.parse(p.fantasmes || '[]'), physical_desc: phys };
+      return {
+        ...p,
+        fantasmes: JSON.parse(p.fantasmes || '[]'),
+        physical_desc: phys,
+        sex_fantasmes: p.sex_fantasmes || '',
+        sex_practiced: p.sex_practiced || '',
+        sex_details:   p.sex_details   || '',
+      };
     });
     const fantasyWikiPages = listWikiPages()
       .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
@@ -407,8 +414,11 @@ function buildAdminRouter(config) {
       extras:      String(req.body.phys_extras      || '').trim(),
     });
     const relation_type  = String(req.body.relation_type  || "").trim();
+    const sex_fantasmes  = String(req.body.sex_fantasmes  || "").trim();
+    const sex_practiced  = String(req.body.sex_practiced  || "").trim();
+    const sex_details    = String(req.body.sex_details    || "").trim();
     const fantasmes   = [].concat(req.body.fantasmes || []).filter(Boolean);
-    if (name) createAiProfile({ name, description, fantasmes, age, sexe, physical_desc, relation_type });
+    if (name) createAiProfile({ name, description, fantasmes, age, sexe, physical_desc, relation_type, sex_fantasmes, sex_practiced, sex_details });
     res.redirect("/admin#tab-ia");
   });
 
@@ -430,8 +440,11 @@ function buildAdminRouter(config) {
       extras:      String(req.body.phys_extras      || '').trim(),
     });
     const relation_type  = String(req.body.relation_type  || "").trim();
+    const sex_fantasmes  = String(req.body.sex_fantasmes  || "").trim();
+    const sex_practiced  = String(req.body.sex_practiced  || "").trim();
+    const sex_details    = String(req.body.sex_details    || "").trim();
     const fantasmes   = [].concat(req.body.fantasmes || []).filter(Boolean);
-    if (name) updateAiProfile(id, { name, description, fantasmes, age, sexe, physical_desc, relation_type });
+    if (name) updateAiProfile(id, { name, description, fantasmes, age, sexe, physical_desc, relation_type, sex_fantasmes, sex_practiced, sex_details });
     res.redirect("/admin#tab-ia");
   });
 

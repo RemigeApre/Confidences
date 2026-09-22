@@ -491,6 +491,9 @@
             sexe: p.sexe || '',
             phys: p.physical_desc,
             relation_type: p.relation_type || '',
+            sex_fantasmes: p.sex_fantasmes || '',
+            sex_practiced: p.sex_practiced || '',
+            sex_details:   p.sex_details   || '',
             fantasmes: p.fantasmes
           })) %>">
           <div class="ia-card-header">
@@ -792,6 +795,13 @@
       if (physText) parts.push('Physiquement\u00a0: ' + physText);
       if (d.description)   parts.push(d.description);
       if (d.relation_type) parts.push('Ta relation avec l\u2019utilisateur\u00a0: ' + d.relation_type + '.');
+      if (d.sex_fantasmes || d.sex_practiced || d.sex_details) {
+        var sexParts = [];
+        if (d.sex_fantasmes) sexParts.push('Ses fantasmes\u00a0: ' + d.sex_fantasmes);
+        if (d.sex_practiced) sexParts.push('Elle a d\u00e9j\u00e0 pratiqu\u00e9\u00a0: ' + d.sex_practiced);
+        if (d.sex_details)   sexParts.push(d.sex_details);
+        parts.push('Sexuellement\u00a0: ' + sexParts.join('. ') + '.');
+      }
       if (d.fantasmes && d.fantasmes.length) parts.push('Tes fantasmes sont\u00a0: ' + d.fantasmes.join(', ') + '.');
       return parts.join(' ');
     }
@@ -835,7 +845,10 @@
       createModal.querySelector("[name=description]").value = "";
       createModal.querySelector("[name=age]").value = "";
       createModal.querySelector("[name=sexe]").value = "";
-      createModal.querySelector("[name=relation_type]").value = "";
+      createModal.querySelector("[name=relation_type]").value  = "";
+      createModal.querySelector("[name=sex_fantasmes]").value  = "";
+      createModal.querySelector("[name=sex_practiced]").value  = "";
+      createModal.querySelector("[name=sex_details]").value    = "";
       resetPhys(createModal);
       createModal.querySelectorAll(".ia-fant-chk").forEach(function (c) { c.checked = false; });
       openModal("ia-create-modal");
@@ -865,7 +878,10 @@
         editModal.querySelector("[name=description]").value   = d.description   || "";
         editModal.querySelector("[name=age]").value           = d.age           || "";
         editModal.querySelector("[name=sexe]").value          = d.sexe          || "";
-        editModal.querySelector("[name=relation_type]").value = d.relation_type || "";
+        editModal.querySelector("[name=relation_type]").value  = d.relation_type  || "";
+        editModal.querySelector("[name=sex_fantasmes]").value  = d.sex_fantasmes  || "";
+        editModal.querySelector("[name=sex_practiced]").value  = d.sex_practiced  || "";
+        editModal.querySelector("[name=sex_details]").value    = d.sex_details    || "";
         resetPhys(editModal, d.phys || {});
         var fantasmes = d.fantasmes || [];
         editModal.querySelectorAll(".ia-fant-chk").forEach(function (c) {
