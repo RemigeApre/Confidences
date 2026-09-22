@@ -800,47 +800,54 @@
       };
     }
 
-    // Construit le texte du prompt en paragraphes propres
+    // Construit le prompt d'incarnation — l'IA doit devenir ce personnage
     function buildPromptText(d) {
       var paragraphs = [];
+      var ph = d.phys || {};
 
-      // ── Identité ──────────────────────────────────────────────────────────
+      // ── § 1 : Identité + physique fusionnés ───────────────────────────────
+      // "Tu es X" ancre l'identité immédiatement. Le physique suit dans la
+      // même respiration pour que l'IA ait une image complète dès la 1re ligne.
       if (d.name) {
-        var id = 'Tu t\u2019appelles ' + d.name;
-        if (d.sexe && d.age)   id += ', une ' + d.sexe + ' de ' + d.age + '\u00a0ans';
-        else if (d.sexe)       id += '\u00a0; tu es ' + d.sexe;
-        else if (d.age)        id += '\u00a0; tu as ' + d.age + '\u00a0ans';
-        id += '.';
-        if (d.relation_type)   id += ' Tu es ' + d.relation_type + '.';
-        paragraphs.push(id);
+        var opening = 'Tu es ' + d.name;
+        if (d.sexe && d.age)   opening += ', une ' + d.sexe + ' de ' + d.age + '\u00a0ans';
+        else if (d.sexe)       opening += ', ' + d.sexe;
+        else if (d.age)        opening += ', ' + d.age + '\u00a0ans';
+        opening += '.';
+
+        var physParts = [];
+        if (ph.skin) physParts.push('la peau ' + ph.skin);
+        var hair = [ph.hair_color, ph.hair_length, ph.hair_style].filter(Boolean);
+        if (hair.length) physParts.push('les cheveux ' + hair.join(' '));
+        var eyes = [ph.eyes_color, ph.eyes_style].filter(Boolean);
+        if (eyes.length) physParts.push('les yeux ' + eyes.join(', '));
+
+        var p1 = [opening];
+        if (physParts.length) p1.push('Tu as ' + physParts.join(', ') + '.');
+        if (ph.height && ph.body)  p1.push('Tu mesures ' + ph.height + ', silhouette ' + ph.body + '.');
+        else if (ph.height)        p1.push('Tu mesures ' + ph.height + '.');
+        else if (ph.body)          p1.push('Silhouette ' + ph.body + '.');
+        if (ph.extras)             p1.push(ph.extras.replace(/\.?\s*$/, '.'));
+
+        paragraphs.push(p1.join(' '));
       }
 
-      // ── Apparence physique ────────────────────────────────────────────────
-      var ph = d.phys || {};
-      var physS = [];
-      if (ph.skin)                                   physS.push('Tu as la peau ' + ph.skin + '.');
-      var hair = [ph.hair_color, ph.hair_length, ph.hair_style].filter(Boolean);
-      if (hair.length)                               physS.push('Tes cheveux sont ' + hair.join(', ') + '.');
-      var eyes = [ph.eyes_color, ph.eyes_style].filter(Boolean);
-      if (eyes.length)                               physS.push('Tes yeux sont ' + eyes.join(', ') + '.');
-      if (ph.height && ph.body)  physS.push('Tu mesures ' + ph.height + ' et tu as une silhouette ' + ph.body + '.');
-      else if (ph.height)        physS.push('Tu mesures ' + ph.height + '.');
-      else if (ph.body)          physS.push('Ta silhouette est ' + ph.body + '.');
-      if (ph.extras)             physS.push(ph.extras.replace(/\.?\s*$/, '.'));
-      if (physS.length) paragraphs.push(physS.join(' '));
-
-      // ── Personnalité ──────────────────────────────────────────────────────
+      // ── § 2 : Personnalité — texte libre inséré tel quel ──────────────────
       if (d.description) paragraphs.push(d.description.replace(/\.?\s*$/, '.'));
 
-      // ── Sexualité ─────────────────────────────────────────────────────────
+      // ── § 3 : Relation — phrase courte et directe ─────────────────────────
+      // Court = l'IA l'intègre sans ambiguïté
+      if (d.relation_type) paragraphs.push('Tu es ' + d.relation_type + '.');
+
+      // ── § 4 : Vie sexuelle ────────────────────────────────────────────────
       var sexS = [];
-      if (d.sex_practiced) sexS.push('Tu as d\u00e9j\u00e0 explor\u00e9\u00a0: ' + d.sex_practiced.replace(/\.?\s*$/, '.'));
+      if (d.sex_practiced) sexS.push('Tu as d\u00e9j\u00e0 v\u00e9cu\u00a0: ' + d.sex_practiced.replace(/\.?\s*$/, '.'));
       if (d.sex_details)   sexS.push(d.sex_details.replace(/\.?\s*$/, '.'));
       if (sexS.length) paragraphs.push(sexS.join(' '));
 
-      // ── Fantasmes & intérêts (Codex) ──────────────────────────────────────
+      // ── § 5 : Fantasmes & désirs ──────────────────────────────────────────
       if (d.fantasmes && d.fantasmes.length) {
-        paragraphs.push('Tes fantasmes et int\u00e9r\u00eats\u00a0: ' + d.fantasmes.join(', ') + '.');
+        paragraphs.push('Tes fantasmes et d\u00e9sirs\u00a0: ' + d.fantasmes.join(', ') + '.');
       }
 
       return paragraphs.join('\n\n');
