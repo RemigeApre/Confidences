@@ -1,24 +1,48 @@
+<div class="ia-form-row">
+  <label class="admin-modal-field" style="flex:2">
+    <span>Nom</span>
+    <input type="text" name="name" id="ia-field-name" required autocomplete="off" maxlength="80" />
+  </label>
+  <label class="admin-modal-field" style="flex:1">
+    <span>Âge</span>
+    <input type="text" name="age" placeholder="ex. 24" autocomplete="off" maxlength="20" />
+  </label>
+  <label class="admin-modal-field" style="flex:1">
+    <span>Sexe</span>
+    <select name="sexe" class="admin-modal-select">
+      <option value="">—</option>
+      <option value="femme">Femme</option>
+      <option value="homme">Homme</option>
+      <option value="non-binaire">Non-binaire</option>
+    </select>
+  </label>
+</div>
 <label class="admin-modal-field">
-  <span>Nom</span>
-  <input type="text" name="name" id="ia-field-name" required autocomplete="off" maxlength="80" />
+  <span>Description physique</span>
+  <textarea name="physical_desc" rows="2" class="ia-desc-textarea" placeholder="Cheveux, silhouette, traits particuliers…"></textarea>
 </label>
 <label class="admin-modal-field">
-  <span>Texte libre (personnalité, contexte…)</span>
-  <textarea name="description" id="ia-field-desc" rows="5" class="ia-desc-textarea"></textarea>
+  <span>Personnalité / contexte</span>
+  <textarea name="description" rows="4" class="ia-desc-textarea" placeholder="Caractère, histoire, particularités…"></textarea>
+</label>
+<label class="admin-modal-field">
+  <span>Type de relation avec l'utilisateur</span>
+  <input type="text" name="relation_type" placeholder="ex. amante, maîtresse, inconnue de passage…" autocomplete="off" maxlength="120" />
 </label>
 <fieldset class="ia-fantasmes-fieldset">
-  <legend>Fantasmes</legend>
-  <% iaFantasmes.forEach(function(group) { %>
-    <div class="ia-fant-group">
-      <span class="ia-fant-group-label"><%= group.cat %></span>
-      <div class="ia-fant-items">
-        <% group.items.forEach(function(item) { %>
-          <label class="ia-fant-item">
-            <input type="checkbox" name="fantasmes" value="<%= item %>" class="ia-fant-chk" />
-            <span><%= item %></span>
-          </label>
-        <% }) %>
-      </div>
+  <legend>Fantasmes (pages Codex)</legend>
+  <% if (!fantasyWikiPages || !fantasyWikiPages.length) { %>
+    <p style="font-size:.78rem;color:#fca5a5;opacity:.6;margin:.25rem 0">
+      Aucune page Codex dans la cat&eacute;gorie «&nbsp;Fantasmes&nbsp;» pour l&apos;instant.
+    </p>
+  <% } else { %>
+    <div class="ia-fant-items">
+      <% fantasyWikiPages.forEach(function(wp) { %>
+        <label class="ia-fant-item">
+          <input type="checkbox" name="fantasmes" value="<%= wp.title %>" class="ia-fant-chk" />
+          <span><%= wp.title %></span>
+        </label>
+      <% }) %>
     </div>
-  <% }) %>
+  <% } %>
 </fieldset>

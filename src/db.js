@@ -2110,10 +2110,19 @@ db.exec(`
     name TEXT NOT NULL DEFAULT '',
     description TEXT NOT NULL DEFAULT '',
     fantasmes TEXT NOT NULL DEFAULT '[]',
+    age TEXT NOT NULL DEFAULT '',
+    sexe TEXT NOT NULL DEFAULT '',
+    physical_desc TEXT NOT NULL DEFAULT '',
+    relation_type TEXT NOT NULL DEFAULT '',
     created_at INTEGER DEFAULT (unixepoch()),
     updated_at INTEGER DEFAULT (unixepoch())
   )
 `);
+// Migrations pour les profils IA existants
+try { db.exec("ALTER TABLE ai_profiles ADD COLUMN age TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE ai_profiles ADD COLUMN sexe TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE ai_profiles ADD COLUMN physical_desc TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE ai_profiles ADD COLUMN relation_type TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS nouvelles (
@@ -2428,14 +2437,14 @@ function listAiProfiles() {
 function getAiProfile(id) {
   return db.prepare(`SELECT * FROM ai_profiles WHERE id=?`).get(id);
 }
-function createAiProfile({ name, description, fantasmes }) {
-  const r = db.prepare(`INSERT INTO ai_profiles (name, description, fantasmes) VALUES (?,?,?)`)
-    .run(name || '', description || '', JSON.stringify(fantasmes || []));
+function createAiProfile({ name, description, fantasmes, age, sexe, physical_desc, relation_type }) {
+  const r = db.prepare(`INSERT INTO ai_profiles (name, description, fantasmes, age, sexe, physical_desc, relation_type) VALUES (?,?,?,?,?,?,?)`)
+    .run(name || '', description || '', JSON.stringify(fantasmes || []), age || '', sexe || '', physical_desc || '', relation_type || '');
   return r.lastInsertRowid;
 }
-function updateAiProfile(id, { name, description, fantasmes }) {
-  db.prepare(`UPDATE ai_profiles SET name=?, description=?, fantasmes=?, updated_at=unixepoch() WHERE id=?`)
-    .run(name || '', description || '', JSON.stringify(fantasmes || []), id);
+function updateAiProfile(id, { name, description, fantasmes, age, sexe, physical_desc, relation_type }) {
+  db.prepare(`UPDATE ai_profiles SET name=?, description=?, fantasmes=?, age=?, sexe=?, physical_desc=?, relation_type=?, updated_at=unixepoch() WHERE id=?`)
+    .run(name || '', description || '', JSON.stringify(fantasmes || []), age || '', sexe || '', physical_desc || '', relation_type || '', id);
 }
 function deleteAiProfile(id) {
   db.prepare(`DELETE FROM ai_profiles WHERE id=?`).run(id);

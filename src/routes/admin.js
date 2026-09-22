@@ -49,14 +49,6 @@ const { slugify, computeScores, flattenItemsRaw } = require("../scoring");
 const loginThrottle = createThrottle();
 const SEXE_VALUES = ["", "femme", "homme", "autre"];
 
-const IA_FANTASMES = [
-  { cat: 'BDSM',        items: ['Domination', 'Soumission', 'Bondage', 'Discipline', 'Sadisme doux', 'Masochisme', 'Humiliation', 'Pet play'] },
-  { cat: 'Pratiques',   items: ['Exhibitionnisme', 'Voyeurisme', 'Fétichisme', 'Roleplay', 'Dirty talk', 'Sextoys', 'Anal', 'Sexe oral'] },
-  { cat: 'Partenaires', items: ['Trio (FFM)', 'Trio (MMF)', 'Partouze', 'Bisexualité', 'Cuckolding', 'Échangisme'] },
-  { cat: 'Scénarios',   items: ['Étudiante / Professeur', 'Patron / Employé(e)', 'Médecin / Patient(e)', 'Uniforme', 'Rencontre d\'inconnus', 'Première fois'] },
-  { cat: 'Lieux',       items: ['Sexe en public', 'Plein air', 'En voiture', 'Lieu de travail', 'Hôtel'] },
-  { cat: 'Sensations',  items: ['Massage érotique', 'Sensoriel (bandeau)', 'Douleur légère', 'Tantrisme', 'Quickie', 'Creampie', 'Squirting'] },
-];
 
 function safeNext(next) {
   if (typeof next !== "string") return null;
@@ -162,11 +154,14 @@ function buildAdminRouter(config) {
       ...p,
       fantasmes: JSON.parse(p.fantasmes || '[]'),
     }));
+    const fantasyWikiPages = listWikiPages()
+      .filter((p) => p.category === 'fantasmes' || (p.extra_categories && JSON.parse(p.extra_categories || '[]').includes('fantasmes')))
+      .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
     res.render("admin-dashboard", {
       config, userStates, matrixSections, submissions,
       wikiPages, allWikiPagesSorted, galleryImages, connectionLogs,
       wikiKPIs, galleryKPIs,
-      aiProfiles, iaFantasmes: IA_FANTASMES,
+      aiProfiles, fantasyWikiPages,
       adminError: adminError || null,
     });
   }
@@ -396,19 +391,27 @@ function buildAdminRouter(config) {
 
   // ── Profils IA ────────────────────────────────────────────────────────────
   router.post("/ia/create", requireAdmin, (req, res) => {
-    const name = String(req.body.name || "").trim();
-    const description = String(req.body.description || "").trim();
-    const fantasmes = [].concat(req.body.fantasmes || []).filter(Boolean);
-    if (name) createAiProfile({ name, description, fantasmes });
+    const name        = String(req.body.name         || "").trim();
+    const description = String(req.body.description  || "").trim();
+    const age         = String(req.body.age          || "").trim();
+    const sexe        = String(req.body.sexe         || "").trim();
+    const physical_desc  = String(req.body.physical_desc  || "").trim();
+    const relation_type  = String(req.body.relation_type  || "").trim();
+    const fantasmes   = [].concat(req.body.fantasmes || []).filter(Boolean);
+    if (name) createAiProfile({ name, description, fantasmes, age, sexe, physical_desc, relation_type });
     res.redirect("/admin#tab-ia");
   });
 
   router.post("/ia/:id/update", requireAdmin, (req, res) => {
-    const id = Number(req.params.id);
-    const name = String(req.body.name || "").trim();
-    const description = String(req.body.description || "").trim();
-    const fantasmes = [].concat(req.body.fantasmes || []).filter(Boolean);
-    if (name) updateAiProfile(id, { name, description, fantasmes });
+    const id          = Number(req.params.id);
+    const name        = String(req.body.name         || "").trim();
+    const description = String(req.body.description  || "").trim();
+    const age         = String(req.body.age          || "").trim();
+    const sexe        = String(req.body.sexe         || "").trim();
+    const physical_desc  = String(req.body.physical_desc  || "").trim();
+    const relation_type  = String(req.body.relation_type  || "").trim();
+    const fantasmes   = [].concat(req.body.fantasmes || []).filter(Boolean);
+    if (name) updateAiProfile(id, { name, description, fantasmes, age, sexe, physical_desc, relation_type });
     res.redirect("/admin#tab-ia");
   });
 
