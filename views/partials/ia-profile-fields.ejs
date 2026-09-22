@@ -1,0 +1,24 @@
+<label class="admin-modal-field">
+  <span>Nom</span>
+  <input type="text" name="name" id="ia-field-name" required autocomplete="off" maxlength="80" />
+</label>
+<label class="admin-modal-field">
+  <span>Texte libre (personnalité, contexte…)</span>
+  <textarea name="description" id="ia-field-desc" rows="5" class="ia-desc-textarea"></textarea>
+</label>
+<fieldset class="ia-fantasmes-fieldset">
+  <legend>Fantasmes</legend>
+  <% iaFantasmes.forEach(function(group) { %>
+    <div class="ia-fant-group">
+      <span class="ia-fant-group-label"><%= group.cat %></span>
+      <div class="ia-fant-items">
+        <% group.items.forEach(function(item) { %>
+          <label class="ia-fant-item">
+            <input type="checkbox" name="fantasmes" value="<%= item %>" class="ia-fant-chk" />
+            <span><%= item %></span>
+          </label>
+        <% }) %>
+      </div>
+    </div>
+  <% }) %>
+</fieldset>

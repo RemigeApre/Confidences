@@ -12,6 +12,7 @@
   <button class="admin-tab-btn" data-tab="wiki">Codex</button>
   <button class="admin-tab-btn" data-tab="galerie">Galerie</button>
   <button class="admin-tab-btn" data-tab="log">Log</button>
+  <button class="admin-tab-btn" data-tab="ia">IA</button>
   <a href="/" class="admin-tab-home" title="Retour à l&apos;accueil">&#8962; Accueil</a>
 </nav>
 
@@ -466,6 +467,97 @@
   </section>
 
   <%# ═══════════════════════════════════════════════
+      TAB : IA
+  ═══════════════════════════════════════════════ %>
+  <section class="admin-tab-section" data-tab="ia" hidden>
+
+    <div class="ia-header">
+      <h2 class="admin-section-title" style="margin:0">Profils IA <span class="ia-count">(<%= aiProfiles.length %>)</span></h2>
+      <button type="button" class="admin-btn-primary" id="ia-create-btn">+ Nouveau profil</button>
+    </div>
+
+    <% if (!aiProfiles.length) { %>
+      <p class="admin-muted ia-empty">Aucun profil IA cr&eacute;&eacute; pour l&apos;instant.</p>
+    <% } %>
+
+    <div class="ia-grid" id="ia-grid">
+      <% aiProfiles.forEach(function(p) { %>
+        <%
+          var profileText = 'Tu te nommes ' + p.name + '. ' + (p.description || '') + (p.fantasmes.length ? ' Tes fantasmes sont\u00a0: ' + p.fantasmes.join(', ') + '.' : '');
+        %>
+        <div class="ia-card" data-id="<%= p.id %>">
+          <div class="ia-card-header">
+            <span class="ia-card-name"><%= p.name %></span>
+            <div class="ia-card-actions">
+              <button type="button" class="ia-action-btn ia-copy-btn" data-text="<%= profileText.replace(/\"/g, '&quot;') %>" title="Copier le prompt">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+              <a class="ia-action-btn ia-dl-btn"
+                href="data:text/plain;charset=utf-8,<%= encodeURIComponent(profileText) %>"
+                download="<%= p.name.toLowerCase().replace(/\s+/g, '-') %>.txt"
+                title="T&eacute;l&eacute;charger en .txt">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </a>
+              <button type="button" class="ia-action-btn ia-edit-btn"
+                data-id="<%= p.id %>"
+                data-name="<%= p.name %>"
+                data-desc="<%= (p.description || '').replace(/\"/g, '&quot;').replace(/\n/g, '&#10;') %>"
+                data-fantasmes='<%= JSON.stringify(p.fantasmes) %>'
+                title="Modifier">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button type="button" class="ia-action-btn ia-del-btn"
+                data-id="<%= p.id %>"
+                data-name="<%= p.name %>"
+                title="Supprimer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <% if (p.description) { %>
+            <p class="ia-card-desc"><%= p.description %></p>
+          <% } %>
+          <% if (p.fantasmes.length) { %>
+            <div class="ia-card-tags">
+              <% p.fantasmes.forEach(function(f) { %>
+                <span class="ia-tag"><%= f %></span>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+
+    <%# ── Modal : créer profil IA ── %>
+    <div class="admin-modal-overlay" id="ia-create-modal" hidden>
+      <div class="admin-modal ia-modal">
+        <button type="button" class="admin-modal-close" id="ia-create-modal-close">&#215;</button>
+        <h2 class="admin-modal-title">Nouveau profil IA</h2>
+        <form method="POST" action="/admin/ia/create" class="admin-modal-form ia-form">
+          <%- include('partials/ia-profile-fields', { iaFantasmes: iaFantasmes, profile: null }) %>
+          <button type="submit" class="admin-btn-primary">Cr&eacute;er</button>
+        </form>
+      </div>
+    </div>
+
+    <%# ── Modal : éditer profil IA ── %>
+    <div class="admin-modal-overlay" id="ia-edit-modal" hidden>
+      <div class="admin-modal ia-modal">
+        <button type="button" class="admin-modal-close" id="ia-edit-modal-close">&#215;</button>
+        <h2 class="admin-modal-title">Modifier le profil</h2>
+        <form method="POST" action="/admin/ia/__ID__/update" id="ia-edit-form" class="admin-modal-form ia-form">
+          <%- include('partials/ia-profile-fields', { iaFantasmes: iaFantasmes, profile: null }) %>
+          <button type="submit" class="admin-btn-primary">Enregistrer</button>
+        </form>
+      </div>
+    </div>
+
+    <%# ── Formulaire caché : supprimer IA ── %>
+    <form method="POST" id="ia-del-form" action="/admin/ia/__ID__/delete" style="display:none"></form>
+
+  </section>
+
+  <%# ═══════════════════════════════════════════════
       TAB : LOG
   ═══════════════════════════════════════════════ %>
   <section class="admin-tab-section" data-tab="log" hidden>
@@ -643,6 +735,66 @@
     document.querySelectorAll("[data-profile-id]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         window.location.href = "/admin/utilisateur/" + btn.dataset.profileId;
+      });
+    });
+  })();
+
+  // ── Profils IA ───────────────────────────────────────────────────────────
+  (function () {
+    function openModal(id) { document.getElementById(id).hidden = false; }
+    function closeModal(id) { document.getElementById(id).hidden = true; }
+
+    var createModal = document.getElementById("ia-create-modal");
+    var editModal   = document.getElementById("ia-edit-modal");
+    if (!createModal) return; // tab absent
+
+    document.getElementById("ia-create-btn").addEventListener("click", function () {
+      // Reset create form
+      createModal.querySelector("[name=name]").value = "";
+      createModal.querySelector("[name=description]").value = "";
+      createModal.querySelectorAll(".ia-fant-chk").forEach(function (c) { c.checked = false; });
+      openModal("ia-create-modal");
+    });
+    document.getElementById("ia-create-modal-close").addEventListener("click", function () { closeModal("ia-create-modal"); });
+    createModal.addEventListener("click", function (e) { if (e.target === this) closeModal("ia-create-modal"); });
+
+    document.getElementById("ia-edit-modal-close").addEventListener("click", function () { closeModal("ia-edit-modal"); });
+    editModal.addEventListener("click", function (e) { if (e.target === this) closeModal("ia-edit-modal"); });
+
+    // Boutons éditer
+    document.querySelectorAll(".ia-edit-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.dataset.id;
+        var fantasmes = JSON.parse(btn.dataset.fantasmes || "[]");
+        document.getElementById("ia-edit-form").action = "/admin/ia/" + id + "/update";
+        editModal.querySelector("[name=name]").value = btn.dataset.name || "";
+        editModal.querySelector("[name=description]").value = (btn.dataset.desc || "").replace(/&#10;/g, "\n");
+        editModal.querySelectorAll(".ia-fant-chk").forEach(function (c) {
+          c.checked = fantasmes.indexOf(c.value) !== -1;
+        });
+        openModal("ia-edit-modal");
+      });
+    });
+
+    // Boutons supprimer
+    document.querySelectorAll(".ia-del-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!confirm("Supprimer le profil « " + btn.dataset.name + " » ?")) return;
+        document.getElementById("ia-del-form").action = "/admin/ia/" + btn.dataset.id + "/delete";
+        document.getElementById("ia-del-form").submit();
+      });
+    });
+
+    // Boutons copier
+    document.querySelectorAll(".ia-copy-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var text = btn.dataset.text;
+        navigator.clipboard.writeText(text).then(function () {
+          var orig = btn.innerHTML;
+          btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+          btn.style.color = "hsl(140,60%,55%)";
+          setTimeout(function () { btn.innerHTML = orig; btn.style.color = ""; }, 1800);
+        });
       });
     });
   })();

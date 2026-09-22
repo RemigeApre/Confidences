@@ -30,39 +30,17 @@ Masturbation mutuelle
 Stimulation manuelle donnée
 Stimulation manuelle reçue
 
-Rapport lent et tendre
-Rapport intense ou brutal
-Rapport silencieux
-Rapport très verbal
 Rapport entièrement dans le noir
 Rapport face à un miroir
-Rapport avec préservatif
-Rapport sans préservatif
+
 Rapport interrompu avant éjaculation
-Rapport sans éjaculation
-Orgasme simultané
-Faire jouir sans être soi-même stimulé
-Être stimulé sans rendre la pareille
-Plusieurs rapports successifs
-Rapport très court
-Rapport prolongé
-Sexe au réveil
-Sexe avant de dormir
-Sexe spontané
-Sexe planifié
+
 Sexe pendant les règles
 Sexe pendant une grossesse
 
 a) Sperme 
 
-Éjaculation vaginale
-Éjaculation anale
-Éjaculation dans la bouche
-Avaler
-Éjaculation sur le visage
-Sur le corps
-Sur les seins
-Sur les fesses
+
 Sur les vêtements
 Dans les sous-vêtements
 Conserver ou porter les vêtements tachés
@@ -71,17 +49,13 @@ Mélanger les fluides des partenaires
 Regarder le sperme couler ou ressortir
 Jouer avec les traces après le rapport
 Éjaculation sur les cheveux
-Sur le ventre
-Sur le dos
-Sur les mains
-Sur les pieds
 Dans un récipient
 Utiliser du faux sperme
 Utiliser le sperme comme lubrifiant
 Plusieurs éjaculations sur la même personne
 Éjaculations de plusieurs partenaires
 Choisir précisément l’endroit où le partenaire éjacule
-Ne pas savoir où le partenaire va éjaculer, dans un cadre consenti
+Ne pas savoir où le partenaire va éjaculer
 Nettoyer immédiatement
 Rester taché après le rapport
 Faire nettoyer par le partenaire

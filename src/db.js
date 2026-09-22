@@ -2105,6 +2105,17 @@ if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE 
 }
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS ai_profiles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    fantasmes TEXT NOT NULL DEFAULT '[]',
+    created_at INTEGER DEFAULT (unixepoch()),
+    updated_at INTEGER DEFAULT (unixepoch())
+  )
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS nouvelles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL DEFAULT '',
@@ -2381,6 +2392,11 @@ module.exports = {
   createNouvelle,
   updateNouvelle,
   deleteNouvelle,
+  listAiProfiles,
+  getAiProfile,
+  createAiProfile,
+  updateAiProfile,
+  deleteAiProfile,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
@@ -2403,4 +2419,24 @@ function updateNouvelle(id, { title, content, summary, tags, category, author, f
 }
 function deleteNouvelle(id) {
   db.prepare(`DELETE FROM nouvelles WHERE id=?`).run(id);
+}
+
+// ── AI Profiles ────────────────────────────────────────────────────────────
+function listAiProfiles() {
+  return db.prepare(`SELECT * FROM ai_profiles ORDER BY updated_at DESC`).all();
+}
+function getAiProfile(id) {
+  return db.prepare(`SELECT * FROM ai_profiles WHERE id=?`).get(id);
+}
+function createAiProfile({ name, description, fantasmes }) {
+  const r = db.prepare(`INSERT INTO ai_profiles (name, description, fantasmes) VALUES (?,?,?)`)
+    .run(name || '', description || '', JSON.stringify(fantasmes || []));
+  return r.lastInsertRowid;
+}
+function updateAiProfile(id, { name, description, fantasmes }) {
+  db.prepare(`UPDATE ai_profiles SET name=?, description=?, fantasmes=?, updated_at=unixepoch() WHERE id=?`)
+    .run(name || '', description || '', JSON.stringify(fantasmes || []), id);
+}
+function deleteAiProfile(id) {
+  db.prepare(`DELETE FROM ai_profiles WHERE id=?`).run(id);
 }
