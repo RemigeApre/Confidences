@@ -14753,29 +14753,54 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .nv-form-prot-chip input:checked + span { background: hsl(340,45%,28%); color: hsl(340,65%,80%); border-color: hsl(340,45%,40%); }
 
-/* ── Reader nouvelles : bouton retour fixe (gauche du flux, desktop) ────── */
-.nv-reader-back {
-  display: none; /* masqué par défaut (mobile) */
+/* ── Colonne gauche fixe : retour + actions admin (desktop) ─────────────── */
+.nv-reader-left {
+  display: none;
   position: fixed;
-  top: calc(var(--topnav-height) + 1.25rem);
-  /* Se place juste à gauche de la colonne de texte (720px centrée dans 900px,
-     elle-même centrée dans le viewport) */
-  left: max(0.5rem, calc(50vw - 450px - 0.5rem));
+  top: calc(var(--topnav-height) + 1.5rem);
+  left: max(0.5rem, calc(50vw - 450px - 3.2rem));
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 50%;
-  color: rgba(255,255,255,0.7);
-  text-decoration: none;
-  font-size: 1.1rem;
-  transition: background 0.15s, color 0.15s, transform 0.12s;
+  gap: 0.45rem;
   z-index: 6;
 }
-.nv-reader-back:hover { background: rgba(255,255,255,0.14); color: #fff; transform: translateX(-2px); }
-@media (min-width: 800px) { .nv-reader-back { display: flex; } }
+@media (min-width: 800px) { .nv-reader-left { display: flex; } }
+
+.nv-reader-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(255,255,255,0.13);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+.nv-reader-back:hover { background: rgba(255,255,255,0.24); transform: translateX(-2px); box-shadow: 0 3px 14px rgba(0,0,0,0.5); }
+
+.nv-reader-left-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.55);
+  font-size: .85rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.nv-reader-left-btn:hover { background: rgba(255,255,255,0.14); color: #fff; border-color: rgba(255,255,255,0.3); }
+.nv-reader-left-del { color: hsl(0, 55%, 55%); }
+.nv-reader-left-del:hover { background: hsl(0, 35%, 16%); border-color: hsl(0, 40%, 30%); color: hsl(0, 65%, 72%); }
 
 
 /* ── Volet droit nouvelles : zone réactions (collée en bas) ─────────────── */

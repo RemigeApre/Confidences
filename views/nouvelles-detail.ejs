@@ -11,8 +11,17 @@
 <main class="container wide" style="--ch-hue: <%= hue %>">
   <%- include('partials/top-nav', { config: config, navTitle: nouvelle.title, navBack: serie ? '/nouvelles/series/' + serie.id : '/nouvelles' }) %>
 
-  <%# ── Bouton retour fixe à gauche du flux (desktop) ──────────────────── %>
-  <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="nv-reader-back" aria-label="Retour">&#8592;</a>
+  <%# ── Colonne gauche fixe : retour + actions admin (desktop) ─────────── %>
+  <div class="nv-reader-left">
+    <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="nv-reader-back" aria-label="Retour" title="Retour">&#8592;</a>
+    <% if (currentUser && currentUser.isAdmin) { %>
+      <a href="/nouvelles/<%= nouvelle.id %>/edit" class="nv-reader-left-btn" title="Modifier">&#9998;</a>
+      <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" style="margin:0"
+        onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
+        <button type="submit" class="nv-reader-left-btn nv-reader-left-del" title="Supprimer">&#128465;</button>
+      </form>
+    <% } %>
+  </div>
 
   <div class="wiki-detail-layout">
 
@@ -24,17 +33,6 @@
       <% } %>
 
       <div class="nv-reader-content"><%- nouvelle.content.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
-
-      <%# Actions admin — dans le flux du texte, hors du volet droit %>
-      <% if (currentUser && currentUser.isAdmin) { %>
-        <div class="nv-body-admin-bar">
-          <a href="/nouvelles/<%= nouvelle.id %>/edit" class="wiki-edit-icon-btn" title="Modifier">&#9998;</a>
-          <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" style="margin:0"
-            onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
-            <button type="submit" class="wiki-edit-icon-btn" style="color:hsl(0,60%,60%)" title="Supprimer">&#128465;</button>
-          </form>
-        </div>
-      <% } %>
 
       <% if (serie && (prev || next)) { %>
         <nav class="nv-chapter-nav">
