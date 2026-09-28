@@ -26,6 +26,8 @@
     <% if (cat) { %>
       <span class="nv-card-cat-badge" style="--nv-hue: <%= hue %>"><%= cat.label %></span>
     <% } %>
+    <% if (n.stage === 'brouillon') { %><span class="nv-card-stage-badge nv-card-stage-brouillon">Brouillon</span><% } %>
+    <% if (n.hidden) { %><span class="nv-card-stage-badge nv-card-stage-hidden">Masqué</span><% } %>
     <% if (n.featured) { %><span class="nv-card-featured-badge">★</span><% } %>
   </div>
   <div class="nv-card-body">

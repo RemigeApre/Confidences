@@ -1,5 +1,5 @@
 const express = require("express");
-const { requireAdmin } = require("../auth");
+const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
 
 const CATEGORIES = [
@@ -13,56 +13,72 @@ const CATEGORIES = [
   { key: "autre",      label: "Autre",       hue: 220 },
 ];
 
+const STAGES = [
+  { key: "brouillon", label: "Brouillon", adminOnly: true  },
+  { key: "stade_1",   label: "Stade 1",   adminOnly: false },
+  { key: "stade_2",   label: "Stade 2",   adminOnly: false },
+  { key: "stade_3",   label: "Stade 3",   adminOnly: false },
+  { key: "stade_4",   label: "Stade 4",   adminOnly: false },
+  { key: "stade_5",   label: "Stade 5",   adminOnly: false },
+];
+
+function isVisible(n, user) {
+  if (user && user.isAdmin) return true;
+  if (n.stage === "brouillon") return false;
+  if (n.hidden) return false;
+  return true;
+}
+
 function parseTags(raw) {
   return String(raw || "").split(",").map(t => t.trim()).filter(Boolean);
 }
 
 function parseNouvelle(n) {
   try { n.tags = JSON.parse(n.tags); } catch { n.tags = []; }
+  try { n.protagoniste_ids = JSON.parse(n.protagoniste_ids || "[]"); } catch { n.protagoniste_ids = []; }
   return n;
 }
 
 function buildNouvellesRouter(config) {
   const router = express.Router();
-  router.use(requireAdmin);
+  router.use(requireUser);
 
   // ── Index ──────────────────────────────────────────────────────────────────
   router.get("/", (req, res) => {
-    const all      = db.listNouvelles().map(parseNouvelle);
-    const series   = db.listNouvelleSeries();
-    const featured = all.filter(n => n.featured);
+    const allRaw     = db.listNouvelles().map(parseNouvelle);
+    const all        = allRaw.filter(n => isVisible(n, req.user));
+    const series     = db.listNouvelleSeries();
+    const featured   = all.filter(n => n.featured);
     const standalone = all.filter(n => !n.serie_id);
-    res.render("nouvelles", { config, all, featured, standalone, series, categories: CATEGORIES });
+    res.render("nouvelles", { config, all, featured, standalone, series, categories: CATEGORIES, stages: STAGES });
   });
 
   // ── Séries ─────────────────────────────────────────────────────────────────
-  router.get("/series/new", (req, res) => {
-    res.render("nouvelle-serie-form", { config, serie: null, categories: CATEGORIES });
+  router.get("/series/new", requireAdmin, (req, res) => {
+    res.render("nouvelle-serie-form", { config, serie: null });
   });
-  router.post("/series/new", express.urlencoded({ extended: false }), (req, res) => {
+  router.post("/series/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const title = String(req.body.title || "").slice(0, 300).trim();
     if (!title) return res.redirect("/nouvelles/series/new");
-    const id = db.createNouvelleSerie({
-      title,
-      description: String(req.body.description || "").slice(0, 1000),
-    });
+    const id = db.createNouvelleSerie({ title, description: String(req.body.description || "").slice(0, 1000) });
     res.redirect(`/nouvelles/series/${id}`);
   });
 
   router.get("/series/:id", (req, res) => {
     const serie = db.getNouvelleSerie(req.params.id);
     if (!serie) return res.redirect("/nouvelles");
-    const chapters = db.listNouvellesBySerie(serie.id).map(parseNouvelle);
-    const totalWords = chapters.reduce((s, c) => s + (c.word_count || 0), 0);
-    res.render("nouvelle-serie-detail", { config, serie, chapters, totalWords, categories: CATEGORIES });
+    const allChapters = db.listNouvellesBySerie(serie.id).map(parseNouvelle);
+    const chapters    = allChapters.filter(c => isVisible(c, req.user));
+    const totalWords  = chapters.reduce((s, c) => s + (c.word_count || 0), 0);
+    res.render("nouvelle-serie-detail", { config, serie, chapters, totalWords, categories: CATEGORIES, stages: STAGES });
   });
 
-  router.get("/series/:id/edit", (req, res) => {
+  router.get("/series/:id/edit", requireAdmin, (req, res) => {
     const serie = db.getNouvelleSerie(req.params.id);
     if (!serie) return res.redirect("/nouvelles");
-    res.render("nouvelle-serie-form", { config, serie, categories: CATEGORIES });
+    res.render("nouvelle-serie-form", { config, serie });
   });
-  router.post("/series/:id/update", express.urlencoded({ extended: false }), (req, res) => {
+  router.post("/series/:id/update", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const serie = db.getNouvelleSerie(req.params.id);
     if (!serie) return res.redirect("/nouvelles");
     db.updateNouvelleSerie(serie.id, {
@@ -71,35 +87,38 @@ function buildNouvellesRouter(config) {
     });
     res.redirect(`/nouvelles/series/${serie.id}`);
   });
-  router.post("/series/:id/delete", (req, res) => {
+  router.post("/series/:id/delete", requireAdmin, (req, res) => {
     db.deleteNouvelleSerie(req.params.id);
     res.redirect("/nouvelles");
   });
 
   // ── Créer nouvelle ─────────────────────────────────────────────────────────
-  router.get("/new", (req, res) => {
-    const series     = db.listNouvelleSeries();
-    const allTags    = db.listAllSiteTags();
-    const preSerieId = req.query.serie ? Number(req.query.serie) : null;
-    res.render("nouvelles-form", { config, nouvelle: null, series, allTags, preSerieId, categories: CATEGORIES });
+  router.get("/new", requireAdmin, (req, res) => {
+    const series       = db.listNouvelleSeries();
+    const allTags      = db.listAllSiteTags();
+    const protagonistes = db.listProtagonistes();
+    const preSerieId   = req.query.serie ? Number(req.query.serie) : null;
+    res.render("nouvelles-form", { config, nouvelle: null, series, allTags, protagonistes, preSerieId, categories: CATEGORIES, stages: STAGES });
   });
-  router.post("/new", express.urlencoded({ extended: false }), (req, res) => {
+  router.post("/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const title = String(req.body.title || "").slice(0, 300).trim();
     if (!title) return res.redirect("/nouvelles/new");
-    const serieId    = req.body.serie_id ? Number(req.body.serie_id) : null;
-    const serieOrder = req.body.serie_order ? Number(req.body.serie_order) : 0;
+    const serieId         = req.body.serie_id ? Number(req.body.serie_id) : null;
+    const protagonisteIds = [].concat(req.body.protagoniste_ids || []).map(Number).filter(Boolean);
     const id = db.createNouvelle({
       title,
-      content:     String(req.body.content  || ""),
-      summary:     String(req.body.summary  || "").slice(0, 500),
-      tags:        parseTags(req.body.tags),
-      category:    String(req.body.category || ""),
-      author:      String(req.body.author   || "").slice(0, 200),
-      featured:    req.body.featured === "1" ? 1 : 0,
-      serie_id:    serieId,
-      serie_order: serieOrder,
+      content:          String(req.body.content  || ""),
+      summary:          String(req.body.summary  || "").slice(0, 500),
+      tags:             parseTags(req.body.tags),
+      category:         String(req.body.category || ""),
+      author:           String(req.body.author   || "").slice(0, 200),
+      featured:         req.body.featured === "1" ? 1 : 0,
+      serie_id:         serieId,
+      serie_order:      req.body.serie_order ? Number(req.body.serie_order) : 0,
+      stage:            String(req.body.stage || "brouillon"),
+      hidden:           req.body.hidden === "1" ? 1 : 0,
+      protagoniste_ids: protagonisteIds,
     });
-    // Redirect to serie if part of one, else to detail
     if (serieId) return res.redirect(`/nouvelles/series/${serieId}`);
     res.redirect(`/nouvelles/${id}`);
   });
@@ -109,50 +128,59 @@ function buildNouvellesRouter(config) {
     const nouvelle = db.getNouvelleById(req.params.id);
     if (!nouvelle) return res.redirect("/nouvelles");
     parseNouvelle(nouvelle);
+    if (!isVisible(nouvelle, req.user)) return res.redirect("/nouvelles");
     let serie = null, chapters = [], chapterIndex = -1, prev = null, next = null;
     if (nouvelle.serie_id) {
       serie    = db.getNouvelleSerie(nouvelle.serie_id);
-      chapters = db.listNouvellesBySerie(nouvelle.serie_id).map(parseNouvelle);
+      chapters = db.listNouvellesBySerie(nouvelle.serie_id).map(parseNouvelle)
+                   .filter(c => isVisible(c, req.user));
       chapterIndex = chapters.findIndex(c => c.id === nouvelle.id);
       prev = chapterIndex > 0 ? chapters[chapterIndex - 1] : null;
       next = chapterIndex < chapters.length - 1 ? chapters[chapterIndex + 1] : null;
     }
-    res.render("nouvelles-detail", { config, nouvelle, serie, chapters, chapterIndex, prev, next, categories: CATEGORIES });
+    const protagonistes = nouvelle.protagoniste_ids.length
+      ? nouvelle.protagoniste_ids.map(id => db.getProtagoniste(id)).filter(Boolean)
+      : [];
+    res.render("nouvelles-detail", { config, nouvelle, serie, chapters, chapterIndex, prev, next, protagonistes, categories: CATEGORIES, stages: STAGES });
   });
 
   // ── Éditer ─────────────────────────────────────────────────────────────────
-  router.get("/:id/edit", (req, res) => {
+  router.get("/:id/edit", requireAdmin, (req, res) => {
     const nouvelle = db.getNouvelleById(req.params.id);
     if (!nouvelle) return res.redirect("/nouvelles");
     parseNouvelle(nouvelle);
-    const series  = db.listNouvelleSeries();
-    const allTags = db.listAllSiteTags();
-    res.render("nouvelles-form", { config, nouvelle, series, allTags, preSerieId: null, categories: CATEGORIES });
+    const series        = db.listNouvelleSeries();
+    const allTags       = db.listAllSiteTags();
+    const protagonistes = db.listProtagonistes();
+    res.render("nouvelles-form", { config, nouvelle, series, allTags, protagonistes, preSerieId: null, categories: CATEGORIES, stages: STAGES });
   });
-  router.post("/:id/update", express.urlencoded({ extended: false }), (req, res) => {
+  router.post("/:id/update", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const nouvelle = db.getNouvelleById(req.params.id);
     if (!nouvelle) return res.redirect("/nouvelles");
-    const serieId    = req.body.serie_id ? Number(req.body.serie_id) : null;
-    const serieOrder = req.body.serie_order ? Number(req.body.serie_order) : 0;
-    const title = String(req.body.title || "").slice(0, 300).trim();
+    const serieId         = req.body.serie_id ? Number(req.body.serie_id) : null;
+    const protagonisteIds = [].concat(req.body.protagoniste_ids || []).map(Number).filter(Boolean);
+    const title           = String(req.body.title || "").slice(0, 300).trim();
     db.updateNouvelle(nouvelle.id, {
-      title:       title || nouvelle.title,
-      content:     String(req.body.content  || ""),
-      summary:     String(req.body.summary  || "").slice(0, 500),
-      tags:        parseTags(req.body.tags),
-      category:    String(req.body.category || ""),
-      author:      String(req.body.author   || "").slice(0, 200),
-      featured:    req.body.featured === "1" ? 1 : 0,
-      serie_id:    serieId,
-      serie_order: serieOrder,
+      title:            title || nouvelle.title,
+      content:          String(req.body.content  || ""),
+      summary:          String(req.body.summary  || "").slice(0, 500),
+      tags:             parseTags(req.body.tags),
+      category:         String(req.body.category || ""),
+      author:           String(req.body.author   || "").slice(0, 200),
+      featured:         req.body.featured === "1" ? 1 : 0,
+      serie_id:         serieId,
+      serie_order:      req.body.serie_order ? Number(req.body.serie_order) : 0,
+      stage:            String(req.body.stage || "brouillon"),
+      hidden:           req.body.hidden === "1" ? 1 : 0,
+      protagoniste_ids: protagonisteIds,
     });
     res.redirect(`/nouvelles/${nouvelle.id}`);
   });
 
   // ── Supprimer ──────────────────────────────────────────────────────────────
-  router.post("/:id/delete", (req, res) => {
+  router.post("/:id/delete", requireAdmin, (req, res) => {
     const nouvelle = db.getNouvelleById(req.params.id);
-    const serieId = nouvelle ? nouvelle.serie_id : null;
+    const serieId  = nouvelle ? nouvelle.serie_id : null;
     db.deleteNouvelle(req.params.id);
     if (serieId) return res.redirect(`/nouvelles/series/${serieId}`);
     res.redirect("/nouvelles");

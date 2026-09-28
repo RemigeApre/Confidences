@@ -1,0 +1,38 @@
+<%- include('partials/head', { title: 'Protagonistes' }) %>
+<main class="container" style="max-width: 860px; margin: 0 auto">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Protagonistes', navBack: '/wiki' }) %>
+
+  <div class="prot-header">
+    <h1 class="prot-page-title">Protagonistes</h1>
+    <p class="prot-page-sub">Personnages récurrents des nouvelles</p>
+  </div>
+
+  <% if (!protagonistes.length) { %>
+    <p class="nv-empty">Aucun protagoniste pour le moment.</p>
+  <% } else { %>
+    <div class="prot-grid">
+      <% protagonistes.forEach(function(p) { %>
+        <a href="/protagonistes/<%= p.id %>" class="prot-card">
+          <div class="prot-card-name"><%= p.name %></div>
+          <% if (p.description) { %>
+            <p class="prot-card-desc"><%= p.description.slice(0, 120) %><%= p.description.length > 120 ? '…' : '' %></p>
+          <% } %>
+          <% if (p.tags && p.tags.length) { %>
+            <div class="prot-card-tags">
+              <% p.tags.slice(0, 5).forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
+            </div>
+          <% } %>
+          <% if (currentUser && currentUser.isAdmin) { %>
+            <a href="/protagonistes/<%= p.id %>/edit" class="prot-edit-btn" onclick="event.preventDefault();event.stopPropagation();location.href=this.href">&#9998;</a>
+          <% } %>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (currentUser && currentUser.isAdmin) { %>
+    <a href="/protagonistes/new" class="wiki-fab-add" title="Nouveau protagoniste">+</a>
+  <% } %>
+
+</main>
+<%- include('partials/foot') %>

@@ -17,6 +17,7 @@ const buildFavoritesRouter = require("./routes/favorites");
 const buildAccountRouter = require("./routes/account");
 const buildCoupleRouter = require("./routes/couple");
 const buildNouvellesRouter = require("./routes/nouvelles");
+const buildProtagonistesRouter = require("./routes/protagonistes");
 const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
@@ -561,6 +562,7 @@ app.use("/favoris", buildFavoritesRouter(config));
 app.use("/compte", buildAccountRouter(config));
 app.use("/couple", buildCoupleRouter(config));
 app.use("/nouvelles", buildNouvellesRouter(config));
+app.use("/protagonistes", buildProtagonistesRouter(config));
 
 if (usingHttps) {
   https

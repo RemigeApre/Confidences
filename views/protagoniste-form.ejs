@@ -1,0 +1,116 @@
+<%- include('partials/head', { title: protagoniste ? 'Modifier : ' + protagoniste.name : 'Nouveau protagoniste' }) %>
+<main class="container" style="max-width: 720px; margin: 0 auto">
+  <%- include('partials/top-nav', { config: config, navTitle: protagoniste ? protagoniste.name : 'Nouveau protagoniste', navBack: protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' }) %>
+
+  <div class="nv-form-wrap">
+    <form method="POST" action="<%= protagoniste ? '/protagonistes/' + protagoniste.id + '/update' : '/protagonistes/new' %>"
+      class="nv-form" id="prot-form">
+
+      <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
+        value="<%= protagoniste ? protagoniste.name : '' %>" placeholder="Nom du protagoniste…" />
+
+      <textarea name="description" class="nv-form-content" rows="12"
+        placeholder="Description, traits de caractère, apparence…"
+        style="resize:vertical"><%= protagoniste ? protagoniste.description : '' %></textarea>
+
+      <%# ── Tags ─────────────────────────────────────────────────────────── %>
+      <% if (allTags && allTags.length) { %>
+        <script id="prot-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
+      <% } %>
+      <div class="wiki-tags-widget">
+        <div class="wiki-tags-board">
+          <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag…" autocomplete="off" />
+        </div>
+        <input type="hidden" name="tags" class="wiki-tags-hidden"
+          value="<%= protagoniste && protagoniste.tags ? protagoniste.tags.join(', ') : '' %>" />
+        <% if (allTags && allTags.length) { %>
+          <div class="wiki-tag-suggestions">
+            <% allTags.slice(0, 20).forEach(function(t) { %>
+              <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+    </form>
+  </div>
+
+  <button type="submit" form="prot-form" class="qe-save-fab">Enregistrer</button>
+  <% if (protagoniste) { %>
+    <form method="POST" action="/protagonistes/<%= protagoniste.id %>/delete" class="qe-delete-form"
+      onsubmit="return confirm('Supprimer ce protagoniste définitivement ?')">
+      <button type="submit" class="qe-delete-fab">&#128465;</button>
+    </form>
+  <% } %>
+
+  <script>
+  (function() {
+    document.querySelectorAll('.wiki-tags-widget').forEach(function(widget) {
+      var board      = widget.querySelector('.wiki-tags-board');
+      var typer      = widget.querySelector('.wiki-tags-typing');
+      var hidden     = widget.querySelector('.wiki-tags-hidden');
+      var suggestBox = widget.querySelector('.wiki-tag-suggestions');
+      if (!board || !typer || !hidden) return;
+      var tags = (hidden.value || '').split(/[,;]+/).map(function(t){ return t.trim(); }).filter(Boolean);
+      function findTag(t) { return tags.indexOf(t) !== -1; }
+      function syncHidden() { hidden.value = tags.join(', '); }
+      function syncSuggest() {
+        if (!suggestBox) return;
+        suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(c){ c.classList.toggle('active', findTag(c.dataset.tag)); });
+      }
+      function renderBoard() {
+        board.querySelectorAll('.wiki-chip').forEach(function(c){ c.remove(); });
+        tags.forEach(function(t) {
+          var chip = document.createElement('span');
+          chip.className = 'link-tag-pill wiki-chip';
+          chip.style.cssText = 'background:hsl(340,50%,38%);color:#fff;cursor:pointer;margin:2px 3px 2px 0;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.75rem';
+          chip.textContent = t + ' ×';
+          chip.addEventListener('click', function(){ tags = tags.filter(function(x){ return x !== t; }); syncHidden(); renderBoard(); syncSuggest(); });
+          board.insertBefore(chip, typer);
+        });
+        syncHidden(); syncSuggest();
+      }
+      function addTag(t) { t = t.trim(); if (t && !findTag(t)) { tags.push(t); renderBoard(); } }
+      function removeTag(t) { tags = tags.filter(function(x){ return x !== t; }); syncHidden(); renderBoard(); syncSuggest(); }
+      typer.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',' || e.key === ';') { e.preventDefault(); if (typer.value.trim()) { addTag(typer.value.trim()); typer.value = ''; closeAc(); } }
+        else if (e.key === 'Backspace' && !typer.value && tags.length) removeTag(tags[tags.length - 1]);
+      });
+      typer.addEventListener('blur', function() { if (typer.value.trim()) { addTag(typer.value.trim()); typer.value = ''; } setTimeout(closeAc, 160); });
+      board.addEventListener('click', function(e) { if (e.target === board) typer.focus(); });
+      if (suggestBox) suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(chip) {
+        chip.addEventListener('click', function() { if (!findTag(chip.dataset.tag)) addTag(chip.dataset.tag); else removeTag(chip.dataset.tag); });
+      });
+      var allAvail = (function(){ var el = document.getElementById('prot-all-tags'); if (el) { try { return JSON.parse(el.textContent); } catch(_){} } return []; })();
+      var acDrop = document.createElement('ul'); acDrop.className = 'wiki-tag-autocomplete'; acDrop.hidden = true;
+      board.parentNode.insertBefore(acDrop, board.nextSibling);
+      var acSel = -1;
+      function clearAcDrop() { while(acDrop.firstChild) acDrop.removeChild(acDrop.firstChild); }
+      function closeAc() { acDrop.hidden = true; clearAcDrop(); acSel = -1; }
+      function showAc(q) {
+        q = (q||'').trim().toLowerCase(); if (!q) { closeAc(); return; }
+        var m = allAvail.filter(function(t){ return t.toLowerCase().indexOf(q) !== -1 && !findTag(t); }).slice(0,9);
+        if (!m.length) { closeAc(); return; }
+        clearAcDrop(); acSel = -1;
+        m.forEach(function(t){ var li = document.createElement('li'); li.className='wiki-tag-ac-item'; li.textContent=t; li.addEventListener('mousedown',function(e){ e.preventDefault(); addTag(t); typer.value=''; closeAc(); typer.focus(); }); acDrop.appendChild(li); });
+        acDrop.hidden = false;
+      }
+      typer.addEventListener('input', function() {
+        showAc(typer.value);
+        if (suggestBox) { var q = typer.value.trim().toLowerCase(); suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(c){ c.hidden = q.length > 0 && c.dataset.tag.toLowerCase().indexOf(q) === -1; }); }
+      });
+      typer.addEventListener('keydown', function(e) {
+        if (acDrop.hidden) return;
+        var items = acDrop.querySelectorAll('.wiki-tag-ac-item');
+        if (e.key==='ArrowDown'){ e.preventDefault(); acSel=Math.min(acSel+1,items.length-1); items.forEach(function(li,i){ li.classList.toggle('selected',i===acSel); }); }
+        else if (e.key==='ArrowUp'){ e.preventDefault(); acSel=Math.max(acSel-1,0); items.forEach(function(li,i){ li.classList.toggle('selected',i===acSel); }); }
+        else if ((e.key==='Enter'||e.key==='Tab') && acSel>=0 && items[acSel]){ e.preventDefault(); e.stopImmediatePropagation(); addTag(items[acSel].textContent); typer.value=''; closeAc(); }
+        else if (e.key==='Escape') closeAc();
+      }, true);
+      renderBoard();
+    });
+  })();
+  </script>
+
+</main>
+<%- include('partials/foot') %>

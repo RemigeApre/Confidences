@@ -20,6 +20,19 @@
           <% }) %>
         </select>
 
+        <select name="stage" class="wf-orce-name-input" style="flex:0 0 auto">
+          <% (stages || []).forEach(function(s) { %>
+            <option value="<%= s.key %>" <%= (nouvelle ? nouvelle.stage : 'brouillon') === s.key ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+
+        <label class="wiki-display-opt-label" title="Masqué même pour les stades publics">
+          <input type="checkbox" name="hidden" value="1" hidden
+            <%= nouvelle && nouvelle.hidden ? 'checked' : '' %> />
+          <span class="wiki-display-opt-track"></span>
+          <span class="wiki-display-opt-text">Masqué</span>
+        </label>
+
         <label class="wiki-display-opt-label">
           <input type="checkbox" name="featured" value="1" hidden
             <%= nouvelle && nouvelle.featured ? 'checked' : '' %> />
@@ -51,7 +64,26 @@
         placeholder="Résumé / accroche (max 500 caractères)…"
         style="resize:vertical"><%= nouvelle ? nouvelle.summary : '' %></textarea>
 
+      <% if (protagonistes && protagonistes.length) { %>
+      <div class="nv-form-prot-row">
+        <span class="nv-form-prot-label">Protagonistes :</span>
+        <div class="nv-form-prot-chips">
+          <% protagonistes.forEach(function(p) {
+            var checked = nouvelle && nouvelle.protagoniste_ids && nouvelle.protagoniste_ids.indexOf(p.id) !== -1;
+          %>
+            <label class="nv-form-prot-chip">
+              <input type="checkbox" name="protagoniste_ids" value="<%= p.id %>" <%= checked ? 'checked' : '' %> />
+              <span><%= p.name %></span>
+            </label>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
       <%# ── Tags (même widget que codex/galerie) ─────────────────────────── %>
+      <% if (allTags && allTags.length) { %>
+        <script id="nv-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
+      <% } %>
       <div class="wiki-tags-widget">
         <div class="wiki-tags-board">
           <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag…" autocomplete="off" />
@@ -60,7 +92,7 @@
           value="<%= nouvelle && nouvelle.tags ? nouvelle.tags.join(', ') : '' %>" />
         <% if (allTags && allTags.length) { %>
           <div class="wiki-tag-suggestions">
-            <% allTags.forEach(function(t) { %>
+            <% allTags.slice(0, 20).forEach(function(t) { %>
               <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
             <% }) %>
           </div>
@@ -186,12 +218,14 @@
       }
 
       // ── Autocomplete dropdown (suggestions filtrées pendant la saisie) ──
-      var allAvail = [];
-      if (suggestBox) {
-        suggestBox.querySelectorAll('.wiki-tag-suggest-chip[data-tag]').forEach(function(c) {
-          allAvail.push(c.dataset.tag);
-        });
-      }
+      // Utilise la liste complète (JSON) si disponible, sinon les chips rendus
+      var allAvail = (function() {
+        var el = document.getElementById('nv-all-tags');
+        if (el) { try { return JSON.parse(el.textContent); } catch(_) {} }
+        var arr = [];
+        if (suggestBox) suggestBox.querySelectorAll('.wiki-tag-suggest-chip[data-tag]').forEach(function(c){ arr.push(c.dataset.tag); });
+        return arr;
+      })();
 
       var acDrop = document.createElement('ul');
       acDrop.className = 'wiki-tag-autocomplete';

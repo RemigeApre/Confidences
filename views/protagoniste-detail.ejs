@@ -1,0 +1,39 @@
+<%- include('partials/head', { title: protagoniste.name }) %>
+<main class="container" style="max-width: 760px; margin: 0 auto">
+  <%- include('partials/top-nav', { config: config, navTitle: protagoniste.name, navBack: '/protagonistes' }) %>
+
+  <div class="prot-detail-header">
+    <h1 class="prot-detail-name"><%= protagoniste.name %></h1>
+    <% if (protagoniste.tags && protagoniste.tags.length) { %>
+      <div class="prot-card-tags" style="margin-bottom:.75rem">
+        <% protagoniste.tags.forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
+      </div>
+    <% } %>
+    <% if (protagoniste.description) { %>
+      <div class="prot-detail-desc"><%= protagoniste.description.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
+    <% } %>
+    <% if (currentUser && currentUser.isAdmin) { %>
+      <div style="margin-top:1rem">
+        <a href="/protagonistes/<%= protagoniste.id %>/edit" class="wf-save-btn" style="position:static;display:inline-block">&#9998; Modifier</a>
+      </div>
+    <% } %>
+  </div>
+
+  <% if (nouvelles && nouvelles.length) { %>
+    <section style="padding: 0 0 3rem">
+      <h2 class="nv-strip-title">Apparaît dans</h2>
+      <div class="prot-nouvelles-list">
+        <% nouvelles.forEach(function(n) { %>
+          <a href="/nouvelles/<%= n.id %>" class="prot-nouvelle-row">
+            <span class="prot-nouvelle-title"><%= n.title %></span>
+            <% if (n.summary) { %><span class="prot-nouvelle-summary"><%= n.summary.slice(0, 80) %><%= n.summary.length > 80 ? '…' : '' %></span><% } %>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+  <% } else { %>
+    <p class="nv-empty">Ce protagoniste n'apparaît dans aucune nouvelle pour le moment.</p>
+  <% } %>
+
+</main>
+<%- include('partials/foot') %>

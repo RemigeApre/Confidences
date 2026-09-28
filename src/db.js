@@ -2153,6 +2153,9 @@ db.exec(`
 `);
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN serie_id INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN serie_order INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE nouvelles ADD COLUMN stage TEXT NOT NULL DEFAULT 'stade_1'"); } catch (_) {}
+try { db.exec("ALTER TABLE nouvelles ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE nouvelles ADD COLUMN protagoniste_ids TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 
 function listCustomQuizzes() {
   return db.prepare(`SELECT q.*,
@@ -2415,6 +2418,12 @@ module.exports = {
   createNouvelle,
   updateNouvelle,
   deleteNouvelle,
+  listProtagonistes,
+  getProtagoniste,
+  createProtagoniste,
+  updateProtagoniste,
+  deleteProtagoniste,
+  listNouvellesByProtagoniste,
   listAllSiteTags,
   listNouvelleSeries,
   getNouvelleSerie,
@@ -2431,21 +2440,21 @@ module.exports = {
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
 function listNouvelles() {
-  return db.prepare(`SELECT id, title, summary, tags, category, author, featured, word_count, serie_id, serie_order, created_at, updated_at FROM nouvelles ORDER BY updated_at DESC`).all();
+  return db.prepare(`SELECT id, title, summary, tags, category, author, featured, word_count, serie_id, serie_order, stage, hidden, protagoniste_ids, created_at, updated_at FROM nouvelles ORDER BY updated_at DESC`).all();
 }
 function getNouvelleById(id) {
   return db.prepare(`SELECT * FROM nouvelles WHERE id=?`).get(id);
 }
-function createNouvelle({ title, content, summary, tags, category, author, featured, serie_id, serie_order }) {
+function createNouvelle({ title, content, summary, tags, category, author, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
-  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, featured, word_count, serie_id, serie_order) VALUES (?,?,?,?,?,?,?,?,?,?)`)
-    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0);
+  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, featured, word_count, serie_id, serie_order, stage, hidden, protagoniste_ids) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []));
   return r.lastInsertRowid;
 }
-function updateNouvelle(id, { title, content, summary, tags, category, author, featured, serie_id, serie_order }) {
+function updateNouvelle(id, { title, content, summary, tags, category, author, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
-  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, featured=?, word_count=?, serie_id=?, serie_order=?, updated_at=unixepoch() WHERE id=?`)
-    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, id);
+  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, featured=?, word_count=?, serie_id=?, serie_order=?, stage=?, hidden=?, protagoniste_ids=?, updated_at=unixepoch() WHERE id=?`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []), id);
 }
 function deleteNouvelle(id) {
   db.prepare(`DELETE FROM nouvelles WHERE id=?`).run(id);
@@ -2475,6 +2484,45 @@ function deleteNouvelleSerie(id) {
   db.prepare(`UPDATE nouvelles SET serie_id=NULL, serie_order=0 WHERE serie_id=?`).run(id);
   db.prepare(`DELETE FROM nouvelle_series WHERE id=?`).run(id);
 }
+db.exec(`
+  CREATE TABLE IF NOT EXISTS protagonistes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    created_at INTEGER DEFAULT (unixepoch()),
+    updated_at INTEGER DEFAULT (unixepoch())
+  )
+`);
+
+function listProtagonistes() {
+  return db.prepare(`SELECT id, name, description, tags, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
+    .map(p => { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } return p; });
+}
+function getProtagoniste(id) {
+  const p = db.prepare(`SELECT * FROM protagonistes WHERE id=?`).get(id);
+  if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } }
+  return p;
+}
+function createProtagoniste({ name, description, tags }) {
+  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags) VALUES (?,?,?)`)
+    .run(name || '', description || '', JSON.stringify(tags || []));
+  return r.lastInsertRowid;
+}
+function updateProtagoniste(id, { name, description, tags }) {
+  db.prepare(`UPDATE protagonistes SET name=?, description=?, tags=?, updated_at=unixepoch() WHERE id=?`)
+    .run(name || '', description || '', JSON.stringify(tags || []), id);
+}
+function deleteProtagoniste(id) {
+  db.prepare(`DELETE FROM protagonistes WHERE id=?`).run(id);
+}
+function listNouvellesByProtagoniste(protagonisteId) {
+  return db.prepare(`SELECT id, title, summary, tags, category, author, word_count, stage, hidden, serie_id, serie_order FROM nouvelles WHERE protagoniste_ids LIKE ? ORDER BY updated_at DESC`)
+    .all(`%${protagonisteId}%`)
+    .filter(n => { try { return JSON.parse(n.protagoniste_ids || '[]').includes(protagonisteId); } catch { return false; } })
+    .map(n => { try { n.tags = JSON.parse(n.tags); } catch { n.tags = []; } return n; });
+}
+
 function listAllSiteTags() {
   const tagSet = new Set();
   db.prepare("SELECT tag FROM tag_meta").all().forEach(r => tagSet.add(r.tag));
