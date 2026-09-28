@@ -37,7 +37,7 @@
         <p class="nv-reader-accroche"><em><%= nouvelle.summary %></em></p>
       <% } %>
 
-      <div class="nv-reader-content"><%- nouvelle.content.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
+      <div class="nv-reader-content"><%- nouvelle.content.replace(/\r\n/g, '\n').replace(/\n+/g, '</p><p>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
 
       <% if (serie && (prev || next)) { %>
         <nav class="nv-chapter-nav">
