@@ -13,13 +13,18 @@
 
   <%# ── Colonne gauche fixe : retour + actions admin (desktop) ─────────── %>
   <div class="nv-reader-left">
-    <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="nv-reader-back" aria-label="Retour" title="Retour">&#8592;</a>
+    <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="nv-reader-back" aria-label="Retour">
+      <span class="nv-reader-back-arrow">&#8592;</span>
+      <span class="nv-reader-back-label">Retour</span>
+    </a>
     <% if (currentUser && currentUser.isAdmin) { %>
-      <a href="/nouvelles/<%= nouvelle.id %>/edit" class="nv-reader-left-btn" title="Modifier">&#9998;</a>
-      <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" style="margin:0"
-        onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
-        <button type="submit" class="nv-reader-left-btn nv-reader-left-del" title="Supprimer">&#128465;</button>
-      </form>
+      <div class="nv-reader-left-admin">
+        <a href="/nouvelles/<%= nouvelle.id %>/edit" class="nv-reader-left-btn" title="Modifier">&#9998;</a>
+        <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" style="margin:0"
+          onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
+          <button type="submit" class="nv-reader-left-btn nv-reader-left-del" title="Supprimer">&#128465;</button>
+        </form>
+      </div>
     <% } %>
   </div>
 

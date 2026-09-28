@@ -14757,50 +14757,78 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .nv-reader-left {
   display: none;
   position: fixed;
-  top: calc(var(--topnav-height) + 1.5rem);
-  left: max(0.5rem, calc(50vw - 450px - 3.2rem));
+  top: calc(var(--topnav-height) + 2rem);
+  /* ancré à droite du groupe : right edge = left edge du container - 20px */
+  right: calc(50vw + 430px);
   flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
+  align-items: flex-end;
+  gap: 0.55rem;
   z-index: 6;
 }
 @media (min-width: 800px) { .nv-reader-left { display: flex; } }
 
+/* Bouton retour : pill élégante et imposante */
 .nv-reader-back {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  background: rgba(255,255,255,0.13);
-  border: 1px solid rgba(255,255,255,0.28);
-  border-radius: 8px;
-  color: #fff;
+  gap: 0.55rem;
+  padding: 0.75rem 1.4rem;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 999px;
+  color: rgba(255,255,255,0.92);
   text-decoration: none;
-  font-size: 1.1rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
+  transition: background 0.18s, transform 0.15s, box-shadow 0.18s, color 0.15s;
 }
-.nv-reader-back:hover { background: rgba(255,255,255,0.24); transform: translateX(-2px); box-shadow: 0 3px 14px rgba(0,0,0,0.5); }
+.nv-reader-back:hover {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  transform: translateX(-4px);
+  box-shadow: 0 6px 28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.nv-reader-back-arrow { font-size: 1.15rem; line-height: 1; }
+.nv-reader-back-label { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.04em; }
 
+/* Rangée éditer + supprimer (côte à côte) */
+.nv-reader-left-admin {
+  display: flex;
+  gap: 0.35rem;
+}
 .nv-reader-left-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.13);
-  border-radius: 8px;
-  color: rgba(255,255,255,0.55);
-  font-size: .85rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.9rem;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-.nv-reader-left-btn:hover { background: rgba(255,255,255,0.14); color: #fff; border-color: rgba(255,255,255,0.3); }
-.nv-reader-left-del { color: hsl(0, 55%, 55%); }
-.nv-reader-left-del:hover { background: hsl(0, 35%, 16%); border-color: hsl(0, 40%, 30%); color: hsl(0, 65%, 72%); }
+.nv-reader-left-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+.nv-reader-left-del { color: hsl(0, 60%, 55%); }
+.nv-reader-left-del:hover {
+  background: hsl(0, 35%, 17%);
+  border-color: hsl(0, 45%, 32%);
+  color: hsl(0, 70%, 72%);
+  box-shadow: 0 4px 14px rgba(120,20,20,0.4);
+}
 
 
 /* ── Volet droit nouvelles : zone réactions (collée en bas) ─────────────── */
