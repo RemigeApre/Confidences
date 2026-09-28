@@ -40,6 +40,12 @@ function parseNouvelle(n) {
   return n;
 }
 
+function renderContent(text) {
+  return "<p>" + String(text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n+/g, "</p><p>") + "</p>";
+}
+
 function buildNouvellesRouter(config) {
   const router = express.Router();
   router.use(requireUser);
@@ -142,8 +148,9 @@ function buildNouvellesRouter(config) {
     const protagonistes = nouvelle.protagoniste_ids.length
       ? nouvelle.protagoniste_ids.map(id => db.getProtagoniste(id)).filter(Boolean)
       : [];
-    const userReaction = getUserReaction(req.user ? req.user.id : null, "nouvelle", nouvelle.id);
-    res.render("nouvelles-detail", { config, nouvelle, serie, chapters, chapterIndex, prev, next, protagonistes, userReaction, categories: CATEGORIES, stages: STAGES });
+    const userReaction  = getUserReaction(req.user ? req.user.id : null, "nouvelle", nouvelle.id);
+    const contentHtml   = renderContent(nouvelle.content);
+    res.render("nouvelles-detail", { config, nouvelle, contentHtml, serie, chapters, chapterIndex, prev, next, protagonistes, userReaction, categories: CATEGORIES, stages: STAGES });
   });
 
   // ── Réaction (étoiles + J'adore) ──────────────────────────────────────────
