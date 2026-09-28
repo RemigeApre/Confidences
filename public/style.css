@@ -14522,3 +14522,136 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   transition: border-color .15s;
 }
 .nv-form-content:focus { border-color: hsl(340, 45%, 40%); }
+
+/* ── Nouvelles : séries ──────────────────────────────────────────────────── */
+.nv-serie-cards { display: flex; flex-wrap: wrap; gap: .75rem; }
+.nv-serie-card {
+  display: flex; flex-direction: column; gap: .25rem;
+  background: var(--surface-2, #1a1a2e); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px; padding: .85rem 1rem; text-decoration: none;
+  min-width: 180px; flex: 1 1 200px; max-width: 280px;
+  transition: border-color .15s, background .15s;
+}
+.nv-serie-card:hover { border-color: hsl(340,45%,40%); background: var(--surface-3, #1e1e38); }
+.nv-serie-card-title { font-size: .9rem; font-weight: 700; color: var(--text); }
+.nv-serie-card-meta  { font-size: .68rem; color: var(--muted); }
+.nv-serie-card-desc  { font-size: .75rem; color: var(--muted); margin-top: .2rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* ── Série : page héro ───────────────────────────────────────────────────── */
+.nv-serie-hero { padding: 1.5rem 1rem 1rem; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 1.5rem; }
+.nv-serie-eyebrow { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: hsl(340,55%,55%); }
+.nv-serie-title { font-size: 1.7rem; font-weight: 800; margin: .25rem 0 .5rem; }
+.nv-serie-desc  { font-size: .85rem; color: var(--muted); margin: 0 0 .6rem; }
+.nv-serie-meta  { font-size: .72rem; color: var(--muted); }
+.nv-serie-admin-bar { display: flex; gap: .5rem; margin-top: .9rem; flex-wrap: wrap; }
+
+/* ── Série : liste des chapitres ─────────────────────────────────────────── */
+.nv-serie-chapters { list-style: none; padding: 0 1rem 3rem; margin: 0; display: flex; flex-direction: column; gap: .5rem; }
+.nv-serie-chapter-row {
+  display: flex; align-items: flex-start; gap: .8rem;
+  padding: .7rem .85rem; border-radius: 8px;
+  background: var(--surface-2, #1a1a2e); border: 1px solid rgba(255,255,255,.06);
+  transition: border-color .15s;
+}
+.nv-serie-chapter-row:hover { border-color: hsl(340,40%,35%); }
+.nv-serie-ch-num { font-size: .7rem; font-weight: 700; color: hsl(340,45%,55%); min-width: 1.6rem; padding-top: .15rem; text-align: right; }
+.nv-serie-ch-body { flex: 1; display: flex; flex-direction: column; gap: .2rem; }
+.nv-serie-ch-title { font-size: .88rem; font-weight: 600; color: var(--text); text-decoration: none; }
+.nv-serie-ch-title:hover { text-decoration: underline; }
+.nv-serie-ch-summary { font-size: .75rem; color: var(--muted); margin: 0; }
+.nv-serie-ch-meta { font-size: .67rem; color: var(--muted); }
+
+/* ── Reader : bandeau série ──────────────────────────────────────────────── */
+.nv-reader-serie-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .45rem 1rem; background: hsl(var(--nv-hue, 340),30%,14%);
+  border-bottom: 1px solid hsl(var(--nv-hue, 340),35%,25%);
+  margin-bottom: .5rem; border-radius: 6px 6px 0 0;
+  font-size: .72rem;
+}
+.nv-reader-serie-link { color: hsl(var(--nv-hue, 340),55%,65%); text-decoration: none; font-weight: 600; }
+.nv-reader-serie-link:hover { text-decoration: underline; }
+.nv-reader-serie-pos { color: var(--muted); }
+
+/* ── Reader : navigation chapitres ──────────────────────────────────────── */
+.nv-chapter-nav {
+  display: flex; justify-content: space-between; align-items: stretch;
+  gap: .75rem; margin: 2rem 0 1rem; padding: 0 0 1rem;
+  border-top: 1px solid rgba(255,255,255,.07); padding-top: 1.5rem;
+}
+.nv-chapter-nav-btn {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .65rem .85rem; border-radius: 8px; text-decoration: none;
+  background: var(--surface-2, #1a1a2e); border: 1px solid rgba(255,255,255,.08);
+  flex: 1; max-width: 46%; transition: border-color .15s;
+}
+.nv-chapter-nav-btn:hover { border-color: hsl(340,45%,40%); }
+.nv-chapter-nav-next { justify-content: flex-end; text-align: right; }
+.nv-chapter-nav-arrow { font-size: 1.1rem; color: hsl(340,55%,55%); flex-shrink: 0; }
+.nv-chapter-nav-label { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.nv-chapter-nav-hint  { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.nv-chapter-nav-title { font-size: .8rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Formulaire : ligne série ────────────────────────────────────────────── */
+.nv-form-serie-row { display: flex; gap: .5rem; margin-bottom: .75rem; align-items: center; }
+.nv-form-serie-order { display: flex; align-items: center; }
+
+/* ── Formulaire : suggestions de tags ───────────────────────────────────── */
+.nv-tags-suggest { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .75rem; align-items: center; }
+.nv-tags-suggest-label { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-right: .2rem; flex-shrink: 0; }
+.nv-tag-chip {
+  font-size: .7rem; padding: .2rem .55rem; border-radius: 20px; cursor: pointer; border: none;
+  background: rgba(255,255,255,.07); color: var(--muted);
+  transition: background .12s, color .12s;
+}
+.nv-tag-chip:hover { background: rgba(255,255,255,.13); color: var(--text); }
+.nv-tag-chip--active { background: hsl(340,45%,28%); color: hsl(340,65%,80%); }
+
+/* ── Carte : curseur pointer (inliné en JS) ──────────────────────────────── */
+
+/* ── Popup nouvelle ──────────────────────────────────────────────────────── */
+.nv-popup-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.nv-popup {
+  background: var(--surface-1, #12121e); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px; max-width: 520px; width: 100%;
+  max-height: 90vh; overflow-y: auto; position: relative;
+  box-shadow: 0 8px 40px rgba(0,0,0,.6);
+}
+.nv-popup-close {
+  position: absolute; top: .7rem; right: .8rem;
+  background: none; border: none; color: var(--muted); font-size: 1.3rem;
+  cursor: pointer; line-height: 1; padding: .2rem .4rem; z-index: 1;
+}
+.nv-popup-close:hover { color: var(--text); }
+.nv-popup-header {
+  padding: 1.2rem 1.2rem .75rem;
+  background: hsl(var(--nv-hue,340),28%,12%);
+  border-bottom: 1px solid hsl(var(--nv-hue,340),30%,20%);
+  border-radius: 14px 14px 0 0;
+}
+.nv-popup-cat {
+  display: inline-block; font-size: .65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; padding: .15rem .55rem; border-radius: 20px; margin-bottom: .5rem;
+  background: hsl(var(--nv-hue,340),45%,22%); color: hsl(var(--nv-hue,340),65%,70%);
+}
+.nv-popup-title  { font-size: 1.2rem; font-weight: 800; margin: 0 0 .3rem; line-height: 1.25; padding-right: 1.5rem; }
+.nv-popup-author { font-size: .78rem; color: var(--muted); font-style: italic; margin: 0 0 .3rem; }
+.nv-popup-meta   { font-size: .68rem; color: var(--muted); margin: 0; }
+.nv-popup-summary { padding: 1rem 1.2rem; font-size: .85rem; line-height: 1.6; color: var(--muted); margin: 0; }
+.nv-popup-footer { padding: .5rem 1.2rem 1.2rem; display: flex; justify-content: flex-end; }
+
+/* ── FAB speed-dial nouvelles ────────────────────────────────────────────── */
+.nv-fab-group { position: fixed; bottom: 5rem; right: 1.25rem; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: .45rem; z-index: 200; }
+.nv-fab-main { position: static !important; bottom: auto !important; right: auto !important; }
+.nv-fab-menu { display: flex; flex-direction: column; gap: .35rem; align-items: flex-end; }
+.nv-fab-item {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .45rem .85rem; border-radius: 20px; white-space: nowrap;
+  background: var(--surface-2, #1a1a2e); border: 1px solid rgba(255,255,255,.12);
+  color: var(--text); text-decoration: none; font-size: .78rem; font-weight: 500;
+  box-shadow: 0 2px 10px rgba(0,0,0,.4); transition: border-color .15s;
+}
+.nv-fab-item:hover { border-color: hsl(340,45%,40%); color: var(--text); }

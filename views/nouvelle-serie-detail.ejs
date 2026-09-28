@@ -1,0 +1,52 @@
+<%- include('partials/head', { title: serie.title }) %>
+<main class="container nv-reader-main" style="max-width: 800px">
+  <%- include('partials/top-nav', { config: config, navTitle: serie.title, navBack: '/nouvelles' }) %>
+
+  <div class="nv-serie-hero">
+    <div class="nv-serie-hero-inner">
+      <span class="nv-serie-eyebrow">Série</span>
+      <h1 class="nv-serie-title"><%= serie.title %></h1>
+      <% if (serie.description) { %>
+        <p class="nv-serie-desc"><%= serie.description %></p>
+      <% } %>
+      <p class="nv-serie-meta">
+        <%= chapters.length %> chapitre<%= chapters.length !== 1 ? 's' : '' %>
+        · <%= totalWords.toLocaleString('fr-FR') %> mots au total
+        · ~<%= Math.max(1, Math.round(totalWords / 200)) %> min de lecture
+      </p>
+    </div>
+    <% if (currentUser && currentUser.isAdmin) { %>
+      <div class="nv-serie-admin-bar">
+        <a href="/nouvelles/series/<%= serie.id %>/edit" class="wf-save-btn" style="position:static;display:inline-block">&#9998; Modifier la série</a>
+        <a href="/nouvelles/new?serie=<%= serie.id %>" class="nv-card-read-btn" style="text-decoration:none">+ Ajouter un chapitre</a>
+      </div>
+    <% } %>
+  </div>
+
+  <% if (!chapters.length) { %>
+    <p class="nv-empty" style="padding: 2rem 1rem">Aucun chapitre pour le moment.</p>
+  <% } else { %>
+    <ol class="nv-serie-chapters">
+      <% chapters.forEach(function(ch, i) {
+        var cat = categories.find(function(c) { return c.key === ch.category; });
+        var hue = cat ? cat.hue : 340;
+        var wc  = ch.word_count || 0;
+        var readMin = Math.max(1, Math.round(wc / 200));
+      %>
+        <li class="nv-serie-chapter-row">
+          <span class="nv-serie-ch-num"><%= i + 1 %></span>
+          <div class="nv-serie-ch-body">
+            <a href="/nouvelles/<%= ch.id %>" class="nv-serie-ch-title"><%= ch.title %></a>
+            <% if (ch.summary) { %><p class="nv-serie-ch-summary"><%= ch.summary %></p><% } %>
+            <span class="nv-serie-ch-meta"><%= wc.toLocaleString('fr-FR') %> mots · ~<%= readMin %> min<% if (cat) { %> · <span style="color:hsl(<%= hue %>,55%,60%)"><%= cat.label %></span><% } %></span>
+          </div>
+          <% if (currentUser && currentUser.isAdmin) { %>
+            <a href="/nouvelles/<%= ch.id %>/edit" class="nv-card-edit-btn" title="Modifier">&#9998;</a>
+          <% } %>
+        </li>
+      <% }) %>
+    </ol>
+  <% } %>
+
+</main>
+<%- include('partials/foot') %>

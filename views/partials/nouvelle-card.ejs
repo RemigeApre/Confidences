@@ -4,7 +4,13 @@
   var wc  = n.word_count || 0;
   var readMin = Math.max(1, Math.round(wc / 200));
 %>
-<article class="nv-card" data-id="<%= n.id %>" data-category="<%= n.category %>">
+<article class="nv-card" data-id="<%= n.id %>" data-category="<%= n.category %>"
+  data-title="<%= n.title.replace(/"/g, '&quot;') %>"
+  data-author="<%= (n.author || '').replace(/"/g, '&quot;') %>"
+  data-summary="<%= (n.summary || '').replace(/"/g, '&quot;') %>"
+  data-meta="<%= wc.toLocaleString('fr-FR') %> mots · ~<%= readMin %> min"
+  data-hue="<%= hue %>"
+  data-cat="<%= cat ? cat.label : '' %>">
   <div class="nv-card-header" style="--nv-hue: <%= hue %>">
     <svg class="nv-card-deco" viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
       <defs>
@@ -30,9 +36,8 @@
   <div class="nv-card-foot">
     <span class="nv-card-meta"><%= wc.toLocaleString('fr-FR') %> mots · ~<%= readMin %> min</span>
     <div class="nv-card-actions">
-      <a href="/nouvelles/<%= n.id %>" class="nv-card-read-btn">Lire</a>
       <% if (currentUser && currentUser.isAdmin) { %>
-        <a href="/nouvelles/<%= n.id %>/edit" class="nv-card-edit-btn" title="Modifier">&#9998;</a>
+        <a href="/nouvelles/<%= n.id %>/edit" class="nv-card-edit-btn" title="Modifier" onclick="event.stopPropagation()">&#9998;</a>
       <% } %>
     </div>
   </div>

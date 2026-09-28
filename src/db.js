@@ -2142,6 +2142,17 @@ db.exec(`
     updated_at INTEGER DEFAULT (unixepoch())
   )
 `);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS nouvelle_series (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    created_at INTEGER DEFAULT (unixepoch()),
+    updated_at INTEGER DEFAULT (unixepoch())
+  )
+`);
+try { db.exec("ALTER TABLE nouvelles ADD COLUMN serie_id INTEGER"); } catch (_) {}
+try { db.exec("ALTER TABLE nouvelles ADD COLUMN serie_order INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 function listCustomQuizzes() {
   return db.prepare(`SELECT q.*,
@@ -2404,6 +2415,13 @@ module.exports = {
   createNouvelle,
   updateNouvelle,
   deleteNouvelle,
+  listAllSiteTags,
+  listNouvelleSeries,
+  getNouvelleSerie,
+  createNouvelleSerie,
+  updateNouvelleSerie,
+  deleteNouvelleSerie,
+  listNouvellesBySerie,
   listAiProfiles,
   getAiProfile,
   createAiProfile,
@@ -2413,24 +2431,63 @@ module.exports = {
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
 function listNouvelles() {
-  return db.prepare(`SELECT id, title, summary, tags, category, author, featured, word_count, created_at, updated_at FROM nouvelles ORDER BY updated_at DESC`).all();
+  return db.prepare(`SELECT id, title, summary, tags, category, author, featured, word_count, serie_id, serie_order, created_at, updated_at FROM nouvelles ORDER BY updated_at DESC`).all();
 }
 function getNouvelleById(id) {
   return db.prepare(`SELECT * FROM nouvelles WHERE id=?`).get(id);
 }
-function createNouvelle({ title, content, summary, tags, category, author, featured }) {
+function createNouvelle({ title, content, summary, tags, category, author, featured, serie_id, serie_order }) {
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
-  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, featured, word_count) VALUES (?,?,?,?,?,?,?,?)`)
-    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount);
+  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, featured, word_count, serie_id, serie_order) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0);
   return r.lastInsertRowid;
 }
-function updateNouvelle(id, { title, content, summary, tags, category, author, featured }) {
+function updateNouvelle(id, { title, content, summary, tags, category, author, featured, serie_id, serie_order }) {
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
-  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, featured=?, word_count=?, updated_at=unixepoch() WHERE id=?`)
-    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, id);
+  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, featured=?, word_count=?, serie_id=?, serie_order=?, updated_at=unixepoch() WHERE id=?`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, id);
 }
 function deleteNouvelle(id) {
   db.prepare(`DELETE FROM nouvelles WHERE id=?`).run(id);
+}
+
+// ── Séries de nouvelles ────────────────────────────────────────────────────
+function listNouvelleSeries() {
+  return db.prepare(`
+    SELECT s.*, COUNT(n.id) as chapter_count, COALESCE(SUM(n.word_count), 0) as total_words
+    FROM nouvelle_series s
+    LEFT JOIN nouvelles n ON n.serie_id = s.id
+    GROUP BY s.id
+    ORDER BY s.updated_at DESC
+  `).all();
+}
+function getNouvelleSerie(id) {
+  return db.prepare(`SELECT * FROM nouvelle_series WHERE id=?`).get(id);
+}
+function createNouvelleSerie({ title, description }) {
+  const r = db.prepare(`INSERT INTO nouvelle_series (title, description) VALUES (?,?)`).run(title || '', description || '');
+  return r.lastInsertRowid;
+}
+function updateNouvelleSerie(id, { title, description }) {
+  db.prepare(`UPDATE nouvelle_series SET title=?, description=?, updated_at=unixepoch() WHERE id=?`).run(title || '', description || '', id);
+}
+function deleteNouvelleSerie(id) {
+  db.prepare(`UPDATE nouvelles SET serie_id=NULL, serie_order=0 WHERE serie_id=?`).run(id);
+  db.prepare(`DELETE FROM nouvelle_series WHERE id=?`).run(id);
+}
+function listAllSiteTags() {
+  const tagSet = new Set();
+  db.prepare("SELECT tag FROM tag_meta").all().forEach(r => tagSet.add(r.tag));
+  db.prepare("SELECT tags FROM wiki_pages WHERE tags != '[]'").all().forEach(r => {
+    try { JSON.parse(r.tags).forEach(t => tagSet.add(t)); } catch (_) {}
+  });
+  db.prepare("SELECT tags FROM gallery_images WHERE tags != '[]'").all().forEach(r => {
+    try { JSON.parse(r.tags).forEach(t => tagSet.add(t)); } catch (_) {}
+  });
+  return Array.from(tagSet).filter(Boolean).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+}
+function listNouvellesBySerie(serieId) {
+  return db.prepare(`SELECT id, title, summary, tags, category, author, featured, word_count, serie_id, serie_order, created_at, updated_at FROM nouvelles WHERE serie_id=? ORDER BY serie_order ASC, id ASC`).all(serieId);
 }
 
 // ── AI Profiles ────────────────────────────────────────────────────────────

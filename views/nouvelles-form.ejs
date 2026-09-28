@@ -1,6 +1,6 @@
 <%- include('partials/head', { title: nouvelle ? 'Modifier : ' + nouvelle.title : 'Nouvelle histoire' }) %>
 <main class="container" style="max-width: 860px; margin: 0 auto">
-  <%- include('partials/top-nav', { config: config, navTitle: nouvelle ? nouvelle.title : 'Nouvelle histoire', navBack: '/nouvelles' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: nouvelle ? nouvelle.title : 'Nouvelle histoire', navBack: nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' }) %>
 
   <div class="nv-form-wrap">
     <form method="POST" action="<%= nouvelle ? '/nouvelles/' + nouvelle.id + '/update' : '/nouvelles/new' %>"
@@ -28,15 +28,43 @@
         </label>
       </div>
 
+      <% if (series && series.length) { %>
+      <div class="nv-form-serie-row">
+        <select name="serie_id" class="wf-orce-name-input" id="nv-serie-select" style="flex:1">
+          <option value="">— Aucune série (standalone) —</option>
+          <% series.forEach(function(s) {
+            var selected = (nouvelle && nouvelle.serie_id === s.id) || (preSerieId === s.id);
+          %>
+            <option value="<%= s.id %>" <%= selected ? 'selected' : '' %>><%= s.title %></option>
+          <% }) %>
+        </select>
+        <div class="nv-form-serie-order" id="nv-serie-order-wrap">
+          <input type="number" name="serie_order" id="nv-serie-order"
+            class="wf-orce-name-input" min="1" style="width:90px"
+            value="<%= nouvelle && nouvelle.serie_order ? nouvelle.serie_order : '' %>"
+            placeholder="Ch. n°" />
+        </div>
+      </div>
+      <% } %>
+
       <textarea name="summary" class="wf-stats-note-input" rows="2" maxlength="500"
         placeholder="Résumé / accroche (max 500 caractères)…"
         style="resize:vertical"><%= nouvelle ? nouvelle.summary : '' %></textarea>
 
       <div class="nv-form-tags-row">
-        <input type="text" name="tags" class="wf-orce-name-input" style="flex:1"
+        <input type="text" name="tags" id="nv-tags-input" class="wf-orce-name-input" style="flex:1"
           value="<%= nouvelle && nouvelle.tags ? nouvelle.tags.join(', ') : '' %>"
-          placeholder="Tags séparés par des virgules…" />
+          placeholder="Tags séparés par des virgules…"
+          autocomplete="off" />
       </div>
+      <% if (allTags && allTags.length) { %>
+        <div class="nv-tags-suggest" id="nv-tags-suggest">
+          <span class="nv-tags-suggest-label">Suggestions :</span>
+          <% allTags.slice(0, 80).forEach(function(t) { %>
+            <button type="button" class="nv-tag-chip" data-tag="<%= t %>"><%= t %></button>
+          <% }) %>
+        </div>
+      <% } %>
 
       <div class="nv-wordcount-bar">
         <span class="nv-wc-label" id="nv-wc">0 mot</span>
@@ -60,9 +88,9 @@
 
   <script>
   (function() {
-    var ta = document.getElementById('nv-content');
-    var wcEl = document.getElementById('nv-wc');
-    var wtEl = document.getElementById('nv-wc-time');
+    var ta    = document.getElementById('nv-content');
+    var wcEl  = document.getElementById('nv-wc');
+    var wtEl  = document.getElementById('nv-wc-time');
     function update() {
       var words = ta.value.trim().split(/\s+/).filter(Boolean).length;
       wcEl.textContent = words.toLocaleString('fr-FR') + ' mot' + (words !== 1 ? 's' : '');
@@ -70,6 +98,46 @@
     }
     ta.addEventListener('input', update);
     update();
+
+    // Afficher/masquer le champ n° de chapitre selon la série sélectionnée
+    var serieSelect = document.getElementById('nv-serie-select');
+    var orderWrap   = document.getElementById('nv-serie-order-wrap');
+    if (serieSelect && orderWrap) {
+      function toggleOrder() {
+        orderWrap.style.display = serieSelect.value ? 'flex' : 'none';
+      }
+      serieSelect.addEventListener('change', toggleOrder);
+      toggleOrder();
+    }
+
+    // Tag chips — clic ajoute le tag dans le champ (sans doublon)
+    var tagsInput  = document.getElementById('nv-tags-input');
+    var tagChips   = document.querySelectorAll('.nv-tag-chip');
+    function getCurrentTags() {
+      return tagsInput.value.split(',').map(function(t) { return t.trim().toLowerCase(); }).filter(Boolean);
+    }
+    function refreshChips() {
+      var current = getCurrentTags();
+      tagChips.forEach(function(chip) {
+        chip.classList.toggle('nv-tag-chip--active', current.indexOf(chip.dataset.tag.toLowerCase()) !== -1);
+      });
+    }
+    tagChips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        var tag  = chip.dataset.tag;
+        var list = getCurrentTags();
+        var idx  = list.indexOf(tag.toLowerCase());
+        if (idx === -1) {
+          list.push(tag);
+        } else {
+          list.splice(idx, 1);
+        }
+        tagsInput.value = list.join(', ');
+        refreshChips();
+      });
+    });
+    tagsInput.addEventListener('input', refreshChips);
+    refreshChips();
   })();
   </script>
 

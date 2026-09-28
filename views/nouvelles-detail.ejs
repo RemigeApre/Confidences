@@ -1,6 +1,6 @@
 <%- include('partials/head', { title: nouvelle.title }) %>
 <main class="container nv-reader-main">
-  <%- include('partials/top-nav', { config: config, navTitle: nouvelle.title, navBack: '/nouvelles' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: nouvelle.title, navBack: serie ? '/nouvelles/series/' + serie.id : '/nouvelles' }) %>
 
   <article class="nv-reader">
     <%
@@ -9,6 +9,13 @@
       var wc  = nouvelle.word_count || 0;
       var readMin = Math.max(1, Math.round(wc / 200));
     %>
+
+    <% if (serie) { %>
+      <div class="nv-reader-serie-banner" style="--nv-hue: <%= hue %>">
+        <a href="/nouvelles/series/<%= serie.id %>" class="nv-reader-serie-link"><%= serie.title %></a>
+        <span class="nv-reader-serie-pos">Chapitre <%= chapterIndex + 1 %> / <%= chapters.length %></span>
+      </div>
+    <% } %>
 
     <header class="nv-reader-header" style="--nv-hue: <%= hue %>">
       <% if (cat) { %><span class="nv-reader-cat"><%= cat.label %></span><% } %>
@@ -23,6 +30,31 @@
     </header>
 
     <div class="nv-reader-content"><%- nouvelle.content.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
+
+    <% if (serie && (prev || next)) { %>
+      <nav class="nv-chapter-nav">
+        <% if (prev) { %>
+          <a href="/nouvelles/<%= prev.id %>" class="nv-chapter-nav-btn nv-chapter-nav-prev">
+            <span class="nv-chapter-nav-arrow">&#8592;</span>
+            <span class="nv-chapter-nav-label">
+              <span class="nv-chapter-nav-hint">Chapitre précédent</span>
+              <span class="nv-chapter-nav-title"><%= prev.title %></span>
+            </span>
+          </a>
+        <% } else { %>
+          <span></span>
+        <% } %>
+        <% if (next) { %>
+          <a href="/nouvelles/<%= next.id %>" class="nv-chapter-nav-btn nv-chapter-nav-next">
+            <span class="nv-chapter-nav-label">
+              <span class="nv-chapter-nav-hint">Chapitre suivant</span>
+              <span class="nv-chapter-nav-title"><%= next.title %></span>
+            </span>
+            <span class="nv-chapter-nav-arrow">&#8594;</span>
+          </a>
+        <% } %>
+      </nav>
+    <% } %>
 
     <% if (currentUser && currentUser.isAdmin) { %>
       <div class="nv-reader-admin-bar">
