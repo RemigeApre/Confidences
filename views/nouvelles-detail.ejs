@@ -4,10 +4,15 @@
   var wc      = nouvelle.word_count || 0;
   var readMin = Math.max(1, Math.round(wc / 200));
   var stageObj = (stages || []).find(function(s){ return s.key === nouvelle.stage; });
+  var userRating = (userReaction && userReaction.rating) || 0;
+  var userFlame  = !!(userReaction && userReaction.flame);
 %>
 <%- include('partials/head', { title: nouvelle.title }) %>
 <main class="container wide" style="--ch-hue: <%= hue %>">
   <%- include('partials/top-nav', { config: config, navTitle: nouvelle.title, navBack: serie ? '/nouvelles/series/' + serie.id : '/nouvelles' }) %>
+
+  <%# ── Bouton retour fixe à gauche du flux (desktop) ──────────────────── %>
+  <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="nv-reader-back" aria-label="Retour">&#8592;</a>
 
   <div class="wiki-detail-layout">
 
@@ -47,49 +52,13 @@
     <%# ── Volet droit (PC) ─────────────────────────────────────────────────── %>
     <aside class="wiki-detail-right" style="--ch-hue: <%= hue %>">
 
-      <%# Retour %>
-      <div class="wiki-right-header">
-        <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="wiki-right-back" title="Retour">&#8592;</a>
-        <div class="wiki-right-header-cats">
-          <% if (cat) { %><span class="wiki-right-cat-text"><%= cat.label %></span><% } %>
-          <% if (stageObj && (stageObj.key !== 'stade_1' || nouvelle.hidden)) { %>
-            <span class="wiki-right-cat-sep">&middot;</span>
-            <span class="nv-right-stage-badge<%= nouvelle.hidden ? ' nv-right-stage-hidden' : '' %>"><%= stageObj.label %><%= nouvelle.hidden ? ' · Masqué' : '' %></span>
-          <% } %>
-        </div>
-      </div>
-
-      <%# Titre + auteur %>
+      <%# Titre centré %>
       <div class="nv-right-title-block">
         <h1 class="nv-right-title"><%= nouvelle.title %></h1>
-        <% if (nouvelle.author) { %><p class="nv-right-author">par <%= nouvelle.author %></p><% } %>
-        <p class="nv-right-meta"><%= wc.toLocaleString('fr-FR') %> mots &middot; ~<%= readMin %> min de lecture</p>
-      </div>
-
-      <%# Série / chapitres %>
-      <% if (serie) { %>
-        <div class="nv-right-serie-block">
-          <a href="/nouvelles/series/<%= serie.id %>" class="nv-right-serie-link"><%= serie.title %></a>
-          <span class="nv-right-serie-pos">Ch. <%= chapterIndex + 1 %> / <%= chapters.length %></span>
-        </div>
-        <% if (prev || next) { %>
-          <div class="nv-right-chapnav">
-            <% if (prev) { %>
-              <a href="/nouvelles/<%= prev.id %>" class="nv-right-chapnav-btn" title="<%= prev.title %>">&#8592; <span><%= prev.title %></span></a>
-            <% } %>
-            <% if (next) { %>
-              <a href="/nouvelles/<%= next.id %>" class="nv-right-chapnav-btn nv-right-chapnav-next" title="<%= next.title %>"><span><%= next.title %></span> &#8594;</a>
-            <% } %>
-          </div>
+        <% if (stageObj && (stageObj.key !== 'stade_1' || nouvelle.hidden)) { %>
+          <span class="nv-right-stage-badge<%= nouvelle.hidden ? ' nv-right-stage-hidden' : '' %>"><%= stageObj.label %><%= nouvelle.hidden ? ' · Masqué' : '' %></span>
         <% } %>
-      <% } %>
-
-      <%# Tags %>
-      <% if (nouvelle.tags && nouvelle.tags.length) { %>
-        <div class="nv-right-tags">
-          <% nouvelle.tags.forEach(function(t) { %><span class="nv-reader-tag"><%= t %></span><% }) %>
-        </div>
-      <% } %>
+      </div>
 
       <%# Protagonistes %>
       <% if (protagonistes && protagonistes.length) { %>
@@ -100,6 +69,27 @@
               <a href="/protagonistes/<%= p.id %>" class="nv-right-prot-link"><%= p.name %></a>
             <% }) %>
           </div>
+        </div>
+      <% } %>
+
+      <%# Tags %>
+      <% if (nouvelle.tags && nouvelle.tags.length) { %>
+        <div class="nv-right-tags">
+          <% nouvelle.tags.forEach(function(t) { %><span class="nv-reader-tag"><%= t %></span><% }) %>
+        </div>
+      <% } %>
+
+      <%# Réactions (étoiles + J'adore) %>
+      <% if (currentUser) { %>
+        <div class="nv-right-reactions" data-id="<%= nouvelle.id %>" data-rating="<%= userRating %>" data-flame="<%= userFlame ? '1' : '0' %>">
+          <div class="wiki-detail-rating nv-right-rating">
+            <% for (var i = 1; i <= 5; i++) { %>
+              <button type="button" class="wiki-star wiki-star-lg" data-value="<%= i %>"><%- i <= userRating ? '&#9733;' : '&#9734;' %></button>
+            <% } %>
+          </div>
+          <button type="button" class="wiki-react-btn wiki-react-flame nv-right-flame<%= userFlame ? ' active' : '' %>" data-key="flame">
+            <span class="wiki-react-icon">&#128293;</span><span class="wiki-react-label">J&apos;adore</span>
+          </button>
         </div>
       <% } %>
 
@@ -119,4 +109,59 @@
   </div><%# /wiki-detail-layout %>
 
 </main>
+
+<% if (currentUser) { %>
+<script>
+(function() {
+  var widget = document.querySelector('.nv-right-reactions');
+  if (!widget) return;
+  var nvId      = widget.dataset.id;
+  var nvRating  = Number(widget.dataset.rating) || 0;
+  var nvFlame   = widget.dataset.flame === '1';
+  var starBtns  = widget.querySelectorAll('.wiki-star');
+  var flamBtn   = widget.querySelector('.nv-right-flame');
+
+  function save() {
+    fetch('/nouvelles/' + nvId + '/react', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating: nvRating, flame: nvFlame }),
+    });
+  }
+
+  function renderStars() {
+    starBtns.forEach(function(btn) {
+      var v = Number(btn.dataset.value);
+      btn.innerHTML = v <= nvRating ? '&#9733;' : '&#9734;';
+      btn.classList.toggle('active', v <= nvRating);
+    });
+  }
+  renderStars();
+
+  starBtns.forEach(function(btn) {
+    var v = Number(btn.dataset.value);
+    btn.addEventListener('mouseenter', function() {
+      starBtns.forEach(function(b) {
+        b.innerHTML = Number(b.dataset.value) <= v ? '&#9733;' : '&#9734;';
+      });
+    });
+    btn.addEventListener('mouseleave', renderStars);
+    btn.addEventListener('click', function() {
+      nvRating = (nvRating === v) ? 0 : v;
+      renderStars();
+      save();
+    });
+  });
+
+  if (flamBtn) {
+    flamBtn.addEventListener('click', function() {
+      nvFlame = !nvFlame;
+      flamBtn.classList.toggle('active', nvFlame);
+      save();
+    });
+  }
+})();
+</script>
+<% } %>
+
 <%- include('partials/foot') %>

@@ -1,6 +1,7 @@
 const express = require("express");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
+const { getUserReaction, setUserReaction } = db;
 
 const CATEGORIES = [
   { key: "romance",    label: "Romance",     hue: 340 },
@@ -141,7 +142,20 @@ function buildNouvellesRouter(config) {
     const protagonistes = nouvelle.protagoniste_ids.length
       ? nouvelle.protagoniste_ids.map(id => db.getProtagoniste(id)).filter(Boolean)
       : [];
-    res.render("nouvelles-detail", { config, nouvelle, serie, chapters, chapterIndex, prev, next, protagonistes, categories: CATEGORIES, stages: STAGES });
+    const userReaction = getUserReaction(req.user ? req.user.id : null, "nouvelle", nouvelle.id);
+    res.render("nouvelles-detail", { config, nouvelle, serie, chapters, chapterIndex, prev, next, protagonistes, userReaction, categories: CATEGORIES, stages: STAGES });
+  });
+
+  // ── Réaction (étoiles + J'adore) ──────────────────────────────────────────
+  router.post("/:id/react", express.json(), (req, res) => {
+    const nouvelle = db.getNouvelleById(req.params.id);
+    if (!nouvelle) return res.status(404).json({ ok: false });
+    parseNouvelle(nouvelle);
+    if (!isVisible(nouvelle, req.user)) return res.status(403).json({ ok: false });
+    const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
+    const flame  = !!req.body.flame;
+    setUserReaction(req.user.id, "nouvelle", nouvelle.id, { rating, flame, interested: false, readLater: false, hidden: false, practiced: false });
+    res.json({ ok: true });
   });
 
   // ── Éditer ─────────────────────────────────────────────────────────────────
