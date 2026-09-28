@@ -11,7 +11,7 @@
 
       <div class="nv-form-meta-row">
         <input type="text" name="author" class="wf-orce-name-input" maxlength="200"
-          value="<%= nouvelle ? nouvelle.author : '' %>" placeholder="Auteur (fictif)…" style="flex:1" />
+          value="<%= nouvelle ? nouvelle.author : '' %>" placeholder="Protagoniste…" style="flex:1" />
 
         <select name="category" class="wf-orce-name-input" style="flex:0 0 auto">
           <option value="">— Catégorie —</option>
@@ -51,20 +51,21 @@
         placeholder="Résumé / accroche (max 500 caractères)…"
         style="resize:vertical"><%= nouvelle ? nouvelle.summary : '' %></textarea>
 
-      <div class="nv-form-tags-row">
-        <input type="text" name="tags" id="nv-tags-input" class="wf-orce-name-input" style="flex:1"
-          value="<%= nouvelle && nouvelle.tags ? nouvelle.tags.join(', ') : '' %>"
-          placeholder="Tags séparés par des virgules…"
-          autocomplete="off" />
-      </div>
-      <% if (allTags && allTags.length) { %>
-        <div class="nv-tags-suggest" id="nv-tags-suggest">
-          <span class="nv-tags-suggest-label">Suggestions :</span>
-          <% allTags.slice(0, 80).forEach(function(t) { %>
-            <button type="button" class="nv-tag-chip" data-tag="<%= t %>"><%= t %></button>
-          <% }) %>
+      <%# ── Tags (même widget que codex/galerie) ─────────────────────────── %>
+      <div class="wiki-tags-widget">
+        <div class="wiki-tags-board">
+          <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag…" autocomplete="off" />
         </div>
-      <% } %>
+        <input type="hidden" name="tags" class="wiki-tags-hidden"
+          value="<%= nouvelle && nouvelle.tags ? nouvelle.tags.join(', ') : '' %>" />
+        <% if (allTags && allTags.length) { %>
+          <div class="wiki-tag-suggestions">
+            <% allTags.forEach(function(t) { %>
+              <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
 
       <div class="nv-wordcount-bar">
         <span class="nv-wc-label" id="nv-wc">0 mot</span>
@@ -88,56 +89,172 @@
 
   <script>
   (function() {
-    var ta    = document.getElementById('nv-content');
-    var wcEl  = document.getElementById('nv-wc');
-    var wtEl  = document.getElementById('nv-wc-time');
-    function update() {
+    // ── Compteur de mots ───────────────────────────────────────────────────
+    var ta   = document.getElementById('nv-content');
+    var wcEl = document.getElementById('nv-wc');
+    var wtEl = document.getElementById('nv-wc-time');
+    function updateWc() {
       var words = ta.value.trim().split(/\s+/).filter(Boolean).length;
       wcEl.textContent = words.toLocaleString('fr-FR') + ' mot' + (words !== 1 ? 's' : '');
       wtEl.textContent = '~' + Math.max(1, Math.round(words / 200)) + ' min';
     }
-    ta.addEventListener('input', update);
-    update();
+    ta.addEventListener('input', updateWc);
+    updateWc();
 
-    // Afficher/masquer le champ n° de chapitre selon la série sélectionnée
+    // ── Sélecteur de série → affiche/masque le n° de chapitre ─────────────
     var serieSelect = document.getElementById('nv-serie-select');
     var orderWrap   = document.getElementById('nv-serie-order-wrap');
     if (serieSelect && orderWrap) {
-      function toggleOrder() {
-        orderWrap.style.display = serieSelect.value ? 'flex' : 'none';
-      }
+      function toggleOrder() { orderWrap.style.display = serieSelect.value ? 'flex' : 'none'; }
       serieSelect.addEventListener('change', toggleOrder);
       toggleOrder();
     }
 
-    // Tag chips — clic ajoute le tag dans le champ (sans doublon)
-    var tagsInput  = document.getElementById('nv-tags-input');
-    var tagChips   = document.querySelectorAll('.nv-tag-chip');
-    function getCurrentTags() {
-      return tagsInput.value.split(',').map(function(t) { return t.trim().toLowerCase(); }).filter(Boolean);
-    }
-    function refreshChips() {
-      var current = getCurrentTags();
-      tagChips.forEach(function(chip) {
-        chip.classList.toggle('nv-tag-chip--active', current.indexOf(chip.dataset.tag.toLowerCase()) !== -1);
-      });
-    }
-    tagChips.forEach(function(chip) {
-      chip.addEventListener('click', function() {
-        var tag  = chip.dataset.tag;
-        var list = getCurrentTags();
-        var idx  = list.indexOf(tag.toLowerCase());
-        if (idx === -1) {
-          list.push(tag);
-        } else {
-          list.splice(idx, 1);
+    // ── Widget tags (même logique que codex/galerie) ───────────────────────
+    document.querySelectorAll('.wiki-tags-widget').forEach(function(widget) {
+      var board      = widget.querySelector('.wiki-tags-board');
+      var typer      = widget.querySelector('.wiki-tags-typing');
+      var hidden     = widget.querySelector('.wiki-tags-hidden');
+      var suggestBox = widget.querySelector('.wiki-tag-suggestions');
+      if (!board || !typer || !hidden) return;
+
+      var tags = (hidden.value || '').split(/[,;]+/).map(function(t){ return t.trim(); }).filter(Boolean);
+
+      function findTag(term) {
+        for (var i = 0; i < tags.length; i++) if (tags[i] === term) return true;
+        return false;
+      }
+      function syncHidden() { hidden.value = tags.join(', '); }
+
+      function renderBoard() {
+        board.querySelectorAll('.wiki-chip').forEach(function(c){ c.remove(); });
+        tags.forEach(function(t) {
+          var chip = document.createElement('span');
+          chip.className = 'link-tag-pill wiki-chip';
+          chip.style.cssText = 'background:hsl(340,50%,38%);color:#fff;cursor:pointer;margin:2px 3px 2px 0;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.75rem';
+          chip.textContent = t + ' ×';
+          chip.addEventListener('click', function() {
+            tags = tags.filter(function(x){ return x !== t; });
+            syncHidden(); renderBoard(); syncSuggest();
+          });
+          board.insertBefore(chip, typer);
+        });
+        syncHidden();
+        syncSuggest();
+      }
+
+      function syncSuggest() {
+        if (!suggestBox) return;
+        suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(chip) {
+          chip.classList.toggle('active', findTag(chip.dataset.tag));
+        });
+      }
+
+      function addTag(t) {
+        t = t.trim();
+        if (t && !findTag(t)) { tags.push(t); renderBoard(); }
+      }
+      function removeTag(t) {
+        tags = tags.filter(function(x){ return x !== t; });
+        syncHidden(); renderBoard(); syncSuggest();
+      }
+
+      // ── Clavier dans le champ de saisie ────────────────────────────────
+      typer.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
+          e.preventDefault();
+          var val = typer.value.trim();
+          if (val) { addTag(val); typer.value = ''; closeAc(); }
+        } else if (e.key === 'Backspace' && !typer.value && tags.length) {
+          removeTag(tags[tags.length - 1]);
         }
-        tagsInput.value = list.join(', ');
-        refreshChips();
       });
+      typer.addEventListener('blur', function() {
+        if (typer.value.trim()) { addTag(typer.value.trim()); typer.value = ''; }
+        setTimeout(closeAc, 160);
+      });
+      board.addEventListener('click', function(e) { if (e.target === board) typer.focus(); });
+
+      // ── Chips de suggestion ─────────────────────────────────────────────
+      if (suggestBox) {
+        suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(chip) {
+          chip.addEventListener('click', function() {
+            if (!findTag(chip.dataset.tag)) addTag(chip.dataset.tag);
+            else removeTag(chip.dataset.tag);
+          });
+        });
+      }
+
+      // ── Autocomplete dropdown (suggestions filtrées pendant la saisie) ──
+      var allAvail = [];
+      if (suggestBox) {
+        suggestBox.querySelectorAll('.wiki-tag-suggest-chip[data-tag]').forEach(function(c) {
+          allAvail.push(c.dataset.tag);
+        });
+      }
+
+      var acDrop = document.createElement('ul');
+      acDrop.className = 'wiki-tag-autocomplete';
+      acDrop.hidden = true;
+      board.parentNode.insertBefore(acDrop, board.nextSibling);
+      var acSel = -1;
+
+      function clearAcDrop() { while (acDrop.firstChild) acDrop.removeChild(acDrop.firstChild); }
+      function closeAc() { acDrop.hidden = true; clearAcDrop(); acSel = -1; }
+
+      function showAc(query) {
+        var q = (query || '').trim().toLowerCase();
+        if (!q) { closeAc(); return; }
+        var matches = allAvail.filter(function(t) {
+          return t.toLowerCase().indexOf(q) !== -1 && !findTag(t);
+        }).slice(0, 9);
+        if (!matches.length) { closeAc(); return; }
+        clearAcDrop();
+        acSel = -1;
+        matches.forEach(function(t) {
+          var li = document.createElement('li');
+          li.className = 'wiki-tag-ac-item';
+          li.textContent = t;
+          li.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            addTag(t); typer.value = ''; closeAc(); typer.focus();
+          });
+          acDrop.appendChild(li);
+        });
+        acDrop.hidden = false;
+      }
+
+      typer.addEventListener('input', function() {
+        showAc(typer.value);
+        if (suggestBox) {
+          var q = typer.value.trim().toLowerCase();
+          suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(chip) {
+            chip.hidden = q.length > 0 && chip.dataset.tag.toLowerCase().indexOf(q) === -1;
+          });
+        }
+      });
+
+      typer.addEventListener('keydown', function(e) {
+        if (acDrop.hidden) return;
+        var items = acDrop.querySelectorAll('.wiki-tag-ac-item');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          acSel = Math.min(acSel + 1, items.length - 1);
+          items.forEach(function(li, i) { li.classList.toggle('selected', i === acSel); });
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          acSel = Math.max(acSel - 1, 0);
+          items.forEach(function(li, i) { li.classList.toggle('selected', i === acSel); });
+        } else if ((e.key === 'Enter' || e.key === 'Tab') && acSel >= 0 && items[acSel]) {
+          e.preventDefault(); e.stopImmediatePropagation();
+          addTag(items[acSel].textContent); typer.value = ''; closeAc();
+        } else if (e.key === 'Escape') {
+          closeAc();
+        }
+      }, true);
+
+      renderBoard();
     });
-    tagsInput.addEventListener('input', refreshChips);
-    refreshChips();
   })();
   </script>
 
