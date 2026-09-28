@@ -25,6 +25,17 @@
 
       <div class="nv-reader-content"><%- nouvelle.content.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
 
+      <%# Actions admin — dans le flux du texte, hors du volet droit %>
+      <% if (currentUser && currentUser.isAdmin) { %>
+        <div class="nv-body-admin-bar">
+          <a href="/nouvelles/<%= nouvelle.id %>/edit" class="wiki-edit-icon-btn" title="Modifier">&#9998;</a>
+          <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" style="margin:0"
+            onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
+            <button type="submit" class="wiki-edit-icon-btn" style="color:hsl(0,60%,60%)" title="Supprimer">&#128465;</button>
+          </form>
+        </div>
+      <% } %>
+
       <% if (serie && (prev || next)) { %>
         <nav class="nv-chapter-nav">
           <% if (prev) { %>
@@ -79,7 +90,7 @@
         </div>
       <% } %>
 
-      <%# Réactions (étoiles + J'adore) %>
+      <%# Réactions (étoiles + J'adore) — collées en bas du volet %>
       <% if (currentUser) { %>
         <div class="nv-right-reactions" data-id="<%= nouvelle.id %>" data-rating="<%= userRating %>" data-flame="<%= userFlame ? '1' : '0' %>">
           <div class="wiki-detail-rating nv-right-rating">
@@ -90,17 +101,6 @@
           <button type="button" class="wiki-react-btn wiki-react-flame nv-right-flame<%= userFlame ? ' active' : '' %>" data-key="flame">
             <span class="wiki-react-icon">&#128293;</span><span class="wiki-react-label">J&apos;adore</span>
           </button>
-        </div>
-      <% } %>
-
-      <%# Actions admin %>
-      <% if (currentUser && currentUser.isAdmin) { %>
-        <div class="nv-right-admin-bar">
-          <a href="/nouvelles/<%= nouvelle.id %>/edit" class="wiki-edit-icon-btn" title="Modifier">&#9998;</a>
-          <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" style="margin:0"
-            onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
-            <button type="submit" class="wiki-edit-icon-btn" style="color:hsl(0,60%,60%)" title="Supprimer">&#128465;</button>
-          </form>
         </div>
       <% } %>
 

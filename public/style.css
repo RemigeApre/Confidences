@@ -14371,11 +14371,6 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   font-size: .75rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .1em; color: var(--muted); margin: 0 0 1rem;
 }
-.nv-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
-}
 .nv-empty { color: var(--muted); font-size: .88rem; padding: 2rem 0; }
 
 /* ── Filtres sidebar ──────────────────────────────────────────────────────── */
@@ -14393,71 +14388,75 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-color: hsl(var(--nv-hue, 340), 35%, 30%);
 }
 
-/* ── Carte nouvelle ───────────────────────────────────────────────────────── */
+/* ── Grille de cartes nouvelles ───────────────────────────────────────────── */
+.nv-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .55rem;
+}
+
+/* ── Carte nouvelle : titre + durée, épurée ───────────────────────────────── */
 .nv-card {
-  background: var(--card, var(--bg));
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
+  position: relative;
   display: flex;
   flex-direction: column;
-  transition: border-color .2s, transform .2s, box-shadow .2s;
-  box-shadow: 0 1px 6px rgba(0,0,0,.07);
+  gap: .55rem;
+  padding: 1.1rem 1rem 0.9rem 1.25rem;
+  background: rgba(255,255,255,.028);
+  border: 1px solid rgba(255,255,255,.07);
+  border-left: 3px solid hsl(var(--nv-hue, 340), 42%, 38%);
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  transition: background .15s, border-left-color .16s, transform .15s, box-shadow .15s;
 }
 .nv-card:hover {
-  border-color: hsl(340, 45%, 40%);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 28px rgba(140,30,80,.18), 0 2px 8px rgba(0,0,0,.06);
+  background: rgba(255,255,255,.055);
+  border-left-color: hsl(var(--nv-hue, 340), 58%, 58%);
+  transform: translateX(3px);
+  box-shadow: -2px 0 14px rgba(0,0,0,.25);
 }
-.nv-card-header {
-  height: 80px; position: relative; overflow: hidden; flex-shrink: 0;
+.nv-card-title {
+  font-size: .92rem;
+  font-weight: 700;
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.4;
+  color: rgba(255,255,255,.88);
+  margin: 0;
 }
-.nv-card-deco { width: 100%; height: 100%; display: block; }
-.nv-card-cat-badge {
-  position: absolute; bottom: 8px; left: 10px;
-  font-size: .62rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em;
-  background: hsl(var(--nv-hue, 340), 35%, 20%);
-  color: hsl(var(--nv-hue, 340), 55%, 70%);
-  border: 1px solid hsl(var(--nv-hue, 340), 30%, 30%);
-  border-radius: 4px; padding: .1rem .4rem;
+.nv-card-dur {
+  font-size: .65rem;
+  color: rgba(255,255,255,.3);
+  letter-spacing: .05em;
+  margin-top: auto;
 }
 .nv-card-featured-badge {
-  position: absolute; top: 8px; right: 10px;
-  color: hsl(45, 90%, 65%); font-size: .85rem;
+  position: absolute;
+  top: .5rem; right: .6rem;
+  font-size: .75rem;
+  color: hsl(45, 90%, 65%);
   text-shadow: 0 1px 4px rgba(0,0,0,.5);
 }
-.nv-card-body { padding: .75rem .85rem .5rem; flex: 1; }
-.nv-card-title { font-size: .9rem; font-weight: 700; margin: 0 0 .2rem; line-height: 1.3; }
-.nv-card-author { font-size: .72rem; color: var(--muted); margin: 0 0 .45rem; font-style: italic; }
-.nv-card-summary {
-  font-size: .76rem; color: var(--muted); margin: 0; line-height: 1.45;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+.nv-card-edit-btn {
+  position: absolute;
+  bottom: .55rem; right: .6rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.35);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 5px;
+  font-size: .75rem; text-decoration: none;
+  transition: background .15s, color .15s;
 }
-.nv-card-foot {
-  padding: .55rem .85rem .7rem;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: .5rem; border-top: 1px solid var(--border);
-}
-.nv-card-meta { font-size: .65rem; color: var(--muted); }
-.nv-card-actions { display: flex; gap: .4rem; align-items: center; }
+.nv-card-edit-btn:hover { background: hsl(220, 40%, 24%); color: #fff; }
 .nv-card-read-btn {
-  display: inline-block; padding: .25rem .7rem;
+  display: inline-block; padding: .3rem .9rem;
   background: hsl(340, 45%, 22%); color: hsl(340, 60%, 75%);
   border: 1px solid hsl(340, 35%, 32%); border-radius: 6px;
-  font-size: .74rem; font-weight: 600; text-decoration: none;
+  font-size: .78rem; font-weight: 600; text-decoration: none;
   transition: background .15s;
 }
 .nv-card-read-btn:hover { background: hsl(340, 50%, 28%); }
-.nv-card-edit-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px;
-  background: hsl(220, 30%, 18%); color: hsl(220, 55%, 68%);
-  border: 1px solid hsl(220, 20%, 28%); border-radius: 6px;
-  font-size: .8rem; text-decoration: none;
-  transition: background .15s;
-}
-.nv-card-edit-btn:hover { background: hsl(220, 45%, 26%); color: #fff; }
 
 /* ── Lecteur ──────────────────────────────────────────────────────────────── */
 .nv-reader-main { max-width: 720px; margin: 0 auto; }
@@ -14483,10 +14482,15 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-radius: 20px; color: var(--muted);
 }
 .nv-reader-content {
-  font-size: 1rem; line-height: 1.85; color: var(--fg);
+  font-size: 1.05rem; line-height: 1.9; color: var(--fg);
   font-family: Georgia, 'Times New Roman', serif;
 }
-.nv-reader-content p { margin: 0 0 1.2em; }
+.nv-reader-content p {
+  text-align: justify;
+  text-indent: 2.5em;
+  margin: 0 0 1.5em;
+}
+.nv-reader-content p:first-child { text-indent: 0; }
 .nv-reader-admin-bar {
   margin-top: 3rem; padding-top: 1.5rem;
   border-top: 1px solid var(--border);
@@ -14662,7 +14666,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* ── Volet droit nouvelles ───────────────────────────────────────────────── */
 .nv-right-title-block { padding: 1.2rem 1rem .8rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,.1); }
-.nv-right-title  { font-size: 1rem; font-weight: 800; margin: 0 0 .35rem; line-height: 1.3; }
+.nv-right-title  { font-size: 1.25rem; font-weight: 800; margin: 0 0 .35rem; line-height: 1.3; }
 
 .nv-right-stage-badge { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: hsl(45,80%,65%); }
 .nv-right-stage-hidden { color: hsl(220,60%,70%); }
@@ -14686,7 +14690,11 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .nv-right-prot-link { font-size: .78rem; color: hsl(var(--ch-hue,340),60%,72%); text-decoration: none; }
 .nv-right-prot-link:hover { text-decoration: underline; }
 
-.nv-right-admin-bar { display: flex; gap: .5rem; padding: .75rem 1rem; margin-top: auto; }
+.nv-body-admin-bar {
+  display: flex; gap: .5rem; align-items: center;
+  margin-top: 2rem; padding-top: 1.2rem;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
 
 /* ── Nouvelle : badges stage / masqué ───────────────────────────────────── */
 .nv-card-stage-badge {
@@ -14769,16 +14777,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .nv-reader-back:hover { background: rgba(255,255,255,0.14); color: #fff; transform: translateX(-2px); }
 @media (min-width: 800px) { .nv-reader-back { display: flex; } }
 
-/* ── Reader nouvelles : texte justifié + retrait 1re ligne + espacement ─── */
-.nv-reader-content p {
-  text-align: justify;
-  text-indent: 1.6em;
-  margin: 0 0 1.6em;
-}
-/* Pas d'indentation sur le premier paragraphe (ou après l'accroche) */
-.nv-reader-content p:first-child { text-indent: 0; }
 
-/* ── Volet droit nouvelles : zone réactions ─────────────────────────────── */
+/* ── Volet droit nouvelles : zone réactions (collée en bas) ─────────────── */
 .nv-right-reactions {
   display: flex;
   flex-direction: column;
@@ -14786,7 +14786,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   gap: 0.6rem;
   padding: 0.9rem 1rem;
   border-top: 1px solid rgba(255,255,255,.1);
-  margin-top: auto;
+  margin-top: auto; /* pousse vers le bas dans le flex column */
 }
 .nv-right-rating { justify-content: center; }
 .nv-right-flame {
