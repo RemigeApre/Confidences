@@ -14487,10 +14487,12 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .nv-reader-content p {
   text-align: justify;
-  text-indent: 2.5em;
   margin: 0 0 1.5em;
 }
-.nv-reader-content p:first-child { text-indent: 0; }
+/* Alinéa : retrait uniquement à partir du 2e paragraphe */
+.nv-reader-content p + p {
+  text-indent: 2.5em !important;
+}
 .nv-reader-admin-bar {
   margin-top: 3rem; padding-top: 1.5rem;
   border-top: 1px solid var(--border);
