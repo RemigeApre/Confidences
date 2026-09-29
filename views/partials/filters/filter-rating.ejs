@@ -22,28 +22,26 @@
   var _intLb = (typeof interestedLabel!== 'undefined') ? interestedLabel: 'Intéressé';
   var _notR  = (typeof showNotRated   !== 'undefined') ? showNotRated   : true;
 %>
-<div class="filter-block filter-block--rating" id="<%= _fid %>-block">
-  <div class="wiki-filter-section">
-    <% if (_label) { %><span class="wiki-filter-label"><%= _label %></span><% } %>
-    <div class="wiki-filter-label-row">
-      <span style="font-size:.7rem;color:var(--muted)">Note minimale</span>
-      <button type="button" class="wiki-adv-star-reset" id="<%= _fid %>-star-reset"
-        title="Retirer le filtre note" aria-label="Retirer">✕</button>
-    </div>
-    <div class="wiki-adv-stars" id="<%= _fid %>-stars">
-      <% for (var _i = 1; _i <= 5; _i++) { %>
-        <button type="button" class="wiki-adv-star" data-value="<%= _i %>">&#9733;</button>
-      <% } %>
-    </div>
-    <% if (_notR || _flame || _int) { %>
-    <div class="wiki-prop-grid" id="<%= _fid %>-props" style="margin-top:.45rem">
-      <% if (_notR) { %><button type="button" class="wiki-prop-btn" data-prop="notRated"  data-state="0">Pas noté</button><% } %>
-      <% if (_flame){ %><button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0">&#128293; J'adore</button><% } %>
-      <% if (_int)  { %><button type="button" class="wiki-prop-btn" data-prop="interested"data-state="0"><%= _intLb %></button><% } %>
-    </div>
+<details class="wiki-subpanel-details filter-block filter-block--rating" id="<%= _fid %>-block">
+  <summary class="wiki-subpanel-summary"><%= _label %></summary>
+  <div class="wiki-filter-label-row">
+    <span style="font-size:.7rem;color:var(--muted)">Note minimale</span>
+    <button type="button" class="wiki-adv-star-reset" id="<%= _fid %>-star-reset"
+      title="Retirer le filtre note" aria-label="Retirer">✕</button>
+  </div>
+  <div class="wiki-adv-stars" id="<%= _fid %>-stars">
+    <% for (var _i = 1; _i <= 5; _i++) { %>
+      <button type="button" class="wiki-adv-star" data-value="<%= _i %>">&#9733;</button>
     <% } %>
   </div>
-</div>
+  <% if (_notR || _flame || _int) { %>
+  <div class="wiki-prop-grid" id="<%= _fid %>-props" style="margin-top:.45rem">
+    <% if (_notR) { %><button type="button" class="wiki-prop-btn" data-prop="notRated"  data-state="0">Pas noté</button><% } %>
+    <% if (_flame){ %><button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0">&#128293; J'adore</button><% } %>
+    <% if (_int)  { %><button type="button" class="wiki-prop-btn" data-prop="interested"data-state="0"><%= _intLb %></button><% } %>
+  </div>
+  <% } %>
+</details>
 
 <script>
 (function () {
@@ -79,7 +77,6 @@
     }));
   }
 
-  // Étoiles
   starsEl.querySelectorAll('.wiki-adv-star').forEach(function (btn) {
     var v = Number(btn.dataset.value);
     btn.addEventListener('mouseenter', function () {
@@ -99,7 +96,6 @@
     });
   }
 
-  // Props (2 états : off / on)
   if (propsEl) {
     propsEl.querySelectorAll('.wiki-prop-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {

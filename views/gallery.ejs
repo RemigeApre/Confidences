@@ -29,10 +29,33 @@
       <details class="wiki-sidebar-filter-details">
       <summary class="wiki-sidebar-filter-summary">Filtres</summary>
 
-      <%# Catégories dans un volet réduit %>
+      <%# Tri + taille (en premier, comme Codex) %>
+      <div class="wiki-filter-section wiki-sort-cols-row">
+        <select id="gallery-sort-select" class="wiki-sort-select">
+          <option value="date-desc">Plus r&eacute;cent</option>
+          <option value="date-asc">Plus ancien</option>
+          <option value="alpha-asc">Ordre alphab&eacute;tique</option>
+          <option value="rating-desc">Mieux not&eacute;</option>
+          <option value="random">Al&eacute;atoire</option>
+        </select>
+        <select id="gallery-size-select" class="wiki-sort-select">
+          <option value="small">Petit</option>
+          <option value="medium" selected>Moyen</option>
+          <option value="large">Grand</option>
+          <option value="xlarge">Tr&egrave;s grand</option>
+        </select>
+      </div>
+
+      <%# Toggles %>
+      <div class="wiki-filter-section wiki-filter-toggles">
+        <button type="button" id="gallery-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
+        <button type="button" id="gallery-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
+      </div>
+
+      <%# Catégories %>
       <% if (categories.length) { %>
-      <details class="gallery-cat-details">
-        <summary class="gallery-cat-summary">Cat&eacute;gories</summary>
+      <details class="wiki-subpanel-details">
+        <summary class="wiki-subpanel-summary">Cat&eacute;gories</summary>
         <div class="links-filter" id="gallery-category-filter">
           <% categories.forEach(function (c) { %>
             <button type="button" class="tag-chip" data-category="<%= c.key %>"><%= c.label %></button>
@@ -41,9 +64,12 @@
       </details>
       <% } %>
 
-      <%# Tags avec compteur %>
+      <%# Tags %>
       <% if (allTags.length) { %>
-      <div class="wiki-filter-section">
+      <details class="wiki-subpanel-details">
+        <summary class="wiki-subpanel-summary">Tags</summary>
+        <input type="search" id="gallery-tag-search" class="wiki-tag-search-input"
+          placeholder="Chercher un tag" autocomplete="off" />
         <div class="wiki-tag-cloud" id="gallery-tag-filter">
           <% allTags.forEach(function(t) { %>
             <% var ni = tagImageCounts[t] || 0; %>
@@ -56,46 +82,12 @@
         <div class="gallery-tag-footer">
           <button type="button" id="gallery-tag-expand-btn" class="wiki-tag-expand-btn" hidden>&#9660; Plus</button>
         </div>
-      </div>
+      </details>
       <% } %>
-
-      <%# Toggles %>
-      <div class="wiki-filter-section wiki-filter-toggles">
-        <button type="button" id="gallery-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
-        <button type="button" id="gallery-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
-      </div>
 
       <%- include('partials/filter-profiles', { section: 'gallery', profiles: locals.galleryFilterProfiles || [] }) %>
 
-      <%# Réinitialiser %>
-      <div class="wiki-filter-section">
-        <button type="button" id="gallery-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
-        <button type="button" id="gallery-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
-        <button type="button" id="gallery-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
-      </div>
-
-      <%# Tri %>
-      <div class="wiki-filter-section">
-        <select id="gallery-sort-select" class="wiki-sort-select">
-          <option value="date-desc">Plus r&eacute;cent</option>
-          <option value="date-asc">Plus ancien</option>
-          <option value="alpha-asc">Ordre alphab&eacute;tique</option>
-          <option value="rating-desc">Mieux not&eacute;</option>
-          <option value="random">Al&eacute;atoire</option>
-        </select>
-      </div>
-
-      <%# Taille des cartes %>
-      <div class="wiki-filter-section">
-        <select id="gallery-size-select" class="wiki-sort-select">
-          <option value="small">Petit</option>
-          <option value="medium" selected>Moyen</option>
-          <option value="large">Grand</option>
-          <option value="xlarge">Tr&egrave;s grand</option>
-        </select>
-      </div>
-
-      <%# Sélection groupée %>
+      <%# Sélection groupée (admin) %>
       <% if (currentUser && currentUser.isAdmin) { %>
       <div class="wiki-filter-section">
         <button type="button" class="link-button gallery-select-toggle" id="gallery-select-toggle" hidden>S&eacute;lectionner</button>
@@ -103,6 +95,13 @@
       <% } %>
 
       </details>
+
+      <%# Réinitialiser / Explorer : hors <details>, toujours visible %>
+      <div class="wiki-filter-section wiki-filter-bottom-actions">
+        <button type="button" id="gallery-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
+        <button type="button" id="gallery-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+        <button type="button" id="gallery-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
+      </div>
 
     </div>
   </aside>

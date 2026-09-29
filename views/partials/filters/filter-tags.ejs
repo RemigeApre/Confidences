@@ -7,7 +7,6 @@
  *    label       {string}  libellé                   (défaut 'Tags')
  *    maxTags     {number}  limite d'affichage         (défaut 40)
  *    counts      {object}  { tag: count }             (optionnel)
- *    placeholder {string}  placeholder recherche      (défaut 'Chercher…')
  *
  *  Événement émis (bubbles) :
  *    'tagfilter:change'  →  { filterId, included:[], excluded:[] }
@@ -17,27 +16,24 @@
  */
   var _fid  = filterId;
   var _tags = tags || [];
-  var _label= (typeof label       !== 'undefined') ? label       : 'Tags';
-  var _max  = (typeof maxTags     !== 'undefined') ? maxTags     : 40;
-  var _cnt  = (typeof counts      !== 'undefined') ? counts      : null;
-  var _ph   = (typeof placeholder !== 'undefined') ? placeholder : 'Chercher…';
+  var _label= (typeof label   !== 'undefined') ? label   : 'Tags';
+  var _max  = (typeof maxTags !== 'undefined') ? maxTags : 40;
+  var _cnt  = (typeof counts  !== 'undefined') ? counts  : null;
 %>
 <% if (_tags.length) { %>
-<div class="filter-block filter-block--tags" id="<%= _fid %>-block">
-  <div class="wiki-filter-section">
-    <% if (_label) { %><span class="wiki-filter-label"><%= _label %></span><% } %>
-    <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
-      placeholder="<%= _ph %>" autocomplete="off" />
-    <div class="wiki-tag-cloud" id="<%= _fid %>">
-      <% _tags.slice(0, _max).forEach(function(t) { %>
-        <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-          <span class="wtc-label"><%= t %></span><%
-          if (_cnt && _cnt[t]) { %><span class="wtc-count"><%= _cnt[t] %></span><% } %>
-        </button>
-      <% }) %>
-    </div>
+<details class="wiki-subpanel-details filter-block filter-block--tags" id="<%= _fid %>-block">
+  <summary class="wiki-subpanel-summary"><%= _label %></summary>
+  <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
+    placeholder="Chercher un tag" autocomplete="off" />
+  <div class="wiki-tag-cloud" id="<%= _fid %>">
+    <% _tags.slice(0, _max).forEach(function(t) { %>
+      <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
+        <span class="wtc-label"><%= t %></span><%
+        if (_cnt && _cnt[t]) { %><span class="wtc-count"><%= _cnt[t] %></span><% } %>
+      </button>
+    <% }) %>
   </div>
-</div>
+</details>
 
 <script>
 (function () {
@@ -72,7 +68,6 @@
     search.addEventListener('input', function () {
       var q = search.value.trim().toLowerCase();
       cloud.querySelectorAll('.wiki-tag-chip').forEach(function (chip) {
-        // Ne jamais masquer un chip actif (état ≠ 0)
         chip.hidden = chip.dataset.state === '0' && q.length > 0
           && chip.dataset.tag.toLowerCase().indexOf(q) === -1;
       });

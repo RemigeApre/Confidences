@@ -17,18 +17,16 @@
   var _label = (typeof label !== 'undefined') ? label : 'Catégorie';
 %>
 <% if (_cats.length) { %>
-<div class="filter-block filter-block--categories" id="<%= _fid %>-block">
-  <div class="wiki-filter-section">
-    <% if (_label) { %><span class="wiki-filter-label"><%= _label %></span><% } %>
-    <div class="filter-cat-chips" id="<%= _fid %>">
-      <% _cats.forEach(function(c) { %>
-        <button type="button" class="tag-chip filter-cat-chip"
-          data-cat="<%= c.key %>" data-state="0"
-          style="--fc-hue: <%= c.hue %>"><%= c.label %></button>
-      <% }) %>
-    </div>
+<details class="wiki-subpanel-details filter-block filter-block--categories" id="<%= _fid %>-block">
+  <summary class="wiki-subpanel-summary"><%= _label %></summary>
+  <div class="filter-cat-chips" id="<%= _fid %>">
+    <% _cats.forEach(function(c) { %>
+      <button type="button" class="tag-chip filter-cat-chip"
+        data-cat="<%= c.key %>" data-state="0"
+        style="--fc-hue: <%= c.hue %>"><%= c.label %></button>
+    <% }) %>
   </div>
-</div>
+</details>
 
 <script>
 (function () {

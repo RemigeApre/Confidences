@@ -13,36 +13,59 @@
       </div>
     </div>
 
-    <div class="wiki-sidebar-body wiki-sidebar-filters filter-sidebar">
-      <%- include('partials/filters/filter-base', {
-            searchId:    'nv-search',
-            showSort:    true,
-            sortOptions: [
-              { value: 'date-desc',  label: 'Plus récent'  },
-              { value: 'date-asc',   label: 'Plus ancien'  },
-              { value: 'alpha-asc',  label: 'Alphabétique' },
-              { value: 'length-desc',label: 'Plus long'    },
-              { value: 'random',     label: 'Aléatoire'    }
-            ],
-            defaultSort: 'date-desc',
-            showType:    true
-          }) %>
+    <div class="wiki-sidebar-body">
 
-      <%- include('partials/filters/filter-categories', {
-            filterId:   'nv-cat-filter',
-            categories: categories,
-            label:      'Catégorie'
-          }) %>
+      <%# ── Recherche : toujours visible ── %>
+      <div class="wiki-search-wrap">
+        <div class="wiki-search-bar">
+          <input type="search" id="nv-search" class="wiki-search-input"
+            placeholder="Recherche" autocomplete="off" />
+          <button type="button" id="nv-search-clear" class="wiki-search-clear"
+            hidden aria-label="Effacer">&#215;</button>
+        </div>
+        <span id="nv-result-count" class="wiki-result-count" hidden></span>
+      </div>
 
-      <% if (allTags && allTags.length) { %>
-        <%- include('partials/filters/filter-tags', {
-              filterId: 'nv-tag-filter',
-              tags:     allTags,
-              label:    'Tags'
-            }) %>
-      <% } %>
+      <%# ── Filtres : volet rétractable ── %>
+      <details class="wiki-sidebar-filter-details">
+        <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+        <div class="wiki-sidebar-filters">
 
+          <%- include('partials/filters/filter-base', {
+                searchId:    'nv-search',
+                showSearch:  false,
+                showSort:    true,
+                sortOptions: [
+                  { value: 'date-desc',  label: 'Plus récent'  },
+                  { value: 'date-asc',   label: 'Plus ancien'  },
+                  { value: 'alpha-asc',  label: 'Alphabétique' },
+                  { value: 'length-desc',label: 'Plus long'    },
+                  { value: 'random',     label: 'Aléatoire'    }
+                ],
+                defaultSort: 'date-desc',
+                showType:    true
+              }) %>
+
+          <%- include('partials/filters/filter-categories', {
+                filterId:   'nv-cat-filter',
+                categories: categories,
+                label:      'Catégorie'
+              }) %>
+
+          <% if (allTags && allTags.length) { %>
+            <%- include('partials/filters/filter-tags', {
+                  filterId: 'nv-tag-filter',
+                  tags:     allTags,
+                  label:    'Tags'
+                }) %>
+          <% } %>
+
+        </div>
+      </details>
+
+      <%# ── Réinitialiser / Explorer : toujours visible ── %>
       <%- include('partials/filters/filter-reset', { filterId: 'nv', showExplore: true }) %>
+
     </div>
   </aside>
 

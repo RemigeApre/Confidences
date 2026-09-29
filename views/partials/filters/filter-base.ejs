@@ -28,6 +28,7 @@
   var _srt     = (typeof showSort       !== 'undefined') ? showSort       : false;
   var _disp    = (typeof showDisplay    !== 'undefined') ? showDisplay    : false;
   var _type    = (typeof showType       !== 'undefined') ? showType       : false;
+  var _srch    = (typeof showSearch     !== 'undefined') ? showSearch     : true;
   var _objet   = (typeof showObjet      !== 'undefined') ? showObjet      : false;
   var _srtOpts = (typeof sortOptions    !== 'undefined') ? sortOptions    : [
     { value: 'date-desc',  label: 'Plus récent'  },
@@ -45,16 +46,20 @@
 %>
 <div class="filter-block filter-block--base" id="<%= _bid %>">
 
-  <%# ── Recherche ── %>
+  <%# ── Recherche (optionnelle : false si rendue directement dans le template) ── %>
+  <% if (_srch) { %>
   <div class="wiki-filter-section">
     <div class="wiki-search-wrap">
-      <span class="wiki-search-icon">&#128269;</span>
-      <input type="search" id="<%= _sid %>" class="wiki-search-input"
-        placeholder="Rechercher…" autocomplete="off" />
-      <button type="button" class="wiki-search-clear" id="<%= _sid %>-clear"
-        hidden aria-label="Effacer">&#215;</button>
+      <div class="wiki-search-bar">
+        <input type="search" id="<%= _sid %>" class="wiki-search-input"
+          placeholder="Recherche" autocomplete="off" />
+        <button type="button" class="wiki-search-clear" id="<%= _sid %>-clear"
+          hidden aria-label="Effacer">&#215;</button>
+      </div>
+      <span class="wiki-result-count" id="<%= _sid %>-count" hidden></span>
     </div>
   </div>
+  <% } %>
 
   <%# ── Tri + affichage ── %>
   <% if (_srt || _disp) { %>

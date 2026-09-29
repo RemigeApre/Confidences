@@ -277,6 +277,7 @@
   // ══════════════════════════════════════════════════
   var grid           = document.getElementById("gallery-grid");
   var tagFilter      = document.getElementById("gallery-tag-filter");
+  var tagSearchInput = document.getElementById("gallery-tag-search");
   var categoryFilter = document.getElementById("gallery-category-filter");
   var searchInput    = document.getElementById("gallery-search");
   var searchClear    = document.getElementById("gallery-search-clear");
@@ -454,6 +455,23 @@
     });
   }
 
+  // ── Recherche dans le nuage de tags ──────────────────────────────────────
+  var tagSearchDebounce = null;
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener("input", function () {
+      clearTimeout(tagSearchDebounce);
+      tagSearchDebounce = setTimeout(function () {
+        var q = tagSearchInput.value.trim().toLowerCase();
+        if (tagFilter) {
+          tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function (chip) {
+            var tag = (chip.dataset.tag || "").toLowerCase();
+            chip.hidden = q.length > 0 && (chip.dataset.state || "0") === "0" && tag.indexOf(q) === -1;
+          });
+        }
+      }, 120);
+    });
+  }
+
   // ── Tag overflow galerie (20 par palier, max 40) ──────────────────────────
   var GTAG_PAGE = 20;
   var GTAG_MAX  = 40;
@@ -590,8 +608,10 @@
         tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function(c) {
           c.dataset.state = "0";
           c.classList.remove("chip-include","chip-exclude");
+          c.hidden = false;
         });
       }
+      if (tagSearchInput) { tagSearchInput.value = ""; }
       // Niveau d'expansion du nuage de tags (voir "Plus") : sans ça, le
       // volet restait déplié après réinitialisation (même bug que Codex).
       gTagExpandedCount = GTAG_PAGE;
