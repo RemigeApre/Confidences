@@ -1,36 +1,39 @@
 <%
-/*  Partial : filtre de base (recherche + tri + affichage + type)
+/*  Partial : filtre de base — recherche + tri + affichage + type
+ *  Classes CSS : identiques au Codex (wiki-search-wrap, wiki-sort-select,
+ *                wiki-ultra-btn, wiki-filter-toggles, etc.)
  *
  *  Paramètres :
- *    searchId      {string}   ID du champ recherche (requis)
- *    showSort      {boolean}  afficher le tri           (défaut false)
- *    sortOptions   {Array}    [{value,label}]           (défaut : date/alpha/aléatoire)
- *    defaultSort   {string}   valeur sélectionnée       (défaut 'date-desc')
- *    showDisplay   {boolean}  afficher nb de colonnes   (défaut false)
+ *    searchId      {string}   ID du <input> recherche        (requis)
+ *    showSort      {boolean}  tri                            (défaut false)
+ *    sortOptions   {Array}    [{value,label}]
+ *    defaultSort   {string}                                  (défaut 'date-desc')
+ *    showDisplay   {boolean}  nombre de colonnes             (défaut false)
  *    displayOptions{Array}    [{value,label}]
- *    defaultDisplay{string}                             (défaut '3')
- *    showType      {boolean}  afficher ultra/irréaliste (défaut false)
- *    showObjet     {boolean}  ajouter bouton "Objets"   (défaut false)
+ *    defaultDisplay{string}                                  (défaut '3')
+ *    showType      {boolean}  chips ultra/irréaliste         (défaut false)
+ *    showObjet     {boolean}  chip Objets                    (défaut false)
  *
  *  Événement émis (bubbles) :
- *    'filterbase:change'  →  { search, sort, display, types:{ultra,irrealiste,objet} }
+ *    'filterbase:change' → { search, sort, display,
+ *                            types: { ultra, irrealiste, objet } }
+ *                           (type : 0 neutre | 1 inclure seulement | 2 masquer)
  *
- *  Méthode DOM :
- *    block._reset()  — réinitialise l'UI et dispatch l'événement
+ *  Méthode DOM : block._reset()
  */
-  var _sid   = searchId;
-  var _bid   = _sid + '-base';
-  var _srtId = _sid + '-sort';
-  var _dispId= _sid + '-disp';
-  var _srt   = (typeof showSort      !== 'undefined') ? showSort      : false;
-  var _disp  = (typeof showDisplay   !== 'undefined') ? showDisplay   : false;
-  var _type  = (typeof showType      !== 'undefined') ? showType      : false;
-  var _objet = (typeof showObjet     !== 'undefined') ? showObjet     : false;
-  var _srtOpts = (typeof sortOptions !== 'undefined') ? sortOptions   : [
-    { value: 'date-desc',  label: 'Plus récent'   },
-    { value: 'date-asc',   label: 'Plus ancien'   },
-    { value: 'alpha-asc',  label: 'Alphabétique'  },
-    { value: 'random',     label: 'Aléatoire'     }
+  var _sid     = searchId;
+  var _bid     = _sid + '-base';
+  var _srtId   = _sid + '-sort';
+  var _dispId  = _sid + '-disp';
+  var _srt     = (typeof showSort       !== 'undefined') ? showSort       : false;
+  var _disp    = (typeof showDisplay    !== 'undefined') ? showDisplay    : false;
+  var _type    = (typeof showType       !== 'undefined') ? showType       : false;
+  var _objet   = (typeof showObjet      !== 'undefined') ? showObjet      : false;
+  var _srtOpts = (typeof sortOptions    !== 'undefined') ? sortOptions    : [
+    { value: 'date-desc',  label: 'Plus récent'  },
+    { value: 'date-asc',   label: 'Plus ancien'  },
+    { value: 'alpha-asc',  label: 'Alphabétique' },
+    { value: 'random',     label: 'Aléatoire'    }
   ];
   var _defSrt  = (typeof defaultSort    !== 'undefined') ? defaultSort    : 'date-desc';
   var _dispOpts= (typeof displayOptions !== 'undefined') ? displayOptions : [
@@ -41,26 +44,30 @@
   var _defDisp = (typeof defaultDisplay !== 'undefined') ? defaultDisplay : '3';
 %>
 <div class="filter-block filter-block--base" id="<%= _bid %>">
+
+  <%# ── Recherche ── %>
   <div class="wiki-filter-section">
-    <div class="filter-base-search-wrap">
-      <input type="search" id="<%= _sid %>" class="wiki-tag-search-input filter-base-search"
+    <div class="wiki-search-wrap">
+      <span class="wiki-search-icon">&#128269;</span>
+      <input type="search" id="<%= _sid %>" class="wiki-search-input"
         placeholder="Rechercher…" autocomplete="off" />
-      <button type="button" class="filter-base-clear" id="<%= _sid %>-clear"
-        hidden aria-label="Effacer">×</button>
+      <button type="button" class="wiki-search-clear" id="<%= _sid %>-clear"
+        hidden aria-label="Effacer">&#215;</button>
     </div>
   </div>
 
+  <%# ── Tri + affichage ── %>
   <% if (_srt || _disp) { %>
-  <div class="wiki-filter-section filter-base-row">
+  <div class="wiki-filter-section wiki-sort-cols-row">
     <% if (_srt) { %>
-    <select id="<%= _srtId %>" class="filter-base-select" data-default="<%= _defSrt %>">
+    <select id="<%= _srtId %>" class="wiki-sort-select" data-default="<%= _defSrt %>">
       <% _srtOpts.forEach(function(o) { %>
         <option value="<%= o.value %>"<%= o.value === _defSrt ? ' selected' : '' %>><%= o.label %></option>
       <% }) %>
     </select>
     <% } %>
     <% if (_disp) { %>
-    <select id="<%= _dispId %>" class="filter-base-select" data-default="<%= _defDisp %>">
+    <select id="<%= _dispId %>" class="wiki-sort-select" data-default="<%= _defDisp %>">
       <% _dispOpts.forEach(function(o) { %>
         <option value="<%= o.value %>"<%= o.value === _defDisp ? ' selected' : '' %>><%= o.label %></option>
       <% }) %>
@@ -69,15 +76,17 @@
   </div>
   <% } %>
 
+  <%# ── Type (ultra / irréaliste / objets) ── %>
   <% if (_type) { %>
-  <div class="wiki-filter-section filter-type-row">
-    <button type="button" class="tag-chip filter-type-btn" data-type="ultra"      data-state="0">Ultra</button>
-    <button type="button" class="tag-chip filter-type-btn" data-type="irrealiste" data-state="0">Irréaliste</button>
+  <div class="wiki-filter-section wiki-filter-toggles">
+    <button type="button" class="wiki-ultra-btn" data-type="ultra"      data-state="0">Ultra</button>
+    <button type="button" class="wiki-ultra-btn" data-type="irrealiste" data-state="0">Irr&eacute;aliste</button>
     <% if (_objet) { %>
-    <button type="button" class="tag-chip filter-type-btn" data-type="objet"      data-state="0">Objets</button>
+    <button type="button" class="wiki-ultra-btn" data-type="objet"      data-state="0">Objets</button>
     <% } %>
   </div>
   <% } %>
+
 </div>
 
 <script>
@@ -93,7 +102,7 @@
 
   function getTypes() {
     var t = {};
-    block.querySelectorAll('.filter-type-btn').forEach(function (btn) {
+    block.querySelectorAll('.wiki-ultra-btn[data-type]').forEach(function (btn) {
       t[btn.dataset.type] = Number(btn.dataset.state) || 0;
     });
     return t;
@@ -111,15 +120,22 @@
     }));
   }
 
-  // Initialise les types depuis les préférences compte (window.ULTRA_MODE etc.)
-  block.querySelectorAll('.filter-type-btn').forEach(function (btn) {
+  // État initial des types depuis les préférences compte
+  block.querySelectorAll('.wiki-ultra-btn[data-type]').forEach(function (btn) {
     var s = 0;
     if (btn.dataset.type === 'ultra'      && window.ULTRA_MODE      === 'hidden') s = 2;
     if (btn.dataset.type === 'irrealiste' && window.IRREALISTE_MODE === 'hidden') s = 2;
-    btn.dataset.state = String(s);
-    btn.classList.toggle('chip-include', s === 1);
-    btn.classList.toggle('chip-exclude', s === 2);
+    _applyTypeState(btn, s);
   });
+
+  function _applyTypeState(btn, s) {
+    btn.dataset.state = String(s);
+    // état 0 : neutre  → style normal wiki-ultra-btn
+    // état 1 : inclure → vert (chip-include)
+    // état 2 : masquer → actif Codex (wiki-ultra-btn.active, bleu sombre)
+    btn.classList.toggle('chip-include', s === 1);
+    btn.classList.toggle('active',       s === 2);
+  }
 
   // Recherche
   input.addEventListener('input', function () {
@@ -136,35 +152,29 @@
   if (dispEl) dispEl.addEventListener('change', dispatch);
 
   // Type (3 états)
-  block.querySelectorAll('.filter-type-btn').forEach(function (btn) {
+  block.querySelectorAll('.wiki-ultra-btn[data-type]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var s = ((Number(btn.dataset.state) || 0) + 1) % 3;
-      btn.dataset.state = String(s);
-      btn.classList.toggle('chip-include', s === 1);
-      btn.classList.toggle('chip-exclude', s === 2);
+      _applyTypeState(btn, s);
       dispatch();
     });
   });
 
-  // Réinitialisation exposée sur l'élément block
+  // Réinitialisation
   block._reset = function () {
     input.value = ''; clear.hidden = true;
     if (sortEl) sortEl.value = sortEl.dataset.default || sortEl.options[0].value;
     if (dispEl) dispEl.value = dispEl.dataset.default || dispEl.options[0].value;
-    block.querySelectorAll('.filter-type-btn').forEach(function (btn) {
+    block.querySelectorAll('.wiki-ultra-btn[data-type]').forEach(function (btn) {
       var s = 0;
       if (btn.dataset.type === 'ultra'      && window.ULTRA_MODE      === 'hidden') s = 2;
       if (btn.dataset.type === 'irrealiste' && window.IRREALISTE_MODE === 'hidden') s = 2;
-      btn.dataset.state = String(s);
-      btn.classList.toggle('chip-include', s === 1);
-      btn.classList.toggle('chip-exclude', s === 2);
+      _applyTypeState(btn, s);
     });
     dispatch();
   };
 
-  // Dispatch initial différé : les <script> des partials s'exécutent avant
-  // le script principal de la page — setTimeout(0) garantit que les listeners
-  // sont attachés quand ce premier événement arrive.
+  // Dispatch initial différé : garantit que les listeners de la page sont attachés
   setTimeout(dispatch, 0);
 })();
 </script>
