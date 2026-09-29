@@ -3,10 +3,21 @@
   var hue = cat ? cat.hue : 340;
   var wc  = n.word_count || 0;
   var readMin = Math.max(1, Math.round(wc / 200));
+  var tags    = n.tags || [];
+  var isUltra      = tags.indexOf('ultra') !== -1;
+  var isIrrealiste = tags.indexOf('irréaliste') !== -1;
+  var bannerText = '';
+  var bannerMod  = '';
+  if (isUltra && isIrrealiste) { bannerText = 'Ultra & Irréaliste'; bannerMod = 'both'; }
+  else if (isUltra)            { bannerText = 'Ultra';              bannerMod = 'ultra'; }
+  else if (isIrrealiste)       { bannerText = 'Irréaliste';         bannerMod = 'irrealiste'; }
 %>
 <article class="nv-card" style="--nv-hue: <%= hue %>"
   data-id="<%= n.id %>"
   data-category="<%= n.category %>"
+  data-tags="<%= tags.join(',') %>"
+  data-ultra="<%= isUltra ? '1' : '0' %>"
+  data-irrealiste="<%= isIrrealiste ? '1' : '0' %>"
   data-title="<%= n.title.replace(/"/g, '&quot;') %>"
   data-author="<%= (n.author || '').replace(/"/g, '&quot;') %>"
   data-summary="<%= (n.summary || '').replace(/"/g, '&quot;') %>"
@@ -14,8 +25,11 @@
   data-hue="<%= hue %>"
   data-cat="<%= cat ? cat.label : '' %>">
 
+  <% if (bannerText) { %>
+    <span class="wiki-card-banner wiki-card-banner--<%= bannerMod %> nv-card-banner"><%= bannerText %></span>
+  <% } %>
   <% if (n.stage === 'brouillon') { %><span class="nv-card-stage-badge nv-card-stage-brouillon">Brouillon</span><% } %>
-  <% if (n.hidden) { %><span class="nv-card-stage-badge nv-card-stage-hidden">Masqué</span><% } %>
+  <% if (n.hidden)   { %><span class="nv-card-stage-badge nv-card-stage-hidden">Masqué</span><% } %>
   <% if (n.featured) { %><span class="nv-card-featured-badge">★</span><% } %>
 
   <h3 class="nv-card-title"><%= n.title %></h3>

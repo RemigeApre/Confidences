@@ -2431,6 +2431,7 @@ module.exports = {
   updateNouvelleSerie,
   deleteNouvelleSerie,
   listNouvellesBySerie,
+  listNouvellesTags,
   listAiProfiles,
   getAiProfile,
   createAiProfile,
@@ -2536,6 +2537,13 @@ function listAllSiteTags() {
 }
 function listNouvellesBySerie(serieId) {
   return db.prepare(`SELECT id, title, summary, tags, category, author, featured, word_count, serie_id, serie_order, created_at, updated_at FROM nouvelles WHERE serie_id=? ORDER BY serie_order ASC, id ASC`).all(serieId);
+}
+function listNouvellesTags() {
+  const tagSet = new Set();
+  db.prepare("SELECT tags FROM nouvelles WHERE tags != '[]'").all().forEach(r => {
+    try { JSON.parse(r.tags).forEach(t => tagSet.add(t)); } catch (_) {}
+  });
+  return Array.from(tagSet).filter(Boolean).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
 }
 
 // ── AI Profiles ────────────────────────────────────────────────────────────

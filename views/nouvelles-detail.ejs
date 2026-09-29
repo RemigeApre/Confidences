@@ -86,10 +86,10 @@
         </div>
       <% } %>
 
-      <%# Tags %>
+      <%# Tags (avec classification ultra/irréaliste via tagRegistry) %>
       <% if (nouvelle.tags && nouvelle.tags.length) { %>
         <div class="nv-right-tags">
-          <% nouvelle.tags.forEach(function(t) { %><span class="nv-reader-tag"><%= t %></span><% }) %>
+          <% nouvelle.tags.forEach(function(t) { %><%- include('partials/tag-badge', { tag: t }) %><% }) %>
         </div>
       <% } %>
 

@@ -14371,22 +14371,39 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   font-size: .75rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .1em; color: var(--muted); margin: 0 0 1rem;
 }
+.nv-strip-title--center { text-align: center; }
 .nv-empty { color: var(--muted); font-size: .88rem; padding: 2rem 0; }
 
 /* ── Filtres sidebar ──────────────────────────────────────────────────────── */
-.nv-cat-filters { display: flex; flex-wrap: wrap; gap: .4rem; }
-.nv-cat-btn {
+.nv-cat-filters { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
+.nv-cat-chip {
   padding: .25rem .65rem; border-radius: 20px;
   border: 1px solid var(--border); background: none;
   color: var(--muted); font-size: .75rem; cursor: pointer;
   transition: background .15s, color .15s, border-color .15s;
 }
-.nv-cat-btn--active,
-.nv-cat-btn:hover {
+.nv-cat-chip:hover {
   background: hsl(var(--nv-hue, 340), 40%, 18%);
   color: hsl(var(--nv-hue, 340), 55%, 72%);
   border-color: hsl(var(--nv-hue, 340), 35%, 30%);
 }
+.nv-cat-chip.chip-include {
+  background: hsl(140,55%,28%); border-color: hsl(140,55%,38%); color: #fff;
+}
+.nv-cat-chip.chip-exclude {
+  background: hsl(0,55%,35%); border-color: hsl(0,55%,45%); color: #fff;
+}
+
+/* Tag search input (sidebar nouvelles) */
+#nv-tag-search {
+  display: block; width: 100%; box-sizing: border-box;
+  margin-bottom: .45rem;
+  padding: .3rem .6rem; border-radius: 6px;
+  border: 1px solid var(--border); background: rgba(255,255,255,.04);
+  color: var(--fg); font-size: .78rem;
+}
+#nv-tag-search::placeholder { color: var(--muted); }
+#nv-tag-search:focus { outline: none; border-color: hsl(340,40%,40%); }
 
 /* ── Grille de cartes nouvelles ───────────────────────────────────────────── */
 .nv-cards {
@@ -14395,37 +14412,35 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   gap: .55rem;
 }
 
-/* ── Carte nouvelle : titre + durée, épurée ───────────────────────────────── */
+/* ── Carte nouvelle : fond coloré par catégorie ───────────────────────────── */
 .nv-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: .55rem;
-  padding: 1.1rem 1rem 0.9rem 1.25rem;
-  background: rgba(255,255,255,.028);
-  border: 1px solid rgba(255,255,255,.07);
-  border-left: 3px solid hsl(var(--nv-hue, 340), 42%, 38%);
-  border-radius: 0 8px 8px 0;
+  gap: .5rem;
+  padding: 1rem 1rem 0.85rem;
+  background: hsl(var(--nv-hue, 340), 38%, 14%);
+  border: 1px solid hsl(var(--nv-hue, 340), 30%, 22%);
+  border-radius: 8px;
   cursor: pointer;
-  transition: background .15s, border-left-color .16s, transform .15s, box-shadow .15s;
+  transition: background .15s, transform .15s, box-shadow .15s;
 }
 .nv-card:hover {
-  background: rgba(255,255,255,.055);
-  border-left-color: hsl(var(--nv-hue, 340), 58%, 58%);
-  transform: translateX(3px);
-  box-shadow: -2px 0 14px rgba(0,0,0,.25);
+  background: hsl(var(--nv-hue, 340), 42%, 19%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 18px rgba(0,0,0,.35);
 }
 .nv-card-title {
   font-size: .92rem;
   font-weight: 700;
   font-family: Georgia, 'Times New Roman', serif;
   line-height: 1.4;
-  color: rgba(255,255,255,.88);
+  color: hsl(var(--nv-hue, 340), 55%, 88%);
   margin: 0;
 }
 .nv-card-dur {
   font-size: .65rem;
-  color: rgba(255,255,255,.3);
+  color: hsl(var(--nv-hue, 340), 35%, 62%);
   letter-spacing: .05em;
   margin-top: auto;
 }
@@ -14705,6 +14720,15 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   display: flex; gap: .5rem; align-items: center;
   margin-top: 2rem; padding-top: 1.2rem;
   border-top: 1px solid rgba(255,255,255,.07);
+}
+
+/* ── Banner ultra/irréaliste sur carte nouvelle (en bas) ─────────────────── */
+.nv-card-banner {
+  top: auto;
+  bottom: 0;
+  font-size: .6rem;
+  padding: .18rem .4rem;
+  border-radius: 0;
 }
 
 /* ── Nouvelle : badges stage / masqué ───────────────────────────────────── */

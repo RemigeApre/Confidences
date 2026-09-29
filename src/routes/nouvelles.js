@@ -9,8 +9,6 @@ const CATEGORIES = [
   { key: "fantaisie",  label: "Fantaisie",   hue: 260 },
   { key: "bdsm",       label: "BDSM",        hue:   5 },
   { key: "jeu_role",   label: "Jeu de rôle", hue:  60 },
-  { key: "rencontre",  label: "Rencontre",   hue: 140 },
-  { key: "couple",     label: "Couple",      hue: 200 },
   { key: "autre",      label: "Autre",       hue: 220 },
 ];
 
@@ -57,7 +55,10 @@ function buildNouvellesRouter(config) {
     const series     = db.listNouvelleSeries();
     const featured   = all.filter(n => n.featured);
     const standalone = all.filter(n => !n.serie_id);
-    res.render("nouvelles", { config, all, featured, standalone, series, categories: CATEGORIES, stages: STAGES });
+    // Nouveautés : les 6 plus récentes (par updated_at, déjà triées DESC)
+    const recent     = all.slice(0, 6);
+    const allTags    = db.listNouvellesTags();
+    res.render("nouvelles", { config, all, featured, standalone, series, recent, allTags, categories: CATEGORIES, stages: STAGES });
   });
 
   // ── Séries ─────────────────────────────────────────────────────────────────
