@@ -13,13 +13,14 @@ function buildProtagonistesRouter(config) {
 
   router.get("/new", requireAdmin, (req, res) => {
     const allTags = db.listAllSiteTags();
-    res.render("protagoniste-form", { config, protagoniste: null, allTags });
+    res.render("protagoniste-form", { config, protagoniste: null, allTags, allParodies: db.listAllParodies() });
   });
   router.post("/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const name = String(req.body.name || "").slice(0, 200).trim();
     if (!name) return res.redirect("/protagonistes/new");
     const tags = String(req.body.tags || "").split(",").map(t => t.trim()).filter(Boolean);
-    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags });
+    const parody = String(req.body.parody || "").slice(0, 200).trim();
+    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody });
     res.redirect(`/protagonistes/${id}`);
   });
 
@@ -35,16 +36,18 @@ function buildProtagonistesRouter(config) {
     const protagoniste = db.getProtagoniste(req.params.id);
     if (!protagoniste) return res.redirect("/protagonistes");
     const allTags = db.listAllSiteTags();
-    res.render("protagoniste-form", { config, protagoniste, allTags });
+    res.render("protagoniste-form", { config, protagoniste, allTags, allParodies: db.listAllParodies() });
   });
   router.post("/:id/update", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const protagoniste = db.getProtagoniste(req.params.id);
     if (!protagoniste) return res.redirect("/protagonistes");
     const tags = String(req.body.tags || "").split(",").map(t => t.trim()).filter(Boolean);
+    const parody = String(req.body.parody || "").slice(0, 200).trim();
     db.updateProtagoniste(protagoniste.id, {
       name:        String(req.body.name || "").slice(0, 200).trim() || protagoniste.name,
       description: String(req.body.description || ""),
       tags,
+      parody,
     });
     res.redirect(`/protagonistes/${protagoniste.id}`);
   });

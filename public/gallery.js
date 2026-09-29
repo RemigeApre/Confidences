@@ -306,6 +306,7 @@
   var storedHideIrrealiste = localStorage.getItem("gallery-hide-irrealiste");
   var hideUltra      = storedHideUltra !== null ? storedHideUltra === "1" : (window.ULTRA_MODE || "hidden") === "hidden";
   var hideIrrealiste = storedHideIrrealiste !== null ? storedHideIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") === "hidden";
+  var activeParody   = "";
   var activeRating   = 0;
   var sortMode       = "date-desc";
   var randomSeeds    = null; // Map<card, number> — persistant entre pages
@@ -341,13 +342,14 @@
       var okUltra       = !hideUltra || card.dataset.ultra !== "1";
       var okIrrealiste  = !hideIrrealiste || card.dataset.irrealiste !== "1";
       var okRating   = !activeRating || Number(card.dataset.rating) >= activeRating;
+      var okParody   = !activeParody || (card.dataset.parody || "") === activeParody;
 
       var okTag = true;
       if (tagIncludes.length) okTag = tagIncludes.every(function(t){ return cardTags.indexOf(t) !== -1; });
       if (tagExcludes.length) okTag = okTag && tagExcludes.every(function(t){ return cardTags.indexOf(t) === -1; });
       var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
 
-      var passes = okCategory && okSearch && okUltra && okIrrealiste && okRating && okTag && okBlacklist;
+      var passes = okCategory && okSearch && okUltra && okIrrealiste && okRating && okParody && okTag && okBlacklist;
       card.dataset.filtered = passes ? "1" : "0";
       if (passes) filteredCards.push(card);
     });
@@ -366,7 +368,7 @@
 
     var total = filteredCards.length;
     var totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
-    var hasFilter = Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating;
+    var hasFilter = Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating || activeParody;
     if (countHero) countHero.textContent = hasFilter ? (total + "/" + cards.length) : cards.length;
     if (resultCount) { resultCount.hidden = !hasFilter; if (hasFilter) resultCount.textContent = total + " / " + cards.length; }
 
@@ -619,6 +621,19 @@
       searchQ = "";
       if (searchInput) { searchInput.value = ""; }
       if (searchClear) searchClear.hidden = true;
+      // Effacer parodie
+      activeParody = "";
+      var parodyBlock = document.getElementById("gallery-parody-filter-block");
+      if (parodyBlock && typeof parodyBlock._reset === "function") parodyBlock._reset();
+      applyFilters();
+    });
+  }
+
+  // ── Parody filter (from filter-parodies partial) ─────────────────────────
+  var gallerySidebar = document.getElementById("mobile-filter-sidebar");
+  if (gallerySidebar) {
+    gallerySidebar.addEventListener("parodyfilter:change", function (e) {
+      activeParody = e.detail.active || "";
       applyFilters();
     });
   }

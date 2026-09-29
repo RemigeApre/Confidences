@@ -13,6 +13,7 @@
     },
     couleurOnly: false,
     langue:      '',
+    parody:      '',
     tagIncluded: [],
     tagExcluded: [],
     minRating:   0,
@@ -78,6 +79,9 @@
       if (show && state.flame      && !flame)                      show = false;
       if (show && state.interested && !interested)                 show = false;
 
+      var parody = card.dataset.parody || '';
+      if (show && state.parody && parody !== state.parody)         show = false;
+
       card.style.display = show ? '' : 'none';
       if (show) visible++;
     });
@@ -106,9 +110,15 @@
       applyFilters();
     });
 
+    sidebar.addEventListener('parodyfilter:change', function (e) {
+      state.parody = e.detail.active || '';
+      applyFilters();
+    });
+
     sidebar.addEventListener('filterreset:reset', function () {
       state.couleurOnly = false;
       state.langue      = '';
+      state.parody      = '';
       if (couleurBtn) couleurBtn.classList.remove('active');
       if (langueFilter) langueFilter.querySelectorAll('.bd-langue-chip').forEach(function (c) { c.classList.remove('active'); });
       sidebar.querySelectorAll('.filter-block').forEach(function (b) {

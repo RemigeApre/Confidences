@@ -85,6 +85,13 @@
 
       <%- include('partials/filter-profiles', { section: 'gallery', profiles: locals.galleryFilterProfiles || [] }) %>
 
+      <% if (allParodies && allParodies.length) { %>
+        <%- include('partials/filters/filter-parodies', {
+              filterId:  'gallery-parody-filter',
+              parodies:  allParodies,
+              label:     'Parodies'
+            }) %>
+      <% } %>
 
       </details>
 

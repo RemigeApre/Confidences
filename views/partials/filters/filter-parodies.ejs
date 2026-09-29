@@ -1,0 +1,95 @@
+<%
+/*  Partial : filtre parodies
+ *
+ *  Paramètres :
+ *    filterId   {string}  ID du conteneur (requis)
+ *    parodies   {Array}   liste de parodies [{name, count?}] ou [string] (requis)
+ *    label      {string}  libellé                   (défaut 'Parodies')
+ *
+ *  Événement émis (bubbles) :
+ *    'parodyfilter:change'  →  { filterId, active: '' | 'nom de la parodie' }
+ *
+ *  Méthode DOM :
+ *    block._reset()
+ */
+  var _fid      = filterId;
+  var _parodies = parodies || [];
+  var _label    = (typeof label !== 'undefined') ? label : 'Parodies';
+%>
+<% if (_parodies.length) { %>
+<details class="wiki-subpanel-details filter-block filter-block--parodies" id="<%= _fid %>-block">
+  <summary class="wiki-subpanel-summary"><%= _label %></summary>
+  <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
+    placeholder="Chercher une parodie" autocomplete="off" />
+  <div class="wiki-tag-cloud" id="<%= _fid %>">
+    <% _parodies.forEach(function(p) {
+      var name  = (typeof p === 'object') ? p.name  : p;
+      var count = (typeof p === 'object') ? p.count : 0;
+    %>
+      <button type="button" class="wiki-tag-chip parody-chip" data-parody="<%= name %>" data-state="0">
+        <span class="wtc-label"><%= name %></span>
+        <% if (count) { %><span class="wtc-count"><%= count %></span><% } %>
+      </button>
+    <% }) %>
+  </div>
+</details>
+
+<script>
+(function () {
+  var block  = document.getElementById('<%= _fid %>-block');
+  var cloud  = document.getElementById('<%= _fid %>');
+  var search = document.getElementById('<%= _fid %>-search');
+  if (!block || !cloud) return;
+
+  var active = '';
+
+  function dispatch() {
+    block.dispatchEvent(new CustomEvent('parodyfilter:change', {
+      bubbles: true,
+      detail: { filterId: '<%= _fid %>', active: active }
+    }));
+  }
+
+  cloud.addEventListener('click', function (e) {
+    var chip = e.target.closest('.parody-chip');
+    if (!chip) return;
+    var name = chip.dataset.parody;
+    if (active === name) {
+      active = '';
+      chip.dataset.state = '0';
+      chip.classList.remove('chip-include');
+    } else {
+      // Désactive l'ancien actif
+      cloud.querySelectorAll('.parody-chip.chip-include').forEach(function (c) {
+        c.dataset.state = '0'; c.classList.remove('chip-include');
+      });
+      active = name;
+      chip.dataset.state = '1';
+      chip.classList.add('chip-include');
+    }
+    dispatch();
+  });
+
+  if (search) {
+    search.addEventListener('input', function () {
+      var q = search.value.trim().toLowerCase();
+      cloud.querySelectorAll('.parody-chip').forEach(function (chip) {
+        chip.hidden = chip.dataset.state === '0' && q.length > 0
+          && (chip.dataset.parody || '').toLowerCase().indexOf(q) === -1;
+      });
+    });
+  }
+
+  block._reset = function () {
+    active = '';
+    if (search) search.value = '';
+    cloud.querySelectorAll('.parody-chip').forEach(function (chip) {
+      chip.dataset.state = '0';
+      chip.classList.remove('chip-include');
+      chip.hidden = false;
+    });
+    dispatch();
+  };
+})();
+</script>
+<% } %>

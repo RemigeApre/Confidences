@@ -34,6 +34,7 @@ const {
   getSeriesMapForIds,
   listUnexploredGalleryImages,
   listBlacklistedTags,
+  listAllParodies,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -192,7 +193,8 @@ function buildGalleryRouter(config) {
     const topTags = allTags.slice(0, 20);
     const galleryIds = items.filter((i) => i.id).map((i) => i.id);
     const seriesMap = galleryIds.length ? getSeriesMapForIds(galleryIds) : {};
-    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap });
+    const allParodies = listAllParodies();
+    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap, allParodies });
   });
 
   // Chaque image est sa propre fiche, jamais regroupées automatiquement —

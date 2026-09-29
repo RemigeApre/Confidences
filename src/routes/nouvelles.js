@@ -58,7 +58,8 @@ function buildNouvellesRouter(config) {
     // Nouveautés : les 6 plus récentes (par updated_at, déjà triées DESC)
     const recent     = all.slice(0, 6);
     const allTags    = db.listNouvellesTags();
-    res.render("nouvelles", { config, all, featured, standalone, series, recent, allTags, categories: CATEGORIES, stages: STAGES });
+    const allParodies = db.listAllParodies();
+    res.render("nouvelles", { config, all, featured, standalone, series, recent, allTags, allParodies, categories: CATEGORIES, stages: STAGES });
   });
 
   // ── Séries ─────────────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ function buildNouvellesRouter(config) {
     const allTags      = db.listAllSiteTags();
     const protagonistes = db.listProtagonistes();
     const preSerieId   = req.query.serie ? Number(req.query.serie) : null;
-    res.render("nouvelles-form", { config, nouvelle: null, series, allTags, protagonistes, preSerieId, categories: CATEGORIES, stages: STAGES });
+    res.render("nouvelles-form", { config, nouvelle: null, series, allTags, protagonistes, preSerieId, allParodies: db.listAllParodies(), categories: CATEGORIES, stages: STAGES });
   });
   router.post("/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const title = String(req.body.title || "").slice(0, 300).trim();
@@ -120,6 +121,7 @@ function buildNouvellesRouter(config) {
       tags:             parseTags(req.body.tags),
       category:         String(req.body.category || ""),
       author:           String(req.body.author   || "").slice(0, 200),
+      parody:           String(req.body.parody   || "").slice(0, 200).trim(),
       featured:         req.body.featured === "1" ? 1 : 0,
       serie_id:         serieId,
       serie_order:      req.body.serie_order ? Number(req.body.serie_order) : 0,
@@ -174,7 +176,7 @@ function buildNouvellesRouter(config) {
     const series        = db.listNouvelleSeries();
     const allTags       = db.listAllSiteTags();
     const protagonistes = db.listProtagonistes();
-    res.render("nouvelles-form", { config, nouvelle, series, allTags, protagonistes, preSerieId: null, categories: CATEGORIES, stages: STAGES });
+    res.render("nouvelles-form", { config, nouvelle, series, allTags, protagonistes, preSerieId: null, allParodies: db.listAllParodies(), categories: CATEGORIES, stages: STAGES });
   });
   router.post("/:id/update", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const nouvelle = db.getNouvelleById(req.params.id);
@@ -189,6 +191,7 @@ function buildNouvellesRouter(config) {
       tags:             parseTags(req.body.tags),
       category:         String(req.body.category || ""),
       author:           String(req.body.author   || "").slice(0, 200),
+      parody:           String(req.body.parody   || "").slice(0, 200).trim(),
       featured:         req.body.featured === "1" ? 1 : 0,
       serie_id:         serieId,
       serie_order:      req.body.serie_order ? Number(req.body.serie_order) : 0,

@@ -69,6 +69,14 @@
                 showNotRated:    true
               }) %>
 
+          <% if (allParodies && allParodies.length) { %>
+            <%- include('partials/filters/filter-parodies', {
+                  filterId:  'bd-parody-filter',
+                  parodies:  allParodies,
+                  label:     'Parodies'
+                }) %>
+          <% } %>
+
         </div>
       </details>
 
@@ -98,7 +106,8 @@
           data-couleur="<%= book.tags.indexOf('en couleur') !== -1 ? '1' : '0' %>"
           data-rating="<%= book.rating || 0 %>"
           data-flame="<%= book.flame ? '1' : '0' %>"
-          data-interested="<%= book.interested ? '1' : '0' %>">
+          data-interested="<%= book.interested ? '1' : '0' %>"
+          data-parody="<%= (book.parody || '').replace(/"/g, '') %>">
           <% if (book.imagePaths && book.imagePaths.length) { %>
             <div class="bd-card-cover">
               <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />

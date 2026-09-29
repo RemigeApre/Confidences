@@ -60,6 +60,14 @@
                 }) %>
           <% } %>
 
+          <% if (allParodies && allParodies.length) { %>
+            <%- include('partials/filters/filter-parodies', {
+                  filterId:  'nv-parody-filter',
+                  parodies:  allParodies,
+                  label:     'Parodies'
+                }) %>
+          <% } %>
+
         </div>
       </details>
 
@@ -178,7 +186,8 @@
     catIncluded: [],
     catExcluded: [],
     tagIncluded: [],
-    tagExcluded: []
+    tagExcluded: [],
+    parody:      ''
   };
 
   // Normalise un texte pour la recherche
@@ -218,6 +227,9 @@
         if (state.types.irrealiste === 1 && !isIrr)        hide = true;
         if (state.types.irrealiste === 2 && isIrr)         hide = true;
       }
+
+      // Parodie
+      if (!hide && state.parody && (card.dataset.parody || '') !== state.parody) hide = true;
 
       card.hidden = hide;
     });
@@ -281,10 +293,15 @@
     applyFilters();
   });
 
+  sidebar.addEventListener('parodyfilter:change', function (e) {
+    state.parody = e.detail.active || '';
+    applyFilters();
+  });
+
   sidebar.addEventListener('filterreset:reset', function () {
     // Réinitialise l'état
     state = { search: '', sort: 'date-desc', types: { ultra: 0, irrealiste: 0, objet: 0 },
-              catIncluded: [], catExcluded: [], tagIncluded: [], tagExcluded: [] };
+              catIncluded: [], catExcluded: [], tagIncluded: [], tagExcluded: [], parody: '' };
     // Demande à chaque bloc de réinitialiser son UI
     // Note : les _reset() des blocs re-dispatchent leurs propres événements,
     // ce qui met à jour state une seconde fois — c'est redondant mais sans effet de bord.

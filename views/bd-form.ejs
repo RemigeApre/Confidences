@@ -21,6 +21,19 @@
       <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= book ? book.tags.join(', ') : '' %>" />
     </div>
 
+    <%# Parodie %>
+    <div class="wiki-field-row">
+      <input type="text" name="parody" class="wiki-title-input"
+        value="<%= book ? book.parody : '' %>"
+        placeholder="Parodie (ex : Pokémon)…" autocomplete="off"
+        list="bd-parody-suggestions" />
+      <% if (typeof allParodies !== 'undefined' && allParodies.length) { %>
+        <datalist id="bd-parody-suggestions">
+          <% allParodies.forEach(function(p) { %><option value="<%= p %>"><% }) %>
+        </datalist>
+      <% } %>
+    </div>
+
     <%# Langue %>
     <div class="bd-form-chips">
       <span class="wiki-meta-label">Langue</span>

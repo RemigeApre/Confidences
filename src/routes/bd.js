@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -71,11 +71,12 @@ function buildBdRouter(config) {
     const tagSet = new Set();
     books.forEach((b) => b.tags.forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
-    res.render("bd", { config, books, allTags });
+    const allParodies = listAllParodies();
+    res.render("bd", { config, books, allTags, allParodies });
   });
 
   router.get("/new", requireAdmin, (req, res) => {
-    res.render("bd-form", { config, book: null });
+    res.render("bd-form", { config, book: null, allParodies: listAllParodies() });
   });
 
   router.post("/", requireAdmin, upload.array("images", 200), (req, res) => {
@@ -85,17 +86,18 @@ function buildBdRouter(config) {
     let tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
     tags = applyTagCheckbox(tags, "en couleur", req.body.couleur === "on");
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
+    const parody = String(req.body.parody || "").slice(0, 200).trim();
     const newFiles = (req.files || []).map((f) => `/uploads/bd/${f.filename}`);
     newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder([], newFiles, req.body.image_order);
-    const id = insertBdBook({ title, description, tags, imagePaths, langue });
+    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody });
     res.redirect(`/bd/${id}`);
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
     const book = getBdBook(Number(req.params.id));
     if (!book) return res.redirect("/bd");
-    res.render("bd-form", { config, book });
+    res.render("bd-form", { config, book, allParodies: listAllParodies() });
   });
 
   router.post("/:id/delete", requireAdmin, (req, res) => {
@@ -121,6 +123,7 @@ function buildBdRouter(config) {
     let tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
     tags = applyTagCheckbox(tags, "en couleur", req.body.couleur === "on");
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
+    const parody = String(req.body.parody || "").slice(0, 200).trim();
 
     const toRemove = new Set([].concat(req.body.remove_image || []));
     for (const src of toRemove) {
@@ -133,7 +136,7 @@ function buildBdRouter(config) {
     newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder(existing, newFiles, req.body.image_order);
 
-    updateBdBook(id, { title, description, tags, imagePaths, langue });
+    updateBdBook(id, { title, description, tags, imagePaths, langue, parody });
     res.redirect(`/bd/${id}`);
   });
 

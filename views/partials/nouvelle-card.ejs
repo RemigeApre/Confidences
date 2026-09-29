@@ -26,7 +26,8 @@
   data-hue="<%= hue %>"
   data-cat="<%= cat ? cat.label : '' %>"
   data-created="<%= n.updated_at || 0 %>"
-  data-wc="<%= n.word_count || 0 %>">
+  data-wc="<%= n.word_count || 0 %>"
+  data-parody="<%= (n.parody || '').replace(/"/g, '') %>">
 
   <% if (bannerText) { %>
     <span class="wiki-card-banner wiki-card-banner--<%= bannerMod %> nv-card-banner"><%= bannerText %></span>

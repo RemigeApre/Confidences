@@ -66,6 +66,7 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN extra_categories TEXT NOT NULL 
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity_set_at TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS gallery_images (
@@ -118,6 +119,7 @@ try { db.exec("ALTER TABLE bd_books ADD COLUMN rating INTEGER NOT NULL DEFAULT 0
 try { db.exec("ALTER TABLE bd_books ADD COLUMN flame INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE bd_books ADD COLUMN interested INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE bd_books ADD COLUMN langue TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE bd_books ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_links (
@@ -1252,6 +1254,7 @@ function rowToWikiPage(row) {
     maturity: row.maturity || 0,
     maturitySetAt: row.maturity_set_at || null,
     extraCategories: (() => { try { return JSON.parse(row.extra_categories || "[]"); } catch (_) { return []; } })(),
+    parody: row.parody || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -1271,14 +1274,14 @@ function listFeaturedWikiPages() {
   return db.prepare("SELECT * FROM wiki_pages WHERE featured = 1").all().map(rowToWikiPage);
 }
 
-function insertWikiPage({ title, category, content, tags, imagePaths, owned, meta, extraCategories }) {
+function insertWikiPage({ title, category, content, tags, imagePaths, owned, meta, extraCategories, parody }) {
   const now = new Date().toISOString();
   const info = db
     .prepare(
-      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, owned, meta, extra_categories, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, owned, meta, extra_categories, parody, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), now, now);
+    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", now, now);
   return info.lastInsertRowid;
 }
 
@@ -1319,7 +1322,7 @@ function getWikiPage(id) {
   return rowToWikiPage(row);
 }
 
-function updateWikiPage(id, { title, category, content, tags, imagePaths, owned, meta, extraCategories }) {
+function updateWikiPage(id, { title, category, content, tags, imagePaths, owned, meta, extraCategories, parody }) {
   const existing = db.prepare("SELECT image_paths, image_path FROM wiki_pages WHERE id = ?").get(id);
   if (!existing) return false;
   // Si imagePaths n'est pas fourni, conserver les images existantes
@@ -1329,9 +1332,9 @@ function updateWikiPage(id, { title, category, content, tags, imagePaths, owned,
     if (!finalImagePaths.length && existing.image_path) finalImagePaths = [existing.image_path];
   }
   db.prepare(
-    `UPDATE wiki_pages SET title = ?, category = ?, content = ?, tags = ?, image_paths = ?, owned = ?, meta = ?, extra_categories = ?, updated_at = ?
+    `UPDATE wiki_pages SET title = ?, category = ?, content = ?, tags = ?, image_paths = ?, owned = ?, meta = ?, extra_categories = ?, parody = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), new Date().toISOString(), id);
+  ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", new Date().toISOString(), id);
   return true;
 }
 
@@ -1624,6 +1627,7 @@ function rowToBdBook(row) {
     flame: false,
     interested: false,
     langue: row.langue || "",
+    parody: row.parody || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -1638,15 +1642,15 @@ function getBdBook(id) {
   return row ? rowToBdBook(row) : null;
 }
 
-function insertBdBook({ title, description, tags, imagePaths, langue }) {
+function insertBdBook({ title, description, tags, imagePaths, langue, parody }) {
   const now = new Date().toISOString();
   const info = db.prepare(
-    `INSERT INTO bd_books (title, description, tags, image_paths, langue, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", now, now);
+    `INSERT INTO bd_books (title, description, tags, image_paths, langue, parody, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", parody || "", now, now);
   return info.lastInsertRowid;
 }
 
-function updateBdBook(id, { title, description, tags, imagePaths, langue }) {
+function updateBdBook(id, { title, description, tags, imagePaths, langue, parody }) {
   const newPaths = imagePaths || [];
   // Une page retirée (checkbox "Supprimer cette page", voir bd-form.ejs)
   // n'a plus lieu d'avoir une réaction en base, pour aucun profil — sinon
@@ -1662,8 +1666,8 @@ function updateBdBook(id, { title, description, tags, imagePaths, langue }) {
     });
   }
   db.prepare(
-    `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, updated_at = ? WHERE id = ?`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", new Date().toISOString(), id);
+    `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, parody = ?, updated_at = ? WHERE id = ?`
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", parody || "", new Date().toISOString(), id);
 }
 
 function deleteBdBook(id) {
@@ -1854,6 +1858,17 @@ function listGalleryAuthors() {
 }
 function listGalleryParodies() {
   return db.prepare("SELECT DISTINCT parody FROM gallery_images WHERE parody != '' ORDER BY parody COLLATE NOCASE").all().map(r => r.parody);
+}
+function listAllParodies() {
+  const set = new Set();
+  [
+    "SELECT DISTINCT parody FROM gallery_images WHERE parody != ''",
+    "SELECT DISTINCT parody FROM bd_books WHERE parody != ''",
+    "SELECT DISTINCT parody FROM nouvelles WHERE parody != ''",
+    "SELECT DISTINCT parody FROM wiki_pages WHERE parody != ''",
+    "SELECT DISTINCT parody FROM protagonistes WHERE parody != ''",
+  ].forEach(q => db.prepare(q).all().forEach(r => set.add(r.parody)));
+  return [...set].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
 }
 
 function updateGalleryImageMeta(id, { tags, author, parody, title, notes, processed } = {}) {
@@ -2156,6 +2171,7 @@ try { db.exec("ALTER TABLE nouvelles ADD COLUMN serie_order INTEGER NOT NULL DEF
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN stage TEXT NOT NULL DEFAULT 'stade_1'"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN protagoniste_ids TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
+try { db.exec("ALTER TABLE nouvelles ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 function listCustomQuizzes() {
   return db.prepare(`SELECT q.*,
@@ -2304,6 +2320,7 @@ module.exports = {
   deleteGalleryImage,
   listGalleryAuthors,
   listGalleryParodies,
+  listAllParodies,
   updateGalleryImageMeta,
   setWikiPageFeatured,
   setWikiPageMaturity,
@@ -2441,21 +2458,21 @@ module.exports = {
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
 function listNouvelles() {
-  return db.prepare(`SELECT id, title, summary, tags, category, author, featured, word_count, serie_id, serie_order, stage, hidden, protagoniste_ids, created_at, updated_at FROM nouvelles ORDER BY updated_at DESC`).all();
+  return db.prepare(`SELECT id, title, summary, tags, category, author, parody, featured, word_count, serie_id, serie_order, stage, hidden, protagoniste_ids, created_at, updated_at FROM nouvelles ORDER BY updated_at DESC`).all();
 }
 function getNouvelleById(id) {
   return db.prepare(`SELECT * FROM nouvelles WHERE id=?`).get(id);
 }
-function createNouvelle({ title, content, summary, tags, category, author, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
+function createNouvelle({ title, content, summary, tags, category, author, parody, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
-  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, featured, word_count, serie_id, serie_order, stage, hidden, protagoniste_ids) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []));
+  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, parody, featured, word_count, serie_id, serie_order, stage, hidden, protagoniste_ids) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', parody || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []));
   return r.lastInsertRowid;
 }
-function updateNouvelle(id, { title, content, summary, tags, category, author, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
+function updateNouvelle(id, { title, content, summary, tags, category, author, parody, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
-  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, featured=?, word_count=?, serie_id=?, serie_order=?, stage=?, hidden=?, protagoniste_ids=?, updated_at=unixepoch() WHERE id=?`)
-    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []), id);
+  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, parody=?, featured=?, word_count=?, serie_id=?, serie_order=?, stage=?, hidden=?, protagoniste_ids=?, updated_at=unixepoch() WHERE id=?`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', parody || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []), id);
 }
 function deleteNouvelle(id) {
   db.prepare(`DELETE FROM nouvelles WHERE id=?`).run(id);
@@ -2495,9 +2512,10 @@ db.exec(`
     updated_at INTEGER DEFAULT (unixepoch())
   )
 `);
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 function listProtagonistes() {
-  return db.prepare(`SELECT id, name, description, tags, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
+  return db.prepare(`SELECT id, name, description, tags, parody, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
     .map(p => { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } return p; });
 }
 function getProtagoniste(id) {
@@ -2505,14 +2523,14 @@ function getProtagoniste(id) {
   if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } }
   return p;
 }
-function createProtagoniste({ name, description, tags }) {
-  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags) VALUES (?,?,?)`)
-    .run(name || '', description || '', JSON.stringify(tags || []));
+function createProtagoniste({ name, description, tags, parody }) {
+  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags, parody) VALUES (?,?,?,?)`)
+    .run(name || '', description || '', JSON.stringify(tags || []), parody || '');
   return r.lastInsertRowid;
 }
-function updateProtagoniste(id, { name, description, tags }) {
-  db.prepare(`UPDATE protagonistes SET name=?, description=?, tags=?, updated_at=unixepoch() WHERE id=?`)
-    .run(name || '', description || '', JSON.stringify(tags || []), id);
+function updateProtagoniste(id, { name, description, tags, parody }) {
+  db.prepare(`UPDATE protagonistes SET name=?, description=?, tags=?, parody=?, updated_at=unixepoch() WHERE id=?`)
+    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', id);
 }
 function deleteProtagoniste(id) {
   db.prepare(`DELETE FROM protagonistes WHERE id=?`).run(id);
