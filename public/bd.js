@@ -1,21 +1,17 @@
 // ── Filtrage BD (sidebar) ─────────────────────────────────────────────────
 (function() {
-  var grid     = document.getElementById("bd-grid");
-  var cards    = grid ? Array.from(grid.querySelectorAll(".bd-card")) : [];
-  var countEl  = document.getElementById("bd-count-hero");
-  var resultEl = document.getElementById("bd-result-count");
+  var grid        = document.getElementById("bd-grid");
+  var cards       = grid ? Array.from(grid.querySelectorAll(".bd-card")) : [];
+  var countEl     = document.getElementById("bd-count-hero");
   var searchInput = document.getElementById("bd-search");
   var searchClear = document.getElementById("bd-search-clear");
   var tagFilter   = document.getElementById("bd-tag-filter");
+  var tagSearchInput = document.getElementById("bd-tag-search");
 
   var activeTags   = [];
   var searchQ      = "";
-  // Tags masqués (voir /favoris et le bouton "Masquer le tag" de la popup
-  // tag) : toute BD portant l'un de ces tags reste masquée partout, sans
-  // bascule possible ici (on les retire depuis /tags/masques).
   var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
-  // Un tag masqué (voir /tags/masques) n'est plus un choix disponible : son
-  // chip est retiré du nuage de tags, pas seulement le contenu qui le porte.
+
   function hideBlacklistedTagChips() {
     if (!tagFilter) return;
     tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]").forEach(function (chip) {
@@ -23,66 +19,56 @@
     });
   }
 
-  // Effectif à la fermeture de la popup tag (voir public/nav.js), pas au
-  // clic sur "Masquer le tag" : on ne veut pas faire disparaître le tag
-  // sous les yeux de l'utilisateur pendant qu'il consulte encore la popup.
   document.addEventListener("tag-blacklist-change", function () {
     blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
     hideBlacklistedTagChips();
     applyFilters();
   });
-  // Etat initial : le réglage de compte sert de valeur par défaut, mais une
-  // bascule explicite en session est mémorisée et prime dessus au
-  // rechargement — sinon revenir sur la page annulait silencieusement le
-  // filtre qu'on venait de poser.
+
   var storedShowUltra      = localStorage.getItem("bd-show-ultra");
   var storedShowIrrealiste = localStorage.getItem("bd-show-irrealiste");
   var showUltra      = storedShowUltra !== null ? storedShowUltra === "1" : (window.ULTRA_MODE || "hidden") !== "hidden";
   var showIrrealiste = storedShowIrrealiste !== null ? storedShowIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") !== "hidden";
-  var activeLangue = "";
+  var activeLangue    = "";
   var showCouleurOnly = false;
-
-  function hasActiveFilter() {
-    return activeTags.length > 0 || searchQ || activeLangue || showCouleurOnly;
-  }
-
-  function updateCount(visible) {
-    if (countEl) countEl.textContent = visible;
-    if (resultEl) {
-      if (hasActiveFilter()) {
-        resultEl.textContent = visible + " résultat" + (visible !== 1 ? "s" : "");
-        resultEl.hidden = false;
-      } else {
-        resultEl.hidden = true;
-      }
-    }
-  }
+  var minRating       = 0;
+  var filterNotRated  = false;
+  var filterFlame     = false;
+  var filterInterested= false;
 
   function applyFilters() {
     var visible = 0;
     cards.forEach(function(card) {
-      var tags    = (card.dataset.tags || "").split(",").filter(Boolean);
-      var title   = card.dataset.title || "";
+      var tags       = (card.dataset.tags || "").split(",").filter(Boolean);
+      var title      = card.dataset.title || "";
       var ultra      = card.dataset.ultra === "1";
       var irrealiste = card.dataset.irrealiste === "1";
-      var langue  = card.dataset.langue || "";
-      var couleur = card.dataset.couleur === "1";
+      var langue     = card.dataset.langue || "";
+      var couleur    = card.dataset.couleur === "1";
+      var rating     = Number(card.dataset.rating) || 0;
+      var flame      = card.dataset.flame === "1";
+      var interested = card.dataset.interested === "1";
 
-      var okTags    = activeTags.length === 0 || activeTags.every(function(t) { return tags.indexOf(t) !== -1; });
-      var okSearch  = !searchQ || title.indexOf(searchQ) !== -1;
-      var okUltra   = showUltra || !ultra;
+      var okTags       = activeTags.length === 0 || activeTags.every(function(t) { return tags.indexOf(t) !== -1; });
+      var okSearch     = !searchQ || title.indexOf(searchQ) !== -1;
+      var okUltra      = showUltra || !ultra;
       var okIrrealiste = showIrrealiste || !irrealiste;
-      var okLangue  = !activeLangue || langue === activeLangue;
-      var okCouleur = !showCouleurOnly || couleur;
-      var okBlacklist = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
+      var okLangue     = !activeLangue || langue === activeLangue;
+      var okCouleur    = !showCouleurOnly || couleur;
+      var okBlacklist  = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
+      var okRating     = minRating === 0 || rating >= minRating;
+      var okNotRated   = !filterNotRated || rating === 0;
+      var okFlame      = !filterFlame || flame;
+      var okInterested = !filterInterested || interested;
 
-      if (okTags && okSearch && okUltra && okIrrealiste && okLangue && okCouleur && okBlacklist) { card.style.display = ""; visible++; }
-      else                                                         { card.style.display = "none"; }
+      var show = okTags && okSearch && okUltra && okIrrealiste && okLangue && okCouleur && okBlacklist && okRating && okNotRated && okFlame && okInterested;
+      card.style.display = show ? "" : "none";
+      if (show) visible++;
     });
-    updateCount(visible);
+    if (countEl) countEl.textContent = visible;
   }
 
-  // Tags
+  // ── Tags ─────────────────────────────────────────────────────────────────
   if (tagFilter) {
     tagFilter.addEventListener("click", function(e) {
       var chip = e.target.closest(".wiki-tag-chip");
@@ -95,8 +81,24 @@
     });
   }
 
-  // Search. Léger débounce : l'input reste instantané, seul le filtrage
-  // (potentiellement coûteux sur beaucoup de BD) est différé.
+  // ── Recherche dans les tags ───────────────────────────────────────────────
+  var tagSearchDebounce = null;
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener("input", function () {
+      clearTimeout(tagSearchDebounce);
+      tagSearchDebounce = setTimeout(function () {
+        var q = tagSearchInput.value.trim().toLowerCase();
+        if (tagFilter) {
+          tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function (chip) {
+            var tag = (chip.dataset.tag || "").toLowerCase();
+            chip.hidden = q.length > 0 && (chip.dataset.state || "0") === "0" && tag.indexOf(q) === -1;
+          });
+        }
+      }, 120);
+    });
+  }
+
+  // ── Recherche titre ───────────────────────────────────────────────────────
   var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", function() {
@@ -115,7 +117,7 @@
     }
   }
 
-  // Langue
+  // ── Langue ───────────────────────────────────────────────────────────────
   var langueFilter = document.getElementById("bd-langue-filter");
   if (langueFilter) {
     langueFilter.addEventListener("click", function(e) {
@@ -134,7 +136,7 @@
     });
   }
 
-  // Couleur toggle
+  // ── Couleur ───────────────────────────────────────────────────────────────
   var couleurBtn = document.getElementById("bd-couleur-toggle");
   if (couleurBtn) {
     couleurBtn.addEventListener("click", function() {
@@ -144,27 +146,113 @@
     });
   }
 
-  // Ultra toggle
+  // ── Ultra ─────────────────────────────────────────────────────────────────
   var ultraBtn = document.getElementById("bd-ultra-toggle");
   if (ultraBtn) {
-    ultraBtn.textContent = showUltra ? "\uD83D\uDD13 Afficher Ultra" : "\uD83D\uDD12 Masquer Ultra";
+    ultraBtn.classList.toggle("active", !showUltra);
     ultraBtn.addEventListener("click", function() {
       showUltra = !showUltra;
       localStorage.setItem("bd-show-ultra", showUltra ? "1" : "0");
-      ultraBtn.textContent = showUltra ? "\uD83D\uDD13 Afficher Ultra" : "\uD83D\uDD12 Masquer Ultra";
+      ultraBtn.classList.toggle("active", !showUltra);
       applyFilters();
     });
   }
 
-  // Irr\u00E9aliste toggle
+  // ── Irréaliste ───────────────────────────────────────────────────────────
   var irrealisteBtn = document.getElementById("bd-irrealiste-toggle");
   if (irrealisteBtn) {
-    irrealisteBtn.textContent = showIrrealiste ? "\uD83D\uDD13 Afficher Irr\u00E9aliste" : "\uD83D\uDD12 Masquer Irr\u00E9aliste";
+    irrealisteBtn.classList.toggle("active", !showIrrealiste);
     irrealisteBtn.addEventListener("click", function() {
       showIrrealiste = !showIrrealiste;
       localStorage.setItem("bd-show-irrealiste", showIrrealiste ? "1" : "0");
-      irrealisteBtn.textContent = showIrrealiste ? "\uD83D\uDD13 Afficher Irr\u00E9aliste" : "\uD83D\uDD12 Masquer Irr\u00E9aliste";
+      irrealisteBtn.classList.toggle("active", !showIrrealiste);
       applyFilters();
+    });
+  }
+
+  // ── Notation ─────────────────────────────────────────────────────────────
+  var starsEl  = document.getElementById("bd-adv-stars");
+  var starReset= document.getElementById("bd-adv-star-reset");
+  var propsEl  = document.getElementById("bd-prop-grid");
+
+  function renderStars() {
+    if (!starsEl) return;
+    starsEl.querySelectorAll(".wiki-adv-star").forEach(function(btn) {
+      btn.classList.toggle("active", Number(btn.dataset.value) <= minRating);
+    });
+  }
+
+  if (starsEl) {
+    starsEl.querySelectorAll(".wiki-adv-star").forEach(function(btn) {
+      var v = Number(btn.dataset.value);
+      btn.addEventListener("mouseenter", function() {
+        starsEl.querySelectorAll(".wiki-adv-star").forEach(function(b) {
+          b.classList.toggle("active", Number(b.dataset.value) <= v);
+        });
+      });
+      btn.addEventListener("mouseleave", renderStars);
+      btn.addEventListener("click", function() {
+        minRating = (minRating === v) ? 0 : v;
+        renderStars(); applyFilters();
+      });
+    });
+  }
+  if (starReset) {
+    starReset.addEventListener("click", function() {
+      minRating = 0; renderStars(); applyFilters();
+    });
+  }
+  if (propsEl) {
+    propsEl.querySelectorAll(".wiki-prop-btn").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var on = btn.dataset.state !== "1";
+        btn.dataset.state = on ? "1" : "0";
+        if (btn.dataset.prop === "notRated")   filterNotRated   = on;
+        if (btn.dataset.prop === "flame")      filterFlame      = on;
+        if (btn.dataset.prop === "interested") filterInterested = on;
+        applyFilters();
+      });
+    });
+  }
+
+  // ── Réinitialiser ────────────────────────────────────────────────────────
+  var resetBtn = document.getElementById("bd-reset-filters");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", function() {
+      // Texte
+      searchQ = ""; if (searchInput) { searchInput.value = ""; } if (searchClear) searchClear.hidden = true;
+      // Tags
+      activeTags = [];
+      if (tagFilter) tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function(c) {
+        c.dataset.state = "0"; c.classList.remove("active"); c.hidden = false;
+      });
+      if (tagSearchInput) tagSearchInput.value = "";
+      // Langue
+      activeLangue = "";
+      if (langueFilter) langueFilter.querySelectorAll(".bd-langue-chip").forEach(function(c) { c.classList.remove("active"); });
+      // Couleur
+      showCouleurOnly = false; if (couleurBtn) couleurBtn.classList.remove("active");
+      // Ultra / Irréaliste : revenir aux préférences compte
+      localStorage.removeItem("bd-show-ultra"); localStorage.removeItem("bd-show-irrealiste");
+      showUltra      = (window.ULTRA_MODE      || "hidden") !== "hidden";
+      showIrrealiste = (window.IRREALISTE_MODE || "visible") !== "hidden";
+      if (ultraBtn)      ultraBtn.classList.toggle("active", !showUltra);
+      if (irrealisteBtn) irrealisteBtn.classList.toggle("active", !showIrrealiste);
+      // Notation
+      minRating = 0; filterNotRated = false; filterFlame = false; filterInterested = false;
+      renderStars();
+      if (propsEl) propsEl.querySelectorAll(".wiki-prop-btn").forEach(function(b) { b.dataset.state = "0"; });
+      applyFilters();
+    });
+  }
+
+  // ── Explorer l'inconnu ───────────────────────────────────────────────────
+  var exploreBtn = document.getElementById("bd-explore-btn");
+  if (exploreBtn) {
+    exploreBtn.addEventListener("click", function() {
+      var visible = cards.filter(function(c) { return c.style.display !== "none"; });
+      if (!visible.length) return;
+      visible[Math.floor(Math.random() * visible.length)].click();
     });
   }
 
