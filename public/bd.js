@@ -21,7 +21,9 @@
     interested:  false
   };
 
-  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function (t) { return String(t).toLowerCase(); }));
+  var blacklistSet  = new Set((window.TAG_BLACKLIST || []).map(function (t) { return String(t).toLowerCase(); }));
+  var couleurBtn   = document.getElementById('bd-couleur-toggle');
+  var langueFilter = document.getElementById('bd-langue-filter');
 
   function hideBlacklistedTagChips() {
     var cloud = document.getElementById('bd-tag-filter');
@@ -107,9 +109,7 @@
     sidebar.addEventListener('filterreset:reset', function () {
       state.couleurOnly = false;
       state.langue      = '';
-      var couleurBtn = document.getElementById('bd-couleur-toggle');
       if (couleurBtn) couleurBtn.classList.remove('active');
-      var langueFilter = document.getElementById('bd-langue-filter');
       if (langueFilter) langueFilter.querySelectorAll('.bd-langue-chip').forEach(function (c) { c.classList.remove('active'); });
       sidebar.querySelectorAll('.filter-block').forEach(function (b) {
         if (typeof b._reset === 'function') b._reset();
@@ -125,7 +125,6 @@
   }
 
   // ── Couleur (spécifique BD) ───────────────────────────────────────────────
-  var couleurBtn = document.getElementById('bd-couleur-toggle');
   if (couleurBtn) {
     couleurBtn.addEventListener('click', function () {
       state.couleurOnly = !state.couleurOnly;
@@ -135,7 +134,6 @@
   }
 
   // ── Langue (spécifique BD) ────────────────────────────────────────────────
-  var langueFilter = document.getElementById('bd-langue-filter');
   if (langueFilter) {
     langueFilter.addEventListener('click', function (e) {
       var chip = e.target.closest('.bd-langue-chip');

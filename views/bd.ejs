@@ -28,46 +28,48 @@
       <%# ── Filtres : toujours visible ── %>
       <details class="wiki-sidebar-filter-details" open>
         <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+        <div class="wiki-sidebar-filters">
 
-        <%- include('partials/filters/filter-base', {
-              searchId:   'bd-search',
-              showSearch: false,
-              showType:   true
-            }) %>
-
-        <%# Couleur (spécifique BD) %>
-        <div class="wiki-filter-section wiki-filter-toggles">
-          <button type="button" id="bd-couleur-toggle" class="wiki-ultra-btn">&#127775; Couleur</button>
-        </div>
-
-        <%# Langue (spécifique BD) %>
-        <details class="wiki-subpanel-details">
-          <summary class="wiki-subpanel-summary">Langue</summary>
-          <div class="bd-langue-filter" id="bd-langue-filter">
-            <button type="button" class="tag-chip bd-langue-chip" data-langue="francais">&#127467;&#127479; FR</button>
-            <button type="button" class="tag-chip bd-langue-chip" data-langue="anglais">&#127468;&#127463; EN</button>
-            <button type="button" class="tag-chip bd-langue-chip" data-langue="japonais">&#127471;&#127477; JP</button>
-            <button type="button" class="tag-chip bd-langue-chip" data-langue="autre">Autre</button>
-          </div>
-        </details>
-
-        <% if (allTags && allTags.length) { %>
-          <%- include('partials/filters/filter-tags', {
-                filterId: 'bd-tag-filter',
-                tags:     allTags,
-                label:    'Tags'
+          <%- include('partials/filters/filter-base', {
+                searchId:   'bd-search',
+                showSearch: false,
+                showType:   true
               }) %>
-        <% } %>
 
-        <%- include('partials/filters/filter-rating', {
-              filterId:        'bd-rating',
-              label:           'Notation',
-              showFlame:       true,
-              showInterested:  true,
-              interestedLabel: 'Intéressé',
-              showNotRated:    true
-            }) %>
+          <%# Couleur (spécifique BD — dans son propre bloc toggles) %>
+          <div class="wiki-filter-section wiki-filter-toggles">
+            <button type="button" id="bd-couleur-toggle" class="wiki-ultra-btn">&#127775; Couleur</button>
+          </div>
 
+          <%# Langue (spécifique BD) %>
+          <details class="wiki-subpanel-details">
+            <summary class="wiki-subpanel-summary">Langue</summary>
+            <div class="bd-langue-filter" id="bd-langue-filter">
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="francais">&#127467;&#127479; FR</button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="anglais">&#127468;&#127463; EN</button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="japonais">&#127471;&#127477; JP</button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="autre">Autre</button>
+            </div>
+          </details>
+
+          <% if (allTags && allTags.length) { %>
+            <%- include('partials/filters/filter-tags', {
+                  filterId: 'bd-tag-filter',
+                  tags:     allTags,
+                  label:    'Tags'
+                }) %>
+          <% } %>
+
+          <%- include('partials/filters/filter-rating', {
+                filterId:        'bd-rating',
+                label:           'Notation',
+                showFlame:       true,
+                showInterested:  true,
+                interestedLabel: 'Intéressé',
+                showNotRated:    true
+              }) %>
+
+        </div>
       </details>
 
       <%- include('partials/filters/filter-reset', { filterId: 'bd', showExplore: true, resetLabel: 'Réinitialiser les filtres' }) %>
