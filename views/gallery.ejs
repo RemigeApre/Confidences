@@ -19,11 +19,9 @@
 
       <div class="wiki-search-wrap">
         <div class="wiki-search-bar">
-          <span class="wiki-search-icon">&#128269;</span>
-          <input type="search" id="gallery-search" class="wiki-search-input" placeholder="Rechercher" autocomplete="off" />
+          <input type="search" id="gallery-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
           <button type="button" id="gallery-search-clear" class="wiki-search-clear" hidden>&#215;</button>
         </div>
-        <span id="gallery-result-count" class="wiki-result-count" hidden></span>
       </div>
 
       <details class="wiki-sidebar-filter-details">
@@ -87,12 +85,6 @@
 
       <%- include('partials/filter-profiles', { section: 'gallery', profiles: locals.galleryFilterProfiles || [] }) %>
 
-      <%# Sélection groupée (admin) %>
-      <% if (currentUser && currentUser.isAdmin) { %>
-      <div class="wiki-filter-section">
-        <button type="button" class="link-button gallery-select-toggle" id="gallery-select-toggle" hidden>S&eacute;lectionner</button>
-      </div>
-      <% } %>
 
       </details>
 
@@ -178,6 +170,12 @@
   <%# ─── FAB + DROPDOWN ───────────────────────────────────────────────── %>
   <% if (currentUser && currentUser.isAdmin) { %>
   <div class="gallery-fab-wrap" id="gallery-fab-wrap">
+    <button type="button" class="gb-fab-link" id="gallery-select-toggle" title="S&eacute;lectionner" aria-label="S&eacute;lectionner" hidden>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 2"/>
+        <polyline points="9 11 12 14 22 4"/><line x1="22" y1="4" x2="22" y2="4"/>
+      </svg>
+    </button>
     <a href="/galerie/series" class="gb-fab-link" title="S&eacute;ries">&#8734;</a>
     <a href="/galerie/batch" class="gb-fab-link" title="Import group&eacute;">&#9776;</a>
     <button type="button" class="wiki-fab-add" id="gallery-fab-main" title="Ajouter une image">+</button>

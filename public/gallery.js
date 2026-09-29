@@ -1537,7 +1537,10 @@
     if (selectToggle) {
       selectToggle.addEventListener("click", function() {
         grid.classList.toggle("gallery-selecting");
-        selectToggle.textContent = grid.classList.contains("gallery-selecting") ? "Annuler s\u00e9lection" : "S\u00e9lectionner";
+        var selecting = grid.classList.contains("gallery-selecting");
+        selectToggle.classList.toggle("active", selecting);
+        selectToggle.title = selecting ? "Annuler la s\u00e9lection" : "S\u00e9lectionner";
+        selectToggle.setAttribute("aria-label", selectToggle.title);
       });
     }
 
