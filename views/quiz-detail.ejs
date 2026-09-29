@@ -86,6 +86,32 @@
         <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
       <% } %>
 
+      <%# ── Encart d'usage (collapsible, fermé en localStorage) ──────── %>
+      <details class="quiz-usage-panel" id="quiz-usage-panel">
+        <summary class="quiz-usage-summary">
+          <span class="quiz-usage-title">Comment répondre&nbsp;?</span>
+          <span class="quiz-usage-toggle-icon" aria-hidden="true">&#9660;</span>
+        </summary>
+        <div class="quiz-usage-body">
+          <div class="quiz-usage-row">
+            <span class="quiz-q-tendency quiz-q-tendency--positive" aria-hidden="true">&#9650;</span>
+            <span><strong>Triangle vert</strong> — question positive : ce que vous aimez / fantasmez.</span>
+          </div>
+          <div class="quiz-usage-row">
+            <span class="quiz-q-tendency quiz-q-tendency--negative" aria-hidden="true">&#9660;</span>
+            <span><strong>Triangle rouge</strong> — question négative : ce que vous n'aimez pas.</span>
+          </div>
+          <div class="quiz-usage-row">
+            <span class="quiz-usage-demo-btn quiz-usage-demo-btn--practiced" aria-hidden="true">&#10003;</span>
+            <span><strong>Pratiqué</strong> — vous l&rsquo;avez déjà vécu dans la réalité.</span>
+          </div>
+          <div class="quiz-usage-row">
+            <span class="quiz-usage-demo-btn quiz-usage-demo-btn--interested" aria-hidden="true">&#10024;</span>
+            <span><strong>Intéressé</strong> — met cet élément en avant et permet de voir du contenu lié suggéré.</span>
+          </div>
+        </div>
+      </details>
+
       <%# ── Questions de l'étape ──────────────────────────────────────── %>
       <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
         <input type="hidden" name="_step" value="<%= stepIdx %>" />
@@ -198,6 +224,22 @@
                 <%- renderInputs('receive', savedReceive) %>
               </div>
             <% } %>
+
+            <%# ── Boutons Pratiqué / Intéressé ─────────────────────────── %>
+            <div class="quiz-q-flags">
+              <button type="button"
+                class="quiz-flag-btn quiz-flag-btn--practiced<%= (flags && flags.practiced && flags.practiced[q.id]) ? ' quiz-flag-btn--on' : '' %>"
+                data-qid="<%= q.id %>" data-flag="practiced"
+                title="Marquer comme déjà pratiqué">
+                <span class="quiz-flag-icon">&#10003;</span> Pratiqué
+              </button>
+              <button type="button"
+                class="quiz-flag-btn quiz-flag-btn--interested<%= (flags && flags.interested && flags.interested[q.id]) ? ' quiz-flag-btn--on' : '' %>"
+                data-qid="<%= q.id %>" data-flag="interested"
+                title="Marquer comme intéressant">
+                <span class="quiz-flag-icon">&#10024;</span> Intéressé
+              </button>
+            </div>
           </div>
 
         <% }) %>
@@ -336,6 +378,50 @@
     }
     document.querySelectorAll('.quiz-sides-btn').forEach(function(btn) {
       btn.addEventListener('click', function() { selectSide(btn.dataset.qid, btn.dataset.side); });
+    });
+
+    /* ── Encart d'usage : mémorise l'état ouvert/fermé ─────────────────────── */
+    (function () {
+      var panel = document.getElementById('quiz-usage-panel');
+      if (!panel) return;
+      var KEY = 'quiz-usage-open';
+      // Par défaut ouvert la première fois, fermé si l'utilisateur l'a déjà refermé
+      var stored = localStorage.getItem(KEY);
+      panel.open = stored !== '0';
+      panel.addEventListener('toggle', function () {
+        try { localStorage.setItem(KEY, panel.open ? '1' : '0'); } catch (_) {}
+      });
+    })();
+
+    /* ── Boutons Pratiqué / Intéressé ───────────────────────────────────────── */
+    document.querySelectorAll('.quiz-flag-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var qid  = btn.dataset.qid;
+        var flag = btn.dataset.flag;
+        var isOn = btn.classList.contains('quiz-flag-btn--on');
+        var newVal = isOn ? 0 : 1;
+
+        // Mise à jour optimiste immédiate
+        btn.classList.toggle('quiz-flag-btn--on', !!newVal);
+        btn.disabled = true;
+
+        fetch('/quizz/<%= quiz.id %>/questions/' + qid + '/flag', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ flag: flag, value: newVal })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.ok) {
+              // Annuler l'optimiste si erreur serveur
+              btn.classList.toggle('quiz-flag-btn--on', isOn);
+            }
+          })
+          .catch(function () {
+            btn.classList.toggle('quiz-flag-btn--on', isOn);
+          })
+          .finally(function () { btn.disabled = false; });
+      });
     });
 
     /* ── Effacer ma réponse (croix rouge unique, centrée) ─────────────────── */

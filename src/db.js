@@ -2118,6 +2118,12 @@ if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE 
 if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE name='tendency'").get()) {
   db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN tendency TEXT DEFAULT NULL");
 }
+if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_answers') WHERE name='practiced'").get()) {
+  db.exec("ALTER TABLE custom_quiz_answers ADD COLUMN practiced TEXT DEFAULT '{}'");
+}
+if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_answers') WHERE name='interested'").get()) {
+  db.exec("ALTER TABLE custom_quiz_answers ADD COLUMN interested TEXT DEFAULT '{}'");
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS ai_profiles (
@@ -2264,6 +2270,34 @@ function clearCustomQuizAnswer(quizId, userId, questionId) {
   db.prepare(`UPDATE custom_quiz_answers SET answers=?, updated_at=unixepoch() WHERE quiz_id=? AND user_id=?`)
     .run(JSON.stringify(answers), quizId, userId);
 }
+function getQuizFlags(quizId, userId) {
+  const row = db.prepare(`SELECT practiced, interested FROM custom_quiz_answers WHERE quiz_id=? AND user_id=?`).get(quizId, userId);
+  if (!row) return { practiced: {}, interested: {} };
+  let practiced = {}, interested = {};
+  try { practiced  = JSON.parse(row.practiced  || '{}'); } catch (_) {}
+  try { interested = JSON.parse(row.interested || '{}'); } catch (_) {}
+  return { practiced, interested };
+}
+
+function saveQuizFlag(quizId, userId, flag, questionId, value) {
+  if (flag !== 'practiced' && flag !== 'interested') return;
+  const row = db.prepare(`SELECT practiced, interested FROM custom_quiz_answers WHERE quiz_id=? AND user_id=?`).get(quizId, userId);
+  let data = {};
+  try { data = row ? JSON.parse(row[flag] || '{}') : {}; } catch (_) {}
+  if (value) data[questionId] = 1; else delete data[questionId];
+  const json = JSON.stringify(data);
+  if (row) {
+    // flag is validated to 'practiced' or 'interested' above — safe to interpolate
+    db.prepare(`UPDATE custom_quiz_answers SET ${flag}=?, updated_at=unixepoch() WHERE quiz_id=? AND user_id=?`)
+      .run(json, quizId, userId);
+  } else {
+    const practiced  = flag === 'practiced'  ? json : '{}';
+    const interested = flag === 'interested' ? json : '{}';
+    db.prepare(`INSERT OR IGNORE INTO custom_quiz_answers (quiz_id, user_id, answers, practiced, interested) VALUES (?,?,'{}',?,?)`)
+      .run(quizId, userId, practiced, interested);
+  }
+}
+
 function listQuizzesNotCompleted(userId) {
   return db.prepare(`SELECT q.*,
     (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count
@@ -2430,6 +2464,8 @@ module.exports = {
   deleteQuizPart,
   reorderAllQuizQuestions,
   getAllQuizAnswers,
+  getQuizFlags,
+  saveQuizFlag,
   listNouvelles,
   getNouvelleById,
   createNouvelle,

@@ -197,6 +197,18 @@ function buildCustomQuizRouter(config) {
     res.json({ ok: true });
   });
 
+  // Toggle "pratiqué" / "intéressé" sur une question (indépendant de la réponse)
+  router.post("/:id/questions/:qid/flag", requireUser, express.json(), (req, res) => {
+    const quiz = db.getCustomQuiz(req.params.id);
+    if (!quiz) return res.status(404).json({ ok: false });
+    const flag = req.body.flag;
+    if (flag !== 'practiced' && flag !== 'interested') return res.status(400).json({ ok: false });
+    const qid = Number(req.params.qid);
+    const value = req.body.value ? 1 : 0;
+    db.saveQuizFlag(quiz.id, req.user.id, flag, qid, value);
+    res.json({ ok: true, flag, qid, value });
+  });
+
   // Helper : construit les étapes (unassigned si non vide, puis parties avec questions)
   function buildSteps(parts, questions) {
     const steps = [];
@@ -218,18 +230,19 @@ function buildCustomQuizRouter(config) {
     questions.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
     const existing = db.getCustomQuizAnswer(quiz.id, req.user.id);
     const answers = existing ? JSON.parse(existing.answers) : {};
+    const flags = db.getQuizFlags(quiz.id, req.user.id);
     const steps = buildSteps(parts, questions);
     const completed = existing ? existing.completed : 0;
     if (!steps.length) {
-      return res.render("quiz-detail", { config, quiz, steps: [], stepIdx: 0, stepData: null, answers, completed });
+      return res.render("quiz-detail", { config, quiz, steps: [], stepIdx: 0, stepData: null, answers, completed, flags });
     }
     if (req.query.step === "done") {
-      return res.render("quiz-detail", { config, quiz, steps, stepIdx: steps.length - 1, stepData: null, answers, completed: 1 });
+      return res.render("quiz-detail", { config, quiz, steps, stepIdx: steps.length - 1, stepData: null, answers, completed: 1, flags });
     }
     let stepIdx = parseInt(req.query.step, 10);
     if (isNaN(stepIdx) || stepIdx < 0) stepIdx = 0;
     if (stepIdx >= steps.length) stepIdx = steps.length - 1;
-    res.render("quiz-detail", { config, quiz, steps, stepIdx, stepData: steps[stepIdx], answers, completed });
+    res.render("quiz-detail", { config, quiz, steps, stepIdx, stepData: steps[stepIdx], answers, completed, flags });
   });
 
   // Sauvegarder les réponses de l'étape courante et avancer
