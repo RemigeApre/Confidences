@@ -25,8 +25,8 @@
         </div>
       </div>
 
-      <%# ── Filtres : volet rétractable ── %>
-      <details class="wiki-sidebar-filter-details">
+      <%# ── Filtres : toujours visible ── %>
+      <details class="wiki-sidebar-filter-details" open>
         <summary class="wiki-sidebar-filter-summary">Filtres</summary>
 
         <%- include('partials/filters/filter-base', {
@@ -70,7 +70,7 @@
 
       </details>
 
-      <%- include('partials/filters/filter-reset', { filterId: 'bd', showExplore: true }) %>
+      <%- include('partials/filters/filter-reset', { filterId: 'bd', showExplore: true, resetLabel: 'Réinitialiser les filtres' }) %>
 
     </div>
   </aside>
