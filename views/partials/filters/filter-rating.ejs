@@ -1,0 +1,125 @@
+<%
+/*  Partial : filtre notation (étoiles + propriétés)
+ *
+ *  Paramètres :
+ *    filterId        {string}   ID du conteneur (requis)
+ *    label           {string}   libellé                 (défaut 'Notation')
+ *    showFlame       {boolean}  bouton J'adore          (défaut true)
+ *    showInterested  {boolean}  bouton Intéressé        (défaut false)
+ *    interestedLabel {string}   libellé du bouton       (défaut 'Intéressé')
+ *    showNotRated    {boolean}  bouton Pas encore noté  (défaut true)
+ *
+ *  Événement émis (bubbles) :
+ *    'filterrating:change'  →  { minRating, notRated, flame, interested }
+ *
+ *  Méthode DOM :
+ *    block._reset()
+ */
+  var _fid   = filterId;
+  var _label = (typeof label          !== 'undefined') ? label          : 'Notation';
+  var _flame = (typeof showFlame      !== 'undefined') ? showFlame      : true;
+  var _int   = (typeof showInterested !== 'undefined') ? showInterested : false;
+  var _intLb = (typeof interestedLabel!== 'undefined') ? interestedLabel: 'Intéressé';
+  var _notR  = (typeof showNotRated   !== 'undefined') ? showNotRated   : true;
+%>
+<div class="filter-block filter-block--rating" id="<%= _fid %>-block">
+  <div class="wiki-filter-section">
+    <% if (_label) { %><p class="wiki-filter-label" style="text-align:center"><%= _label %></p><% } %>
+    <div class="wiki-filter-label-row">
+      <span style="font-size:.7rem;color:var(--muted)">Note minimale</span>
+      <button type="button" class="wiki-adv-star-reset" id="<%= _fid %>-star-reset"
+        title="Retirer le filtre note" aria-label="Retirer">✕</button>
+    </div>
+    <div class="wiki-adv-stars" id="<%= _fid %>-stars">
+      <% for (var _i = 1; _i <= 5; _i++) { %>
+        <button type="button" class="wiki-adv-star" data-value="<%= _i %>">&#9733;</button>
+      <% } %>
+    </div>
+    <% if (_notR || _flame || _int) { %>
+    <div class="wiki-prop-grid" id="<%= _fid %>-props" style="margin-top:.45rem">
+      <% if (_notR) { %><button type="button" class="wiki-prop-btn" data-prop="notRated"  data-state="0">Pas noté</button><% } %>
+      <% if (_flame){ %><button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0">&#128293; J'adore</button><% } %>
+      <% if (_int)  { %><button type="button" class="wiki-prop-btn" data-prop="interested"data-state="0"><%= _intLb %></button><% } %>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+(function () {
+  var block    = document.getElementById('<%= _fid %>-block');
+  var starsEl  = document.getElementById('<%= _fid %>-stars');
+  var resetBtn = document.getElementById('<%= _fid %>-star-reset');
+  var propsEl  = document.getElementById('<%= _fid %>-props');
+  if (!block || !starsEl) return;
+
+  var minRating = 0;
+
+  function renderStars() {
+    starsEl.querySelectorAll('.wiki-adv-star').forEach(function (btn) {
+      btn.classList.toggle('active', Number(btn.dataset.value) <= minRating);
+    });
+  }
+
+  function dispatch() {
+    var props = {};
+    if (propsEl) {
+      propsEl.querySelectorAll('.wiki-prop-btn').forEach(function (btn) {
+        props[btn.dataset.prop] = btn.dataset.state === '1';
+      });
+    }
+    block.dispatchEvent(new CustomEvent('filterrating:change', {
+      bubbles: true,
+      detail: {
+        minRating:   minRating,
+        notRated:    props.notRated    || false,
+        flame:       props.flame       || false,
+        interested:  props.interested  || false
+      }
+    }));
+  }
+
+  // Étoiles
+  starsEl.querySelectorAll('.wiki-adv-star').forEach(function (btn) {
+    var v = Number(btn.dataset.value);
+    btn.addEventListener('mouseenter', function () {
+      starsEl.querySelectorAll('.wiki-adv-star').forEach(function (b) {
+        b.classList.toggle('active', Number(b.dataset.value) <= v);
+      });
+    });
+    btn.addEventListener('mouseleave', renderStars);
+    btn.addEventListener('click', function () {
+      minRating = (minRating === v) ? 0 : v;
+      renderStars(); dispatch();
+    });
+  });
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      minRating = 0; renderStars(); dispatch();
+    });
+  }
+
+  // Props (2 états : off / on)
+  if (propsEl) {
+    propsEl.querySelectorAll('.wiki-prop-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var s = btn.dataset.state === '1' ? '0' : '1';
+        btn.dataset.state = s;
+        dispatch();
+      });
+    });
+  }
+
+  renderStars();
+
+  block._reset = function () {
+    minRating = 0; renderStars();
+    if (propsEl) {
+      propsEl.querySelectorAll('.wiki-prop-btn').forEach(function (btn) {
+        btn.dataset.state = '0';
+      });
+    }
+    dispatch();
+  };
+})();
+</script>

@@ -14364,6 +14364,48 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
    NOUVELLES
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── Système filter-block (partials réutilisables) ───────────────────────── */
+.filter-sidebar { display: flex; flex-direction: column; }
+.filter-block   { padding: .65rem 0; }
+.filter-block + .filter-block { border-top: 1px solid rgba(255,255,255,.07); }
+/* Ordre fixe quel que soit l'ordre d'inclusion EJS */
+.filter-block--base       { order: 10; }
+.filter-block--categories { order: 20; }
+.filter-block--tags       { order: 30; }
+.filter-block--rating     { order: 40; }
+.filter-block--reset      { order: 99; margin-top: auto; }
+
+/* Recherche dans filter-base */
+.filter-base-search-wrap { position: relative; }
+.filter-base-search { display: block; width: 100%; box-sizing: border-box; padding-right: 1.8rem !important; }
+.filter-base-clear {
+  position: absolute; right: .45rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--muted); font-size: 1rem;
+  cursor: pointer; padding: 0 .2rem; line-height: 1;
+}
+.filter-base-clear:hover { color: var(--fg); }
+/* Tri + affichage */
+.filter-base-row { display: flex; gap: .4rem; margin-top: .5rem; }
+.filter-base-select {
+  flex: 1; min-width: 0;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.14);
+  color: var(--fg); border-radius: 6px; padding: .3rem .5rem;
+  font-size: .76rem; cursor: pointer;
+}
+/* Type chips (ultra/irréaliste/objets) */
+.filter-type-row { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+.filter-type-btn { /* hérite de tag-chip via la classe */ }
+
+/* Catégories : centré + hue par catégorie */
+.filter-cat-chips { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
+.filter-cat-chip { --nv-hue: var(--fc-hue, 340); }
+.filter-cat-chip:hover,
+.filter-cat-chip[data-state="1"]:not(.chip-include) {
+  background: hsl(var(--fc-hue, 340), 40%, 18%);
+  color: hsl(var(--fc-hue, 340), 55%, 72%);
+  border-color: hsl(var(--fc-hue, 340), 35%, 30%);
+}
+
 /* ── Hub / index ──────────────────────────────────────────────────────────── */
 .nv-hub { padding: 1.5rem 1rem 3rem; max-width: 100%; }
 .nv-strip { margin-bottom: 2.5rem; }
@@ -14394,16 +14436,6 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   background: hsl(0,55%,35%); border-color: hsl(0,55%,45%); color: #fff;
 }
 
-/* Tag search input (sidebar nouvelles) */
-#nv-tag-search {
-  display: block; width: 100%; box-sizing: border-box;
-  margin-bottom: .45rem;
-  padding: .3rem .6rem; border-radius: 6px;
-  border: 1px solid var(--border); background: rgba(255,255,255,.04);
-  color: var(--fg); font-size: .78rem;
-}
-#nv-tag-search::placeholder { color: var(--muted); }
-#nv-tag-search:focus { outline: none; border-color: hsl(340,40%,40%); }
 
 /* ── Grille de cartes nouvelles ───────────────────────────────────────────── */
 .nv-cards {

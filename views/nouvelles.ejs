@@ -1,7 +1,6 @@
 <%- include('partials/head', { title: 'Nouvelles' }) %>
 <main class="container wide wiki-locked" style="--ch-hue: 340">
   <%- include('partials/top-nav', { config: config, navTitle: 'Nouvelles', navBack: '/' }) %>
-
   <%- include('partials/mobile-filter-toggle') %>
 
   <%# ── Sidebar ─────────────────────────────────────────────────────────── %>
@@ -13,42 +12,46 @@
         <h1 class="wiki-chapter-hero-title">Nouvelles</h1>
       </div>
     </div>
-    <div class="wiki-sidebar-body">
 
-      <%# ── Filtre catégorie ─ %>
-      <div class="wf-filter-section">
-        <p class="wf-filter-label" style="text-align:center">Catégorie</p>
-        <div class="nv-cat-filters" id="nv-cat-filters">
-          <% categories.forEach(function(c) { %>
-            <button type="button" class="tag-chip nv-cat-chip" data-cat="<%= c.key %>" data-state="0"
-              style="--nv-hue: <%= c.hue %>"><%= c.label %></button>
-          <% }) %>
-        </div>
-      </div>
+    <div class="wiki-sidebar-body filter-sidebar">
+      <%- include('partials/filters/filter-base', {
+            searchId:    'nv-search',
+            showSort:    true,
+            sortOptions: [
+              { value: 'date-desc',  label: 'Plus récent'  },
+              { value: 'date-asc',   label: 'Plus ancien'  },
+              { value: 'alpha-asc',  label: 'Alphabétique' },
+              { value: 'length-desc',label: 'Plus long'    },
+              { value: 'random',     label: 'Aléatoire'    }
+            ],
+            defaultSort: 'date-desc',
+            showType:    true
+          }) %>
 
-      <%# ── Filtre tags ─ %>
+      <%- include('partials/filters/filter-categories', {
+            filterId:   'nv-cat-filter',
+            categories: categories,
+            label:      'Catégorie'
+          }) %>
+
       <% if (allTags && allTags.length) { %>
-      <div class="wf-filter-section" style="margin-top:1.2rem">
-        <p class="wf-filter-label" style="text-align:center">Tags</p>
-        <input type="search" id="nv-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag…" autocomplete="off" />
-        <div class="wiki-tag-cloud" id="nv-tag-filter">
-          <% allTags.slice(0, 40).forEach(function(t) { %>
-            <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0"><%= t %></button>
-          <% }) %>
-        </div>
-      </div>
+        <%- include('partials/filters/filter-tags', {
+              filterId: 'nv-tag-filter',
+              tags:     allTags,
+              label:    'Tags'
+            }) %>
       <% } %>
 
+      <%- include('partials/filters/filter-reset', { filterId: 'nv', showExplore: true }) %>
     </div>
   </aside>
 
   <%# ── Contenu principal ───────────────────────────────────────────────── %>
   <div class="nv-hub">
 
-    <%# ── Séries ─────────────────────────────────────────────────────────── %>
     <% if (series && series.length) { %>
     <section class="nv-strip">
-      <h2 class="nv-strip-title">Séries</h2>
+      <h2 class="nv-strip-title nv-strip-title--center">Séries</h2>
       <div class="nv-serie-cards">
         <% series.forEach(function(s) { %>
           <a href="/nouvelles/series/<%= s.id %>" class="nv-serie-card">
@@ -57,18 +60,15 @@
               <%= s.chapter_count %> chapitre<%= s.chapter_count !== 1 ? 's' : '' %>
               · ~<%= Math.max(1, Math.round((s.total_words || 0) / 200)) %> min
             </div>
-            <% if (s.description) { %>
-              <div class="nv-serie-card-desc"><%= s.description %></div>
-            <% } %>
+            <% if (s.description) { %><div class="nv-serie-card-desc"><%= s.description %></div><% } %>
           </a>
         <% }) %>
       </div>
     </section>
     <% } %>
 
-    <%# ── Nouveautés ──────────────────────────────────────────────────────── %>
     <% if (recent && recent.length) { %>
-    <section class="nv-strip">
+    <section class="nv-strip" id="nv-section-recent">
       <h2 class="nv-strip-title nv-strip-title--center">Nouveautés</h2>
       <div class="nv-cards" id="nv-cards-recent">
         <% recent.forEach(function(n) { %>
@@ -78,9 +78,8 @@
     </section>
     <% } %>
 
-    <%# ── Recommandations (mises en avant) ───────────────────────────────── %>
     <% if (featured.length) { %>
-    <section class="nv-strip">
+    <section class="nv-strip" id="nv-section-featured">
       <h2 class="nv-strip-title nv-strip-title--center">Recommandations</h2>
       <div class="nv-cards" id="nv-cards-featured">
         <% featured.forEach(function(n) { %>
@@ -90,8 +89,7 @@
     </section>
     <% } %>
 
-    <%# ── Toutes les nouvelles standalone ────────────────────────────────── %>
-    <section class="nv-strip" id="nv-strip-all">
+    <section class="nv-strip" id="nv-section-all">
       <h2 class="nv-strip-title nv-strip-title--center">Toutes les nouvelles</h2>
       <div class="nv-cards" id="nv-cards-all">
         <% standalone.forEach(function(n) { %>
@@ -99,13 +97,12 @@
         <% }) %>
       </div>
       <% if (!standalone.length) { %>
-        <p class="nv-empty">Aucune nouvelle standalone pour le moment.</p>
+        <p class="nv-empty">Aucune nouvelle pour le moment.</p>
       <% } %>
     </section>
 
   </div>
 
-  <%# ── FABs admin (speed-dial) ────────────────────────────────────────── %>
   <% if (currentUser && currentUser.isAdmin) { %>
     <div class="nv-fab-group" id="nv-fab-group">
       <button type="button" class="wiki-fab-add nv-fab-main" id="nv-fab-main" title="Créer…" aria-expanded="false">+</button>
@@ -121,7 +118,6 @@
       </div>
     </div>
   <% } %>
-
 </main>
 
 <%# ── Popup modale ────────────────────────────────────────────────────────── %>
@@ -142,108 +138,151 @@
 </div>
 
 <script>
-(function() {
-  // ── Préférences globales (ultra / irréaliste) ─────────────────────────────
-  var hideUltra      = (window.ULTRA_MODE      || 'hidden')  === 'hidden';
-  var hideIrrealiste = (window.IRREALISTE_MODE || 'visible') === 'hidden';
-
-  // ── État des filtres ──────────────────────────────────────────────────────
-  var catStates  = {};   // key → 0 neutre | 1 inclus | 2 exclu
-  var tagStates  = {};   // tag → 0 | 1 | 2
-
-  // ── Toutes les cartes (toutes sections confondues) ────────────────────────
+(function () {
+  var sidebar  = document.getElementById('mobile-filter-sidebar');
   var allCards = Array.from(document.querySelectorAll('.nv-card'));
 
-  // ── Filtre catégorie (3 états) ────────────────────────────────────────────
-  var catChips = document.querySelectorAll('.nv-cat-chip');
-  catChips.forEach(function(chip) {
-    chip.addEventListener('click', function() {
-      var cat = chip.dataset.cat;
-      var s   = ((catStates[cat] || 0) + 1) % 3;
-      catStates[cat] = s;
-      chip.dataset.state = String(s);
-      chip.classList.toggle('chip-include', s === 1);
-      chip.classList.toggle('chip-exclude', s === 2);
-      applyFilters();
-    });
-  });
+  // ── État des filtres ──────────────────────────────────────────────────────
+  // Les types reprennent les préférences compte (même logique que filter-base)
+  var state = {
+    search:      '',
+    sort:        'date-desc',
+    types: {
+      ultra:      (window.ULTRA_MODE      === 'hidden') ? 2 : 0,
+      irrealiste: (window.IRREALISTE_MODE === 'hidden') ? 2 : 0,
+      objet:      0
+    },
+    catIncluded: [],
+    catExcluded: [],
+    tagIncluded: [],
+    tagExcluded: []
+  };
 
-  // ── Filtre tags (3 états) ─────────────────────────────────────────────────
-  var tagChips  = document.querySelectorAll('#nv-tag-filter .wiki-tag-chip');
-  var tagSearch = document.getElementById('nv-tag-search');
-
-  tagChips.forEach(function(chip) {
-    chip.addEventListener('click', function() {
-      var tag = chip.dataset.tag;
-      var s   = ((tagStates[tag] || 0) + 1) % 3;
-      tagStates[tag] = s;
-      chip.dataset.state = String(s);
-      chip.classList.toggle('chip-include', s === 1);
-      chip.classList.toggle('chip-exclude', s === 2);
-      applyFilters();
-    });
-  });
-
-  if (tagSearch) {
-    tagSearch.addEventListener('input', function() {
-      var q = tagSearch.value.trim().toLowerCase();
-      tagChips.forEach(function(chip) {
-        chip.hidden = q.length > 0 && chip.dataset.tag.toLowerCase().indexOf(q) === -1;
-      });
-    });
+  // Normalise un texte pour la recherche
+  function norm(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
-  // ── Logique de filtre ─────────────────────────────────────────────────────
+  // ── Filtre ────────────────────────────────────────────────────────────────
   function applyFilters() {
-    var includedCats = [], excludedCats = [];
-    var includedTags = [], excludedTags = [];
-    Object.keys(catStates).forEach(function(k) {
-      if (catStates[k] === 1) includedCats.push(k);
-      else if (catStates[k] === 2) excludedCats.push(k);
-    });
-    Object.keys(tagStates).forEach(function(k) {
-      if (tagStates[k] === 1) includedTags.push(k);
-      else if (tagStates[k] === 2) excludedTags.push(k);
-    });
-
-    allCards.forEach(function(card) {
+    var sq = norm(state.search);
+    allCards.forEach(function (card) {
       var cat  = card.dataset.category || '';
       var tags = card.dataset.tags ? card.dataset.tags.split(',') : [];
-
       var hide = false;
 
-      // Catégorie
-      if (includedCats.length && includedCats.indexOf(cat) === -1) hide = true;
-      if (excludedCats.length && excludedCats.indexOf(cat) !== -1) hide = true;
+      // Recherche
+      if (sq && norm(card.dataset.searchText || '').indexOf(sq) === -1) hide = true;
 
-      // Tags
-      if (!hide && includedTags.length) {
-        var hasAll = includedTags.every(function(t) { return tags.indexOf(t) !== -1; });
-        if (!hasAll) hide = true;
+      // Catégories
+      if (!hide && state.catIncluded.length && state.catIncluded.indexOf(cat) === -1) hide = true;
+      if (!hide && state.catExcluded.length && state.catExcluded.indexOf(cat) !== -1) hide = true;
+
+      // Tags (tous les inclus doivent matcher, aucun exclu)
+      if (!hide && state.tagIncluded.length) {
+        hide = !state.tagIncluded.every(function (t) { return tags.indexOf(t) !== -1; });
       }
-      if (!hide && excludedTags.length) {
-        var hasAny = excludedTags.some(function(t) { return tags.indexOf(t) !== -1; });
-        if (hasAny) hide = true;
+      if (!hide && state.tagExcluded.length) {
+        hide = state.tagExcluded.some(function (t) { return tags.indexOf(t) !== -1; });
       }
 
-      // Ultra / irréaliste
-      if (!hide && hideUltra      && card.dataset.ultra      === '1') hide = true;
-      if (!hide && hideIrrealiste && card.dataset.irrealiste === '1') hide = true;
+      // Types : 0=neutre, 1=inclure seulement, 2=exclure
+      if (!hide) {
+        var isUltra = card.dataset.ultra === '1';
+        var isIrr   = card.dataset.irrealiste === '1';
+        if (state.types.ultra === 1 && !isUltra)           hide = true;
+        if (state.types.ultra === 2 && isUltra)            hide = true;
+        if (state.types.irrealiste === 1 && !isIrr)        hide = true;
+        if (state.types.irrealiste === 2 && isIrr)         hide = true;
+      }
 
       card.hidden = hide;
     });
 
     // Masquer les sections entières si toutes leurs cartes sont cachées
-    document.querySelectorAll('.nv-strip').forEach(function(section) {
+    document.querySelectorAll('.nv-strip').forEach(function (section) {
       var cards = section.querySelectorAll('.nv-card');
       if (!cards.length) return;
-      section.hidden = Array.from(cards).every(function(c) { return c.hidden; });
+      section.hidden = Array.from(cards).every(function (c) { return c.hidden; });
     });
+
+    // Trier la section "Toutes"
+    sortCards();
   }
 
-  applyFilters();
+  // ── Tri (uniquement la section "Toutes") ─────────────────────────────────
+  var _randomSeeds = null;
+  function sortCards() {
+    var container = document.getElementById('nv-cards-all');
+    if (!container) return;
+    var cards = Array.from(container.querySelectorAll('.nv-card'));
+    if (!cards.length) return;
 
-  // ── Popup carte ──────────────────────────────────────────────────────────
+    if (state.sort === 'random') {
+      if (!_randomSeeds) {
+        _randomSeeds = new Map();
+        cards.forEach(function (c) { _randomSeeds.set(c, Math.random()); });
+      }
+      cards.sort(function (a, b) { return _randomSeeds.get(a) - _randomSeeds.get(b); });
+    } else {
+      _randomSeeds = null;
+      cards.sort(function (a, b) {
+        switch (state.sort) {
+          case 'alpha-asc':   return norm(a.dataset.title || '').localeCompare(norm(b.dataset.title || ''));
+          case 'date-asc':    return Number(a.dataset.created || 0) - Number(b.dataset.created || 0);
+          case 'length-desc': return Number(b.dataset.wc || 0) - Number(a.dataset.wc || 0);
+          default:            return Number(b.dataset.created || 0) - Number(a.dataset.created || 0);
+        }
+      });
+    }
+    cards.forEach(function (c, i) { c.style.order = i; });
+  }
+
+  // ── Listeners sur les événements des partials ─────────────────────────────
+  sidebar.addEventListener('filterbase:change', function (e) {
+    state.search = e.detail.search || '';
+    if (e.detail.sort)    state.sort  = e.detail.sort;
+    if (e.detail.types)   state.types = e.detail.types;
+    applyFilters();
+  });
+
+  sidebar.addEventListener('filtercats:change', function (e) {
+    state.catIncluded = e.detail.included || [];
+    state.catExcluded = e.detail.excluded || [];
+    applyFilters();
+  });
+
+  sidebar.addEventListener('tagfilter:change', function (e) {
+    state.tagIncluded = e.detail.included || [];
+    state.tagExcluded = e.detail.excluded || [];
+    applyFilters();
+  });
+
+  sidebar.addEventListener('filterreset:reset', function () {
+    // Réinitialise l'état
+    state = { search: '', sort: 'date-desc', types: { ultra: 0, irrealiste: 0, objet: 0 },
+              catIncluded: [], catExcluded: [], tagIncluded: [], tagExcluded: [] };
+    // Demande à chaque bloc de réinitialiser son UI
+    // Note : les _reset() des blocs re-dispatchent leurs propres événements,
+    // ce qui met à jour state une seconde fois — c'est redondant mais sans effet de bord.
+    var resetting = true;
+    sidebar.querySelectorAll('.filter-block').forEach(function (b) {
+      if (typeof b._reset === 'function') b._reset();
+    });
+    resetting = false; // eslint-disable-line no-unused-vars
+    applyFilters();
+  });
+
+  sidebar.addEventListener('filterreset:explore', function () {
+    var visible = allCards.filter(function (c) { return !c.hidden; });
+    if (!visible.length) return;
+    openPopup(visible[Math.floor(Math.random() * visible.length)]);
+  });
+
+  // Lancer les filtres après init (les partials dispatch au chargement)
+  // Le filterbase dispatch automatiquement au load, ça suffit.
+
+  // ── Popup ─────────────────────────────────────────────────────────────────
   var overlay   = document.getElementById('nv-popup-overlay');
   var popHeader = document.getElementById('nv-popup-header');
   var popCat    = document.getElementById('nv-popup-cat');
@@ -269,33 +308,30 @@
     document.body.style.overflow = 'hidden';
     closeBtn.focus();
   }
-  function closePopup() {
-    overlay.hidden = true;
-    document.body.style.overflow = '';
-  }
+  function closePopup() { overlay.hidden = true; document.body.style.overflow = ''; }
 
-  allCards.forEach(function(card) {
+  allCards.forEach(function (card) {
     card.style.cursor = 'pointer';
-    card.addEventListener('click', function(e) {
+    card.addEventListener('click', function (e) {
       if (e.target.closest('a, button')) return;
       openPopup(card);
     });
   });
   closeBtn.addEventListener('click', closePopup);
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) closePopup(); });
-  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !overlay.hidden) closePopup(); });
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closePopup(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !overlay.hidden) closePopup(); });
 
   // ── FAB speed-dial ───────────────────────────────────────────────────────
   var fabMain = document.getElementById('nv-fab-main');
   var fabMenu = document.getElementById('nv-fab-menu');
   if (fabMain && fabMenu) {
-    fabMain.addEventListener('click', function() {
-      var open = fabMenu.hidden === false;
+    fabMain.addEventListener('click', function () {
+      var open = !fabMenu.hidden;
       fabMenu.hidden = open;
       fabMain.setAttribute('aria-expanded', String(!open));
       fabMain.textContent = open ? '+' : '×';
     });
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
       if (!fabMain.contains(e.target) && !fabMenu.contains(e.target)) {
         fabMenu.hidden = true;
         fabMain.setAttribute('aria-expanded', 'false');

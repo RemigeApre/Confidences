@@ -1,0 +1,41 @@
+<%
+/*  Partial : réinitialiser + explorer l'inconnu (toujours en dernier)
+ *
+ *  Paramètres :
+ *    showExplore  {boolean}  bouton explorer         (défaut true)
+ *    exploreLabel {string}   libellé explorer         (défaut 'Explorer l'inconnu')
+ *    resetLabel   {string}   libellé reset            (défaut 'Réinitialiser')
+ *
+ *  Événements émis (bubbles) :
+ *    'filterreset:reset'    — demande réinit de tous les filtres
+ *    'filterreset:explore'  — demande exploration aléatoire
+ */
+  var _bid        = (typeof filterId     !== 'undefined') ? filterId     : 'filter-reset-' + Math.random().toString(36).slice(2);
+  var _explore    = (typeof showExplore  !== 'undefined') ? showExplore  : true;
+  var _exLabel    = (typeof exploreLabel !== 'undefined') ? exploreLabel : "Explorer l'inconnu";
+  var _rstLabel   = (typeof resetLabel   !== 'undefined') ? resetLabel   : 'Réinitialiser';
+%>
+<div class="filter-block filter-block--reset" id="<%= _bid %>-reset-block">
+  <div class="wiki-filter-section wiki-filter-bottom-actions">
+    <button type="button" class="wiki-filter-reset-btn js-filter-reset"><%= _rstLabel %></button>
+    <% if (_explore) { %>
+    <button type="button" class="wiki-filter-reset-btn wiki-explore-btn js-filter-explore"><%= _exLabel %></button>
+    <% } %>
+  </div>
+</div>
+
+<script>
+(function () {
+  var block = document.getElementById('<%= _bid %>-reset-block');
+  if (!block) return;
+  block.querySelector('.js-filter-reset').addEventListener('click', function () {
+    block.dispatchEvent(new CustomEvent('filterreset:reset', { bubbles: true, detail: {} }));
+  });
+  var exBtn = block.querySelector('.js-filter-explore');
+  if (exBtn) {
+    exBtn.addEventListener('click', function () {
+      block.dispatchEvent(new CustomEvent('filterreset:explore', { bubbles: true, detail: {} }));
+    });
+  }
+})();
+</script>

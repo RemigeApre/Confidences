@@ -1,0 +1,70 @@
+<%
+/*  Partial : filtre catégories (3 états)
+ *
+ *  Paramètres :
+ *    filterId   {string}  ID du conteneur (requis)
+ *    categories {Array}   [{key, label, hue}] (requis)
+ *    label      {string}  libellé affiché        (défaut 'Catégorie')
+ *
+ *  Événement émis (bubbles) :
+ *    'filtercats:change'  →  { included:[], excluded:[] }
+ *
+ *  Méthode DOM :
+ *    block._reset()
+ */
+  var _fid   = filterId;
+  var _cats  = categories || [];
+  var _label = (typeof label !== 'undefined') ? label : 'Catégorie';
+%>
+<% if (_cats.length) { %>
+<div class="filter-block filter-block--categories" id="<%= _fid %>-block">
+  <div class="wiki-filter-section">
+    <% if (_label) { %><p class="wiki-filter-label" style="text-align:center"><%= _label %></p><% } %>
+    <div class="filter-cat-chips" id="<%= _fid %>">
+      <% _cats.forEach(function(c) { %>
+        <button type="button" class="tag-chip filter-cat-chip"
+          data-cat="<%= c.key %>" data-state="0"
+          style="--fc-hue: <%= c.hue %>"><%= c.label %></button>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var block = document.getElementById('<%= _fid %>-block');
+  var cloud = document.getElementById('<%= _fid %>');
+  if (!block || !cloud) return;
+
+  function dispatch() {
+    var included = [], excluded = [];
+    cloud.querySelectorAll('.filter-cat-chip').forEach(function (btn) {
+      if (btn.dataset.state === '1') included.push(btn.dataset.cat);
+      else if (btn.dataset.state === '2') excluded.push(btn.dataset.cat);
+    });
+    block.dispatchEvent(new CustomEvent('filtercats:change', {
+      bubbles: true,
+      detail: { included: included, excluded: excluded }
+    }));
+  }
+
+  cloud.addEventListener('click', function (e) {
+    var btn = e.target.closest('.filter-cat-chip');
+    if (!btn) return;
+    var s = ((Number(btn.dataset.state) || 0) + 1) % 3;
+    btn.dataset.state = String(s);
+    btn.classList.toggle('chip-include', s === 1);
+    btn.classList.toggle('chip-exclude', s === 2);
+    dispatch();
+  });
+
+  block._reset = function () {
+    cloud.querySelectorAll('.filter-cat-chip').forEach(function (btn) {
+      btn.dataset.state = '0';
+      btn.classList.remove('chip-include', 'chip-exclude');
+    });
+    dispatch();
+  };
+})();
+</script>
+<% } %>
