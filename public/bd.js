@@ -1,264 +1,161 @@
 // ── Filtrage BD (sidebar) ─────────────────────────────────────────────────
-(function() {
-  var grid        = document.getElementById("bd-grid");
-  var cards       = grid ? Array.from(grid.querySelectorAll(".bd-card")) : [];
-  var countEl     = document.getElementById("bd-count-hero");
-  var searchInput = document.getElementById("bd-search");
-  var searchClear = document.getElementById("bd-search-clear");
-  var tagFilter   = document.getElementById("bd-tag-filter");
-  var tagSearchInput = document.getElementById("bd-tag-search");
+(function () {
+  var grid    = document.getElementById('bd-grid');
+  var cards   = grid ? Array.from(grid.querySelectorAll('.bd-card')) : [];
+  var countEl = document.getElementById('bd-count-hero');
+  var sidebar = document.getElementById('mobile-filter-sidebar');
 
-  var activeTags   = [];
-  var searchQ      = "";
-  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  var state = {
+    search:      '',
+    types: {
+      ultra:      (window.ULTRA_MODE      === 'hidden') ? 2 : 0,
+      irrealiste: (window.IRREALISTE_MODE === 'hidden') ? 2 : 0
+    },
+    couleurOnly: false,
+    langue:      '',
+    tagIncluded: [],
+    tagExcluded: [],
+    minRating:   0,
+    notRated:    false,
+    flame:       false,
+    interested:  false
+  };
+
+  var blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function (t) { return String(t).toLowerCase(); }));
 
   function hideBlacklistedTagChips() {
-    if (!tagFilter) return;
-    tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]").forEach(function (chip) {
-      if (blacklistSet.has((chip.dataset.tag || "").toLowerCase())) chip.hidden = true;
+    var cloud = document.getElementById('bd-tag-filter');
+    if (!cloud) return;
+    cloud.querySelectorAll('.wiki-tag-chip[data-tag]').forEach(function (chip) {
+      if (blacklistSet.has((chip.dataset.tag || '').toLowerCase())) chip.hidden = true;
     });
   }
 
-  document.addEventListener("tag-blacklist-change", function () {
-    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function(t) { return String(t).toLowerCase(); }));
+  document.addEventListener('tag-blacklist-change', function () {
+    blacklistSet = new Set((window.TAG_BLACKLIST || []).map(function (t) { return String(t).toLowerCase(); }));
     hideBlacklistedTagChips();
     applyFilters();
   });
 
-  var storedShowUltra      = localStorage.getItem("bd-show-ultra");
-  var storedShowIrrealiste = localStorage.getItem("bd-show-irrealiste");
-  var showUltra      = storedShowUltra !== null ? storedShowUltra === "1" : (window.ULTRA_MODE || "hidden") !== "hidden";
-  var showIrrealiste = storedShowIrrealiste !== null ? storedShowIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") !== "hidden";
-  var activeLangue    = "";
-  var showCouleurOnly = false;
-  var minRating       = 0;
-  var filterNotRated  = false;
-  var filterFlame     = false;
-  var filterInterested= false;
-
   function applyFilters() {
     var visible = 0;
-    cards.forEach(function(card) {
-      var tags       = (card.dataset.tags || "").split(",").filter(Boolean);
-      var title      = card.dataset.title || "";
-      var ultra      = card.dataset.ultra === "1";
-      var irrealiste = card.dataset.irrealiste === "1";
-      var langue     = card.dataset.langue || "";
-      var couleur    = card.dataset.couleur === "1";
+    cards.forEach(function (card) {
+      var tags       = (card.dataset.tags || '').split(',').filter(Boolean);
+      var title      = card.dataset.title || '';
+      var ultra      = card.dataset.ultra === '1';
+      var irrealiste = card.dataset.irrealiste === '1';
+      var langue     = card.dataset.langue || '';
+      var couleur    = card.dataset.couleur === '1';
       var rating     = Number(card.dataset.rating) || 0;
-      var flame      = card.dataset.flame === "1";
-      var interested = card.dataset.interested === "1";
+      var flame      = card.dataset.flame === '1';
+      var interested = card.dataset.interested === '1';
 
-      var okTags       = activeTags.length === 0 || activeTags.every(function(t) { return tags.indexOf(t) !== -1; });
-      var okSearch     = !searchQ || title.indexOf(searchQ) !== -1;
-      var okUltra      = showUltra || !ultra;
-      var okIrrealiste = showIrrealiste || !irrealiste;
-      var okLangue     = !activeLangue || langue === activeLangue;
-      var okCouleur    = !showCouleurOnly || couleur;
-      var okBlacklist  = blacklistSet.size === 0 || !tags.some(function(t) { return blacklistSet.has(t); });
-      var okRating     = minRating === 0 || rating >= minRating;
-      var okNotRated   = !filterNotRated || rating === 0;
-      var okFlame      = !filterFlame || flame;
-      var okInterested = !filterInterested || interested;
+      var sq   = state.search.toLowerCase().trim();
+      var show = true;
 
-      var show = okTags && okSearch && okUltra && okIrrealiste && okLangue && okCouleur && okBlacklist && okRating && okNotRated && okFlame && okInterested;
-      card.style.display = show ? "" : "none";
+      if (sq && title.indexOf(sq) === -1) show = false;
+
+      if (show && state.types.ultra === 1      && !ultra)      show = false;
+      if (show && state.types.ultra === 2      && ultra)       show = false;
+      if (show && state.types.irrealiste === 1 && !irrealiste) show = false;
+      if (show && state.types.irrealiste === 2 && irrealiste)  show = false;
+
+      if (show && state.couleurOnly && !couleur)              show = false;
+      if (show && state.langue && langue !== state.langue)    show = false;
+
+      if (show && state.tagIncluded.length &&
+          !state.tagIncluded.every(function (t) { return tags.indexOf(t) !== -1; })) show = false;
+      if (show && state.tagExcluded.length &&
+          state.tagExcluded.some(function (t)  { return tags.indexOf(t) !== -1; })) show = false;
+
+      if (show && blacklistSet.size &&
+          tags.some(function (t) { return blacklistSet.has(t); })) show = false;
+
+      if (show && state.minRating > 0 && rating < state.minRating) show = false;
+      if (show && state.notRated   && rating !== 0)                show = false;
+      if (show && state.flame      && !flame)                      show = false;
+      if (show && state.interested && !interested)                 show = false;
+
+      card.style.display = show ? '' : 'none';
       if (show) visible++;
     });
     if (countEl) countEl.textContent = visible;
   }
 
-  // ── Tags ─────────────────────────────────────────────────────────────────
-  if (tagFilter) {
-    tagFilter.addEventListener("click", function(e) {
-      var chip = e.target.closest(".wiki-tag-chip");
-      if (!chip) return;
-      var tag = chip.dataset.tag;
-      var idx = activeTags.indexOf(tag);
-      if (idx === -1) { activeTags.push(tag); chip.dataset.state = "1"; chip.classList.add("active"); }
-      else            { activeTags.splice(idx, 1); chip.dataset.state = "0"; chip.classList.remove("active"); }
+  // ── Listeners sur les événements des partials ─────────────────────────────
+  if (sidebar) {
+    sidebar.addEventListener('filterbase:change', function (e) {
+      state.search = e.detail.search || '';
+      if (e.detail.types) state.types = e.detail.types;
       applyFilters();
     });
-  }
 
-  // ── Recherche dans les tags ───────────────────────────────────────────────
-  var tagSearchDebounce = null;
-  if (tagSearchInput) {
-    tagSearchInput.addEventListener("input", function () {
-      clearTimeout(tagSearchDebounce);
-      tagSearchDebounce = setTimeout(function () {
-        var q = tagSearchInput.value.trim().toLowerCase();
-        if (tagFilter) {
-          tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function (chip) {
-            var tag = (chip.dataset.tag || "").toLowerCase();
-            chip.hidden = q.length > 0 && (chip.dataset.state || "0") === "0" && tag.indexOf(q) === -1;
-          });
-        }
-      }, 120);
+    sidebar.addEventListener('tagfilter:change', function (e) {
+      state.tagIncluded = e.detail.included || [];
+      state.tagExcluded = e.detail.excluded || [];
+      applyFilters();
     });
-  }
 
-  // ── Recherche titre ───────────────────────────────────────────────────────
-  var searchDebounceTimer = null;
-  if (searchInput) {
-    searchInput.addEventListener("input", function() {
-      searchQ = searchInput.value.toLowerCase().trim();
-      if (searchClear) searchClear.hidden = !searchQ;
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(applyFilters, 120);
+    sidebar.addEventListener('filterrating:change', function (e) {
+      state.minRating  = e.detail.minRating  || 0;
+      state.notRated   = e.detail.notRated   || false;
+      state.flame      = e.detail.flame      || false;
+      state.interested = e.detail.interested || false;
+      applyFilters();
     });
-    if (searchClear) {
-      searchClear.addEventListener("click", function() {
-        searchInput.value = "";
-        searchQ = "";
-        searchClear.hidden = true;
-        applyFilters();
+
+    sidebar.addEventListener('filterreset:reset', function () {
+      state.couleurOnly = false;
+      state.langue      = '';
+      var couleurBtn = document.getElementById('bd-couleur-toggle');
+      if (couleurBtn) couleurBtn.classList.remove('active');
+      var langueFilter = document.getElementById('bd-langue-filter');
+      if (langueFilter) langueFilter.querySelectorAll('.bd-langue-chip').forEach(function (c) { c.classList.remove('active'); });
+      sidebar.querySelectorAll('.filter-block').forEach(function (b) {
+        if (typeof b._reset === 'function') b._reset();
       });
-    }
-  }
-
-  // ── Langue ───────────────────────────────────────────────────────────────
-  var langueFilter = document.getElementById("bd-langue-filter");
-  if (langueFilter) {
-    langueFilter.addEventListener("click", function(e) {
-      var chip = e.target.closest(".bd-langue-chip");
-      if (!chip) return;
-      var lng = chip.dataset.langue;
-      if (activeLangue === lng) {
-        activeLangue = "";
-        langueFilter.querySelectorAll(".bd-langue-chip").forEach(function(c) { c.classList.remove("active"); });
-      } else {
-        activeLangue = lng;
-        langueFilter.querySelectorAll(".bd-langue-chip").forEach(function(c) { c.classList.remove("active"); });
-        chip.classList.add("active");
-      }
       applyFilters();
     });
-  }
 
-  // ── Couleur ───────────────────────────────────────────────────────────────
-  var couleurBtn = document.getElementById("bd-couleur-toggle");
-  if (couleurBtn) {
-    couleurBtn.addEventListener("click", function() {
-      showCouleurOnly = !showCouleurOnly;
-      couleurBtn.classList.toggle("active", showCouleurOnly);
-      applyFilters();
-    });
-  }
-
-  // ── Ultra ─────────────────────────────────────────────────────────────────
-  var ultraBtn = document.getElementById("bd-ultra-toggle");
-  if (ultraBtn) {
-    ultraBtn.classList.toggle("active", !showUltra);
-    ultraBtn.addEventListener("click", function() {
-      showUltra = !showUltra;
-      localStorage.setItem("bd-show-ultra", showUltra ? "1" : "0");
-      ultraBtn.classList.toggle("active", !showUltra);
-      applyFilters();
-    });
-  }
-
-  // ── Irréaliste ───────────────────────────────────────────────────────────
-  var irrealisteBtn = document.getElementById("bd-irrealiste-toggle");
-  if (irrealisteBtn) {
-    irrealisteBtn.classList.toggle("active", !showIrrealiste);
-    irrealisteBtn.addEventListener("click", function() {
-      showIrrealiste = !showIrrealiste;
-      localStorage.setItem("bd-show-irrealiste", showIrrealiste ? "1" : "0");
-      irrealisteBtn.classList.toggle("active", !showIrrealiste);
-      applyFilters();
-    });
-  }
-
-  // ── Notation ─────────────────────────────────────────────────────────────
-  var starsEl  = document.getElementById("bd-adv-stars");
-  var starReset= document.getElementById("bd-adv-star-reset");
-  var propsEl  = document.getElementById("bd-prop-grid");
-
-  function renderStars() {
-    if (!starsEl) return;
-    starsEl.querySelectorAll(".wiki-adv-star").forEach(function(btn) {
-      btn.classList.toggle("active", Number(btn.dataset.value) <= minRating);
-    });
-  }
-
-  if (starsEl) {
-    starsEl.querySelectorAll(".wiki-adv-star").forEach(function(btn) {
-      var v = Number(btn.dataset.value);
-      btn.addEventListener("mouseenter", function() {
-        starsEl.querySelectorAll(".wiki-adv-star").forEach(function(b) {
-          b.classList.toggle("active", Number(b.dataset.value) <= v);
-        });
-      });
-      btn.addEventListener("mouseleave", renderStars);
-      btn.addEventListener("click", function() {
-        minRating = (minRating === v) ? 0 : v;
-        renderStars(); applyFilters();
-      });
-    });
-  }
-  if (starReset) {
-    starReset.addEventListener("click", function() {
-      minRating = 0; renderStars(); applyFilters();
-    });
-  }
-  if (propsEl) {
-    propsEl.querySelectorAll(".wiki-prop-btn").forEach(function(btn) {
-      btn.addEventListener("click", function() {
-        var on = btn.dataset.state !== "1";
-        btn.dataset.state = on ? "1" : "0";
-        if (btn.dataset.prop === "notRated")   filterNotRated   = on;
-        if (btn.dataset.prop === "flame")      filterFlame      = on;
-        if (btn.dataset.prop === "interested") filterInterested = on;
-        applyFilters();
-      });
-    });
-  }
-
-  // ── Réinitialiser ────────────────────────────────────────────────────────
-  var resetBtn = document.getElementById("bd-reset-filters");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", function() {
-      // Texte
-      searchQ = ""; if (searchInput) { searchInput.value = ""; } if (searchClear) searchClear.hidden = true;
-      // Tags
-      activeTags = [];
-      if (tagFilter) tagFilter.querySelectorAll(".wiki-tag-chip").forEach(function(c) {
-        c.dataset.state = "0"; c.classList.remove("active"); c.hidden = false;
-      });
-      if (tagSearchInput) tagSearchInput.value = "";
-      // Langue
-      activeLangue = "";
-      if (langueFilter) langueFilter.querySelectorAll(".bd-langue-chip").forEach(function(c) { c.classList.remove("active"); });
-      // Couleur
-      showCouleurOnly = false; if (couleurBtn) couleurBtn.classList.remove("active");
-      // Ultra / Irréaliste : revenir aux préférences compte
-      localStorage.removeItem("bd-show-ultra"); localStorage.removeItem("bd-show-irrealiste");
-      showUltra      = (window.ULTRA_MODE      || "hidden") !== "hidden";
-      showIrrealiste = (window.IRREALISTE_MODE || "visible") !== "hidden";
-      if (ultraBtn)      ultraBtn.classList.toggle("active", !showUltra);
-      if (irrealisteBtn) irrealisteBtn.classList.toggle("active", !showIrrealiste);
-      // Notation
-      minRating = 0; filterNotRated = false; filterFlame = false; filterInterested = false;
-      renderStars();
-      if (propsEl) propsEl.querySelectorAll(".wiki-prop-btn").forEach(function(b) { b.dataset.state = "0"; });
-      applyFilters();
-    });
-  }
-
-  // ── Explorer l'inconnu ───────────────────────────────────────────────────
-  var exploreBtn = document.getElementById("bd-explore-btn");
-  if (exploreBtn) {
-    exploreBtn.addEventListener("click", function() {
-      var visible = cards.filter(function(c) { return c.style.display !== "none"; });
+    sidebar.addEventListener('filterreset:explore', function () {
+      var visible = cards.filter(function (c) { return c.style.display !== 'none'; });
       if (!visible.length) return;
       visible[Math.floor(Math.random() * visible.length)].click();
     });
   }
 
+  // ── Couleur (spécifique BD) ───────────────────────────────────────────────
+  var couleurBtn = document.getElementById('bd-couleur-toggle');
+  if (couleurBtn) {
+    couleurBtn.addEventListener('click', function () {
+      state.couleurOnly = !state.couleurOnly;
+      couleurBtn.classList.toggle('active', state.couleurOnly);
+      applyFilters();
+    });
+  }
+
+  // ── Langue (spécifique BD) ────────────────────────────────────────────────
+  var langueFilter = document.getElementById('bd-langue-filter');
+  if (langueFilter) {
+    langueFilter.addEventListener('click', function (e) {
+      var chip = e.target.closest('.bd-langue-chip');
+      if (!chip) return;
+      var lng = chip.dataset.langue;
+      if (state.langue === lng) {
+        state.langue = '';
+        langueFilter.querySelectorAll('.bd-langue-chip').forEach(function (c) { c.classList.remove('active'); });
+      } else {
+        state.langue = lng;
+        langueFilter.querySelectorAll('.bd-langue-chip').forEach(function (c) { c.classList.remove('active'); });
+        chip.classList.add('active');
+      }
+      applyFilters();
+    });
+  }
+
   hideBlacklistedTagChips();
   applyFilters();
-})();
+}());
 
 // ── Modal BD ──────────────────────────────────────────────────────────────────
 (function() {

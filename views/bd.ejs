@@ -29,14 +29,18 @@
       <details class="wiki-sidebar-filter-details">
         <summary class="wiki-sidebar-filter-summary">Filtres</summary>
 
-        <%# Types %>
+        <%- include('partials/filters/filter-base', {
+              searchId:   'bd-search',
+              showSearch: false,
+              showType:   true
+            }) %>
+
+        <%# Couleur (spécifique BD) %>
         <div class="wiki-filter-section wiki-filter-toggles">
-          <button type="button" id="bd-ultra-toggle"      class="wiki-ultra-btn">Ultra</button>
-          <button type="button" id="bd-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
-          <button type="button" id="bd-couleur-toggle"    class="wiki-ultra-btn">&#127775; Couleur</button>
+          <button type="button" id="bd-couleur-toggle" class="wiki-ultra-btn">&#127775; Couleur</button>
         </div>
 
-        <%# Langue %>
+        <%# Langue (spécifique BD) %>
         <details class="wiki-subpanel-details">
           <summary class="wiki-subpanel-summary">Langue</summary>
           <div class="bd-langue-filter" id="bd-langue-filter">
@@ -47,49 +51,26 @@
           </div>
         </details>
 
-        <%# Tags %>
         <% if (allTags && allTags.length) { %>
-        <details class="wiki-subpanel-details">
-          <summary class="wiki-subpanel-summary">Tags</summary>
-          <input type="search" id="bd-tag-search" class="wiki-tag-search-input"
-            placeholder="Chercher un tag" autocomplete="off" />
-          <div class="wiki-tag-cloud" id="bd-tag-filter">
-            <% allTags.forEach(function(t) { %>
-              <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-                <span class="wtc-label"><%= t %></span>
-              </button>
-            <% }) %>
-          </div>
-        </details>
+          <%- include('partials/filters/filter-tags', {
+                filterId: 'bd-tag-filter',
+                tags:     allTags,
+                label:    'Tags'
+              }) %>
         <% } %>
 
-        <%# Notation %>
-        <details class="wiki-subpanel-details" id="bd-rating-block">
-          <summary class="wiki-subpanel-summary">Notation</summary>
-          <div class="wiki-filter-label-row">
-            <span style="font-size:.7rem;color:var(--muted)">Note minimale</span>
-            <button type="button" class="wiki-adv-star-reset" id="bd-adv-star-reset"
-              title="Retirer le filtre note" aria-label="Retirer">&#10005;</button>
-          </div>
-          <div class="wiki-adv-stars" id="bd-adv-stars">
-            <% for (var si = 1; si <= 5; si++) { %>
-              <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9733;</button>
-            <% } %>
-          </div>
-          <div class="wiki-prop-grid" id="bd-prop-grid">
-            <button type="button" class="wiki-prop-btn" data-prop="notRated"  data-state="0">Pas not&eacute;</button>
-            <button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0">&#128293; J&rsquo;adore</button>
-            <button type="button" class="wiki-prop-btn" data-prop="interested"data-state="0">Int&eacute;ress&eacute;</button>
-          </div>
-        </details>
+        <%- include('partials/filters/filter-rating', {
+              filterId:        'bd-rating',
+              label:           'Notation',
+              showFlame:       true,
+              showInterested:  true,
+              interestedLabel: 'Intéressé',
+              showNotRated:    true
+            }) %>
 
       </details>
 
-      <%# ── Réinitialiser / Explorer : toujours visible ── %>
-      <div class="wiki-filter-section wiki-filter-bottom-actions">
-        <button type="button" id="bd-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser</button>
-        <button type="button" id="bd-explore-btn"   class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
-      </div>
+      <%- include('partials/filters/filter-reset', { filterId: 'bd', showExplore: true }) %>
 
     </div>
   </aside>
