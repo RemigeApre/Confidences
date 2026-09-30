@@ -45,6 +45,7 @@ const {
   getLootboxConfig,
   setLootboxConfigKey,
   setImageRarity,
+  listCharms,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -408,7 +409,9 @@ function buildAdminRouter(config) {
   // ── Récompenses ─────────────────────────────────────────────────────────
   router.get("/recompenses", requireAdmin, (req, res) => {
     const lootboxConfig = getLootboxConfig();
-    res.render("admin-recompenses", { config, lootboxConfig });
+    const charms = listCharms();
+    const section = ['images', 'charms', 'config'].includes(req.query.section) ? req.query.section : 'images';
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -418,7 +421,7 @@ function buildAdminRouter(config) {
       if (req.body[`buy_${tier}`]    !== undefined) setLootboxConfigKey(`buy_${tier}`,    req.body[`buy_${tier}`]);
       if (req.body[`sell_${tier}`]   !== undefined) setLootboxConfigKey(`sell_${tier}`,   req.body[`sell_${tier}`]);
     }
-    res.redirect("/admin/recompenses");
+    res.redirect("/admin/recompenses?section=config");
   });
 
   router.get("/recompenses/images-profil", requireAdmin, (req, res) => {
