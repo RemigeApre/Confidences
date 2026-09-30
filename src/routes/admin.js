@@ -267,7 +267,7 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     const count = Math.min(20, Math.max(1, parseInt(req.body.count, 10) || 1));
     if (Number.isInteger(id)) grantLootbox(id, count);
-    res.redirect(`/admin/profils/${id}`);
+    res.redirect(`/admin/utilisateur/${id}`);
   });
 
   router.post("/profils/:id/delete", requireAdmin, (req, res) => {

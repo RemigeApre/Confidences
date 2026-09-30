@@ -1,13 +1,17 @@
 <%#
-  Affiche l'avatar de profil de currentUser :
-  - une image de galerie débloquée si profile_image_id est défini
-  - sinon un losange coloré avec profile_color
-  Taille : 28×28 px (responsive via CSS var --avatar-size).
+  Avatar de profil : image débloquée (avec recadrage optionnel) ou losange coloré.
 %>
 <% var _pu = locals.currentUser; %>
 <% if (_pu && _pu.profileImageId && locals.profileAvatarThumb) { %>
+  <%
+    var _crop = locals.profileImageCrop;
+    var _cx   = (_crop && _crop.x  != null) ? _crop.x  : 50;
+    var _cy   = (_crop && _crop.y  != null) ? _crop.y  : 50;
+    var _cs   = (_crop && _crop.scale != null && _crop.scale >= 1) ? _crop.scale : 1;
+    var _imgStyle = 'object-position:' + _cx + '% ' + _cy + '%;transform:scale(' + _cs + ');transform-origin:' + _cx + '% ' + _cy + '%;';
+  %>
   <span class="profile-avatar profile-avatar--img" aria-hidden="true">
-    <img src="<%= profileAvatarThumb %>" alt="" class="profile-avatar-img" loading="lazy" />
+    <img src="<%= profileAvatarThumb %>" alt="" class="profile-avatar-img" loading="lazy" style="<%= _imgStyle %>" />
   </span>
 <% } else if (_pu) { %>
   <span class="profile-avatar profile-avatar--shape" aria-hidden="true"

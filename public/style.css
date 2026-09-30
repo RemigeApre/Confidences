@@ -16368,6 +16368,74 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .coffre-btn--sell-confirm:hover:not(:disabled) { background: rgba(200,40,40,.28); }
 .coffre-btn--sell-confirm:disabled { opacity: .4; cursor: default; }
 
+/* Bouton recadrer */
+.coffre-btn--crop {
+  width: 100%; margin-top: .2rem;
+  border-color: rgba(80,200,120,.25); color: hsl(140,55%,62%);
+  display: inline-flex; align-items: center; justify-content: center; gap: .3rem;
+  font-size: .68rem;
+}
+.coffre-btn--crop svg { width: 12px; height: 12px; }
+.coffre-btn--crop:hover { background: rgba(80,200,120,.1); }
+
+/* ── Modal de recadrage ── */
+.crop-modal-backdrop {
+  position: fixed; inset: 0; z-index: 1300;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  animation: coffre-fade-in .15s ease;
+}
+.crop-modal-dialog {
+  background: var(--surface-1, #12121c);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px;
+  padding: 1.4rem 1.5rem 1.2rem;
+  width: 90vw; max-width: 340px;
+  display: flex; flex-direction: column; gap: .9rem;
+  box-shadow: 0 12px 50px rgba(0,0,0,.55);
+  animation: coffre-pop-in .18s ease;
+}
+.crop-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.crop-modal-title { font-size: .9rem; font-weight: 700; }
+.crop-modal-hint { font-size: .72rem; color: var(--muted, #888); margin: -.2rem 0 0; }
+.crop-modal-actions { display: flex; gap: .5rem; justify-content: flex-end; }
+
+/* Zone de prévisualisation circulaire */
+.crop-preview-wrap {
+  display: flex; align-items: center; justify-content: center;
+  padding: .5rem 0;
+}
+.crop-preview-circle {
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: grab;
+  border: 3px solid rgba(255,255,255,.15);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.07);
+  user-select: none;
+  touch-action: none;
+}
+.crop-preview-circle:active { cursor: grabbing; }
+.crop-preview-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  transition: transform .05s, object-position .05s;
+}
+
+/* Slider zoom */
+.crop-zoom-row {
+  display: flex; align-items: center; gap: .6rem;
+}
+.crop-zoom-slider {
+  flex: 1; height: 4px; cursor: pointer;
+  accent-color: hsl(44,90%,55%);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    PAGE JEU — plein écran, sans scroll
    ══════════════════════════════════════════════════════════════════════════ */
@@ -16573,7 +16641,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
    PROFILE AVATAR
    ══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --avatar-size: 28px;
+  --avatar-size: 38px;
   --rarity-common:    hsl(0,0%,60%);
   --rarity-rare:      hsl(210,80%,60%);
   --rarity-epic:      hsl(270,65%,65%);

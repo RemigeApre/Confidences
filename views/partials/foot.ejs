@@ -56,12 +56,38 @@
 
     <%# Coffre animé %>
     <div class="lootbox-reveal-chest" id="lootbox-reveal-chest">
-      <svg class="lootbox-reveal-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="5" y="38" width="70" height="37" rx="5" stroke="currentColor" stroke-width="3" fill="none"/>
-        <path d="M5 38 Q5 20 25 30 L55 30 Q75 20 75 38" stroke="currentColor" stroke-width="3" fill="none"/>
-        <rect x="28" y="22" width="24" height="14" rx="4" stroke="currentColor" stroke-width="3" fill="none"/>
-        <circle cx="40" cy="56" r="5" stroke="currentColor" stroke-width="2.5" fill="none"/>
-      </svg>
+      <svg class="lootbox-reveal-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="rb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(28,70%,38%)"/><stop offset="100%" stop-color="hsl(28,60%,22%)"/></linearGradient>
+    <linearGradient id="rl" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(28,65%,44%)"/><stop offset="100%" stop-color="hsl(28,60%,30%)"/></linearGradient>
+    <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(44,95%,62%)"/><stop offset="100%" stop-color="hsl(38,85%,40%)"/></linearGradient>
+  </defs>
+  <!-- Corps -->
+  <rect x="6" y="44" width="88" height="32" rx="4" fill="url(#rb)" stroke="hsl(44,80%,42%)" stroke-width="2"/>
+  <!-- Planches -->
+  <line x1="7" y1="58" x2="93" y2="58" stroke="hsl(28,55%,18%)" stroke-width="1.2" opacity=".5"/>
+  <line x1="7" y1="68" x2="93" y2="68" stroke="hsl(28,55%,18%)" stroke-width="1.2" opacity=".5"/>
+  <!-- Couvercle -->
+  <path d="M6 46 Q6 18 50 18 Q94 18 94 46 Z" fill="url(#rl)" stroke="hsl(44,80%,42%)" stroke-width="2"/>
+  <!-- Reflet couvercle -->
+  <path d="M16 40 Q30 24 50 22 Q70 24 84 40" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Bande centrale -->
+  <rect x="4" y="42" width="92" height="7" rx="2.5" fill="url(#rg)" stroke="hsl(38,75%,32%)" stroke-width="1.2"/>
+  <!-- Charnières -->
+  <rect x="12" y="40" width="12" height="11" rx="2.5" fill="url(#rg)" stroke="hsl(38,75%,32%)" stroke-width="1"/>
+  <rect x="76" y="40" width="12" height="11" rx="2.5" fill="url(#rg)" stroke="hsl(38,75%,32%)" stroke-width="1"/>
+  <!-- Rivets -->
+  <circle cx="18" cy="61" r="2.5" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width=".8"/>
+  <circle cx="82" cy="61" r="2.5" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width=".8"/>
+  <circle cx="18" cy="70" r="2.5" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width=".8"/>
+  <circle cx="82" cy="70" r="2.5" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width=".8"/>
+  <!-- Cadenas -->
+  <rect x="40" y="42" width="20" height="13" rx="3" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width="1.2"/>
+  <path d="M44 42 Q44 35 50 35 Q56 35 56 42" fill="none" stroke="url(#rg)" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="50" cy="49" r="3" fill="hsl(28,55%,18%)"/>
+  <!-- Gem centrale -->
+  <polygon points="50,22 54,27 50,31 46,27" fill="hsl(270,80%,68%)" stroke="hsl(270,70%,50%)" stroke-width="1" opacity=".9"/>
+</svg>
     </div>
 
     <%# Carte récompense (une à la fois) %>

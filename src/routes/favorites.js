@@ -36,6 +36,7 @@ const {
   sellUnlock,
   buyItem,
   setProfileImageId,
+  setProfileImageCrop,
   RARITY_BUY_PRICE,
   RARITY_SELL_PRICE,
 } = require("../db");
@@ -248,6 +249,14 @@ function buildFavoritesRouter(config) {
     const imageId = raw === null || raw === undefined ? null : parseInt(raw, 10);
     const ok = setProfileImageId(req.user.id, isNaN(imageId) ? null : imageId);
     res.json({ ok });
+  });
+
+  // Sauvegarde le recadrage de la photo de profil
+  router.post("/coffre/set-avatar-crop", requireUserJson, express.json(), (req, res) => {
+    const crop = req.body;
+    if (!crop || typeof crop !== 'object') return res.json({ ok: false });
+    setProfileImageCrop(req.user.id, crop);
+    res.json({ ok: true });
   });
 
   router.get("/parametres", requireUser, (req, res) => {

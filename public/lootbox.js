@@ -44,6 +44,11 @@
 
   if (!overlay) return;
 
+  // Sur la page /jeu, le widget flottant est remplacé par le grand coffre
+  if (jeuBtn && widget) {
+    widget.setAttribute('hidden', '');
+  }
+
   // ── État ────────────────────────────────────────────────────────────────────
   var _count   = 0;
   var _opening = false;  // empêche les doubles clics
@@ -67,8 +72,8 @@
   function setCount(n) {
     _count = n;
 
-    // Widget flottant
-    if (widget && btn && countEl) {
+    // Widget flottant (toutes les pages sauf /jeu)
+    if (widget && btn && countEl && !jeuBtn) {
       if (n > 0) {
         widget.removeAttribute("hidden");
         countEl.textContent = n > 99 ? "99+" : String(n);

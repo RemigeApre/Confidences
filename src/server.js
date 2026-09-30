@@ -226,6 +226,7 @@ app.use((req, res, next) => {
     if (img) {
       const firstPath = (img.imagePaths && img.imagePaths[0]) || img.filename || null;
       res.locals.profileAvatarThumb = firstPath ? thumbUrl(firstPath) : null;
+      res.locals.profileImageCrop = req.user.profileImageCrop || null;
     }
   }
   next();

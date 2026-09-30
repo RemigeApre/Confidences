@@ -242,6 +242,9 @@ try { db.exec("ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 0"); 
 // ultra : 0 par défaut (cohérent avec ultra_mode='hidden'). irrealiste : 1 par défaut.
 try { db.exec("ALTER TABLE users ADD COLUMN lootbox_allow_ultra INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN lootbox_allow_irrealiste INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
+// Paramètres de recadrage de la photo de profil (pan+zoom dans le cercle)
+// JSON : {x:50, y:50, scale:1} — x/y en % (object-position), scale = facteur de zoom
+try { db.exec("ALTER TABLE users ADD COLUMN profile_image_crop TEXT"); } catch (_) {}
 
 // ── Lootboxes et récompenses ───────────────────────────────────────────────
 // Lootboxes attribuées à un utilisateur (une ligne = une boîte, ouverte ou non).
@@ -549,6 +552,7 @@ function rowToUser(row) {
     coins: row.coins || 0,
     lootboxAllowUltra: row.lootbox_allow_ultra == null ? 0 : !!row.lootbox_allow_ultra,
     lootboxAllowIrrealiste: row.lootbox_allow_irrealiste == null ? 1 : !!row.lootbox_allow_irrealiste,
+    profileImageCrop: (() => { try { return JSON.parse(row.profile_image_crop || 'null'); } catch(_) { return null; } })(),
   };
 }
 
@@ -2721,6 +2725,12 @@ function setProfileImageId(userId, imageId) {
   return true;
 }
 
+function setProfileImageCrop(userId, crop) {
+  const safe = { x: Number(crop.x) || 50, y: Number(crop.y) || 50, scale: Math.max(1, Math.min(4, Number(crop.scale) || 1)) };
+  db.prepare("UPDATE users SET profile_image_crop = ? WHERE id = ?").run(JSON.stringify(safe), userId);
+  return true;
+}
+
 function setLootboxFilters(userId, { allowUltra, allowIrrealiste }) {
   const u = allowUltra      !== undefined ? (allowUltra      ? 1 : 0) : null;
   const i = allowIrrealiste !== undefined ? (allowIrrealiste ? 1 : 0) : null;
@@ -2930,6 +2940,7 @@ module.exports = {
   RARITY_SELL_PRICE,
   setProfileColor,
   setProfileImageId,
+  setProfileImageCrop,
   setLootboxFilters,
 };
 

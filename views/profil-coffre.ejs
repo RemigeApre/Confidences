@@ -62,6 +62,17 @@
                   <%= currentUser.profileImageId === u.refId ? '✕ Retirer' : '★ Utiliser' %>
                 </button>
               </div>
+              <% if (currentUser.profileImageId === u.refId) { %>
+              <div class="coffre-item-actions">
+                <button class="coffre-btn coffre-btn--crop js-crop-edit"
+                        data-ref-id="<%= u.refId %>"
+                        data-thumb="<%= u.thumb ? thumbUrl(u.thumb) : '' %>"
+                        title="Recadrer la zone affichée">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 1v8h8"/><path d="M1 4h8v8"/></svg>
+                  Recadrer
+                </button>
+              </div>
+              <% } %>
             </div>
           <% }) %>
         </div>
@@ -107,6 +118,33 @@
     </section>
 
   </div>
+
+<!-- Modal recadrage -->
+<div class="crop-modal-backdrop" id="crop-modal" role="dialog" aria-modal="true" style="display:none">
+  <div class="crop-modal-dialog">
+    <div class="crop-modal-header">
+      <span class="crop-modal-title">Recadrer la photo de profil</span>
+      <button class="coffre-sell-close js-crop-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p class="crop-modal-hint">Faites glisser pour déplacer &bull; Molette pour zoomer</p>
+    <div class="crop-preview-wrap" id="crop-preview-wrap">
+      <div class="crop-preview-circle" id="crop-preview-circle">
+        <img class="crop-preview-img" id="crop-preview-img" src="" alt="" draggable="false" />
+      </div>
+    </div>
+    <div class="crop-zoom-row">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:16px;height:16px;flex-shrink:0"><circle cx="8" cy="8" r="5"/><line x1="13" y1="13" x2="18" y2="18"/><line x1="6" y1="8" x2="10" y2="8"/></svg>
+      <input type="range" id="crop-zoom-slider" min="100" max="400" step="5" value="100" class="crop-zoom-slider" />
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:16px;height:16px;flex-shrink:0"><circle cx="8" cy="8" r="5"/><line x1="13" y1="13" x2="18" y2="18"/><line x1="6" y1="8" x2="10" y2="8"/><line x1="8" y1="6" x2="8" y2="10"/></svg>
+    </div>
+    <div class="crop-modal-actions">
+      <button class="coffre-btn coffre-btn--ghost js-crop-close">Annuler</button>
+      <button class="coffre-btn coffre-btn--sell-confirm" id="crop-save-btn" style="border-color:hsl(120,50%,38%);color:hsl(120,60%,65%);background:rgba(40,160,40,.12)">Enregistrer</button>
+    </div>
+  </div>
+</div>
 </main>
 
 <%# ── Modal de vente ── %>
@@ -371,6 +409,108 @@
           if (titleEl) titleEl.textContent = 'Images obtenues (' + remaining + ')';
         }, 300);
       });
+  });
+  // ── Éditeur de recadrage ───────────────────────────────────────────────
+  var cropModal   = document.getElementById('crop-modal');
+  var cropCircle  = document.getElementById('crop-preview-circle');
+  var cropImg     = document.getElementById('crop-preview-img');
+  var cropSlider  = document.getElementById('crop-zoom-slider');
+  var cropSaveBtn = document.getElementById('crop-save-btn');
+
+  // État du recadrage
+  var cropX = 50, cropY = 50, cropScale = 1;
+  var cropDragging = false, cropDragSX, cropDragSY, cropDragX0, cropDragY0;
+
+  function applyCrop() {
+    cropImg.style.objectPosition = cropX + '% ' + cropY + '%';
+    cropImg.style.transform = 'scale(' + cropScale + ')';
+    cropImg.style.transformOrigin = cropX + '% ' + cropY + '%';
+  }
+
+  document.querySelectorAll('.js-crop-edit').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var thumb = btn.dataset.thumb;
+      if (!thumb) return;
+      cropX = 50; cropY = 50; cropScale = 1;
+      if (cropSlider) cropSlider.value = 100;
+      cropImg.src = thumb;
+      applyCrop();
+      cropModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    });
+  });
+
+  function closeCropModal() {
+    cropModal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.js-crop-close').forEach(function(b) { b.addEventListener('click', closeCropModal); });
+  cropModal && cropModal.addEventListener('click', function(e) { if (e.target === cropModal) closeCropModal(); });
+
+  // Drag
+  cropCircle && cropCircle.addEventListener('mousedown', function(e) {
+    cropDragging = true;
+    cropDragSX = e.clientX; cropDragSY = e.clientY;
+    cropDragX0 = cropX; cropDragY0 = cropY;
+    e.preventDefault();
+  });
+  // Touch support
+  cropCircle && cropCircle.addEventListener('touchstart', function(e) {
+    if (!e.touches[0]) return;
+    cropDragging = true;
+    cropDragSX = e.touches[0].clientX; cropDragSY = e.touches[0].clientY;
+    cropDragX0 = cropX; cropDragY0 = cropY;
+  }, { passive: true });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!cropDragging || !cropCircle) return;
+    var rect = cropCircle.getBoundingClientRect();
+    var dx = (e.clientX - cropDragSX) / rect.width  * 100 / cropScale;
+    var dy = (e.clientY - cropDragSY) / rect.height * 100 / cropScale;
+    cropX = Math.max(0, Math.min(100, cropDragX0 - dx));
+    cropY = Math.max(0, Math.min(100, cropDragY0 - dy));
+    applyCrop();
+  });
+  document.addEventListener('touchmove', function(e) {
+    if (!cropDragging || !e.touches[0] || !cropCircle) return;
+    var rect = cropCircle.getBoundingClientRect();
+    var dx = (e.touches[0].clientX - cropDragSX) / rect.width  * 100 / cropScale;
+    var dy = (e.touches[0].clientY - cropDragSY) / rect.height * 100 / cropScale;
+    cropX = Math.max(0, Math.min(100, cropDragX0 - dx));
+    cropY = Math.max(0, Math.min(100, cropDragY0 - dy));
+    applyCrop();
+  }, { passive: true });
+  document.addEventListener('mouseup',  function() { cropDragging = false; });
+  document.addEventListener('touchend', function() { cropDragging = false; });
+
+  // Scroll to zoom
+  cropCircle && cropCircle.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    cropScale = Math.max(1, Math.min(4, cropScale - e.deltaY * 0.003));
+    if (cropSlider) cropSlider.value = Math.round(cropScale * 100);
+    applyCrop();
+  }, { passive: false });
+
+  // Slider zoom
+  cropSlider && cropSlider.addEventListener('input', function() {
+    cropScale = parseInt(cropSlider.value, 10) / 100;
+    applyCrop();
+  });
+
+  // Enregistrer
+  cropSaveBtn && cropSaveBtn.addEventListener('click', function() {
+    cropSaveBtn.disabled = true;
+    fetch('/favoris/coffre/set-avatar-crop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ x: Math.round(cropX * 10) / 10, y: Math.round(cropY * 10) / 10, scale: Math.round(cropScale * 100) / 100 }),
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        cropSaveBtn.disabled = false;
+        if (d.ok) { closeCropModal(); window.location.reload(); }
+      })
+      .catch(function() { cropSaveBtn.disabled = false; });
   });
 })();
 </script>
