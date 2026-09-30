@@ -73,6 +73,9 @@
                 <button type="button" class="admin-utile-menu-item"
                   data-pwd-id="<%= state.user.id %>"
                   data-pwd-name="<%= state.user.displayName %>">R&eacute;init. MDP</button>
+                <button type="button" class="admin-utile-menu-item"
+                  data-grant-id="<%= state.user.id %>"
+                  data-grant-name="<%= state.user.displayName %>">Offrir des lootboxes</button>
                 <% if (state.user.id !== currentUser.id) { %>
                   <button type="button" class="admin-utile-menu-item admin-utile-menu-item--danger"
                     data-del-id="<%= state.user.id %>"
@@ -252,6 +255,24 @@
 
     <%# ── Formulaire caché : supprimer ── %>
     <form method="POST" id="admin-del-form" action="/admin/profils/__ID__/delete" style="display:none"></form>
+
+    <%# ── Modal : offrir des lootboxes ── %>
+    <div class="admin-modal-overlay" id="admin-grant-modal" hidden>
+      <div class="admin-modal">
+        <button type="button" class="admin-modal-close" id="admin-grant-modal-close" aria-label="Fermer">&#215;</button>
+        <h2 class="admin-modal-title" id="admin-grant-modal-title">Offrir des lootboxes</h2>
+        <p class="admin-muted" id="admin-grant-modal-to"></p>
+        <form id="admin-grant-form" method="POST" action="" class="admin-modal-form">
+          <label class="admin-modal-field">
+            <span class="admin-modal-label">Nombre de lootboxes</span>
+            <input type="number" name="count" id="admin-grant-count" value="1" min="1" max="50" class="admin-modal-input" />
+          </label>
+          <div class="admin-modal-actions">
+            <button type="submit" class="admin-btn-primary">Offrir</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
   </section>
 
@@ -738,6 +759,25 @@
         document.getElementById("admin-pwd-modal-title").textContent = "MDP : " + btn.dataset.pwdName;
         openModal("admin-pwd-modal");
       });
+    });
+
+    // Boutons "Offrir des lootboxes"
+    document.querySelectorAll("[data-grant-id]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id   = btn.dataset.grantId;
+        var name = btn.dataset.grantName;
+        document.getElementById("admin-grant-form").action = "/admin/profils/" + id + "/grant-lootbox";
+        document.getElementById("admin-grant-modal-title").textContent = "Offrir des lootboxes";
+        document.getElementById("admin-grant-modal-to").textContent = "Destinataire : " + name;
+        document.getElementById("admin-grant-count").value = "1";
+        openModal("admin-grant-modal");
+      });
+    });
+    document.getElementById("admin-grant-modal-close").addEventListener("click", function () {
+      closeModal("admin-grant-modal");
+    });
+    document.getElementById("admin-grant-modal").addEventListener("click", function (e) {
+      if (e.target === this) closeModal("admin-grant-modal");
     });
 
     // Boutons "Supprimer"

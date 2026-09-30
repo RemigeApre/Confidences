@@ -26,6 +26,7 @@ function buildLootboxRouter(config) {
         title: reward.title,
         rarity: reward.rarity,
         thumb: reward.thumb ? thumbUrl(reward.thumb) : null,
+        isDuplicate: !!reward.isDuplicate,
       },
     });
   });

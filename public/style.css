@@ -16702,6 +16702,11 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   padding: 2rem 1.5rem;
   max-width: 360px;
   width: 90vw;
+  transition: max-width .25s ease;
+}
+/* Quand le panneau batch est visible, élargir le conteneur */
+.lootbox-reveal:has(#lootbox-batch-results:not([hidden])) {
+  max-width: 520px;
 }
 
 /* Coffre animé */
@@ -16815,9 +16820,24 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   margin: 0;
 }
 
-/* Bouton fermer */
-.lootbox-reveal-close {
-  padding: .5rem 1.75rem;
+/* Bouton fermer — styles hérités de .lootbox-reveal-btn ci-dessous */
+.lootbox-reveal-close[hidden] { display: none; }
+
+/* Bord coloré selon la rareté sur la carte */
+.lootbox-reveal-card:has(.lootbox-reveal-rarity--rare)      { border-color: color-mix(in srgb, var(--rarity-rare) 40%, transparent); }
+.lootbox-reveal-card:has(.lootbox-reveal-rarity--epic)      { border-color: color-mix(in srgb, var(--rarity-epic) 40%, transparent); }
+.lootbox-reveal-card:has(.lootbox-reveal-rarity--legendary) { border-color: color-mix(in srgb, var(--rarity-legendary) 60%, transparent); }
+.lootbox-reveal-card:has(.lootbox-reveal-rarity--mythic)    { border-color: color-mix(in srgb, var(--rarity-mythic) 60%, transparent); }
+
+/* Cursor zoom sur l'image de la carte */
+.lootbox-reveal-img-wrap { cursor: zoom-in; }
+
+/* Boutons d'action (Fermer / Suivant) */
+.lootbox-reveal-actions {
+  display: flex; gap: .65rem; flex-wrap: wrap; justify-content: center;
+}
+.lootbox-reveal-btn {
+  padding: .5rem 1.5rem;
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,.2);
   background: rgba(255,255,255,.06);
@@ -16826,11 +16846,143 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   cursor: pointer;
   transition: background .15s;
 }
-.lootbox-reveal-close:hover { background: rgba(255,255,255,.12); }
-.lootbox-reveal-close[hidden] { display: none; }
+.lootbox-reveal-btn:hover { background: rgba(255,255,255,.12); }
+.lootbox-reveal-btn[hidden] { display: none; }
+.lootbox-reveal-next {
+  border-color: hsl(44,70%,40%); color: hsl(44,90%,65%);
+  font-weight: 700;
+}
+.lootbox-reveal-next:hover { background: rgba(245,210,100,.12); }
 
-/* Bord coloré selon la rareté sur la carte */
-.lootbox-reveal-card:has(.lootbox-reveal-rarity--rare)      { border-color: color-mix(in srgb, var(--rarity-rare) 40%, transparent); }
-.lootbox-reveal-card:has(.lootbox-reveal-rarity--epic)      { border-color: color-mix(in srgb, var(--rarity-epic) 40%, transparent); }
-.lootbox-reveal-card:has(.lootbox-reveal-rarity--legendary) { border-color: color-mix(in srgb, var(--rarity-legendary) 60%, transparent); }
-.lootbox-reveal-card:has(.lootbox-reveal-rarity--mythic)    { border-color: color-mix(in srgb, var(--rarity-mythic) 60%, transparent); }
+/* ── Écran de choix ──────────────────────────────────────────────── */
+.lootbox-choice {
+  display: flex; flex-direction: column; align-items: center; gap: 1.1rem;
+  padding: .5rem 0;
+  animation: card-reveal .3s cubic-bezier(.22,1,.36,1) forwards;
+}
+.lootbox-choice[hidden] { display: none; }
+.lootbox-choice-msg {
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--text-1, #fff); margin: 0;
+  text-align: center;
+}
+.lootbox-choice-coins svg {
+  width: 72px; height: 72px;
+  filter: drop-shadow(0 0 14px rgba(245,210,100,.4));
+}
+.lootbox-choice-btns {
+  display: flex; flex-direction: column; gap: .55rem; width: 100%;
+}
+@media (min-width: 420px) {
+  .lootbox-choice-btns { flex-direction: row; }
+}
+.lootbox-choice-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .65rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.07);
+  color: var(--text-1, #eee);
+  font-size: .85rem; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+}
+.lootbox-choice-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.lootbox-choice-btn:hover { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.28); }
+.lootbox-choice-btn--all {
+  border-color: hsl(44,70%,38%); color: hsl(44,90%,65%);
+  background: rgba(245,210,100,.07);
+}
+.lootbox-choice-btn--all:hover { background: rgba(245,210,100,.15); }
+.lootbox-choice-cancel {
+  font-size: .75rem; color: var(--muted, #888);
+  background: none; border: none; cursor: pointer; padding: .2rem .5rem;
+  text-decoration: underline;
+}
+.lootbox-choice-cancel:hover { color: var(--text-1, #eee); }
+
+/* ── Résultats "tout ouvrir" ─────────────────────────────────────── */
+.lootbox-batch-results {
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  width: 100%;
+  animation: card-reveal .3s cubic-bezier(.22,1,.36,1) forwards;
+}
+.lootbox-batch-results[hidden] { display: none; }
+.lootbox-batch-title {
+  font-size: .8rem; font-weight: 600; color: var(--muted, #aaa);
+  margin: 0; text-align: center;
+}
+.lootbox-batch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: .5rem;
+  width: 100%; max-height: 300px;
+  overflow-y: auto;
+  padding-right: .2rem;
+}
+/* Scrollbar discrète */
+.lootbox-batch-grid::-webkit-scrollbar { width: 4px; }
+.lootbox-batch-grid::-webkit-scrollbar-track { background: transparent; }
+.lootbox-batch-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+
+.lootbox-batch-card {
+  display: flex; flex-direction: column;
+  border: 1.5px solid rgba(255,255,255,.08);
+  border-radius: 8px; overflow: hidden;
+  background: var(--surface-2, #1a1a2e);
+}
+.lootbox-batch-card--rare      { border-color: color-mix(in srgb, var(--rarity-rare) 35%, transparent); }
+.lootbox-batch-card--epic      { border-color: color-mix(in srgb, var(--rarity-epic) 35%, transparent); }
+.lootbox-batch-card--legendary { border-color: color-mix(in srgb, var(--rarity-legendary) 55%, transparent); }
+.lootbox-batch-card--mythic    { border-color: color-mix(in srgb, var(--rarity-mythic) 55%, transparent); }
+.lootbox-batch-card--dupe      { opacity: .55; }
+
+.lootbox-batch-card-img {
+  position: relative; width: 100%; aspect-ratio: 1;
+  background: var(--surface-3, #111); overflow: hidden;
+}
+.lootbox-batch-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.lootbox-batch-card-rarity {
+  position: absolute; bottom: 2px; left: 2px;
+  font-size: .5rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  padding: .1rem .3rem; border-radius: 3px;
+  background: rgba(0,0,0,.65);
+}
+.lootbox-batch-card-rarity--common    { color: var(--rarity-common); }
+.lootbox-batch-card-rarity--rare      { color: var(--rarity-rare); }
+.lootbox-batch-card-rarity--epic      { color: var(--rarity-epic); }
+.lootbox-batch-card-rarity--legendary { color: var(--rarity-legendary); }
+.lootbox-batch-card-rarity--mythic    { color: var(--rarity-mythic); }
+
+.lootbox-batch-card-dupe-tag {
+  position: absolute; top: 2px; right: 2px;
+  font-size: .48rem; font-weight: 700; text-transform: uppercase;
+  background: rgba(0,0,0,.65); color: var(--muted, #888);
+  padding: .1rem .3rem; border-radius: 3px;
+}
+.lootbox-batch-card-title {
+  font-size: .6rem; padding: .25rem .3rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0; color: var(--muted, #aaa);
+}
+
+/* ── Zoom overlay ────────────────────────────────────────────────── */
+.lootbox-zoom-overlay {
+  position: fixed; inset: 0; z-index: 1600;
+  background: rgba(0,0,0,.88);
+  display: flex; align-items: center; justify-content: center;
+  cursor: zoom-out;
+  backdrop-filter: blur(6px);
+  animation: coffre-fade-in .15s ease;
+}
+.lootbox-zoom-overlay[hidden] { display: none; }
+.lootbox-zoom-img {
+  max-width: 92vw; max-height: 92vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 12px 60px rgba(0,0,0,.7);
+  animation: coffre-pop-in .2s cubic-bezier(.22,1,.36,1);
+  pointer-events: none;
+}

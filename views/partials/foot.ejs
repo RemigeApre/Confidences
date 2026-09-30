@@ -5,7 +5,6 @@
 <%# ── Lootbox widget ──────────────────────────────────────────────── %>
 <div id="lootbox-widget" class="lootbox-widget" aria-live="polite" hidden>
   <button class="lootbox-btn" id="lootbox-btn" aria-label="Ouvrir les lootboxes">
-    <%# Icône coffre SVG : état vide vs. plein géré par data-count via CSS %>
     <svg class="lootbox-icon lootbox-icon--closed" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect x="3" y="17" width="30" height="16" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
       <rect x="3" y="17" width="30" height="7" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
@@ -28,7 +27,34 @@
 <%# ── Overlay d'ouverture ─────────────────────────────────────────── %>
 <div id="lootbox-overlay" class="lootbox-overlay" hidden aria-modal="true" role="dialog" aria-label="Ouverture de lootbox">
   <div class="lootbox-overlay-backdrop"></div>
-  <div class="lootbox-reveal">
+  <div class="lootbox-reveal" id="lootbox-reveal-wrap">
+
+    <%# Écran de choix (affiché quand count ≥ 2) %>
+    <div class="lootbox-choice" id="lootbox-choice" hidden>
+      <p class="lootbox-choice-msg" id="lootbox-choice-msg"></p>
+      <div class="lootbox-choice-coins" aria-hidden="true">
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="24" width="52" height="28" rx="5" fill="hsl(35,60%,22%)" stroke="hsl(44,80%,45%)" stroke-width="2"/>
+          <path d="M4 28 Q4 10 30 10 Q56 10 56 28 Z" fill="hsl(35,55%,28%)" stroke="hsl(44,80%,45%)" stroke-width="2"/>
+          <rect x="3" y="23" width="54" height="7" rx="2" fill="hsl(44,90%,50%)" stroke="hsl(44,70%,35%)" stroke-width="1.5"/>
+          <rect x="24" y="23" width="12" height="9" rx="3" fill="hsl(44,90%,50%)" stroke="hsl(44,70%,35%)" stroke-width="1.5"/>
+          <circle cx="30" cy="38" r="5" stroke="hsl(44,80%,55%)" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+      <div class="lootbox-choice-btns">
+        <button class="lootbox-choice-btn" id="lootbox-choice-one">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="14" height="9" rx="2"/><path d="M3 9 Q3 3 10 3 Q17 3 17 9"/><circle cx="10" cy="14" r="1.5"/></svg>
+          Ouvrir une par une
+        </button>
+        <button class="lootbox-choice-btn lootbox-choice-btn--all" id="lootbox-choice-all">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 8 10 2 3 8"/><rect x="3" y="8" width="14" height="10" rx="2"/><line x1="10" y1="13" x2="10" y2="18"/></svg>
+          Tout ouvrir (<span id="lootbox-choice-count-label"></span>)
+        </button>
+      </div>
+      <button class="lootbox-choice-cancel" id="lootbox-choice-cancel">Annuler</button>
+    </div>
+
+    <%# Coffre animé %>
     <div class="lootbox-reveal-chest" id="lootbox-reveal-chest">
       <svg class="lootbox-reveal-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="5" y="38" width="70" height="37" rx="5" stroke="currentColor" stroke-width="3" fill="none"/>
@@ -37,21 +63,37 @@
         <circle cx="40" cy="56" r="5" stroke="currentColor" stroke-width="2.5" fill="none"/>
       </svg>
     </div>
+
+    <%# Carte récompense (une à la fois) %>
     <div class="lootbox-reveal-card" id="lootbox-reveal-card" hidden>
       <div class="lootbox-reveal-rarity" id="lootbox-reveal-rarity"></div>
-      <div class="lootbox-reveal-img-wrap">
+      <div class="lootbox-reveal-img-wrap" id="lootbox-reveal-img-wrap" title="Cliquer pour agrandir">
         <img id="lootbox-reveal-img" src="" alt="" class="lootbox-reveal-img" />
         <div class="lootbox-reveal-img-placeholder" id="lootbox-reveal-placeholder">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="4"/><circle cx="17" cy="17" r="5"/><path d="M4 34l12-12 8 8 6-6 14 14"/></svg>
         </div>
       </div>
       <p class="lootbox-reveal-title" id="lootbox-reveal-title"></p>
-      <p class="lootbox-reveal-hint">Cette image est maintenant disponible comme photo de profil.</p>
+      <p class="lootbox-reveal-hint" id="lootbox-reveal-hint">Cette image est maintenant disponible comme photo de profil.</p>
     </div>
-    <div class="lootbox-reveal-actions">
-      <button class="lootbox-reveal-close" id="lootbox-reveal-close" hidden>Fermer</button>
+
+    <%# Résultats "tout ouvrir" %>
+    <div class="lootbox-batch-results" id="lootbox-batch-results" hidden>
+      <p class="lootbox-batch-title" id="lootbox-batch-title"></p>
+      <div class="lootbox-batch-grid" id="lootbox-batch-grid"></div>
+    </div>
+
+    <%# Boutons d'action %>
+    <div class="lootbox-reveal-actions" id="lootbox-reveal-actions">
+      <button class="lootbox-reveal-btn lootbox-reveal-close" id="lootbox-reveal-close" hidden>Fermer</button>
+      <button class="lootbox-reveal-btn lootbox-reveal-next" id="lootbox-reveal-next" hidden>Suivant &rarr;</button>
     </div>
   </div>
+</div>
+
+<%# ── Zoom image ────────────────────────────────────────────────────── %>
+<div class="lootbox-zoom-overlay" id="lootbox-zoom-overlay" hidden aria-modal="true" role="dialog">
+  <img class="lootbox-zoom-img" id="lootbox-zoom-img" src="" alt="" />
 </div>
 
 <script src="/lootbox.js?v=<%= assetVersion %>"></script>
