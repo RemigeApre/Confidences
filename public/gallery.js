@@ -2025,25 +2025,65 @@
       var protChips = document.getElementById("lbep-prot-chips");
       var protInp   = document.getElementById("lbep-prot-inp");
       var protDrop  = document.getElementById("lbep-prot-drop");
+
+      function addProtChip(id, label) {
+        var existing = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function (c) { return Number(c.dataset.protId); });
+        if (existing.indexOf(Number(id)) !== -1) return false;
+        var chip = makeChip(label, null);
+        chip.dataset.protId = id;
+        protChips.appendChild(chip);
+        return true;
+      }
+
+      // Dropdown : position fixed pour échapper à l'overflow du panneau
+      document.body.appendChild(protDrop);
+      protDrop.style.position = "fixed";
+      protDrop.style.zIndex   = "9999";
+      function repositionProtDrop() {
+        var rect = protInp.getBoundingClientRect();
+        protDrop.style.top   = (rect.bottom + 2) + "px";
+        protDrop.style.left  = rect.left + "px";
+        protDrop.style.width = rect.width + "px";
+        protDrop.style.right = "auto";
+      }
+
       makeAc(protInp, protDrop,
         function (q, cb) {
           var prots = window.GALLERY_PROTAGONISTS || {};
           var sel   = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function (c) { return Number(c.dataset.protId); });
-          cb(Object.keys(prots)
+          var results = Object.keys(prots)
             .filter(function (id) { return prots[id].toLowerCase().indexOf(q.toLowerCase()) !== -1 && sel.indexOf(Number(id)) === -1; })
-            .slice(0, 8).map(function (id) { return { id: Number(id), label: prots[id] }; }));
+            .slice(0, 8).map(function (id) { return { id: Number(id), label: prots[id] }; });
+          cb(results);
+          if (results.length) repositionProtDrop();
         },
         function (item) {
-          var chip = makeChip(item.label, null);
-          chip.dataset.protId = item.id;
-          protChips.appendChild(chip);
+          addProtChip(item.id, item.label);
           protInp.value = "";
         }
       );
       protInp.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
+          e.preventDefault();
+          var q = protInp.value.trim();
+          if (!q) return;
+          // Essai via dropdown (même s'il est hors de la vue)
           var firstItem = protDrop.querySelector(".lbep-ac-item");
-          if (firstItem) { e.preventDefault(); firstItem.dispatchEvent(new MouseEvent("mousedown")); }
+          if (firstItem) {
+            firstItem.dispatchEvent(new MouseEvent("mousedown"));
+            return;
+          }
+          // Recherche directe dans GALLERY_PROTAGONISTS (fallback si debounce pas encore déclenché)
+          var lq = q.toLowerCase();
+          var prots = window.GALLERY_PROTAGONISTS || {};
+          var match = null;
+          Object.keys(prots).forEach(function (id) {
+            if (!match && prots[id].toLowerCase() === lq) match = { id: Number(id), label: prots[id] };
+          });
+          if (!match) Object.keys(prots).forEach(function (id) {
+            if (!match && prots[id].toLowerCase().indexOf(lq) !== -1) match = { id: Number(id), label: prots[id] };
+          });
+          if (match) { addProtChip(match.id, match.label); protInp.value = ""; }
         } else if (e.key === "Backspace" && protInp.value === "") {
           var all = protChips.querySelectorAll(".lbep-chip");
           if (all.length) all[all.length - 1].remove();
@@ -2212,6 +2252,9 @@
 
     function exitEdit() {
       if (editPanel) editPanel.hidden = true;
+      // Fermer le dropdown des protagonistes (maintenant dans document.body)
+      var pd = document.getElementById("lbep-prot-drop");
+      if (pd) { pd.hidden = true; pd.innerHTML = ""; }
       metaBlock.classList.remove("lb-meta--editing");
       editActive = false; editCurrentId = null;
       toggleBtn.classList.remove("active");
