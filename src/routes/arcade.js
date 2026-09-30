@@ -1,6 +1,6 @@
 const express = require('express');
 const { requireUserJson } = require('../auth');
-const { getMemoryImages, getMemoryTags, grantLootbox, getLootboxCount, updateArcadeStats } = require('../db');
+const { getMemoryImages, getMemoryTags, grantLootbox, getLootboxCount, updateArcadeStats, getUserById } = require('../db');
 const { thumbUrl } = require('../thumbs');
 
 function buildArcadeRouter() {
@@ -27,11 +27,16 @@ function buildArcadeRouter() {
   // POST /arcade/memory-complete  { level, won, score }
   router.post('/memory-complete', requireUserJson, express.json(), (req, res) => {
     const { level, won, score } = req.body;
-    const lvl   = Math.max(1, parseInt(level) || 0);
-    const pts   = Math.max(0, parseInt(score)  || 0);
-    if (won) updateArcadeStats(req.user.id, lvl, pts);
+    const lvl = Math.max(1, parseInt(level) || 0);
+    const pts = Math.max(0, parseInt(score)  || 0);
     if (!won) return res.json({ ok: true, lootboxGranted: false });
-    if (lvl % 5 === 0) {
+
+    // Lire le meilleur niveau AVANT la mise à jour pour savoir si ce palier est nouveau
+    const prevBest = (getUserById(req.user.id) || {}).arcadeMemoryBestLevel || 0;
+    updateArcadeStats(req.user.id, lvl, pts);
+
+    // Lootbox uniquement si palier multiple de 5 ET jamais atteint auparavant
+    if (lvl % 5 === 0 && lvl > prevBest) {
       grantLootbox(req.user.id, 1, 'standard');
       const newCount = getLootboxCount(req.user.id);
       return res.json({ ok: true, lootboxGranted: true, newCount });

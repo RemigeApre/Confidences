@@ -447,15 +447,19 @@
     var inGame = screenGame && !screenGame.hidden;
     var inLose = screenLose && !screenLose.hidden;
     var inWin  = screenWin  && !screenWin.hidden;
-    if ((inGame || inLose || inWin) && (_level > 1 || _totalScore > 0)) {
+    // Sauvegarder dès qu'une partie est en cours, peu importe le niveau ou le score
+    if (inGame || inLose || inWin) {
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify({
           level: _level, totalScore: _totalScore,
           mode: _mode, tag: _selectedTag || null,
         }));
-      } catch (_) {}
+      } catch (_e) {}
     }
   }
+
+  // Sauvegarde aussi quand la page se ferme / rafraîchit
+  window.addEventListener('beforeunload', saveProgress);
 
   function clearProgress() {
     try { localStorage.removeItem(SAVE_KEY); } catch (_) {}
@@ -489,7 +493,7 @@
   // ── Memory: play button → resume or setup ─────────────────────────────────────
   memPlayBtn && memPlayBtn.addEventListener('click', function() {
     var saved = loadSave();
-    if (saved && saved.level > 1) {
+    if (saved && (saved.level > 1 || (saved.totalScore || 0) > 0)) {
       if (resumeLevelEl) resumeLevelEl.textContent = saved.level;
       if (resumeScoreEl) resumeScoreEl.textContent = saved.totalScore || 0;
       if (resumeModeEl) resumeModeEl.textContent = saved.mode === 'tag' && saved.tag
