@@ -29,59 +29,33 @@ function buildLootboxRouter(config) {
       });
     }
 
-    if (result.isCharm) {
-      return res.json({
-        ok: true, isCharm: true,
-        reward: {
-          charmKey:    result.charmKey  || null,
-          label:       result.label     || null,
-          symbol:      result.symbol    || null,
-          rarity:      result.rarity    || 'legendary',
-          isDuplicate: !!result.isDuplicate,
-          coins:       result.coins     || 0,
-        },
-      });
-    }
-
-    if (result.isJoker) {
-      return res.json({
-        ok: true, isJoker: true,
-        reward: {
-          jokerType:   result.jokerType,
-          rarity:      result.rarity,
-          isDuplicate: !!result.isDuplicate,
-        },
-      });
-    }
-
+    // Tableau de 3 récompenses — chaque élément peut être image, charm ou joker
     res.json({
       ok: true,
-      reward: {
-        imageId:     result.imageId,
-        title:       result.title,
-        rarity:      result.rarity,
-        thumb:       result.thumb ? thumbUrl(result.thumb) : null,
-        isDuplicate: !!result.isDuplicate,
-      },
+      rewards: result.rewards.map(r => {
+        if (r.isJoker) return { isJoker: true, jokerType: r.jokerType, rarity: r.rarity, isDuplicate: !!r.isDuplicate };
+        if (r.isCharm) return { isCharm: true, charmKey: r.charmKey || null, label: r.label || null, symbol: r.symbol || null, rarity: r.rarity || 'legendary', isDuplicate: !!r.isDuplicate, coins: r.coins || 0 };
+        return { imageId: r.imageId, title: r.title, rarity: r.rarity, thumb: r.thumb ? thumbUrl(r.thumb) : null, isDuplicate: !!r.isDuplicate };
+      }),
     });
   });
 
-  // ── Sélection du choix ─────────────────────────────────────────────────────
+  // ── Sélection du choix — l'utilisateur choisit 3 parmi 9 ──────────────────
   router.post("/pick-choice", express.json(), (req, res) => {
     const sessionId = parseInt(req.body.sessionId, 10);
-    const optionIdx = parseInt(req.body.optionIdx, 10);
-    if (isNaN(sessionId) || isNaN(optionIdx)) return res.json({ ok: false });
-    const reward = db.pickChoiceReward(req.user.id, sessionId, optionIdx);
-    if (!reward) return res.json({ ok: false, error: "invalid_session" });
+    const optionIdxs = req.body.optionIdxs;
+    if (isNaN(sessionId) || !Array.isArray(optionIdxs) || optionIdxs.length !== 3) return res.json({ ok: false });
+    const idxs = optionIdxs.map(i => parseInt(i, 10));
+    if (idxs.some(isNaN)) return res.json({ ok: false });
+    const rewards = db.pickChoiceReward(req.user.id, sessionId, idxs);
+    if (!rewards) return res.json({ ok: false, error: "invalid_session" });
     res.json({
       ok: true,
-      reward: {
-        imageId:     reward.imageId,
-        title:       reward.title,
-        rarity:      reward.rarity,
-        thumb:       reward.thumb ? thumbUrl(reward.thumb) : null,
-        isDuplicate: !!reward.isDuplicate,
-      },
+      rewards: rewards.map(r => ({
+        imageId: r.imageId, title: r.title, rarity: r.rarity,
+        thumb: r.thumb ? thumbUrl(r.thumb) : null,
+        isDuplicate: !!r.isDuplicate,
+      })),
     });
   });
 

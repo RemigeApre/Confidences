@@ -2663,14 +2663,16 @@ function setImageRarity(id, rarity) {
 }
 
 function _pickRarity() {
-  const weights = getLootboxConfig().weights;
-  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  // Minimum rare — common n'est jamais accordé via lootbox
+  const cfg = getLootboxConfig().weights;
+  const weights = { rare: cfg.rare, epic: cfg.epic, legendary: cfg.legendary, mythic: cfg.mythic };
+  const total = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
   let r = Math.random() * total;
   for (const [key, weight] of Object.entries(weights)) {
     r -= weight;
     if (r <= 0) return key;
   }
-  return 'common';
+  return 'rare';
 }
 
 function getLootboxCount(userId) {
@@ -2883,13 +2885,15 @@ function openLootbox(userId) {
   if (!box) return null;
   const type = box.loot_type || 'standard';
 
-  // ── Lootbox à choix : génère 3 options sans les accorder tout de suite
+  const now = new Date().toISOString();
+
+  // ── Lootbox à choix : génère 9 options sans les accorder tout de suite (l'utilisateur en choisit 3)
   if (type === 'choice') {
     const pool = _buildImagePool(userId);
     if (!pool.length) return null;
     const options = [];
     const usedIds = new Set();
-    for (let i = 0; i < 8 && options.length < 3; i++) {
+    for (let i = 0; i < 27 && options.length < 9; i++) {
       const rarity = _pickRarity();
       const rp = pool.filter(img => (img.rarity || 'common') === rarity && !usedIds.has(img.id));
       const fb = pool.filter(img => !usedIds.has(img.id));
@@ -2899,61 +2903,79 @@ function openLootbox(userId) {
       let paths = []; try { paths = JSON.parse(img.image_paths || '[]'); } catch (_) {}
       options.push({ imageId: img.id, title: img.title || '', rarity, thumb: paths[0] || null });
     }
-    if (!options.length) return null;
-    const now = new Date().toISOString();
+    if (options.length < 3) return null;
     db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
     const sessionId = db.prepare("INSERT INTO lootbox_choice_sessions (user_id, lootbox_id, options, created_at) VALUES (?, ?, ?, ?)").run(userId, box.id, JSON.stringify(options), now).lastInsertRowid;
     return { isChoice: true, sessionId, options };
   }
 
-  // ── Lootbox charme : donne un charme aléatoire non possédé
+  // ── Lootbox charme : donne jusqu'à 3 charmes non possédés
   if (type === 'charm') {
     const allCharms = listCharms();
     const ownedIds = new Set(db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'charm'").all(userId).map(r => r.ref_id));
     const available = allCharms.filter(c => !ownedIds.has(c.id));
-    const now = new Date().toISOString();
-    if (!available.length) {
-      const coins = RARITY_SELL_PRICE.legendary;
-      db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
-      db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity='legendary', opened_at=? WHERE id=?").run(now, box.id);
-      return { isCharm: true, isDuplicate: true, rarity: 'legendary', coins };
+    db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity='legendary', opened_at=? WHERE id=?").run(now, box.id);
+    const rewards = [];
+    for (let i = 0; i < 3; i++) {
+      const remaining = allCharms.filter(c => !ownedIds.has(c.id) && !rewards.find(r => r.charmKey === c.key));
+      if (!remaining.length) {
+        const coins = RARITY_SELL_PRICE.legendary;
+        db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+        rewards.push({ isCharm: true, isDuplicate: true, rarity: 'legendary', coins });
+      } else {
+        const charm = remaining[Math.floor(Math.random() * remaining.length)];
+        db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, 'legendary', ?)").run(userId, charm.id, now);
+        rewards.push({ isCharm: true, charmKey: charm.key, label: charm.label, symbol: charm.symbol, rarity: 'legendary', isDuplicate: false });
+      }
     }
-    const charm = available[Math.floor(Math.random() * available.length)];
-    db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, 'legendary', ?)").run(userId, charm.id, now);
-    db.prepare("UPDATE user_lootboxes SET opened=1, reward_ref_id=?, reward_rarity='legendary', opened_at=? WHERE id=?").run(charm.id, now, box.id);
-    return { isCharm: true, charmKey: charm.key, label: charm.label, symbol: charm.symbol, rarity: 'legendary', isDuplicate: false };
+    return { rewards };
   }
 
-  // ── Lootbox standard / image : images + chance joker
+  // ── Lootbox standard / image : 3 récompenses (images + chance joker)
   const pool = _buildImagePool(userId);
   if (!pool.length) return null;
-  const rarity = _pickRarity();
-  if (rarity === 'mythic'    && Math.random() < 0.40) return _grantJoker(userId, box.id, 'joker_charm',  'mythic');
-  if (rarity === 'legendary' && Math.random() < 0.08 && type !== 'image') return _grantJoker(userId, box.id, 'joker_image', 'legendary');
-  return _grantImageReward(userId, box.id, pool);
+  db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
+  const rewards = [];
+  for (let i = 0; i < 3; i++) {
+    const rarity = _pickRarity();
+    if (rarity === 'mythic'    && Math.random() < 0.40) {
+      rewards.push(_grantJoker(userId, null, 'joker_charm',  'mythic'));
+    } else if (rarity === 'legendary' && Math.random() < 0.08 && type !== 'image') {
+      rewards.push(_grantJoker(userId, null, 'joker_image', 'legendary'));
+    } else {
+      rewards.push(_grantImageReward(userId, null, pool));
+    }
+  }
+  return { rewards };
 }
 
-// ── Sélection du choix (lootbox à choix) ─────────────────────────────────
-function pickChoiceReward(userId, sessionId, optionIdx) {
+// ── Sélection du choix (lootbox à choix) — l'utilisateur choisit 3 parmi 9 ──
+function pickChoiceReward(userId, sessionId, optionIdxs) {
   const session = db.prepare("SELECT * FROM lootbox_choice_sessions WHERE id=? AND user_id=? AND picked=0").get(sessionId, userId);
   if (!session) return null;
   let options = []; try { options = JSON.parse(session.options); } catch (_) {}
-  const idx = parseInt(optionIdx, 10);
-  if (isNaN(idx) || idx < 0 || idx >= options.length) return null;
-  const chosen = options[idx];
-  const imgRow = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images WHERE id=?").get(chosen.imageId);
-  if (!imgRow) return null;
-  const rarity = chosen.rarity || imgRow.rarity || 'common';
+  const idxList = (Array.isArray(optionIdxs) ? optionIdxs : [optionIdxs]).map(i => parseInt(i, 10));
+  if (idxList.length !== 3 || idxList.some(i => isNaN(i) || i < 0 || i >= options.length)) return null;
+  const uniqueIdxs = [...new Set(idxList)];
+  if (uniqueIdxs.length !== 3) return null;
   const now = new Date().toISOString();
-  const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, chosen.imageId, rarity, now);
-  const isDuplicate = ins.changes === 0;
-  if (isDuplicate) {
-    const coins = (getLootboxConfig().sellPrices[rarity]) || RARITY_SELL_PRICE[rarity] || 1;
-    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+  const rewards = [];
+  for (const idx of uniqueIdxs) {
+    const chosen = options[idx];
+    const imgRow = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images WHERE id=?").get(chosen.imageId);
+    if (!imgRow) continue;
+    const rarity = chosen.rarity || imgRow.rarity || 'common';
+    const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, chosen.imageId, rarity, now);
+    const isDuplicate = ins.changes === 0;
+    if (isDuplicate) {
+      const coins = (getLootboxConfig().sellPrices[rarity]) || RARITY_SELL_PRICE[rarity] || 1;
+      db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+    }
+    let imagePaths = []; try { imagePaths = JSON.parse(imgRow.image_paths || '[]'); } catch (_) {}
+    rewards.push({ imageId: chosen.imageId, title: imgRow.title || '', rarity, thumb: imagePaths[0] || null, isDuplicate });
   }
   db.prepare("UPDATE lootbox_choice_sessions SET picked=1 WHERE id=?").run(session.id);
-  let imagePaths = []; try { imagePaths = JSON.parse(imgRow.image_paths || '[]'); } catch (_) {}
-  return { imageId: chosen.imageId, title: imgRow.title || '', rarity, thumb: imagePaths[0] || null, isDuplicate };
+  return rewards;
 }
 
 function listUnownedImages(userId, limit) {

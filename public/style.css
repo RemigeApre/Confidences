@@ -17195,9 +17195,9 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-zoom-avatar-btn:disabled { opacity: .55; cursor: default; }
 .lootbox-zoom-avatar-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 
-/* ── Lootbox à choix — panel 3 options ───────────────────────────── */
+/* ── Lootbox à choix — panel 9 options, choisir 3 ────────────────── */
 .lootbox-reveal:has(#lootbox-pick-choice:not([hidden])) {
-  max-width: min(95vw, 680px);
+  max-width: min(95vw, 720px);
 }
 .lootbox-pick-choice {
   display: flex; flex-direction: column; align-items: center; gap: 1rem;
@@ -17257,6 +17257,44 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-pick-card--epic      .lootbox-pick-card-rarity { color: var(--rarity-epic); }
 .lootbox-pick-card--legendary .lootbox-pick-card-rarity { color: var(--rarity-legendary); }
 .lootbox-pick-card--mythic    .lootbox-pick-card-rarity { color: var(--rarity-mythic); }
+/* État sélectionné */
+.lootbox-pick-card--selected {
+  outline: 2.5px solid hsl(44,90%,58%);
+  outline-offset: 2px;
+  background: rgba(245,210,100,.1);
+  transform: translateY(-3px) scale(1.02);
+}
+.lootbox-pick-card--selected .lootbox-pick-card-img::after {
+  content: "✓";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-weight: 900;
+  color: hsl(44,95%,70%);
+  background: rgba(0,0,0,.35);
+  pointer-events: none;
+}
+.lootbox-pick-card-img { position: relative; }
+/* Footer : compteur + bouton confirmer */
+.lootbox-pick-choice-footer {
+  display: flex; align-items: center; justify-content: center; gap: 1rem;
+  flex-wrap: wrap; width: 100%; padding-top: .25rem;
+}
+.lootbox-pick-choice-counter {
+  font-size: .85rem; font-weight: 700;
+  color: var(--muted, #aaa); min-width: 3.5rem; text-align: center;
+}
+.lootbox-pick-choice-confirm {
+  padding: .55rem 1.6rem;
+  border-radius: 10px;
+  border: 1.5px solid color-mix(in srgb,hsl(44,90%,55%) 60%,transparent);
+  background: color-mix(in srgb,hsl(44,90%,55%) 14%,transparent);
+  color: hsl(44,90%,62%);
+  font-size: .88rem; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, opacity .15s;
+}
+.lootbox-pick-choice-confirm:hover:not(:disabled) { background: color-mix(in srgb,hsl(44,90%,55%) 24%,transparent); }
+.lootbox-pick-choice-confirm:disabled { opacity: .35; cursor: default; }
 
 /* ── Récompense charme ────────────────────────────────────────────── */
 .lootbox-charm-reveal {

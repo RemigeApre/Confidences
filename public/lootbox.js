@@ -29,8 +29,10 @@
   var batchGrid   = document.getElementById("lootbox-batch-grid");
 
   // Lootbox à choix (pick-choice panel)
-  var pickChoicePanel = document.getElementById("lootbox-pick-choice");
-  var pickChoiceGrid  = document.getElementById("lootbox-pick-choice-grid");
+  var pickChoicePanel   = document.getElementById("lootbox-pick-choice");
+  var pickChoiceGrid    = document.getElementById("lootbox-pick-choice-grid");
+  var pickChoiceCounter = document.getElementById("lootbox-pick-choice-counter");
+  var pickChoiceConfirm = document.getElementById("lootbox-pick-choice-confirm");
 
   // Récompense charme
   var charmReveal     = document.getElementById("lootbox-charm-reveal");
@@ -77,6 +79,7 @@
   var _count          = 0;
   var _opening        = false;
   var _sessionRewards = [];
+  var _rewardQueue    = []; // file d'attente des récompenses restantes pour la boîte en cours
   var _zoomList       = [];
   var _zoomIdx        = 0;
   var _avatarSetId    = null;
@@ -117,7 +120,8 @@
   function onTrigger() {
     if (_opening || _count <= 0) return;
     _sessionRewards = [];
-    _avatarSetId = null;
+    _rewardQueue    = [];
+    _avatarSetId    = null;
     if (_count >= 2) {
       showChoice();
     } else {
@@ -160,19 +164,25 @@
         showPickChoicePanel(data.sessionId, data.options);
         return;
       }
-      if (data.isCharm) {
-        _sessionRewards.push({ itemType: 'charm', charmKey: data.reward.charmKey, symbol: data.reward.symbol, label: data.reward.label, rarity: data.reward.rarity });
-        showCharmReveal(data.reward, _count > 0);
-        return;
-      }
-      if (data.isJoker) {
-        _sessionRewards.push({ itemType: 'joker', jokerType: data.reward.jokerType, rarity: data.reward.rarity });
-        showJokerReveal(data.reward, _count > 0);
-        return;
-      }
-      _sessionRewards.push(data.reward);
-      showRewardCard(data.reward, _count > 0);
+
+      // 3 récompenses en file d'attente
+      var rewards = data.rewards || [];
+      rewards.forEach(function (r) {
+        _sessionRewards.push(r);
+        _rewardQueue.push(r);
+      });
+      showNextQueued();
     });
+  }
+
+  // Affiche la prochaine récompense en file, ou ferme si plus rien
+  function showNextQueued() {
+    var r = _rewardQueue.shift();
+    if (!r) { closeOverlay(); return; }
+    var hasMore = _rewardQueue.length > 0 || _count > 0;
+    if (r.isJoker) { showJokerReveal(r, hasMore); return; }
+    if (r.isCharm) { showCharmReveal(r, hasMore); return; }
+    showRewardCard(r, hasMore);
   }
 
   function showChestAnimation(cb) {
@@ -201,11 +211,19 @@
       .catch(function () { setTimeout(closeOverlay, 600); });
   }
 
-  // ── Lootbox à choix : 3 options ──────────────────────────────────────────────
+  // ── Lootbox à choix : 9 options, l'utilisateur en choisit 3 ─────────────────
   function showPickChoicePanel(sessionId, options) {
     hideAll();
     if (!pickChoicePanel || !pickChoiceGrid) { closeOverlay(); return; }
     while (pickChoiceGrid.firstChild) pickChoiceGrid.removeChild(pickChoiceGrid.firstChild);
+
+    var selectedIdxs = [];
+
+    function updateFooter() {
+      var n = selectedIdxs.length;
+      if (pickChoiceCounter) pickChoiceCounter.textContent = n + " / 3";
+      if (pickChoiceConfirm) pickChoiceConfirm.disabled = n < 3;
+    }
 
     options.forEach(function (opt, idx) {
       var rarity = opt.rarity || 'common';
@@ -226,31 +244,59 @@
       var badge = document.createElement("span");
       badge.className = "lootbox-pick-card-rarity";
       badge.textContent = rarity;
-
       card.appendChild(imgDiv);
       card.appendChild(badge);
 
-      (function (i) {
-        card.addEventListener("click", function () {
-          pickChoiceGrid.querySelectorAll(".lootbox-pick-card").forEach(function (c) { c.setAttribute("disabled", ""); c.style.pointerEvents = "none"; });
-          fetch("/lootbox/pick-choice", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: sessionId, optionIdx: i }),
-          })
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-              if (!d.ok) { closeOverlay(); return; }
-              pickChoicePanel.setAttribute("hidden", "");
-              _sessionRewards.push(d.reward);
-              showRewardCard(d.reward, _count > 0);
-            })
-            .catch(closeOverlay);
-        });
-      }(idx));
+      card.addEventListener("click", function () {
+        var pos = selectedIdxs.indexOf(idx);
+        if (pos !== -1) {
+          // Désélectionner
+          selectedIdxs.splice(pos, 1);
+          card.classList.remove("lootbox-pick-card--selected");
+        } else if (selectedIdxs.length < 3) {
+          // Sélectionner
+          selectedIdxs.push(idx);
+          card.classList.add("lootbox-pick-card--selected");
+        }
+        updateFooter();
+      });
 
       pickChoiceGrid.appendChild(card);
     });
+
+    updateFooter();
+
+    if (pickChoiceConfirm) {
+      // Remplacer le listener existant en clonant le bouton
+      var newConfirm = pickChoiceConfirm.cloneNode(true);
+      pickChoiceConfirm.parentNode.replaceChild(newConfirm, pickChoiceConfirm);
+      pickChoiceConfirm = newConfirm;
+      if (pickChoiceCounter) pickChoiceCounter.textContent = "0 / 3";
+      pickChoiceConfirm.disabled = true;
+
+      pickChoiceConfirm.addEventListener("click", function () {
+        if (selectedIdxs.length !== 3) return;
+        pickChoiceGrid.querySelectorAll(".lootbox-pick-card").forEach(function (c) { c.style.pointerEvents = "none"; });
+        pickChoiceConfirm.disabled = true;
+        fetch("/lootbox/pick-choice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: sessionId, optionIdxs: selectedIdxs }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.ok) { closeOverlay(); return; }
+            pickChoicePanel.setAttribute("hidden", "");
+            var rewards = d.rewards || [];
+            rewards.forEach(function (r) {
+              _sessionRewards.push(r);
+              _rewardQueue.push(r);
+            });
+            showNextQueued();
+          })
+          .catch(closeOverlay);
+      });
+    }
 
     pickChoicePanel.removeAttribute("hidden");
   }
@@ -288,7 +334,11 @@
     if (card)     card.setAttribute("hidden", "");
     if (closeBtn) closeBtn.setAttribute("hidden", "");
     if (nextBtn)  nextBtn.setAttribute("hidden", "");
-    startOpeningOne();
+    if (_rewardQueue.length > 0) {
+      showNextQueued();
+    } else {
+      startOpeningOne();
+    }
   });
 
   imgWrap && imgWrap.addEventListener("click", function () {
@@ -532,11 +582,11 @@
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (data.ok) {
-            if (data.isChoice || data.isCharm || data.isJoker) {
-              // Pour les types spéciaux dans un "tout ouvrir", on les ajoute quand même au log
-              results.push(data.reward || data);
-            } else if (data.reward) {
-              results.push(data.reward);
+            if (data.isChoice) {
+              // Les choice boxes en mode "tout ouvrir" sont ignorées (grille image uniquement)
+            } else if (data.rewards) {
+              // Tableau de 3 récompenses — on garde seulement les images pour la grille batch
+              data.rewards.forEach(function (r) { results.push(r); });
             }
           }
           openNext(remaining - 1);
