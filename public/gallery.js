@@ -1765,6 +1765,12 @@
           qProtDrop.hidden = false;
         }, 180);
       });
+      qProtInp.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          var firstItem = qProtDrop.querySelector(".lbep-ac-item");
+          if (firstItem) { e.preventDefault(); firstItem.dispatchEvent(new MouseEvent("mousedown")); }
+        }
+      });
       qProtInp.addEventListener("blur", function() { setTimeout(function(){ qProtDrop.innerHTML = ""; qProtDrop.hidden = true; }, 160); });
     }
 
@@ -2035,7 +2041,10 @@
         }
       );
       protInp.addEventListener("keydown", function (e) {
-        if (e.key === "Backspace" && protInp.value === "") {
+        if (e.key === "Enter") {
+          var firstItem = protDrop.querySelector(".lbep-ac-item");
+          if (firstItem) { e.preventDefault(); firstItem.dispatchEvent(new MouseEvent("mousedown")); }
+        } else if (e.key === "Backspace" && protInp.value === "") {
           var all = protChips.querySelectorAll(".lbep-chip");
           if (all.length) all[all.length - 1].remove();
         }
