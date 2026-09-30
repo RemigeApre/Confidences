@@ -32,6 +32,7 @@ const {
   listCollectionsForImagePopup,
   listHiddenBdPages,
   getUserUnlocks,
+  getUserUnlockedCharms,
   getShopItems,
   sellUnlock,
   buyItem,
@@ -206,14 +207,18 @@ function buildFavoritesRouter(config) {
 
   // ── Coffre ────────────────────────────────────────────────────────────────
   router.get("/coffre", requireUser, (req, res) => {
+    const view = ['images', 'charms'].includes(req.query.view) ? req.query.view : null;
     const unlocks   = getUserUnlocks(req.user.id);
-    const shopItems = getShopItems(req.user.id);
+    const charms    = getUserUnlockedCharms(req.user.id);
+    const shopItems = view === 'images' ? getShopItems(req.user.id) : [];
     res.render("profil-coffre", {
       config,
       roleHue: roleHue(req.user),
       notesCounts: notesCounts(req.user),
       unlocks,
+      charms,
       shopItems,
+      view,
       RARITY_BUY_PRICE,
       RARITY_SELL_PRICE,
     });

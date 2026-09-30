@@ -3,16 +3,30 @@
 
 <% if (currentUser) { %>
 <%# ── Charme actif : injection du symbole pour JS ─────────────── %>
-<% var _charmMap = { heart:'♥', diamond:'◆', moon:'☾', bolt:'⚡', flower:'✿' }; %>
-<% var _charmSym = _charmMap[currentUser.ratingCharm] || null; %>
+<% var _charmMap      = { heart:'♥', diamond:'◆', moon:'☾', bolt:'⚡', flower:'✿' }; %>
+<% var _charmEmptyMap = { heart:'♡', diamond:'◇', moon:'○', bolt:'✧', flower:'✾' }; %>
+<% var _charmSym      = _charmMap[currentUser.ratingCharm]      || null; %>
+<% var _charmSymEmpty = _charmEmptyMap[currentUser.ratingCharm] || null; %>
 <% if (_charmSym) { %>
 <script>
-window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, symbol: <%- JSON.stringify(_charmSym) %> };
+window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, symbol: <%- JSON.stringify(_charmSym) %>, symbolEmpty: <%- JSON.stringify(_charmSymEmpty) %> };
 (function() {
-  var sym = window.RATING_CHARM.symbol;
+  var sym  = window.RATING_CHARM.symbol;
+  var symE = window.RATING_CHARM.symbolEmpty || sym;
+  var SEL  = '.gallery-star,.bd-star,.wiki-star,.wiki-card-star,.bd-card-star';
   function patchStars() {
-    document.querySelectorAll('.gallery-star,.bd-star,.wiki-star,.wiki-card-star,.bd-card-star').forEach(function(el) { el.textContent = sym; });
+    document.querySelectorAll(SEL).forEach(function(el) {
+      el.textContent = el.classList.contains('filled') ? sym : symE;
+    });
   }
+  // Observe future class changes (toggling filled/unfilled when user rates)
+  document.addEventListener('click', function() {
+    requestAnimationFrame(function() {
+      document.querySelectorAll(SEL).forEach(function(el) {
+        el.textContent = el.classList.contains('filled') ? sym : symE;
+      });
+    });
+  }, true);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', patchStars);
   else patchStars();
 })();

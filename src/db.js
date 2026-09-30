@@ -293,6 +293,26 @@ db.exec(`CREATE TABLE IF NOT EXISTS charms (
   _cs.run(4, 'bolt',    'Éclair',   '⚡');
   _cs.run(5, 'flower',  'Fleur',    '✿');
 }
+// Migration one-shot : ajout de symbol_empty aux charmes
+try { db.exec("ALTER TABLE charms ADD COLUMN symbol_empty TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+{
+  const _cse = db.prepare("UPDATE charms SET symbol_empty = ? WHERE key = ? AND symbol_empty = ''");
+  _cse.run('♡', 'heart');
+  _cse.run('◇', 'diamond');
+  _cse.run('○', 'moon');
+  _cse.run('✦', 'bolt');
+  _cse.run('✾', 'flower');
+}
+// Migration one-shot : corriger les raretés user_unlocks pour correspondre à gallery_images
+{
+  db.prepare(`
+    UPDATE user_unlocks
+    SET rarity = (SELECT rarity FROM gallery_images WHERE id = user_unlocks.ref_id)
+    WHERE item_type = 'profile_image'
+      AND ref_id IN (SELECT id FROM gallery_images)
+      AND rarity != (SELECT rarity FROM gallery_images WHERE id = user_unlocks.ref_id)
+  `).run();
+}
 
 // ── Sessions de choix (lootbox à choix) ──────────────────────────────────
 db.exec(`CREATE TABLE IF NOT EXISTS lootbox_choice_sessions (
@@ -2769,7 +2789,7 @@ function checkAndGrantActionLootbox(userId, actionType, total, threshold) {
 
 // ── Charmes ───────────────────────────────────────────────────────────────
 function listCharms() {
-  return db.prepare("SELECT id, key, label, symbol, rarity FROM charms ORDER BY id").all();
+  return db.prepare("SELECT id, key, label, symbol, symbol_empty, rarity FROM charms ORDER BY id").all();
 }
 
 function getCharmByKey(key) {
@@ -2855,16 +2875,21 @@ function _grantImageReward(userId, boxId, imageFromPool) {
   const rarityPool = imageFromPool.filter(img => (img.rarity || 'common') === rarity);
   const image = rarityPool.length ? rarityPool[Math.floor(Math.random() * rarityPool.length)]
                                   : imageFromPool[Math.floor(Math.random() * imageFromPool.length)];
+  // Toujours utiliser la rareté propre de l'image (configurée dans l'admin)
+  const imageRarity = image.rarity || 'common';
   const now = new Date().toISOString();
-  const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, image.id, rarity, now);
+  const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, image.id, imageRarity, now);
   const isDuplicate = ins.changes === 0;
   if (isDuplicate) {
-    const coins = (getLootboxConfig().sellPrices[rarity]) || RARITY_SELL_PRICE[rarity] || 1;
+    const cfg = getLootboxConfig();
+    const coins = Math.ceil((cfg.buyPrices[imageRarity] || RARITY_BUY_PRICE[imageRarity] || RARITY_BUY_PRICE.common) / 2);
     db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+    if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity=?, opened_at=? WHERE id=?").run(imageRarity, now, boxId);
+    return { isCoins: true, coins, rarity: imageRarity };
   }
-  if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_ref_id=?, reward_rarity=?, opened_at=? WHERE id=?").run(image.id, rarity, now, boxId);
+  if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_ref_id=?, reward_rarity=?, opened_at=? WHERE id=?").run(image.id, imageRarity, now, boxId);
   let imagePaths = []; try { imagePaths = JSON.parse(image.image_paths || '[]'); } catch (_) {}
-  return { imageId: image.id, title: image.title || '', rarity, thumb: imagePaths[0] || null, isDuplicate };
+  return { imageId: image.id, title: image.title || '', rarity: imageRarity, thumb: imagePaths[0] || null, isDuplicate: false };
 }
 
 function _grantJoker(userId, boxId, jokerType, rarity) {
@@ -2901,7 +2926,8 @@ function openLootbox(userId) {
       if (!img) continue;
       usedIds.add(img.id);
       let paths = []; try { paths = JSON.parse(img.image_paths || '[]'); } catch (_) {}
-      options.push({ imageId: img.id, title: img.title || '', rarity, thumb: paths[0] || null });
+      // Rareté de l'option = rareté propre de l'image (pas le tirage aléatoire)
+      options.push({ imageId: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: paths[0] || null });
     }
     if (options.length < 3) return null;
     db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
@@ -2964,15 +2990,19 @@ function pickChoiceReward(userId, sessionId, optionIdxs) {
     const chosen = options[idx];
     const imgRow = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images WHERE id=?").get(chosen.imageId);
     if (!imgRow) continue;
-    const rarity = chosen.rarity || imgRow.rarity || 'common';
+    // Toujours utiliser la rareté propre de l'image
+    const rarity = imgRow.rarity || 'common';
     const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, chosen.imageId, rarity, now);
     const isDuplicate = ins.changes === 0;
     if (isDuplicate) {
-      const coins = (getLootboxConfig().sellPrices[rarity]) || RARITY_SELL_PRICE[rarity] || 1;
+      const cfg = getLootboxConfig();
+      const coins = Math.ceil((cfg.buyPrices[rarity] || RARITY_BUY_PRICE[rarity] || RARITY_BUY_PRICE.common) / 2);
       db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+      rewards.push({ isCoins: true, coins, rarity });
+    } else {
+      let imagePaths = []; try { imagePaths = JSON.parse(imgRow.image_paths || '[]'); } catch (_) {}
+      rewards.push({ imageId: chosen.imageId, title: imgRow.title || '', rarity, thumb: imagePaths[0] || null, isDuplicate: false });
     }
-    let imagePaths = []; try { imagePaths = JSON.parse(imgRow.image_paths || '[]'); } catch (_) {}
-    rewards.push({ imageId: chosen.imageId, title: imgRow.title || '', rarity, thumb: imagePaths[0] || null, isDuplicate });
   }
   db.prepare("UPDATE lootbox_choice_sessions SET picked=1 WHERE id=?").run(session.id);
   return rewards;

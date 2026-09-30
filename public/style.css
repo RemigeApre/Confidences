@@ -17468,3 +17468,121 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-joker-charm-lbl {
   font-size: .9rem; font-weight: 600; color: var(--text-1, #eee);
 }
+
+/* ── Carte récompense pièces (doublon ou rareté épuisée) ───────────────── */
+.lootbox-coins-reward {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .35rem; padding: 1.25rem .75rem; height: 100%;
+}
+.lootbox-coins-svg { width: 64px; height: 64px; filter: drop-shadow(0 0 14px hsl(44,90%,55%)); }
+.lootbox-coins-amount {
+  font-size: 2rem; font-weight: 800; line-height: 1;
+  text-shadow: 0 0 12px var(--coin-color, #94a3b8);
+}
+.lootbox-coins-label { font-size: .8rem; color: rgba(255,255,255,.55); }
+.lootbox-coins-reward--small { padding: .75rem .5rem; gap: .2rem; }
+.lootbox-coins-reward--small .lootbox-coins-svg { width: 40px; height: 40px; }
+.lootbox-coins-reward--small .lootbox-coins-amount { font-size: 1.2rem; }
+.lootbox-batch-card--coins .lootbox-batch-card-img { background: rgba(0,0,0,.35); }
+
+/* ── Coffre — vue d'ensemble ───────────────────────────────────────────── */
+.coffre-back-overview {
+  font-size: .82rem; color: rgba(255,255,255,.5); text-decoration: none;
+  border: 1px solid rgba(255,255,255,.12); border-radius: 6px; padding: .3rem .75rem;
+  transition: color .15s, border-color .15s;
+}
+.coffre-back-overview:hover { color: #e2e8f0; border-color: rgba(255,255,255,.28); }
+.coffre-voir-plus {
+  font-size: .8rem; font-weight: 600; color: rgba(255,255,255,.45);
+  text-decoration: none; border: 1px solid rgba(255,255,255,.1); border-radius: 6px;
+  padding: .3rem .75rem; white-space: nowrap; transition: color .15s, border-color .15s;
+}
+.coffre-voir-plus:hover { color: #e2e8f0; border-color: rgba(255,255,255,.28); }
+.coffre-section-count { font-weight: 400; color: rgba(255,255,255,.4); }
+.coffre-section-subtitle { font-size: .85rem; color: rgba(255,255,255,.45); margin: -.5rem 0 1rem; }
+
+/* Grille aperçu (2 rangées × 4) */
+.coffre-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .5rem;
+}
+@media (max-width: 500px) { .coffre-preview-grid { grid-template-columns: repeat(4, 1fr); gap: .35rem; } }
+.coffre-preview-item {
+  position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+  background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .15s;
+}
+.coffre-preview-item:hover { transform: scale(1.04); }
+.coffre-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+.coffre-preview-item svg { width: 40%; height: 40%; color: rgba(255,255,255,.2); }
+.coffre-preview-item--rare      { border-color: rgba(96,165,250,.45); }
+.coffre-preview-item--epic      { border-color: rgba(167,139,250,.45); }
+.coffre-preview-item--legendary { border-color: rgba(251,191,36,.55); box-shadow: 0 0 8px rgba(251,191,36,.2); }
+.coffre-preview-item--mythic    { border-color: rgba(248,113,113,.55); box-shadow: 0 0 8px rgba(248,113,113,.2); }
+.coffre-preview-active-dot {
+  position: absolute; bottom: 4px; right: 4px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: hsl(140,60%,55%); box-shadow: 0 0 4px hsl(140,60%,45%);
+}
+.coffre-preview-more {
+  aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+  background: rgba(255,255,255,.07); border: 1.5px dashed rgba(255,255,255,.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; font-weight: 700; color: rgba(255,255,255,.45);
+  text-decoration: none; transition: background .15s, color .15s;
+}
+.coffre-preview-more:hover { background: rgba(255,255,255,.13); color: #e2e8f0; }
+
+/* ── Charmes — bande d'aperçu ── */
+.coffre-charms-strip {
+  display: flex; flex-wrap: wrap; gap: .5rem;
+}
+.coffre-charm-pill {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: 20px; padding: .3rem .75rem;
+  font-size: .85rem; cursor: default;
+  transition: background .15s, border-color .15s;
+}
+.coffre-charm-pill--active {
+  background: rgba(255,255,255,.1); border-color: var(--charm-color, rgba(255,255,255,.25));
+  box-shadow: 0 0 8px rgba(0,0,0,.3);
+}
+.coffre-charm-symbol { font-size: 1.15rem; line-height: 1; }
+.coffre-charm-label  { font-weight: 600; color: rgba(255,255,255,.7); }
+
+/* ── Charmes — vue complète ── */
+.coffre-charms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: .75rem;
+}
+.coffre-charm-card {
+  display: flex; flex-direction: column; align-items: center; gap: .4rem;
+  background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: 12px; padding: 1.1rem .75rem; text-align: center;
+  transition: border-color .2s, box-shadow .2s;
+}
+.coffre-charm-card--owned { border-color: rgba(255,255,255,.18); }
+.coffre-charm-card--active {
+  border-color: var(--charm-color, #fbbf24);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--charm-color, #fbbf24) 35%, transparent);
+}
+.coffre-charm-card--locked { opacity: .5; }
+.coffre-charm-card-symbols { display: flex; align-items: center; gap: .25rem; margin-bottom: .2rem; }
+.coffre-charm-card-sym { font-size: 1.7rem; line-height: 1; }
+.coffre-charm-card-sym--filled { filter: drop-shadow(0 0 6px var(--charm-color, #fbbf24)); }
+.coffre-charm-card-sym--empty  { opacity: .4; }
+.coffre-charm-card-label  { font-size: .9rem; font-weight: 700; color: #f1f5f9; }
+.coffre-charm-card-rarity { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.coffre-charm-card-locked { font-size: .75rem; color: rgba(255,255,255,.35); font-style: italic; }
+.coffre-charm-btn {
+  margin-top: .25rem; font-size: .8rem; padding: .3rem .8rem;
+  border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.7);
+  background: rgba(255,255,255,.07); border-radius: 6px; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.coffre-charm-btn:hover { background: rgba(255,255,255,.14); color: #f1f5f9; }
+.coffre-charm-btn--active { border-color: var(--charm-color, #fbbf24); color: var(--charm-color, #fbbf24); }

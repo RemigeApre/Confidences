@@ -12,9 +12,78 @@
         <span id="coffre-coins-value"><%= currentUser.coins %></span>
         <span class="coffre-coins-label">pi&egrave;ces</span>
       </div>
+      <% if (view) { %>
+        <a href="/favoris/coffre" class="coffre-back-overview">&#8592; Vue d&rsquo;ensemble</a>
+      <% } %>
     </div>
 
-    <%# ── Images de profil obtenues ── %>
+    <% if (!view) { %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+    <%# ── VUE D'ENSEMBLE ── %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+
+    <%# ── Section images (aperçu 2 lignes × 4) ── %>
+    <section class="coffre-section">
+      <div class="coffre-section-header">
+        <h2 class="coffre-section-title">Images de profil <span class="coffre-section-count">(<%= unlocks.length %>)</span></h2>
+        <a href="/favoris/coffre?view=images" class="coffre-voir-plus">Voir tout &rarr;</a>
+      </div>
+      <% if (!unlocks.length) { %>
+        <p class="coffre-empty">Ouvrez des lootboxes depuis la <a href="/jeu">page Jeu</a> pour débloquer des images.</p>
+      <% } else { %>
+        <div class="coffre-preview-grid">
+          <% unlocks.slice(0, 8).forEach(function(u) { %>
+            <div class="coffre-preview-item coffre-preview-item--<%= u.rarity %>"
+                 title="<%= u.title || 'Sans titre' %>">
+              <% if (u.thumb) { %>
+                <img src="<%= thumbUrl(u.thumb) %>" alt="<%= u.title %>" loading="lazy" />
+              <% } else { %>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <% } %>
+              <% if (currentUser.profileImageId === u.refId) { %>
+                <span class="coffre-preview-active-dot" title="Photo active"></span>
+              <% } %>
+            </div>
+          <% }) %>
+          <% if (unlocks.length > 8) { %>
+            <a href="/favoris/coffre?view=images" class="coffre-preview-more">+<%= unlocks.length - 8 %></a>
+          <% } %>
+        </div>
+      <% } %>
+    </section>
+
+    <%# ── Section charmes (aperçu 1 ligne) ── %>
+    <section class="coffre-section">
+      <div class="coffre-section-header">
+        <h2 class="coffre-section-title">Charmes</h2>
+        <a href="/favoris/coffre?view=charms" class="coffre-voir-plus">Voir tout &rarr;</a>
+      </div>
+      <% var ownedCharms = charms.filter(function(c) { return c.owned; }); %>
+      <% if (!ownedCharms.length) { %>
+        <p class="coffre-empty">Aucun charme obtenu — ouvrez une lootbox charme pour en débloquer.</p>
+      <% } else { %>
+        <div class="coffre-charms-strip">
+          <% ownedCharms.forEach(function(c) { %>
+            <%
+              var rarityColor = c.rarity === 'mythic' ? '#f87171' : c.rarity === 'legendary' ? '#fbbf24' : c.rarity === 'epic' ? '#a78bfa' : c.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
+              var isActive = currentUser.ratingCharm === c.key;
+            %>
+            <div class="coffre-charm-pill<%= isActive ? ' coffre-charm-pill--active' : '' %>"
+                 style="--charm-color:<%= rarityColor %>"
+                 title="<%= c.label %><%= isActive ? ' (actif)' : '' %>">
+              <span class="coffre-charm-symbol"><%= c.symbol %></span>
+              <span class="coffre-charm-label"><%= c.label %></span>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <% } else if (view === 'images') { %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+    <%# ── VUE IMAGES COMPLÈTE ── %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+
     <section class="coffre-section">
       <div class="coffre-section-header">
         <h2 class="coffre-section-title">Images obtenues (<%= unlocks.length %>)</h2>
@@ -48,11 +117,6 @@
                 <% if (currentUser.profileImageId === u.refId) { %>
                   <div class="coffre-item-active-badge">Photo active</div>
                 <% } %>
-                <%# Checkbox de sélection pour la vente (masqué par défaut) %>
-                <label class="coffre-item-select-wrap js-sell-select-wrap" style="display:none" aria-label="Sélectionner pour vente">
-                  <input type="checkbox" class="coffre-item-select js-sell-checkbox" data-unlock-id="<%= u.id %>" data-sell-price="<%= RARITY_SELL_PRICE[u.rarity] || 1 %>" />
-                  <span class="coffre-item-select-box"></span>
-                </label>
               </div>
               <p class="coffre-item-title"><%= u.title || 'Sans titre' %></p>
               <div class="coffre-item-actions js-item-normal-actions">
@@ -79,13 +143,12 @@
       <% } %>
     </section>
 
-    <%# ── Boutique : images disponibles à l'achat ── %>
+    <%# ── Boutique ── %>
     <section class="coffre-section">
       <h2 class="coffre-section-title">
-        Disponibles &agrave; l&rsquo;achat
-        <span class="coffre-shop-price-hint">(<%= RARITY_BUY_PRICE.common %>&thinsp;P par image &bull; revente&nbsp;<%= RARITY_SELL_PRICE.common %>&thinsp;P)</span>
+        Ce qu&rsquo;il vous manque
+        <span class="coffre-shop-price-hint">(achat selon rareté &bull; revente&nbsp;<%= RARITY_SELL_PRICE.common %>&ndash;<%= RARITY_SELL_PRICE.mythic %>&thinsp;P)</span>
       </h2>
-
       <% if (!shopItems.length) { %>
         <p class="coffre-empty">Vous possédez déjà toutes les images disponibles !</p>
       <% } else { %>
@@ -117,9 +180,55 @@
       <% } %>
     </section>
 
+    <% } else if (view === 'charms') { %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+    <%# ── VUE CHARMES COMPLÈTE ── %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+
+    <section class="coffre-section">
+      <h2 class="coffre-section-title">Charmes</h2>
+      <p class="coffre-section-subtitle">Les charmes remplacent les étoiles &#9733; dans les notes.</p>
+
+      <div class="coffre-charms-grid">
+        <% charms.forEach(function(c) { %>
+          <%
+            var rarityColor = c.rarity === 'mythic' ? '#f87171' : c.rarity === 'legendary' ? '#fbbf24' : c.rarity === 'epic' ? '#a78bfa' : c.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
+            var rarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[c.rarity] || c.rarity;
+            var isActive = currentUser.ratingCharm === c.key;
+          %>
+          <div class="coffre-charm-card<%= c.owned ? ' coffre-charm-card--owned' : ' coffre-charm-card--locked' %><%= isActive ? ' coffre-charm-card--active' : '' %>"
+               style="--charm-color:<%= rarityColor %>">
+            <div class="coffre-charm-card-symbols">
+              <span class="coffre-charm-card-sym coffre-charm-card-sym--filled"><%= c.symbol %></span>
+              <% if (c.symbol_empty) { %>
+                <span class="coffre-charm-card-sym coffre-charm-card-sym--empty"><%= c.symbol_empty %></span>
+              <% } %>
+            </div>
+            <strong class="coffre-charm-card-label"><%= c.label %></strong>
+            <span class="coffre-charm-card-rarity" style="color:<%= rarityColor %>"><%= rarityLabel %></span>
+            <% if (c.owned) { %>
+              <% if (isActive) { %>
+                <button class="coffre-btn coffre-charm-btn coffre-charm-btn--active js-charm-equip" data-charm-key="star">
+                  Retirer
+                </button>
+              <% } else { %>
+                <button class="coffre-btn coffre-charm-btn js-charm-equip" data-charm-key="<%= c.key %>">
+                  Équiper
+                </button>
+              <% } %>
+            <% } else { %>
+              <span class="coffre-charm-card-locked">Non obtenu</span>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
   </div>
 
-<!-- Modal recadrage -->
+<%# ── Modal recadrage (vue images seulement) ── %>
+<% if (view === 'images') { %>
 <div class="crop-modal-backdrop" id="crop-modal" role="dialog" aria-modal="true" style="display:none">
   <div class="crop-modal-dialog">
     <div class="crop-modal-header">
@@ -156,13 +265,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-
     <p class="coffre-sell-hint">Cliquez sur les images à vendre, puis confirmez.</p>
-
-    <div class="coffre-sell-grid" id="coffre-sell-grid">
-      <%# rempli dynamiquement par JS %>
-    </div>
-
+    <div class="coffre-sell-grid" id="coffre-sell-grid"></div>
     <div class="coffre-sell-footer">
       <div class="coffre-sell-summary" id="coffre-sell-summary">
         <span class="coffre-sell-count" id="coffre-sell-count">0 image</span>
@@ -182,7 +286,6 @@
   </div>
 </div>
 
-<%# Templates SVG réutilisés en JS — aucune donnée utilisateur n'y est injectée %>
 <template id="tpl-img-placeholder">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
 </template>
@@ -195,14 +298,8 @@
 <script>
 (function () {
   var coinsEl = document.getElementById('coffre-coins-value');
-  function cloneTpl(id) {
-    var tpl = document.getElementById(id);
-    return tpl ? tpl.content.cloneNode(true) : null;
-  }
-
-  function updateCoins(n) {
-    if (coinsEl) coinsEl.textContent = n;
-  }
+  function cloneTpl(id) { var tpl = document.getElementById(id); return tpl ? tpl.content.cloneNode(true) : null; }
+  function updateCoins(n) { if (coinsEl) coinsEl.textContent = n; }
 
   // ── Achat ─────────────────────────────────────────────────────────────
   document.querySelectorAll('.js-buy').forEach(function (btn) {
@@ -210,22 +307,15 @@
       var refId = btn.dataset.refId;
       var price = btn.dataset.price;
       var balance = parseInt(coinsEl ? coinsEl.textContent : '0', 10);
-      if (balance < parseInt(price)) {
-        alert('Pas assez de pièces (il vous en faut ' + price + ', vous en avez ' + balance + ').');
-        return;
-      }
+      if (balance < parseInt(price)) { alert('Pas assez de pièces (il vous en faut ' + price + ', vous en avez ' + balance + ').'); return; }
       if (!confirm('Acheter cette image pour ' + price + ' pièce(s) ?')) return;
       fetch('/favoris/coffre/buy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemType: 'profile_image', refId: parseInt(refId) }),
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (!d.ok) { alert(d.error || 'Erreur'); return; }
-          updateCoins(d.newBalance);
-          window.location.reload();
-        });
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) { alert(d.error || 'Erreur'); return; }
+        updateCoins(d.newBalance); window.location.reload();
+      });
     });
   });
 
@@ -236,25 +326,22 @@
       var card = btn.closest('.coffre-item');
       var isActive = card && card.classList.contains('coffre-item--active');
       fetch('/favoris/coffre/set-avatar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageId: isActive ? null : parseInt(refId) }),
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (!d.ok) { alert('Erreur'); return; }
-          window.location.reload();
-        });
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) { alert('Erreur'); return; }
+        window.location.reload();
+      });
     });
   });
 
-  // ── Modal de vente multi-sélection ────────────────────────────────────
+  // ── Modal de vente ────────────────────────────────────────────────────
   var modal = document.getElementById('coffre-sell-modal');
   var sellGrid = document.getElementById('coffre-sell-grid');
   var countEl = document.getElementById('coffre-sell-count');
   var totalEl = document.getElementById('coffre-sell-total-value');
   var confirmBtn = document.getElementById('coffre-sell-confirm-btn');
-  var selected = {};  // unlockId → sellPrice
+  var selected = {};
 
   function updateSummary() {
     var ids = Object.keys(selected);
@@ -262,22 +349,14 @@
     countEl.textContent = ids.length + ' image' + (ids.length > 1 ? 's' : '');
     totalEl.textContent = total;
     confirmBtn.disabled = ids.length === 0;
-    // Synchroniser l'état visuel des cartes du modal
     sellGrid.querySelectorAll('.coffre-sell-card').forEach(function(card) {
-      var id = card.dataset.unlockId;
-      if (selected[id]) {
-        card.classList.add('coffre-sell-card--selected');
-      } else {
-        card.classList.remove('coffre-sell-card--selected');
-      }
+      card.classList.toggle('coffre-sell-card--selected', !!selected[card.dataset.unlockId]);
     });
   }
 
   function buildSellGrid() {
-    selected = {};
-    sellGrid.innerHTML = '';
-    var items = document.querySelectorAll('#coffre-unlocked-grid .coffre-item');
-    items.forEach(function(item) {
+    selected = {}; sellGrid.innerHTML = '';
+    document.querySelectorAll('#coffre-unlocked-grid .coffre-item').forEach(function(item) {
       var unlockId = item.dataset.unlockId;
       var rarity   = item.dataset.rarity;
       var price    = parseInt(item.dataset.sellPrice, 10) || 1;
@@ -286,231 +365,123 @@
       var isActive = item.classList.contains('coffre-item--active');
 
       var card = document.createElement('div');
-      card.className = 'coffre-sell-card';
-      card.dataset.unlockId = unlockId;
-
-      var imgWrap = document.createElement('div');
-      imgWrap.className = 'coffre-sell-card-img';
-      if (imgEl) {
-        var img = document.createElement('img');
-        img.src = imgEl.src;
-        img.alt = '';
-        img.loading = 'lazy';
-        imgWrap.appendChild(img);
-      } else {
-        var placeholder = cloneTpl('tpl-img-placeholder');
-        if (placeholder) imgWrap.appendChild(placeholder);
-      }
-
-      var badge = document.createElement('span');
-      badge.className = 'coffre-item-rarity coffre-item-rarity--' + rarity;
-      var labels = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
-      badge.textContent = labels[rarity] || rarity;
+      card.className = 'coffre-sell-card'; card.dataset.unlockId = unlockId;
+      var imgWrap = document.createElement('div'); imgWrap.className = 'coffre-sell-card-img';
+      if (imgEl) { var img = document.createElement('img'); img.src = imgEl.src; img.alt = ''; img.loading = 'lazy'; imgWrap.appendChild(img); }
+      else { var ph = cloneTpl('tpl-img-placeholder'); if (ph) imgWrap.appendChild(ph); }
+      var badge = document.createElement('span'); badge.className = 'coffre-item-rarity coffre-item-rarity--' + rarity;
+      badge.textContent = ({common:'Commun',rare:'Rare',epic:'Épique',legendary:'Légendaire',mythic:'Mythique'})[rarity] || rarity;
       imgWrap.appendChild(badge);
-
-      var tick = document.createElement('span');
-      tick.className = 'coffre-sell-card-tick';
-      var tickSvg = cloneTpl('tpl-sell-tick');
-      if (tickSvg) tick.appendChild(tickSvg);
+      var tick = document.createElement('span'); tick.className = 'coffre-sell-card-tick';
+      var tickSvg = cloneTpl('tpl-sell-tick'); if (tickSvg) tick.appendChild(tickSvg);
       imgWrap.appendChild(tick);
-
-      var info = document.createElement('div');
-      info.className = 'coffre-sell-card-info';
-
-      var titleEl = document.createElement('span');
-      titleEl.className = 'coffre-sell-card-title';
-      titleEl.textContent = title.trim() || 'Sans titre';
-      info.appendChild(titleEl);
-
-      var priceEl = document.createElement('span');
-      priceEl.className = 'coffre-sell-card-price';
-      priceEl.textContent = price + '\u202fP';
-      info.appendChild(priceEl);
-
-      if (isActive) {
-        var warn = document.createElement('span');
-        warn.className = 'coffre-sell-card-warn';
-        warn.textContent = 'Photo active';
-        info.appendChild(warn);
-      }
-
-      card.appendChild(imgWrap);
-      card.appendChild(info);
-
+      var info = document.createElement('div'); info.className = 'coffre-sell-card-info';
+      var titleEl = document.createElement('span'); titleEl.className = 'coffre-sell-card-title'; titleEl.textContent = title.trim() || 'Sans titre'; info.appendChild(titleEl);
+      var priceEl = document.createElement('span'); priceEl.className = 'coffre-sell-card-price'; priceEl.textContent = price + '\u202fP'; info.appendChild(priceEl);
+      if (isActive) { var warn = document.createElement('span'); warn.className = 'coffre-sell-card-warn'; warn.textContent = 'Photo active'; info.appendChild(warn); }
+      card.appendChild(imgWrap); card.appendChild(info);
       card.addEventListener('click', function() {
-        if (selected[unlockId]) {
-          delete selected[unlockId];
-        } else {
-          selected[unlockId] = price;
-        }
+        if (selected[unlockId]) delete selected[unlockId]; else selected[unlockId] = price;
         updateSummary();
       });
-
       sellGrid.appendChild(card);
     });
     updateSummary();
   }
 
-  // Ouvrir le modal
-  document.getElementById('coffre-sell-multi-btn') && document.getElementById('coffre-sell-multi-btn').addEventListener('click', function() {
-    buildSellGrid();
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    // Focus trap léger
-    setTimeout(function() { confirmBtn.focus(); }, 50);
+  var sellOpenBtn = document.getElementById('coffre-sell-multi-btn');
+  sellOpenBtn && sellOpenBtn.addEventListener('click', function() {
+    buildSellGrid(); modal.style.display = 'flex'; document.body.style.overflow = 'hidden';
+    setTimeout(function() { if(confirmBtn) confirmBtn.focus(); }, 50);
   });
+  function closeModal() { modal.style.display = 'none'; document.body.style.overflow = ''; selected = {}; }
+  document.querySelectorAll('.js-sell-modal-close').forEach(function(btn) { btn.addEventListener('click', closeModal); });
+  modal && modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && modal && modal.style.display !== 'none') closeModal(); });
 
-  // Fermer le modal
-  function closeModal() {
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-    selected = {};
-  }
-  document.querySelectorAll('.js-sell-modal-close').forEach(function(btn) {
-    btn.addEventListener('click', closeModal);
-  });
-  modal && modal.addEventListener('click', function(e) {
-    if (e.target === modal) closeModal();
-  });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && modal && modal.style.display !== 'none') closeModal();
-  });
-
-  // Confirmer la vente
   confirmBtn && confirmBtn.addEventListener('click', function() {
     var ids = Object.keys(selected).map(Number);
     if (!ids.length) return;
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Vente en cours…';
+    confirmBtn.disabled = true; confirmBtn.textContent = 'Vente en cours…';
     fetch('/favoris/coffre/sell', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ unlockIds: ids }),
-    })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (!d.ok) { alert(d.error || 'Erreur'); confirmBtn.disabled = false; confirmBtn.textContent = 'Vendre la sélection'; return; }
-        updateCoins(d.newBalance);
-        closeModal();
-        // Retirer les cartes vendues du DOM avec animation
-        ids.forEach(function(unlockId) {
-          var card = document.querySelector('#coffre-unlocked-grid .coffre-item[data-unlock-id="' + unlockId + '"]');
-          if (card) {
-            card.style.transition = 'opacity .25s, transform .25s';
-            card.style.opacity = '0';
-            card.style.transform = 'scale(.9)';
-            setTimeout(function() { card.remove(); }, 270);
-          }
-        });
-        // Mettre à jour le compteur dans le titre
-        setTimeout(function() {
-          var remaining = document.querySelectorAll('#coffre-unlocked-grid .coffre-item').length;
-          var titleEl = document.querySelector('.coffre-section-title');
-          if (titleEl) titleEl.textContent = 'Images obtenues (' + remaining + ')';
-        }, 300);
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (!d.ok) { alert(d.error || 'Erreur'); confirmBtn.disabled = false; confirmBtn.textContent = 'Vendre la sélection'; return; }
+      updateCoins(d.newBalance); closeModal();
+      ids.forEach(function(unlockId) {
+        var card = document.querySelector('#coffre-unlocked-grid .coffre-item[data-unlock-id="' + unlockId + '"]');
+        if (card) { card.style.transition = 'opacity .25s, transform .25s'; card.style.opacity = '0'; card.style.transform = 'scale(.9)'; setTimeout(function() { card.remove(); }, 270); }
       });
-  });
-  // ── Éditeur de recadrage ───────────────────────────────────────────────
-  var cropModal   = document.getElementById('crop-modal');
-  var cropCircle  = document.getElementById('crop-preview-circle');
-  var cropImg     = document.getElementById('crop-preview-img');
-  var cropSlider  = document.getElementById('crop-zoom-slider');
-  var cropSaveBtn = document.getElementById('crop-save-btn');
-
-  // État du recadrage
-  var cropX = 50, cropY = 50, cropScale = 1;
-  var cropDragging = false, cropDragSX, cropDragSY, cropDragX0, cropDragY0;
-
-  function applyCrop() {
-    cropImg.style.objectPosition = cropX + '% ' + cropY + '%';
-    cropImg.style.transform = 'scale(' + cropScale + ')';
-    cropImg.style.transformOrigin = cropX + '% ' + cropY + '%';
-  }
-
-  document.querySelectorAll('.js-crop-edit').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var thumb = btn.dataset.thumb;
-      if (!thumb) return;
-      cropX = 50; cropY = 50; cropScale = 1;
-      if (cropSlider) cropSlider.value = 100;
-      cropImg.src = thumb;
-      applyCrop();
-      cropModal.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
+      setTimeout(function() {
+        var remaining = document.querySelectorAll('#coffre-unlocked-grid .coffre-item').length;
+        var titleEl = document.querySelector('.coffre-section-title');
+        if (titleEl) titleEl.textContent = 'Images obtenues (' + remaining + ')';
+      }, 300);
     });
   });
 
-  function closeCropModal() {
-    cropModal.style.display = 'none';
-    document.body.style.overflow = '';
-  }
+  // ── Recadrage ─────────────────────────────────────────────────────────
+  var cropModal = document.getElementById('crop-modal');
+  var cropCircle = document.getElementById('crop-preview-circle');
+  var cropImg    = document.getElementById('crop-preview-img');
+  var cropSlider = document.getElementById('crop-zoom-slider');
+  var cropSaveBtn= document.getElementById('crop-save-btn');
+  var cropX = 50, cropY = 50, cropScale = 1;
+  var cropDragging = false, cropDragSX, cropDragSY, cropDragX0, cropDragY0;
+  function applyCrop() { cropImg.style.objectPosition = cropX + '% ' + cropY + '%'; cropImg.style.transform = 'scale(' + cropScale + ')'; cropImg.style.transformOrigin = cropX + '% ' + cropY + '%'; }
+  document.querySelectorAll('.js-crop-edit').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var thumb = btn.dataset.thumb; if (!thumb) return;
+      cropX = 50; cropY = 50; cropScale = 1; if (cropSlider) cropSlider.value = 100;
+      cropImg.src = thumb; applyCrop(); cropModal.style.display = 'flex'; document.body.style.overflow = 'hidden';
+    });
+  });
+  function closeCropModal() { cropModal.style.display = 'none'; document.body.style.overflow = ''; }
   document.querySelectorAll('.js-crop-close').forEach(function(b) { b.addEventListener('click', closeCropModal); });
   cropModal && cropModal.addEventListener('click', function(e) { if (e.target === cropModal) closeCropModal(); });
-
-  // Drag
-  cropCircle && cropCircle.addEventListener('mousedown', function(e) {
-    cropDragging = true;
-    cropDragSX = e.clientX; cropDragSY = e.clientY;
-    cropDragX0 = cropX; cropDragY0 = cropY;
-    e.preventDefault();
-  });
-  // Touch support
-  cropCircle && cropCircle.addEventListener('touchstart', function(e) {
-    if (!e.touches[0]) return;
-    cropDragging = true;
-    cropDragSX = e.touches[0].clientX; cropDragSY = e.touches[0].clientY;
-    cropDragX0 = cropX; cropDragY0 = cropY;
-  }, { passive: true });
-
-  document.addEventListener('mousemove', function(e) {
-    if (!cropDragging || !cropCircle) return;
-    var rect = cropCircle.getBoundingClientRect();
-    var dx = (e.clientX - cropDragSX) / rect.width  * 100 / cropScale;
-    var dy = (e.clientY - cropDragSY) / rect.height * 100 / cropScale;
-    cropX = Math.max(0, Math.min(100, cropDragX0 - dx));
-    cropY = Math.max(0, Math.min(100, cropDragY0 - dy));
-    applyCrop();
-  });
-  document.addEventListener('touchmove', function(e) {
-    if (!cropDragging || !e.touches[0] || !cropCircle) return;
-    var rect = cropCircle.getBoundingClientRect();
-    var dx = (e.touches[0].clientX - cropDragSX) / rect.width  * 100 / cropScale;
-    var dy = (e.touches[0].clientY - cropDragSY) / rect.height * 100 / cropScale;
-    cropX = Math.max(0, Math.min(100, cropDragX0 - dx));
-    cropY = Math.max(0, Math.min(100, cropDragY0 - dy));
-    applyCrop();
-  }, { passive: true });
-  document.addEventListener('mouseup',  function() { cropDragging = false; });
+  cropCircle && cropCircle.addEventListener('mousedown', function(e) { cropDragging = true; cropDragSX = e.clientX; cropDragSY = e.clientY; cropDragX0 = cropX; cropDragY0 = cropY; e.preventDefault(); });
+  cropCircle && cropCircle.addEventListener('touchstart', function(e) { if (!e.touches[0]) return; cropDragging = true; cropDragSX = e.touches[0].clientX; cropDragSY = e.touches[0].clientY; cropDragX0 = cropX; cropDragY0 = cropY; }, { passive: true });
+  document.addEventListener('mousemove', function(e) { if (!cropDragging || !cropCircle) return; var rect = cropCircle.getBoundingClientRect(); var dx = (e.clientX - cropDragSX) / rect.width * 100 / cropScale; var dy = (e.clientY - cropDragSY) / rect.height * 100 / cropScale; cropX = Math.max(0, Math.min(100, cropDragX0 - dx)); cropY = Math.max(0, Math.min(100, cropDragY0 - dy)); applyCrop(); });
+  document.addEventListener('touchmove', function(e) { if (!cropDragging || !e.touches[0] || !cropCircle) return; var rect = cropCircle.getBoundingClientRect(); var dx = (e.touches[0].clientX - cropDragSX) / rect.width * 100 / cropScale; var dy = (e.touches[0].clientY - cropDragSY) / rect.height * 100 / cropScale; cropX = Math.max(0, Math.min(100, cropDragX0 - dx)); cropY = Math.max(0, Math.min(100, cropDragY0 - dy)); applyCrop(); }, { passive: true });
+  document.addEventListener('mouseup', function() { cropDragging = false; });
   document.addEventListener('touchend', function() { cropDragging = false; });
-
-  // Scroll to zoom
-  cropCircle && cropCircle.addEventListener('wheel', function(e) {
-    e.preventDefault();
-    cropScale = Math.max(1, Math.min(4, cropScale - e.deltaY * 0.003));
-    if (cropSlider) cropSlider.value = Math.round(cropScale * 100);
-    applyCrop();
-  }, { passive: false });
-
-  // Slider zoom
-  cropSlider && cropSlider.addEventListener('input', function() {
-    cropScale = parseInt(cropSlider.value, 10) / 100;
-    applyCrop();
-  });
-
-  // Enregistrer
+  cropCircle && cropCircle.addEventListener('wheel', function(e) { e.preventDefault(); cropScale = Math.max(1, Math.min(4, cropScale - e.deltaY * 0.003)); if (cropSlider) cropSlider.value = Math.round(cropScale * 100); applyCrop(); }, { passive: false });
+  cropSlider && cropSlider.addEventListener('input', function() { cropScale = parseInt(cropSlider.value, 10) / 100; applyCrop(); });
   cropSaveBtn && cropSaveBtn.addEventListener('click', function() {
     cropSaveBtn.disabled = true;
     fetch('/favoris/coffre/set-avatar-crop', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ x: Math.round(cropX * 10) / 10, y: Math.round(cropY * 10) / 10, scale: Math.round(cropScale * 100) / 100 }),
-    })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        cropSaveBtn.disabled = false;
-        if (d.ok) { closeCropModal(); window.location.reload(); }
-      })
-      .catch(function() { cropSaveBtn.disabled = false; });
+    }).then(function(r) { return r.json(); }).then(function(d) { cropSaveBtn.disabled = false; if (d.ok) { closeCropModal(); window.location.reload(); } }).catch(function() { cropSaveBtn.disabled = false; });
   });
 })();
 </script>
+
+<% } else if (view === 'charms') { %>
+</main>
+
+<%- include('partials/foot') %>
+
+<script>
+(function() {
+  var coinsEl = document.getElementById('coffre-coins-value');
+  document.querySelectorAll('.js-charm-equip').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var key = btn.dataset.charmKey;
+      fetch('/lootbox/set-charm', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ charmKey: key }),
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.ok) window.location.reload();
+        else alert(d.error || 'Erreur');
+      });
+    });
+  });
+})();
+</script>
+
+<% } else { %>
+</main>
+<%- include('partials/foot') %>
+<% } %>

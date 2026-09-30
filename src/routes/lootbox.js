@@ -35,7 +35,8 @@ function buildLootboxRouter(config) {
       rewards: result.rewards.map(r => {
         if (r.isJoker) return { isJoker: true, jokerType: r.jokerType, rarity: r.rarity, isDuplicate: !!r.isDuplicate };
         if (r.isCharm) return { isCharm: true, charmKey: r.charmKey || null, label: r.label || null, symbol: r.symbol || null, rarity: r.rarity || 'legendary', isDuplicate: !!r.isDuplicate, coins: r.coins || 0 };
-        return { imageId: r.imageId, title: r.title, rarity: r.rarity, thumb: r.thumb ? thumbUrl(r.thumb) : null, isDuplicate: !!r.isDuplicate };
+        if (r.isCoins) return { isCoins: true, coins: r.coins || 0, rarity: r.rarity || 'common' };
+        return { imageId: r.imageId, title: r.title, rarity: r.rarity, thumb: r.thumb ? thumbUrl(r.thumb) : null, isDuplicate: false };
       }),
     });
   });
@@ -51,11 +52,10 @@ function buildLootboxRouter(config) {
     if (!rewards) return res.json({ ok: false, error: "invalid_session" });
     res.json({
       ok: true,
-      rewards: rewards.map(r => ({
-        imageId: r.imageId, title: r.title, rarity: r.rarity,
-        thumb: r.thumb ? thumbUrl(r.thumb) : null,
-        isDuplicate: !!r.isDuplicate,
-      })),
+      rewards: rewards.map(r => {
+        if (r.isCoins) return { isCoins: true, coins: r.coins || 0, rarity: r.rarity || 'common' };
+        return { imageId: r.imageId, title: r.title, rarity: r.rarity, thumb: r.thumb ? thumbUrl(r.thumb) : null, isDuplicate: false };
+      }),
     });
   });
 

@@ -182,7 +182,41 @@
     var hasMore = _rewardQueue.length > 0 || _count > 0;
     if (r.isJoker) { showJokerReveal(r, hasMore); return; }
     if (r.isCharm) { showCharmReveal(r, hasMore); return; }
+    if (r.isCoins) { showCoinsCard(r, hasMore); return; }
     showRewardCard(r, hasMore);
+  }
+
+  // ── Récompense pièces (doublon ou rareté épuisée) ─────────────────────────
+  function showCoinsCard(reward, hasNext) {
+    hideAll();
+    if (!card) { closeOverlay(); return; }
+    var rarity = reward.rarity || 'common';
+    var RARITY_COLORS = { common: '#94a3b8', rare: '#60a5fa', epic: '#a78bfa', legendary: '#fbbf24', mythic: '#f87171' };
+    var color = RARITY_COLORS[rarity] || '#94a3b8';
+    // Réutilise le card slot mais avec contenu pièces
+    if (imgWrap) {
+      imgWrap.setAttribute('data-rarity', rarity);
+      imgWrap.innerHTML = '';
+      var coinDiv = document.createElement('div');
+      coinDiv.className = 'lootbox-coins-reward';
+      coinDiv.style.setProperty('--coin-color', color);
+      coinDiv.innerHTML = '<svg viewBox="0 0 60 60" class="lootbox-coins-svg" aria-hidden="true">'
+        + '<circle cx="30" cy="30" r="28" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="2.5"/>'
+        + '<text x="30" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="hsl(44,35%,20%)">P</text>'
+        + '</svg>'
+        + '<span class="lootbox-coins-amount" style="color:' + color + '">' + (reward.coins || 0) + '</span>'
+        + '<span class="lootbox-coins-label">pi\u00e8ces</span>';
+      imgWrap.appendChild(coinDiv);
+    }
+    if (hintEl) hintEl.setAttribute('hidden', '');
+    card.removeAttribute('hidden');
+    card.classList.remove('lootbox-card--in');
+    requestAnimationFrame(function() { requestAnimationFrame(function() { card.classList.add('lootbox-card--in'); }); });
+    if (closeBtn) closeBtn.removeAttribute('hidden');
+    if (nextBtn) {
+      if (hasNext) nextBtn.removeAttribute('hidden');
+      else         nextBtn.setAttribute('hidden', '');
+    }
   }
 
   function showChestAnimation(cb) {
@@ -599,29 +633,41 @@
 
   function renderBatchResults(rewards) {
     while (batchGrid.firstChild) batchGrid.removeChild(batchGrid.firstChild);
+    var RARITY_COLORS = { common: '#94a3b8', rare: '#60a5fa', epic: '#a78bfa', legendary: '#fbbf24', mythic: '#f87171' };
     var imageRewards = rewards.filter(function(r) { return r && r.imageId; });
-    imageRewards.forEach(function (reward, i) {
+    rewards.forEach(function (reward, i) {
       var rarity = reward.rarity || "common";
       var item = document.createElement("div");
-      item.className = "lootbox-batch-card lootbox-batch-card--" + rarity + (reward.isDuplicate ? " lootbox-batch-card--dupe" : "");
+      item.className = "lootbox-batch-card lootbox-batch-card--" + rarity;
       var imgDiv = document.createElement("div");
       imgDiv.className = "lootbox-batch-card-img";
       imgDiv.setAttribute("data-rarity", rarity);
-      if (reward.thumb) {
-        var img = document.createElement("img");
-        img.src = reward.thumb; img.alt = ""; img.loading = "lazy";
-        imgDiv.appendChild(img);
-        imgDiv.style.cursor = "zoom-in";
-        (function (idx) {
-          imgDiv.addEventListener("click", function () { openZoom(imageRewards, idx); });
-        }(i));
+
+      if (reward.isCoins) {
+        // Carte pièces
+        item.classList.add("lootbox-batch-card--coins");
+        var coinWrap = document.createElement("div");
+        coinWrap.className = "lootbox-coins-reward lootbox-coins-reward--small";
+        coinWrap.style.setProperty('--coin-color', RARITY_COLORS[rarity] || '#94a3b8');
+        coinWrap.innerHTML = '<svg viewBox="0 0 60 60" class="lootbox-coins-svg" aria-hidden="true">'
+          + '<circle cx="30" cy="30" r="28" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="2.5"/>'
+          + '<text x="30" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="hsl(44,35%,20%)">P</text>'
+          + '</svg>'
+          + '<span class="lootbox-coins-amount" style="color:' + (RARITY_COLORS[rarity]||'#94a3b8') + '">' + (reward.coins || 0) + '</span>';
+        imgDiv.appendChild(coinWrap);
+      } else if (reward.imageId) {
+        if (reward.thumb) {
+          var img = document.createElement("img");
+          img.src = reward.thumb; img.alt = ""; img.loading = "lazy";
+          imgDiv.appendChild(img);
+          imgDiv.style.cursor = "zoom-in";
+          (function (imgIdx) {
+            var idx = imageRewards.indexOf(reward);
+            imgDiv.addEventListener("click", function () { if (idx >= 0) openZoom(imageRewards, idx); });
+          }(i));
+        }
       }
-      if (reward.isDuplicate) {
-        var dupeTag = document.createElement("span");
-        dupeTag.className = "lootbox-batch-card-dupe-tag";
-        dupeTag.textContent = "Doublon";
-        imgDiv.appendChild(dupeTag);
-      }
+
       item.appendChild(imgDiv);
       batchGrid.appendChild(item);
     });
