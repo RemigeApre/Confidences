@@ -75,10 +75,7 @@
   <% if (galleryImages && galleryImages.length) { %>
     <%
       var IRREALISTE_TAGS = ['irréaliste', 'fantaisie'];
-      // Statut spécial du personnage lui-même (hérité par toutes ses images)
-      var _protTagTypes = (protagoniste.tags || []).map(function(t){ return (tagMeta && tagMeta[t]) || ''; });
-      var _protSpecial  = _protTagTypes.indexOf('ultra') !== -1 ? 'ultra'
-                        : _protTagTypes.indexOf('irrealiste') !== -1 ? 'irrealiste' : '';
+      var _protSpecial = protagoniste.special || '';
       function imgSpecial(img) {
         var t = (img.tags || []).map(function(x){ return String(x).toLowerCase(); });
         if (t.indexOf('ultra') !== -1) return 'ultra';

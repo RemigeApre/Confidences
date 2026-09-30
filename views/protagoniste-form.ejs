@@ -73,6 +73,17 @@
         </div>
       </div>
 
+      <%# ── Classification Ultra / Irréaliste ── %>
+      <div class="prot-form-field-group">
+        <div class="prot-form-field-label">Classification <span style="font-weight:400;font-size:.75rem;opacity:.6">(détermine la visibilité selon préférences)</span></div>
+        <input type="hidden" name="special" id="prot-special-hidden" value="<%= protagoniste ? (protagoniste.special || '') : '' %>" />
+        <div class="prot-special-btns">
+          <button type="button" class="prot-special-btn<%= (!protagoniste || !protagoniste.special) ? ' active' : '' %>" data-val="">Normal</button>
+          <button type="button" class="prot-special-btn prot-special-btn--ultra<%= (protagoniste && protagoniste.special === 'ultra') ? ' active' : '' %>" data-val="ultra">Ultra</button>
+          <button type="button" class="prot-special-btn prot-special-btn--irrealiste<%= (protagoniste && protagoniste.special === 'irrealiste') ? ' active' : '' %>" data-val="irrealiste">Irréaliste</button>
+        </div>
+      </div>
+
       <%# ── Nature — select élégant ── %>
       <div class="prot-form-field-group">
         <label class="prot-form-field-label" for="prot-nature">Nature</label>
@@ -134,15 +145,13 @@
         </div>
         <input type="hidden" name="tags" class="wiki-tags-hidden"
           value="<%= protagoniste && protagoniste.tags ? protagoniste.tags.join(', ') : '' %>" />
-        <div class="wiki-tag-suggestions">
-          <button type="button" class="wiki-tag-suggest-chip wiki-tag-suggest-chip--special" data-tag="ultra">ultra</button>
-          <button type="button" class="wiki-tag-suggest-chip wiki-tag-suggest-chip--special" data-tag="irréaliste">irréaliste</button>
-          <% if (allTags && allTags.length) { %>
+        <% if (allTags && allTags.length) { %>
+          <div class="wiki-tag-suggestions">
             <% allTags.slice(0, 20).forEach(function(t) { %>
               <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
             <% }) %>
-          <% } %>
-        </div>
+          </div>
+        <% } %>
       </div>
 
       <div class="wiki-form-actions wf-mobile-actions">
@@ -318,6 +327,15 @@
       if (newInp) newInp.focus();
     });
   })();
+  // ── Classification (special) ──
+  var specialHidden = document.getElementById('prot-special-hidden');
+  document.querySelectorAll('.prot-special-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.prot-special-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      if (specialHidden) specialHidden.value = btn.dataset.val || '';
+    });
+  });
   </script>
 
 </main>

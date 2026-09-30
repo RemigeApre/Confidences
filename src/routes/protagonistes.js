@@ -49,8 +49,7 @@ function buildProtagonistesRouter(config) {
   router.get("/", (req, res) => {
     const all = db.listProtagonistes();
     const parodies = [...new Set(all.map(p => p.parody).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
-    const tagMeta = db.getAllTagMeta();
-    res.render("protagonistes", { config, protagonistes: all, parodies, tagMeta });
+    res.render("protagonistes", { config, protagonistes: all, parodies });
   });
 
   router.get("/new", requireAdmin, (req, res) => {
@@ -66,7 +65,8 @@ function buildProtagonistesRouter(config) {
     const gender = VALID_GENDERS.has(req.body.gender) ? req.body.gender : "";
     const nature = VALID_NATURES.has(req.body.nature) ? req.body.nature : "";
     const imagePath = req.file ? `/uploads/personnages/${req.file.filename}` : "";
-    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody, subParody, gender, nature, imagePath });
+    const special = req.body.special || "";
+    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody, subParody, gender, nature, imagePath, special });
     res.redirect(`/protagonistes/${id}`);
   });
 
@@ -128,6 +128,7 @@ function buildProtagonistesRouter(config) {
       nature,
       imagePath,
       evolutions,
+      special: req.body.special || "",
     });
     res.redirect(`/protagonistes/${protagoniste.id}`);
   });

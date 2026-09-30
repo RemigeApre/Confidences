@@ -67,14 +67,7 @@
   <% } else { %>
     <div class="prot-grid" id="prot-grid">
       <% protagonistes.forEach(function(p) { %>
-        <%
-          var _pSpecial = '';
-          if (p.tags && tagMeta) {
-            var _pt = p.tags.map(function(t){ return tagMeta[t] || ''; });
-            if (_pt.indexOf('ultra') !== -1) _pSpecial = 'ultra';
-            else if (_pt.indexOf('irrealiste') !== -1) _pSpecial = 'irrealiste';
-          }
-        %>
+        <% var _pSpecial = p.special || ''; %>
         <a href="/protagonistes/<%= p.id %>" class="prot-card"
           data-gender="<%= p.gender || '' %>"
           data-nature="<%= p.nature || '' %>"

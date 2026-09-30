@@ -158,11 +158,24 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: usingHttps,
+      // Ne jamais figer le flag "secure" au démarrage : si les fichiers cert
+      // existent mais que Node sert finalement en HTTP (redémarrage PM2 après
+      // erreur TLS, changement de config, etc.), le cookie secure:true n'est
+      // jamais envoyé par le navigateur HTTP → boucle de redirection infinie.
+      // On laisse false ici et on l'ajuste par requête ci-dessous via req.secure.
+      secure: false,
       maxAge: 1000 * 60 * 60 * 24 * 90,
     },
   })
 );
+
+// Ajustement dynamique du flag "secure" : true uniquement si la connexion
+// courante est réellement TLS (req.secure). Évite toute désynchronisation
+// entre la détection au démarrage (usingHttps) et le protocole réel.
+app.use((req, res, next) => {
+  if (req.session) req.session.cookie.secure = req.secure;
+  next();
+});
 
 app.use(attachUser);
 

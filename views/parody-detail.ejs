@@ -76,12 +76,9 @@
   <% if (content.gallery.length) { %>
   <%
     var IRREALISTE_TAGS = ['irréaliste', 'fantaisie'];
-    // Map protagonist id → special type, pour héritage
     var _protSpecialMap = {};
     (content.protagonistes || []).forEach(function(p) {
-      var types = (p.tags || []).map(function(t){ return (tagMeta && tagMeta[t]) || ''; });
-      if (types.indexOf('ultra') !== -1) _protSpecialMap[p.id] = 'ultra';
-      else if (types.indexOf('irrealiste') !== -1) _protSpecialMap[p.id] = 'irrealiste';
+      if (p.special) _protSpecialMap[p.id] = p.special;
     });
     function imgSpecial(img) {
       var t = (img.tags || []).map(function(x){ return String(x).toLowerCase(); });

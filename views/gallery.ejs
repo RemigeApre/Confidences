@@ -387,16 +387,7 @@ window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'f
 window.GALLERY_PROTAGONISTS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;
 window.GALLERY_PROT_META = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = { parody: p.parody || '', sub_parody: p.sub_parody || '' }; return m; }, {})) %>;
 window.GALLERY_PROT_EVOS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { if (p.evolutions && p.evolutions.length) m[p.id] = p.evolutions; return m; }, {})) %>;
-window.GALLERY_PROT_SPECIAL = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) {
-  var sp = '';
-  if (p.tags && tagMeta) {
-    var types = p.tags.map(function(t){ return tagMeta[t] || ''; });
-    if (types.indexOf('ultra') !== -1) sp = 'ultra';
-    else if (types.indexOf('irrealiste') !== -1) sp = 'irrealiste';
-  }
-  if (sp) m[p.id] = sp;
-  return m;
-}, {})) %>;
+window.GALLERY_PROT_SPECIAL = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { if (p.special) m[p.id] = p.special; return m; }, {})) %>;
 </script>
 <script src="/gallery.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>
