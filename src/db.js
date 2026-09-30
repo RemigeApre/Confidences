@@ -2048,7 +2048,7 @@ function setTagParent(tag, parent) {
   db.prepare("INSERT INTO tag_meta (tag, type, category, parent) VALUES (?, 'normal', 'autre', ?) ON CONFLICT(tag) DO UPDATE SET parent = excluded.parent").run(t, p);
 }
 
-const VALID_SUBCATEGORIES = new Set(["physique", "fantastique", "vetements", "autre", ""]);
+const VALID_SUBCATEGORIES = new Set(["physique", "ethnie", "fantastique", "vetements", "autre", ""]);
 const CATS_WITH_SUBCATS   = new Set(["femme", "homme"]);
 
 function getAllTagSubcategories() {

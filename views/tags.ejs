@@ -3,8 +3,8 @@
   var CAT_LABELS   = { femme: 'Femme', homme: 'Homme', rapport: 'Rapport', lieu: 'Lieu', relation: 'Relation', objet: 'Objet', autre: 'Autre' };
   var CAT_ORDER    = ['femme', 'homme', 'rapport', 'lieu', 'relation', 'objet', 'autre'];
   var CAT_WITH_SUB = { femme: true, homme: true };
-  var SUBCAT_ORDER  = ['physique', 'fantastique', 'vetements', 'autre'];
-  var SUBCAT_LABELS = { physique: 'Physique', fantastique: 'Fantastique et impossible', vetements: 'V\u00eatements', autre: 'Autre' };
+  var SUBCAT_ORDER  = ['physique', 'ethnie', 'fantastique', 'vetements', ''];
+  var SUBCAT_LABELS = { physique: 'Physique', ethnie: 'Ethnie', fantastique: 'Fantastique et impossible', vetements: 'V\u00eatements', '': 'Sans cat\u00e9gorie' };
   var CAT_MAX = 20;
   var tagsByCat = {};
   CAT_ORDER.forEach(function(c) { tagsByCat[c] = []; });
@@ -53,9 +53,9 @@
           <div class="links-filter tags-cat-filter-wrap" id="tags-subcat-filter">
             <button type="button" class="tag-chip active" data-subcat-filter="">Toutes</button>
             <button type="button" class="tag-chip" data-subcat-filter="physique">Physique</button>
+            <button type="button" class="tag-chip" data-subcat-filter="ethnie">Ethnie</button>
             <button type="button" class="tag-chip" data-subcat-filter="fantastique">Fantastique et impossible</button>
             <button type="button" class="tag-chip" data-subcat-filter="vetements">V&ecirc;tements</button>
-            <button type="button" class="tag-chip" data-subcat-filter="autre">Autre</button>
           </div>
         </div>
 
@@ -136,17 +136,18 @@
         <%
           var tagsBySubcat = {};
           SUBCAT_ORDER.forEach(function(s){ tagsBySubcat[s] = []; });
-          tagsBySubcat[''] = [];
           catItems.forEach(function(item){
             var s = item.subcategory || '';
-            (tagsBySubcat[s] || (tagsBySubcat[''] = tagsBySubcat[''])).push(item);
+            // 'autre' (ancien) → '' (sans catégorie)
+            if (s === 'autre') s = '';
+            if (!tagsBySubcat.hasOwnProperty(s)) s = '';
+            tagsBySubcat[s].push(item);
           });
         %>
         <% SUBCAT_ORDER.forEach(function(subcat) { %>
         <%   var subcatItems = tagsBySubcat[subcat] || []; %>
-        <%   if (subcat === 'autre') subcatItems = subcatItems.concat(tagsBySubcat['']); %>
         <%   if (subcatItems.length === 0) { return; } %>
-        <div class="tags-subcat-group">
+        <div class="tags-subcat-group" data-subcat="<%= subcat %>">
           <span class="tags-subcat-label"><%= SUBCAT_LABELS[subcat] %></span>
           <div class="tags-cat-body">
             <% subcatItems.forEach(function(item) { %>
@@ -285,16 +286,6 @@
     if (!show) { activeSubcat = ""; if (subcatFilter) subcatFilter.querySelectorAll(".tag-chip").forEach(function(b){ b.classList.toggle("active", (b.dataset.subcatFilter || "") === ""); }); }
   }
 
-  function hasAnyFilter() {
-    var q = searchInput ? searchInput.value.trim() : "";
-    if (q) return true;
-    if (activeCat) return true;
-    if (activeSubcat) return true;
-    if (hideVariants) return true;
-    if (Object.values(typeStates).some(function (v) { return v > 0; })) return true;
-    return false;
-  }
-
   function applyFilters() {
     var q = searchInput ? searchInput.value.trim().toLowerCase() : "";
     var includedTypes = [], excludedTypes = [];
@@ -302,19 +293,49 @@
       if (typeStates[t] === 1) includedTypes.push(t);
       else if (typeStates[t] === 2) excludedTypes.push(t);
     });
+    var hasSearch   = !!q;
+    var hasType     = includedTypes.length > 0 || excludedTypes.length > 0;
 
-    if (!hasAnyFilter()) {
-      // ── Mode groupé : pas de filtre actif ──
+    if (!hasSearch && !hasType && !hideVariants) {
+      // ── Mode groupé : cat/subcat filtrés directement sur les groupes ──
       groupedView.hidden = false;
       filteredView.hidden = true;
       if (emptyMsg) emptyMsg.hidden = true;
-      if (countDisplay) countDisplay.textContent = TOTAL;
+
+      var visibleCount = 0;
+      groupedView.querySelectorAll(".tags-cat-group").forEach(function (group) {
+        var matchCat = !activeCat || group.dataset.category === activeCat;
+        group.hidden = !matchCat;
+        if (matchCat) {
+          // Filtrer les sous-groupes si présents
+          var subcatGroups = group.querySelectorAll(".tags-subcat-group");
+          subcatGroups.forEach(function (sg) {
+            // sg.dataset.subcat = '' signifie "sans catégorie"
+            var matchSub = !activeSubcat || (sg.dataset.subcat || "") === activeSubcat;
+            sg.hidden = !matchSub;
+          });
+          // Compter les items dans les groupes visibles
+          group.querySelectorAll(".tags-item").forEach(function (item) {
+            // Pour les items hors sous-groupe (catégories plates)
+            // vérifier subcat si filtre subcat actif
+            var parentSg = item.closest(".tags-subcat-group");
+            if (parentSg && parentSg.hidden) return;
+            visibleCount++;
+          });
+        }
+      });
+
+      if (countDisplay) countDisplay.textContent = (activeCat || activeSubcat) ? visibleCount : TOTAL;
       return;
     }
 
-    // ── Mode filtré : liste plate ──
+    // ── Mode filtré : liste plate (recherche / type / hideVariants) ──
     groupedView.hidden = true;
     filteredView.hidden = false;
+
+    // Réafficher tous les items du grouped view (pour les prochains appels)
+    groupedView.querySelectorAll(".tags-cat-group").forEach(function(g){ g.hidden = false; });
+    groupedView.querySelectorAll(".tags-subcat-group").forEach(function(g){ g.hidden = false; });
 
     var visible = 0;
     filteredView.querySelectorAll(".tags-item").forEach(function (item) {
@@ -322,8 +343,10 @@
       var t         = item.dataset.type || "normal";
       var matchType = (includedTypes.length === 0 || includedTypes.indexOf(t) !== -1)
                     && excludedTypes.indexOf(t) === -1;
+      var itemSubcat = item.dataset.subcategory || "";
+      if (itemSubcat === "autre") itemSubcat = "";
       var matchCat    = !activeCat || item.dataset.category === activeCat;
-      var matchSubcat = !activeSubcat || (item.dataset.subcategory || "") === activeSubcat;
+      var matchSubcat = !activeSubcat || itemSubcat === activeSubcat;
       var matchVariant = !hideVariants || !item.dataset.parent;
       var show = matchQ && matchType && matchCat && matchSubcat && matchVariant;
       item.hidden = !show;
