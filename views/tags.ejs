@@ -63,6 +63,10 @@
         <% } %>
 
         <% if (currentUser && currentUser.isAdmin) { %>
+        <%# ─ Admin : mode sélection multiple ─ %>
+        <div class="wiki-filter-section">
+          <button type="button" class="tags-select-mode-btn" id="tags-select-mode-btn">Sélectionner</button>
+        </div>
         <%# ─ Admin : ajouter des tags par catégorie ─ %>
         <div class="wiki-filter-section">
           <span class="wiki-filter-label">Ajouter des tags</span>
@@ -154,6 +158,19 @@
     </div>
 
     <p class="tags-empty" id="tags-empty" hidden>Aucun tag trouv&eacute;.</p>
+
+    <% if (currentUser && currentUser.isAdmin) { %>
+    <div class="tags-bulk-bar" id="tags-bulk-bar" hidden>
+      <span class="tags-bulk-count" id="tags-bulk-count">0 sélectionné(s)</span>
+      <select class="tags-bulk-select" id="tags-bulk-cat-select">
+        <% CAT_ORDER.forEach(function(cat) { %>
+        <option value="<%= cat %>"><%= CAT_LABELS[cat] %></option>
+        <% }) %>
+      </select>
+      <button type="button" class="tags-bulk-apply-btn" id="tags-bulk-apply-btn" disabled>Assigner</button>
+      <button type="button" class="tags-bulk-cancel-btn" id="tags-bulk-cancel-btn">Annuler</button>
+    </div>
+    <% } %>
   </div>
 
   <%# Popup de resultats/admin : voir partials/tag-popup.ejs %>
@@ -487,6 +504,110 @@
         }
       });
     });
+  }
+
+  /* ── Admin : mode sélection multiple pour réassigner des catégories ── */
+  if (isAdmin) {
+    var selectModeBtn  = document.getElementById("tags-select-mode-btn");
+    var bulkBar        = document.getElementById("tags-bulk-bar");
+    var bulkCount      = document.getElementById("tags-bulk-count");
+    var bulkCatSelect  = document.getElementById("tags-bulk-cat-select");
+    var bulkApplyBtn   = document.getElementById("tags-bulk-apply-btn");
+    var bulkCancelBtn  = document.getElementById("tags-bulk-cancel-btn");
+    var selectMode     = false;
+    var selectedTags   = new Set();
+
+    function enterSelectMode() {
+      selectMode = true;
+      selectedTags.clear();
+      if (selectModeBtn) { selectModeBtn.classList.add("active"); selectModeBtn.textContent = "Sélection active"; }
+      if (bulkBar) bulkBar.hidden = false;
+      updateBulkCount();
+    }
+
+    function exitSelectMode() {
+      selectMode = false;
+      selectedTags.clear();
+      if (selectModeBtn) { selectModeBtn.classList.remove("active"); selectModeBtn.textContent = "Sélectionner"; }
+      if (bulkBar) bulkBar.hidden = true;
+      document.querySelectorAll(".tags-item--selected").forEach(function (el) {
+        el.classList.remove("tags-item--selected");
+      });
+    }
+
+    function updateBulkCount() {
+      var n = selectedTags.size;
+      if (bulkCount) bulkCount.textContent = n + " sélectionné" + (n > 1 ? "s" : "");
+      if (bulkApplyBtn) bulkApplyBtn.disabled = n === 0;
+    }
+
+    if (selectModeBtn) {
+      selectModeBtn.addEventListener("click", function () {
+        if (selectMode) exitSelectMode(); else enterSelectMode();
+      });
+    }
+    if (bulkCancelBtn) bulkCancelBtn.addEventListener("click", exitSelectMode);
+
+    // Intercepter les clicks sur les tags quand en mode sélection
+    if (grid) {
+      grid.addEventListener("click", function (e) {
+        if (!selectMode) return;
+        if (e.target.closest(".tags-item-wiki-link")) return;
+        if (e.target.closest(".tags-cat-more-btn"))   return;
+        var item = e.target.closest(".tags-item");
+        if (!item) return;
+        e.stopImmediatePropagation();
+        var tag = item.dataset.tag;
+        if (selectedTags.has(tag)) {
+          selectedTags.delete(tag);
+          item.classList.remove("tags-item--selected");
+        } else {
+          selectedTags.add(tag);
+          item.classList.add("tags-item--selected");
+        }
+        updateBulkCount();
+      }, true); // capture pour prendre la main avant openTagPopup
+    }
+
+    if (bulkApplyBtn) {
+      bulkApplyBtn.addEventListener("click", function () {
+        if (!selectedTags.size) return;
+        var cat = bulkCatSelect ? bulkCatSelect.value : "autre";
+        bulkApplyBtn.disabled = true;
+        bulkApplyBtn.textContent = "…";
+
+        var promises = Array.from(selectedTags).map(function (tag) {
+          return fetch("/api/tags/category", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tag: tag, category: cat })
+          }).then(function (r) { return r.json(); }).then(function (res) {
+            if (res.ok) {
+              // Mettre à jour dataset dans les deux vues
+              document.querySelectorAll('.tags-item[data-tag="' + tag + '"]').forEach(function (el) {
+                el.dataset.category = cat;
+              });
+            }
+            return { tag: tag, ok: !!res.ok };
+          });
+        });
+
+        Promise.all(promises).then(function (results) {
+          var n = results.filter(function (r) { return r.ok; }).length;
+          bulkApplyBtn.textContent = "Assigner";
+          exitSelectMode();
+          applyFilters();
+          if (createFeedback) {
+            createFeedback.textContent = n + " tag" + (n > 1 ? "s" : "") + " réassigné" + (n > 1 ? "s" : "") + " !";
+            createFeedback.style.color = "var(--accent)";
+            createFeedback.hidden = false;
+          }
+        }).catch(function () {
+          bulkApplyBtn.textContent = "Assigner";
+          bulkApplyBtn.disabled = false;
+        });
+      });
+    }
   }
 
 })();

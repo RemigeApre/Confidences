@@ -9338,6 +9338,9 @@ body.wiki-todo-open { overflow: hidden; }
 
 /* Grille de tags */
 .tags-grid {
+  display: block;
+}
+#tags-filtered-view {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   gap: 0.45rem;
@@ -9670,8 +9673,8 @@ body.wiki-todo-open { overflow: hidden; }
 }
 .tags-cat-more-btn:hover { border-color: var(--accent); color: var(--accent); }
 .tags-cat-body {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   gap: 0.45rem;
 }
 
@@ -9690,6 +9693,69 @@ body.wiki-todo-open { overflow: hidden; }
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.25rem 0.5rem;
+}
+
+/* Admin : mode sélection multiple pour réassigner des catégories */
+.tags-select-mode-btn {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.tags-select-mode-btn:hover,
+.tags-select-mode-btn.active { border-color: var(--accent); color: var(--accent); }
+
+.tags-item.tags-item--selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.tags-bulk-bar {
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  margin-top: 1rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+}
+.tags-bulk-count { font-size: 0.85rem; color: var(--fg-muted); flex: 1; }
+.tags-bulk-select {
+  font-size: 0.82rem;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+}
+.tags-bulk-apply-btn {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.tags-bulk-apply-btn:disabled { opacity: 0.45; cursor: default; }
+.tags-bulk-cancel-btn {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
 }
 
 /* Admin section dans le popup */
