@@ -2,6 +2,18 @@
 <main class="container" style="max-width: 720px; margin: 0 auto">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste ? protagoniste.name : 'Nouveau protagoniste', navBack: protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' }) %>
 
+  <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="wf-back-btn">&#8592; Retour</a>
+  <div class="wf-actions-right">
+    <button type="submit" form="prot-form" class="wf-save-btn">Enregistrer</button>
+    <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="wf-cancel-link">Annuler</a>
+  </div>
+  <% if (protagoniste) { %>
+  <form method="POST" action="/protagonistes/<%= protagoniste.id %>/delete" class="wf-delete-form-fixed"
+    onsubmit="return confirm('Supprimer ce protagoniste d\u00e9finitivement ?')">
+    <button type="submit" class="wf-delete-btn-fixed" title="Supprimer le protagoniste">&#128465;</button>
+  </form>
+  <% } %>
+
   <div class="nv-form-wrap">
     <form method="POST" action="<%= protagoniste ? '/protagonistes/' + protagoniste.id + '/update' : '/protagonistes/new' %>"
       class="nv-form" id="prot-form">
@@ -40,16 +52,13 @@
         <% } %>
       </div>
 
+      <div class="wiki-form-actions wf-mobile-actions">
+        <button type="submit">Enregistrer</button>
+        <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="link-button">Annuler</a>
+      </div>
     </form>
   </div>
 
-  <button type="submit" form="prot-form" class="qe-save-fab">Enregistrer</button>
-  <% if (protagoniste) { %>
-    <form method="POST" action="/protagonistes/<%= protagoniste.id %>/delete" class="qe-delete-form"
-      onsubmit="return confirm('Supprimer ce protagoniste définitivement ?')">
-      <button type="submit" class="qe-delete-fab">&#128465;</button>
-    </form>
-  <% } %>
 
   <script>
   (function() {

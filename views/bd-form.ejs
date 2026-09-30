@@ -1,7 +1,17 @@
 <%- include('partials/head', { title: 'BD : ' + (book ? 'Modifier ' + book.title : 'Nouvelle BD') }) %>
 <main class="container">
   <%- include('partials/top-nav', { config: config }) %>
-  <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="link-button">&larr; Retour</a>
+  <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="wf-back-btn">&#8592; Retour</a>
+  <div class="wf-actions-right">
+    <button type="submit" form="bd-form" class="wf-save-btn">Enregistrer</button>
+    <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="wf-cancel-link">Annuler</a>
+  </div>
+  <% if (book) { %>
+  <form method="POST" action="/bd/<%= book.id %>/delete" class="wf-delete-form-fixed"
+    onsubmit="return confirm('Supprimer cette BD ?')">
+    <button type="submit" class="wf-delete-btn-fixed" title="Supprimer la BD">&#128465;</button>
+  </form>
+  <% } %>
 
   <h1 class="section-title-h1"><%= book ? 'Modifier' : 'Nouvelle BD' %></h1>
 
@@ -100,13 +110,9 @@
       <div class="bd-new-previews" id="bd-new-previews"></div>
     </div>
 
-    <div class="wiki-form-actions">
+    <div class="wiki-form-actions wf-mobile-actions">
       <button type="submit">Enregistrer</button>
-      <% if (book) { %>
-        <form method="POST" action="/bd/<%= book.id %>/delete" style="display:inline" onsubmit="return confirm('Supprimer cette BD ?')">
-          <button type="submit" class="link-delete-btn-text">Supprimer</button>
-        </form>
-      <% } %>
+      <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="link-button">Annuler</a>
     </div>
   </form>
 </main>

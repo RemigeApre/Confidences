@@ -1,7 +1,15 @@
 <%- include('partials/head', { title: 'Images : Modifier l\'image' }) %>
 <main class="container">
   <%- include('partials/top-nav', { config: config }) %>
-  <a href="/galerie" class="link-button">&larr; Retour à la galerie</a>
+  <a href="/galerie" class="wf-back-btn">&#8592; Retour</a>
+  <div class="wf-actions-right">
+    <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
+    <a href="/galerie" class="wf-cancel-link">Annuler</a>
+  </div>
+  <form method="POST" action="/galerie/<%= image.id %>/delete" class="wf-delete-form-fixed"
+    onsubmit="return confirm('Supprimer cette image d\u00e9finitivement ?')">
+    <button type="submit" class="wf-delete-btn-fixed" title="Supprimer l&rsquo;image">&#128465;</button>
+  </form>
 
   <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form gf-form" id="gf-form">
 
@@ -129,7 +137,7 @@
       </div>
     </div>
 
-    <div class="wiki-form-actions">
+    <div class="wiki-form-actions wf-mobile-actions">
       <button type="submit">Enregistrer</button>
       <a href="/galerie" class="link-button">Annuler</a>
     </div>
@@ -166,9 +174,6 @@
     <p id="gf-series-msg" class="gs-add-msg" hidden></p>
   </div>
 
-  <form method="POST" action="/galerie/<%= image.id %>/delete" class="gallery-delete-form-page" onsubmit="return confirm('Supprimer cette image definitivement ?')">
-    <button type="submit" class="link-delete-btn-text">Supprimer cette image</button>
-  </form>
 </main>
 <script>
 (function () {

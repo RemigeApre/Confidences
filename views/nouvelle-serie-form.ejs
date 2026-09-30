@@ -2,9 +2,21 @@
 <main class="container" style="max-width: 720px; margin: 0 auto">
   <%- include('partials/top-nav', { config: config, navTitle: serie ? serie.title : 'Nouvelle série', navBack: serie ? '/nouvelles/series/' + serie.id : '/nouvelles' }) %>
 
+  <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="wf-back-btn">&#8592; Retour</a>
+  <div class="wf-actions-right">
+    <button type="submit" form="nv-serie-form" class="wf-save-btn">Enregistrer</button>
+    <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="wf-cancel-link">Annuler</a>
+  </div>
+  <% if (serie) { %>
+  <form method="POST" action="/nouvelles/series/<%= serie.id %>/delete" class="wf-delete-form-fixed"
+    onsubmit="return confirm('Supprimer cette s\u00e9rie ? Les chapitres ne seront pas supprim\u00e9s, seulement d\u00e9tach\u00e9s.')">
+    <button type="submit" class="wf-delete-btn-fixed" title="Supprimer la série">&#128465;</button>
+  </form>
+  <% } %>
+
   <div class="nv-form-wrap">
     <form method="POST" action="<%= serie ? '/nouvelles/series/' + serie.id + '/update' : '/nouvelles/series/new' %>"
-      class="nv-form" id="nv-serie-form">
+      class="nv-serie-form" id="nv-serie-form">
 
       <input type="text" name="title" class="nv-form-title-input" required maxlength="300"
         value="<%= serie ? serie.title : '' %>" placeholder="Titre de la série…" />
@@ -13,16 +25,12 @@
         maxlength="1000" placeholder="Description / synopsis de la série (max 1000 caractères)…"
         style="resize:vertical"><%= serie ? serie.description : '' %></textarea>
 
+      <div class="wiki-form-actions wf-mobile-actions">
+        <button type="submit">Enregistrer</button>
+        <a href="<%= serie ? '/nouvelles/series/' + serie.id : '/nouvelles' %>" class="link-button">Annuler</a>
+      </div>
     </form>
   </div>
-
-  <button type="submit" form="nv-serie-form" class="qe-save-fab">Enregistrer</button>
-  <% if (serie) { %>
-    <form method="POST" action="/nouvelles/series/<%= serie.id %>/delete" class="qe-delete-form"
-      onsubmit="return confirm('Supprimer cette série ? Les chapitres ne seront pas supprimés, seulement détachés.')">
-      <button type="submit" class="qe-delete-fab">&#128465;</button>
-    </form>
-  <% } %>
 
 </main>
 <%- include('partials/foot') %>

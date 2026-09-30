@@ -2,6 +2,18 @@
 <main class="container" style="max-width: 860px; margin: 0 auto">
   <%- include('partials/top-nav', { config: config, navTitle: nouvelle ? nouvelle.title : 'Nouvelle histoire', navBack: nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' }) %>
 
+  <a href="<%= nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' %>" class="wf-back-btn">&#8592; Retour</a>
+  <div class="wf-actions-right">
+    <button type="submit" form="nv-form" class="wf-save-btn">Enregistrer</button>
+    <a href="<%= nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' %>" class="wf-cancel-link">Annuler</a>
+  </div>
+  <% if (nouvelle) { %>
+  <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" class="wf-delete-form-fixed"
+    onsubmit="return confirm('Supprimer cette nouvelle d\u00e9finitivement ?')">
+    <button type="submit" class="wf-delete-btn-fixed" title="Supprimer la nouvelle">&#128465;</button>
+  </form>
+  <% } %>
+
   <div class="nv-form-wrap">
     <form method="POST" action="<%= nouvelle ? '/nouvelles/' + nouvelle.id + '/update' : '/nouvelles/new' %>"
       class="nv-form" id="nv-form">
@@ -130,16 +142,13 @@
         placeholder="Écrivez votre nouvelle ici…"
         style="resize:vertical"><%= nouvelle ? nouvelle.content : '' %></textarea>
 
+      <div class="wiki-form-actions wf-mobile-actions">
+        <button type="submit">Enregistrer</button>
+        <a href="<%= nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' %>" class="link-button">Annuler</a>
+      </div>
     </form>
   </div>
 
-  <button type="submit" form="nv-form" class="qe-save-fab">Enregistrer</button>
-  <% if (nouvelle) { %>
-    <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" class="qe-delete-form"
-      onsubmit="return confirm('Supprimer cette nouvelle définitivement ?')">
-      <button type="submit" class="qe-delete-fab">&#128465;</button>
-    </form>
-  <% } %>
 
   <script>
   (function () {
