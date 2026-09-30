@@ -62,50 +62,38 @@
     <linearGradient id="rl" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(28,65%,44%)"/><stop offset="100%" stop-color="hsl(28,60%,30%)"/></linearGradient>
     <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(44,95%,62%)"/><stop offset="100%" stop-color="hsl(38,85%,40%)"/></linearGradient>
   </defs>
-  <!-- Corps -->
   <rect x="6" y="44" width="88" height="32" rx="4" fill="url(#rb)" stroke="hsl(44,80%,42%)" stroke-width="2"/>
-  <!-- Planches -->
   <line x1="7" y1="58" x2="93" y2="58" stroke="hsl(28,55%,18%)" stroke-width="1.2" opacity=".5"/>
   <line x1="7" y1="68" x2="93" y2="68" stroke="hsl(28,55%,18%)" stroke-width="1.2" opacity=".5"/>
-  <!-- Couvercle -->
   <path d="M6 46 Q6 18 50 18 Q94 18 94 46 Z" fill="url(#rl)" stroke="hsl(44,80%,42%)" stroke-width="2"/>
-  <!-- Reflet couvercle -->
   <path d="M16 40 Q30 24 50 22 Q70 24 84 40" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- Bande centrale -->
   <rect x="4" y="42" width="92" height="7" rx="2.5" fill="url(#rg)" stroke="hsl(38,75%,32%)" stroke-width="1.2"/>
-  <!-- Charnières -->
   <rect x="12" y="40" width="12" height="11" rx="2.5" fill="url(#rg)" stroke="hsl(38,75%,32%)" stroke-width="1"/>
   <rect x="76" y="40" width="12" height="11" rx="2.5" fill="url(#rg)" stroke="hsl(38,75%,32%)" stroke-width="1"/>
-  <!-- Rivets -->
   <circle cx="18" cy="61" r="2.5" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width=".8"/>
   <circle cx="82" cy="61" r="2.5" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width=".8"/>
   <circle cx="18" cy="70" r="2.5" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width=".8"/>
   <circle cx="82" cy="70" r="2.5" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width=".8"/>
-  <!-- Cadenas -->
   <rect x="40" y="42" width="20" height="13" rx="3" fill="url(#rg)" stroke="hsl(38,70%,30%)" stroke-width="1.2"/>
   <path d="M44 42 Q44 35 50 35 Q56 35 56 42" fill="none" stroke="url(#rg)" stroke-width="2.5" stroke-linecap="round"/>
   <circle cx="50" cy="49" r="3" fill="hsl(28,55%,18%)"/>
-  <!-- Gem centrale -->
   <polygon points="50,22 54,27 50,31 46,27" fill="hsl(270,80%,68%)" stroke="hsl(270,70%,50%)" stroke-width="1" opacity=".9"/>
 </svg>
     </div>
 
-    <%# Carte récompense (une à la fois) %>
+    <%# Carte récompense — image seule + halo rareté + hint doublon %>
     <div class="lootbox-reveal-card" id="lootbox-reveal-card" hidden>
-      <div class="lootbox-reveal-rarity" id="lootbox-reveal-rarity"></div>
       <div class="lootbox-reveal-img-wrap" id="lootbox-reveal-img-wrap" title="Cliquer pour agrandir">
         <img id="lootbox-reveal-img" src="" alt="" class="lootbox-reveal-img" />
         <div class="lootbox-reveal-img-placeholder" id="lootbox-reveal-placeholder">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="4"/><circle cx="17" cy="17" r="5"/><path d="M4 34l12-12 8 8 6-6 14 14"/></svg>
         </div>
       </div>
-      <p class="lootbox-reveal-title" id="lootbox-reveal-title"></p>
-      <p class="lootbox-reveal-hint" id="lootbox-reveal-hint">Cette image est maintenant disponible comme photo de profil.</p>
+      <p class="lootbox-reveal-hint" id="lootbox-reveal-hint" hidden>Doublon — converti en pi&egrave;ces.</p>
     </div>
 
-    <%# Résultats "tout ouvrir" %>
+    <%# Résultats "tout ouvrir" — grille large sans titre %>
     <div class="lootbox-batch-results" id="lootbox-batch-results" hidden>
-      <p class="lootbox-batch-title" id="lootbox-batch-title"></p>
       <div class="lootbox-batch-grid" id="lootbox-batch-grid"></div>
     </div>
 
@@ -117,9 +105,32 @@
   </div>
 </div>
 
-<%# ── Zoom image ────────────────────────────────────────────────────── %>
-<div class="lootbox-zoom-overlay" id="lootbox-zoom-overlay" hidden aria-modal="true" role="dialog">
-  <img class="lootbox-zoom-img" id="lootbox-zoom-img" src="" alt="" />
+<%# ── Inspecteur zoom — navigation + choix avatar ────────────────── %>
+<div class="lootbox-zoom-overlay" id="lootbox-zoom-overlay" hidden aria-modal="true" role="dialog" aria-label="Inspection de récompense">
+  <button class="lootbox-zoom-close" id="lootbox-zoom-close" aria-label="Fermer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+
+  <button class="lootbox-zoom-nav lootbox-zoom-prev" id="lootbox-zoom-prev" aria-label="Précédent" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+
+  <div class="lootbox-zoom-center">
+    <div class="lootbox-zoom-img-outer" id="lootbox-zoom-img-outer">
+      <img class="lootbox-zoom-img" id="lootbox-zoom-img" src="" alt="" />
+    </div>
+    <div class="lootbox-zoom-footer">
+      <span class="lootbox-zoom-counter" id="lootbox-zoom-counter" hidden></span>
+      <button class="lootbox-zoom-avatar-btn" id="lootbox-zoom-avatar-btn">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="7" r="4"/><path d="M2 18c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        Utiliser comme photo de profil
+      </button>
+    </div>
+  </div>
+
+  <button class="lootbox-zoom-nav lootbox-zoom-next" id="lootbox-zoom-next" aria-label="Suivant" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
 </div>
 
 <script src="/lootbox.js?v=<%= assetVersion %>"></script>

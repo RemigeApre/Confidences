@@ -1,4 +1,4 @@
-/* Lootbox widget — état, animation, ouverture, zoom, 3D tilt */
+/* Lootbox widget — état, animation, ouverture, zoom, navigation */
 (function () {
   "use strict";
 
@@ -19,49 +19,46 @@
   // Ouverture normale
   var chest       = document.getElementById("lootbox-reveal-chest");
   var card        = document.getElementById("lootbox-reveal-card");
-  var rarityEl    = document.getElementById("lootbox-reveal-rarity");
   var imgWrap     = document.getElementById("lootbox-reveal-img-wrap");
   var imgEl       = document.getElementById("lootbox-reveal-img");
   var placeholder = document.getElementById("lootbox-reveal-placeholder");
-  var titleEl     = document.getElementById("lootbox-reveal-title");
   var hintEl      = document.getElementById("lootbox-reveal-hint");
   var closeBtn    = document.getElementById("lootbox-reveal-close");
   var nextBtn     = document.getElementById("lootbox-reveal-next");
 
   // Résultats batch
   var batchPanel  = document.getElementById("lootbox-batch-results");
-  var batchTitle  = document.getElementById("lootbox-batch-title");
   var batchGrid   = document.getElementById("lootbox-batch-grid");
 
   // Zoom
-  var zoomOverlay = document.getElementById("lootbox-zoom-overlay");
-  var zoomImg     = document.getElementById("lootbox-zoom-img");
+  var zoomOverlay  = document.getElementById("lootbox-zoom-overlay");
+  var zoomImg      = document.getElementById("lootbox-zoom-img");
+  var zoomClose    = document.getElementById("lootbox-zoom-close");
+  var zoomPrev     = document.getElementById("lootbox-zoom-prev");
+  var zoomNext     = document.getElementById("lootbox-zoom-next");
+  var zoomCounter  = document.getElementById("lootbox-zoom-counter");
+  var zoomAvatarBtn = document.getElementById("lootbox-zoom-avatar-btn");
+  var zoomImgOuter = document.getElementById("lootbox-zoom-img-outer");
 
-  // Bouton coffre de la page /jeu (optionnel)
+  // Coffre page /jeu (optionnel)
   var jeuBtn   = document.getElementById("jeu-lootbox-btn");
   var jeuCount = document.getElementById("jeu-lootbox-count");
   var jeuLabel = document.getElementById("jeu-lootbox-label");
 
   if (!overlay) return;
 
-  // Sur la page /jeu, le widget flottant est remplacé par le grand coffre
-  if (jeuBtn && widget) {
-    widget.setAttribute('hidden', '');
-  }
+  // Sur la page /jeu, le widget flottant est masqué
+  if (jeuBtn && widget) widget.setAttribute("hidden", "");
 
-  // ── État ────────────────────────────────────────────────────────────────────
-  var _count   = 0;
-  var _opening = false;  // empêche les doubles clics
+  // ── État ─────────────────────────────────────────────────────────────────────
+  var _count          = 0;
+  var _opening        = false;
+  var _sessionRewards = [];   // toutes les récompenses ouvertes depuis l'overlay
+  var _zoomList       = [];   // liste courante dans le zoom (batch ou single)
+  var _zoomIdx        = 0;    // position courante dans _zoomList
+  var _avatarSetId    = null; // imageId déjà défini comme avatar cette session
 
-  var RARITY_LABELS = {
-    common:    "Commun",
-    rare:      "Rare",
-    epic:      "Épique",
-    legendary: "Légendaire",
-    mythic:    "Mythique",
-  };
-
-  // ── Compteur ────────────────────────────────────────────────────────────────
+  // ── Compteur ─────────────────────────────────────────────────────────────────
   function refreshCount() {
     fetch("/lootbox/count")
       .then(function (r) { return r.json(); })
@@ -71,8 +68,6 @@
 
   function setCount(n) {
     _count = n;
-
-    // Widget flottant (toutes les pages sauf /jeu)
     if (widget && btn && countEl && !jeuBtn) {
       if (n > 0) {
         widget.removeAttribute("hidden");
@@ -84,8 +79,6 @@
         btn.removeAttribute("data-has-loot");
       }
     }
-
-    // Coffre de la page /jeu
     if (jeuBtn) {
       if (n > 0) {
         jeuBtn.removeAttribute("disabled");
@@ -101,9 +94,11 @@
     }
   }
 
-  // ── Déclencheurs ────────────────────────────────────────────────────────────
+  // ── Déclencheurs ─────────────────────────────────────────────────────────────
   function onTrigger() {
     if (_opening || _count <= 0) return;
+    _sessionRewards = [];
+    _avatarSetId = null;
     if (_count >= 2) {
       showChoice();
     } else {
@@ -114,35 +109,34 @@
   if (btn)    btn.addEventListener("click", onTrigger);
   if (jeuBtn) jeuBtn.addEventListener("click", onTrigger);
 
-  // ── Écran de choix ──────────────────────────────────────────────────────────
+  // ── Écran de choix ───────────────────────────────────────────────────────────
   function showChoice() {
     _opening = true;
     overlay.removeAttribute("hidden");
     hideAll();
-    choiceMsg.textContent = "Vous avez " + _count + " lootbox" + (_count > 1 ? "es" : "") + " !";
+    choiceMsg.textContent = "Vous avez " + _count + " lootbox" + (_count > 1 ? "es" : "") + "\u00a0!";
     if (choiceCountLbl) choiceCountLbl.textContent = _count;
     choicePanel.removeAttribute("hidden");
   }
 
-  choiceOneBtn  && choiceOneBtn.addEventListener("click", function () {
+  choiceOneBtn    && choiceOneBtn.addEventListener("click", function () {
     choicePanel.setAttribute("hidden", "");
     startOpeningOne();
   });
 
-  choiceAllBtn  && choiceAllBtn.addEventListener("click", function () {
+  choiceAllBtn    && choiceAllBtn.addEventListener("click", function () {
     choicePanel.setAttribute("hidden", "");
     startOpeningAll();
   });
 
-  choiceCancelBtn && choiceCancelBtn.addEventListener("click", function () {
-    closeOverlay();
-  });
+  choiceCancelBtn && choiceCancelBtn.addEventListener("click", closeOverlay);
 
-  // ── Ouverture une par une ───────────────────────────────────────────────────
+  // ── Ouverture une par une ────────────────────────────────────────────────────
   function startOpeningOne() {
     _opening = true;
     showChestAnimation(function (reward) {
       if (!reward) { closeOverlay(); return; }
+      _sessionRewards.push(reward);
       setCount(_count - 1);
       showRewardCard(reward, _count > 0);
     });
@@ -161,9 +155,7 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            chest.classList.add("lootbox-chest--opening");
-          });
+          requestAnimationFrame(function () { chest.classList.add("lootbox-chest--opening"); });
         });
         setTimeout(function () {
           chest.classList.add("lootbox-chest--done");
@@ -177,12 +169,13 @@
 
   function showRewardCard(reward, hasNext) {
     var rarity = reward.rarity || "common";
-    rarityEl.textContent = RARITY_LABELS[rarity] || rarity;
-    rarityEl.className = "lootbox-reveal-rarity lootbox-reveal-rarity--" + rarity;
-    titleEl.textContent = reward.title || "Image débloquée";
+
+    // Halo rareté via data-rarity
+    imgWrap.setAttribute("data-rarity", rarity);
 
     if (reward.thumb) {
       imgEl.src = reward.thumb;
+      imgEl.alt = "";
       imgEl.removeAttribute("hidden");
       placeholder.setAttribute("hidden", "");
     } else {
@@ -191,9 +184,9 @@
     }
 
     if (reward.isDuplicate) {
-      hintEl.textContent = "Déjà possédé — converti en pièces.";
+      hintEl.removeAttribute("hidden");
     } else {
-      hintEl.textContent = "Cette image est maintenant disponible comme photo de profil.";
+      hintEl.setAttribute("hidden", "");
     }
 
     card.removeAttribute("hidden");
@@ -217,25 +210,46 @@
     startOpeningOne();
   });
 
-  // ── Ouverture de toutes les lootboxes ───────────────────────────────────────
+  // Clic sur la carte individuelle → zoom dans la session entière
+  imgWrap && imgWrap.addEventListener("click", function () {
+    if (imgEl && !imgEl.hasAttribute("hidden") && imgEl.src) {
+      var idx = _sessionRewards.length - 1;
+      openZoom(_sessionRewards, idx);
+    }
+  });
+
+  // ── 3D tilt sur la carte récompense ─────────────────────────────────────────
+  if (card) {
+    card.addEventListener("mousemove", function (e) {
+      if (card.hasAttribute("hidden")) return;
+      var rect = card.getBoundingClientRect();
+      var dx = (e.clientX - rect.left - rect.width  / 2) / (rect.width  / 2);
+      var dy = (e.clientY - rect.top  - rect.height / 2) / (rect.height / 2);
+      card.style.transition = "none";
+      card.style.transform = "perspective(700px) rotateY(" + (dx * 14) + "deg) rotateX(" + (-dy * 10) + "deg) scale(1.02)";
+    });
+    card.addEventListener("mouseleave", function () {
+      card.style.transition = "transform .4s cubic-bezier(.22,1,.36,1)";
+      card.style.transform  = "perspective(700px) rotateY(0deg) rotateX(0deg) scale(1)";
+      setTimeout(function () { if (card) card.style.transition = ""; }, 420);
+    });
+  }
+
+  // ── Ouverture de toutes les lootboxes ────────────────────────────────────────
   function startOpeningAll() {
     _opening = true;
     var total = _count;
     var results = [];
     hideAll();
 
-    // Afficher un état "chargement" pendant les appels
-    if (batchTitle) {
-      batchTitle.textContent = "Ouverture en cours…";
-    }
-    batchGrid.innerHTML = "";
+    // Indicateur de chargement : grille vide visible
+    while (batchGrid.firstChild) batchGrid.removeChild(batchGrid.firstChild);
     batchPanel.removeAttribute("hidden");
 
-    // Ouvrir séquentiellement (SQLite synchrone côté serveur → pas de race condition)
     function openNext(remaining) {
       if (remaining <= 0) {
-        // Tout ouvert : afficher les résultats
         setCount(0);
+        results.forEach(function (r) { _sessionRewards.push(r); });
         renderBatchResults(results);
         closeBtn.removeAttribute("hidden");
         return;
@@ -247,9 +261,7 @@
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (data.ok && data.reward) {
-            results.push(data.reward);
-          }
+          if (data.ok && data.reward) results.push(data.reward);
           openNext(remaining - 1);
         })
         .catch(function () { openNext(remaining - 1); });
@@ -259,12 +271,9 @@
   }
 
   function renderBatchResults(rewards) {
-    var dupes = rewards.filter(function (r) { return r.isDuplicate; }).length;
-    batchTitle.textContent = rewards.length + " récompense" + (rewards.length > 1 ? "s" : "") + " obtenues"
-      + (dupes > 0 ? " · " + dupes + " doublon" + (dupes > 1 ? "s" : "") + " → pièces" : "");
-
     while (batchGrid.firstChild) batchGrid.removeChild(batchGrid.firstChild);
-    rewards.forEach(function (reward) {
+
+    rewards.forEach(function (reward, i) {
       var rarity = reward.rarity || "common";
       var item = document.createElement("div");
       item.className = "lootbox-batch-card lootbox-batch-card--" + rarity
@@ -272,21 +281,22 @@
 
       var imgDiv = document.createElement("div");
       imgDiv.className = "lootbox-batch-card-img";
+      imgDiv.setAttribute("data-rarity", rarity);
+
       if (reward.thumb) {
         var img = document.createElement("img");
         img.src = reward.thumb;
-        img.alt = reward.title || "";
+        img.alt = "";
         img.loading = "lazy";
         imgDiv.appendChild(img);
-        // Clic pour zoom
-        imgDiv.addEventListener("click", function () { openZoom(reward.thumb); });
         imgDiv.style.cursor = "zoom-in";
+        // Fermeture pour capturer l'index correct
+        (function (idx) {
+          imgDiv.addEventListener("click", function () {
+            openZoom(rewards, idx);
+          });
+        }(i));
       }
-
-      var badge = document.createElement("span");
-      badge.className = "lootbox-batch-card-rarity lootbox-batch-card-rarity--" + rarity;
-      badge.textContent = RARITY_LABELS[rarity] || rarity;
-      imgDiv.appendChild(badge);
 
       if (reward.isDuplicate) {
         var dupeTag = document.createElement("span");
@@ -295,12 +305,7 @@
         imgDiv.appendChild(dupeTag);
       }
 
-      var titleDiv = document.createElement("p");
-      titleDiv.className = "lootbox-batch-card-title";
-      titleDiv.textContent = reward.title || "Sans titre";
-
       item.appendChild(imgDiv);
-      item.appendChild(titleDiv);
       batchGrid.appendChild(item);
     });
   }
@@ -308,9 +313,9 @@
   // ── Fermeture ────────────────────────────────────────────────────────────────
   function closeOverlay() {
     overlay.setAttribute("hidden", "");
+    closeZoom();
     hideAll();
     _opening = false;
-    // Rafraîchir si jamais le serveur avait plus de boîtes
     refreshCount();
   }
 
@@ -332,54 +337,137 @@
     if (e.target === overlay || e.target.classList.contains("lootbox-overlay-backdrop")) closeOverlay();
   });
 
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") {
-      if (zoomOverlay && !zoomOverlay.hasAttribute("hidden")) {
-        closeZoom();
-      } else if (!overlay.hasAttribute("hidden")) {
-        closeOverlay();
-      }
-    }
-  });
-
-  // ── 3D tilt sur la carte récompense ─────────────────────────────────────────
-  if (card) {
-    card.addEventListener("mousemove", function (e) {
-      if (card.hasAttribute("hidden")) return;
-      var rect = card.getBoundingClientRect();
-      var cx = rect.left + rect.width  / 2;
-      var cy = rect.top  + rect.height / 2;
-      var dx = (e.clientX - cx) / (rect.width  / 2);  // -1 … 1
-      var dy = (e.clientY - cy) / (rect.height / 2);  // -1 … 1
-      card.style.transition = "none";
-      card.style.transform = "perspective(700px) rotateY(" + (dx * 14) + "deg) rotateX(" + (-dy * 10) + "deg) scale(1.02)";
-    });
-
-    card.addEventListener("mouseleave", function () {
-      card.style.transition = "transform .4s cubic-bezier(.22,1,.36,1)";
-      card.style.transform  = "perspective(700px) rotateY(0deg) rotateX(0deg) scale(1)";
-      setTimeout(function () { if (card) card.style.transition = ""; }, 420);
-    });
+  // ── Zoom ─────────────────────────────────────────────────────────────────────
+  function openZoom(list, idx) {
+    if (!zoomOverlay || !zoomImg) return;
+    _zoomList = list || [];
+    _zoomIdx  = idx  || 0;
+    renderZoom();
+    zoomOverlay.removeAttribute("hidden");
   }
 
-  // ── Zoom image ───────────────────────────────────────────────────────────────
-  function openZoom(src) {
-    if (!zoomOverlay || !zoomImg || !src) return;
-    zoomImg.src = src;
-    zoomOverlay.removeAttribute("hidden");
+  function renderZoom() {
+    var reward = _zoomList[_zoomIdx];
+    if (!reward) return;
+
+    // Image
+    zoomImg.src = reward.thumb || "";
+    zoomImg.alt = "";
+
+    // Halo rareté sur le conteneur
+    if (zoomImgOuter) zoomImgOuter.setAttribute("data-rarity", reward.rarity || "common");
+
+    // Compteur
+    if (zoomCounter) {
+      if (_zoomList.length > 1) {
+        zoomCounter.textContent = (_zoomIdx + 1) + "\u00a0/\u00a0" + _zoomList.length;
+        zoomCounter.removeAttribute("hidden");
+      } else {
+        zoomCounter.setAttribute("hidden", "");
+      }
+    }
+
+    // Boutons nav
+    if (zoomPrev) {
+      if (_zoomIdx > 0) zoomPrev.removeAttribute("hidden");
+      else zoomPrev.setAttribute("hidden", "");
+    }
+    if (zoomNext) {
+      if (_zoomIdx < _zoomList.length - 1) zoomNext.removeAttribute("hidden");
+      else zoomNext.setAttribute("hidden", "");
+    }
+
+    // Bouton avatar
+    if (zoomAvatarBtn) {
+      var imageId = reward.imageId || reward.id || null;
+      if (imageId && imageId === _avatarSetId) {
+        zoomAvatarBtn.textContent = "Photo de profil définie \u2713";
+        zoomAvatarBtn.setAttribute("disabled", "");
+      } else {
+        zoomAvatarBtn.textContent = "Utiliser comme photo de profil";
+        zoomAvatarBtn.removeAttribute("disabled");
+      }
+    }
   }
 
   function closeZoom() {
     if (zoomOverlay) zoomOverlay.setAttribute("hidden", "");
     if (zoomImg) zoomImg.src = "";
+    _zoomList = [];
+    _zoomIdx  = 0;
   }
 
-  // Clic sur l'image de la carte individuelle → zoom
-  imgWrap && imgWrap.addEventListener("click", function () {
-    if (imgEl && !imgEl.hasAttribute("hidden") && imgEl.src) openZoom(imgEl.src);
+  function zoomNavigate(delta) {
+    var newIdx = _zoomIdx + delta;
+    if (newIdx < 0 || newIdx >= _zoomList.length) return;
+    _zoomIdx = newIdx;
+    renderZoom();
+  }
+
+  zoomClose && zoomClose.addEventListener("click", function (e) {
+    e.stopPropagation();
+    closeZoom();
   });
 
-  zoomOverlay && zoomOverlay.addEventListener("click", closeZoom);
+  zoomPrev && zoomPrev.addEventListener("click", function (e) {
+    e.stopPropagation();
+    zoomNavigate(-1);
+  });
+
+  zoomNext && zoomNext.addEventListener("click", function (e) {
+    e.stopPropagation();
+    zoomNavigate(1);
+  });
+
+  // Clic sur le fond de l'overlay ferme (mais pas sur les contrôles)
+  zoomOverlay && zoomOverlay.addEventListener("click", function (e) {
+    if (e.target === zoomOverlay) closeZoom();
+  });
+
+  // Bouton "utiliser comme avatar"
+  zoomAvatarBtn && zoomAvatarBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    var reward = _zoomList[_zoomIdx];
+    if (!reward) return;
+    var imageId = reward.imageId || reward.id || null;
+    if (!imageId) return;
+    zoomAvatarBtn.disabled = true;
+    fetch("/lootbox/set-profile-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageId: imageId }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          _avatarSetId = imageId;
+          zoomAvatarBtn.textContent = "Photo de profil définie \u2713";
+          zoomAvatarBtn.setAttribute("disabled", "");
+        } else {
+          zoomAvatarBtn.disabled = false;
+        }
+      })
+      .catch(function () { zoomAvatarBtn.disabled = false; });
+  });
+
+  // ── Clavier global ───────────────────────────────────────────────────────────
+  document.addEventListener("keydown", function (e) {
+    if (zoomOverlay && !zoomOverlay.hasAttribute("hidden")) {
+      if (e.key === "Escape") {
+        closeZoom();
+      } else if (e.key === "ArrowLeft") {
+        zoomNavigate(-1);
+      } else if (e.key === "ArrowRight") {
+        zoomNavigate(1);
+      } else if (e.key === "Enter" && zoomAvatarBtn && !zoomAvatarBtn.disabled) {
+        zoomAvatarBtn.click();
+      }
+      return;
+    }
+    if (!overlay.hasAttribute("hidden") && e.key === "Escape") {
+      closeOverlay();
+    }
+  });
 
   // ── Init ─────────────────────────────────────────────────────────────────────
   refreshCount();

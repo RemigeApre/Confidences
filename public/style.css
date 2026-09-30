@@ -16774,7 +16774,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 /* Quand le panneau batch est visible, élargir le conteneur */
 .lootbox-reveal:has(#lootbox-batch-results:not([hidden])) {
-  max-width: 520px;
+  max-width: 680px;
 }
 
 /* Coffre animé */
@@ -16813,12 +16813,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .75rem;
-  background: var(--surface-2, #1a1a2e);
-  border: 2px solid rgba(255,255,255,.1);
-  border-radius: 16px;
-  padding: 1.25rem;
+  gap: .9rem;
+  background: linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%);
+  border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: 20px;
+  padding: 1.5rem 1.25rem 1.25rem;
   width: 100%;
+  backdrop-filter: blur(6px);
   transform: scale(.85) translateY(20px);
   opacity: 0;
   transition: none;
@@ -16831,32 +16832,27 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* Rareté */
-.lootbox-reveal-rarity {
-  font-size: .72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  padding: .2rem .75rem;
-  border-radius: 99px;
-  background: rgba(255,255,255,.06);
-}
-.lootbox-reveal-rarity--common    { color: var(--rarity-common);    border: 1px solid var(--rarity-common); }
-.lootbox-reveal-rarity--rare      { color: var(--rarity-rare);      border: 1px solid var(--rarity-rare); }
-.lootbox-reveal-rarity--epic      { color: var(--rarity-epic);      border: 1px solid var(--rarity-epic); }
-.lootbox-reveal-rarity--legendary { color: var(--rarity-legendary); border: 1px solid var(--rarity-legendary); box-shadow: 0 0 8px color-mix(in srgb, var(--rarity-legendary) 40%, transparent); }
-.lootbox-reveal-rarity--mythic    { color: var(--rarity-mythic);    border: 1px solid var(--rarity-mythic);    box-shadow: 0 0 8px color-mix(in srgb, var(--rarity-mythic) 40%, transparent); }
-
 /* Image débloquée */
 .lootbox-reveal-img-wrap {
-  width: 180px;
-  height: 180px;
-  border-radius: 12px;
+  width: 220px;
+  height: 220px;
+  border-radius: 14px;
   overflow: hidden;
   background: var(--surface-3, #111);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: zoom-in;
+  transition: box-shadow .3s ease;
+}
+/* Halos rareté sur l'image individuelle */
+.lootbox-reveal-img-wrap[data-rarity="rare"]      { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-rare) 60%,transparent), 0 0 22px 4px color-mix(in srgb,var(--rarity-rare) 35%,transparent); }
+.lootbox-reveal-img-wrap[data-rarity="epic"]      { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-epic) 60%,transparent), 0 0 28px 6px color-mix(in srgb,var(--rarity-epic) 35%,transparent); }
+.lootbox-reveal-img-wrap[data-rarity="legendary"] { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-legendary) 70%,transparent), 0 0 36px 8px color-mix(in srgb,var(--rarity-legendary) 45%,transparent); }
+.lootbox-reveal-img-wrap[data-rarity="mythic"]    { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-mythic) 80%,transparent), 0 0 44px 10px color-mix(in srgb,var(--rarity-mythic) 50%,transparent); animation: mythic-pulse 2s ease-in-out infinite; }
+@keyframes mythic-pulse {
+  0%,100% { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-mythic) 80%,transparent), 0 0 44px 10px color-mix(in srgb,var(--rarity-mythic) 50%,transparent); }
+  50%     { box-shadow: 0 0 0 3px color-mix(in srgb,var(--rarity-mythic) 90%,transparent), 0 0 60px 16px color-mix(in srgb,var(--rarity-mythic) 60%,transparent); }
 }
 .lootbox-reveal-img {
   width: 100%;
@@ -16873,32 +16869,17 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .lootbox-reveal-img-placeholder[hidden] { display: none; }
 
-/* Titre et hint */
-.lootbox-reveal-title {
-  font-size: .9rem;
-  font-weight: 600;
-  text-align: center;
-  color: var(--text-1, #fff);
-  margin: 0;
-}
+/* Hint doublon */
 .lootbox-reveal-hint {
   font-size: .72rem;
   color: var(--muted, #888);
   text-align: center;
   margin: 0;
 }
+.lootbox-reveal-hint[hidden] { display: none; }
 
-/* Bouton fermer — styles hérités de .lootbox-reveal-btn ci-dessous */
+/* Bouton fermer */
 .lootbox-reveal-close[hidden] { display: none; }
-
-/* Bord coloré selon la rareté sur la carte */
-.lootbox-reveal-card:has(.lootbox-reveal-rarity--rare)      { border-color: color-mix(in srgb, var(--rarity-rare) 40%, transparent); }
-.lootbox-reveal-card:has(.lootbox-reveal-rarity--epic)      { border-color: color-mix(in srgb, var(--rarity-epic) 40%, transparent); }
-.lootbox-reveal-card:has(.lootbox-reveal-rarity--legendary) { border-color: color-mix(in srgb, var(--rarity-legendary) 60%, transparent); }
-.lootbox-reveal-card:has(.lootbox-reveal-rarity--mythic)    { border-color: color-mix(in srgb, var(--rarity-mythic) 60%, transparent); }
-
-/* Cursor zoom sur l'image de la carte */
-.lootbox-reveal-img-wrap { cursor: zoom-in; }
 
 /* Boutons d'action (Fermer / Suivant) */
 .lootbox-reveal-actions {
@@ -16977,17 +16958,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   animation: card-reveal .3s cubic-bezier(.22,1,.36,1) forwards;
 }
 .lootbox-batch-results[hidden] { display: none; }
-.lootbox-batch-title {
-  font-size: .8rem; font-weight: 600; color: var(--muted, #aaa);
-  margin: 0; text-align: center;
-}
 .lootbox-batch-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: .5rem;
-  width: 100%; max-height: 300px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: .6rem;
+  width: 100%; max-height: 420px;
   overflow-y: auto;
-  padding-right: .2rem;
+  padding-right: .25rem;
 }
 /* Scrollbar discrète */
 .lootbox-batch-grid::-webkit-scrollbar { width: 4px; }
@@ -16995,62 +16972,115 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-batch-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
 
 .lootbox-batch-card {
-  display: flex; flex-direction: column;
-  border: 1.5px solid rgba(255,255,255,.08);
-  border-radius: 8px; overflow: hidden;
+  border-radius: 10px; overflow: hidden;
   background: var(--surface-2, #1a1a2e);
+  transition: transform .15s;
 }
-.lootbox-batch-card--rare      { border-color: color-mix(in srgb, var(--rarity-rare) 35%, transparent); }
-.lootbox-batch-card--epic      { border-color: color-mix(in srgb, var(--rarity-epic) 35%, transparent); }
-.lootbox-batch-card--legendary { border-color: color-mix(in srgb, var(--rarity-legendary) 55%, transparent); }
-.lootbox-batch-card--mythic    { border-color: color-mix(in srgb, var(--rarity-mythic) 55%, transparent); }
-.lootbox-batch-card--dupe      { opacity: .55; }
+.lootbox-batch-card:hover { transform: scale(1.03); }
+.lootbox-batch-card--dupe { opacity: .55; }
 
 .lootbox-batch-card-img {
   position: relative; width: 100%; aspect-ratio: 1;
   background: var(--surface-3, #111); overflow: hidden;
+  border-radius: 10px;
 }
 .lootbox-batch-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.lootbox-batch-card-rarity {
-  position: absolute; bottom: 2px; left: 2px;
-  font-size: .5rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
-  padding: .1rem .3rem; border-radius: 3px;
-  background: rgba(0,0,0,.65);
-}
-.lootbox-batch-card-rarity--common    { color: var(--rarity-common); }
-.lootbox-batch-card-rarity--rare      { color: var(--rarity-rare); }
-.lootbox-batch-card-rarity--epic      { color: var(--rarity-epic); }
-.lootbox-batch-card-rarity--legendary { color: var(--rarity-legendary); }
-.lootbox-batch-card-rarity--mythic    { color: var(--rarity-mythic); }
+/* Halos rareté sur les cartes batch */
+.lootbox-batch-card-img[data-rarity="rare"]      { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--rarity-rare) 55%,transparent), 0 0 14px 3px color-mix(in srgb,var(--rarity-rare) 30%,transparent); }
+.lootbox-batch-card-img[data-rarity="epic"]      { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--rarity-epic) 55%,transparent), 0 0 18px 4px color-mix(in srgb,var(--rarity-epic) 30%,transparent); }
+.lootbox-batch-card-img[data-rarity="legendary"] { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--rarity-legendary) 65%,transparent), 0 0 24px 6px color-mix(in srgb,var(--rarity-legendary) 40%,transparent); }
+.lootbox-batch-card-img[data-rarity="mythic"]    { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--rarity-mythic) 75%,transparent), 0 0 30px 8px color-mix(in srgb,var(--rarity-mythic) 45%,transparent); animation: mythic-pulse 2s ease-in-out infinite; }
 
 .lootbox-batch-card-dupe-tag {
-  position: absolute; top: 2px; right: 2px;
-  font-size: .48rem; font-weight: 700; text-transform: uppercase;
-  background: rgba(0,0,0,.65); color: var(--muted, #888);
-  padding: .1rem .3rem; border-radius: 3px;
-}
-.lootbox-batch-card-title {
-  font-size: .6rem; padding: .25rem .3rem;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  margin: 0; color: var(--muted, #aaa);
+  position: absolute; top: 3px; right: 3px;
+  font-size: .5rem; font-weight: 700; text-transform: uppercase;
+  background: rgba(0,0,0,.7); color: var(--muted, #888);
+  padding: .12rem .35rem; border-radius: 4px;
 }
 
 /* ── Zoom overlay ────────────────────────────────────────────────── */
 .lootbox-zoom-overlay {
   position: fixed; inset: 0; z-index: 1600;
-  background: rgba(0,0,0,.88);
-  display: flex; align-items: center; justify-content: center;
-  cursor: zoom-out;
-  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,.92);
+  display: flex; align-items: center; justify-content: center; gap: 1rem;
+  backdrop-filter: blur(8px);
   animation: coffre-fade-in .15s ease;
 }
 .lootbox-zoom-overlay[hidden] { display: none; }
-.lootbox-zoom-img {
-  max-width: 92vw; max-height: 92vh;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 12px 60px rgba(0,0,0,.7);
-  animation: coffre-pop-in .2s cubic-bezier(.22,1,.36,1);
-  pointer-events: none;
+
+/* Bouton fermer (coin haut-droit) */
+.lootbox-zoom-close {
+  position: absolute; top: 1rem; right: 1rem;
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 50%; cursor: pointer; color: var(--text-1,#eee);
+  transition: background .15s;
 }
+.lootbox-zoom-close:hover { background: rgba(255,255,255,.18); }
+.lootbox-zoom-close svg { width: 16px; height: 16px; }
+
+/* Boutons de navigation latéraux */
+.lootbox-zoom-nav {
+  flex-shrink: 0;
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 50%; cursor: pointer; color: var(--text-1,#eee);
+  transition: background .15s, transform .1s;
+  z-index: 1;
+}
+.lootbox-zoom-nav:hover { background: rgba(255,255,255,.18); transform: scale(1.08); }
+.lootbox-zoom-nav[hidden] { visibility: hidden; pointer-events: none; }
+.lootbox-zoom-nav svg { width: 20px; height: 20px; }
+
+/* Zone centrale (image + footer) */
+.lootbox-zoom-center {
+  display: flex; flex-direction: column; align-items: center; gap: .9rem;
+  flex: 1 1 auto; min-width: 0;
+  max-width: min(80vw, 600px);
+}
+
+/* Conteneur image avec halo */
+.lootbox-zoom-img-outer {
+  border-radius: 12px; overflow: hidden;
+  transition: box-shadow .3s ease;
+  animation: coffre-pop-in .2s cubic-bezier(.22,1,.36,1);
+}
+.lootbox-zoom-img-outer[data-rarity="rare"]      { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-rare) 60%,transparent), 0 0 32px 8px color-mix(in srgb,var(--rarity-rare) 35%,transparent); }
+.lootbox-zoom-img-outer[data-rarity="epic"]      { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-epic) 60%,transparent), 0 0 38px 10px color-mix(in srgb,var(--rarity-epic) 35%,transparent); }
+.lootbox-zoom-img-outer[data-rarity="legendary"] { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-legendary) 70%,transparent), 0 0 50px 14px color-mix(in srgb,var(--rarity-legendary) 45%,transparent); }
+.lootbox-zoom-img-outer[data-rarity="mythic"]    { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-mythic) 80%,transparent), 0 0 64px 18px color-mix(in srgb,var(--rarity-mythic) 55%,transparent); animation: mythic-pulse 2s ease-in-out infinite; }
+
+.lootbox-zoom-img {
+  display: block;
+  max-width: min(80vw, 600px);
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+/* Footer du zoom (compteur + avatar) */
+.lootbox-zoom-footer {
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+  width: 100%;
+}
+.lootbox-zoom-counter {
+  font-size: .75rem; color: var(--muted,#888); letter-spacing: .05em;
+}
+.lootbox-zoom-counter[hidden] { display: none; }
+.lootbox-zoom-avatar-btn {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .5rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.07);
+  color: var(--text-1,#eee);
+  font-size: .82rem; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.lootbox-zoom-avatar-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
+.lootbox-zoom-avatar-btn:disabled { opacity: .55; cursor: default; }
+.lootbox-zoom-avatar-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
