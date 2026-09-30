@@ -255,9 +255,11 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS wordle_daily (
     date TEXT PRIMARY KEY,
     word TEXT NOT NULL,
-    source_title TEXT NOT NULL DEFAULT ''
+    source_title TEXT NOT NULL DEFAULT '',
+    source_id INTEGER
   )
 `);
+try { db.exec(`ALTER TABLE wordle_daily ADD COLUMN source_id INTEGER`); } catch (_) {}
 db.exec(`
   CREATE TABLE IF NOT EXISTS wordle_user_game (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -3330,12 +3332,12 @@ function normalizeWordleWord(str) {
 }
 
 function getWordlePool() {
-  const rows = db.prepare("SELECT title, meta FROM wiki_pages").all();
-  const words = new Map(); // normalized → original display string
+  const rows = db.prepare("SELECT id, title, meta FROM wiki_pages").all();
+  const words = new Map(); // normalized → [original display string, pageId]
   for (const row of rows) {
     const title = (row.title || '').trim();
     const norm = normalizeWordleWord(title);
-    if (norm.length >= 4 && norm.length <= 10) words.set(norm, title);
+    if (norm.length >= 4 && norm.length <= 10) words.set(norm, [title, row.id]);
     let meta = {};
     try { meta = JSON.parse(row.meta || '{}'); } catch (_) {}
     const variantes = Array.isArray(meta.variantes) ? meta.variantes : [];
@@ -3345,16 +3347,17 @@ function getWordlePool() {
       else if (v && typeof v === 'object') vName = String(v.name || v.value || v.label || v.text || '').trim();
       if (!vName) continue;
       const vNorm = normalizeWordleWord(vName);
-      if (vNorm.length >= 4 && vNorm.length <= 10 && !words.has(vNorm)) words.set(vNorm, vName);
+      if (vNorm.length >= 4 && vNorm.length <= 10 && !words.has(vNorm)) words.set(vNorm, [vName, row.id]);
     }
   }
   return Array.from(words.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  // Each entry: [norm, [originalTitle, pageId]]
 }
 
 function getWordleDaily() {
   const today = getFrenchDate();
-  const existing = db.prepare("SELECT word, source_title FROM wordle_daily WHERE date = ?").get(today);
-  if (existing) return { date: today, word: existing.word, sourceTitle: existing.source_title };
+  const existing = db.prepare("SELECT word, source_title, source_id FROM wordle_daily WHERE date = ?").get(today);
+  if (existing) return { date: today, word: existing.word, sourceTitle: existing.source_title, sourceId: existing.source_id };
 
   const recentWords = new Set(
     db.prepare("SELECT word FROM wordle_daily WHERE date >= date(?, '-30 days')").all(today).map(r => r.word)
@@ -3365,9 +3368,9 @@ function getWordleDaily() {
   if (!finalPool.length) return null;
 
   const dateNum = parseInt(today.replace(/-/g, ''), 10);
-  const [norm, original] = finalPool[dateNum % finalPool.length];
-  db.prepare("INSERT OR IGNORE INTO wordle_daily (date, word, source_title) VALUES (?, ?, ?)").run(today, norm, original);
-  return { date: today, word: norm, sourceTitle: original };
+  const [norm, [original, pageId]] = finalPool[dateNum % finalPool.length];
+  db.prepare("INSERT OR IGNORE INTO wordle_daily (date, word, source_title, source_id) VALUES (?, ?, ?, ?)").run(today, norm, original, pageId);
+  return { date: today, word: norm, sourceTitle: original, sourceId: pageId };
 }
 
 function getWordleUserGame(userId, date) {

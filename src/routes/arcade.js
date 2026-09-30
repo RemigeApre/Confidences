@@ -118,8 +118,10 @@ function buildArcadeRouter() {
       guesses: userGame.guesses,
       solved: userGame.solved,
       gameOver,
+      rewardGranted: userGame.rewardGranted,
       word: gameOver ? daily.word : null,
       sourceTitle: gameOver ? daily.sourceTitle : null,
+      sourceId: gameOver ? daily.sourceId : null,
     });
   });
 
@@ -151,6 +153,7 @@ function buildArcadeRouter() {
       lootboxGranted, lootboxCount,
       word: gameOver ? daily.word : null,
       sourceTitle: gameOver ? daily.sourceTitle : null,
+      sourceId: gameOver ? daily.sourceId : null,
     });
   });
 
