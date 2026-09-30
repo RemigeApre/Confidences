@@ -1,0 +1,72 @@
+<%- include('partials/head', { title: 'Admin : Récompenses', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= config.title %> &mdash; R&eacute;compenses</span>
+</div>
+
+<main class="admin-main" style="max-width:700px">
+
+  <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+    <a href="/admin/recompenses/images-profil" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:.55rem 1.1rem;border-radius:8px;text-decoration:none;font-size:.9rem;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.08)'">
+      <span style="font-size:1.2rem">&#128247;</span> Images de profil
+    </a>
+  </div>
+
+  <form method="POST" action="/admin/recompenses/config">
+    <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 1rem;text-transform:uppercase;letter-spacing:.06em">Configuration des raretés</h2>
+
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+        <thead>
+          <tr style="color:#94a3b8;text-align:left">
+            <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08)">Rareté</th>
+            <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">% drop</th>
+            <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix achat &#127481;</th>
+            <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix revente &#127481;</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%
+            var tiers = [
+              { key: 'common',    label: 'Commun',     color: '#94a3b8' },
+              { key: 'rare',      label: 'Rare',        color: '#60a5fa' },
+              { key: 'epic',      label: 'Épique',      color: '#a78bfa' },
+              { key: 'legendary', label: 'Légendaire',  color: '#fbbf24' },
+              { key: 'mythic',    label: 'Mythique',    color: '#f87171' },
+            ];
+          %>
+          <% tiers.forEach(function(tier) { %>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+            <td style="padding:.6rem .75rem">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<%= tier.color %>;margin-right:.5rem"></span>
+              <strong style="color:<%= tier.color %>"><%= tier.label %></strong>
+            </td>
+            <td style="padding:.6rem .75rem;text-align:center">
+              <input type="number" name="weight_<%= tier.key %>" value="<%= lootboxConfig.weights[tier.key] %>" min="0" max="100" step="1"
+                style="width:60px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+            </td>
+            <td style="padding:.6rem .75rem;text-align:center">
+              <input type="number" name="buy_<%= tier.key %>" value="<%= lootboxConfig.buyPrices[tier.key] %>" min="0" step="1"
+                style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+            </td>
+            <td style="padding:.6rem .75rem;text-align:center">
+              <input type="number" name="sell_<%= tier.key %>" value="<%= lootboxConfig.sellPrices[tier.key] %>" min="0" step="1"
+                style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-size:.78rem;color:#64748b;margin:.75rem 0 1rem">Les % de drop n'ont pas besoin de totaliser 100 — ils sont utilisés comme poids relatifs.</p>
+
+    <button type="submit" style="background:#f87171;border:none;color:#fff;padding:.55rem 1.4rem;border-radius:7px;font-weight:600;font-size:.9rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#ef4444'" onmouseout="this.style.background='#f87171'">
+      Enregistrer
+    </button>
+  </form>
+
+</main>
+
+<%- include('partials/foot') %>

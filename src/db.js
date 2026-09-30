@@ -120,6 +120,7 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN ai_suspected INTEGER NOT NU
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN wiki_synced INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN title_visible INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN protagonist_evos TEXT NOT NULL DEFAULT '{}'"); } catch(_) {}
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN rarity TEXT NOT NULL DEFAULT 'common'"); } catch(_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS gallery_links (
@@ -1893,6 +1894,7 @@ function rowToGalleryImage(row) {
     protagonistIds: (() => { try { return JSON.parse(row.protagonist_ids || "[]"); } catch(_) { return []; } })(),
     protagonistEvos: (() => { try { return JSON.parse(row.protagonist_evos || "{}"); } catch(_) { return {}; } })(),
     aiSuspected: !!row.ai_suspected,
+    rarity: row.rarity || 'common',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -2588,10 +2590,51 @@ const RARITY_WEIGHTS = { common: 50, rare: 28, epic: 15, legendary: 5, mythic: 2
 const RARITY_BUY_PRICE  = { common: 10, rare: 20, epic: 50, legendary: 100, mythic: 200 };
 const RARITY_SELL_PRICE = { common:  1, rare:  2, epic:  5, legendary:  10, mythic:  20 };
 
+// ── Config lootbox (drop rates, prix) ─────────────────────────────────────
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS lootbox_config (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL DEFAULT ''
+  )`);
+  const _cfgCount = db.prepare("SELECT COUNT(*) as n FROM lootbox_config").get().n;
+  if (_cfgCount === 0) {
+    const _cfgStmt = db.prepare("INSERT OR IGNORE INTO lootbox_config (key, value) VALUES (?, ?)");
+    for (const [k, v] of Object.entries({ weight_common: 50, weight_rare: 28, weight_epic: 15, weight_legendary: 5, weight_mythic: 2, buy_common: 10, buy_rare: 20, buy_epic: 50, buy_legendary: 100, buy_mythic: 200, sell_common: 1, sell_rare: 2, sell_epic: 5, sell_legendary: 10, sell_mythic: 20 })) {
+      _cfgStmt.run(k, String(v));
+    }
+  }
+} catch (_) {}
+
+function getLootboxConfig() {
+  let rows = [];
+  try { rows = db.prepare("SELECT key, value FROM lootbox_config").all(); } catch (_) {}
+  const cfg = {};
+  for (const { key, value } of rows) cfg[key] = value;
+  const n = (k, fb) => { const v = Number(cfg[k]); return (v > 0 ? v : fb); };
+  return {
+    weights:    { common: n('weight_common', RARITY_WEIGHTS.common),    rare: n('weight_rare', RARITY_WEIGHTS.rare),    epic: n('weight_epic', RARITY_WEIGHTS.epic),    legendary: n('weight_legendary', RARITY_WEIGHTS.legendary),    mythic: n('weight_mythic', RARITY_WEIGHTS.mythic) },
+    buyPrices:  { common: n('buy_common',    RARITY_BUY_PRICE.common),  rare: n('buy_rare',    RARITY_BUY_PRICE.rare),  epic: n('buy_epic',    RARITY_BUY_PRICE.epic),  legendary: n('buy_legendary',    RARITY_BUY_PRICE.legendary),  mythic: n('buy_mythic',    RARITY_BUY_PRICE.mythic) },
+    sellPrices: { common: n('sell_common',   RARITY_SELL_PRICE.common), rare: n('sell_rare',   RARITY_SELL_PRICE.rare), epic: n('sell_epic',   RARITY_SELL_PRICE.epic), legendary: n('sell_legendary',   RARITY_SELL_PRICE.legendary), mythic: n('sell_mythic',   RARITY_SELL_PRICE.mythic) },
+  };
+}
+
+function setLootboxConfigKey(key, value) {
+  const VALID_KEYS = ['weight_common','weight_rare','weight_epic','weight_legendary','weight_mythic','buy_common','buy_rare','buy_epic','buy_legendary','buy_mythic','sell_common','sell_rare','sell_epic','sell_legendary','sell_mythic'];
+  if (!VALID_KEYS.includes(key)) return;
+  db.prepare("INSERT OR REPLACE INTO lootbox_config (key, value) VALUES (?, ?)").run(key, String(Math.max(0, Number(value) || 0)));
+}
+
+function setImageRarity(id, rarity) {
+  const VALID = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+  if (!VALID.includes(rarity)) return;
+  db.prepare("UPDATE gallery_images SET rarity = ? WHERE id = ?").run(rarity, id);
+}
+
 function _pickRarity() {
-  const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
+  const weights = getLootboxConfig().weights;
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
   let r = Math.random() * total;
-  for (const [key, weight] of Object.entries(RARITY_WEIGHTS)) {
+  for (const [key, weight] of Object.entries(weights)) {
     r -= weight;
     if (r <= 0) return key;
   }
@@ -2686,7 +2729,7 @@ function openLootbox(userId) {
   const ultraTags      = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'ultra'").all().map(r => r.tag));
   const irrealisteTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'irrealiste'").all().map(r => r.tag));
   // Tirer un pool élargi pour avoir de la marge après filtrage
-  let pool = db.prepare("SELECT id, image_paths, title, tags FROM gallery_images ORDER BY RANDOM() LIMIT 200").all();
+  let pool = db.prepare("SELECT id, image_paths, title, tags, rarity FROM gallery_images ORDER BY RANDOM() LIMIT 200").all();
   pool = pool.filter(img => {
     let tags = [];
     try { tags = JSON.parse(img.tags || '[]'); } catch (_) {}
@@ -2695,10 +2738,14 @@ function openLootbox(userId) {
     return true;
   });
   // Fallback : si le filtre est trop restrictif, utiliser le pool complet
-  if (!pool.length) pool = db.prepare("SELECT id, image_paths, title FROM gallery_images ORDER BY RANDOM() LIMIT 30").all();
+  if (!pool.length) pool = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images ORDER BY RANDOM() LIMIT 30").all();
   if (!pool.length) return null;
-  const image = pool[Math.floor(Math.random() * pool.length)];
   const rarity = _pickRarity();
+  // Préférer les images de la bonne rareté ; fallback sur le pool complet
+  const rarityPool = pool.filter(img => (img.rarity || 'common') === rarity);
+  const image = rarityPool.length
+    ? rarityPool[Math.floor(Math.random() * rarityPool.length)]
+    : pool[Math.floor(Math.random() * pool.length)];
   const now = new Date().toISOString();
   // Tenter d'insérer dans les unlocks ; si déjà possédé → convertir en pièces
   const insertResult = db.prepare(
@@ -2741,15 +2788,15 @@ function buyItem(userId, itemType, refId) {
   if (itemType !== 'profile_image') return { ok: false, error: 'invalid_type' };
   const refIdInt = parseInt(refId, 10);
   if (isNaN(refIdInt)) return { ok: false, error: 'invalid_ref' };
-  // Pour l'instant toutes les images sont "common"
-  const rarity = 'common';
-  const price = RARITY_BUY_PRICE[rarity];
+  const imgRow = db.prepare("SELECT id, rarity FROM gallery_images WHERE id = ?").get(refIdInt);
+  if (!imgRow) return { ok: false, error: 'item_not_found' };
+  const rarity = imgRow.rarity || 'common';
+  const cfgBuy = getLootboxConfig().buyPrices;
+  const price = cfgBuy[rarity] || RARITY_BUY_PRICE[rarity] || RARITY_BUY_PRICE.common;
   const user = db.prepare("SELECT coins, profile_image_id FROM users WHERE id = ?").get(userId);
   if (!user) return { ok: false, error: 'user_not_found' };
   if (user.coins < price) return { ok: false, error: 'not_enough_coins', need: price, have: user.coins };
-  // Vérifier que la galerie existe
-  const img = db.prepare("SELECT id FROM gallery_images WHERE id = ?").get(refIdInt);
-  if (!img) return { ok: false, error: 'item_not_found' };
+  // La galerie existe déjà (vérifiée ci-dessus via imgRow)
   // Vérifier pas déjà possédé
   const existing = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = ? AND ref_id = ?").get(userId, itemType, refIdInt);
   if (existing) return { ok: false, error: 'already_owned' };
@@ -2763,12 +2810,14 @@ function getShopItems(userId) {
   const ownedIds = new Set(
     db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").all(userId).map(r => r.ref_id)
   );
-  return db.prepare("SELECT id, image_paths, title FROM gallery_images ORDER BY id DESC").all()
+  return db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images ORDER BY id DESC").all()
     .filter(r => !ownedIds.has(r.id))
     .map(r => {
       let imagePaths = [];
       try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
-      return { id: r.id, title: r.title || '', thumb: imagePaths[0] || null, rarity: 'common', buyPrice: RARITY_BUY_PRICE.common };
+      const rarity = r.rarity || 'common';
+      const cfgBuy = getLootboxConfig().buyPrices;
+      return { id: r.id, title: r.title || '', thumb: imagePaths[0] || null, rarity, buyPrice: cfgBuy[rarity] || RARITY_BUY_PRICE[rarity] || RARITY_BUY_PRICE.common };
     });
 }
 
@@ -3001,6 +3050,9 @@ module.exports = {
   countUserRatingsAll,
   countUserFavoritesAll,
   countUserBdRatings,
+  getLootboxConfig,
+  setLootboxConfigKey,
+  setImageRarity,
   openLootbox,
   getUserUnlocks,
   sellUnlock,

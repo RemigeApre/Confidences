@@ -42,6 +42,9 @@ const {
   createAiProfile,
   updateAiProfile,
   deleteAiProfile,
+  getLootboxConfig,
+  setLootboxConfigKey,
+  setImageRarity,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -463,6 +466,39 @@ function buildAdminRouter(config) {
   router.post("/ia/:id/delete", requireAdmin, (req, res) => {
     deleteAiProfile(Number(req.params.id));
     res.redirect("/admin#tab-ia");
+  });
+
+  // ── Récompenses ─────────────────────────────────────────────────────────
+  router.get("/recompenses", requireAdmin, (req, res) => {
+    const lootboxConfig = getLootboxConfig();
+    res.render("admin-recompenses", { config, lootboxConfig });
+  });
+
+  router.post("/recompenses/config", requireAdmin, (req, res) => {
+    const tiers = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+    for (const tier of tiers) {
+      if (req.body[`weight_${tier}`] !== undefined) setLootboxConfigKey(`weight_${tier}`, req.body[`weight_${tier}`]);
+      if (req.body[`buy_${tier}`]    !== undefined) setLootboxConfigKey(`buy_${tier}`,    req.body[`buy_${tier}`]);
+      if (req.body[`sell_${tier}`]   !== undefined) setLootboxConfigKey(`sell_${tier}`,   req.body[`sell_${tier}`]);
+    }
+    res.redirect("/admin/recompenses");
+  });
+
+  router.get("/recompenses/images-profil", requireAdmin, (req, res) => {
+    const images = listGalleryImages().map(img => {
+      const imagePaths = img.imagePaths || [];
+      return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null, imagePaths };
+    });
+    res.render("admin-recompenses-images", { config, images });
+  });
+
+  router.post("/recompenses/images-profil/:id/rarity", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const rarity = String(req.body.rarity || '');
+    const VALID = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+    if (!VALID.includes(rarity)) return res.json({ ok: false });
+    setImageRarity(id, rarity);
+    res.json({ ok: true, rarity });
   });
 
   return router;
