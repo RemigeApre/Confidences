@@ -2002,7 +2002,7 @@ function getContentByParody(parody, subParody) {
     try { r.image_paths = JSON.parse(r.image_paths || "[]"); } catch(_) { r.image_paths = []; }
     return r;
   });
-  var protagonistes = q("SELECT id, name, description, sub_parody FROM protagonistes WHERE parody = ? ORDER BY name COLLATE NOCASE");
+  var protagonistes = q("SELECT id, name, description, sub_parody, image_path, gender, nature FROM protagonistes WHERE parody = ? ORDER BY name COLLATE NOCASE");
   return { gallery, bd, nouvelles, wiki, protagonistes };
 }
 

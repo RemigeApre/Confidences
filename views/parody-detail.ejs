@@ -1,6 +1,8 @@
 <%- include('partials/head', { title: (subParody ? subParody + ' (' + parody + ')' : parody) + ' — Parodie' }) %>
-<main class="container" style="max-width: 960px; margin: 0 auto">
+<main class="container" style="max-width: 860px; margin: 0 auto">
   <%- include('partials/top-nav', { config: config, navTitle: subParody ? subParody : parody, navBack: subParody ? '/parodies/' + encodeURIComponent(parody) : '/parodies' }) %>
+
+  <a href="<%= subParody ? '/parodies/' + encodeURIComponent(parody) : '/parodies' %>" class="prot-back-link" aria-label="Retour">&#8592; <%= subParody ? parody : 'Parodies' %></a>
 
   <div class="prot-header">
     <% if (subParody) { %>
@@ -32,13 +34,38 @@
 
   <%# ── Protagonistes ── %>
   <% if (content.protagonistes.length) { %>
-  <section class="parody-section">
-    <h2 class="parody-section-title">Personnages</h2>
+  <section class="prot-section">
+    <h2 class="nv-strip-title">Personnages <span class="prot-section-count">(<%= content.protagonistes.length %>)</span></h2>
     <div class="prot-grid">
       <% content.protagonistes.forEach(function(p) { %>
         <a href="/protagonistes/<%= p.id %>" class="prot-card">
-          <div class="prot-card-name"><%= p.name %></div>
-          <% if (p.description) { %><p class="prot-card-desc"><%= p.description.slice(0, 100) %><%= p.description.length > 100 ? '…' : '' %></p><% } %>
+          <% if (p.image_path) { %>
+            <div class="prot-card-img-wrap">
+              <% if (p.nature && p.nature !== 'humain') { %>
+                <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
+              <% } %>
+              <img src="<%= p.image_path %>" alt="<%= p.name %>" class="prot-card-img" loading="lazy" />
+            </div>
+          <% } else if (p.nature && p.nature !== 'humain') { %>
+            <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
+          <% } %>
+          <div class="prot-card-body">
+            <div class="prot-card-header">
+              <% if (p.gender) { %>
+                <span class="prot-card-gender-icon prot-card-gender-icon--<%= p.gender %>" aria-hidden="true">
+                  <% if (p.gender === 'femme') { %>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+                  <% } else if (p.gender === 'homme') { %>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+                  <% } else { %>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+                  <% } %>
+                </span>
+              <% } %>
+              <div class="prot-card-name"><%= p.name %></div>
+            </div>
+            <% if (p.description) { %><p class="prot-card-desc"><%= p.description.slice(0, 100) %><%= p.description.length > 100 ? '…' : '' %></p><% } %>
+          </div>
         </a>
       <% }) %>
     </div>
@@ -47,28 +74,59 @@
 
   <%# ── Galerie ── %>
   <% if (content.gallery.length) { %>
-  <section class="parody-section">
-    <h2 class="parody-section-title">Images (<%= content.gallery.length %>)</h2>
-    <div class="parody-img-grid">
-      <% content.gallery.forEach(function(img) { %>
-        <% var imgSrc = img.imagePaths[0] || ''; %>
-        <a href="/galerie" class="parody-img-thumb">
-          <img src="<%= thumbUrl(imgSrc) %>" alt="<%= img.title || '' %>" loading="lazy" />
-          <% if (img.title) { %><span class="parody-img-title"><%= img.title %></span><% } %>
-        </a>
-      <% }) %>
+  <%
+    var IRREALISTE_TAGS = ['irréaliste', 'fantaisie'];
+    function imgSpecial(img) {
+      var t = (img.tags || []).map(function(x){ return String(x).toLowerCase(); });
+      if (t.indexOf('ultra') !== -1) return 'ultra';
+      if (IRREALISTE_TAGS.some(function(r){ return t.indexOf(r) !== -1; })) return 'irrealiste';
+      return '';
+    }
+    var hasUltra      = content.gallery.some(function(i){ return imgSpecial(i) === 'ultra'; });
+    var hasIrrealiste = content.gallery.some(function(i){ return imgSpecial(i) === 'irrealiste'; });
+  %>
+  <section class="prot-section">
+    <div class="prot-section-header">
+      <h2 class="nv-strip-title">Images <span class="prot-section-count" id="par-gallery-count">(<%= content.gallery.length %>)</span></h2>
+      <div class="prot-gallery-toggles">
+        <% if (hasUltra) { %>
+          <button type="button" class="wiki-ultra-btn" id="par-ultra-toggle">Masquer Ultra</button>
+        <% } %>
+        <% if (hasIrrealiste) { %>
+          <button type="button" class="wiki-ultra-btn" id="par-irrealiste-toggle">Masquer Irréaliste</button>
+        <% } %>
+      </div>
+    </div>
+    <div class="prot-carousel" id="par-carousel">
+      <button type="button" class="prot-carousel-btn prot-carousel-prev" aria-label="Précédent">&#8249;</button>
+      <div class="prot-carousel-track-wrap">
+        <div class="prot-carousel-track" id="par-carousel-track">
+          <% content.gallery.forEach(function(img) { %>
+            <% var thumb = (img.imagePaths || [])[0] || ''; %>
+            <% if (thumb) { %>
+              <a href="/galerie?img=<%= img.id %>" class="prot-carousel-item"
+                title="<%= img.title || '' %>"
+                data-special="<%= imgSpecial(img) %>">
+                <img src="<%= thumbUrl(thumb) %>" alt="<%= img.title || '' %>" loading="lazy" />
+                <% if (img.title) { %><span class="parody-img-title"><%= img.title %></span><% } %>
+              </a>
+            <% } %>
+          <% }) %>
+        </div>
+      </div>
+      <button type="button" class="prot-carousel-btn prot-carousel-next" aria-label="Suivant">&#8250;</button>
     </div>
   </section>
   <% } %>
 
   <%# ── BD ── %>
   <% if (content.bd.length) { %>
-  <section class="parody-section">
-    <h2 class="parody-section-title">BD (<%= content.bd.length %>)</h2>
-    <div class="prot-grid">
+  <section class="prot-section">
+    <h2 class="nv-strip-title">BD <span class="prot-section-count">(<%= content.bd.length %>)</span></h2>
+    <div class="prot-nouvelles-list">
       <% content.bd.forEach(function(b) { %>
-        <a href="/bd/<%= b.id %>" class="prot-card">
-          <div class="prot-card-name"><%= b.title %></div>
+        <a href="/bd/<%= b.id %>" class="prot-nouvelle-row">
+          <span class="prot-nouvelle-title"><%= b.title %></span>
         </a>
       <% }) %>
     </div>
@@ -77,13 +135,13 @@
 
   <%# ── Nouvelles ── %>
   <% if (content.nouvelles.length) { %>
-  <section class="parody-section">
-    <h2 class="parody-section-title">Nouvelles (<%= content.nouvelles.length %>)</h2>
-    <div class="prot-grid">
+  <section class="prot-section">
+    <h2 class="nv-strip-title">Nouvelles <span class="prot-section-count">(<%= content.nouvelles.length %>)</span></h2>
+    <div class="prot-nouvelles-list">
       <% content.nouvelles.forEach(function(n) { %>
-        <a href="/nouvelles/<%= n.id %>" class="prot-card">
-          <div class="prot-card-name"><%= n.title %></div>
-          <% if (n.summary) { %><p class="prot-card-desc"><%= n.summary.slice(0, 100) %><%= n.summary.length > 100 ? '…' : '' %></p><% } %>
+        <a href="/nouvelles/<%= n.id %>" class="prot-nouvelle-row">
+          <span class="prot-nouvelle-title"><%= n.title %></span>
+          <% if (n.summary) { %><span class="prot-nouvelle-summary"><%= n.summary.slice(0, 80) %><%= n.summary.length > 80 ? '…' : '' %></span><% } %>
         </a>
       <% }) %>
     </div>
@@ -92,12 +150,13 @@
 
   <%# ── Codex ── %>
   <% if (content.wiki.length) { %>
-  <section class="parody-section">
-    <h2 class="parody-section-title">Codex (<%= content.wiki.length %>)</h2>
-    <div class="prot-grid">
+  <section class="prot-section">
+    <h2 class="nv-strip-title">Codex <span class="prot-section-count">(<%= content.wiki.length %>)</span></h2>
+    <div class="prot-nouvelles-list">
       <% content.wiki.forEach(function(w) { %>
-        <a href="/wiki/<%= w.id %>" class="prot-card">
-          <div class="prot-card-name"><%= w.title %></div>
+        <a href="/wiki/<%= w.id %>" class="prot-nouvelle-row">
+          <span class="prot-nouvelle-title"><%= w.title %></span>
+          <% if (w.category) { %><span class="prot-nouvelle-summary"><%= w.category %></span><% } %>
         </a>
       <% }) %>
     </div>
@@ -105,4 +164,81 @@
   <% } %>
 
 </main>
+
+<script>
+(function() {
+  var track   = document.getElementById('par-carousel-track');
+  if (!track) return;
+  var wrap    = track.parentElement;
+  var prevBtn = document.querySelector('.prot-carousel-prev');
+  var nextBtn = document.querySelector('.prot-carousel-next');
+  var countEl = document.getElementById('par-gallery-count');
+  var pos = 0;
+
+  function visibleItems() { return Array.from(track.querySelectorAll('.prot-carousel-item:not([hidden])')); }
+
+  function update() {
+    var items = visibleItems();
+    if (!items.length) { track.style.transform = 'translateX(0)'; if (prevBtn) prevBtn.disabled = true; if (nextBtn) nextBtn.disabled = true; return; }
+    var itemW = items[0].offsetWidth + 8;
+    var perPage = Math.max(1, Math.floor(wrap.clientWidth / itemW));
+    var max = Math.max(0, items.length - perPage);
+    pos = Math.min(pos, max);
+    var offset = items[pos] ? items[pos].offsetLeft : 0;
+    track.style.transform = 'translateX(-' + offset + 'px)';
+    if (prevBtn) prevBtn.disabled = pos === 0;
+    if (nextBtn) nextBtn.disabled = pos >= max;
+    if (countEl) countEl.textContent = '(' + items.length + ')';
+  }
+
+  if (prevBtn) prevBtn.addEventListener('click', function() { pos = Math.max(0, pos - 1); update(); });
+  if (nextBtn) nextBtn.addEventListener('click', function() { pos++; update(); });
+  window.addEventListener('resize', function() { pos = 0; update(); });
+
+  var hideUltra      = localStorage.getItem('gallery-hide-ultra') === '1';
+  var hideIrrealiste = localStorage.getItem('gallery-hide-irrealiste') === '1';
+
+  function applyFilters() {
+    Array.from(track.querySelectorAll('.prot-carousel-item')).forEach(function(item) {
+      var sp = item.dataset.special || '';
+      item.hidden = (hideUltra && sp === 'ultra') || (hideIrrealiste && sp === 'irrealiste');
+    });
+    pos = 0;
+    update();
+  }
+
+  function syncBtn(btn, hidden, labelHide, labelShow) {
+    if (!btn) return;
+    btn.textContent = hidden ? labelShow : labelHide;
+    btn.classList.toggle('active', hidden);
+  }
+
+  var ultraToggle      = document.getElementById('par-ultra-toggle');
+  var irrealisteToggle = document.getElementById('par-irrealiste-toggle');
+
+  syncBtn(ultraToggle,      hideUltra,      'Masquer Ultra',       'Afficher Ultra');
+  syncBtn(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste',  'Afficher Irréaliste');
+
+  if (ultraToggle) {
+    ultraToggle.addEventListener('click', function() {
+      hideUltra = !hideUltra;
+      localStorage.setItem('gallery-hide-ultra', hideUltra ? '1' : '0');
+      syncBtn(ultraToggle, hideUltra, 'Masquer Ultra', 'Afficher Ultra');
+      applyFilters();
+    });
+  }
+  if (irrealisteToggle) {
+    irrealisteToggle.addEventListener('click', function() {
+      hideIrrealiste = !hideIrrealiste;
+      localStorage.setItem('gallery-hide-irrealiste', hideIrrealiste ? '1' : '0');
+      syncBtn(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste', 'Afficher Irréaliste');
+      applyFilters();
+    });
+  }
+
+  applyFilters();
+  update();
+})();
+</script>
+
 <%- include('partials/foot') %>
