@@ -295,13 +295,13 @@ window.buildTagBadgeHTML = function (tag) {
   var reg = window.TAG_REGISTRY || {};
   var meta = reg[String(tag).toLowerCase().trim()] || { tier: "normal", wikiPageId: null, pct: 0 };
   var style = meta.tier === "normal" ? ' style="--pct:' + meta.pct + '"' : "";
-  var html = '<span class="tag-badge tag-badge--' + meta.tier + '" data-tag="' +
-    lqEscapeHtml(String(tag).toLowerCase().trim()) + '"' + style + '>' + lqEscapeHtml(tag) + "</span>";
+  var inner = lqEscapeHtml(tag);
   if (meta.wikiPageId) {
-    html += '<a class="tag-badge-arrow" href="/wiki/' + meta.wikiPageId +
-      '" title="Voir la page codex" aria-label="Voir la page codex">&#8599;</a>';
+    inner += '<a class="tag-badge-arrow" href="/wiki/' + meta.wikiPageId +
+      '" title="Voir la page codex" aria-label="Voir la page codex" onclick="event.stopPropagation()">&#8599;</a>';
   }
-  return html;
+  return '<span class="tag-badge tag-badge--' + meta.tier + '" data-tag="' +
+    lqEscapeHtml(String(tag).toLowerCase().trim()) + '"' + style + '>' + inner + '</span>';
 };
 
 // ── Popup de tag unifiée (voir partials/tag-popup.ejs) ──────────────────────

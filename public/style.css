@@ -14985,52 +14985,30 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .lb-meta-block__title:empty { display: none; }
 
-.lb-meta-section-header {
+/* Sections verticales : label centré → contenu → séparateur bas */
+.lb-meta-section {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
-  margin: 0.1rem 0 0.2rem;
+  gap: 0.45rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
-.lb-meta-section-title {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
-  white-space: nowrap;
-  flex-shrink: 0;
-  margin: 0;
-}
-.lb-meta-section-line {
-  flex: 1;
-  height: 1px;
-  background: rgba(255,255,255,0.08);
-}
-
-/* Lignes de métadonnées structurées (Parodie / Auteur / Personnages / Tags) */
-.lb-meta-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-.lb-meta-row[hidden] { display: none; }
+.lb-meta-section[hidden] { display: none; }
 .lb-meta-label {
-  font-size: 0.67rem;
-  font-weight: 600;
+  font-size: 0.64rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.38);
-  min-width: 5rem;
-  padding-top: 0.22rem;
-  flex-shrink: 0;
-  text-align: right;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.32);
+  text-align: center;
 }
 .lb-meta-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  flex: 1;
-  min-width: 0;
+  gap: 0.35rem;
+  justify-content: center;
+  width: 100%;
 }
 
 /* Séparateur flexible — pousse admin + avis en bas quand le contenu est court */
