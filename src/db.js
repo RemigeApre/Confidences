@@ -117,6 +117,7 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN protagonist_ids TEXT NOT NU
 // formulaire) : seules les premières sont géré/nettoyées par la synchro —
 // on ne doit jamais toucher aux images/tags d'une fiche liée à la main.
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN wiki_synced INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN title_visible INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS gallery_links (
@@ -1809,6 +1810,7 @@ function rowToGalleryImage(row) {
     interested: false,
     wikiPageId: row.wiki_page_id || null,
     wikiSynced: !!row.wiki_synced,
+    titleVisible: !!row.title_visible,
     processed: !!row.processed,
     featured: !!row.featured,
     protagonistIds: (() => { try { return JSON.parse(row.protagonist_ids || "[]"); } catch(_) { return []; } })(),
@@ -1852,13 +1854,13 @@ function getGalleryImage(id) {
   return row ? rowToGalleryImage(row) : null;
 }
 
-function insertGalleryImage({ imagePaths, title, tags, notes, category, wikiPageId, author, parody, subParody, protagonistIds }) {
+function insertGalleryImage({ imagePaths, title, titleVisible, tags, notes, category, wikiPageId, author, parody, subParody, protagonistIds }) {
   const now = new Date().toISOString();
   const paths = imagePaths || [];
   const info = db.prepare(
-    `INSERT INTO gallery_images (filename, image_paths, title, tags, notes, category, wiki_page_id, author, parody, sub_parody, protagonist_ids, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(paths[0] || "", JSON.stringify(paths), title || "", JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), now, now);
+    `INSERT INTO gallery_images (filename, image_paths, title, title_visible, tags, notes, category, wiki_page_id, author, parody, sub_parody, protagonist_ids, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(paths[0] || "", JSON.stringify(paths), title || "", titleVisible ? 1 : 0, JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), now, now);
   return info.lastInsertRowid;
 }
 
@@ -1869,7 +1871,7 @@ function setGalleryImageWikiSynced(id, synced) {
   db.prepare("UPDATE gallery_images SET wiki_synced = ? WHERE id = ?").run(synced ? 1 : 0, id);
 }
 
-function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds }) {
+function updateGalleryImage(id, { title, titleVisible, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds }) {
   const existing = db.prepare("SELECT image_paths, filename FROM gallery_images WHERE id = ?").get(id);
   if (!existing) return false;
   // Si imagePaths n'est pas fourni, conserver les images existantes
@@ -1879,9 +1881,9 @@ function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wiki
     if (!finalImagePaths.length && existing.filename) finalImagePaths = [existing.filename];
   }
   db.prepare(
-    `UPDATE gallery_images SET title = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, updated_at = ?
+    `UPDATE gallery_images SET title = ?, title_visible = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title || "", category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), new Date().toISOString(), id);
+  ).run(title || "", titleVisible ? 1 : 0, category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), new Date().toISOString(), id);
   return true;
 }
 

@@ -999,7 +999,10 @@
       }
     }
     preloadAdjacent();
-    if (lbTitle) lbTitle.textContent = displayTitle;
+    if (lbTitle) {
+      lbTitle.textContent = displayTitle;
+      lbTitle.hidden = card.dataset.titleVisible !== "1";
+    }
     if (lbTags) {
       lbTags.innerHTML = tags.map(function(t) { return window.buildTagBadgeHTML(t); }).join("");
     }
@@ -1139,7 +1142,7 @@
       if (lbProcessBtn) {
         lbProcessBtn.dataset.galleryId = galleryId;
         lbProcessBtn.hidden = false;
-        lbProcessBtn.textContent = card.dataset.processed === "1" ? "Retirer trait\u00e9" : "Marquer trait\u00e9";
+        lbProcessBtn.textContent = card.dataset.processed === "1" ? "Trait\u00e9" : "\u00c0 traiter";
       }
     }
   }
@@ -1474,7 +1477,7 @@
               badge.remove();
             }
           }
-          lbProcessBtn.textContent = data.processed ? "Retirer trait\u00e9" : "Marquer trait\u00e9";
+          lbProcessBtn.textContent = data.processed ? "Trait\u00e9" : "\u00c0 traiter";
         });
     });
   }

@@ -535,8 +535,9 @@ function buildGalleryRouter(config) {
     const parody = normalizeParody(String(req.body.parody || ""));
     const subParody = normalizeParody(String(req.body.sub_parody || ""));
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Number.isInteger);
+    const titleVisible = req.body.title_visible === "1";
 
-    updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds });
+    updateGalleryImage(id, { title, titleVisible, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds });
     setGalleryLinks(id, galleryLinksData);
 
     const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
