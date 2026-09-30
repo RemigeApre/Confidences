@@ -53,6 +53,14 @@ function buildLootboxRouter(config) {
     res.json({ unlocks });
   });
 
+  // Sauvegarde les filtres de contenu pour les lootboxes
+  router.post("/settings", express.json(), (req, res) => {
+    const allowUltra      = req.body.allowUltra      !== undefined ? !!req.body.allowUltra      : undefined;
+    const allowIrrealiste = req.body.allowIrrealiste !== undefined ? !!req.body.allowIrrealiste : undefined;
+    db.setLootboxFilters(req.user.id, { allowUltra, allowIrrealiste });
+    res.json({ ok: true });
+  });
+
   // ── Admin : attribuer des lootboxes ───────────────────────────────────────
   router.post("/admin/grant", requireAdmin, express.json(), (req, res) => {
     const targetUserId = parseInt(req.body.userId, 10);

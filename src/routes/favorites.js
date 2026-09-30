@@ -216,16 +216,21 @@ function buildFavoritesRouter(config) {
     });
   });
 
-  // Revente d'un item débloqué
+  // Revente d'un ou plusieurs items débloqués
   router.post("/coffre/sell", requireUserJson, express.json(), (req, res) => {
-    const unlockId = parseInt(req.body.unlockId, 10);
-    if (isNaN(unlockId)) return res.json({ ok: false, error: 'invalid' });
-    const result = sellUnlock(req.user.id, unlockId);
-    if (!result.ok) return res.json(result);
-    // Retourner le nouveau solde
     const { getUserById } = require("../db");
+    // Batch : { unlockIds: [1,2,3] }  ou legacy : { unlockId: 1 }
+    const ids = Array.isArray(req.body.unlockIds)
+      ? req.body.unlockIds.map(n => parseInt(n, 10)).filter(n => !isNaN(n))
+      : [parseInt(req.body.unlockId, 10)].filter(n => !isNaN(n));
+    if (!ids.length) return res.json({ ok: false, error: 'invalid' });
+    let totalCoins = 0;
+    for (const unlockId of ids) {
+      const result = sellUnlock(req.user.id, unlockId);
+      if (result.ok) totalCoins += result.coins;
+    }
     const user = getUserById(req.user.id);
-    res.json({ ok: true, coinsEarned: result.coins, newBalance: user.coins });
+    res.json({ ok: true, soldIds: ids, coinsEarned: totalCoins, newBalance: user.coins });
   });
 
   // Achat d'un item depuis la boutique

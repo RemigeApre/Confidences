@@ -224,9 +224,8 @@ app.use((req, res, next) => {
   if (req.user && req.user.profileImageId) {
     const img = getGalleryImage(req.user.profileImageId);
     if (img) {
-      let paths = [];
-      try { paths = JSON.parse(img.image_paths || '[]'); } catch (_) {}
-      res.locals.profileAvatarThumb = paths[0] ? thumbUrl(paths[0]) : null;
+      const firstPath = (img.imagePaths && img.imagePaths[0]) || img.filename || null;
+      res.locals.profileAvatarThumb = firstPath ? thumbUrl(firstPath) : null;
     }
   }
   next();

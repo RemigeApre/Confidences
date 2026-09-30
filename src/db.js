@@ -238,6 +238,10 @@ try { db.exec("ALTER TABLE users ADD COLUMN profile_image_id INTEGER"); } catch 
 // Monnaie virtuelle : gagnée en ouvrant des lootboxes (doublons → pièces)
 // ou en revendant des items. Dépensée pour acheter des items en boutique.
 try { db.exec("ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+// Filtres de contenu pour les lootboxes : 0 = exclu, 1 = inclus.
+// ultra : 0 par défaut (cohérent avec ultra_mode='hidden'). irrealiste : 1 par défaut.
+try { db.exec("ALTER TABLE users ADD COLUMN lootbox_allow_ultra INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN lootbox_allow_irrealiste INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 
 // ── Lootboxes et récompenses ───────────────────────────────────────────────
 // Lootboxes attribuées à un utilisateur (une ligne = une boîte, ouverte ou non).
@@ -543,6 +547,8 @@ function rowToUser(row) {
     profileColor: row.profile_color || '#6b7280',
     profileImageId: row.profile_image_id || null,
     coins: row.coins || 0,
+    lootboxAllowUltra: row.lootbox_allow_ultra == null ? 0 : !!row.lootbox_allow_ultra,
+    lootboxAllowIrrealiste: row.lootbox_allow_irrealiste == null ? 1 : !!row.lootbox_allow_irrealiste,
   };
 }
 
@@ -2603,9 +2609,25 @@ function grantLootbox(userId, count) {
 function openLootbox(userId) {
   const box = db.prepare("SELECT id FROM user_lootboxes WHERE user_id = ? AND opened = 0 ORDER BY created_at ASC LIMIT 1").get(userId);
   if (!box) return null;
-  const images = db.prepare("SELECT id, image_paths, title FROM gallery_images ORDER BY RANDOM() LIMIT 30").all();
-  if (!images.length) return null;
-  const image = images[Math.floor(Math.random() * images.length)];
+  const user = db.prepare("SELECT lootbox_allow_ultra, lootbox_allow_irrealiste FROM users WHERE id = ?").get(userId);
+  const allowUltra      = user ? !!user.lootbox_allow_ultra      : false;
+  const allowIrrealiste = user ? !!user.lootbox_allow_irrealiste : true;
+  // Construire la liste des tags ultra/irréaliste pour le filtrage
+  const ultraTags      = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'ultra'").all().map(r => r.tag));
+  const irrealisteTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'irrealiste'").all().map(r => r.tag));
+  // Tirer un pool élargi pour avoir de la marge après filtrage
+  let pool = db.prepare("SELECT id, image_paths, title, tags FROM gallery_images ORDER BY RANDOM() LIMIT 200").all();
+  pool = pool.filter(img => {
+    let tags = [];
+    try { tags = JSON.parse(img.tags || '[]'); } catch (_) {}
+    if (!allowUltra      && tags.some(t => ultraTags.has(t)))      return false;
+    if (!allowIrrealiste && tags.some(t => irrealisteTags.has(t))) return false;
+    return true;
+  });
+  // Fallback : si le filtre est trop restrictif, utiliser le pool complet
+  if (!pool.length) pool = db.prepare("SELECT id, image_paths, title FROM gallery_images ORDER BY RANDOM() LIMIT 30").all();
+  if (!pool.length) return null;
+  const image = pool[Math.floor(Math.random() * pool.length)];
   const rarity = _pickRarity();
   const now = new Date().toISOString();
   // Tenter d'insérer dans les unlocks ; si déjà possédé → convertir en pièces
@@ -2696,6 +2718,14 @@ function setProfileImageId(userId, imageId) {
   const unlock = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image' AND ref_id = ?").get(userId, id);
   if (!unlock) return false;
   db.prepare("UPDATE users SET profile_image_id = ? WHERE id = ?").run(id, userId);
+  return true;
+}
+
+function setLootboxFilters(userId, { allowUltra, allowIrrealiste }) {
+  const u = allowUltra      !== undefined ? (allowUltra      ? 1 : 0) : null;
+  const i = allowIrrealiste !== undefined ? (allowIrrealiste ? 1 : 0) : null;
+  if (u !== null) db.prepare("UPDATE users SET lootbox_allow_ultra = ? WHERE id = ?").run(u, userId);
+  if (i !== null) db.prepare("UPDATE users SET lootbox_allow_irrealiste = ? WHERE id = ?").run(i, userId);
   return true;
 }
 
@@ -2900,6 +2930,7 @@ module.exports = {
   RARITY_SELL_PRICE,
   setProfileColor,
   setProfileImageId,
+  setLootboxFilters,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
