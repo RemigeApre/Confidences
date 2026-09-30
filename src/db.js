@@ -3222,6 +3222,55 @@ function setLootboxFilters(userId, { allowUltra, allowIrrealiste }) {
   return true;
 }
 
+// ── Arcade Memory ─────────────────────────────────────────────────────────
+function getMemoryImages(userId, { tag = null, count = 16 } = {}) {
+  const user = db.prepare("SELECT lootbox_allow_ultra, lootbox_allow_irrealiste FROM users WHERE id = ?").get(userId);
+  const allowUltra = user ? !!user.lootbox_allow_ultra : false;
+  const allowIrrealiste = user ? !!user.lootbox_allow_irrealiste : true;
+  const ultraTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'ultra'").all().map(r => r.tag));
+  const irrealisteTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'irrealiste'").all().map(r => r.tag));
+  let rows = db.prepare("SELECT id, image_paths, title, tags FROM gallery_images WHERE image_paths != '[]' ORDER BY RANDOM() LIMIT 400").all();
+  rows = rows.filter(img => {
+    let tags = []; try { tags = JSON.parse(img.tags || '[]'); } catch (_) {}
+    if (!allowUltra && tags.some(t => ultraTags.has(t))) return false;
+    if (!allowIrrealiste && tags.some(t => irrealisteTags.has(t))) return false;
+    if (tag && !tags.includes(tag)) return false;
+    return true;
+  });
+  const result = [];
+  for (const img of rows) {
+    let paths = []; try { paths = JSON.parse(img.image_paths || '[]'); } catch (_) {}
+    if (!paths.length) continue;
+    result.push({ id: img.id, thumb: paths[0], title: img.title || '' });
+    if (result.length >= count) break;
+  }
+  return result;
+}
+
+function getMemoryTags(userId, minImages = 8) {
+  const user = db.prepare("SELECT lootbox_allow_ultra, lootbox_allow_irrealiste FROM users WHERE id = ?").get(userId);
+  const allowUltra = user ? !!user.lootbox_allow_ultra : false;
+  const allowIrrealiste = user ? !!user.lootbox_allow_irrealiste : true;
+  const ultraTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'ultra'").all().map(r => r.tag));
+  const irrealisteTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'irrealiste'").all().map(r => r.tag));
+  const rows = db.prepare("SELECT image_paths, tags FROM gallery_images WHERE image_paths != '[]'").all();
+  const tagCount = {};
+  for (const img of rows) {
+    let tags = [], paths = [];
+    try { tags = JSON.parse(img.tags || '[]'); } catch (_) {}
+    try { paths = JSON.parse(img.image_paths || '[]'); } catch (_) {}
+    if (!paths.length) continue;
+    if (!allowUltra && tags.some(t => ultraTags.has(t))) continue;
+    if (!allowIrrealiste && tags.some(t => irrealisteTags.has(t))) continue;
+    for (const tag of tags) tagCount[tag] = (tagCount[tag] || 0) + 1;
+  }
+  return Object.entries(tagCount)
+    .filter(([, c]) => c >= minImages)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 80)
+    .map(([tag, count]) => ({ tag, count }));
+}
+
 module.exports = {
   db,
   insertSubmission,
@@ -3414,6 +3463,8 @@ module.exports = {
   deleteAiProfile,
   getLootboxCount,
   grantLootbox,
+  getMemoryImages,
+  getMemoryTags,
   checkAndGrantActionLootbox,
   countUserRatingsAll,
   countUserFavoritesAll,
