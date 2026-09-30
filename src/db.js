@@ -250,6 +250,26 @@ try { db.exec("ALTER TABLE users ADD COLUMN rating_charm TEXT NOT NULL DEFAULT '
 try { db.exec("ALTER TABLE users ADD COLUMN arcade_memory_best_level INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN arcade_memory_best_score INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
+// ── Wordle du Codex ──────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS wordle_daily (
+    date TEXT PRIMARY KEY,
+    word TEXT NOT NULL,
+    source_title TEXT NOT NULL DEFAULT ''
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS wordle_user_game (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    guesses TEXT NOT NULL DEFAULT '[]',
+    solved INTEGER NOT NULL DEFAULT 0,
+    reward_granted INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(user_id, date)
+  )
+`);
+
 // ── Lootboxes et récompenses ───────────────────────────────────────────────
 // Lootboxes attribuées à un utilisateur (une ligne = une boîte, ouverte ou non).
 db.exec(`
@@ -3002,7 +3022,7 @@ function openLootbox(userId) {
     const available = allCharms.filter(c => !ownedIds.has(c.id));
     db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity='legendary', opened_at=? WHERE id=?").run(now, box.id);
     const rewards = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 1; i++) {
       const remaining = allCharms.filter(c => !ownedIds.has(c.id) && !rewards.find(r => r.charmKey === c.key));
       if (!remaining.length) {
         const cfg = getLootboxConfig();
@@ -3055,7 +3075,7 @@ function openLootbox(userId) {
   if (!pool.length) return null;
   db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
   const rewards = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 1; i++) {
     const rarity = _pickRarity();
     if (rarity === 'mythic'    && Math.random() < 0.40) {
       rewards.push(_grantJoker(userId, null, 'joker_charm',  'mythic'));
@@ -3299,6 +3319,72 @@ function updateArcadeStats(userId, level, score) {
   ).run(newLevel, newScore, userId);
 }
 
+function getFrenchDate() {
+  return new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date()).split('/').reverse().join('-');
+}
+
+function normalizeWordleWord(str) {
+  return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+}
+
+function getWordlePool() {
+  const rows = db.prepare("SELECT title, meta FROM wiki_pages").all();
+  const words = new Map(); // normalized → original display string
+  for (const row of rows) {
+    const title = (row.title || '').trim();
+    const norm = normalizeWordleWord(title);
+    if (norm.length >= 4 && norm.length <= 10) words.set(norm, title);
+    let meta = {};
+    try { meta = JSON.parse(row.meta || '{}'); } catch (_) {}
+    const variantes = Array.isArray(meta.variantes) ? meta.variantes : [];
+    for (const v of variantes) {
+      let vName = '';
+      if (typeof v === 'string') vName = v.trim();
+      else if (v && typeof v === 'object') vName = String(v.name || v.value || v.label || v.text || '').trim();
+      if (!vName) continue;
+      const vNorm = normalizeWordleWord(vName);
+      if (vNorm.length >= 4 && vNorm.length <= 10 && !words.has(vNorm)) words.set(vNorm, vName);
+    }
+  }
+  return Array.from(words.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+function getWordleDaily() {
+  const today = getFrenchDate();
+  const existing = db.prepare("SELECT word, source_title FROM wordle_daily WHERE date = ?").get(today);
+  if (existing) return { date: today, word: existing.word, sourceTitle: existing.source_title };
+
+  const recentWords = new Set(
+    db.prepare("SELECT word FROM wordle_daily WHERE date >= date(?, '-30 days')").all(today).map(r => r.word)
+  );
+  const fullPool = getWordlePool();
+  const pool = fullPool.filter(([norm]) => !recentWords.has(norm));
+  const finalPool = pool.length ? pool : fullPool;
+  if (!finalPool.length) return null;
+
+  const dateNum = parseInt(today.replace(/-/g, ''), 10);
+  const [norm, original] = finalPool[dateNum % finalPool.length];
+  db.prepare("INSERT OR IGNORE INTO wordle_daily (date, word, source_title) VALUES (?, ?, ?)").run(today, norm, original);
+  return { date: today, word: norm, sourceTitle: original };
+}
+
+function getWordleUserGame(userId, date) {
+  const row = db.prepare("SELECT guesses, solved, reward_granted FROM wordle_user_game WHERE user_id = ? AND date = ?").get(userId, date);
+  if (!row) return { guesses: [], solved: false, rewardGranted: false };
+  let guesses = [];
+  try { guesses = JSON.parse(row.guesses || '[]'); } catch (_) {}
+  return { guesses, solved: !!row.solved, rewardGranted: !!row.reward_granted };
+}
+
+function saveWordleGuess(userId, date, guesses, solved, rewardGranted) {
+  db.prepare(`
+    INSERT INTO wordle_user_game (user_id, date, guesses, solved, reward_granted) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, date) DO UPDATE SET guesses=excluded.guesses, solved=excluded.solved, reward_granted=excluded.reward_granted
+  `).run(userId, date, JSON.stringify(guesses), solved ? 1 : 0, rewardGranted ? 1 : 0);
+}
+
 module.exports = {
   db,
   insertSubmission,
@@ -3526,6 +3612,11 @@ module.exports = {
   setProfileImageId,
   setProfileImageCrop,
   setLootboxFilters,
+  getWordleDaily,
+  getWordleUserGame,
+  saveWordleGuess,
+  normalizeWordleWord,
+  getFrenchDate,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

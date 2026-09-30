@@ -117,6 +117,14 @@
           </div>
           <button class="arcade-game-play-btn" id="arcade-memory-play-btn">Jouer</button>
         </div>
+        <div class="arcade-game-card">
+          <span class="arcade-game-card-icon">&#128195;</span>
+          <div class="arcade-game-card-info">
+            <strong>Mot du Codex</strong>
+            <span>Un mot par jour &bull; Jusqu&rsquo;&agrave; 5&nbsp;&#127873; selon votre nombre d&rsquo;essais</span>
+          </div>
+          <button class="arcade-game-play-btn" id="arcade-wordle-play-btn">Jouer</button>
+        </div>
       </div>
     </div>
 
@@ -211,6 +219,23 @@
         <button class="arcade-btn arcade-btn--ghost" id="lose-quit-btn">Quitter</button>
         <button class="arcade-btn arcade-btn--primary" id="lose-retry-btn">Rejouer ce niveau</button>
       </div>
+    </div>
+
+    <%# ── Mot du Codex (Wordle) ── %>
+    <div id="arcade-screen-wordle" class="arcade-screen" hidden>
+      <div class="wordle-header">
+        <button class="arcade-btn arcade-btn--ghost wordle-back-btn" id="wordle-back-btn">&larr; Retour</button>
+        <div class="wordle-title-group">
+          <span class="wordle-title">Mot du Codex</span>
+          <span class="wordle-date" id="wordle-date"></span>
+        </div>
+      </div>
+      <div class="wordle-grid-wrap">
+        <div class="wordle-grid" id="wordle-grid"></div>
+      </div>
+      <div class="wordle-message" id="wordle-message"></div>
+      <div class="wordle-keyboard" id="wordle-keyboard"></div>
+      <div class="wordle-result" id="wordle-result" hidden></div>
     </div>
 
   </div>
@@ -856,6 +881,300 @@
     clearProgress();
     showScreen(screenGames);
   });
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOT DU CODEX — Wordle
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var MAX_GUESSES = 6;
+  var REWARDS_LABELS = ['5 coffres', '4 coffres', '3 coffres', '2 coffres', '1 coffre', ''];
+
+  // DOM
+  var arcadeOverlay   = document.getElementById('arcade-modal');
+  var playBtn         = document.getElementById('arcade-wordle-play-btn');
+  var backBtn         = document.getElementById('wordle-back-btn');
+  var gridEl          = document.getElementById('wordle-grid');
+  var msgEl           = document.getElementById('wordle-message');
+  var kbEl            = document.getElementById('wordle-keyboard');
+  var resultEl        = document.getElementById('wordle-result');
+  var dateEl          = document.getElementById('wordle-date');
+  var screenWordle    = document.getElementById('arcade-screen-wordle');
+
+  if (!screenWordle) return;
+
+  // State
+  var _wordLength  = 5;
+  var _currentRow  = 0;
+  var _currentGuess= '';
+  var _gameOver    = false;
+  var _tiles       = [];     // 2D array [row][col]
+  var _keyMap      = {};     // letter → best status
+
+  // AZERTY rows
+  var KB_ROWS = [
+    ['A','Z','E','R','T','Y','U','I','O','P'],
+    ['Q','S','D','F','G','H','J','K','L','M'],
+    ['ENTER','W','X','C','V','B','N','⌫'],
+  ];
+
+  // ── Show screen ──────────────────────────────────────────────────────────
+  var _allScreens = document.querySelectorAll('#arcade-modal .arcade-screen');
+  function showScreen(el) {
+    _allScreens.forEach(function(s) { s.hidden = true; });
+    if (el) el.hidden = false;
+  }
+
+  // ── Open wordle ──────────────────────────────────────────────────────────
+  playBtn && playBtn.addEventListener('click', function() {
+    loadToday();
+  });
+
+  backBtn && backBtn.addEventListener('click', function() {
+    showScreen(document.getElementById('arcade-screen-games'));
+  });
+
+  // ── Load today's game ────────────────────────────────────────────────────
+  function loadToday() {
+    showScreen(screenWordle);
+    if (msgEl) { msgEl.textContent = 'Chargement\u2026'; msgEl.className = 'wordle-message'; }
+    fetch('/arcade/wordle/today')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.ok) { if (msgEl) msgEl.textContent = 'Aucun mot disponible.'; return; }
+        if (msgEl) msgEl.textContent = '';
+        _wordLength = d.wordLength;
+        _currentRow = d.guesses.length;
+        _currentGuess = '';
+        _gameOver = d.gameOver;
+        _keyMap = {};
+
+        // Date display
+        var today = new Date();
+        if (dateEl) dateEl.textContent = today.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
+
+        buildGrid();
+        buildKeyboard();
+
+        // Restore previous guesses
+        d.guesses.forEach(function(g, row) {
+          for (var col = 0; col < _wordLength; col++) {
+            setTile(row, col, g.guess[col] || '', g.feedback[col] || 'absent', true);
+          }
+          updateKeyMap(g.guess, g.feedback);
+        });
+        renderKeyboard();
+
+        if (d.gameOver) showResult(d.solved, d.word, d.sourceTitle, 0, d.guesses.length);
+      })
+      .catch(function() { if (msgEl) msgEl.textContent = 'Erreur de chargement.'; });
+  }
+
+  // ── Build grid ───────────────────────────────────────────────────────────
+  function buildGrid() {
+    if (!gridEl) return;
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = 'repeat(' + _wordLength + ', 1fr)';
+    _tiles = [];
+    for (var r = 0; r < MAX_GUESSES; r++) {
+      _tiles[r] = [];
+      for (var c = 0; c < _wordLength; c++) {
+        var tile = document.createElement('div');
+        tile.className = 'wordle-tile';
+        gridEl.appendChild(tile);
+        _tiles[r][c] = tile;
+      }
+    }
+  }
+
+  // ── Build keyboard ───────────────────────────────────────────────────────
+  function buildKeyboard() {
+    if (!kbEl) return;
+    kbEl.innerHTML = '';
+    KB_ROWS.forEach(function(row) {
+      var rowEl = document.createElement('div');
+      rowEl.className = 'wordle-kb-row';
+      row.forEach(function(key) {
+        var btn = document.createElement('button');
+        btn.className = 'wordle-key';
+        if (key === 'ENTER') btn.className += ' wordle-key--wide';
+        if (key === '⌫')    btn.className += ' wordle-key--wide';
+        btn.textContent = key;
+        btn.dataset.key = key;
+        btn.addEventListener('click', function() { onKey(key); });
+        rowEl.appendChild(btn);
+      });
+      kbEl.appendChild(rowEl);
+    });
+  }
+
+  function renderKeyboard() {
+    if (!kbEl) return;
+    kbEl.querySelectorAll('[data-key]').forEach(function(btn) {
+      var k = btn.dataset.key;
+      if (_keyMap[k]) btn.dataset.status = _keyMap[k];
+      else delete btn.dataset.status;
+    });
+  }
+
+  // ── Set tile ─────────────────────────────────────────────────────────────
+  function setTile(row, col, letter, status, immediate) {
+    var tile = _tiles[row] && _tiles[row][col];
+    if (!tile) return;
+    tile.textContent = letter.toUpperCase();
+    if (status) {
+      if (immediate) {
+        tile.dataset.status = status;
+      } else {
+        setTimeout(function() { tile.dataset.status = status; }, col * 120);
+      }
+    } else {
+      delete tile.dataset.status;
+    }
+  }
+
+  // ── Current row rendering ────────────────────────────────────────────────
+  function renderCurrentRow() {
+    for (var c = 0; c < _wordLength; c++) {
+      var tile = _tiles[_currentRow] && _tiles[_currentRow][c];
+      if (!tile) continue;
+      tile.textContent = c < _currentGuess.length ? _currentGuess[c].toUpperCase() : '';
+      delete tile.dataset.status;
+      tile.classList.toggle('wordle-tile--filled', c < _currentGuess.length);
+    }
+  }
+
+  // ── Key handling ─────────────────────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    if (!arcadeOverlay || arcadeOverlay.hidden) return;
+    if (!screenWordle || screenWordle.hidden) return;
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.key === 'Enter') { onKey('ENTER'); return; }
+    if (e.key === 'Backspace') { onKey('⌫'); return; }
+    if (/^[a-zA-Z]$/.test(e.key)) onKey(e.key.toUpperCase());
+  });
+
+  function onKey(key) {
+    if (_gameOver) return;
+    if (key === '⌫') {
+      if (_currentGuess.length > 0) {
+        _currentGuess = _currentGuess.slice(0, -1);
+        renderCurrentRow();
+      }
+      return;
+    }
+    if (key === 'ENTER') {
+      submitGuess();
+      return;
+    }
+    if (/^[A-Z]$/.test(key) && _currentGuess.length < _wordLength) {
+      _currentGuess += key.toLowerCase();
+      renderCurrentRow();
+    }
+  }
+
+  // ── Submit guess ─────────────────────────────────────────────────────────
+  function submitGuess() {
+    if (_currentGuess.length !== _wordLength) {
+      showMsg('Mot trop court\u00a0!', 'warn'); return;
+    }
+    fetch('/arcade/wordle/guess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guess: _currentGuess }),
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.ok) {
+          if (d.error === 'wrong_length') showMsg('Longueur incorrecte.', 'warn');
+          else showMsg('Erreur.', 'warn');
+          return;
+        }
+        // Reveal tiles
+        for (var c = 0; c < _wordLength; c++) {
+          setTile(_currentRow, c, _currentGuess[c], d.feedback[c], false);
+        }
+        updateKeyMap(_currentGuess, d.feedback);
+        setTimeout(function() { renderKeyboard(); }, _wordLength * 120 + 100);
+
+        var row = _currentRow;
+        _currentRow++;
+        _currentGuess = '';
+
+        if (d.gameOver) {
+          _gameOver = true;
+          setTimeout(function() {
+            showResult(d.solved, d.word, d.sourceTitle, d.lootboxGranted, d.guessCount);
+            if (d.lootboxGranted > 0 && typeof window._lbRefreshCount === 'function') {
+              window._lbRefreshCount();
+            }
+          }, _wordLength * 120 + 400);
+        } else {
+          if (msgEl) msgEl.textContent = '';
+        }
+      })
+      .catch(function() { showMsg('Erreur r\u00e9seau.', 'warn'); });
+  }
+
+  // ── Key map update ───────────────────────────────────────────────────────
+  var STATUS_RANK = { correct: 3, present: 2, absent: 1 };
+  function updateKeyMap(guess, feedback) {
+    for (var i = 0; i < guess.length; i++) {
+      var letter = guess[i].toUpperCase();
+      var st = feedback[i];
+      if (!_keyMap[letter] || STATUS_RANK[st] > STATUS_RANK[_keyMap[letter]]) {
+        _keyMap[letter] = st;
+      }
+    }
+  }
+
+  // ── Show message ─────────────────────────────────────────────────────────
+  function showMsg(text, type) {
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.className = 'wordle-message wordle-message--' + (type || 'info');
+    setTimeout(function() { if (msgEl.textContent === text) msgEl.textContent = ''; }, 2000);
+  }
+
+  // ── Result panel ─────────────────────────────────────────────────────────
+  function showResult(solved, word, sourceTitle, lootboxGranted, guessCount) {
+    if (!resultEl) return;
+    resultEl.hidden = false;
+    resultEl.textContent = '';
+    resultEl.className = 'wordle-result ' + (solved ? 'wordle-result--win' : 'wordle-result--lose');
+
+    var line1 = document.createElement('div');
+    line1.className = 'wordle-result-line1';
+    line1.textContent = solved ? '\uD83C\uDF89 Trouv\u00e9 !' : '\u231B Pas trouv\u00e9\u2026';
+
+    var line2 = document.createElement('div');
+    line2.className = 'wordle-result-word';
+    line2.textContent = 'Le mot\u00a0: ' + (word || '').toUpperCase();
+
+    var line3 = document.createElement('div');
+    line3.className = 'wordle-result-source';
+    line3.textContent = sourceTitle ? 'Codex\u00a0: \u00ab\u00a0' + sourceTitle + '\u00a0\u00bb' : '';
+
+    resultEl.appendChild(line1);
+    resultEl.appendChild(line2);
+    if (sourceTitle) resultEl.appendChild(line3);
+
+    if (solved && lootboxGranted > 0) {
+      var line4 = document.createElement('div');
+      line4.className = 'wordle-result-reward';
+      line4.textContent = '\uD83C\uDF73 +' + lootboxGranted + ' coffre' + (lootboxGranted > 1 ? 's' : '') + ' !';
+      resultEl.appendChild(line4);
+    } else if (solved && lootboxGranted === 0) {
+      var line4b = document.createElement('div');
+      line4b.className = 'wordle-result-source';
+      line4b.textContent = '(R\u00e9compense d\u00e9j\u00e0 obtenue aujourd\u2019hui)';
+      resultEl.appendChild(line4b);
+    }
+  }
 })();
 </script>
 
