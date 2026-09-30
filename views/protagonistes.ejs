@@ -1,38 +1,144 @@
-<%- include('partials/head', { title: 'Protagonistes' }) %>
-<main class="container" style="max-width: 860px; margin: 0 auto">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Protagonistes', navBack: '/wiki' }) %>
+<%- include('partials/head', { title: 'Personnages' }) %>
+<main class="container prot-layout">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Personnages', navBack: '/wiki' }) %>
 
-  <div class="prot-header">
-    <h1 class="prot-page-title">Protagonistes</h1>
-    <p class="prot-page-sub">Personnages récurrents des nouvelles</p>
+  <%# ── Volet gauche ───────────────────────────────────────────────────────── %>
+  <aside class="prot-sidebar" id="prot-sidebar">
+    <h2 class="prot-sidebar-title">Personnages</h2>
+
+    <%# Genre %>
+    <div class="prot-filter-section">
+      <div class="prot-filter-label">Genre</div>
+      <div class="prot-filter-chips" id="prot-gender-chips">
+        <button type="button" class="prot-chip prot-chip--active" data-gender="">Tous</button>
+        <button type="button" class="prot-chip" data-gender="femme">Femme</button>
+        <button type="button" class="prot-chip" data-gender="homme">Homme</button>
+        <button type="button" class="prot-chip" data-gender="autre">Autre</button>
+      </div>
+    </div>
+
+    <%# Nature %>
+    <div class="prot-filter-section">
+      <div class="prot-filter-label">Nature</div>
+      <div class="prot-filter-chips" id="prot-nature-chips">
+        <button type="button" class="prot-chip prot-chip--active" data-nature="">Toutes</button>
+        <button type="button" class="prot-chip" data-nature="humain">Humain</button>
+        <button type="button" class="prot-chip" data-nature="monstre">Monstre</button>
+        <button type="button" class="prot-chip" data-nature="animal">Animal</button>
+        <button type="button" class="prot-chip" data-nature="pokemon">Pokémon</button>
+        <button type="button" class="prot-chip" data-nature="autre">Autre</button>
+      </div>
+    </div>
+
+    <% if (parodies && parodies.length) { %>
+    <%# Parodie %>
+    <div class="prot-filter-section">
+      <div class="prot-filter-label">Univers</div>
+      <div class="prot-filter-chips" id="prot-parody-chips">
+        <button type="button" class="prot-chip prot-chip--active" data-parody="">Tous</button>
+        <% parodies.forEach(function(par) { %>
+          <button type="button" class="prot-chip" data-parody="<%= par %>"><%= par %></button>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+    <%# Résultats %>
+    <div class="prot-filter-count" id="prot-count"></div>
+  </aside>
+
+  <%# ── Contenu principal ──────────────────────────────────────────────────── %>
+  <div class="prot-main">
+    <% if (!protagonistes.length) { %>
+      <p class="nv-empty">Aucun personnage pour le moment.</p>
+    <% } else { %>
+      <div class="prot-grid" id="prot-grid">
+        <% protagonistes.forEach(function(p) { %>
+          <a href="/protagonistes/<%= p.id %>" class="prot-card"
+            data-gender="<%= p.gender || '' %>"
+            data-nature="<%= p.nature || '' %>"
+            data-parody="<%= p.parody || '' %>">
+            <% if (p.image_path) { %>
+              <div class="prot-card-img-wrap">
+                <img src="<%= p.image_path %>" alt="<%= p.name %>" class="prot-card-img" loading="lazy" />
+              </div>
+            <% } %>
+            <div class="prot-card-body">
+              <div class="prot-card-name"><%= p.name %></div>
+              <% if (p.gender || p.nature) { %>
+                <div class="prot-card-meta">
+                  <% if (p.gender) { %><span class="prot-badge prot-badge--<%= p.gender %>"><%= p.gender %></span><% } %>
+                  <% if (p.nature) { %><span class="prot-badge prot-badge--nature"><%= p.nature === 'pokemon' ? 'Pokémon' : p.nature %></span><% } %>
+                </div>
+              <% } %>
+              <% if (p.description) { %>
+                <p class="prot-card-desc"><%= p.description.slice(0, 100) %><%= p.description.length > 100 ? '…' : '' %></p>
+              <% } %>
+              <% if (p.tags && p.tags.length) { %>
+                <div class="prot-card-tags">
+                  <% p.tags.slice(0, 4).forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
+                </div>
+              <% } %>
+            </div>
+            <% if (currentUser && currentUser.isAdmin) { %>
+              <a href="/protagonistes/<%= p.id %>/edit" class="prot-edit-btn" onclick="event.preventDefault();event.stopPropagation();location.href=this.href">&#9998;</a>
+            <% } %>
+          </a>
+        <% }) %>
+      </div>
+      <p class="prot-no-results" id="prot-no-results" hidden>Aucun personnage ne correspond aux filtres.</p>
+    <% } %>
   </div>
 
-  <% if (!protagonistes.length) { %>
-    <p class="nv-empty">Aucun protagoniste pour le moment.</p>
-  <% } else { %>
-    <div class="prot-grid">
-      <% protagonistes.forEach(function(p) { %>
-        <a href="/protagonistes/<%= p.id %>" class="prot-card">
-          <div class="prot-card-name"><%= p.name %></div>
-          <% if (p.description) { %>
-            <p class="prot-card-desc"><%= p.description.slice(0, 120) %><%= p.description.length > 120 ? '…' : '' %></p>
-          <% } %>
-          <% if (p.tags && p.tags.length) { %>
-            <div class="prot-card-tags">
-              <% p.tags.slice(0, 5).forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
-            </div>
-          <% } %>
-          <% if (currentUser && currentUser.isAdmin) { %>
-            <a href="/protagonistes/<%= p.id %>/edit" class="prot-edit-btn" onclick="event.preventDefault();event.stopPropagation();location.href=this.href">&#9998;</a>
-          <% } %>
-        </a>
-      <% }) %>
-    </div>
-  <% } %>
-
   <% if (currentUser && currentUser.isAdmin) { %>
-    <a href="/protagonistes/new" class="wiki-fab-add" title="Nouveau protagoniste">+</a>
+    <a href="/protagonistes/new" class="wiki-fab-add" title="Nouveau personnage">+</a>
   <% } %>
-
 </main>
+
+<script>
+(function() {
+  var grid = document.getElementById('prot-grid');
+  if (!grid) return;
+  var cards = Array.from(grid.querySelectorAll('.prot-card'));
+  var noResults = document.getElementById('prot-no-results');
+  var countEl = document.getElementById('prot-count');
+
+  var activeGender = '';
+  var activeNature = '';
+  var activeParody = '';
+
+  function applyFilters() {
+    var shown = 0;
+    cards.forEach(function(c) {
+      var ok = true;
+      if (activeGender && c.dataset.gender !== activeGender) ok = false;
+      if (activeNature && c.dataset.nature !== activeNature) ok = false;
+      if (activeParody && c.dataset.parody !== activeParody) ok = false;
+      c.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (noResults) noResults.hidden = shown > 0;
+    if (countEl) countEl.textContent = shown + ' personnage' + (shown !== 1 ? 's' : '');
+  }
+
+  function wireChips(containerId, key, setter) {
+    var box = document.getElementById(containerId);
+    if (!box) return;
+    box.querySelectorAll('.prot-chip').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        box.querySelectorAll('.prot-chip').forEach(function(b) { b.classList.remove('prot-chip--active'); });
+        btn.classList.add('prot-chip--active');
+        setter(btn.dataset[key] || '');
+        applyFilters();
+      });
+    });
+  }
+
+  wireChips('prot-gender-chips', 'gender', function(v) { activeGender = v; });
+  wireChips('prot-nature-chips', 'nature', function(v) { activeNature = v; });
+  wireChips('prot-parody-chips', 'parody', function(v) { activeParody = v; });
+  applyFilters();
+})();
+</script>
+
 <%- include('partials/foot') %>

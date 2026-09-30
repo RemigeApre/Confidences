@@ -1,27 +1,74 @@
 <%- include('partials/head', { title: protagoniste.name }) %>
-<main class="container" style="max-width: 760px; margin: 0 auto">
+<main class="container" style="max-width: 860px; margin: 0 auto">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste.name, navBack: '/protagonistes' }) %>
 
   <div class="prot-detail-header">
-    <h1 class="prot-detail-name"><%= protagoniste.name %></h1>
-    <% if (protagoniste.tags && protagoniste.tags.length) { %>
-      <div class="prot-card-tags" style="margin-bottom:.75rem">
-        <% protagoniste.tags.forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
+
+    <% if (protagoniste.image_path) { %>
+      <div class="prot-detail-img-wrap">
+        <img src="<%= protagoniste.image_path %>" alt="<%= protagoniste.name %>" class="prot-detail-img" />
       </div>
     <% } %>
-    <% if (protagoniste.description) { %>
-      <div class="prot-detail-desc"><%= protagoniste.description.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
-    <% } %>
-    <% if (currentUser && currentUser.isAdmin) { %>
-      <div style="margin-top:1rem">
-        <a href="/protagonistes/<%= protagoniste.id %>/edit" class="wf-save-btn" style="position:static;display:inline-block">&#9998; Modifier</a>
-      </div>
-    <% } %>
+
+    <div class="prot-detail-info">
+      <h1 class="prot-detail-name"><%= protagoniste.name %></h1>
+
+      <% if (protagoniste.gender || protagoniste.nature || protagoniste.parody) { %>
+        <div class="prot-detail-badges">
+          <% if (protagoniste.gender) { %><span class="prot-badge prot-badge--<%= protagoniste.gender %>"><%= protagoniste.gender %></span><% } %>
+          <% if (protagoniste.nature) { %><span class="prot-badge prot-badge--nature"><%= protagoniste.nature === 'pokemon' ? 'Pokémon' : protagoniste.nature %></span><% } %>
+          <% if (protagoniste.parody) { %><span class="prot-badge prot-badge--parody"><%= protagoniste.parody %><% if (protagoniste.sub_parody) { %> · <%= protagoniste.sub_parody %><% } %></span><% } %>
+        </div>
+      <% } %>
+
+      <% if (protagoniste.tags && protagoniste.tags.length) { %>
+        <div class="prot-card-tags" style="margin-bottom:.75rem">
+          <% protagoniste.tags.forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
+        </div>
+      <% } %>
+
+      <% if (protagoniste.description) { %>
+        <div class="prot-detail-desc"><%- protagoniste.description.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
+      <% } %>
+
+      <% if (currentUser && currentUser.isAdmin) { %>
+        <div style="margin-top:1rem">
+          <a href="/protagonistes/<%= protagoniste.id %>/edit" class="wf-save-btn" style="position:static;display:inline-block">&#9998; Modifier</a>
+        </div>
+      <% } %>
+    </div>
   </div>
 
+  <%# ── Carrousel galerie ───────────────────────────────────────────────────── %>
+  <% if (galleryImages && galleryImages.length) { %>
+    <section class="prot-section">
+      <h2 class="nv-strip-title">Apparaît dans <span class="prot-section-count">(<%= galleryImages.length %>)</span></h2>
+      <div class="prot-carousel" id="prot-carousel">
+        <button type="button" class="prot-carousel-btn prot-carousel-prev" aria-label="Précédent">&#8249;</button>
+        <div class="prot-carousel-track-wrap">
+          <div class="prot-carousel-track" id="prot-carousel-track">
+            <% galleryImages.forEach(function(img) { %>
+              <%
+                var imgSrcs = img.imagePaths || [];
+                var thumb = imgSrcs[0] || '';
+              %>
+              <% if (thumb) { %>
+                <a href="/galerie" class="prot-carousel-item" title="<%= img.title || '' %>">
+                  <img src="<%= thumb %>" alt="<%= img.title || protagoniste.name %>" loading="lazy" />
+                </a>
+              <% } %>
+            <% }) %>
+          </div>
+        </div>
+        <button type="button" class="prot-carousel-btn prot-carousel-next" aria-label="Suivant">&#8250;</button>
+      </div>
+    </section>
+  <% } %>
+
+  <%# ── Nouvelles ────────────────────────────────────────────────────────────── %>
   <% if (nouvelles && nouvelles.length) { %>
-    <section style="padding: 0 0 3rem">
-      <h2 class="nv-strip-title">Apparaît dans</h2>
+    <section class="prot-section">
+      <h2 class="nv-strip-title">Nouvelles <span class="prot-section-count">(<%= nouvelles.length %>)</span></h2>
       <div class="prot-nouvelles-list">
         <% nouvelles.forEach(function(n) { %>
           <a href="/nouvelles/<%= n.id %>" class="prot-nouvelle-row">
@@ -31,9 +78,54 @@
         <% }) %>
       </div>
     </section>
-  <% } else { %>
-    <p class="nv-empty">Ce protagoniste n'apparaît dans aucune nouvelle pour le moment.</p>
+  <% } %>
+
+  <%# ── Codex ───────────────────────────────────────────────────────────────── %>
+  <% if (codexPages && codexPages.length) { %>
+    <section class="prot-section">
+      <h2 class="nv-strip-title">Codex <span class="prot-section-count">(<%= codexPages.length %>)</span></h2>
+      <div class="prot-nouvelles-list">
+        <% codexPages.forEach(function(pg) { %>
+          <a href="/wiki/<%= pg.id %>" class="prot-nouvelle-row">
+            <span class="prot-nouvelle-title"><%= pg.title %></span>
+            <% if (pg.category) { %><span class="prot-nouvelle-summary"><%= pg.category %></span><% } %>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
+  <% if (!nouvelles?.length && !galleryImages?.length && !codexPages?.length) { %>
+    <p class="nv-empty" style="margin-top:2rem">Ce personnage n'apparaît dans aucun contenu pour le moment.</p>
   <% } %>
 
 </main>
+
+<script>
+(function() {
+  var track = document.getElementById('prot-carousel-track');
+  if (!track) return;
+  var wrap = track.parentElement;
+  var items = track.querySelectorAll('.prot-carousel-item');
+  if (items.length <= 1) return;
+  var prev = document.querySelector('.prot-carousel-prev');
+  var next = document.querySelector('.prot-carousel-next');
+  var pos = 0;
+  var itemW = 0;
+  function getVisible() { return Math.max(1, Math.floor(wrap.clientWidth / (itemW || 160))); }
+  function update() {
+    itemW = items[0] ? items[0].offsetWidth + 8 : 160;
+    var max = Math.max(0, items.length - getVisible());
+    pos = Math.min(pos, max);
+    track.style.transform = 'translateX(-' + (pos * itemW) + 'px)';
+    if (prev) prev.disabled = pos === 0;
+    if (next) next.disabled = pos >= max;
+  }
+  if (prev) prev.addEventListener('click', function() { pos = Math.max(0, pos - 1); update(); });
+  if (next) next.addEventListener('click', function() { pos++; update(); });
+  window.addEventListener('resize', update);
+  update();
+})();
+</script>
+
 <%- include('partials/foot') %>

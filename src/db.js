@@ -2684,6 +2684,8 @@ module.exports = {
   updateProtagoniste,
   deleteProtagoniste,
   listNouvellesByProtagoniste,
+  listGalleryImagesByProtagoniste,
+  listWikiPagesByTag,
   listAllSiteTags,
   listNouvelleSeries,
   getNouvelleSerie,
@@ -2757,9 +2759,12 @@ db.exec(`
 `);
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN gender TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN nature TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN image_path TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 function listProtagonistes() {
-  return db.prepare(`SELECT id, name, description, tags, parody, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
+  return db.prepare(`SELECT id, name, description, tags, parody, sub_parody, gender, nature, image_path, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
     .map(p => { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } return p; });
 }
 function getProtagoniste(id) {
@@ -2767,14 +2772,17 @@ function getProtagoniste(id) {
   if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } }
   return p;
 }
-function createProtagoniste({ name, description, tags, parody, subParody }) {
-  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags, parody, sub_parody) VALUES (?,?,?,?,?)`)
-    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '');
+function createProtagoniste({ name, description, tags, parody, subParody, gender, nature, imagePath }) {
+  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags, parody, sub_parody, gender, nature, image_path) VALUES (?,?,?,?,?,?,?,?)`)
+    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || '', imagePath || '');
   return r.lastInsertRowid;
 }
-function updateProtagoniste(id, { name, description, tags, parody, subParody }) {
-  db.prepare(`UPDATE protagonistes SET name=?, description=?, tags=?, parody=?, sub_parody=?, updated_at=unixepoch() WHERE id=?`)
-    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', id);
+function updateProtagoniste(id, { name, description, tags, parody, subParody, gender, nature, imagePath }) {
+  const sets = ['name=?', 'description=?', 'tags=?', 'parody=?', 'sub_parody=?', 'gender=?', 'nature=?', 'updated_at=unixepoch()'];
+  const params = [name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || ''];
+  if (imagePath !== undefined) { sets.splice(sets.length - 1, 0, 'image_path=?'); params.push(imagePath || ''); }
+  params.push(id);
+  db.prepare(`UPDATE protagonistes SET ${sets.join(',')} WHERE id=?`).run(...params);
 }
 function deleteProtagoniste(id) {
   db.prepare(`DELETE FROM protagonistes WHERE id=?`).run(id);
@@ -2784,6 +2792,22 @@ function listNouvellesByProtagoniste(protagonisteId) {
     .all(`%${protagonisteId}%`)
     .filter(n => { try { return JSON.parse(n.protagoniste_ids || '[]').includes(protagonisteId); } catch { return false; } })
     .map(n => { try { n.tags = JSON.parse(n.tags); } catch { n.tags = []; } return n; });
+}
+function listGalleryImagesByProtagoniste(protagonisteId) {
+  return db.prepare(`SELECT id, filename, image_paths, title, title_visible FROM gallery_images WHERE protagonist_ids LIKE ? ORDER BY created_at DESC`)
+    .all(`%${protagonisteId}%`)
+    .filter(r => { try { return JSON.parse(r.protagonist_ids || '[]').includes(protagonisteId); } catch { return false; } })
+    .map(r => {
+      try { r.imagePaths = JSON.parse(r.image_paths || '[]'); } catch { r.imagePaths = []; }
+      return r;
+    });
+}
+function listWikiPagesByTag(tag) {
+  const tagLower = (tag || '').toLowerCase();
+  return db.prepare(`SELECT id, title, category, tags, image_path FROM wiki_pages ORDER BY title COLLATE NOCASE`).all()
+    .filter(p => {
+      try { return JSON.parse(p.tags || '[]').some(t => t.toLowerCase() === tagLower); } catch { return false; }
+    });
 }
 
 function listAllSiteTags() {

@@ -1,6 +1,6 @@
-<%- include('partials/head', { title: protagoniste ? 'Modifier : ' + protagoniste.name : 'Nouveau protagoniste' }) %>
+<%- include('partials/head', { title: protagoniste ? 'Modifier : ' + protagoniste.name : 'Nouveau personnage' }) %>
 <main class="container" style="max-width: 720px; margin: 0 auto">
-  <%- include('partials/top-nav', { config: config, navTitle: protagoniste ? protagoniste.name : 'Nouveau protagoniste', navBack: protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: protagoniste ? protagoniste.name : 'Nouveau personnage', navBack: protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' }) %>
 
   <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
@@ -8,19 +8,65 @@
   </div>
   <% if (protagoniste) { %>
   <form method="POST" action="/protagonistes/<%= protagoniste.id %>/delete" class="wf-delete-form-fixed"
-    onsubmit="return confirm('Supprimer ce protagoniste d\u00e9finitivement ?')">
-    <button type="submit" class="wf-delete-btn-fixed" title="Supprimer le protagoniste">&#128465;</button>
+    onsubmit="return confirm('Supprimer ce personnage d\u00e9finitivement ?')">
+    <button type="submit" class="wf-delete-btn-fixed" title="Supprimer le personnage">&#128465;</button>
   </form>
   <% } %>
 
   <div class="nv-form-wrap">
     <form method="POST" action="<%= protagoniste ? '/protagonistes/' + protagoniste.id + '/update' : '/protagonistes/new' %>"
-      class="nv-form" id="prot-form" data-no-enter-submit>
+      class="nv-form" id="prot-form" data-no-enter-submit enctype="multipart/form-data">
 
       <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
-        value="<%= protagoniste ? protagoniste.name : '' %>" placeholder="Nom du protagoniste…" />
+        value="<%= protagoniste ? protagoniste.name : '' %>" placeholder="Nom du personnage…" />
 
-      <textarea name="description" class="nv-form-content" rows="12"
+      <%# ── Image du personnage ──────────────────────────────────────────────── %>
+      <div class="prot-form-img-section">
+        <div class="prot-form-img-label">Photo / Illustration</div>
+        <% if (protagoniste && protagoniste.image_path) { %>
+          <div class="prot-form-img-preview" id="prot-img-preview">
+            <img src="<%= protagoniste.image_path %>" alt="Image actuelle" class="prot-form-img-thumb" id="prot-img-thumb" />
+            <label class="prot-form-img-remove">
+              <input type="checkbox" name="remove_image" value="1" id="prot-remove-img" />
+              Supprimer l'image
+            </label>
+          </div>
+        <% } else { %>
+          <div class="prot-form-img-preview" id="prot-img-preview" style="display:none">
+            <img src="" alt="Aperçu" class="prot-form-img-thumb" id="prot-img-thumb" />
+          </div>
+        <% } %>
+        <label class="prot-form-img-btn">
+          <input type="file" name="character_image" accept="image/*" id="prot-img-input" style="display:none" />
+          Choisir une image…
+        </label>
+      </div>
+
+      <%# ── Genre + Nature ──────────────────────────────────────────────────── %>
+      <div class="prot-form-row-2">
+        <div class="prot-form-field">
+          <label class="prot-form-field-label" for="prot-gender">Genre</label>
+          <select name="gender" id="prot-gender" class="prot-form-select">
+            <option value="">— non défini —</option>
+            <option value="femme"  <%= protagoniste && protagoniste.gender === 'femme'  ? 'selected' : '' %>>Femme</option>
+            <option value="homme"  <%= protagoniste && protagoniste.gender === 'homme'  ? 'selected' : '' %>>Homme</option>
+            <option value="autre"  <%= protagoniste && protagoniste.gender === 'autre'  ? 'selected' : '' %>>Autre</option>
+          </select>
+        </div>
+        <div class="prot-form-field">
+          <label class="prot-form-field-label" for="prot-nature">Nature</label>
+          <select name="nature" id="prot-nature" class="prot-form-select">
+            <option value="">— non défini —</option>
+            <option value="humain"  <%= protagoniste && protagoniste.nature === 'humain'  ? 'selected' : '' %>>Humain</option>
+            <option value="monstre" <%= protagoniste && protagoniste.nature === 'monstre' ? 'selected' : '' %>>Monstre</option>
+            <option value="animal"  <%= protagoniste && protagoniste.nature === 'animal'  ? 'selected' : '' %>>Animal</option>
+            <option value="pokemon" <%= protagoniste && protagoniste.nature === 'pokemon' ? 'selected' : '' %>>Pokémon</option>
+            <option value="autre"   <%= protagoniste && protagoniste.nature === 'autre'   ? 'selected' : '' %>>Autre</option>
+          </select>
+        </div>
+      </div>
+
+      <textarea name="description" class="nv-form-content" rows="10"
         placeholder="Description, traits de caractère, apparence…"
         style="resize:vertical"><%= protagoniste ? protagoniste.description : '' %></textarea>
 
@@ -28,8 +74,8 @@
       <%- include('partials/parody-input', {
             idPrefix:  'protf',
             mainValue: protagoniste ? protagoniste.parody    : '',
-            subValue:  protagoniste ? protagoniste.subParody : '',
-            mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
+            subValue:  protagoniste ? protagoniste.sub_parody : '',
+            mainPh:    'Univers (ex\u00a0: Pok\u00e9mon)\u2026'
           }) %>
 
       <%# ── Tags ─────────────────────────────────────────────────────────── %>
@@ -57,9 +103,25 @@
     </form>
   </div>
 
-
   <script>
   (function() {
+    // Image preview
+    var imgInput = document.getElementById('prot-img-input');
+    var imgThumb = document.getElementById('prot-img-thumb');
+    var imgPreview = document.getElementById('prot-img-preview');
+    var removeImg = document.getElementById('prot-remove-img');
+    if (imgInput) {
+      imgInput.addEventListener('change', function() {
+        var file = imgInput.files[0];
+        if (!file) return;
+        var url = URL.createObjectURL(file);
+        imgThumb.src = url;
+        imgPreview.style.display = '';
+        if (removeImg) removeImg.checked = false;
+      });
+    }
+
+    // Tags widget
     document.querySelectorAll('.wiki-tags-widget').forEach(function(widget) {
       var board      = widget.querySelector('.wiki-tags-board');
       var typer      = widget.querySelector('.wiki-tags-typing');
@@ -77,7 +139,6 @@
           c.hidden = isSelected;
         });
       }
-      // Zone chips au-dessus du champ
       var chipsArea = widget.querySelector('.wiki-tags-chips');
       if (!chipsArea) {
         chipsArea = document.createElement('div');
