@@ -17730,6 +17730,106 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
    ARCADE
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   MACHINE À CHARMES — slot machine
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Header de l'écran (retour + pièces) */
+.slots-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .9rem;
+}
+.slots-back-btn { font-size: .8rem; padding: .35rem .75rem; }
+.slots-coins-display {
+  display: flex; align-items: center; gap: .35rem;
+  background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3);
+  border-radius: 20px; padding: .28rem .8rem;
+  font-size: .95rem; font-weight: 700; color: hsl(44,95%,72%);
+}
+.slots-coins-label { font-size: .75rem; font-weight: 400; color: #94a3b8; }
+
+/* Bandeau coût */
+.slots-cost-notice {
+  text-align: center; font-size: .8rem; color: #64748b;
+  margin-bottom: 1.2rem;
+}
+.slots-cost-notice strong { color: hsl(44,95%,62%); }
+
+/* Zone des rouleaux */
+.slots-reels-wrap {
+  position: relative;
+  margin: 0 auto 1.4rem;
+  width: fit-content;
+}
+.slots-reels {
+  display: flex; gap: .65rem;
+  background: rgba(0,0,0,.45);
+  border: 2px solid rgba(251,191,36,.35);
+  border-radius: 14px; padding: .7rem 1rem;
+}
+.slots-reel {
+  width: 70px; height: 70px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem; line-height: 1;
+  background: rgba(255,255,255,.05);
+  border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  transition: color .2s, border-color .2s, box-shadow .2s;
+  user-select: none;
+}
+.slots-reel.spinning {
+  animation: slots-blur .12s ease infinite alternate;
+  color: rgba(255,255,255,.5);
+}
+@keyframes slots-blur {
+  from { filter: blur(0px); }
+  to   { filter: blur(2px); }
+}
+.slots-reel.reel-win {
+  color: hsl(44,98%,68%);
+  border-color: hsl(44,90%,55%);
+  box-shadow: 0 0 14px rgba(251,191,36,.45);
+}
+
+/* Flash victoire */
+.slots-win-flash {
+  position: absolute; inset: 0; border-radius: 14px; pointer-events: none;
+  animation: slots-win-pulse 0.6s ease infinite alternate;
+  border: 2px solid hsl(44,95%,55%);
+}
+@keyframes slots-win-pulse {
+  from { box-shadow: 0 0 10px rgba(251,191,36,.3); }
+  to   { box-shadow: 0 0 30px rgba(251,191,36,.7); }
+}
+
+/* Bouton jouer */
+.slots-play-btn {
+  display: block; width: 100%; max-width: 280px; margin: 0 auto 1.2rem;
+  padding: .75rem 1.5rem; font-size: .95rem; font-weight: 700; cursor: pointer;
+  background: linear-gradient(135deg, hsl(40,90%,48%), hsl(36,85%,38%));
+  color: hsl(44,40%,15%); border: none; border-radius: 10px;
+  transition: filter .15s, transform .1s;
+}
+.slots-play-btn:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
+.slots-play-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; filter: none; }
+
+/* Zone résultat */
+.slots-result {
+  text-align: center; padding: .75rem 1rem;
+  border-radius: 10px; font-size: .92rem;
+  display: flex; flex-direction: column; align-items: center; gap: .2rem;
+  animation: slots-result-in .3s ease;
+}
+@keyframes slots-result-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+.slots-result--win {
+  background: rgba(251,191,36,.1); border: 1.5px solid rgba(251,191,36,.4); color: hsl(44,95%,72%);
+}
+.slots-result--lose {
+  background: rgba(100,116,139,.1); border: 1.5px solid rgba(100,116,139,.25); color: #94a3b8;
+}
+.slots-result--win strong { color: #fef3c7; }
+.slots-reward-icon { font-size: 1.6rem; line-height: 1; }
+
 /* ── Badge « Bientôt » sur les jeux indisponibles ── */
 .arcade-game-card--unavailable { opacity: .7; pointer-events: none; }
 .arcade-unavailable-badge {

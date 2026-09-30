@@ -223,7 +223,9 @@
       <h2 class="arcade-modal-title">&#127920; Casino</h2>
       <button class="arcade-close-btn" id="casino-close-btn" aria-label="Fermer">&#10005;</button>
     </div>
-    <div class="arcade-screen">
+
+    <%# ── Liste des jeux casino ── %>
+    <div id="casino-screen-games" class="arcade-screen">
       <div class="arcade-games-list">
         <div class="arcade-game-card arcade-game-card--unavailable">
           <span class="arcade-game-card-icon">&#127744;</span>
@@ -241,8 +243,46 @@
           </div>
           <span class="arcade-unavailable-badge">Bient&ocirc;t</span>
         </div>
+        <div class="arcade-game-card">
+          <span class="arcade-game-card-icon">&#10024;</span>
+          <div class="arcade-game-card-info">
+            <strong>Machine &agrave; charmes</strong>
+            <span>3 symboles &mdash; 5&nbsp;% de chance &mdash; 4&nbsp;&#128B0; par partie</span>
+          </div>
+          <button class="arcade-game-play-btn" id="casino-charm-slots-open">Jouer</button>
+        </div>
       </div>
     </div>
+
+    <%# ── Machine à charmes : jeu ── %>
+    <div id="casino-screen-charm-slots" class="arcade-screen" hidden>
+      <div class="slots-header">
+        <button class="arcade-btn arcade-btn--ghost slots-back-btn" id="charm-slots-back">&larr; Retour</button>
+        <div class="slots-coins-display">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:14px;height:14px"><circle cx="10" cy="10" r="9" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="1.5"/><text x="10" y="14.5" text-anchor="middle" font-size="10" font-weight="bold" fill="hsl(44,40%,20%)">P</text></svg>
+          <span id="slots-coins"><%= currentUser.coins %></span>
+          <span class="slots-coins-label">pi&egrave;ces</span>
+        </div>
+      </div>
+
+      <div class="slots-cost-notice">Co&ucirc;t&nbsp;: <strong>4 pi&egrave;ces</strong> par tirage &mdash; Gain&nbsp;: charme al&eacute;atoire</div>
+
+      <div class="slots-reels-wrap">
+        <div class="slots-reels">
+          <div class="slots-reel" id="slots-reel-0">&#9733;</div>
+          <div class="slots-reel" id="slots-reel-1">&#9733;</div>
+          <div class="slots-reel" id="slots-reel-2">&#9733;</div>
+        </div>
+        <div class="slots-win-flash" id="slots-win-flash" hidden></div>
+      </div>
+
+      <button class="slots-play-btn" id="charm-slots-play" disabled>
+        &#127921; Jouer &mdash; 4&nbsp;pi&egrave;ces
+      </button>
+
+      <div class="slots-result" id="slots-result" hidden></div>
+    </div>
+
   </div>
 </div>
 
@@ -820,23 +860,223 @@
 </script>
 
 <script>
-/* Casino + Aventure modals */
+/* ═══════════════════════════════════════════════════════════════════════════
+   AVENTURE — modal simple
+   ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
-  function simpleModal(overlayId, openBtnId, closeBtnId) {
-    var overlay  = document.getElementById(overlayId);
-    var openBtn  = document.getElementById(openBtnId);
-    var closeBtn = document.getElementById(closeBtnId);
-    if (!overlay) return;
-    function open()  { overlay.hidden = false; document.body.style.overflow = 'hidden'; }
-    function close() { overlay.hidden = true;  document.body.style.overflow = ''; }
-    openBtn  && openBtn.addEventListener('click', open);
-    closeBtn && closeBtn.addEventListener('click', close);
-    overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && !overlay.hidden) close();
+  var overlay  = document.getElementById('aventure-modal');
+  var openBtn  = document.getElementById('jeu-aventure-btn');
+  var closeBtn = document.getElementById('aventure-close-btn');
+  if (!overlay) return;
+  function open()  { overlay.hidden = false; document.body.style.overflow = 'hidden'; }
+  function close() { overlay.hidden = true;  document.body.style.overflow = ''; }
+  openBtn  && openBtn.addEventListener('click', open);
+  closeBtn && closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !overlay.hidden) close(); });
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   CASINO — Machine à charmes
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var overlay         = document.getElementById('casino-modal');
+  var closeBtn        = document.getElementById('casino-close-btn');
+  var openBtn         = document.getElementById('jeu-casino-btn');
+  var screenGames     = document.getElementById('casino-screen-games');
+  var screenSlots     = document.getElementById('casino-screen-charm-slots');
+  var slotsOpenBtn    = document.getElementById('casino-charm-slots-open');
+  var slotsBackBtn    = document.getElementById('charm-slots-back');
+  var slotsPlayBtn    = document.getElementById('charm-slots-play');
+  var slotsCoinsEl    = document.getElementById('slots-coins');
+  var slotsResultEl   = document.getElementById('slots-result');
+  var slotsWinFlash   = document.getElementById('slots-win-flash');
+  var reels           = [
+    document.getElementById('slots-reel-0'),
+    document.getElementById('slots-reel-1'),
+    document.getElementById('slots-reel-2'),
+  ];
+
+  if (!overlay) return;
+
+  var _charms      = [];
+  var _coins       = parseInt((slotsCoinsEl && slotsCoinsEl.textContent) || '0', 10) || 0;
+  var _spinning    = false;
+  var _spinTimers  = [null, null, null];
+
+  // ── Écrans ──────────────────────────────────────────────────────────────────
+  function showScreen(el) {
+    [screenGames, screenSlots].forEach(function(s) { if (s) s.hidden = true; });
+    if (el) el.hidden = false;
+  }
+
+  // ── Ouverture / fermeture ────────────────────────────────────────────────────
+  function openCasino() {
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    showScreen(screenGames);
+  }
+  function closeCasino() {
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  openBtn  && openBtn.addEventListener('click', openCasino);
+  closeBtn && closeBtn.addEventListener('click', closeCasino);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeCasino(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !overlay.hidden) closeCasino(); });
+
+  // ── Chargement des charmes ───────────────────────────────────────────────────
+  function loadCharms(cb) {
+    if (_charms.length) { cb(); return; }
+    fetch('/arcade/charm-slots/info')
+      .then(function(r) { return r.json(); })
+      .then(function(d) { _charms = d.charms || []; cb(); })
+      .catch(function() { cb(); });
+  }
+
+  // ── Ouvrir l'écran slots ─────────────────────────────────────────────────────
+  slotsOpenBtn && slotsOpenBtn.addEventListener('click', function() {
+    loadCharms(function() {
+      showScreen(screenSlots);
+      resetReels();
+      if (slotsResultEl) slotsResultEl.hidden = true;
+      if (slotsWinFlash) slotsWinFlash.hidden = true;
+      updateCoinsUI();
+    });
+  });
+
+  slotsBackBtn && slotsBackBtn.addEventListener('click', function() {
+    showScreen(screenGames);
+  });
+
+  // ── Pièces ───────────────────────────────────────────────────────────────────
+  function updateCoinsUI() {
+    if (slotsCoinsEl) slotsCoinsEl.textContent = _coins;
+    if (slotsPlayBtn) slotsPlayBtn.disabled = _spinning || _coins < 4;
+  }
+
+  // ── Animation rouleaux ───────────────────────────────────────────────────────
+  function randomSymbol() {
+    if (!_charms.length) return '\u2605';
+    return _charms[Math.floor(Math.random() * _charms.length)].symbol;
+  }
+
+  function resetReels() {
+    reels.forEach(function(r) {
+      if (r) { r.textContent = randomSymbol(); r.classList.remove('spinning', 'reel-win'); }
     });
   }
-  simpleModal('casino-modal',   'jeu-casino-btn',   'casino-close-btn');
-  simpleModal('aventure-modal', 'jeu-aventure-btn', 'aventure-close-btn');
+
+  function startReelSpin(idx) {
+    clearInterval(_spinTimers[idx]);
+    var r = reels[idx];
+    if (r) r.classList.add('spinning');
+    _spinTimers[idx] = setInterval(function() {
+      if (r) r.textContent = randomSymbol();
+    }, 70);
+  }
+
+  function stopReel(idx, symbol, delay) {
+    return new Promise(function(resolve) {
+      setTimeout(function() {
+        clearInterval(_spinTimers[idx]);
+        var r = reels[idx];
+        if (r) { r.textContent = symbol; r.classList.remove('spinning'); }
+        resolve();
+      }, delay);
+    });
+  }
+
+  // ── Jouer ────────────────────────────────────────────────────────────────────
+  slotsPlayBtn && slotsPlayBtn.addEventListener('click', function() {
+    if (_spinning || _coins < 4) return;
+    _spinning = true;
+    if (slotsResultEl) slotsResultEl.hidden = true;
+    if (slotsWinFlash) slotsWinFlash.hidden = true;
+    reels.forEach(function(r) { if (r) r.classList.remove('reel-win'); });
+    updateCoinsUI();
+
+    // Lancer l'animation de tous les rouleaux
+    [0, 1, 2].forEach(startReelSpin);
+
+    fetch('/arcade/charm-slots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.ok) {
+          [0, 1, 2].forEach(function(i) { clearInterval(_spinTimers[i]); });
+          _spinning = false;
+          if (d.error === 'not_enough_coins') _coins = 0;
+          updateCoinsUI();
+          showResultMessage(false, null);
+          return;
+        }
+
+        var syms = d.symbols.map(function(s) { return s.symbol; });
+        // Arrêt séquentiel des rouleaux
+        Promise.all([
+          stopReel(0, syms[0], 700),
+          stopReel(1, syms[1], 1100),
+          stopReel(2, syms[2], 1500),
+        ]).then(function() {
+          // Attendre la fin du dernier stop
+          setTimeout(function() {
+            _spinning = false;
+            _coins = d.newCoins;
+            updateCoinsUI();
+            if (d.win) {
+              reels.forEach(function(r) { if (r) r.classList.add('reel-win'); });
+              if (slotsWinFlash) slotsWinFlash.hidden = false;
+            }
+            showResultMessage(d.win, d.reward);
+          }, 200);
+        });
+      })
+      .catch(function() {
+        [0, 1, 2].forEach(function(i) { clearInterval(_spinTimers[i]); });
+        _spinning = false;
+        updateCoinsUI();
+      });
+  });
+
+  // ── Afficher le résultat ─────────────────────────────────────────────────────
+  function showResultMessage(win, reward) {
+    if (!slotsResultEl) return;
+    slotsResultEl.hidden = false;
+    slotsResultEl.className = 'slots-result ' + (win ? 'slots-result--win' : 'slots-result--lose');
+    slotsResultEl.textContent = '';
+
+    if (win && reward) {
+      var icon = document.createElement('span');
+      icon.className = 'slots-reward-icon';
+      icon.textContent = reward.charm.symbol;
+
+      var line1 = document.createElement('strong');
+      var line2 = document.createElement('span');
+
+      if (reward.type === 'charm') {
+        line1.textContent = '\uD83C\uDF89 ' + reward.charm.label + ' d\u00e9bloqu\u00e9\u00a0!';
+        slotsResultEl.appendChild(icon);
+        slotsResultEl.appendChild(line1);
+      } else {
+        line1.textContent = '\uD83C\uDF89 D\u00e9j\u00e0 poss\u00e9d\u00e9';
+        line2.textContent = '+' + reward.coins + '\u00a0pi\u00e8ces compens\u00e9es';
+        slotsResultEl.appendChild(icon);
+        slotsResultEl.appendChild(line1);
+        slotsResultEl.appendChild(document.createElement('br'));
+        slotsResultEl.appendChild(line2);
+      }
+    } else {
+      slotsResultEl.textContent = 'Pas de chance\u2026 r\u00e9essayez\u00a0!';
+    }
+  }
 })();
 </script>

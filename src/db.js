@@ -2831,6 +2831,20 @@ function getCharmByKey(key) {
   return db.prepare("SELECT id, key, label, symbol, symbol_empty, rarity FROM charms WHERE key = ?").get(key) || null;
 }
 
+function adjustCoins(userId, delta) {
+  db.prepare("UPDATE users SET coins = MAX(0, coins + ?) WHERE id = ?").run(delta, userId);
+}
+
+function grantCharmDirect(userId, charmId) {
+  const charm = db.prepare("SELECT id, key, label, symbol, rarity FROM charms WHERE id = ?").get(charmId);
+  if (!charm) return { ok: false };
+  const now = new Date().toISOString();
+  const result = db.prepare(
+    "INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, ?, ?)"
+  ).run(userId, charmId, charm.rarity, now);
+  return { ok: true, alreadyOwned: result.changes === 0, charm };
+}
+
 function setCharmRarity(charmId, rarity) {
   const VALID = ['common', 'rare', 'epic', 'legendary', 'mythic'];
   if (!VALID.includes(rarity)) return false;
@@ -3480,6 +3494,8 @@ module.exports = {
   getMemoryImages,
   getMemoryTags,
   updateArcadeStats,
+  adjustCoins,
+  grantCharmDirect,
   checkAndGrantActionLootbox,
   countUserRatingsAll,
   countUserFavoritesAll,
