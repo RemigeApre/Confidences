@@ -270,23 +270,37 @@ function buildGalleryRouter(config) {
 
   // Métadonnées d'une image galerie par son src (pour le lightbox)
   router.get("/image-meta", function(req, res) {
-    var src = String(req.query.src || "");
-    if (!src) return res.json(null);
-    var img = findImageBySrc(src, listGalleryImages());
+    var img = null;
+    if (req.query.id) {
+      img = getGalleryImage(Number(req.query.id));
+    } else if (req.query.src) {
+      img = findImageBySrc(String(req.query.src), listGalleryImages());
+    }
     if (!img) return res.json(null);
-    res.json({ id: img.id, tags: img.tags, author: img.author, parody: img.parody, subParody: img.subParody });
+    var links = getGalleryLinks(img.id).map(function(l) {
+      return { type: l.link_type, id: l.linked_id, label: l.label };
+    });
+    res.json({ id: img.id, tags: img.tags, author: img.author, parody: img.parody, subParody: img.subParody, protagonistIds: img.protagonistIds || [], links });
   });
 
   router.post("/image-meta", requireAdmin, express.json(), function(req, res) {
     var id = Number(req.body.id);
     if (!id) return res.json({ ok: false });
-    var tags     = [].concat(req.body.tags || []).filter(Boolean);
-    var author   = String(req.body.author || "").trim();
-    var parody   = normalizeParody(String(req.body.parody || ""));
-    var subParody = normalizeParody(String(req.body.sub_parody || ""));
-    var title    = req.body.title !== undefined ? String(req.body.title).trim() : undefined;
-    var notes    = req.body.notes !== undefined ? String(req.body.notes).trim() : undefined;
-    updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes });
+    var tags          = [].concat(req.body.tags || []).filter(Boolean);
+    var author        = String(req.body.author || "").trim();
+    var parody        = normalizeParody(String(req.body.parody || ""));
+    var subParody     = normalizeParody(String(req.body.sub_parody || ""));
+    var title         = req.body.title !== undefined ? String(req.body.title).trim() : undefined;
+    var notes         = req.body.notes !== undefined ? String(req.body.notes).trim() : undefined;
+    var protagonistIds = req.body.protagonist_ids !== undefined
+      ? [].concat(req.body.protagonist_ids).map(Number).filter(Boolean)
+      : undefined;
+    updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, protagonistIds });
+    if (req.body.gallery_links !== undefined) {
+      var links = req.body.gallery_links;
+      if (!Array.isArray(links)) { try { links = JSON.parse(links); } catch (_) { links = []; } }
+      setGalleryLinks(id, links);
+    }
     res.json({ ok: true });
   });
 

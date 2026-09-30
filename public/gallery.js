@@ -968,6 +968,8 @@
   function renderLightbox() {
     var card = currentCard();
     if (!lightbox || !card) return;
+    // Fermer l'édition inline si on change d'image
+    if (window._lbInlineEditExit) window._lbInlineEditExit();
     lightbox.scrollTop = 0; // chaque nouvelle image se montre d'abord, infos accessibles au scroll
     var images  = currentImages();
     var thumbs  = currentThumbs();
@@ -1778,5 +1780,355 @@
       el.setAttribute("open", "");
     });
   }
+
+  // ══════════════════════════════════════════════════
+  // 7. INLINE EDIT du volet droit (admin + desktop uniquement)
+  // ══════════════════════════════════════════════════
+  (function () {
+    if (!window.IS_ADMIN) return;
+    if (window.innerWidth < 768) return;
+
+    var toggleBtn = document.getElementById("gallery-lb-inline-edit-btn");
+    var metaBlock = document.querySelector(".lb-meta-block");
+    var lbPanel   = document.querySelector(".gallery-lb-panel");
+    if (!toggleBtn || !metaBlock || !lbPanel) return;
+
+    toggleBtn.hidden = false;
+
+    var editPanel    = null;
+    var editActive   = false;
+    var editCurrentId = null;
+    var editLinks    = [];   // [{type, id, label}] — géré par addLinkChip / removeLink
+
+    // ── Autocomplete générique ──────────────────────────────────────────
+    function makeAc(inp, drop, fetchFn, onSelect) {
+      var sel = -1, timer;
+      function close() { drop.innerHTML = ""; drop.hidden = true; sel = -1; }
+      function setItems(items) {
+        drop.innerHTML = ""; sel = -1;
+        if (!items || !items.length) { drop.hidden = true; return; }
+        items.slice(0, 10).forEach(function (item) {
+          var li = document.createElement("li");
+          li.className = "lbep-ac-item";
+          li.textContent = item.label;
+          li.addEventListener("mousedown", function (e) { e.preventDefault(); onSelect(item); close(); });
+          drop.appendChild(li);
+        });
+        drop.hidden = false;
+      }
+      inp.addEventListener("input", function () {
+        clearTimeout(timer);
+        var q = inp.value.trim();
+        if (!q) { close(); return; }
+        timer = setTimeout(function () { fetchFn(q, setItems); }, 180);
+      });
+      inp.addEventListener("blur", function () { setTimeout(close, 160); });
+      inp.addEventListener("keydown", function (e) {
+        var items = drop.querySelectorAll(".lbep-ac-item");
+        if (e.key === "ArrowDown") { e.preventDefault(); sel = Math.min(sel + 1, items.length - 1); items.forEach(function (li, i) { li.classList.toggle("selected", i === sel); }); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(sel - 1, 0); items.forEach(function (li, i) { li.classList.toggle("selected", i === sel); }); }
+        else if (e.key === "Enter" && sel >= 0 && items[sel]) { e.preventDefault(); items[sel].dispatchEvent(new MouseEvent("mousedown")); }
+        else if (e.key === "Escape") close();
+      });
+    }
+
+    // ── Chip générique ──────────────────────────────────────────────────
+    function makeChip(text, onRemove) {
+      var span = document.createElement("span");
+      span.className = "lbep-chip";
+      var t = document.createElement("span"); t.textContent = text;
+      var x = document.createElement("button");
+      x.type = "button"; x.className = "lbep-chip-x"; x.innerHTML = "&times;";
+      x.addEventListener("click", function () { span.remove(); if (onRemove) onRemove(); });
+      span.appendChild(t); span.appendChild(x);
+      return span;
+    }
+
+    // ── Construction du panneau (une seule fois) ────────────────────────
+    function buildPanel() {
+      if (editPanel) return;
+      editPanel = document.createElement("div");
+      editPanel.className = "lb-edit-panel";
+      editPanel.hidden = true;
+      editPanel.innerHTML = [
+        // Parodie
+        '<div class="lbep-section">',
+          '<span class="lbep-label">Parodie</span>',
+          '<div class="lbep-parody-row">',
+            '<div class="lbep-ac-wrap"><input type="text" class="lbep-input" id="lbep-parody-inp" placeholder="Parodie\u2026" autocomplete="off"><ul class="lbep-ac-drop" id="lbep-parody-drop" hidden></ul></div>',
+            '<div class="lbep-ac-wrap"><input type="text" class="lbep-input" id="lbep-sub-inp" placeholder="Sous-parodie\u2026" autocomplete="off"><ul class="lbep-ac-drop" id="lbep-sub-drop" hidden></ul></div>',
+          '</div>',
+        '</div>',
+        // Auteur
+        '<div class="lbep-section">',
+          '<span class="lbep-label">Auteur</span>',
+          '<div class="lbep-ac-wrap"><input type="text" class="lbep-input" id="lbep-author-inp" placeholder="Auteur\u2026" autocomplete="off"><ul class="lbep-ac-drop" id="lbep-author-drop" hidden></ul></div>',
+        '</div>',
+        // Personnages
+        '<div class="lbep-section">',
+          '<span class="lbep-label">Personnages</span>',
+          '<div class="lbep-chips" id="lbep-prot-chips"></div>',
+          '<div class="lbep-ac-wrap"><input type="text" class="lbep-input" id="lbep-prot-inp" placeholder="Ajouter un personnage\u2026" autocomplete="off"><ul class="lbep-ac-drop" id="lbep-prot-drop" hidden></ul></div>',
+        '</div>',
+        // Tags
+        '<div class="lbep-section">',
+          '<span class="lbep-label">Tags</span>',
+          '<div class="lbep-chips" id="lbep-tag-chips"></div>',
+          '<input type="text" class="lbep-input" id="lbep-tag-inp" placeholder="Tag\u2026 (\u23ce ou virgule)" autocomplete="off">',
+        '</div>',
+        // Liens
+        '<div class="lbep-section">',
+          '<span class="lbep-label">Liens</span>',
+          '<div class="lbep-links-sub">',
+            '<span class="lbep-links-sublabel">Codex</span>',
+            '<div class="lbep-chips" id="lbep-link-wiki-chips"></div>',
+            '<div class="lbep-ac-wrap"><input type="text" class="lbep-input" id="lbep-link-wiki-inp" placeholder="Lier une page codex\u2026" autocomplete="off"><ul class="lbep-ac-drop" id="lbep-link-wiki-drop" hidden></ul></div>',
+          '</div>',
+          '<div class="lbep-links-sub">',
+            '<span class="lbep-links-sublabel">Quizz</span>',
+            '<div class="lbep-chips" id="lbep-link-quiz-chips"></div>',
+            '<div class="lbep-ac-wrap"><input type="text" class="lbep-input" id="lbep-link-quiz-inp" placeholder="Lier une question quizz\u2026" autocomplete="off"><ul class="lbep-ac-drop" id="lbep-link-quiz-drop" hidden></ul></div>',
+          '</div>',
+          '<div class="lbep-links-sub">',
+            '<span class="lbep-links-sublabel">Nouvelles</span>',
+            '<div class="lbep-chips" id="lbep-link-nouvelle-chips"></div>',
+            '<div class="lbep-ac-wrap"><input type="text" class="lbep-input" id="lbep-link-nouvelle-inp" placeholder="Lier une nouvelle\u2026" autocomplete="off"><ul class="lbep-ac-drop" id="lbep-link-nouvelle-drop" hidden></ul></div>',
+          '</div>',
+        '</div>',
+        // Actions
+        '<div class="lbep-actions">',
+          '<button type="button" class="lbep-save">Enregistrer</button>',
+          '<button type="button" class="lbep-cancel">Annuler</button>',
+        '</div>',
+      ].join("");
+
+      var spacer = lbPanel.querySelector(".lb-spacer");
+      lbPanel.insertBefore(editPanel, spacer || null);
+      wireWidgets();
+    }
+
+    // ── Câblage des widgets (une seule fois) ────────────────────────────
+    function wireWidgets() {
+      // Parodie
+      var parodyInp = document.getElementById("lbep-parody-inp");
+      var parodyDrop = document.getElementById("lbep-parody-drop");
+      var subInp    = document.getElementById("lbep-sub-inp");
+      var subDrop   = document.getElementById("lbep-sub-drop");
+      makeAc(parodyInp, parodyDrop,
+        function (q, cb) { fetch("/parodies/autocomplete?q=" + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (list) { cb(list.map(function (p) { return { label: p, value: p }; })); }).catch(function () {}); },
+        function (item) { parodyInp.value = item.value; subInp.value = ""; }
+      );
+      makeAc(subInp, subDrop,
+        function (q, cb) { var m = parodyInp.value.trim(); fetch("/parodies/autocomplete?q=" + encodeURIComponent(q) + (m ? "&main=" + encodeURIComponent(m) : "")).then(function (r) { return r.json(); }).then(function (list) { cb(list.map(function (p) { return { label: p, value: p }; })); }).catch(function () {}); },
+        function (item) { subInp.value = item.value; }
+      );
+
+      // Auteur
+      makeAc(
+        document.getElementById("lbep-author-inp"), document.getElementById("lbep-author-drop"),
+        function (q, cb) { fetch("/galerie/autocomplete/authors?q=" + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (list) { cb(list.map(function (a) { return { label: a, value: a }; })); }).catch(function () {}); },
+        function (item) { document.getElementById("lbep-author-inp").value = item.value; }
+      );
+
+      // Protagonistes
+      var protChips = document.getElementById("lbep-prot-chips");
+      var protInp   = document.getElementById("lbep-prot-inp");
+      var protDrop  = document.getElementById("lbep-prot-drop");
+      makeAc(protInp, protDrop,
+        function (q, cb) {
+          var prots = window.GALLERY_PROTAGONISTS || {};
+          var sel   = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function (c) { return Number(c.dataset.protId); });
+          cb(Object.keys(prots)
+            .filter(function (id) { return prots[id].toLowerCase().indexOf(q.toLowerCase()) !== -1 && sel.indexOf(Number(id)) === -1; })
+            .slice(0, 8).map(function (id) { return { id: Number(id), label: prots[id] }; }));
+        },
+        function (item) {
+          var chip = makeChip(item.label, null);
+          chip.dataset.protId = item.id;
+          protChips.appendChild(chip);
+          protInp.value = "";
+        }
+      );
+      protInp.addEventListener("keydown", function (e) {
+        if (e.key === "Backspace" && protInp.value === "") {
+          var all = protChips.querySelectorAll(".lbep-chip");
+          if (all.length) all[all.length - 1].remove();
+        }
+      });
+
+      // Tags
+      var tagChips = document.getElementById("lbep-tag-chips");
+      var tagInp   = document.getElementById("lbep-tag-inp");
+      function addTagChip(raw) {
+        raw.split(/[,;]+/).forEach(function (t) {
+          t = t.trim().toLowerCase();
+          if (!t) return;
+          var exists = Array.from(tagChips.querySelectorAll(".lbep-chip")).some(function (c) { return c.dataset.tag === t; });
+          if (exists) return;
+          var chip = makeChip(t, null);
+          chip.dataset.tag = t;
+          tagChips.appendChild(chip);
+        });
+      }
+      tagInp.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === ",") {
+          e.preventDefault();
+          if (tagInp.value.trim()) { addTagChip(tagInp.value); tagInp.value = ""; }
+        } else if (e.key === "Backspace" && tagInp.value === "") {
+          var all = tagChips.querySelectorAll(".lbep-chip");
+          if (all.length) all[all.length - 1].remove();
+        }
+      });
+
+      // Liens
+      [
+        { type: "wiki",     inpId: "lbep-link-wiki-inp",     dropId: "lbep-link-wiki-drop",     chipsId: "lbep-link-wiki-chips",
+          fetch: function (q, cb) { fetch("/wiki/search?q=" + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (d) { cb(d.map(function (r) { return { id: String(r.id), label: r.title }; })); }).catch(function () {}); } },
+        { type: "quiz",     inpId: "lbep-link-quiz-inp",     dropId: "lbep-link-quiz-drop",     chipsId: "lbep-link-quiz-chips",
+          fetch: function (q, cb) { fetch("/wiki/question-search?q=" + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (d) { cb(d.map(function (r) { return { id: r.section_key + "::" + r.question_id, label: r.section_title + " \u2014 " + r.question_text }; })); }).catch(function () {}); } },
+        { type: "nouvelle", inpId: "lbep-link-nouvelle-inp", dropId: "lbep-link-nouvelle-drop", chipsId: "lbep-link-nouvelle-chips",
+          fetch: function (q, cb) { fetch("/nouvelles/search?q=" + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (d) { cb(d.map(function (r) { return { id: String(r.id), label: r.title }; })); }).catch(function () {}); } },
+      ].forEach(function (lt) {
+        var inp    = document.getElementById(lt.inpId);
+        var drop   = document.getElementById(lt.dropId);
+        var chipsEl = document.getElementById(lt.chipsId);
+        makeAc(inp, drop, lt.fetch, function (item) {
+          if (!editLinks.find(function (l) { return l.type === lt.type && String(l.id) === String(item.id); })) {
+            editLinks.push({ type: lt.type, id: item.id, label: item.label });
+            var chip = makeChip(item.label, function () {
+              editLinks = editLinks.filter(function (l) { return !(l.type === lt.type && String(l.id) === String(item.id)); });
+            });
+            chip.dataset.linkId   = item.id;
+            chip.dataset.linkType = lt.type;
+            chipsEl.appendChild(chip);
+          }
+          inp.value = "";
+        });
+      });
+
+      // Boutons
+      editPanel.querySelector(".lbep-save").addEventListener("click", saveEdit);
+      editPanel.querySelector(".lbep-cancel").addEventListener("click", exitEdit);
+    }
+
+    // ── Remplissage depuis la carte + API ───────────────────────────────
+    function populatePanel(card, galleryId) {
+      document.getElementById("lbep-parody-inp").value  = card.dataset.parody    || "";
+      document.getElementById("lbep-sub-inp").value     = card.dataset.subParody || "";
+      document.getElementById("lbep-author-inp").value  = card.dataset.author    || "";
+      document.getElementById("lbep-prot-chips").innerHTML = "";
+      document.getElementById("lbep-tag-chips").innerHTML  = "";
+      ["lbep-link-wiki-chips", "lbep-link-quiz-chips", "lbep-link-nouvelle-chips"].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.innerHTML = "";
+      });
+      editLinks = [];
+
+      // Tags (pipe-séparés dans le dataset)
+      var tagChips = document.getElementById("lbep-tag-chips");
+      if (card.dataset.tags) {
+        card.dataset.tags.split("|").forEach(function (t) {
+          t = t.trim(); if (!t) return;
+          var chip = makeChip(t, null); chip.dataset.tag = t; tagChips.appendChild(chip);
+        });
+      }
+
+      // Protagonistes (IDs comma-séparés)
+      var protChips = document.getElementById("lbep-prot-chips");
+      var prots = window.GALLERY_PROTAGONISTS || {};
+      if (card.dataset.protagonists) {
+        card.dataset.protagonists.split(",").forEach(function (pid) {
+          pid = pid.trim(); if (!pid) return;
+          var name = prots[pid]; if (!name) return;
+          var chip = makeChip(name, null); chip.dataset.protId = pid; protChips.appendChild(chip);
+        });
+      }
+
+      // Liens via API
+      fetch("/galerie/image-meta?id=" + galleryId)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.links) return;
+          var chipsMap = { wiki: "lbep-link-wiki-chips", quiz: "lbep-link-quiz-chips", nouvelle: "lbep-link-nouvelle-chips" };
+          data.links.forEach(function (link) {
+            var chipsId = chipsMap[link.type]; if (!chipsId) return;
+            var chipsEl = document.getElementById(chipsId); if (!chipsEl) return;
+            editLinks.push({ type: link.type, id: link.id, label: link.label });
+            var chip = makeChip(link.label, (function (l) { return function () {
+              editLinks = editLinks.filter(function (x) { return !(x.type === l.type && String(x.id) === String(l.id)); });
+            }; })(link));
+            chip.dataset.linkId   = link.id;
+            chip.dataset.linkType = link.type;
+            chipsEl.appendChild(chip);
+          });
+        })
+        .catch(function () {});
+    }
+
+    // ── Sauvegarde ─────────────────────────────────────────────────────
+    function saveEdit() {
+      if (!editCurrentId) return;
+      var card = currentCard();
+      var tags = Array.from(document.getElementById("lbep-tag-chips").querySelectorAll(".lbep-chip")).map(function (c) { return c.dataset.tag; }).filter(Boolean);
+      var protagonistIds = Array.from(document.getElementById("lbep-prot-chips").querySelectorAll(".lbep-chip")).map(function (c) { return Number(c.dataset.protId); }).filter(Boolean);
+      var saveBtn = editPanel.querySelector(".lbep-save");
+      saveBtn.disabled = true; saveBtn.textContent = "Enregistrement\u2026";
+      fetch("/galerie/image-meta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id:             editCurrentId,
+          tags:           tags,
+          author:         document.getElementById("lbep-author-inp").value.trim(),
+          parody:         document.getElementById("lbep-parody-inp").value.trim(),
+          sub_parody:     document.getElementById("lbep-sub-inp").value.trim(),
+          protagonist_ids: protagonistIds,
+          gallery_links:  editLinks,
+        }),
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        saveBtn.disabled = false; saveBtn.textContent = "Enregistrer";
+        if (!data.ok) return;
+        // Mettre à jour le dataset de la carte pour que renderLightbox reflète les changements
+        if (card) {
+          card.dataset.tags         = tags.join("|");
+          card.dataset.author       = document.getElementById("lbep-author-inp").value.trim();
+          card.dataset.parody       = document.getElementById("lbep-parody-inp").value.trim();
+          card.dataset.subParody    = document.getElementById("lbep-sub-inp").value.trim();
+          card.dataset.protagonists = protagonistIds.join(",");
+        }
+        exitEdit();
+        renderLightbox();
+      })
+      .catch(function () { saveBtn.disabled = false; saveBtn.textContent = "Enregistrer"; });
+    }
+
+    // ── Entrée / sortie du mode édition ────────────────────────────────
+    function enterEdit() {
+      buildPanel();
+      var card = currentCard();
+      if (!card) return;
+      editCurrentId = Number(card.dataset.galleryId);
+      populatePanel(card, editCurrentId);
+      metaBlock.classList.add("lb-meta--editing");
+      editPanel.hidden = false;
+      editActive = true;
+      toggleBtn.classList.add("active");
+    }
+
+    function exitEdit() {
+      if (editPanel) editPanel.hidden = true;
+      metaBlock.classList.remove("lb-meta--editing");
+      editActive = false; editCurrentId = null;
+      toggleBtn.classList.remove("active");
+    }
+
+    // Exposer exitEdit pour que renderLightbox puisse le fermer sur navigation
+    window._lbInlineEditExit = exitEdit;
+
+    toggleBtn.addEventListener("click", function () {
+      if (editActive) exitEdit(); else enterEdit();
+    });
+  })();
 
 })();

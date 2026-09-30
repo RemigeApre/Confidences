@@ -1998,12 +1998,13 @@ function getContentByParody(parody, subParody) {
   return { gallery, bd, nouvelles, wiki, protagonistes };
 }
 
-function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, processed } = {}) {
+function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, processed, protagonistIds } = {}) {
   const sets = ["tags = ?", "author = ?", "parody = ?", "sub_parody = ?", "updated_at = ?"];
   const params = [JSON.stringify(tags || []), author || "", parody || "", subParody || "", new Date().toISOString()];
-  if (title !== undefined) { sets.splice(sets.length - 1, 0, "title = ?"); params.splice(params.length - 1, 0, title); }
-  if (notes !== undefined) { sets.splice(sets.length - 1, 0, "notes = ?"); params.splice(params.length - 1, 0, notes); }
-  if (typeof processed === "number") { sets.splice(sets.length - 1, 0, "processed = ?"); params.splice(params.length - 1, 0, processed); }
+  if (title          !== undefined) { sets.splice(sets.length - 1, 0, "title = ?");           params.splice(params.length - 1, 0, title); }
+  if (notes          !== undefined) { sets.splice(sets.length - 1, 0, "notes = ?");           params.splice(params.length - 1, 0, notes); }
+  if (typeof processed === "number") { sets.splice(sets.length - 1, 0, "processed = ?");      params.splice(params.length - 1, 0, processed); }
+  if (protagonistIds !== undefined) { sets.splice(sets.length - 1, 0, "protagonist_ids = ?"); params.splice(params.length - 1, 0, JSON.stringify(protagonistIds || [])); }
   params.push(id);
   db.prepare(`UPDATE gallery_images SET ${sets.join(", ")} WHERE id = ?`).run(...params);
   return true;

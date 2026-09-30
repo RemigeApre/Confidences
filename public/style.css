@@ -15070,6 +15070,181 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 /* Séparateur flexible — pousse admin + avis en bas quand le contenu est court */
 .lb-spacer { flex: 1; min-height: 0.75rem; }
 
+/* ── Bouton édition inline (admin + desktop) ── */
+.lb-inline-edit-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  z-index: 2;
+}
+.lb-inline-edit-btn:hover,
+.lb-inline-edit-btn.active { background: rgba(var(--accent-rgb, 130,80,255),0.25); border-color: var(--accent); color: #fff; }
+.lb-meta-block { position: relative; }
+
+/* Masquer les sections display quand le panneau d'édition est actif */
+.lb-meta--editing .lb-meta-block__title,
+.lb-meta--editing .lb-meta-section,
+.lb-meta--editing .gallery-lb-wiki-btn { display: none !important; }
+
+/* ── Panneau d'édition inline ── */
+.lb-edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.1rem 0 0.5rem;
+}
+.lbep-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.lbep-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.3);
+}
+.lbep-parody-row {
+  display: flex;
+  gap: 0.35rem;
+}
+.lbep-parody-row .lbep-ac-wrap { flex: 1; }
+.lbep-ac-wrap { position: relative; }
+.lbep-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.82rem;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.lbep-input:focus { border-color: var(--accent); }
+.lbep-ac-drop {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0; right: 0;
+  z-index: 200;
+  background: var(--surface, #1e1e2e);
+  border: 1px solid var(--border, rgba(255,255,255,0.15));
+  border-radius: 6px;
+  list-style: none;
+  margin: 0; padding: 0.25rem 0;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.lbep-ac-item {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: rgba(255,255,255,0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lbep-ac-item:hover,
+.lbep-ac-item.selected { background: rgba(255,255,255,0.08); }
+
+/* Chips */
+.lbep-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-height: 0;
+}
+.lbep-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 20px;
+  padding: 0.15rem 0.45rem 0.15rem 0.55rem;
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.85);
+}
+.lbep-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem; height: 1rem;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+.lbep-chip-x:hover { color: #fff; background: rgba(255,255,255,0.12); }
+
+/* Liens */
+.lbep-links-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.lbep-links-sub:first-child { border-top: none; padding-top: 0; }
+.lbep-links-sublabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.35);
+}
+
+/* Actions */
+.lbep-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+.lbep-save {
+  flex: 1;
+  padding: 0.4rem 0.75rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.lbep-save:hover { opacity: 0.88; }
+.lbep-save:disabled { opacity: 0.5; cursor: default; }
+.lbep-cancel {
+  padding: 0.4rem 0.75rem;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lbep-cancel:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
 /* Bloc admin (juste au-dessus du bloc avis) */
 .lb-admin-block {
   display: flex;
