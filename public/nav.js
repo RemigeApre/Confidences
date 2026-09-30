@@ -313,11 +313,13 @@ window.buildTagBadgeHTML = function (tag) {
   var galleryBtn  = document.getElementById("tag-popup-gallery-btn");
   var bdBtn       = document.getElementById("tag-popup-bd-btn");
   var closeBtn    = document.getElementById("tag-popup-close");
-  var adminPanel  = document.getElementById("tag-popup-admin");
-  var renameInput = document.getElementById("tag-popup-rename-input");
-  var renameBtn   = document.getElementById("tag-popup-rename-btn");
-  var typeBtnsWrap = document.getElementById("tag-popup-type-btns");
-  var feedbackEl  = document.getElementById("tag-popup-admin-feedback");
+  var adminPanel    = document.getElementById("tag-popup-admin");
+  var renameInput   = document.getElementById("tag-popup-rename-input");
+  var renameBtn     = document.getElementById("tag-popup-rename-btn");
+  var typeBtnsWrap  = document.getElementById("tag-popup-type-btns");
+  var catSelect     = document.getElementById("tag-popup-category-select");
+  var catBtn        = document.getElementById("tag-popup-category-btn");
+  var feedbackEl    = document.getElementById("tag-popup-admin-feedback");
   var blacklistBtn = document.getElementById("tag-popup-blacklist-btn");
 
   var currentTag = "";
@@ -482,6 +484,31 @@ window.buildTagBadgeHTML = function (tag) {
           })
           .catch(function () {});
       });
+    });
+  }
+
+  if (catBtn && catSelect) {
+    catBtn.addEventListener("click", function () {
+      if (!currentTag) return;
+      var category = catSelect.value;
+      fetch("/api/tags/category", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag: currentTag, category: category }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok) {
+            if (feedbackEl) { feedbackEl.textContent = "Catégorie mise à jour."; feedbackEl.style.color = "var(--accent)"; }
+            // Mettre à jour le data-category du .tags-item correspondant (si sur la page /tags)
+            document.querySelectorAll('.tags-item[data-tag="' + currentTag + '"]').forEach(function (el) {
+              el.dataset.category = category;
+            });
+          } else {
+            if (feedbackEl) { feedbackEl.textContent = (d && d.error) || "Erreur"; feedbackEl.style.color = "#e05555"; }
+          }
+        })
+        .catch(function () { if (feedbackEl) feedbackEl.textContent = "Erreur réseau"; });
     });
   }
 

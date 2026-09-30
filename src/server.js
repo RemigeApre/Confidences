@@ -20,7 +20,7 @@ const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
 const { attachUser } = require("./auth");
 const {
-  db, getAllTagMeta, setTagType, createStandaloneTag, renameTagEverywhere,
+  db, getAllTagMeta, getAllTagCategories, setTagType, setTagCategory, createStandaloneTag, renameTagEverywhere,
   listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
@@ -379,6 +379,8 @@ app.get("/tags", function (req, res) {
   }
   var metaMap = {};
   try { metaMap = getAllTagMeta(); } catch (_) {}
+  var categoryMap = {};
+  try { categoryMap = getAllTagCategories(); } catch (_) {}
 
   // Tags venant du contenu
   var allKeys = new Set(Object.keys(wiki).concat(Object.keys(galerie)).concat(Object.keys(bd)));
@@ -392,10 +394,11 @@ app.get("/tags", function (req, res) {
 
   var tags = Array.from(allKeys).map(function (t) {
     return {
-      tag:       t,
-      count:     (wiki[t] || 0) + (galerie[t] || 0) + (bd[t] || 0),
-      breakdown: { wiki: wiki[t] || 0, galerie: galerie[t] || 0, bd: bd[t] || 0 },
-      type:      resolveTagType(t, metaMap),
+      tag:      t,
+      count:    (wiki[t] || 0) + (galerie[t] || 0) + (bd[t] || 0),
+      breakdown:{ wiki: wiki[t] || 0, galerie: galerie[t] || 0, bd: bd[t] || 0 },
+      type:     resolveTagType(t, metaMap),
+      category: categoryMap[t] || "autre",
     };
   }).sort(function (a, b) {
     var d = b.count - a.count;
@@ -424,10 +427,22 @@ app.get("/tags", function (req, res) {
 // ── API admin : créer un tag standalone ────────────────────────────────────
 app.post("/api/tags/create", function (req, res) {
   if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false, error: "Interdit" });
-  var tag = String(req.body.tag || "").toLowerCase().trim();
+  var tag      = String(req.body.tag      || "").toLowerCase().trim();
+  var category = String(req.body.category || "autre").toLowerCase().trim();
   if (!tag) return res.status(400).json({ ok: false, error: "Tag vide" });
-  createStandaloneTag(tag);
-  res.json({ ok: true, tag: tag });
+  createStandaloneTag(tag, category);
+  if (category && category !== "autre") setTagCategory(tag, category);
+  res.json({ ok: true, tag, category });
+});
+
+// ── API admin : changer la catégorie d'un tag ──────────────────────────────
+app.put("/api/tags/category", function (req, res) {
+  if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false, error: "Interdit" });
+  var tag      = String(req.body.tag      || "").toLowerCase().trim();
+  var category = String(req.body.category || "autre").toLowerCase().trim();
+  if (!tag) return res.status(400).json({ ok: false, error: "Tag vide" });
+  setTagCategory(tag, category);
+  res.json({ ok: true });
 });
 
 // ── API admin : renommer un tag partout ────────────────────────────────────

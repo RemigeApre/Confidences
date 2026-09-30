@@ -1,4 +1,17 @@
 <%- include('partials/head', { title: 'Tous les tags' }) %>
+<%
+  var CAT_LABELS = { femme: 'Femme', homme: 'Homme', rapport: 'Rapport', lieu: 'Lieu', relation: 'Relation', objet: 'Objet', autre: 'Autre' };
+  var CAT_ORDER  = ['femme', 'homme', 'rapport', 'lieu', 'relation', 'objet', 'autre'];
+  var CAT_MAX    = 20;
+  // Regrouper les tags par catégorie (déjà triés par count desc côté serveur)
+  var tagsByCat = {};
+  CAT_ORDER.forEach(function(c) { tagsByCat[c] = []; });
+  tags.forEach(function(item) {
+    var c = item.category || 'autre';
+    if (!tagsByCat[c]) tagsByCat[c] = [];
+    tagsByCat[c].push(item);
+  });
+%>
 <main class="container wide wiki-locked tags-page-locked" style="--ch-hue: 270">
   <%- include('partials/top-nav', { config: config }) %>
 
@@ -21,6 +34,17 @@
       </div>
 
       <div class="wiki-sidebar-filters">
+        <%# ─ Filtre par catégorie ─ %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Catégorie</span>
+          <div class="links-filter tags-cat-filter-wrap" id="tags-cat-filter">
+            <button type="button" class="tag-chip active" data-cat-filter="">Toutes</button>
+            <% CAT_ORDER.forEach(function(cat) { %>
+            <button type="button" class="tag-chip" data-cat-filter="<%= cat %>"><%= CAT_LABELS[cat] %></button>
+            <% }) %>
+          </div>
+        </div>
+
         <%# ─ Filtre par type ─ %>
         <div class="wiki-filter-section">
           <span class="wiki-filter-label">Type</span>
@@ -39,18 +63,23 @@
         <% } %>
 
         <% if (currentUser && currentUser.isAdmin) { %>
-        <%# ─ Admin : créer un tag ─ %>
+        <%# ─ Admin : ajouter des tags par catégorie ─ %>
         <div class="wiki-filter-section">
-          <span class="wiki-filter-label">Nouveau tag</span>
+          <span class="wiki-filter-label">Ajouter des tags</span>
           <form id="tags-create-form" class="tags-create-form">
-            <input type="text" id="tags-create-input" class="wiki-search-input tags-create-input"
-                   placeholder="Nom du tag&hellip;" autocomplete="off" />
-            <select id="tags-create-type" class="wiki-sort-select tags-create-type">
+            <select id="tags-create-category" class="wiki-sort-select tags-create-select">
+              <% CAT_ORDER.forEach(function(cat) { %>
+              <option value="<%= cat %>"><%= CAT_LABELS[cat] %></option>
+              <% }) %>
+            </select>
+            <select id="tags-create-type" class="wiki-sort-select tags-create-select">
               <option value="normal">Normal</option>
               <option value="ultra">Ultra</option>
               <option value="irrealiste">Irr&eacute;aliste</option>
             </select>
-            <button type="submit" class="tags-create-btn">+ Cr&eacute;er</button>
+            <textarea id="tags-create-input" class="wiki-search-input tags-create-textarea"
+                      placeholder="Un tag par ligne&#10;ou séparés par des virgules&hellip;" rows="3"></textarea>
+            <button type="submit" class="tags-create-btn">+ Créer</button>
           </form>
           <p class="tags-create-feedback" id="tags-create-feedback" hidden></p>
         </div>
@@ -61,11 +90,55 @@
 
   <%# ─── GRILLE DES TAGS ─────────────────────────────────────────────────── %>
   <div class="tags-grid" id="tags-grid">
-    <% tags.forEach(function (item) { %>
+
+    <%# ── Vue groupée par catégorie (masquée quand un filtre est actif) ── %>
+    <div id="tags-grouped-view">
+      <% CAT_ORDER.forEach(function(cat) { %>
+      <% var catItems = tagsByCat[cat] || []; %>
+      <% if (catItems.length > 0) { %>
+      <div class="tags-cat-group" data-category="<%= cat %>">
+        <div class="tags-cat-header">
+          <span class="tags-cat-label"><%= CAT_LABELS[cat] %></span>
+          <% if (catItems.length > CAT_MAX) { %>
+          <button type="button" class="tags-cat-more-btn" data-cat="<%= cat %>">
+            +<%= catItems.length - CAT_MAX %> &rarr;
+          </button>
+          <% } %>
+        </div>
+        <div class="tags-cat-body">
+          <% catItems.forEach(function(item, idx) { %>
+          <% var wikiId = wikiPageByTitle[item.tag.toLowerCase()] || null; %>
+          <div class="tags-item tags-item--<%= item.type %><%= wikiId ? ' tags-item--wiki-page' : '' %>"
+               data-tag="<%= item.tag %>"
+               data-type="<%= item.type %>"
+               data-category="<%= item.category || 'autre' %>"
+               data-wiki-id="<%= wikiId || '' %>"
+               data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
+               <% if (idx >= CAT_MAX) { %>data-cat-overflow="1"<% } %>
+               style="--tag-pct: <%= item.pct.toFixed(3) %>">
+            <span class="tags-item-name"><%= item.tag %></span>
+            <span class="tags-item-right">
+              <span class="tags-item-count"><%= item.count %></span>
+              <% if (wikiId) { %>
+                <a href="/wiki/<%= wikiId %>" class="tags-item-wiki-link" title="Voir la page codex" aria-label="Voir la page codex">&#8599;</a>
+              <% } %>
+            </span>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+      <% }) %>
+    </div>
+
+    <%# ── Vue filtrée (liste plate, visible quand un filtre est actif) ── %>
+    <div id="tags-filtered-view" hidden>
+      <% tags.forEach(function(item) { %>
       <% var wikiId = wikiPageByTitle[item.tag.toLowerCase()] || null; %>
       <div class="tags-item tags-item--<%= item.type %><%= wikiId ? ' tags-item--wiki-page' : '' %>"
            data-tag="<%= item.tag %>"
            data-type="<%= item.type %>"
+           data-category="<%= item.category || 'autre' %>"
            data-wiki-id="<%= wikiId || '' %>"
            data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
            style="--tag-pct: <%= item.pct.toFixed(3) %>">
@@ -77,13 +150,13 @@
           <% } %>
         </span>
       </div>
-    <% }) %>
+      <% }) %>
+    </div>
+
     <p class="tags-empty" id="tags-empty" hidden>Aucun tag trouv&eacute;.</p>
   </div>
 
-  <%# Popup de resultats/admin : voir partials/tag-popup.ejs (inclus une
-      seule fois par partials/foot.ejs, partagee par tout le site). %>
-
+  <%# Popup de resultats/admin : voir partials/tag-popup.ejs %>
   <%# ─── Tooltip hover ── %>
   <div class="tags-tooltip" id="tags-tooltip" hidden></div>
 </main>
@@ -91,6 +164,7 @@
 <script>
 (function () {
   var isAdmin = <%= currentUser && currentUser.isAdmin ? 'true' : 'false' %>;
+  var TOTAL   = <%= tags.length %>;
 
   /* ── Retour page précédente ── */
   var backBtn = document.getElementById("tags-back-btn");
@@ -102,59 +176,105 @@
     });
   }
 
-  /* ── Recherche ── */
-  var searchInput   = document.getElementById("tags-search-input");
+  /* ── Références DOM ── */
   var grid          = document.getElementById("tags-grid");
+  var groupedView   = document.getElementById("tags-grouped-view");
+  var filteredView  = document.getElementById("tags-filtered-view");
   var emptyMsg      = document.getElementById("tags-empty");
   var countDisplay  = document.getElementById("tags-count-display");
-  // Filtres type : map type → état (0=neutre, 1=inclus, 2=exclu)
-  var typeStates = {};
+  var searchInput   = document.getElementById("tags-search-input");
+
+  /* ── État des filtres ── */
+  var typeStates   = {};   // type → 0 neutre / 1 inclus / 2 exclu
+  var activeCat    = "";   // catégorie active (vide = toutes)
+
+  function hasAnyFilter() {
+    var q = searchInput ? searchInput.value.trim() : "";
+    if (q) return true;
+    if (activeCat) return true;
+    if (Object.values(typeStates).some(function (v) { return v > 0; })) return true;
+    return false;
+  }
 
   function applyFilters() {
-    if (!grid) return;
     var q = searchInput ? searchInput.value.trim().toLowerCase() : "";
     var includedTypes = [], excludedTypes = [];
     Object.keys(typeStates).forEach(function (t) {
       if (typeStates[t] === 1) includedTypes.push(t);
       else if (typeStates[t] === 2) excludedTypes.push(t);
     });
+
+    if (!hasAnyFilter()) {
+      // ── Mode groupé : pas de filtre actif ──
+      groupedView.hidden = false;
+      filteredView.hidden = true;
+      if (emptyMsg) emptyMsg.hidden = true;
+      if (countDisplay) countDisplay.textContent = TOTAL;
+      return;
+    }
+
+    // ── Mode filtré : liste plate ──
+    groupedView.hidden = true;
+    filteredView.hidden = false;
+
     var visible = 0;
-    grid.querySelectorAll(".tags-item").forEach(function (item) {
+    filteredView.querySelectorAll(".tags-item").forEach(function (item) {
       var matchQ    = !q || item.dataset.tag.toLowerCase().indexOf(q) !== -1;
-      var t = item.dataset.type || "normal";
+      var t         = item.dataset.type || "normal";
       var matchType = (includedTypes.length === 0 || includedTypes.indexOf(t) !== -1)
                     && excludedTypes.indexOf(t) === -1;
-      var show = matchQ && matchType;
+      var matchCat  = !activeCat || item.dataset.category === activeCat;
+      var show = matchQ && matchType && matchCat;
       item.hidden = !show;
       if (show) visible++;
     });
-    var hasFilter = q || includedTypes.length > 0 || excludedTypes.length > 0;
-    if (emptyMsg) emptyMsg.hidden = visible > 0 || !hasFilter;
+
+    if (emptyMsg) emptyMsg.hidden = visible > 0;
     if (countDisplay) countDisplay.textContent = visible;
   }
 
-  // Effectif à la fermeture de la popup tag (voir public/nav.js) : cette
-  // page est filtrée côté serveur (le tag masqué n'est même pas rendu au
-  // prochain chargement), donc ici on retire directement l'élément de la
-  // grille — pas besoin de recharger la page pour le voir disparaître.
+  /* ── Blacklist ── */
   document.addEventListener("tag-blacklist-change", function () {
-    if (!grid) return;
     var blacklist = window.TAG_BLACKLIST || [];
-    grid.querySelectorAll(".tags-item").forEach(function (item) {
-      if (blacklist.indexOf(item.dataset.tag) !== -1) item.remove();
+    [groupedView, filteredView].forEach(function (view) {
+      if (!view) return;
+      view.querySelectorAll(".tags-item").forEach(function (item) {
+        if (blacklist.indexOf(item.dataset.tag) !== -1) item.remove();
+      });
     });
     applyFilters();
     var maskedCount = document.getElementById("tags-masked-count");
     if (maskedCount) maskedCount.textContent = blacklist.length ? " (" + blacklist.length + ")" : "";
   });
 
+  /* ── Recherche ── */
   var searchDebounceTimer = null;
   if (searchInput) searchInput.addEventListener("input", function () {
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(applyFilters, 120);
   });
 
-  /* ── Filtre par type : 3 états (neutre → inclus → exclu) ── */
+  /* ── Filtre par catégorie : sélection exclusive ── */
+  var catFilter = document.getElementById("tags-cat-filter");
+  if (catFilter) {
+    catFilter.querySelectorAll(".tag-chip[data-cat-filter]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var val = btn.dataset.catFilter || "";
+        if (activeCat === val && val !== "") {
+          // Désélectionner : retour à "Toutes"
+          activeCat = "";
+        } else {
+          activeCat = val;
+        }
+        catFilter.querySelectorAll(".tag-chip").forEach(function (b) {
+          b.classList.toggle("active", (b.dataset.catFilter || "") === activeCat);
+        });
+        applyFilters();
+      });
+    });
+  }
+
+  /* ── Filtre par type : 3 états ── */
   var typeFilter = document.getElementById("tags-type-filter");
   if (typeFilter) {
     var STATE_CLASSES = ["", "active", "tags-type-excluded"];
@@ -164,18 +284,13 @@
         b.dataset.state = "0";
         STATE_CLASSES.forEach(function (c) { if (c) b.classList.remove(c); });
       });
-      // Tous chip back to active
       var allChip = typeFilter.querySelector('[data-type-filter=""]');
       if (allChip) allChip.classList.add("active");
     }
     typeFilter.querySelectorAll(".tag-chip[data-type-filter]").forEach(function (btn) {
       var typeVal = btn.dataset.typeFilter;
       if (!typeVal) {
-        // "Tous" chip : reset
-        btn.addEventListener("click", function () {
-          resetTypeChips();
-          applyFilters();
-        });
+        btn.addEventListener("click", function () { resetTypeChips(); applyFilters(); });
         return;
       }
       btn.addEventListener("click", function () {
@@ -185,10 +300,26 @@
         STATE_CLASSES.forEach(function (c) { if (c) btn.classList.remove(c); });
         if (s > 0) btn.classList.add(STATE_CLASSES[s]);
         typeStates[typeVal] = s;
-        // Tous chip : ôter active si un type est sélectionné
         var allChip = typeFilter.querySelector('[data-type-filter=""]');
         var anyActive = Object.values(typeStates).some(function (v) { return v > 0; });
         if (allChip) allChip.classList.toggle("active", !anyActive);
+        applyFilters();
+      });
+    });
+  }
+
+  /* ── Boutons "voir plus" des groupes ── */
+  if (groupedView) {
+    groupedView.querySelectorAll(".tags-cat-more-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var cat = btn.dataset.cat;
+        // Activer le filtre catégorie correspondant
+        activeCat = cat;
+        if (catFilter) {
+          catFilter.querySelectorAll(".tag-chip").forEach(function (b) {
+            b.classList.toggle("active", (b.dataset.catFilter || "") === cat);
+          });
+        }
         applyFilters();
       });
     });
@@ -240,92 +371,123 @@
     });
   }
 
-  /* -- Resultats + admin (renommer/type) : popup unifiee partagee, voir
-     public/nav.js openTagPopup / window.openTagPopup -- */
+  /* ── Popup résultats/admin ── */
   if (grid) {
     grid.addEventListener("click", function (e) {
-      if (e.target.closest(".tags-item-wiki-link")) return; // lien wiki : navigation normale
+      if (e.target.closest(".tags-item-wiki-link")) return;
+      if (e.target.closest(".tags-cat-more-btn"))   return;
       var item = e.target.closest(".tags-item");
       if (item && window.openTagPopup) { hideTooltip(); window.openTagPopup(item.dataset.tag); }
     });
   }
 
+  /* ── Groupes : masquer les items overflow par défaut ── */
+  if (groupedView) {
+    groupedView.querySelectorAll(".tags-item[data-cat-overflow]").forEach(function (item) {
+      item.hidden = true;
+    });
+  }
 
-  /* ── Admin : créer un tag ── */
+  /* ── Admin : créer des tags (batch) ── */
   var createForm     = document.getElementById("tags-create-form");
   var createInput    = document.getElementById("tags-create-input");
+  var createCategory = document.getElementById("tags-create-category");
   var createType     = document.getElementById("tags-create-type");
   var createFeedback = document.getElementById("tags-create-feedback");
 
   if (isAdmin && createForm) {
     createForm.addEventListener("submit", function (e) {
       e.preventDefault();
-      var tag  = createInput ? createInput.value.trim().toLowerCase() : "";
-      var type = createType ? createType.value : "normal";
-      if (!tag) return;
-      // Vérifie si le tag existe déjà dans la grille
-      if (grid && grid.querySelector('[data-tag="' + tag + '"]')) {
+      var raw      = createInput ? createInput.value : "";
+      var category = createCategory ? createCategory.value : "autre";
+      var type     = createType     ? createType.value     : "normal";
+      // Séparer par virgules ET sauts de ligne
+      var tagList  = raw.split(/[\n,]+/).map(function (t) { return t.trim().toLowerCase(); }).filter(Boolean);
+      if (!tagList.length) return;
+
+      // Dédupliquer contre les tags déjà présents dans la vue filtrée
+      tagList = tagList.filter(function (tag) {
+        return !filteredView.querySelector('[data-tag="' + tag + '"]');
+      });
+      if (!tagList.length) {
         if (createFeedback) {
-          createFeedback.textContent = "Ce tag existe déjà.";
+          createFeedback.textContent = "Ces tags existent déjà.";
           createFeedback.style.color = "#e05555";
           createFeedback.hidden = false;
         }
         return;
       }
-      var p1 = fetch("/api/tags/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tag: tag })
-      }).then(function (r) { return r.json(); });
-      var p2 = type !== "normal"
-        ? fetch("/api/tags/type", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tag: tag, type: type })
-          }).then(function (r) { return r.json(); })
-        : Promise.resolve({ ok: true });
 
-      Promise.all([p1, p2]).then(function (results) {
-        if (results[0].ok) {
-          // Ajoute le tag dans la grille
-          var div = document.createElement("div");
-          div.className = "tags-item tags-item--" + type;
-          div.dataset.tag  = tag;
-          div.dataset.type = type;
-          div.dataset.breakdown = '{"wiki":0,"galerie":0,"bd":0}';
-          div.style.setProperty("--tag-pct", "1");
-          var nameSpan = document.createElement("span");
-          nameSpan.className = "tags-item-name"; nameSpan.textContent = tag;
-          var countSpan = document.createElement("span");
-          countSpan.className = "tags-item-count"; countSpan.textContent = "0";
-          div.appendChild(nameSpan); div.appendChild(countSpan);
-          if (grid) {
-            var emptyEl = document.getElementById("tags-empty");
-            grid.insertBefore(div, emptyEl || null);
+      var promises = tagList.map(function (tag) {
+        var p1 = fetch("/api/tags/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tag: tag, category: category })
+        }).then(function (r) { return r.json(); });
+        var p2 = type !== "normal"
+          ? fetch("/api/tags/type", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ tag: tag, type: type })
+            }).then(function (r) { return r.json(); })
+          : Promise.resolve({ ok: true });
+        return Promise.all([p1, p2]).then(function (res) { return { tag: tag, ok: res[0].ok }; });
+      });
+
+      Promise.all(promises).then(function (results) {
+        var created = results.filter(function (r) { return r.ok; });
+        if (created.length) {
+          // Ajouter dans la vue filtrée
+          created.forEach(function (r) {
+            var div = document.createElement("div");
+            div.className = "tags-item tags-item--" + type;
+            div.dataset.tag      = r.tag;
+            div.dataset.type     = type;
+            div.dataset.category = category;
+            div.dataset.breakdown = '{"wiki":0,"galerie":0,"bd":0}';
+            div.style.setProperty("--tag-pct", "1");
+            var nameSpan = document.createElement("span");
+            nameSpan.className = "tags-item-name"; nameSpan.textContent = r.tag;
+            var rightSpan = document.createElement("span");
+            rightSpan.className = "tags-item-right";
+            var countSpan = document.createElement("span");
+            countSpan.className = "tags-item-count"; countSpan.textContent = "0";
+            rightSpan.appendChild(countSpan);
+            div.appendChild(nameSpan); div.appendChild(rightSpan);
+            filteredView.insertBefore(div, filteredView.firstChild);
+          });
+
+          // Passer en vue filtrée par catégorie pour voir les nouveaux tags
+          activeCat = category;
+          if (catFilter) {
+            catFilter.querySelectorAll(".tag-chip").forEach(function (b) {
+              b.classList.toggle("active", (b.dataset.catFilter || "") === category);
+            });
           }
+          applyFilters();
+
           if (createInput) createInput.value = "";
           if (createFeedback) {
-            createFeedback.textContent = "Tag \u00ab\u00a0" + tag + "\u00a0\u00bb cr\u00e9\u00e9 !";
+            createFeedback.textContent = created.length + " tag" + (created.length > 1 ? "s créés" : " créé") + " !";
             createFeedback.style.color = "var(--accent)";
             createFeedback.hidden = false;
           }
         } else {
           if (createFeedback) {
-            createFeedback.textContent = results[0].error || "Erreur";
+            createFeedback.textContent = "Erreur lors de la création.";
             createFeedback.style.color = "#e05555";
             createFeedback.hidden = false;
           }
         }
       }).catch(function () {
         if (createFeedback) {
-          createFeedback.textContent = "Erreur r\u00e9seau";
+          createFeedback.textContent = "Erreur réseau.";
           createFeedback.style.color = "#e05555";
           createFeedback.hidden = false;
         }
       });
     });
   }
-
 
 })();
 </script>

@@ -9614,11 +9614,13 @@ body.wiki-todo-open { overflow: hidden; }
   gap: 0.4rem;
   margin-top: 0.4rem;
 }
-.tags-create-input {
+.tags-create-select { width: 100%; }
+.tags-create-textarea {
   width: 100%;
-}
-.tags-create-type {
-  width: 100%;
+  resize: vertical;
+  min-height: 4rem;
+  font-family: inherit;
+  font-size: 0.83rem;
 }
 .tags-create-btn {
   background: var(--accent);
@@ -9635,6 +9637,59 @@ body.wiki-todo-open { overflow: hidden; }
 .tags-create-feedback {
   font-size: 0.8rem;
   margin-top: 0.25rem;
+}
+
+/* ── Groupes par catégorie ── */
+.tags-cat-group {
+  margin-bottom: 1.4rem;
+}
+.tags-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.tags-cat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.38);
+}
+.tags-cat-more-btn {
+  font-size: 0.74rem;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 0.15rem 0.55rem;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.tags-cat-more-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tags-cat-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+/* Filtre catégorie dans la sidebar */
+.tags-cat-filter-wrap {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* Popup tag : sélecteur catégorie */
+.tag-popup-category-select {
+  flex: 1;
+  font-size: 0.82rem;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
 }
 
 /* Admin section dans le popup */

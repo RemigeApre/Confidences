@@ -367,14 +367,18 @@ db.exec(`
   )
 `);
 
-// Métadonnées des tags : type (normal/ultra/irrealiste/fantaisie) et
+// Métadonnées des tags : type (normal/ultra/irrealiste/fantaisie),
+// catégorie (objet/femme/homme/rapport/lieu/relation/autre) et
 // possibilité de créer des tags "standalone" sans aucun contenu associé.
 db.exec(`
   CREATE TABLE IF NOT EXISTS tag_meta (
-    tag  TEXT PRIMARY KEY,
-    type TEXT NOT NULL DEFAULT 'normal'
+    tag      TEXT PRIMARY KEY,
+    type     TEXT NOT NULL DEFAULT 'normal',
+    category TEXT NOT NULL DEFAULT 'autre'
   )
 `);
+// Migration : ajouter la colonne category si elle n'existe pas encore
+try { db.exec("ALTER TABLE tag_meta ADD COLUMN category TEXT NOT NULL DEFAULT 'autre'"); } catch (_) {}
 
 // Blacklist personnelle de tags (bouton "Masquer le tag" de la popup tag,
 // gérée depuis /tags/masques) : tout contenu portant un de ces tags reste
@@ -2006,7 +2010,8 @@ function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, no
 }
 
 // ── Tag metadata ──────────────────────────────────────────────────────────
-const VALID_TAG_TYPES = new Set(["normal", "ultra", "irrealiste"]);
+const VALID_TAG_TYPES      = new Set(["normal", "ultra", "irrealiste"]);
+const VALID_TAG_CATEGORIES = new Set(["objet", "femme", "homme", "rapport", "lieu", "relation", "autre"]);
 // Migration : les tags en type "fantaisie" rejoignent "irrealiste"
 try { db.exec("UPDATE tag_meta SET type='irrealiste' WHERE type='fantaisie'"); } catch (_) {}
 
@@ -2017,15 +2022,30 @@ function getAllTagMeta() {
   return result;
 }
 
-function setTagType(tag, type) {
-  if (!VALID_TAG_TYPES.has(type)) type = "normal";
-  db.prepare("INSERT OR REPLACE INTO tag_meta (tag, type) VALUES (?, ?)").run(tag, type);
+function getAllTagCategories() {
+  const rows = db.prepare("SELECT tag, category FROM tag_meta").all();
+  const result = {};
+  rows.forEach((r) => { result[r.tag] = r.category || "autre"; });
+  return result;
 }
 
-function createStandaloneTag(tag) {
+function setTagType(tag, type) {
+  if (!VALID_TAG_TYPES.has(type)) type = "normal";
+  db.prepare("INSERT INTO tag_meta (tag, type, category) VALUES (?, ?, 'autre') ON CONFLICT(tag) DO UPDATE SET type = excluded.type").run(tag, type);
+}
+
+function setTagCategory(tag, category) {
+  const t = String(tag || "").trim();
+  if (!t) return;
+  if (!VALID_TAG_CATEGORIES.has(category)) category = "autre";
+  db.prepare("INSERT INTO tag_meta (tag, type, category) VALUES (?, 'normal', ?) ON CONFLICT(tag) DO UPDATE SET category = excluded.category").run(t, category);
+}
+
+function createStandaloneTag(tag, category) {
   const t = String(tag || "").trim();
   if (!t) return false;
-  db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type) VALUES (?, 'normal')").run(t);
+  const cat = VALID_TAG_CATEGORIES.has(category) ? category : "autre";
+  db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type, category) VALUES (?, 'normal', ?)").run(t, cat);
   return true;
 }
 
@@ -2183,10 +2203,10 @@ function renameTagEverywhere(oldTag, newTag) {
     }
   }
   // Déplace les métadonnées vers le nouveau nom
-  const meta = db.prepare("SELECT type FROM tag_meta WHERE tag = ?").get(oldTag);
+  const meta = db.prepare("SELECT type, category FROM tag_meta WHERE tag = ?").get(oldTag);
   if (meta) {
     db.prepare("DELETE FROM tag_meta WHERE tag = ?").run(oldTag);
-    db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type) VALUES (?, ?)").run(newTag, meta.type);
+    db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type, category) VALUES (?, ?, ?)").run(newTag, meta.type, meta.category || "autre");
   }
 }
 
@@ -2534,7 +2554,9 @@ module.exports = {
   getUserNote,
   setUserNote,
   getAllTagMeta,
+  getAllTagCategories,
   setTagType,
+  setTagCategory,
   createStandaloneTag,
   renameTagEverywhere,
   deleteUser,
