@@ -5489,9 +5489,11 @@ a.wiki-ql-label:hover .wiki-ql-text {
   width: 0; height: 0;
   border-style: solid;
   border-width: 28px 28px 0 0;
-  border-color: #7c3aed transparent transparent transparent;
+  border-color: transparent;
   z-index: 3;
 }
+.gallery-processed-badge--done { border-color: #22c55e transparent transparent transparent; }
+.gallery-processed-badge--todo { border-color: #f97316 transparent transparent transparent; }
 
 /* Bouton wiki élégant */
 .gallery-lb-wiki-btn {
@@ -15331,14 +15333,14 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   height: 2rem;
   flex-shrink: 0;
   padding: 0;
-  color: rgba(255,255,255,0.5);
+  color: #60a5fa;
   text-decoration: none;
   border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(96,165,250,0.3);
+  background: rgba(96,165,250,0.08);
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.lb-admin-edit:hover { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.25); }
+.lb-admin-edit:hover { background: rgba(96,165,250,0.2); color: #93c5fd; border-color: rgba(96,165,250,0.55); }
 .lb-admin-edit[hidden] { display: none; }
 
 .lb-admin-processed {
@@ -15355,6 +15357,10 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 .lb-admin-processed:hover { color: #a78bfa; background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.3); }
+.lb-admin-processed--todo { color: #fb923c; border-color: rgba(251,146,60,0.35); background: rgba(251,146,60,0.08); }
+.lb-admin-processed--todo:hover { color: #fdba74; background: rgba(251,146,60,0.18); border-color: rgba(251,146,60,0.55); }
+.lb-admin-processed--done { color: #4ade80; border-color: rgba(74,222,128,0.35); background: rgba(74,222,128,0.08); }
+.lb-admin-processed--done:hover { color: #86efac; background: rgba(74,222,128,0.18); border-color: rgba(74,222,128,0.55); }
 .lb-admin-processed[hidden] { display: none; }
 
 .lb-admin-delete {
@@ -15366,13 +15372,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   padding: 0;
   flex-shrink: 0;
   border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: none;
-  color: rgba(255,255,255,0.35);
+  border: 1px solid rgba(224,92,92,0.35);
+  background: rgba(224,92,92,0.09);
+  color: #e05c5c;
   cursor: pointer;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
-.lb-admin-delete:hover { color: #e05c5c; background: rgba(224,92,92,0.15); border-color: rgba(224,92,92,0.4); }
+.lb-admin-delete:hover { color: #ff8080; background: rgba(224,92,92,0.22); border-color: rgba(224,92,92,0.6); }
 .lb-admin-delete[hidden] { display: none; }
 
 /* Bloc avis (tout en bas du volet) */
@@ -15437,6 +15443,31 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-color: #a0a0a0;
   color: #e0e0e0;
 }
+
+/* Eye button : survol en rouge + œil barré + tooltip */
+.gallery-lb-hide-btn { position: relative; overflow: visible; }
+.lbhb-eye-crossed { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; color: #e05c5c; transition: opacity 0.15s; pointer-events: none; }
+.lbhb-eye-normal { transition: opacity 0.15s; }
+.gallery-lb-hide-btn:hover .lbhb-eye-normal { opacity: 0; }
+.gallery-lb-hide-btn:hover .lbhb-eye-crossed { opacity: 1; }
+.gallery-lb-hide-btn:hover { border-color: rgba(224,92,92,0.45); background: rgba(224,92,92,0.12); }
+.gallery-lb-hide-tooltip {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%; transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.7rem;
+  padding: 0.18rem 0.48rem;
+  background: rgba(20,20,30,0.97);
+  border: 1px solid rgba(224,92,92,0.45);
+  border-radius: 5px;
+  color: #e05c5c;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 20;
+}
+.gallery-lb-hide-btn:hover .gallery-lb-hide-tooltip { opacity: 1; }
 
 /* ── Bloc liens multi-types ──────────────────────────────────────────────── */
 .ef-block--liens {

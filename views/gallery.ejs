@@ -72,6 +72,16 @@
       </details>
       <% } %>
 
+      <% if (currentUser && currentUser.isAdmin) { %>
+      <details class="wiki-subpanel-details">
+        <summary class="wiki-subpanel-summary">Traitement</summary>
+        <div class="links-filter" id="gallery-processed-filter">
+          <button type="button" class="tag-chip active" data-processed-filter="">Tous</button>
+          <button type="button" class="tag-chip gallery-filter-chip--todo" data-processed-filter="0">&Agrave; traiter</button>
+          <button type="button" class="tag-chip gallery-filter-chip--done" data-processed-filter="1">Trait&eacute;</button>
+        </div>
+      </details>
+      <% } %>
       <%- include('partials/filter-profiles', { section: 'gallery', profiles: locals.galleryFilterProfiles || [] }) %>
 
       <% if (allParodies && allParodies.length) { %>
@@ -139,8 +149,8 @@
 
         <% if (cat) { %><span class="wiki-card-accent" style="background: hsl(<%= cat.hue %>, 55%, 45%)"></span><% } %>
 
-        <% if (item.processed && item.type === 'gallery' && currentUser) { %>
-          <span class="gallery-processed-badge" aria-label="Trait&#233;"></span>
+        <% if (item.type === 'gallery' && currentUser && currentUser.isAdmin) { %>
+          <span class="gallery-processed-badge gallery-processed-badge--<%= item.processed ? 'done' : 'todo' %>" aria-label="<%= item.processed ? 'Trait\u00e9' : '\u00c0 traiter' %>"></span>
         <% } %>
 
         <% if (item.type === 'gallery' && item.id) { %>

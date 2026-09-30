@@ -309,6 +309,7 @@
   var hideUltra      = storedHideUltra !== null ? storedHideUltra === "1" : (window.ULTRA_MODE || "hidden") === "hidden";
   var hideIrrealiste = storedHideIrrealiste !== null ? storedHideIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") === "hidden";
   var activeParody   = "";
+  var activeProcessed = ""; // "" = tous, "0" = à traiter, "1" = traité
   var activeRating   = 0;
   var sortMode       = "date-desc";
   var randomSeeds    = null; // Map<card, number> — persistant entre pages
@@ -351,7 +352,8 @@
       if (tagExcludes.length) okTag = okTag && tagExcludes.every(function(t){ return cardTags.indexOf(t) === -1; });
       var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
 
-      var passes = okCategory && okSearch && okUltra && okIrrealiste && okRating && okParody && okTag && okBlacklist;
+      var okProcessed = !activeProcessed || card.dataset.processed === activeProcessed;
+      var passes = okCategory && okSearch && okUltra && okIrrealiste && okRating && okParody && okTag && okBlacklist && okProcessed;
       card.dataset.filtered = passes ? "1" : "0";
       if (passes) filteredCards.push(card);
     });
@@ -370,7 +372,7 @@
 
     var total = filteredCards.length;
     var totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
-    var hasFilter = Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating || activeParody;
+    var hasFilter = Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating || activeParody || activeProcessed;
     if (countHero) countHero.textContent = hasFilter ? (total + "/" + cards.length) : cards.length;
     if (resultCount) { resultCount.hidden = !hasFilter; if (hasFilter) resultCount.textContent = total + " / " + cards.length; }
 
@@ -439,6 +441,20 @@
           chip.classList.add("active");
           activeCategory = t;
         }
+        applyFilters();
+      });
+    });
+  }
+
+  // Processed filter (admin only)
+  var processedFilterEl = document.getElementById("gallery-processed-filter");
+  if (processedFilterEl) {
+    processedFilterEl.querySelectorAll("[data-processed-filter]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        activeProcessed = btn.dataset.processedFilter;
+        processedFilterEl.querySelectorAll("[data-processed-filter]").forEach(function(b) {
+          b.classList.toggle("active", b.dataset.processedFilter === activeProcessed);
+        });
         applyFilters();
       });
     });
@@ -1173,6 +1189,8 @@
         lbProcessBtn.dataset.galleryId = galleryId;
         lbProcessBtn.hidden = false;
         lbProcessBtn.textContent = card.dataset.processed === "1" ? "Trait\u00e9" : "\u00c0 traiter";
+        lbProcessBtn.classList.toggle("lb-admin-processed--done", card.dataset.processed === "1");
+        lbProcessBtn.classList.toggle("lb-admin-processed--todo", card.dataset.processed !== "1");
       }
     }
   }
@@ -1499,15 +1517,19 @@
             card.dataset.processed = data.processed ? "1" : "0";
             // Mise à jour du badge sur la carte
             var badge = card.querySelector(".gallery-processed-badge");
-            if (data.processed && !badge) {
-              var b = document.createElement("span");
-              b.className = "gallery-processed-badge";
-              card.insertBefore(b, card.firstChild);
-            } else if (!data.processed && badge) {
+            if (window.IS_ADMIN) {
+              if (!badge) {
+                badge = document.createElement("span");
+                card.insertBefore(badge, card.firstChild);
+              }
+              badge.className = "gallery-processed-badge gallery-processed-badge--" + (data.processed ? "done" : "todo");
+            } else if (badge) {
               badge.remove();
             }
           }
           lbProcessBtn.textContent = data.processed ? "Trait\u00e9" : "\u00c0 traiter";
+          lbProcessBtn.classList.toggle("lb-admin-processed--done", data.processed);
+          lbProcessBtn.classList.toggle("lb-admin-processed--todo", !data.processed);
         });
     });
   }
