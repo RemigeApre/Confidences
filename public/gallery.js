@@ -834,9 +834,12 @@
   var lightbox  = document.getElementById("gallery-lightbox");
   var lbImg     = lightbox ? lightbox.querySelector(".gallery-lb-img")       : null;
   var lbDots    = document.getElementById("gallery-lb-dots");
-  var lbTags    = lightbox ? lightbox.querySelector(".gallery-lb-tags")      : null;
+  var lbMetaParody       = document.getElementById("gallery-lb-meta-parody");
+  var lbMetaAuthor       = document.getElementById("gallery-lb-meta-author");
+  var lbMetaProtagonists = document.getElementById("gallery-lb-meta-protagonists");
+  var lbMetaTags         = document.getElementById("gallery-lb-meta-tags");
+  var lbTags    = lbMetaTags ? lbMetaTags.querySelector(".gallery-lb-tags") : null;
   var lbLink    = lightbox ? lightbox.querySelector(".gallery-lb-wiki-btn")  : null;
-  var lbNotes   = lightbox ? lightbox.querySelector(".gallery-lb-notes")     : null;
   var lbClose   = lightbox ? lightbox.querySelector(".gallery-lb-close")     : null;
   var lbPrev    = lightbox ? lightbox.querySelector(".gallery-lb-prev")      : null;
   var lbNext    = lightbox ? lightbox.querySelector(".gallery-lb-next")      : null;
@@ -1007,6 +1010,7 @@
     }
     if (lbTags) {
       lbTags.innerHTML = tags.map(function(t) { return window.buildTagBadgeHTML(t); }).join("");
+      if (lbMetaTags) lbMetaTags.hidden = !tags.length;
     }
     if (lbLink) {
       lbLink.hidden = !wikiId;
@@ -1021,35 +1025,54 @@
     var parody = card.dataset.parody || "";
     var subParody = card.dataset.subParody || "";
     var protagonistIdStr = card.dataset.protagonists || "";
-    if (lbNotes) {
-      lbNotes.innerHTML = "";
-      if (author) {
-        var p = document.createElement("span");
-        p.className = "gallery-lb-meta-pill gallery-lb-meta-pill--author";
-        p.textContent = "\u270F " + author;
-        lbNotes.appendChild(p);
-      }
+
+    // Section Parodie
+    if (lbMetaParody) {
+      var parodyChips = lbMetaParody.querySelector(".lb-meta-chips");
+      parodyChips.innerHTML = "";
       if (parody) {
-        var parodySec = document.createElement("span");
-        parodySec.className = "gallery-lb-parody-sec";
         var pLink = document.createElement("a");
         pLink.className = "gallery-lb-meta-pill gallery-lb-meta-pill--parody";
         pLink.href = "/parodies/" + encodeURIComponent(parody);
-        pLink.textContent = "\u2728 " + parody;
-        parodySec.appendChild(pLink);
+        pLink.textContent = parody;
+        parodyChips.appendChild(pLink);
         if (subParody) {
-          var sep = document.createElement("span");
-          sep.className = "gallery-lb-parody-sep";
-          sep.textContent = " \u203a ";
-          parodySec.appendChild(sep);
+          var pSep = document.createElement("span");
+          pSep.className = "gallery-lb-parody-sep";
+          pSep.textContent = " \u203a ";
+          parodyChips.appendChild(pSep);
           var sLink = document.createElement("a");
           sLink.className = "gallery-lb-meta-pill gallery-lb-meta-pill--parody gallery-lb-meta-pill--sub-parody";
           sLink.href = "/parodies/" + encodeURIComponent(parody) + "/" + encodeURIComponent(subParody);
           sLink.textContent = subParody;
-          parodySec.appendChild(sLink);
+          parodyChips.appendChild(sLink);
         }
-        lbNotes.appendChild(parodySec);
+        lbMetaParody.hidden = false;
+      } else {
+        lbMetaParody.hidden = true;
       }
+    }
+
+    // Section Auteur
+    if (lbMetaAuthor) {
+      var authorChips = lbMetaAuthor.querySelector(".lb-meta-chips");
+      authorChips.innerHTML = "";
+      if (author) {
+        var aSpan = document.createElement("span");
+        aSpan.className = "gallery-lb-meta-pill gallery-lb-meta-pill--author";
+        aSpan.textContent = author;
+        authorChips.appendChild(aSpan);
+        lbMetaAuthor.hidden = false;
+      } else {
+        lbMetaAuthor.hidden = true;
+      }
+    }
+
+    // Section Protagonistes
+    if (lbMetaProtagonists) {
+      var protChips = lbMetaProtagonists.querySelector(".lb-meta-chips");
+      protChips.innerHTML = "";
+      var hasProts = false;
       if (protagonistIdStr) {
         var protagonistsMap = window.GALLERY_PROTAGONISTS || {};
         protagonistIdStr.split(",").forEach(function(pid) {
@@ -1057,13 +1080,15 @@
           if (!pid) return;
           var name = protagonistsMap[pid];
           if (!name) return;
+          hasProts = true;
           var r = document.createElement("a");
           r.className = "gallery-lb-meta-pill gallery-lb-meta-pill--protagonist";
           r.href = "/protagonistes/" + pid;
-          r.textContent = "\uD83D\uDC64 " + name;
-          lbNotes.appendChild(r);
+          r.textContent = name;
+          protChips.appendChild(r);
         });
       }
+      lbMetaProtagonists.hidden = !hasProts;
     }
 
     if (lbDots) {
