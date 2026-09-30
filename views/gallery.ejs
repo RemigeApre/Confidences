@@ -143,6 +143,7 @@
         data-processed="<%= (item.processed && item.type === 'gallery') ? '1' : '0' %>"
         data-author="<%= (item.author || '').replace(/"/g, '') %>"
         data-parody="<%= (item.parody || '').replace(/"/g, '') %>"
+        data-protagonists="<%= (item.protagonistIds || []).join(',') %>"
         data-series="<%= itemSeries.map(function(s){ return s.seriesId; }).join(',') %>">
 
         <% if (cat) { %><span class="wiki-card-accent" style="background: hsl(<%= cat.hue %>, 55%, 45%)"></span><% } %>
@@ -222,6 +223,21 @@
             <input type="hidden" name="parody" class="wiki-tags-hidden" value="" />
           </div>
         </div>
+
+        <%# Protagonistes %>
+        <% if (allProtagonists && allProtagonists.length) { %>
+        <div class="nv-form-prot-row">
+          <span class="nv-form-prot-label">Protagonistes :</span>
+          <div class="nv-form-prot-chips">
+            <% allProtagonists.forEach(function(p) { %>
+              <label class="nv-form-prot-chip">
+                <input type="checkbox" name="protagonist_ids" value="<%= p.id %>" />
+                <span><%= p.name %></span>
+              </label>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
 
         <%# Tags : ultra/irréaliste en haut, puis saisie + suggestions top tags %>
         <div class="guf-tags-special-row">
@@ -360,6 +376,9 @@
   </div>
 </div>
 
-<script>window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>
+<script>
+window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;
+window.GALLERY_PROTAGONISTS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;
+</script>
 <script src="/gallery.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

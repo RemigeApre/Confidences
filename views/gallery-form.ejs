@@ -84,6 +84,22 @@
       <input type="text" name="parody" class="wiki-title-input gallery-parody-input" value="<%= image.parody || '' %>" placeholder="Parodie (optionnel)&hellip;" autocomplete="off" />
     </div>
 
+    <% if (allProtagonists && allProtagonists.length) { %>
+    <div class="nv-form-prot-row">
+      <span class="nv-form-prot-label">Protagonistes :</span>
+      <div class="nv-form-prot-chips">
+        <% allProtagonists.forEach(function(p) {
+          var checked = image.protagonistIds && image.protagonistIds.indexOf(p.id) !== -1;
+        %>
+          <label class="nv-form-prot-chip">
+            <input type="checkbox" name="protagonist_ids" value="<%= p.id %>" <%= checked ? 'checked' : '' %> />
+            <span><%= p.name %></span>
+          </label>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
     <textarea name="notes" class="wiki-textarea gallery-notes-input" rows="4" placeholder="Notes&hellip;"><%= image.notes %></textarea>
 
     <%# ─ Image(s) de cette fiche — chaque image est indépendante : les

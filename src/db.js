@@ -97,6 +97,7 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN content_type TEXT NOT NULL 
 try { db.exec("UPDATE gallery_images SET content_type = 'image' WHERE content_type = 'bd'"); } catch (_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN processed INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN protagonist_ids TEXT NOT NULL DEFAULT '[]'"); } catch(_) {}
 // Distingue une fiche créée automatiquement à partir d'une image de page
 // codex (voir syncPageGalleryImages, routes/wiki.js) d'une fiche liée
 // manuellement via l'upload direct dans la Galerie (champ "Page codex" du
@@ -1768,6 +1769,7 @@ function rowToGalleryImage(row) {
     wikiSynced: !!row.wiki_synced,
     processed: !!row.processed,
     featured: !!row.featured,
+    protagonistIds: (() => { try { return JSON.parse(row.protagonist_ids || "[]"); } catch(_) { return []; } })(),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -1808,13 +1810,13 @@ function getGalleryImage(id) {
   return row ? rowToGalleryImage(row) : null;
 }
 
-function insertGalleryImage({ imagePaths, title, tags, notes, category, wikiPageId, author, parody }) {
+function insertGalleryImage({ imagePaths, title, tags, notes, category, wikiPageId, author, parody, protagonistIds }) {
   const now = new Date().toISOString();
   const paths = imagePaths || [];
   const info = db.prepare(
-    `INSERT INTO gallery_images (filename, image_paths, title, tags, notes, category, wiki_page_id, author, parody, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(paths[0] || "", JSON.stringify(paths), title || "", JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", now, now);
+    `INSERT INTO gallery_images (filename, image_paths, title, tags, notes, category, wiki_page_id, author, parody, protagonist_ids, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(paths[0] || "", JSON.stringify(paths), title || "", JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", JSON.stringify(protagonistIds || []), now, now);
   return info.lastInsertRowid;
 }
 
@@ -1825,7 +1827,7 @@ function setGalleryImageWikiSynced(id, synced) {
   db.prepare("UPDATE gallery_images SET wiki_synced = ? WHERE id = ?").run(synced ? 1 : 0, id);
 }
 
-function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody }) {
+function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, protagonistIds }) {
   const existing = db.prepare("SELECT image_paths, filename FROM gallery_images WHERE id = ?").get(id);
   if (!existing) return false;
   // Si imagePaths n'est pas fourni, conserver les images existantes
@@ -1835,9 +1837,9 @@ function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wiki
     if (!finalImagePaths.length && existing.filename) finalImagePaths = [existing.filename];
   }
   db.prepare(
-    `UPDATE gallery_images SET title = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, updated_at = ?
+    `UPDATE gallery_images SET title = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, protagonist_ids = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title || "", category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", new Date().toISOString(), id);
+  ).run(title || "", category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", JSON.stringify(protagonistIds || []), new Date().toISOString(), id);
   return true;
 }
 
@@ -1869,6 +1871,36 @@ function listAllParodies() {
     "SELECT DISTINCT parody FROM protagonistes WHERE parody != ''",
   ].forEach(q => db.prepare(q).all().forEach(r => set.add(r.parody)));
   return [...set].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+}
+
+function listAllParodiesWithCounts() {
+  const all = listAllParodies();
+  return all.map(parody => {
+    const counts = {
+      gallery: db.prepare("SELECT COUNT(*) as n FROM gallery_images WHERE parody = ?").get(parody).n,
+      bd:      db.prepare("SELECT COUNT(*) as n FROM bd_books WHERE parody = ?").get(parody).n,
+      nouvelles: db.prepare("SELECT COUNT(*) as n FROM nouvelles WHERE parody = ?").get(parody).n,
+      wiki:    db.prepare("SELECT COUNT(*) as n FROM wiki_pages WHERE parody = ?").get(parody).n,
+      protagonistes: db.prepare("SELECT COUNT(*) as n FROM protagonistes WHERE parody = ?").get(parody).n,
+    };
+    counts.total = counts.gallery + counts.bd + counts.nouvelles + counts.wiki + counts.protagonistes;
+    return { parody, counts };
+  });
+}
+
+function getContentByParody(parody) {
+  const gallery = db.prepare("SELECT * FROM gallery_images WHERE parody = ? ORDER BY created_at DESC").all(parody).map(rowToGalleryImage);
+  const bd = db.prepare("SELECT id, title, image_paths FROM bd_books WHERE parody = ? ORDER BY updated_at DESC").all(parody).map(r => {
+    try { r.image_paths = JSON.parse(r.image_paths || "[]"); } catch(_) { r.image_paths = []; }
+    return r;
+  });
+  const nouvelles = db.prepare("SELECT id, title, summary, author, word_count FROM nouvelles WHERE parody = ? ORDER BY updated_at DESC").all(parody);
+  const wiki = db.prepare("SELECT id, title, category, image_paths FROM wiki_pages WHERE parody = ? ORDER BY updated_at DESC").all(parody).map(r => {
+    try { r.image_paths = JSON.parse(r.image_paths || "[]"); } catch(_) { r.image_paths = []; }
+    return r;
+  });
+  const protagonistes = db.prepare("SELECT id, name, description FROM protagonistes WHERE parody = ? ORDER BY name COLLATE NOCASE").all(parody);
+  return { gallery, bd, nouvelles, wiki, protagonistes };
 }
 
 function updateGalleryImageMeta(id, { tags, author, parody, title, notes, processed } = {}) {
@@ -2355,6 +2387,8 @@ module.exports = {
   listGalleryAuthors,
   listGalleryParodies,
   listAllParodies,
+  listAllParodiesWithCounts,
+  getContentByParody,
   updateGalleryImageMeta,
   setWikiPageFeatured,
   setWikiPageMaturity,

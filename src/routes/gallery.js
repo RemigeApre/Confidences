@@ -35,6 +35,7 @@ const {
   listUnexploredGalleryImages,
   listBlacklistedTags,
   listAllParodies,
+  listProtagonistes,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -153,6 +154,9 @@ function buildItems(galleryImages, wikiPages) {
     interested: img.interested,
     partnerReaction: img.partnerReaction || null,
     processed: !!img.processed,
+    author: img.author || "",
+    parody: img.parody || "",
+    protagonistIds: img.protagonistIds || [],
     date: img.createdAt,
   }));
 
@@ -194,7 +198,8 @@ function buildGalleryRouter(config) {
     const galleryIds = items.filter((i) => i.id).map((i) => i.id);
     const seriesMap = galleryIds.length ? getSeriesMapForIds(galleryIds) : {};
     const allParodies = listAllParodies();
-    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap, allParodies });
+    const allProtagonists = listProtagonistes();
+    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap, allParodies, allProtagonists });
   });
 
   // Chaque image est sa propre fiche, jamais regroupées automatiquement —
@@ -211,10 +216,11 @@ function buildGalleryRouter(config) {
     const notes = String(req.body.notes || "").trim();
     const author = String(req.body.author || "").trim();
     const parody = String(req.body.parody || "").trim();
+    const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Number.isInteger);
     files.forEach((f) => {
       const p = `/uploads/gallery/${f.filename}`;
       generateThumb(p);
-      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, author, parody });
+      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, author, parody, protagonistIds });
     });
     res.redirect("/galerie");
   });
@@ -464,7 +470,8 @@ function buildGalleryRouter(config) {
     const linkedPage = image.wikiPageId ? getWikiPage(image.wikiPageId) : null;
     const imageSeries = getImageSeries(id);
     const allSeries = listSeries();
-    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage, imageSeries, allSeries });
+    const allProtagonists = listProtagonistes();
+    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage, imageSeries, allSeries, allProtagonists });
   });
 
   router.post("/:id/view", (req, res) => {
@@ -506,13 +513,14 @@ function buildGalleryRouter(config) {
     const notes = String(req.body.notes || "").trim();
     const author = String(req.body.author || "").trim();
     const parody = String(req.body.parody || "").trim();
+    const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Number.isInteger);
 
-    updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody });
+    updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, protagonistIds });
 
     const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
     added.forEach((p) => {
       generateThumb(p);
-      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, wikiPageId, author, parody });
+      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, wikiPageId, author, parody, protagonistIds });
     });
 
     const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));

@@ -1,0 +1,30 @@
+<%- include('partials/head', { title: 'Parodies' }) %>
+<main class="container" style="max-width: 860px; margin: 0 auto">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Parodies', navBack: '/wiki' }) %>
+
+  <div class="prot-header">
+    <h1 class="prot-page-title">Parodies</h1>
+    <p class="prot-page-sub">Œuvres parodiées dans le contenu du site</p>
+  </div>
+
+  <% if (!parodies.length) { %>
+    <p class="nv-empty">Aucune parodie enregistrée pour le moment.</p>
+  <% } else { %>
+    <div class="parody-grid">
+      <% parodies.forEach(function(item) { %>
+        <a href="/parodies/<%= encodeURIComponent(item.parody) %>" class="parody-card">
+          <div class="parody-card-name"><%= item.parody %></div>
+          <div class="parody-card-counts">
+            <% if (item.counts.gallery) { %><span class="parody-count-chip">📷 <%= item.counts.gallery %></span><% } %>
+            <% if (item.counts.bd) { %><span class="parody-count-chip">📚 <%= item.counts.bd %></span><% } %>
+            <% if (item.counts.nouvelles) { %><span class="parody-count-chip">📝 <%= item.counts.nouvelles %></span><% } %>
+            <% if (item.counts.wiki) { %><span class="parody-count-chip">🔖 <%= item.counts.wiki %></span><% } %>
+            <% if (item.counts.protagonistes) { %><span class="parody-count-chip">👤 <%= item.counts.protagonistes %></span><% } %>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+
+</main>
+<%- include('partials/foot') %>

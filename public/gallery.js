@@ -1008,22 +1008,37 @@
       }
     }
 
-    // Auteur / parodie
+    // Auteur / parodie / protagonistes
     var author = card.dataset.author || "";
     var parody = card.dataset.parody || "";
+    var protagonistIdStr = card.dataset.protagonists || "";
     if (lbNotes) {
       lbNotes.innerHTML = "";
       if (author) {
         var p = document.createElement("span");
-        p.className = "gallery-lb-meta-pill";
-        p.textContent = "Auteur : " + author;
+        p.className = "gallery-lb-meta-pill gallery-lb-meta-pill--author";
+        p.textContent = "\u270F " + author;
         lbNotes.appendChild(p);
       }
       if (parody) {
         var q = document.createElement("span");
-        q.className = "gallery-lb-meta-pill";
-        q.textContent = "Parodie : " + parody;
+        q.className = "gallery-lb-meta-pill gallery-lb-meta-pill--parody";
+        q.textContent = "\u2728 " + parody;
         lbNotes.appendChild(q);
+      }
+      if (protagonistIdStr) {
+        var protagonistsMap = window.GALLERY_PROTAGONISTS || {};
+        protagonistIdStr.split(",").forEach(function(pid) {
+          pid = pid.trim();
+          if (!pid) return;
+          var name = protagonistsMap[pid];
+          if (!name) return;
+          var r = document.createElement("a");
+          r.className = "gallery-lb-meta-pill gallery-lb-meta-pill--protagonist";
+          r.href = "/protagonistes/" + pid;
+          r.textContent = "\uD83D\uDC64 " + name;
+          lbNotes.appendChild(r);
+        });
       }
     }
 

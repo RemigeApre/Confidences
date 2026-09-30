@@ -1,0 +1,90 @@
+<%- include('partials/head', { title: parody + ' — Parodie' }) %>
+<main class="container" style="max-width: 960px; margin: 0 auto">
+  <%- include('partials/top-nav', { config: config, navTitle: parody, navBack: '/parodies' }) %>
+
+  <div class="prot-header">
+    <h1 class="prot-page-title"><%= parody %></h1>
+    <p class="prot-page-sub">Tout le contenu en rapport avec cette œuvre</p>
+  </div>
+
+  <% var hasContent = content.gallery.length || content.bd.length || content.nouvelles.length || content.wiki.length || content.protagonistes.length; %>
+  <% if (!hasContent) { %>
+    <p class="nv-empty">Aucun contenu trouvé pour cette parodie.</p>
+  <% } %>
+
+  <%# ── Protagonistes ── %>
+  <% if (content.protagonistes.length) { %>
+  <section class="parody-section">
+    <h2 class="parody-section-title">Protagonistes</h2>
+    <div class="prot-grid">
+      <% content.protagonistes.forEach(function(p) { %>
+        <a href="/protagonistes/<%= p.id %>" class="prot-card">
+          <div class="prot-card-name"><%= p.name %></div>
+          <% if (p.description) { %><p class="prot-card-desc"><%= p.description.slice(0, 100) %><%= p.description.length > 100 ? '…' : '' %></p><% } %>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <%# ── Galerie ── %>
+  <% if (content.gallery.length) { %>
+  <section class="parody-section">
+    <h2 class="parody-section-title">Images (<%= content.gallery.length %>)</h2>
+    <div class="parody-img-grid">
+      <% content.gallery.forEach(function(img) { %>
+        <% var imgSrc = img.imagePaths[0] || ''; %>
+        <a href="/galerie" class="parody-img-thumb">
+          <img src="<%= thumbUrl(imgSrc) %>" alt="<%= img.title || '' %>" loading="lazy" />
+          <% if (img.title) { %><span class="parody-img-title"><%= img.title %></span><% } %>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <%# ── BD ── %>
+  <% if (content.bd.length) { %>
+  <section class="parody-section">
+    <h2 class="parody-section-title">BD (<%= content.bd.length %>)</h2>
+    <div class="prot-grid">
+      <% content.bd.forEach(function(b) { %>
+        <a href="/bd/<%= b.id %>" class="prot-card">
+          <div class="prot-card-name"><%= b.title %></div>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <%# ── Nouvelles ── %>
+  <% if (content.nouvelles.length) { %>
+  <section class="parody-section">
+    <h2 class="parody-section-title">Nouvelles (<%= content.nouvelles.length %>)</h2>
+    <div class="prot-grid">
+      <% content.nouvelles.forEach(function(n) { %>
+        <a href="/nouvelles/<%= n.id %>" class="prot-card">
+          <div class="prot-card-name"><%= n.title %></div>
+          <% if (n.summary) { %><p class="prot-card-desc"><%= n.summary.slice(0, 100) %><%= n.summary.length > 100 ? '…' : '' %></p><% } %>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <%# ── Codex ── %>
+  <% if (content.wiki.length) { %>
+  <section class="parody-section">
+    <h2 class="parody-section-title">Codex (<%= content.wiki.length %>)</h2>
+    <div class="prot-grid">
+      <% content.wiki.forEach(function(w) { %>
+        <a href="/wiki/<%= w.id %>" class="prot-card">
+          <div class="prot-card-name"><%= w.title %></div>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+</main>
+<%- include('partials/foot') %>
