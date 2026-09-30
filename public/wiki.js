@@ -2,6 +2,23 @@
   "use strict";
 
   // ══════════════════════════════════════════════════
+  // 0-A. Empêcher Enter de soumettre les formulaires d'édition
+  // ══════════════════════════════════════════════════
+  // Dans tous les formulaires marqués [data-no-enter-submit], la touche Enter
+  // dans un champ texte ne soumet pas le formulaire. Chaque widget gère lui-même
+  // le comportement voulu (ex. : ajouter un tag, valider l'autocomplete, etc.).
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var el = e.target;
+    if (el.tagName !== "INPUT") return;
+    var type = (el.type || "text").toLowerCase();
+    if (type === "submit" || type === "button" || type === "reset" ||
+        type === "checkbox" || type === "radio" || type === "file") return;
+    var form = el.closest("form[data-no-enter-submit]");
+    if (form) e.preventDefault();
+  }, true); // capture pour court-circuiter avant les autres handlers
+
+  // ══════════════════════════════════════════════════
   // 0. TODO-PANEL : cocher l'item si page vient d'être créée
   // ══════════════════════════════════════════════════
   (function () {

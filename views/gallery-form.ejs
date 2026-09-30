@@ -10,7 +10,7 @@
     <button type="submit" class="wf-delete-btn-fixed" title="Supprimer l&rsquo;image">&#128465;</button>
   </form>
 
-  <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form gf-form" id="gf-form">
+  <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form gf-form" id="gf-form" data-no-enter-submit>
 
     <%# ── BLOC 1 : META ──────────────────────────────────────────────────── %>
     <div class="ef-block">
@@ -123,14 +123,19 @@
           var inp   = document.getElementById('gf-prot-input');
           var drop  = document.getElementById('gf-prot-drop');
           if (!inp) return;
+          var acSel = -1;
+
           function selectedIds() {
             return Array.from(chips.querySelectorAll('[name="protagonist_ids"]')).map(function(c){ return Number(c.value); });
           }
+
+          function closeDrop() { drop.innerHTML = ''; drop.hidden = true; acSel = -1; }
+
           function renderDrop(q) {
-            drop.innerHTML = '';
+            drop.innerHTML = ''; acSel = -1;
             var sel = selectedIds();
             var matches = ALL_PROTS.filter(function(p) {
-              return p.name.toLowerCase().includes(q.toLowerCase()) && !sel.includes(p.id);
+              return p.name.toLowerCase().indexOf(q.toLowerCase()) !== -1 && sel.indexOf(p.id) === -1;
             }).slice(0, 8);
             if (!matches.length) { drop.hidden = true; return; }
             matches.forEach(function(p) {
@@ -141,30 +146,65 @@
                 e.preventDefault();
                 addChip(p);
                 inp.value = '';
-                drop.hidden = true;
+                closeDrop();
               });
               drop.appendChild(li);
             });
             drop.hidden = false;
           }
+
           function addChip(p) {
-            if (selectedIds().includes(p.id)) return;
+            if (selectedIds().indexOf(p.id) !== -1) return;
             var span = document.createElement('span');
             span.className = 'gf-prot-chip';
             span.dataset.id = p.id;
-            span.textContent = p.name;
+            span.textContent = p.name + ' ';
             var cb = document.createElement('input');
             cb.type = 'checkbox'; cb.name = 'protagonist_ids'; cb.value = p.id; cb.checked = true; cb.style.display = 'none';
             span.appendChild(cb);
+            var x = document.createElement('span');
+            x.className = 'gf-prot-chip-x'; x.textContent = '×'; x.title = 'Retirer';
+            span.appendChild(x);
+            x.addEventListener('click', function(e) { e.stopPropagation(); span.remove(); });
             span.addEventListener('click', function() { span.remove(); });
             chips.appendChild(span);
           }
-          // click to remove existing chips
+
+          // Retirer les chips existants au clic
           chips.querySelectorAll('.gf-prot-chip').forEach(function(chip) {
             chip.addEventListener('click', function() { chip.remove(); });
           });
-          inp.addEventListener('input', function() { if (inp.value.trim()) renderDrop(inp.value); else drop.hidden = true; });
-          inp.addEventListener('blur', function() { setTimeout(function(){ drop.hidden = true; }, 160); });
+
+          inp.addEventListener('input', function() {
+            if (inp.value.trim()) renderDrop(inp.value);
+            else closeDrop();
+          });
+
+          inp.addEventListener('blur', function() { setTimeout(closeDrop, 160); });
+
+          inp.addEventListener('keydown', function(e) {
+            var items = drop.querySelectorAll('.parody-ac-item');
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              acSel = Math.min(acSel + 1, items.length - 1);
+              items.forEach(function(li, i) { li.classList.toggle('selected', i === acSel); });
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              acSel = Math.max(acSel - 1, 0);
+              items.forEach(function(li, i) { li.classList.toggle('selected', i === acSel); });
+            } else if (e.key === 'Enter') {
+              // e.preventDefault() est déjà géré par le listener global data-no-enter-submit
+              if (!drop.hidden && items.length) {
+                var target = acSel >= 0 ? items[acSel] : items[0];
+                if (target) target.dispatchEvent(new MouseEvent('mousedown'));
+              }
+            } else if (e.key === 'Backspace' && inp.value === '') {
+              var allChips = chips.querySelectorAll('.gf-prot-chip');
+              if (allChips.length) allChips[allChips.length - 1].remove();
+            } else if (e.key === 'Escape') {
+              closeDrop();
+            }
+          });
         })();
         </script>
       </div>

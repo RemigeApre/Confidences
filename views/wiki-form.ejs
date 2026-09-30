@@ -25,7 +25,7 @@
     var allTagsNormal = allTags.filter(function(t){ return SPECIAL_TAGS.indexOf(t) === -1; });
   %>
 
-  <form method="POST" action="<%= page.id ? '/wiki/' + page.id : '/wiki/' %>" enctype="multipart/form-data" class="wiki-form" id="wiki-edit-form">
+  <form method="POST" action="<%= page.id ? '/wiki/' + page.id : '/wiki/' %>" enctype="multipart/form-data" class="wiki-form" id="wiki-edit-form" data-no-enter-submit>
     <input type="hidden" name="_returnTo" value="<%= returnTo || '' %>" />
 
     <%# ── 1. Titre + Catégorie ── %>
