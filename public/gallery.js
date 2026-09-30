@@ -1082,9 +1082,10 @@
           if (!name) return;
           hasProts = true;
           var r = document.createElement("a");
-          r.className = "gallery-lb-meta-pill gallery-lb-meta-pill--protagonist";
+          r.className = "tag-badge tag-badge--protagonist";
           r.href = "/protagonistes/" + pid;
           r.textContent = name;
+          r.addEventListener("click", function(e) { e.stopPropagation(); });
           protChips.appendChild(r);
         });
       }
