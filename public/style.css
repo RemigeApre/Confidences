@@ -8305,22 +8305,37 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
     color: var(--accent);
   }
 
-  /* Labels / Parodies / Personnages : couleur + pas de "+" */
+  /* Images / BD / Histoire : texte coloré */
+  .pc-drop-link--images   { color: hsl(210, 70%, 68%); }
+  .pc-drop-link--bd       { color: hsl(140, 55%, 60%); }
+  .pc-drop-link--histoire { color: hsl(30,  80%, 65%); }
+
+  .pc-drop-link--images:hover   { color: hsl(210, 80%, 80%); background: rgba(100,160,255,.08); }
+  .pc-drop-link--bd:hover       { color: hsl(140, 65%, 72%); background: rgba(80, 200,120,.08); }
+  .pc-drop-link--histoire:hover { color: hsl(30,  90%, 78%); background: rgba(255,160, 60,.08); }
+
+  /* Labels / Parodies / Personnages : fond coloré + texte contrasté + pas de "+" */
   .pc-drop-link--labels,
   .pc-drop-link--parodies,
-  .pc-drop-link--prot { font-weight: 600; }
+  .pc-drop-link--prot {
+    font-weight: 600;
+    border-radius: 6px;
+    margin: 1px 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 
   .pc-drop-link--labels::before,
   .pc-drop-link--parodies::before,
   .pc-drop-link--prot::before { content: "" !important; }
 
-  .pc-drop-link--labels   { color: hsl(270, 60%, 72%); }
-  .pc-drop-link--parodies { color: hsl(46,  80%, 62%); }
-  .pc-drop-link--prot     { color: hsl(340, 65%, 70%); }
+  .pc-drop-link--labels   { background: hsl(270, 38%, 26%); color: hsl(270, 80%, 88%); }
+  .pc-drop-link--parodies { background: hsl(46,  50%, 24%); color: hsl(46,  90%, 82%); }
+  .pc-drop-link--prot     { background: hsl(340, 42%, 26%); color: hsl(340, 80%, 88%); }
 
-  .pc-drop-link--labels:hover   { color: hsl(270, 70%, 85%); background: rgba(160,100,255,.08); }
-  .pc-drop-link--parodies:hover { color: hsl(46,  90%, 75%); background: rgba(255,200, 50,.08); }
-  .pc-drop-link--prot:hover     { color: hsl(340, 75%, 82%); background: rgba(255,100,160,.08); }
+  .pc-drop-link--labels:hover   { background: hsl(270, 45%, 33%); color: hsl(270, 90%, 93%); }
+  .pc-drop-link--parodies:hover { background: hsl(46,  58%, 30%); color: hsl(46,  95%, 88%); }
+  .pc-drop-link--prot:hover     { background: hsl(340, 50%, 33%); color: hsl(340, 90%, 93%); }
 
   .pc-drop-dot {
     width: 0.5rem;
