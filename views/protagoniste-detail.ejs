@@ -11,35 +11,54 @@
     <% } %>
 
     <div class="prot-detail-info">
-      <h1 class="prot-detail-name"><%= protagoniste.name %></h1>
 
-      <% if (protagoniste.gender || protagoniste.nature || protagoniste.parody) { %>
-        <div class="prot-detail-badges">
-          <% if (protagoniste.gender) { %><span class="prot-badge prot-badge--<%= protagoniste.gender %>"><%= protagoniste.gender %></span><% } %>
-          <% if (protagoniste.nature) { %><span class="prot-badge prot-badge--nature"><%= protagoniste.nature === 'pokemon' ? 'Pokémon' : protagoniste.nature %></span><% } %>
-          <% if (protagoniste.parody) { %><span class="prot-badge prot-badge--parody"><%= protagoniste.parody %><% if (protagoniste.sub_parody) { %> · <%= protagoniste.sub_parody %><% } %></span><% } %>
+      <%# ── Genre (icône grande et colorée) ── %>
+      <div class="prot-detail-top">
+        <% if (protagoniste.gender) { %>
+          <span class="prot-gender-icon prot-gender-icon--<%= protagoniste.gender %>" aria-label="<%= protagoniste.gender %>">
+            <% if (protagoniste.gender === 'femme') { %>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+            <% } else if (protagoniste.gender === 'homme') { %>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+            <% } else { %>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+            <% } %>
+          </span>
+        <% } %>
+        <h1 class="prot-detail-name"><%= protagoniste.name %></h1>
+      </div>
+
+      <%# ── Nature (seulement si pas humain) ── %>
+      <% if (protagoniste.nature && protagoniste.nature !== 'humain') { %>
+        <div class="prot-detail-nature">
+          <span class="prot-badge prot-badge--nature"><%= protagoniste.nature === 'pokemon' ? 'Pokémon' : protagoniste.nature %></span>
         </div>
       <% } %>
 
+      <%# ── Univers (parodie) — visuellement distinct des tags ── %>
+      <% if (protagoniste.parody) { %>
+        <div class="prot-detail-univers">
+          <svg class="prot-detail-univers-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 0 0 18"/><path d="M12 3a14.5 14.5 0 0 1 0 18"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+          <span class="prot-detail-univers-text"><%= protagoniste.parody %><% if (protagoniste.sub_parody) { %><span class="prot-detail-univers-sub"> › <%= protagoniste.sub_parody %></span><% } %></span>
+        </div>
+      <% } %>
+
+      <%# ── Tags ── %>
       <% if (protagoniste.tags && protagoniste.tags.length) { %>
-        <div class="prot-card-tags" style="margin-bottom:.75rem">
+        <div class="prot-card-tags prot-detail-tags">
           <% protagoniste.tags.forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
         </div>
       <% } %>
 
+      <%# ── Description ── %>
       <% if (protagoniste.description) { %>
         <div class="prot-detail-desc"><%- protagoniste.description.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
       <% } %>
 
-      <% if (currentUser && currentUser.isAdmin) { %>
-        <div style="margin-top:1rem">
-          <a href="/protagonistes/<%= protagoniste.id %>/edit" class="wf-save-btn" style="position:static;display:inline-block">&#9998; Modifier</a>
-        </div>
-      <% } %>
     </div>
   </div>
 
-  <%# ── Carrousel galerie ───────────────────────────────────────────────────── %>
+  <%# ── Carrousel galerie ── %>
   <% if (galleryImages && galleryImages.length) { %>
     <section class="prot-section">
       <h2 class="nv-strip-title">Apparaît dans <span class="prot-section-count">(<%= galleryImages.length %>)</span></h2>
@@ -48,10 +67,7 @@
         <div class="prot-carousel-track-wrap">
           <div class="prot-carousel-track" id="prot-carousel-track">
             <% galleryImages.forEach(function(img) { %>
-              <%
-                var imgSrcs = img.imagePaths || [];
-                var thumb = imgSrcs[0] || '';
-              %>
+              <% var thumb = (img.imagePaths || [])[0] || ''; %>
               <% if (thumb) { %>
                 <a href="/galerie" class="prot-carousel-item" title="<%= img.title || '' %>">
                   <img src="<%= thumb %>" alt="<%= img.title || protagoniste.name %>" loading="lazy" />
@@ -65,7 +81,7 @@
     </section>
   <% } %>
 
-  <%# ── Nouvelles ────────────────────────────────────────────────────────────── %>
+  <%# ── Nouvelles ── %>
   <% if (nouvelles && nouvelles.length) { %>
     <section class="prot-section">
       <h2 class="nv-strip-title">Nouvelles <span class="prot-section-count">(<%= nouvelles.length %>)</span></h2>
@@ -80,7 +96,7 @@
     </section>
   <% } %>
 
-  <%# ── Codex ───────────────────────────────────────────────────────────────── %>
+  <%# ── Codex ── %>
   <% if (codexPages && codexPages.length) { %>
     <section class="prot-section">
       <h2 class="nv-strip-title">Codex <span class="prot-section-count">(<%= codexPages.length %>)</span></h2>
@@ -97,6 +113,13 @@
 
   <% if (!nouvelles?.length && !galleryImages?.length && !codexPages?.length) { %>
     <p class="nv-empty" style="margin-top:2rem">Ce personnage n'apparaît dans aucun contenu pour le moment.</p>
+  <% } %>
+
+  <%# ── Bouton modifier (bas-droite fixe, admin uniquement) ── %>
+  <% if (currentUser && currentUser.isAdmin) { %>
+    <a href="/protagonistes/<%= protagoniste.id %>/edit" class="prot-edit-fab" title="Modifier le personnage" aria-label="Modifier le personnage">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </a>
   <% } %>
 
 </main>

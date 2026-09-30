@@ -20,57 +20,82 @@
       <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
         value="<%= protagoniste ? protagoniste.name : '' %>" placeholder="Nom du personnage…" />
 
-      <%# ── Image du personnage ──────────────────────────────────────────────── %>
+      <%# ── Image du personnage ── %>
       <div class="prot-form-img-section">
-        <div class="prot-form-img-label">Photo / Illustration</div>
-        <% if (protagoniste && protagoniste.image_path) { %>
-          <div class="prot-form-img-preview" id="prot-img-preview">
-            <img src="<%= protagoniste.image_path %>" alt="Image actuelle" class="prot-form-img-thumb" id="prot-img-thumb" />
-            <label class="prot-form-img-remove">
-              <input type="checkbox" name="remove_image" value="1" id="prot-remove-img" />
-              Supprimer l'image
-            </label>
-          </div>
-        <% } else { %>
-          <div class="prot-form-img-preview" id="prot-img-preview" style="display:none">
-            <img src="" alt="Aperçu" class="prot-form-img-thumb" id="prot-img-thumb" />
-          </div>
-        <% } %>
-        <label class="prot-form-img-btn">
-          <input type="file" name="character_image" accept="image/*" id="prot-img-input" style="display:none" />
-          Choisir une image…
-        </label>
+        <div class="prot-form-field-label">Photo / Illustration</div>
+        <div class="prot-form-img-wrap" id="prot-img-wrap">
+          <% if (protagoniste && protagoniste.image_path) { %>
+            <div class="prot-form-img-holder" id="prot-img-holder">
+              <img src="<%= protagoniste.image_path %>" alt="Image actuelle" class="prot-form-img-thumb" id="prot-img-thumb" />
+              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
+            </div>
+          <% } else { %>
+            <div class="prot-form-img-holder" id="prot-img-holder" style="display:none">
+              <img src="" alt="Aperçu" class="prot-form-img-thumb" id="prot-img-thumb" />
+              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
+            </div>
+          <% } %>
+          <label class="prot-form-img-pick" id="prot-img-pick-btn">
+            <input type="file" name="character_image" accept="image/*" id="prot-img-input" style="display:none" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span id="prot-img-pick-label">Choisir une image…</span>
+          </label>
+        </div>
       </div>
 
-      <%# ── Genre + Nature ──────────────────────────────────────────────────── %>
-      <div class="prot-form-row-2">
-        <div class="prot-form-field">
-          <label class="prot-form-field-label" for="prot-gender">Genre</label>
-          <select name="gender" id="prot-gender" class="prot-form-select">
-            <option value="">— non défini —</option>
-            <option value="femme"  <%= protagoniste && protagoniste.gender === 'femme'  ? 'selected' : '' %>>Femme</option>
-            <option value="homme"  <%= protagoniste && protagoniste.gender === 'homme'  ? 'selected' : '' %>>Homme</option>
-            <option value="autre"  <%= protagoniste && protagoniste.gender === 'autre'  ? 'selected' : '' %>>Autre</option>
-          </select>
+      <%# ── Genre — boutons radio ── %>
+      <div class="prot-form-field-group">
+        <div class="prot-form-field-label">Genre</div>
+        <div class="prot-gender-btns">
+          <%
+            var genderOpts = [
+              { value: '', label: '—' },
+              { value: 'femme', label: 'Femme' },
+              { value: 'homme', label: 'Homme' },
+              { value: 'autre', label: 'Autre' }
+            ];
+            var currentGender = protagoniste ? (protagoniste.gender || '') : '';
+          %>
+          <% genderOpts.forEach(function(opt) { %>
+            <label class="prot-gender-btn prot-gender-btn--<%= opt.value || 'none' %><%= currentGender === opt.value ? ' active' : '' %>">
+              <input type="radio" name="gender" value="<%= opt.value %>" <%= currentGender === opt.value ? 'checked' : '' %> style="display:none" />
+              <% if (opt.value === 'femme') { %>
+                <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+              <% } else if (opt.value === 'homme') { %>
+                <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+              <% } else if (opt.value === 'autre') { %>
+                <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+              <% } %>
+              <%= opt.label %>
+            </label>
+          <% }) %>
         </div>
-        <div class="prot-form-field">
-          <label class="prot-form-field-label" for="prot-nature">Nature</label>
-          <select name="nature" id="prot-nature" class="prot-form-select">
-            <option value="">— non défini —</option>
-            <option value="humain"  <%= protagoniste && protagoniste.nature === 'humain'  ? 'selected' : '' %>>Humain</option>
-            <option value="monstre" <%= protagoniste && protagoniste.nature === 'monstre' ? 'selected' : '' %>>Monstre</option>
-            <option value="animal"  <%= protagoniste && protagoniste.nature === 'animal'  ? 'selected' : '' %>>Animal</option>
-            <option value="pokemon" <%= protagoniste && protagoniste.nature === 'pokemon' ? 'selected' : '' %>>Pokémon</option>
-            <option value="autre"   <%= protagoniste && protagoniste.nature === 'autre'   ? 'selected' : '' %>>Autre</option>
-          </select>
-        </div>
+      </div>
+
+      <%# ── Nature — select élégant ── %>
+      <div class="prot-form-field-group">
+        <label class="prot-form-field-label" for="prot-nature">Nature</label>
+        <select name="nature" id="prot-nature" class="prot-form-select-elegant">
+          <option value="">— non définie —</option>
+          <option value="humain"  <%= protagoniste && protagoniste.nature === 'humain'  ? 'selected' : '' %>>Humain</option>
+          <option value="monstre" <%= protagoniste && protagoniste.nature === 'monstre' ? 'selected' : '' %>>Monstre</option>
+          <option value="animal"  <%= protagoniste && protagoniste.nature === 'animal'  ? 'selected' : '' %>>Animal</option>
+          <option value="pokemon" <%= protagoniste && protagoniste.nature === 'pokemon' ? 'selected' : '' %>>Pokémon</option>
+          <option value="autre"   <%= protagoniste && protagoniste.nature === 'autre'   ? 'selected' : '' %>>Autre</option>
+        </select>
       </div>
 
       <textarea name="description" class="nv-form-content" rows="10"
         placeholder="Description, traits de caractère, apparence…"
         style="resize:vertical"><%= protagoniste ? protagoniste.description : '' %></textarea>
 
-      <%# ── Parodie ──────────────────────────────────────────────────────── %>
+      <%# ── Parodie / Univers ── %>
       <%- include('partials/parody-input', {
             idPrefix:  'protf',
             mainValue: protagoniste ? protagoniste.parody    : '',
@@ -78,7 +103,7 @@
             mainPh:    'Univers (ex\u00a0: Pok\u00e9mon)\u2026'
           }) %>
 
-      <%# ── Tags ─────────────────────────────────────────────────────────── %>
+      <%# ── Tags ── %>
       <% if (allTags && allTags.length) { %>
         <script id="prot-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
       <% } %>
@@ -105,23 +130,44 @@
 
   <script>
   (function() {
-    // Image preview
-    var imgInput = document.getElementById('prot-img-input');
-    var imgThumb = document.getElementById('prot-img-thumb');
-    var imgPreview = document.getElementById('prot-img-preview');
-    var removeImg = document.getElementById('prot-remove-img');
+    // ── Image : preview + croix ──
+    var imgInput   = document.getElementById('prot-img-input');
+    var imgThumb   = document.getElementById('prot-img-thumb');
+    var imgHolder  = document.getElementById('prot-img-holder');
+    var removeBtn  = document.getElementById('prot-img-remove-btn');
+    var removeHid  = document.getElementById('prot-remove-hidden');
+    var pickBtn    = document.getElementById('prot-img-pick-btn');
+    var pickLabel  = document.getElementById('prot-img-pick-label');
+
     if (imgInput) {
       imgInput.addEventListener('change', function() {
         var file = imgInput.files[0];
         if (!file) return;
-        var url = URL.createObjectURL(file);
-        imgThumb.src = url;
-        imgPreview.style.display = '';
-        if (removeImg) removeImg.checked = false;
+        imgThumb.src = URL.createObjectURL(file);
+        imgHolder.style.display = '';
+        if (removeHid) removeHid.value = '';
+        if (pickLabel) pickLabel.textContent = 'Remplacer\u2026';
+      });
+    }
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function() {
+        imgHolder.style.display = 'none';
+        imgThumb.src = '';
+        if (removeHid) removeHid.value = '1';
+        if (imgInput) imgInput.value = '';
+        if (pickLabel) pickLabel.textContent = 'Choisir une image\u2026';
       });
     }
 
-    // Tags widget
+    // ── Genre : boutons radio ──
+    document.querySelectorAll('.prot-gender-btns .prot-gender-btn').forEach(function(lbl) {
+      lbl.addEventListener('click', function() {
+        document.querySelectorAll('.prot-gender-btns .prot-gender-btn').forEach(function(b) { b.classList.remove('active'); });
+        lbl.classList.add('active');
+      });
+    });
+
+    // ── Tags widget ──
     document.querySelectorAll('.wiki-tags-widget').forEach(function(widget) {
       var board      = widget.querySelector('.wiki-tags-board');
       var typer      = widget.querySelector('.wiki-tags-typing');
