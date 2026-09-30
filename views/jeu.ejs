@@ -1,0 +1,55 @@
+<%- include('partials/head', { title: 'Jeu' }) %>
+<main class="container wide profil-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Jeu' }) %>
+
+  <div class="jeu-page">
+
+    <% if (partner) { %>
+    <%# ── Accès mode couple ── %>
+    <section class="jeu-section">
+      <h2 class="jeu-section-title">Mode couple</h2>
+      <p class="jeu-section-desc">Explorez les notes et favoris de <strong><%= partner.displayName %></strong>.</p>
+      <div class="jeu-couple-links">
+        <a href="/couple/notes/wiki" class="jeu-card jeu-card--wiki">
+          <span class="jeu-card-icon">&#128218;</span>
+          <span class="jeu-card-label">Codex</span>
+        </a>
+        <a href="/couple/notes/images" class="jeu-card jeu-card--images">
+          <span class="jeu-card-icon">&#128247;</span>
+          <span class="jeu-card-label">Images</span>
+        </a>
+        <a href="/couple/notes/bd" class="jeu-card jeu-card--bd">
+          <span class="jeu-card-icon">&#128366;</span>
+          <span class="jeu-card-label">BD</span>
+        </a>
+        <a href="/couple/a-lire-plus-tard" class="jeu-card jeu-card--read-later">
+          <span class="jeu-card-icon">&#9203;</span>
+          <span class="jeu-card-label">À lire plus tard</span>
+        </a>
+      </div>
+    </section>
+    <% } %>
+
+    <%# ── Lootboxes ── %>
+    <section class="jeu-section">
+      <h2 class="jeu-section-title">&#127381; Lootboxes</h2>
+      <p class="jeu-section-desc">Des lootboxes peuvent être attribuées par l&rsquo;admin. Ouvrez-les pour débloquer des images de profil.</p>
+      <div class="jeu-lootbox-hint" id="jeu-lootbox-hint">
+        <span class="jeu-lootbox-hint-count" id="jeu-lootbox-hint-count">—</span>
+        <span class="jeu-lootbox-hint-label">lootbox(es) disponible(s)</span>
+      </div>
+    </section>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>
+
+<script>
+fetch('/lootbox/count')
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    var el = document.getElementById('jeu-lootbox-hint-count');
+    if (el) el.textContent = d.count || 0;
+  });
+</script>

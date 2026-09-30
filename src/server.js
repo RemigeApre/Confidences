@@ -623,6 +623,7 @@ app.delete("/api/filter-profils/:id", function (req, res) {
 const buildCustomQuizRouter = require("./routes/custom-quiz");
 const buildParodiesRouter = require("./routes/parodies");
 const buildLootboxRouter = require("./routes/lootbox");
+const buildJeuRouter = require("./routes/jeu");
 app.use("/quizz", buildCustomQuizRouter(config));
 app.use("/", buildQuizRouter(config));
 app.use("/admin", buildAdminRouter(config));
@@ -637,6 +638,7 @@ app.use("/nouvelles", buildNouvellesRouter(config));
 app.use("/protagonistes", buildProtagonistesRouter(config));
 app.use("/parodies", buildParodiesRouter(config));
 app.use("/lootbox", buildLootboxRouter(config));
+app.use("/jeu", buildJeuRouter(config));
 
 if (usingHttps) {
   https

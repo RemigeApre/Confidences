@@ -30,6 +30,7 @@
     var _onNouvelles = _path.indexOf("/nouvelles") === 0;
     var _onQuizz   = _path.indexOf("/quizz") === 0;
     var _onCouple  = _path.indexOf("/couple") === 0;
+    var _onJeu     = _path.indexOf("/jeu") === 0;
     var _onGalerieOnly = _path.indexOf("/galerie") === 0;
     var _onBd     = _path.indexOf("/bd") === 0;
     var _onProfil = _path.indexOf("/favoris") === 0;
@@ -54,7 +55,7 @@
           </div>
         </div>
         <a href="/quizz" class="pc-nav-link pc-nav-link--quizz<%= _onQuizz ? ' pc-nav-link--active' : '' %>">Quizz</a>
-        <a href="/couple" class="pc-nav-link pc-nav-link--jeu<%= _onCouple ? ' pc-nav-link--active' : '' %>">Jeu</a>
+        <a href="/jeu" class="pc-nav-link pc-nav-link--jeu<%= _onJeu ? ' pc-nav-link--active' : '' %>">Jeu</a>
       <% } %>
     </div>
 
@@ -118,8 +119,8 @@
   <% } %>
   <a href="/" class="mobile-tabbar-home<%= _path === '/' ? ' active' : '' %>" aria-label="Accueil" title="Accueil">C</a>
   <% if (currentUser) { %>
-    <a href="/bd" class="mobile-tabbar-link<%= _onBd ? ' active' : '' %>" aria-label="BD" title="BD">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M7 21h13a2 2 0 0 0 2-2V6"/></svg>
+    <a href="/jeu" class="mobile-tabbar-link<%= _onJeu ? ' active' : '' %>" aria-label="Jeu" title="Jeu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="13" rx="3"/><path d="M9 11v4M7 13h4"/><circle cx="16" cy="13" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="11" r="1" fill="currentColor" stroke="none"/></svg>
     </a>
     <a href="/favoris" class="mobile-tabbar-link<%= _onProfil ? ' active' : '' %>" aria-label="Profil" title="Profil">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
