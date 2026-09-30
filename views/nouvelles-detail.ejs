@@ -93,6 +93,18 @@
         </div>
       <% } %>
 
+      <%# Parodie %>
+      <% if (nouvelle.parody) { %>
+        <div class="nv-right-section nv-right-parody">
+          <p class="nv-right-section-label">Parodie</p>
+          <a href="/parodies/<%= encodeURIComponent(nouvelle.parody) %>" class="nv-right-parody-link"><%= nouvelle.parody %></a>
+          <% if (nouvelle.subParody) { %>
+            <span class="nv-right-parody-sep"> › </span>
+            <a href="/parodies/<%= encodeURIComponent(nouvelle.parody) %>/<%= encodeURIComponent(nouvelle.subParody) %>" class="nv-right-parody-link nv-right-parody-sub"><%= nouvelle.subParody %></a>
+          <% } %>
+        </div>
+      <% } %>
+
       <%# Réactions (étoiles + J'adore) — collées en bas du volet %>
       <% if (currentUser) { %>
         <div class="nv-right-reactions" data-id="<%= nouvelle.id %>" data-rating="<%= userRating %>" data-flame="<%= userFlame ? '1' : '0' %>">

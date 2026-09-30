@@ -1,0 +1,111 @@
+<%
+/*  Partial générique : nuage de chips filtrables
+ *  Absorbe filter-tags.ejs (mode:'multi') et filter-parodies.ejs (mode:'single').
+ *
+ *  Paramètres :
+ *    filterId   {string}   ID du conteneur               (requis)
+ *    items      {Array}    strings ou {name,count?}       (requis)
+ *    itemKey    {string}   dataset attr sur le chip       (défaut 'value')
+ *    chipClass  {string}   CSS class du chip              (défaut 'wiki-tag-chip')
+ *    label      {string}   libellé du sous-volet          (défaut 'Filtre')
+ *    mode       {string}   'single' | 'multi'             (défaut 'multi')
+ *    eventName  {string}   CustomEvent émis               (requis)
+ *    counts     {object}   { valeur: nombre }             (optionnel)
+ *    maxItems   {number}   limite d'affichage             (défaut 60)
+ *
+ *  Événement émis (bubbles) :
+ *    mode multi  → eventName  { filterId, included:[], excluded:[] }
+ *    mode single → eventName  { filterId, active: '' | valeur }
+ *
+ *  Méthode DOM : block._reset()
+ */
+  var _fid    = filterId;
+  var _items  = items  || [];
+  var _key    = (typeof itemKey   !== 'undefined') ? itemKey   : 'value';
+  var _cls    = (typeof chipClass !== 'undefined') ? chipClass : 'wiki-tag-chip';
+  var _label  = (typeof label     !== 'undefined') ? label     : 'Filtre';
+  var _mode   = (typeof mode      !== 'undefined') ? mode      : 'multi';
+  var _evt    = eventName;
+  var _cnt    = (typeof counts    !== 'undefined') ? counts    : null;
+  var _max    = (typeof maxItems  !== 'undefined') ? maxItems  : 60;
+%>
+<% if (_items.length) { %>
+<details class="wiki-subpanel-details filter-block filter-block--chips" id="<%= _fid %>-block">
+  <summary class="wiki-subpanel-summary"><%= _label %></summary>
+  <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
+    placeholder="Chercher&hellip;" autocomplete="off" />
+  <div class="wiki-tag-cloud" id="<%= _fid %>">
+    <% _items.slice(0, _max).forEach(function(item) {
+      var val   = (typeof item === 'object') ? item.name  : item;
+      var count = (typeof item === 'object') ? item.count : (_cnt && _cnt[val] ? _cnt[val] : 0);
+    %>
+      <button type="button" class="<%= _cls %>" data-<%= _key %>="<%= val %>" data-state="0">
+        <span class="wtc-label"><%= val %></span>
+        <% if (count) { %><span class="wtc-count"><%= count %></span><% } %>
+      </button>
+    <% }) %>
+  </div>
+</details>
+
+<script>
+(function () {
+  var block  = document.getElementById('<%= _fid %>-block');
+  var cloud  = document.getElementById('<%= _fid %>');
+  var search = document.getElementById('<%= _fid %>-search');
+  if (!block || !cloud) return;
+
+  var single = '<%= _mode %>' === 'single';
+
+  function dispatch() {
+    var detail = { filterId: '<%= _fid %>' };
+    if (single) {
+      var on = cloud.querySelector('.<%= _cls %>.chip-include');
+      detail.active = on ? on.dataset['<%= _key %>'] : '';
+    } else {
+      detail.included = []; detail.excluded = [];
+      cloud.querySelectorAll('.<%= _cls %>').forEach(function (c) {
+        if (c.dataset.state === '1') detail.included.push(c.dataset['<%= _key %>']);
+        else if (c.dataset.state === '2') detail.excluded.push(c.dataset['<%= _key %>']);
+      });
+    }
+    block.dispatchEvent(new CustomEvent('<%= _evt %>', { bubbles: true, detail: detail }));
+  }
+
+  cloud.addEventListener('click', function (e) {
+    var chip = e.target.closest('.<%= _cls %>');
+    if (!chip) return;
+    if (single) {
+      var wasOn = chip.classList.contains('chip-include');
+      cloud.querySelectorAll('.<%= _cls %>').forEach(function (c) {
+        c.dataset.state = '0'; c.classList.remove('chip-include');
+      });
+      if (!wasOn) { chip.dataset.state = '1'; chip.classList.add('chip-include'); }
+    } else {
+      var s = ((Number(chip.dataset.state) || 0) + 1) % 3;
+      chip.dataset.state = String(s);
+      chip.classList.toggle('chip-include', s === 1);
+      chip.classList.toggle('chip-exclude', s === 2);
+    }
+    dispatch();
+  });
+
+  search.addEventListener('input', function () {
+    var q = search.value.trim().toLowerCase();
+    cloud.querySelectorAll('.<%= _cls %>').forEach(function (c) {
+      c.hidden = c.dataset.state === '0' && q.length > 0
+        && (c.dataset['<%= _key %>'] || '').toLowerCase().indexOf(q) === -1;
+    });
+  });
+
+  block._reset = function () {
+    search.value = '';
+    cloud.querySelectorAll('.<%= _cls %>').forEach(function (c) {
+      c.dataset.state = '0';
+      c.classList.remove('chip-include', 'chip-exclude');
+      c.hidden = false;
+    });
+    dispatch();
+  };
+})();
+</script>
+<% } %>

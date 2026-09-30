@@ -1,25 +1,41 @@
 <%
-/*  Partial : réinitialiser + explorer l'inconnu (toujours en dernier)
+/*  Partial : boutons reset / enregistrer / explorer (toujours en dernier)
  *
  *  Paramètres :
+ *    filterId     {string}   préfixe d'ID            (requis)
  *    showExplore  {boolean}  bouton explorer         (défaut true)
- *    exploreLabel {string}   libellé explorer         (défaut 'Explorer l'inconnu')
- *    resetLabel   {string}   libellé reset            (défaut 'Réinitialiser')
+ *    showSave     {boolean}  bouton enregistrer      (défaut false)
+ *    exploreLabel {string}   libellé explorer        (défaut "Explorer l'inconnu")
+ *    resetLabel   {string}   libellé reset           (défaut 'Réinitialiser')
+ *    saveLabel    {string}   libellé save            (défaut 'Enregistrer le filtre')
  *
  *  Événements émis (bubbles) :
- *    'filterreset:reset'    — demande réinit de tous les filtres
- *    'filterreset:explore'  — demande exploration aléatoire
+ *    'filterreset:reset'   — réinit de tous les filtres
+ *    'filterreset:explore' — exploration aléatoire
+ *
+ *  IDs générés (pour getElementById côté JS) :
+ *    {filterId}-reset-btn    bouton réinitialiser
+ *    {filterId}-explore-btn  bouton explorer
+ *    {filterId}-save-btn     bouton enregistrer (si showSave)
  */
-  var _bid        = (typeof filterId     !== 'undefined') ? filterId     : 'filter-reset-' + Math.random().toString(36).slice(2);
-  var _explore    = (typeof showExplore  !== 'undefined') ? showExplore  : true;
-  var _exLabel    = (typeof exploreLabel !== 'undefined') ? exploreLabel : "Explorer l'inconnu";
-  var _rstLabel   = (typeof resetLabel   !== 'undefined') ? resetLabel   : 'Réinitialiser';
+  var _bid      = (typeof filterId     !== 'undefined') ? filterId     : 'filter-reset-' + Math.random().toString(36).slice(2);
+  var _explore  = (typeof showExplore  !== 'undefined') ? showExplore  : true;
+  var _save     = (typeof showSave     !== 'undefined') ? showSave     : false;
+  var _exLabel  = (typeof exploreLabel !== 'undefined') ? exploreLabel : "Explorer l'inconnu";
+  var _rstLabel = (typeof resetLabel   !== 'undefined') ? resetLabel   : 'Réinitialiser';
+  var _svLabel  = (typeof saveLabel    !== 'undefined') ? saveLabel    : 'Enregistrer le filtre';
 %>
 <div class="filter-block filter-block--reset" id="<%= _bid %>-reset-block">
   <div class="wiki-filter-section wiki-filter-bottom-actions">
-    <button type="button" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger js-filter-reset"><%= _rstLabel %></button>
+    <% if (_save) { %>
+    <button type="button" id="<%= _bid %>-save-btn"
+      class="wiki-filter-reset-btn filter-profile-save-btn" hidden><%= _svLabel %></button>
+    <% } %>
+    <button type="button" id="<%= _bid %>-reset-btn"
+      class="wiki-filter-reset-btn wiki-filter-reset-btn--danger js-filter-reset"><%= _rstLabel %></button>
     <% if (_explore) { %>
-    <button type="button" class="wiki-filter-reset-btn wiki-explore-btn js-filter-explore"><%= _exLabel %></button>
+    <button type="button" id="<%= _bid %>-explore-btn"
+      class="wiki-filter-reset-btn wiki-explore-btn js-filter-explore"><%= _exLabel %></button>
     <% } %>
   </div>
 </div>

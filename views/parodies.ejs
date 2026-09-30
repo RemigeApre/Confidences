@@ -12,16 +12,28 @@
   <% } else { %>
     <div class="parody-grid">
       <% parodies.forEach(function(item) { %>
-        <a href="/parodies/<%= encodeURIComponent(item.parody) %>" class="parody-card">
-          <div class="parody-card-name"><%= item.parody %></div>
+        <div class="parody-card">
+          <a href="/parodies/<%= encodeURIComponent(item.parody) %>" class="parody-card-name"><%= item.parody %></a>
           <div class="parody-card-counts">
-            <% if (item.counts.gallery) { %><span class="parody-count-chip">📷 <%= item.counts.gallery %></span><% } %>
-            <% if (item.counts.bd) { %><span class="parody-count-chip">📚 <%= item.counts.bd %></span><% } %>
-            <% if (item.counts.nouvelles) { %><span class="parody-count-chip">📝 <%= item.counts.nouvelles %></span><% } %>
-            <% if (item.counts.wiki) { %><span class="parody-count-chip">🔖 <%= item.counts.wiki %></span><% } %>
-            <% if (item.counts.protagonistes) { %><span class="parody-count-chip">👤 <%= item.counts.protagonistes %></span><% } %>
+            <% if (item.counts.gallery)      { %><span class="parody-count-chip">📷 <%= item.counts.gallery %></span><% } %>
+            <% if (item.counts.bd)           { %><span class="parody-count-chip">📚 <%= item.counts.bd %></span><% } %>
+            <% if (item.counts.nouvelles)    { %><span class="parody-count-chip">📝 <%= item.counts.nouvelles %></span><% } %>
+            <% if (item.counts.wiki)         { %><span class="parody-count-chip">🔖 <%= item.counts.wiki %></span><% } %>
+            <% if (item.counts.protagonistes){ %><span class="parody-count-chip">👤 <%= item.counts.protagonistes %></span><% } %>
           </div>
-        </a>
+          <% if (item.subs && item.subs.length) { %>
+          <ul class="parody-subs-list">
+            <% item.subs.forEach(function(s) { %>
+              <li>
+                <a href="/parodies/<%= encodeURIComponent(item.parody) %>/<%= encodeURIComponent(s.sub) %>" class="parody-sub-link">
+                  <span class="parody-sub-arrow">›</span> <%= s.sub %>
+                  <span class="parody-sub-count"><%= s.counts.total %></span>
+                </a>
+              </li>
+            <% }) %>
+          </ul>
+          <% } %>
+        </div>
       <% }) %>
     </div>
   <% } %>

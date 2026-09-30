@@ -8085,6 +8085,15 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
     cursor: pointer;
     font-family: inherit;
   }
+  .pc-nav-link--label {
+    cursor: default;
+    user-select: none;
+  }
+  .pc-nav-link--label:hover,
+  .pc-nav-link--label.pc-nav-link--galerie:hover {
+    background: none;
+    color: inherit;
+  }
   .pc-nav-link:hover {
     background: var(--bg);
     color: var(--accent);
@@ -14845,3 +14854,85 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-color: hsl(20, 60%, 38%);
   color: hsl(28, 90%, 68%);
 }
+
+/* ── Parody autocomplete input group ─────────────────────────────────────── */
+.parody-input-group { display: flex; flex-direction: column; gap: .45rem; margin-bottom: .65rem; }
+.parody-ac-wrap { position: relative; }
+.parody-ac-drop {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 120;
+  background: var(--surface-2, #1a1a2e); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 8px; margin-top: 2px; padding: .25rem 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4); list-style: none;
+}
+.parody-ac-item {
+  padding: .35rem .75rem; font-size: .82rem; cursor: pointer;
+  color: var(--text); transition: background .1s;
+}
+.parody-ac-item:hover,
+.parody-ac-item.selected { background: rgba(255,255,255,.1); }
+
+/* ── Parody sub-list on parodies.ejs cards ───────────────────────────────── */
+.parody-subs-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .18rem; }
+.parody-sub-link {
+  display: flex; align-items: center; gap: .3rem;
+  font-size: .75rem; color: var(--muted); text-decoration: none;
+  padding: .1rem 0; transition: color .12s;
+}
+.parody-sub-link:hover { color: var(--text); }
+.parody-sub-arrow { opacity: .5; }
+.parody-sub-count {
+  margin-left: auto; font-size: .68rem;
+  background: rgba(255,255,255,.07); border-radius: 20px;
+  padding: .05rem .4rem; color: var(--muted);
+}
+
+/* ── Parody detail page ──────────────────────────────────────────────────── */
+.parody-detail-breadcrumb { font-size: .82rem; color: var(--muted); margin: 0 0 .35rem; }
+.parody-detail-parent { color: var(--muted); text-decoration: none; }
+.parody-detail-parent:hover { color: var(--text); }
+.parody-detail-sep { opacity: .5; }
+.parody-detail-sub { color: var(--text); font-weight: 600; }
+.parody-detail-subs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .55rem 0 .25rem; }
+.parody-detail-sub-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .25rem .7rem; border-radius: 20px; font-size: .78rem;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  color: var(--text); text-decoration: none; transition: background .12s, border-color .12s;
+}
+.parody-detail-sub-chip:hover { background: rgba(255,255,255,.13); border-color: hsl(50,80%,40%); }
+.parody-detail-sub-chip-count {
+  font-size: .68rem; color: var(--muted);
+  background: rgba(255,255,255,.07); border-radius: 20px; padding: .05rem .38rem;
+}
+
+/* ── Gallery lightbox parody display ─────────────────────────────────────── */
+.gallery-lb-parody-sec {
+  display: flex; align-items: center; gap: .3rem;
+  justify-content: center; flex-wrap: wrap;
+  margin-top: .35rem;
+}
+.gallery-lb-parody-sep { color: var(--muted); font-size: .9rem; }
+.gallery-lb-meta-pill--sub-parody {
+  background: rgba(255,200,100,0.08);
+  border-color: rgba(255,200,100,0.2);
+  font-size: .75rem;
+}
+
+/* ── Wiki detail left sidebar : parody ──────────────────────────────────── */
+.wiki-left-parody {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .3rem;
+  padding: .45rem 0; border-top: 1px solid var(--border); margin-top: .2rem;
+  font-size: .78rem;
+}
+.wiki-left-parody-label { color: var(--muted); flex-basis: 100%; font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; }
+.wiki-left-parody-link { color: hsl(50,80%,65%); text-decoration: none; font-weight: 600; }
+.wiki-left-parody-link:hover { text-decoration: underline; }
+.wiki-left-parody-sep { color: var(--muted); }
+.wiki-left-parody-sub { font-weight: 400; color: hsl(50,60%,55%); }
+
+/* ── Nouvelles reader right panel : parody ───────────────────────────────── */
+.nv-right-parody { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem; }
+.nv-right-parody-link { color: hsl(50,80%,65%); text-decoration: none; font-weight: 600; font-size: .82rem; }
+.nv-right-parody-link:hover { text-decoration: underline; }
+.nv-right-parody-sep { color: var(--muted); font-size: .82rem; }
+.nv-right-parody-sub { font-weight: 400; color: hsl(50,60%,55%); }

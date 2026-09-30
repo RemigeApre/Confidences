@@ -1,6 +1,7 @@
 const express = require("express");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
+const { normalizeParody } = db;
 
 function buildProtagonistesRouter(config) {
   const router = express.Router();
@@ -19,8 +20,9 @@ function buildProtagonistesRouter(config) {
     const name = String(req.body.name || "").slice(0, 200).trim();
     if (!name) return res.redirect("/protagonistes/new");
     const tags = String(req.body.tags || "").split(",").map(t => t.trim()).filter(Boolean);
-    const parody = String(req.body.parody || "").slice(0, 200).trim();
-    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody });
+    const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
+    const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
+    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody, subParody });
     res.redirect(`/protagonistes/${id}`);
   });
 
@@ -42,12 +44,14 @@ function buildProtagonistesRouter(config) {
     const protagoniste = db.getProtagoniste(req.params.id);
     if (!protagoniste) return res.redirect("/protagonistes");
     const tags = String(req.body.tags || "").split(",").map(t => t.trim()).filter(Boolean);
-    const parody = String(req.body.parody || "").slice(0, 200).trim();
+    const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
+    const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
     db.updateProtagoniste(protagoniste.id, {
       name:        String(req.body.name || "").slice(0, 200).trim() || protagoniste.name,
       description: String(req.body.description || ""),
       tags,
       parody,
+      subParody,
     });
     res.redirect(`/protagonistes/${protagoniste.id}`);
   });

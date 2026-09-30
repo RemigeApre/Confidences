@@ -104,15 +104,12 @@
       </div>
 
       <%# ── Parodie ─────────────────────────────────────────────────────────── %>
-      <input type="text" name="parody" class="wf-orce-name-input"
-        value="<%= nouvelle ? nouvelle.parody : '' %>"
-        placeholder="Parodie (ex : Pokémon)…" autocomplete="off"
-        list="nv-parody-suggestions" style="margin-bottom:.5rem" />
-      <% if (typeof allParodies !== 'undefined' && allParodies.length) { %>
-        <datalist id="nv-parody-suggestions">
-          <% allParodies.forEach(function(p) { %><option value="<%= p %>"><% }) %>
-        </datalist>
-      <% } %>
+      <%- include('partials/parody-input', {
+            idPrefix:  'nvf',
+            mainValue: nouvelle ? nouvelle.parody    : '',
+            subValue:  nouvelle ? nouvelle.subParody : '',
+            mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
+          }) %>
 
       <div class="nv-wordcount-bar">
         <span class="nv-wc-label" id="nv-wc">0 mot</span>

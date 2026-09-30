@@ -6,25 +6,11 @@
   <%# ── Sidebar ─────────────────────────────────────────────────────────── %>
   <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
     <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
-    <div class="wiki-chapter-hero">
-      <div class="wiki-chapter-hero-top">
-        <span class="wiki-chapter-hero-back"></span>
-        <h1 class="wiki-chapter-hero-title">Nouvelles</h1>
-      </div>
-    </div>
+    <%- include('partials/sidebar-hero', { title: 'Nouvelles' }) %>
 
     <div class="wiki-sidebar-body">
 
-      <%# ── Recherche : toujours visible ── %>
-      <div class="wiki-search-wrap">
-        <div class="wiki-search-bar">
-          <input type="search" id="nv-search" class="wiki-search-input"
-            placeholder="Recherche" autocomplete="off" />
-          <button type="button" id="nv-search-clear" class="wiki-search-clear"
-            hidden aria-label="Effacer">&#215;</button>
-        </div>
-        <span id="nv-result-count" class="wiki-result-count" hidden></span>
-      </div>
+      <%- include('partials/search-bar', { searchId: 'nv-search', showCount: true }) %>
 
       <%# ── Filtres : toujours visible ── %>
       <details class="wiki-sidebar-filter-details" open>
@@ -33,7 +19,6 @@
 
           <%- include('partials/filters/filter-base', {
                 searchId:    'nv-search',
-                showSearch:  false,
                 showSort:    true,
                 sortOptions: [
                   { value: 'date-desc',  label: 'Plus récent'  },

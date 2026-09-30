@@ -1,7 +1,7 @@
 const express = require("express");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
-const { getUserReaction, setUserReaction } = db;
+const { getUserReaction, setUserReaction, normalizeParody } = db;
 
 const CATEGORIES = [
   { key: "romance",    label: "Romance",     hue: 340 },
@@ -121,7 +121,8 @@ function buildNouvellesRouter(config) {
       tags:             parseTags(req.body.tags),
       category:         String(req.body.category || ""),
       author:           String(req.body.author   || "").slice(0, 200),
-      parody:           String(req.body.parody   || "").slice(0, 200).trim(),
+      parody:           normalizeParody(String(req.body.parody   || "").slice(0, 200)),
+      subParody:        normalizeParody(String(req.body.sub_parody || "").slice(0, 200)),
       featured:         req.body.featured === "1" ? 1 : 0,
       serie_id:         serieId,
       serie_order:      req.body.serie_order ? Number(req.body.serie_order) : 0,
@@ -191,7 +192,8 @@ function buildNouvellesRouter(config) {
       tags:             parseTags(req.body.tags),
       category:         String(req.body.category || ""),
       author:           String(req.body.author   || "").slice(0, 200),
-      parody:           String(req.body.parody   || "").slice(0, 200).trim(),
+      parody:           normalizeParody(String(req.body.parody   || "").slice(0, 200)),
+      subParody:        normalizeParody(String(req.body.sub_parody || "").slice(0, 200)),
       featured:         req.body.featured === "1" ? 1 : 0,
       serie_id:         serieId,
       serie_order:      req.body.serie_order ? Number(req.body.serie_order) : 0,

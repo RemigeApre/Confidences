@@ -16,11 +16,7 @@
 
     <div class="wiki-sidebar-body">
 
-      <div class="wiki-search-wrap">
-        <div class="wiki-search-bar">
-          <input type="search" id="notes-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
-        </div>
-      </div>
+      <%- include('partials/search-bar', { searchId: 'notes-search' }) %>
 
       <details class="wiki-sidebar-filter-details" open>
       <summary class="wiki-sidebar-filter-summary">Filtres</summary>
@@ -40,23 +36,12 @@
         </div>
 
         <%# Tags %>
-        <% if (allTags.length) { %>
-        <div class="wiki-filter-section">
-          <input type="search" id="notes-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
-          <div class="wiki-tag-cloud" id="notes-tag-filter">
-            <% allTags.forEach(function(t) { %>
-              <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-                <span class="wtc-label"><%= t %></span>
-              </button>
-            <% }) %>
-          </div>
-        </div>
-        <% } %>
+        <%- include('partials/filters/filter-tag-cloud', { filterId: 'notes-tag', tags: allTags }) %>
 
       </div>
       </details>
 
-      <button type="button" id="notes-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+      <%- include('partials/filters/filter-reset', { filterId: 'notes', showExplore: false, resetLabel: 'Réinitialiser les filtres' }) %>
 
     </div>
   </aside>
@@ -115,7 +100,7 @@
   // Un tag masqué (voir /tags/masques) n'est plus un choix disponible : son
   // chip est retiré du nuage de tags, pas seulement le contenu qui le porte.
   function hideBlacklistedTagChips() {
-    document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(chip) {
+    document.querySelectorAll('#notes-tag .wiki-tag-chip').forEach(function(chip) {
       if (blacklistSet.has((chip.dataset.tag || '').toLowerCase())) chip.hidden = true;
     });
   }
@@ -152,7 +137,7 @@
     applyFilters();
   });
 
-  document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(chip) {
+  document.querySelectorAll('#notes-tag .wiki-tag-chip').forEach(function(chip) {
     chip.addEventListener('click', function() {
       var tag = chip.dataset.tag;
       var idx = activeTags.indexOf(tag);
@@ -191,13 +176,20 @@
   }
 
   var searchInput = document.getElementById('notes-search');
+  var searchClear = document.getElementById('notes-search-clear');
   var searchDebounceTimer = null;
   if (searchInput) {
     searchInput.addEventListener('input', function() {
       search = this.value.toLowerCase().trim();
+      if (searchClear) searchClear.hidden = !search;
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(applyFilters, 120);
     });
+    if (searchClear) {
+      searchClear.addEventListener('click', function() {
+        searchInput.value = ''; search = ''; searchClear.hidden = true; applyFilters();
+      });
+    }
   }
 
   var tagSearchInput = document.getElementById('notes-tag-search');
@@ -207,7 +199,7 @@
       clearTimeout(tagSearchDebounceTimer);
       tagSearchDebounceTimer = setTimeout(function() {
         var q = tagSearchInput.value.trim().toLowerCase();
-        document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(chip) {
+        document.querySelectorAll('#notes-tag .wiki-tag-chip').forEach(function(chip) {
           var tag = (chip.dataset.tag || '').toLowerCase();
           chip.hidden = q.length > 0 && tag.indexOf(q) === -1;
         });
@@ -215,15 +207,16 @@
     });
   }
 
-  var resetBtn = document.getElementById('notes-reset-filters');
+  var resetBtn = document.getElementById('notes-reset-btn');
   if (resetBtn) {
     resetBtn.addEventListener('click', function() {
       activeTags = [];
       advMinRating = 0;
       search = '';
       if (searchInput) searchInput.value = '';
+      if (searchClear) searchClear.hidden = true;
       if (tagSearchInput) tagSearchInput.value = '';
-      document.querySelectorAll('#notes-tag-filter .wiki-tag-chip').forEach(function(c) {
+      document.querySelectorAll('#notes-tag .wiki-tag-chip').forEach(function(c) {
         c.classList.remove('active'); c.dataset.state = '0'; c.hidden = false;
       });
       syncStars();

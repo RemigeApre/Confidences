@@ -1,0 +1,21 @@
+<%
+/*  Partial : barre de recherche
+ *
+ *  Paramètres :
+ *    searchId     {string}  ID du <input>                 (requis)
+ *    placeholder  {string}  texte placeholder             (défaut 'Recherche')
+ *    showCount    {boolean} affiche un compteur de résultats (défaut false)
+ */
+  var _sid  = searchId;
+  var _ph   = (typeof placeholder !== 'undefined') ? placeholder : 'Recherche';
+  var _cnt  = (typeof showCount   !== 'undefined') ? showCount   : false;
+%>
+<div class="wiki-search-wrap">
+  <div class="wiki-search-bar">
+    <input type="search" id="<%= _sid %>" class="wiki-search-input"
+      placeholder="<%= _ph %>" autocomplete="off" />
+    <button type="button" id="<%= _sid %>-clear" class="wiki-search-clear"
+      hidden aria-label="Effacer">&#215;</button>
+  </div>
+  <% if (_cnt) { %><span id="<%= _sid %>-count" class="wiki-result-count" hidden></span><% } %>
+</div>

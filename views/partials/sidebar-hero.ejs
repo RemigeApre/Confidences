@@ -1,0 +1,35 @@
+<%
+/*  Partial : en-tête du panneau latéral (.wiki-chapter-hero).
+ *  Toujours 3 enfants dans .wiki-chapter-hero-top pour le centrage flex.
+ *
+ *  Paramètres :
+ *    title      {string}   titre affiché              (requis)
+ *    hue        {number}   --ch-hue CSS var            (optionnel)
+ *    backHref   {string}   href lien retour → <a>      (optionnel — <span> si absent)
+ *    backLabel  {string}   aria-label + title du lien  (défaut 'Retour')
+ *    count      {*}        valeur à afficher           (optionnel — <span> vide si absent)
+ *    countId    {string}   id du span .wiki-chapter-hero-count (optionnel)
+ */
+  var _title    = title;
+  var _hue      = (typeof hue       !== 'undefined') ? hue       : null;
+  var _backHref = (typeof backHref  !== 'undefined') ? backHref  : null;
+  var _backLbl  = (typeof backLabel !== 'undefined') ? backLabel : 'Retour';
+  var _count    = (typeof count     !== 'undefined') ? count     : null;
+  var _cntId    = (typeof countId   !== 'undefined') ? countId   : null;
+%>
+<div class="wiki-chapter-hero"<% if (_hue !== null) { %> style="--ch-hue: <%= _hue %>"<% } %>>
+  <div class="wiki-chapter-hero-top">
+    <% if (_backHref) { %>
+      <a href="<%= _backHref %>" class="wiki-chapter-hero-back"
+         title="<%= _backLbl %>" aria-label="<%= _backLbl %>">&larr;</a>
+    <% } else { %>
+      <span class="wiki-chapter-hero-back" aria-hidden="true"></span>
+    <% } %>
+    <h1 class="wiki-chapter-hero-title"><%= _title %></h1>
+    <% if (_count !== null) { %>
+      <span class="wiki-chapter-hero-count"<% if (_cntId) { %> id="<%= _cntId %>"<% } %>><%= _count %></span>
+    <% } else { %>
+      <span></span>
+    <% } %>
+  </div>
+</div>

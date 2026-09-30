@@ -1,0 +1,30 @@
+<%
+/*  Partial HTML-only : bloc notation du Codex.
+ *  Aucun JS ici — wiki.js attache ses propres listeners sur ces IDs.
+ *
+ *  IDs fixes attendus par wiki.js :
+ *    wiki-adv-stars       étoiles
+ *    wiki-adv-star-reset  bouton ✕
+ *    wiki-prop-grid       boutons propriétés
+ *
+ *  Paramètre :
+ *    interestedLabel  {string}  libellé du bouton Intéressé (requis)
+ */
+%>
+<details class="wiki-subpanel-details">
+  <summary class="wiki-subpanel-summary">Notation</summary>
+  <div class="wiki-filter-label-row">
+    <span class="wiki-filter-label">Note minimale</span>
+    <button type="button" class="wiki-adv-star-reset" id="wiki-adv-star-reset">&#10006;</button>
+  </div>
+  <div class="wiki-adv-stars" id="wiki-adv-stars">
+    <% for (var _ri = 1; _ri <= 5; _ri++) { %>
+      <button type="button" class="wiki-adv-star" data-value="<%= _ri %>">&#9734;</button>
+    <% } %>
+  </div>
+  <div class="wiki-prop-grid" id="wiki-prop-grid">
+    <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0">Pas encore not&eacute;</button>
+    <button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0">J&apos;adore</button>
+    <button type="button" class="wiki-prop-btn" data-prop="interested"data-state="0"><%= interestedLabel %></button>
+  </div>
+</details>

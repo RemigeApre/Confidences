@@ -14,15 +14,12 @@
         style="resize:vertical"><%= protagoniste ? protagoniste.description : '' %></textarea>
 
       <%# ── Parodie ──────────────────────────────────────────────────────── %>
-      <input type="text" name="parody" class="wf-orce-name-input"
-        value="<%= protagoniste ? protagoniste.parody : '' %>"
-        placeholder="Parodie (ex : Pokémon)…" autocomplete="off"
-        list="prot-parody-suggestions" style="margin-bottom:.5rem" />
-      <% if (typeof allParodies !== 'undefined' && allParodies.length) { %>
-        <datalist id="prot-parody-suggestions">
-          <% allParodies.forEach(function(p) { %><option value="<%= p %>"><% }) %>
-        </datalist>
-      <% } %>
+      <%- include('partials/parody-input', {
+            idPrefix:  'protf',
+            mainValue: protagoniste ? protagoniste.parody    : '',
+            subValue:  protagoniste ? protagoniste.subParody : '',
+            mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
+          }) %>
 
       <%# ── Tags ─────────────────────────────────────────────────────────── %>
       <% if (allTags && allTags.length) { %>

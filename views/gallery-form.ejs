@@ -81,8 +81,13 @@
 
     <div class="gallery-author-row">
       <input type="text" name="author" class="wiki-title-input gallery-author-input" value="<%= image.author || '' %>" placeholder="Auteur / Dessinateur&hellip;" autocomplete="off" />
-      <input type="text" name="parody" class="wiki-title-input gallery-parody-input" value="<%= image.parody || '' %>" placeholder="Parodie (optionnel)&hellip;" autocomplete="off" />
     </div>
+    <%- include('partials/parody-input', {
+          idPrefix:  'gf',
+          mainValue: image.parody    || '',
+          subValue:  image.subParody || '',
+          mainPh:    'Parodie (optionnel)\u2026'
+        }) %>
 
     <% if (allProtagonists && allProtagonists.length) { %>
     <div class="nv-form-prot-row">

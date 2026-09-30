@@ -7,22 +7,11 @@
   <%# ─── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
   <aside class="wiki-cat-sidebar gallery-sidebar" id="mobile-filter-sidebar">
     <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
-    <div class="wiki-chapter-hero" style="--ch-hue: 220">
-      <div class="wiki-chapter-hero-top">
-        <span></span>
-        <h1 class="wiki-chapter-hero-title">Images</h1>
-        <span class="wiki-chapter-hero-count" id="gallery-count-hero"><%= items.length %></span>
-      </div>
-    </div>
+    <%- include('partials/sidebar-hero', { title: 'Images', hue: 220, count: items.length, countId: 'gallery-count-hero' }) %>
 
     <div class="wiki-sidebar-body">
 
-      <div class="wiki-search-wrap">
-        <div class="wiki-search-bar">
-          <input type="search" id="gallery-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
-          <button type="button" id="gallery-search-clear" class="wiki-search-clear" hidden>&#215;</button>
-        </div>
-      </div>
+      <%- include('partials/search-bar', { searchId: 'gallery-search' }) %>
 
       <details class="wiki-sidebar-filter-details">
       <summary class="wiki-sidebar-filter-summary">Filtres</summary>
@@ -95,12 +84,12 @@
 
       </details>
 
-      <%# Réinitialiser / Explorer : hors <details>, toujours visible %>
-      <div class="wiki-filter-section wiki-filter-bottom-actions">
-        <button type="button" id="gallery-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
-        <button type="button" id="gallery-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
-        <button type="button" id="gallery-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
-      </div>
+      <%- include('partials/filters/filter-reset', {
+            filterId:    'gallery',
+            showExplore: true,
+            showSave:    true,
+            resetLabel:  'Réinitialiser les filtres'
+          }) %>
 
     </div>
   </aside>
@@ -143,6 +132,7 @@
         data-processed="<%= (item.processed && item.type === 'gallery') ? '1' : '0' %>"
         data-author="<%= (item.author || '').replace(/"/g, '') %>"
         data-parody="<%= (item.parody || '').replace(/"/g, '') %>"
+        data-sub-parody="<%= (item.subParody || '').replace(/"/g, '') %>"
         data-protagonists="<%= (item.protagonistIds || []).join(',') %>"
         data-series="<%= itemSeries.map(function(s){ return s.seriesId; }).join(',') %>">
 

@@ -1,9 +1,27 @@
-<%- include('partials/head', { title: parody + ' — Parodie' }) %>
+<%- include('partials/head', { title: (subParody ? subParody + ' (' + parody + ')' : parody) + ' — Parodie' }) %>
 <main class="container" style="max-width: 960px; margin: 0 auto">
-  <%- include('partials/top-nav', { config: config, navTitle: parody, navBack: '/parodies' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: subParody ? subParody : parody, navBack: subParody ? '/parodies/' + encodeURIComponent(parody) : '/parodies' }) %>
 
   <div class="prot-header">
-    <h1 class="prot-page-title"><%= parody %></h1>
+    <% if (subParody) { %>
+      <p class="parody-detail-breadcrumb">
+        <a href="/parodies/<%= encodeURIComponent(parody) %>" class="parody-detail-parent"><%= parody %></a>
+        <span class="parody-detail-sep"> › </span>
+        <span class="parody-detail-sub"><%= subParody %></span>
+      </p>
+      <h1 class="prot-page-title"><%= subParody %></h1>
+    <% } else { %>
+      <h1 class="prot-page-title"><%= parody %></h1>
+      <% if (subs && subs.length) { %>
+        <div class="parody-detail-subs">
+          <% subs.forEach(function(s) { %>
+            <a href="/parodies/<%= encodeURIComponent(parody) %>/<%= encodeURIComponent(s.sub) %>" class="parody-detail-sub-chip">
+              <%= s.sub %> <span class="parody-detail-sub-chip-count"><%= s.counts.total %></span>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    <% } %>
     <p class="prot-page-sub">Tout le contenu en rapport avec cette œuvre</p>
   </div>
 

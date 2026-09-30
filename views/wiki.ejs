@@ -13,26 +13,17 @@
       <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
 
       <%# ─ En-tête : flèche retour + nom + nombre ─ %>
-      <div class="wiki-chapter-hero">
-        <div class="wiki-chapter-hero-top">
-          <a href="/wiki" class="wiki-chapter-hero-back" title="Retour au sommaire" aria-label="Retour au sommaire">&larr;</a>
-          <h1 class="wiki-chapter-hero-title"><%= lockedCategory.label %></h1>
-          <span class="wiki-chapter-hero-count"><%= pages.length %></span>
-        </div>
-      </div>
+      <%- include('partials/sidebar-hero', {
+            title:     lockedCategory.label,
+            backHref:  '/wiki',
+            backLabel: 'Retour au sommaire',
+            count:     pages.length
+          }) %>
 
       <%# ─ Corps scrollable : recherche + filtres ─ %>
       <div class="wiki-sidebar-body">
 
-        <div class="wiki-search-wrap">
-          <div class="wiki-search-bar">
-            <input type="search" id="wiki-search-input" class="wiki-search-input"
-                   placeholder="Recherche"
-                   autocomplete="off" />
-            <button type="button" id="wiki-search-clear" class="wiki-search-clear" hidden>&#215;</button>
-          </div>
-          <span id="wiki-result-count" class="wiki-result-count" hidden></span>
-        </div>
+        <%- include('partials/search-bar', { searchId: 'wiki-search-input', showCount: true }) %>
 
         <details class="wiki-sidebar-filter-details">
         <summary class="wiki-sidebar-filter-summary">Filtres</summary>
@@ -95,24 +86,7 @@
             </div>
           <% } %>
 
-          <details class="wiki-subpanel-details">
-            <summary class="wiki-subpanel-summary">Notation</summary>
-            <div class="wiki-filter-label-row">
-              <span class="wiki-filter-label">Note minimale</span>
-              <button type="button" class="wiki-adv-star-reset" id="wiki-adv-star-reset">&#10006;</button>
-            </div>
-            <div class="wiki-adv-stars" id="wiki-adv-stars">
-              <% for (var si = 1; si <= 5; si++) { %>
-                <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
-              <% } %>
-            </div>
-            <%# "Possédé" retiré : doublon avec la bascule "Nos objets". %>
-            <div class="wiki-prop-grid" id="wiki-prop-grid">
-              <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0">Pas encore not&eacute;</button>
-              <button type="button" class="wiki-prop-btn" data-prop="flame" data-state="0">J&apos;adore</button>
-              <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0"><%= interestedLabel %></button>
-            </div>
-          </details>
+          <%- include('partials/filters/filter-wiki-rating', { interestedLabel: interestedLabel }) %>
 
           <% if (currentUser && currentUser.isAdmin) { %>
           <div class="wiki-filter-section">
@@ -128,22 +102,7 @@
           </div>
           <% } %>
 
-          <% if (allTags.length) { %>
-            <div class="wiki-filter-section">
-              <input type="search" id="wiki-tag-search" class="wiki-tag-search-input" placeholder="Chercher un tag" autocomplete="off" />
-              <div class="wiki-tag-cloud" id="wiki-tag-filter">
-                <% allTags.forEach(function (tag) { %>
-                  <button type="button" class="wiki-tag-chip" data-tag="<%= tag %>" data-state="0">
-                    <span class="wtc-label"><%= tag %></span><% if (typeof tagCounts !== 'undefined' && tagCounts[tag]) { %><span class="wtc-count"><%= tagCounts[tag] %></span><% } %>
-                  </button>
-                <% }) %>
-              </div>
-              <div class="wiki-tag-footer">
-                <button type="button" id="wiki-tag-expand-btn" class="wiki-tag-expand-btn" hidden>&#9660; Plus</button>
-                <a href="/tags" class="wiki-tag-all-link" id="wiki-tag-all-link" hidden>Tous les tags</a>
-              </div>
-            </div>
-          <% } %>
+          <%- include('partials/filters/filter-wiki-tags', { tags: allTags, counts: (typeof tagCounts !== 'undefined' ? tagCounts : null) }) %>
 
           <details class="wiki-subpanel-details">
             <summary class="wiki-subpanel-summary">Affichage des cartes</summary>
@@ -192,14 +151,7 @@
     </div>
 
     <%# ─── RECHERCHE : toujours visible ──────────────────────────────────── %>
-    <div class="wiki-search-wrap">
-      <div class="wiki-search-bar">
-        <input type="search" id="wiki-search-input" class="wiki-search-input"
-               placeholder="Recherche" autocomplete="off" />
-        <button type="button" id="wiki-search-clear" class="wiki-search-clear" hidden>&#215;</button>
-      </div>
-      <span id="wiki-result-count" class="wiki-result-count" hidden></span>
-    </div>
+    <%- include('partials/search-bar', { searchId: 'wiki-search-input', showCount: true }) %>
 
     <%# ─── FILTRES + TRI ─────────────────────────────────────────────────── %>
     <details class="wiki-filters-panel" id="wiki-filters-panel">
@@ -210,16 +162,16 @@
           <div class="wiki-adv-row">
             <label class="wiki-adv-label">Note min.</label>
             <div class="wiki-adv-stars" id="wiki-adv-stars">
-              <% for (var si = 1; si <= 5; si++) { %>
-                <button type="button" class="wiki-adv-star" data-value="<%= si %>">&#9734;</button>
+              <% for (var _ri = 1; _ri <= 5; _ri++) { %>
+                <button type="button" class="wiki-adv-star" data-value="<%= _ri %>">&#9734;</button>
               <% } %>
               <button type="button" class="wiki-adv-star-reset" id="wiki-adv-star-reset">&#10006;</button>
             </div>
           </div>
           <div class="wiki-prop-grid" id="wiki-prop-grid">
             <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0">Pas encore not&eacute;</button>
-            <button type="button" class="wiki-prop-btn" data-prop="flame" data-state="0">J&apos;adore</button>
-            <button type="button" class="wiki-prop-btn" data-prop="interested" data-state="0"><%= interestedLabel %></button>
+            <button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0">J&apos;adore</button>
+            <button type="button" class="wiki-prop-btn" data-prop="interested"data-state="0"><%= interestedLabel %></button>
           </div>
         </div>
 
@@ -235,9 +187,10 @@
 
           <% if (allTags.length) { %>
             <div class="wiki-tag-cloud" id="wiki-tag-filter">
-              <% allTags.forEach(function (tag) { %>
-                <button type="button" class="wiki-tag-chip" data-tag="<%= tag %>" data-state="0">
-                  <span class="wtc-label"><%= tag %></span><% if (typeof tagCounts !== 'undefined' && tagCounts[tag]) { %><span class="wtc-count"><%= tagCounts[tag] %></span><% } %>
+              <% allTags.forEach(function (t) { %>
+                <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
+                  <span class="wtc-label"><%= t %></span><%
+                  if (typeof tagCounts !== 'undefined' && tagCounts[t]) { %><span class="wtc-count"><%= tagCounts[t] %></span><% } %>
                 </button>
               <% }) %>
             </div>

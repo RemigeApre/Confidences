@@ -39,6 +39,7 @@ const {
   listGalleryImages,
   listUnexploredWikiPages,
   listBlacklistedTags,
+  normalizeParody,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
@@ -702,8 +703,10 @@ function buildWikiRouter(config) {
     if (scenImgFile) meta.scenario_image = `/uploads/wiki/${scenImgFile.filename}`;
     if (meta.orce_name) tags = [...new Set([...tags, meta.orce_name])];
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
+    const parody = normalizeParody(String(req.body.parody || ""));
+    const subParody = normalizeParody(String(req.body.sub_parody || ""));
 
-    const newId = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
+    const newId = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody });
     syncPageGalleryImages(newId, title, imagePaths, meta);
     res.redirect(`/wiki/${newId}`);
   });
@@ -870,7 +873,9 @@ function buildWikiRouter(config) {
     if (meta.orce_name) tags = [...new Set([...tags, meta.orce_name])];
     const extraCategories = arr(req.body.extra_categories).filter((k) => CATEGORY_KEYS.includes(k) && k !== category);
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
-    updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories });
+    const parody = normalizeParody(String(req.body.parody || ""));
+    const subParody = normalizeParody(String(req.body.sub_parody || ""));
+    updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody });
     syncPageGalleryImages(id, title, imagePaths, meta, existing.title.trim().toLowerCase());
     res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${id}`));
   });

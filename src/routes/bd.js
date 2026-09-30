@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -86,11 +86,12 @@ function buildBdRouter(config) {
     let tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
     tags = applyTagCheckbox(tags, "en couleur", req.body.couleur === "on");
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
-    const parody = String(req.body.parody || "").slice(0, 200).trim();
+    const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
+    const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
     const newFiles = (req.files || []).map((f) => `/uploads/bd/${f.filename}`);
     newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder([], newFiles, req.body.image_order);
-    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody });
+    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody });
     res.redirect(`/bd/${id}`);
   });
 
@@ -123,7 +124,8 @@ function buildBdRouter(config) {
     let tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
     tags = applyTagCheckbox(tags, "en couleur", req.body.couleur === "on");
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
-    const parody = String(req.body.parody || "").slice(0, 200).trim();
+    const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
+    const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
 
     const toRemove = new Set([].concat(req.body.remove_image || []));
     for (const src of toRemove) {
@@ -136,7 +138,7 @@ function buildBdRouter(config) {
     newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder(existing, newFiles, req.body.image_order);
 
-    updateBdBook(id, { title, description, tags, imagePaths, langue, parody });
+    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody });
     res.redirect(`/bd/${id}`);
   });
 

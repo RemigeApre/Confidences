@@ -1,88 +1,22 @@
 <%
-/*  Partial : filtre tags (3 états + recherche)
- *
- *  Paramètres :
- *    filterId    {string}  ID du conteneur (requis)
- *    tags        {Array}   liste de tags   (requis)
- *    label       {string}  libellé                   (défaut 'Tags')
- *    maxTags     {number}  limite d'affichage         (défaut 40)
- *    counts      {object}  { tag: count }             (optionnel)
- *
- *  Événement émis (bubbles) :
- *    'tagfilter:change'  →  { filterId, included:[], excluded:[] }
- *
- *  Méthode DOM :
- *    block._reset()
+/*  Filtre tags (3 états include/exclude) — délègue à filter-chips.ejs.
+ *  Paramètres : filterId, tags, label?, maxTags?, counts?
+ *  Événement : 'tagfilter:change' → { filterId, included:[], excluded:[] }
  */
-  var _fid  = filterId;
-  var _tags = tags || [];
-  var _label= (typeof label   !== 'undefined') ? label   : 'Tags';
-  var _max  = (typeof maxTags !== 'undefined') ? maxTags : 40;
-  var _cnt  = (typeof counts  !== 'undefined') ? counts  : null;
+  var _fid   = filterId;
+  var _items = tags || [];
+  var _label = (typeof label   !== 'undefined') ? label   : 'Tags';
+  var _max   = (typeof maxTags !== 'undefined') ? maxTags : 40;
+  var _cnt   = (typeof counts  !== 'undefined') ? counts  : null;
 %>
-<% if (_tags.length) { %>
-<details class="wiki-subpanel-details filter-block filter-block--tags" id="<%= _fid %>-block">
-  <summary class="wiki-subpanel-summary"><%= _label %></summary>
-  <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
-    placeholder="Chercher un tag" autocomplete="off" />
-  <div class="wiki-tag-cloud" id="<%= _fid %>">
-    <% _tags.slice(0, _max).forEach(function(t) { %>
-      <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-        <span class="wtc-label"><%= t %></span><%
-        if (_cnt && _cnt[t]) { %><span class="wtc-count"><%= _cnt[t] %></span><% } %>
-      </button>
-    <% }) %>
-  </div>
-</details>
-
-<script>
-(function () {
-  var block  = document.getElementById('<%= _fid %>-block');
-  var cloud  = document.getElementById('<%= _fid %>');
-  var search = document.getElementById('<%= _fid %>-search');
-  if (!block || !cloud) return;
-
-  function dispatch() {
-    var included = [], excluded = [];
-    cloud.querySelectorAll('.wiki-tag-chip').forEach(function (chip) {
-      if (chip.dataset.state === '1') included.push(chip.dataset.tag);
-      else if (chip.dataset.state === '2') excluded.push(chip.dataset.tag);
-    });
-    block.dispatchEvent(new CustomEvent('tagfilter:change', {
-      bubbles: true,
-      detail: { filterId: '<%= _fid %>', included: included, excluded: excluded }
-    }));
-  }
-
-  cloud.addEventListener('click', function (e) {
-    var chip = e.target.closest('.wiki-tag-chip');
-    if (!chip) return;
-    var s = ((Number(chip.dataset.state) || 0) + 1) % 3;
-    chip.dataset.state = String(s);
-    chip.classList.toggle('chip-include', s === 1);
-    chip.classList.toggle('chip-exclude', s === 2);
-    dispatch();
-  });
-
-  if (search) {
-    search.addEventListener('input', function () {
-      var q = search.value.trim().toLowerCase();
-      cloud.querySelectorAll('.wiki-tag-chip').forEach(function (chip) {
-        chip.hidden = chip.dataset.state === '0' && q.length > 0
-          && chip.dataset.tag.toLowerCase().indexOf(q) === -1;
-      });
-    });
-  }
-
-  block._reset = function () {
-    if (search) search.value = '';
-    cloud.querySelectorAll('.wiki-tag-chip').forEach(function (chip) {
-      chip.dataset.state = '0';
-      chip.classList.remove('chip-include', 'chip-exclude');
-      chip.hidden = false;
-    });
-    dispatch();
-  };
-})();
-</script>
-<% } %>
+<%- include('filter-chips', {
+      filterId:  _fid,
+      items:     _items,
+      itemKey:   'tag',
+      chipClass: 'wiki-tag-chip',
+      label:     _label,
+      mode:      'multi',
+      eventName: 'tagfilter:change',
+      counts:    _cnt,
+      maxItems:  _max
+    }) %>

@@ -36,6 +36,7 @@ const {
   listBlacklistedTags,
   listAllParodies,
   listProtagonistes,
+  normalizeParody,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -156,6 +157,7 @@ function buildItems(galleryImages, wikiPages) {
     processed: !!img.processed,
     author: img.author || "",
     parody: img.parody || "",
+    subParody: img.subParody || "",
     protagonistIds: img.protagonistIds || [],
     date: img.createdAt,
   }));
@@ -215,12 +217,13 @@ function buildGalleryRouter(config) {
     const tags = parseTags(req.body.tags);
     const notes = String(req.body.notes || "").trim();
     const author = String(req.body.author || "").trim();
-    const parody = String(req.body.parody || "").trim();
+    const parody = normalizeParody(String(req.body.parody || ""));
+    const subParody = normalizeParody(String(req.body.sub_parody || ""));
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Number.isInteger);
     files.forEach((f) => {
       const p = `/uploads/gallery/${f.filename}`;
       generateThumb(p);
-      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, author, parody, protagonistIds });
+      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, author, parody, subParody, protagonistIds });
     });
     res.redirect("/galerie");
   });
@@ -266,18 +269,19 @@ function buildGalleryRouter(config) {
     if (!src) return res.json(null);
     var img = findImageBySrc(src, listGalleryImages());
     if (!img) return res.json(null);
-    res.json({ id: img.id, tags: img.tags, author: img.author, parody: img.parody });
+    res.json({ id: img.id, tags: img.tags, author: img.author, parody: img.parody, subParody: img.subParody });
   });
 
   router.post("/image-meta", requireAdmin, express.json(), function(req, res) {
     var id = Number(req.body.id);
     if (!id) return res.json({ ok: false });
-    var tags   = [].concat(req.body.tags || []).filter(Boolean);
-    var author = String(req.body.author || "").trim();
-    var parody = String(req.body.parody || "").trim();
-    var title  = req.body.title !== undefined ? String(req.body.title).trim() : undefined;
-    var notes  = req.body.notes !== undefined ? String(req.body.notes).trim() : undefined;
-    updateGalleryImageMeta(id, { tags, author, parody, title, notes });
+    var tags     = [].concat(req.body.tags || []).filter(Boolean);
+    var author   = String(req.body.author || "").trim();
+    var parody   = normalizeParody(String(req.body.parody || ""));
+    var subParody = normalizeParody(String(req.body.sub_parody || ""));
+    var title    = req.body.title !== undefined ? String(req.body.title).trim() : undefined;
+    var notes    = req.body.notes !== undefined ? String(req.body.notes).trim() : undefined;
+    updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes });
     res.json({ ok: true });
   });
 
@@ -291,7 +295,7 @@ function buildGalleryRouter(config) {
   // Autocomplete parodies
   router.get("/autocomplete/parodies", function(req, res) {
     var q = String(req.query.q || "").toLowerCase();
-    var all = listGalleryParodies();
+    var all = listAllParodies();
     res.json(q ? all.filter(function(a) { return a.toLowerCase().indexOf(q) !== -1; }) : all);
   });
 
@@ -310,7 +314,8 @@ function buildGalleryRouter(config) {
     const commonTags     = parseTags(req.body.common_tags);
     const commonCategory = normalizeCategory(req.body.common_category);
     const commonAuthor   = String(req.body.common_author  || "").trim();
-    const commonParody   = String(req.body.common_parody  || "").trim();
+    const commonParody   = normalizeParody(String(req.body.common_parody  || ""));
+    const commonSubParody = normalizeParody(String(req.body.common_sub_parody || ""));
 
     let batchMeta = {};
     try { batchMeta = JSON.parse(req.body.batch_meta || "{}"); } catch {}
@@ -343,6 +348,7 @@ function buildGalleryRouter(config) {
         wikiPageId:  null,
         author:      finalAuthor,
         parody:      commonParody,
+        subParody:   commonSubParody,
       });
     });
 
@@ -512,10 +518,11 @@ function buildGalleryRouter(config) {
     const title = String(req.body.title || "").trim();
     const notes = String(req.body.notes || "").trim();
     const author = String(req.body.author || "").trim();
-    const parody = String(req.body.parody || "").trim();
+    const parody = normalizeParody(String(req.body.parody || ""));
+    const subParody = normalizeParody(String(req.body.sub_parody || ""));
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Number.isInteger);
 
-    updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, protagonistIds });
+    updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds });
 
     const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
     added.forEach((p) => {

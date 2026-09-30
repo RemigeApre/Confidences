@@ -9,6 +9,17 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 const db = new Database(path.join(dataDir, "quizz.db"));
 db.pragma("journal_mode = WAL");
 
+// Normalise une parodie : Title Case + suppression des accents pour éviter
+// les doublons "Evangelion" / "Évangélion" et "reine des neiges" / "Reine Des Neiges".
+function normalizeParody(str) {
+  if (!str || !str.trim()) return '';
+  return str.trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/(?:^|\s)(\S)/g, function(m, c) { return m.replace(c, c.toUpperCase()); });
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS submissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,6 +78,7 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN featured INTEGER NOT NULL DEFAU
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity_set_at TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS gallery_images (
@@ -90,6 +102,7 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN wiki_page_id INTEGER"); } c
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN image_paths TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN author TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN content_type TEXT NOT NULL DEFAULT 'image'"); } catch(_) {}
 // La distinction "bd" dans la Galerie était une tentative abandonnée (le
 // vrai suivi BD vit dans bd_books, voir plus bas) : on referme les quelques
@@ -121,6 +134,7 @@ try { db.exec("ALTER TABLE bd_books ADD COLUMN flame INTEGER NOT NULL DEFAULT 0"
 try { db.exec("ALTER TABLE bd_books ADD COLUMN interested INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE bd_books ADD COLUMN langue TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE bd_books ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE bd_books ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_links (
@@ -361,6 +375,20 @@ db.exec(`
     PRIMARY KEY (user_id, tag)
   )
 `);
+
+// Migration one-time : normalise les parodies existantes (casse + accents)
+try {
+  [
+    ['wiki_pages', 'parody'], ['gallery_images', 'parody'], ['bd_books', 'parody'],
+    ['nouvelles', 'parody'], ['protagonistes', 'parody'],
+  ].forEach(function(pair) {
+    var t = pair[0], col = pair[1];
+    db.prepare('SELECT id, ' + col + ' FROM ' + t + ' WHERE ' + col + " != ''").all().forEach(function(r) {
+      var norm = normalizeParody(r[col]);
+      if (norm !== r[col]) db.prepare('UPDATE ' + t + ' SET ' + col + ' = ? WHERE id = ?').run(norm, r.id);
+    });
+  });
+} catch (_) {}
 
 function listBlacklistedTags(userId) {
   return db.prepare(
@@ -1256,6 +1284,7 @@ function rowToWikiPage(row) {
     maturitySetAt: row.maturity_set_at || null,
     extraCategories: (() => { try { return JSON.parse(row.extra_categories || "[]"); } catch (_) { return []; } })(),
     parody: row.parody || "",
+    subParody: row.sub_parody || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -1275,14 +1304,14 @@ function listFeaturedWikiPages() {
   return db.prepare("SELECT * FROM wiki_pages WHERE featured = 1").all().map(rowToWikiPage);
 }
 
-function insertWikiPage({ title, category, content, tags, imagePaths, owned, meta, extraCategories, parody }) {
+function insertWikiPage({ title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody }) {
   const now = new Date().toISOString();
   const info = db
     .prepare(
-      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, owned, meta, extra_categories, parody, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, owned, meta, extra_categories, parody, sub_parody, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", now, now);
+    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", now, now);
   return info.lastInsertRowid;
 }
 
@@ -1323,7 +1352,7 @@ function getWikiPage(id) {
   return rowToWikiPage(row);
 }
 
-function updateWikiPage(id, { title, category, content, tags, imagePaths, owned, meta, extraCategories, parody }) {
+function updateWikiPage(id, { title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody }) {
   const existing = db.prepare("SELECT image_paths, image_path FROM wiki_pages WHERE id = ?").get(id);
   if (!existing) return false;
   // Si imagePaths n'est pas fourni, conserver les images existantes
@@ -1333,9 +1362,9 @@ function updateWikiPage(id, { title, category, content, tags, imagePaths, owned,
     if (!finalImagePaths.length && existing.image_path) finalImagePaths = [existing.image_path];
   }
   db.prepare(
-    `UPDATE wiki_pages SET title = ?, category = ?, content = ?, tags = ?, image_paths = ?, owned = ?, meta = ?, extra_categories = ?, parody = ?, updated_at = ?
+    `UPDATE wiki_pages SET title = ?, category = ?, content = ?, tags = ?, image_paths = ?, owned = ?, meta = ?, extra_categories = ?, parody = ?, sub_parody = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", new Date().toISOString(), id);
+  ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", new Date().toISOString(), id);
   return true;
 }
 
@@ -1629,6 +1658,7 @@ function rowToBdBook(row) {
     interested: false,
     langue: row.langue || "",
     parody: row.parody || "",
+    subParody: row.sub_parody || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -1643,15 +1673,15 @@ function getBdBook(id) {
   return row ? rowToBdBook(row) : null;
 }
 
-function insertBdBook({ title, description, tags, imagePaths, langue, parody }) {
+function insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody }) {
   const now = new Date().toISOString();
   const info = db.prepare(
-    `INSERT INTO bd_books (title, description, tags, image_paths, langue, parody, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", parody || "", now, now);
+    `INSERT INTO bd_books (title, description, tags, image_paths, langue, parody, sub_parody, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", parody || "", subParody || "", now, now);
   return info.lastInsertRowid;
 }
 
-function updateBdBook(id, { title, description, tags, imagePaths, langue, parody }) {
+function updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody }) {
   const newPaths = imagePaths || [];
   // Une page retirée (checkbox "Supprimer cette page", voir bd-form.ejs)
   // n'a plus lieu d'avoir une réaction en base, pour aucun profil — sinon
@@ -1667,8 +1697,8 @@ function updateBdBook(id, { title, description, tags, imagePaths, langue, parody
     });
   }
   db.prepare(
-    `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, parody = ?, updated_at = ? WHERE id = ?`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", parody || "", new Date().toISOString(), id);
+    `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, parody = ?, sub_parody = ?, updated_at = ? WHERE id = ?`
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", parody || "", subParody || "", new Date().toISOString(), id);
 }
 
 function deleteBdBook(id) {
@@ -1760,6 +1790,7 @@ function rowToGalleryImage(row) {
     notes: row.notes || "",
     author: row.author || "",
     parody: row.parody || "",
+    subParody: row.sub_parody || "",
     // rating/flame/interested : propres a chaque profil, voir content_reactions
     // (memes remarques que rowToWikiPage ci-dessus).
     rating: 0,
@@ -1810,13 +1841,13 @@ function getGalleryImage(id) {
   return row ? rowToGalleryImage(row) : null;
 }
 
-function insertGalleryImage({ imagePaths, title, tags, notes, category, wikiPageId, author, parody, protagonistIds }) {
+function insertGalleryImage({ imagePaths, title, tags, notes, category, wikiPageId, author, parody, subParody, protagonistIds }) {
   const now = new Date().toISOString();
   const paths = imagePaths || [];
   const info = db.prepare(
-    `INSERT INTO gallery_images (filename, image_paths, title, tags, notes, category, wiki_page_id, author, parody, protagonist_ids, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(paths[0] || "", JSON.stringify(paths), title || "", JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", JSON.stringify(protagonistIds || []), now, now);
+    `INSERT INTO gallery_images (filename, image_paths, title, tags, notes, category, wiki_page_id, author, parody, sub_parody, protagonist_ids, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(paths[0] || "", JSON.stringify(paths), title || "", JSON.stringify(tags || []), notes || "", category || "", wikiPageId || null, author || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), now, now);
   return info.lastInsertRowid;
 }
 
@@ -1827,7 +1858,7 @@ function setGalleryImageWikiSynced(id, synced) {
   db.prepare("UPDATE gallery_images SET wiki_synced = ? WHERE id = ?").run(synced ? 1 : 0, id);
 }
 
-function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, protagonistIds }) {
+function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds }) {
   const existing = db.prepare("SELECT image_paths, filename FROM gallery_images WHERE id = ?").get(id);
   if (!existing) return false;
   // Si imagePaths n'est pas fourni, conserver les images existantes
@@ -1837,9 +1868,9 @@ function updateGalleryImage(id, { title, category, tags, notes, imagePaths, wiki
     if (!finalImagePaths.length && existing.filename) finalImagePaths = [existing.filename];
   }
   db.prepare(
-    `UPDATE gallery_images SET title = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, protagonist_ids = ?, updated_at = ?
+    `UPDATE gallery_images SET title = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title || "", category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", JSON.stringify(protagonistIds || []), new Date().toISOString(), id);
+  ).run(title || "", category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), new Date().toISOString(), id);
   return true;
 }
 
@@ -1873,39 +1904,78 @@ function listAllParodies() {
   return [...set].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
 }
 
-function listAllParodiesWithCounts() {
-  const all = listAllParodies();
-  return all.map(parody => {
-    const counts = {
-      gallery: db.prepare("SELECT COUNT(*) as n FROM gallery_images WHERE parody = ?").get(parody).n,
-      bd:      db.prepare("SELECT COUNT(*) as n FROM bd_books WHERE parody = ?").get(parody).n,
-      nouvelles: db.prepare("SELECT COUNT(*) as n FROM nouvelles WHERE parody = ?").get(parody).n,
-      wiki:    db.prepare("SELECT COUNT(*) as n FROM wiki_pages WHERE parody = ?").get(parody).n,
-      protagonistes: db.prepare("SELECT COUNT(*) as n FROM protagonistes WHERE parody = ?").get(parody).n,
-    };
-    counts.total = counts.gallery + counts.bd + counts.nouvelles + counts.wiki + counts.protagonistes;
-    return { parody, counts };
-  });
+function listAllSubParodies(mainParody, q) {
+  var set = new Set();
+  [
+    "SELECT DISTINCT sub_parody FROM gallery_images WHERE parody = ? AND sub_parody != ''",
+    "SELECT DISTINCT sub_parody FROM bd_books WHERE parody = ? AND sub_parody != ''",
+    "SELECT DISTINCT sub_parody FROM nouvelles WHERE parody = ? AND sub_parody != ''",
+    "SELECT DISTINCT sub_parody FROM wiki_pages WHERE parody = ? AND sub_parody != ''",
+    "SELECT DISTINCT sub_parody FROM protagonistes WHERE parody = ? AND sub_parody != ''",
+  ].forEach(function(sql) { db.prepare(sql).all(mainParody).forEach(function(r) { set.add(r.sub_parody); }); });
+  var subs = Array.from(set).sort(function(a, b) { return a.localeCompare(b, 'fr', { sensitivity: 'base' }); });
+  if (q) { var ql = q.toLowerCase(); subs = subs.filter(function(s) { return s.toLowerCase().indexOf(ql) !== -1; }); }
+  return subs;
 }
 
-function getContentByParody(parody) {
-  const gallery = db.prepare("SELECT * FROM gallery_images WHERE parody = ? ORDER BY created_at DESC").all(parody).map(rowToGalleryImage);
-  const bd = db.prepare("SELECT id, title, image_paths FROM bd_books WHERE parody = ? ORDER BY updated_at DESC").all(parody).map(r => {
+function listAllParodiesWithCounts() {
+  var tables = [
+    { name: 'gallery',      table: 'gallery_images' },
+    { name: 'bd',           table: 'bd_books'       },
+    { name: 'nouvelles',    table: 'nouvelles'      },
+    { name: 'wiki',         table: 'wiki_pages'     },
+    { name: 'protagonistes',table: 'protagonistes'  },
+  ];
+  var mainMap = new Map();
+  tables.forEach(function(entry) {
+    db.prepare("SELECT parody, sub_parody, COUNT(*) as n FROM " + entry.table + " WHERE parody != '' GROUP BY parody, sub_parody").all().forEach(function(r) {
+      if (!mainMap.has(r.parody)) {
+        mainMap.set(r.parody, { counts: { gallery:0, bd:0, nouvelles:0, wiki:0, protagonistes:0, total:0 }, subs: new Map() });
+      }
+      var main = mainMap.get(r.parody);
+      main.counts[entry.name] = (main.counts[entry.name] || 0) + r.n;
+      main.counts.total += r.n;
+      if (r.sub_parody) {
+        if (!main.subs.has(r.sub_parody)) main.subs.set(r.sub_parody, { gallery:0, bd:0, nouvelles:0, wiki:0, protagonistes:0, total:0 });
+        var sub = main.subs.get(r.sub_parody);
+        sub[entry.name] = (sub[entry.name] || 0) + r.n;
+        sub.total += r.n;
+      }
+    });
+  });
+  return Array.from(mainMap.entries())
+    .sort(function(a, b) { return a[0].localeCompare(b[0], 'fr', { sensitivity: 'base' }); })
+    .map(function(entry) {
+      return {
+        parody: entry[0],
+        counts: entry[1].counts,
+        subs: Array.from(entry[1].subs.entries())
+          .sort(function(a, b) { return a[0].localeCompare(b[0], 'fr', { sensitivity: 'base' }); })
+          .map(function(s) { return { sub: s[0], counts: s[1] }; }),
+      };
+    });
+}
+
+function getContentByParody(parody, subParody) {
+  var sf = subParody ? " AND sub_parody = ?" : "";
+  function q(sql) { return subParody ? db.prepare(sql + sf).all(parody, subParody) : db.prepare(sql + sf).all(parody); }
+  var gallery = q("SELECT * FROM gallery_images WHERE parody = ? ORDER BY created_at DESC").map(rowToGalleryImage);
+  var bd = q("SELECT id, title, image_paths, sub_parody FROM bd_books WHERE parody = ? ORDER BY updated_at DESC").map(function(r) {
     try { r.image_paths = JSON.parse(r.image_paths || "[]"); } catch(_) { r.image_paths = []; }
     return r;
   });
-  const nouvelles = db.prepare("SELECT id, title, summary, author, word_count FROM nouvelles WHERE parody = ? ORDER BY updated_at DESC").all(parody);
-  const wiki = db.prepare("SELECT id, title, category, image_paths FROM wiki_pages WHERE parody = ? ORDER BY updated_at DESC").all(parody).map(r => {
+  var nouvelles = q("SELECT id, title, summary, author, word_count, sub_parody FROM nouvelles WHERE parody = ? ORDER BY updated_at DESC");
+  var wiki = q("SELECT id, title, category, image_paths, sub_parody FROM wiki_pages WHERE parody = ? ORDER BY updated_at DESC").map(function(r) {
     try { r.image_paths = JSON.parse(r.image_paths || "[]"); } catch(_) { r.image_paths = []; }
     return r;
   });
-  const protagonistes = db.prepare("SELECT id, name, description FROM protagonistes WHERE parody = ? ORDER BY name COLLATE NOCASE").all(parody);
+  var protagonistes = q("SELECT id, name, description, sub_parody FROM protagonistes WHERE parody = ? ORDER BY name COLLATE NOCASE");
   return { gallery, bd, nouvelles, wiki, protagonistes };
 }
 
-function updateGalleryImageMeta(id, { tags, author, parody, title, notes, processed } = {}) {
-  const sets = ["tags = ?", "author = ?", "parody = ?", "updated_at = ?"];
-  const params = [JSON.stringify(tags || []), author || "", parody || "", new Date().toISOString()];
+function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, processed } = {}) {
+  const sets = ["tags = ?", "author = ?", "parody = ?", "sub_parody = ?", "updated_at = ?"];
+  const params = [JSON.stringify(tags || []), author || "", parody || "", subParody || "", new Date().toISOString()];
   if (title !== undefined) { sets.splice(sets.length - 1, 0, "title = ?"); params.splice(params.length - 1, 0, title); }
   if (notes !== undefined) { sets.splice(sets.length - 1, 0, "notes = ?"); params.splice(params.length - 1, 0, notes); }
   if (typeof processed === "number") { sets.splice(sets.length - 1, 0, "processed = ?"); params.splice(params.length - 1, 0, processed); }
@@ -2210,6 +2280,7 @@ try { db.exec("ALTER TABLE nouvelles ADD COLUMN stage TEXT NOT NULL DEFAULT 'sta
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN protagoniste_ids TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE nouvelles ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 function listCustomQuizzes() {
   return db.prepare(`SELECT q.*,
@@ -2386,7 +2457,9 @@ module.exports = {
   deleteGalleryImage,
   listGalleryAuthors,
   listGalleryParodies,
+  normalizeParody,
   listAllParodies,
+  listAllSubParodies,
   listAllParodiesWithCounts,
   getContentByParody,
   updateGalleryImageMeta,
@@ -2533,16 +2606,16 @@ function listNouvelles() {
 function getNouvelleById(id) {
   return db.prepare(`SELECT * FROM nouvelles WHERE id=?`).get(id);
 }
-function createNouvelle({ title, content, summary, tags, category, author, parody, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
+function createNouvelle({ title, content, summary, tags, category, author, parody, subParody, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
-  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, parody, featured, word_count, serie_id, serie_order, stage, hidden, protagoniste_ids) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', parody || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []));
+  const r = db.prepare(`INSERT INTO nouvelles (title, content, summary, tags, category, author, parody, sub_parody, featured, word_count, serie_id, serie_order, stage, hidden, protagoniste_ids) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', parody || '', subParody || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []));
   return r.lastInsertRowid;
 }
-function updateNouvelle(id, { title, content, summary, tags, category, author, parody, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
+function updateNouvelle(id, { title, content, summary, tags, category, author, parody, subParody, featured, serie_id, serie_order, stage, hidden, protagoniste_ids }) {
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
-  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, parody=?, featured=?, word_count=?, serie_id=?, serie_order=?, stage=?, hidden=?, protagoniste_ids=?, updated_at=unixepoch() WHERE id=?`)
-    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', parody || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []), id);
+  db.prepare(`UPDATE nouvelles SET title=?, content=?, summary=?, tags=?, category=?, author=?, parody=?, sub_parody=?, featured=?, word_count=?, serie_id=?, serie_order=?, stage=?, hidden=?, protagoniste_ids=?, updated_at=unixepoch() WHERE id=?`)
+    .run(title || '', content || '', summary || '', JSON.stringify(tags || []), category || '', author || '', parody || '', subParody || '', featured ? 1 : 0, wordCount, serie_id || null, serie_order || 0, stage || 'brouillon', hidden ? 1 : 0, JSON.stringify(protagoniste_ids || []), id);
 }
 function deleteNouvelle(id) {
   db.prepare(`DELETE FROM nouvelles WHERE id=?`).run(id);
@@ -2583,6 +2656,7 @@ db.exec(`
   )
 `);
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 function listProtagonistes() {
   return db.prepare(`SELECT id, name, description, tags, parody, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
@@ -2593,14 +2667,14 @@ function getProtagoniste(id) {
   if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } }
   return p;
 }
-function createProtagoniste({ name, description, tags, parody }) {
-  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags, parody) VALUES (?,?,?,?)`)
-    .run(name || '', description || '', JSON.stringify(tags || []), parody || '');
+function createProtagoniste({ name, description, tags, parody, subParody }) {
+  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags, parody, sub_parody) VALUES (?,?,?,?,?)`)
+    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '');
   return r.lastInsertRowid;
 }
-function updateProtagoniste(id, { name, description, tags, parody }) {
-  db.prepare(`UPDATE protagonistes SET name=?, description=?, tags=?, parody=?, updated_at=unixepoch() WHERE id=?`)
-    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', id);
+function updateProtagoniste(id, { name, description, tags, parody, subParody }) {
+  db.prepare(`UPDATE protagonistes SET name=?, description=?, tags=?, parody=?, sub_parody=?, updated_at=unixepoch() WHERE id=?`)
+    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', id);
 }
 function deleteProtagoniste(id) {
   db.prepare(`DELETE FROM protagonistes WHERE id=?`).run(id);

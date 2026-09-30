@@ -22,17 +22,12 @@
     </div>
 
     <%# Parodie %>
-    <div class="wiki-field-row">
-      <input type="text" name="parody" class="wiki-title-input"
-        value="<%= book ? book.parody : '' %>"
-        placeholder="Parodie (ex : Pokémon)…" autocomplete="off"
-        list="bd-parody-suggestions" />
-      <% if (typeof allParodies !== 'undefined' && allParodies.length) { %>
-        <datalist id="bd-parody-suggestions">
-          <% allParodies.forEach(function(p) { %><option value="<%= p %>"><% }) %>
-        </datalist>
-      <% } %>
-    </div>
+    <%- include('partials/parody-input', {
+          idPrefix:  'bdf',
+          mainValue: book ? book.parody    : '',
+          subValue:  book ? book.subParody : '',
+          mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
+        }) %>
 
     <%# Langue %>
     <div class="bd-form-chips">

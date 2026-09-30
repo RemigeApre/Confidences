@@ -299,6 +299,17 @@
           </dl>
         <% } %>
 
+        <% if (page.parody) { %>
+          <div class="wiki-left-parody">
+            <span class="wiki-left-parody-label">Parodie</span>
+            <a href="/parodies/<%= encodeURIComponent(page.parody) %>" class="wiki-left-parody-link"><%= page.parody %></a>
+            <% if (page.subParody) { %>
+              <span class="wiki-left-parody-sep">›</span>
+              <a href="/parodies/<%= encodeURIComponent(page.parody) %>/<%= encodeURIComponent(page.subParody) %>" class="wiki-left-parody-link wiki-left-parody-sub"><%= page.subParody %></a>
+            <% } %>
+          </div>
+        <% } %>
+
         <p class="wiki-left-updated">Derni&egrave;re modification&nbsp;: <%= new Date(page.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) %></p>
 
       </aside>

@@ -61,6 +61,14 @@
       </div>
     </div>
 
+    <%# ── Parodie ── %>
+    <%- include('partials/parody-input', {
+          idPrefix:  'wkf',
+          mainValue: page.parody    || '',
+          subValue:  page.subParody || '',
+          mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
+        }) %>
+
     <%# ── Sous-catégorie partenaires (avant extra-cats) ── %>
     <%
       var pmP = page.meta || {};

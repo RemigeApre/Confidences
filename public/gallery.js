@@ -588,7 +588,7 @@
   syncIrrealisteBtn();
 
   // Reset filters
-  var resetFiltersBtn = document.getElementById("gallery-reset-filters");
+  var resetFiltersBtn = document.getElementById("gallery-reset-btn");
   if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener("click", function() {
       // Revient aux reglages de compte (voir /favoris > Parametres) et
@@ -644,7 +644,7 @@
   // on le restitue de la même façon (pas de rechargement de page nécessaire
   // ici, tout est déjà en mémoire).
   (function () {
-    var saveBtn    = document.getElementById("gallery-save-filter-btn");
+    var saveBtn    = document.getElementById("gallery-save-btn");
     var modal      = document.getElementById("gallery-filter-profile-modal");
     var nameInput  = document.getElementById("gallery-filter-profile-name");
     var confirmBtn = document.getElementById("gallery-filter-profile-confirm");
@@ -1011,6 +1011,7 @@
     // Auteur / parodie / protagonistes
     var author = card.dataset.author || "";
     var parody = card.dataset.parody || "";
+    var subParody = card.dataset.subParody || "";
     var protagonistIdStr = card.dataset.protagonists || "";
     if (lbNotes) {
       lbNotes.innerHTML = "";
@@ -1021,10 +1022,25 @@
         lbNotes.appendChild(p);
       }
       if (parody) {
-        var q = document.createElement("span");
-        q.className = "gallery-lb-meta-pill gallery-lb-meta-pill--parody";
-        q.textContent = "\u2728 " + parody;
-        lbNotes.appendChild(q);
+        var parodySec = document.createElement("span");
+        parodySec.className = "gallery-lb-parody-sec";
+        var pLink = document.createElement("a");
+        pLink.className = "gallery-lb-meta-pill gallery-lb-meta-pill--parody";
+        pLink.href = "/parodies/" + encodeURIComponent(parody);
+        pLink.textContent = "\u2728 " + parody;
+        parodySec.appendChild(pLink);
+        if (subParody) {
+          var sep = document.createElement("span");
+          sep.className = "gallery-lb-parody-sep";
+          sep.textContent = " \u203a ";
+          parodySec.appendChild(sep);
+          var sLink = document.createElement("a");
+          sLink.className = "gallery-lb-meta-pill gallery-lb-meta-pill--parody gallery-lb-meta-pill--sub-parody";
+          sLink.href = "/parodies/" + encodeURIComponent(parody) + "/" + encodeURIComponent(subParody);
+          sLink.textContent = subParody;
+          parodySec.appendChild(sLink);
+        }
+        lbNotes.appendChild(parodySec);
       }
       if (protagonistIdStr) {
         var protagonistsMap = window.GALLERY_PROTAGONISTS || {};
@@ -1628,7 +1644,8 @@
           '<input type="text" class="gallery-qedit-tag-input wiki-lb-meta-tag-input" placeholder="Ajouter un tag\u2026" autocomplete="off" />',
         '</div>',
         '<input type="text" class="gallery-qedit-author wiki-title-input" placeholder="Auteur\u2026" autocomplete="off" />',
-        '<input type="text" class="gallery-qedit-parody wiki-title-input" placeholder="Parodie\u2026" autocomplete="off" />',
+        '<div style="position:relative"><input type="text" class="gallery-qedit-parody wiki-title-input" placeholder="Parodie\u2026" autocomplete="off" /></div>',
+        '<div style="position:relative"><input type="text" class="gallery-qedit-sub-parody wiki-title-input" placeholder="Sous-parodie\u2026" autocomplete="off" /></div>',
         '<div class="gallery-qedit-actions">',
           '<button type="button" class="gallery-qedit-save gallery-submit-btn">Enregistrer</button>',
           '<button type="button" class="gallery-qedit-cancel link-button">Annuler</button>',
@@ -1665,7 +1682,8 @@
         var tags = Array.from(qTagsEl.querySelectorAll(".wiki-lb-tag-chip")).map(function(c){ return c.dataset.tag; }).filter(Boolean);
         var author = quickEditPanel.querySelector(".gallery-qedit-author").value.trim();
         var parody = quickEditPanel.querySelector(".gallery-qedit-parody").value.trim();
-        var body = { id: quickEditCurrentId, tags: tags, author: author, parody: parody };
+        var subParody = quickEditPanel.querySelector(".gallery-qedit-sub-parody").value.trim();
+        var body = { id: quickEditCurrentId, tags: tags, author: author, parody: parody, sub_parody: subParody };
         fetch("/galerie/image-meta", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1700,6 +1718,7 @@
     qTagsEl.innerHTML = "";
     quickEditPanel.querySelector(".gallery-qedit-author").value = "";
     quickEditPanel.querySelector(".gallery-qedit-parody").value = "";
+    quickEditPanel.querySelector(".gallery-qedit-sub-parody").value = "";
     var src = card ? (card.dataset.images || "").split("|")[0] : "";
     if (src) {
       fetch("/galerie/image-meta?src=" + encodeURIComponent(src))
@@ -1709,6 +1728,7 @@
           (meta.tags || []).forEach(function(t){ addQEditTag(t); });
           quickEditPanel.querySelector(".gallery-qedit-author").value = meta.author || "";
           quickEditPanel.querySelector(".gallery-qedit-parody").value = meta.parody || "";
+          quickEditPanel.querySelector(".gallery-qedit-sub-parody").value = meta.subParody || "";
         });
     }
     quickEditPanel.hidden = false;

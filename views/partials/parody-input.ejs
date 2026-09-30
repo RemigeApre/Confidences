@@ -1,0 +1,118 @@
+<%
+/*  Partial : champ parodie + sous-parodie avec autocomplétion dynamique.
+ *
+ *  Paramètres :
+ *    idPrefix    {string}  préfixe d'ID unique dans la page  (requis)
+ *    mainValue   {string}  valeur initiale parodie           (défaut '')
+ *    subValue    {string}  valeur initiale sous-parodie      (défaut '')
+ *    mainName    {string}  name du champ parody              (défaut 'parody')
+ *    subName     {string}  name du champ sub_parody          (défaut 'sub_parody')
+ *    mainPh      {string}  placeholder parodie               (défaut 'Parodie…')
+ *    subPh       {string}  placeholder sous-parodie          (défaut 'Sous-parodie (optionnel)…')
+ *    wrapClass   {string}  classe CSS supplémentaire         (optionnel)
+ */
+  var _pfx      = idPrefix;
+  var _mv       = (typeof mainValue !== 'undefined') ? (mainValue || '') : '';
+  var _sv       = (typeof subValue  !== 'undefined') ? (subValue  || '') : '';
+  var _mn       = (typeof mainName  !== 'undefined') ? mainName  : 'parody';
+  var _sn       = (typeof subName   !== 'undefined') ? subName   : 'sub_parody';
+  var _mph      = (typeof mainPh    !== 'undefined') ? mainPh    : 'Parodie\u2026';
+  var _sph      = (typeof subPh     !== 'undefined') ? subPh     : 'Sous-parodie (optionnel)\u2026';
+  var _wc       = (typeof wrapClass !== 'undefined') ? wrapClass : '';
+%>
+<div class="parody-input-group <%= _wc %>">
+  <div class="parody-ac-wrap">
+    <input type="text" name="<%= _mn %>" id="<%= _pfx %>-parody"
+      class="wiki-title-input parody-main-input"
+      value="<%= _mv %>"
+      placeholder="<%= _mph %>"
+      autocomplete="off" />
+  </div>
+  <div class="parody-ac-wrap">
+    <input type="text" name="<%= _sn %>" id="<%= _pfx %>-sub-parody"
+      class="wiki-title-input parody-sub-input"
+      value="<%= _sv %>"
+      placeholder="<%= _sph %>"
+      autocomplete="off" />
+  </div>
+</div>
+<script>
+(function () {
+  var mainInp = document.getElementById('<%= _pfx %>-parody');
+  var subInp  = document.getElementById('<%= _pfx %>-sub-parody');
+  if (!mainInp || !subInp) return;
+
+  function acFor(inp, getUrl) {
+    var wrap = inp.parentElement;
+    var drop = document.createElement('ul');
+    drop.className = 'parody-ac-drop';
+    drop.setAttribute('hidden', '');
+    wrap.appendChild(drop);
+    var timer = null;
+
+    function showDrop(list) {
+      drop.innerHTML = '';
+      if (!list || !list.length) { drop.hidden = true; return; }
+      list.slice(0, 8).forEach(function (val) {
+        var li = document.createElement('li');
+        li.className = 'parody-ac-item';
+        li.textContent = val;
+        li.addEventListener('mousedown', function (e) {
+          e.preventDefault();
+          inp.value = val;
+          drop.hidden = true;
+        });
+        drop.appendChild(li);
+      });
+      drop.hidden = false;
+    }
+
+    inp.addEventListener('input', function () {
+      clearTimeout(timer);
+      var q = inp.value.trim();
+      if (!q) { drop.hidden = true; return; }
+      timer = setTimeout(function () {
+        fetch(getUrl(q))
+          .then(function (r) { return r.json(); })
+          .then(showDrop)
+          .catch(function () {});
+      }, 180);
+    });
+
+    inp.addEventListener('blur', function () {
+      setTimeout(function () { drop.hidden = true; }, 200);
+    });
+
+    inp.addEventListener('keydown', function (e) {
+      if (drop.hidden) return;
+      var items = drop.querySelectorAll('.parody-ac-item');
+      var sel   = drop.querySelector('.parody-ac-item.selected');
+      var idx   = Array.prototype.indexOf.call(items, sel);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        idx = Math.min(idx + 1, items.length - 1);
+        items.forEach(function (li, i) { li.classList.toggle('selected', i === idx); });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        idx = Math.max(idx - 1, 0);
+        items.forEach(function (li, i) { li.classList.toggle('selected', i === idx); });
+      } else if (e.key === 'Enter' && sel) {
+        e.preventDefault();
+        inp.value = sel.textContent;
+        drop.hidden = true;
+      } else if (e.key === 'Escape') {
+        drop.hidden = true;
+      }
+    }, true);
+  }
+
+  acFor(mainInp, function (q) {
+    return '/parodies/autocomplete?q=' + encodeURIComponent(q);
+  });
+
+  acFor(subInp, function (q) {
+    return '/parodies/autocomplete?q=' + encodeURIComponent(q)
+      + '&main=' + encodeURIComponent(mainInp.value.trim());
+  });
+})();
+</script>

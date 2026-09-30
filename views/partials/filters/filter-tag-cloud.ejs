@@ -1,0 +1,31 @@
+<%
+/*  Partial HTML-only : nuage de tags avec champ de recherche.
+ *  Aucun JS ici — la page hôte attache ses propres listeners sur ces IDs.
+ *
+ *  IDs générés :
+ *    {filterId}         conteneur du nuage (.wiki-tag-cloud)
+ *    {filterId}-search  input de recherche dans les tags
+ *
+ *  Paramètres :
+ *    filterId  {string}  préfixe d'ID      (requis)
+ *    tags      {Array}   liste de strings  (requis)
+ *    counts    {object}  { tag: nombre }   (optionnel)
+ */
+  var _fid  = filterId;
+  var _tags = (typeof tags   !== 'undefined') ? tags   : [];
+  var _cnts = (typeof counts !== 'undefined') ? counts : null;
+%>
+<% if (_tags.length) { %>
+<div class="wiki-filter-section">
+  <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
+    placeholder="Chercher un tag" autocomplete="off" />
+  <div class="wiki-tag-cloud" id="<%= _fid %>">
+    <% _tags.forEach(function(t) { %>
+      <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
+        <span class="wtc-label"><%= t %></span>
+        <% if (_cnts && _cnts[t]) { %><span class="wtc-count"><%= _cnts[t] %></span><% } %>
+      </button>
+    <% }) %>
+  </div>
+</div>
+<% } %>

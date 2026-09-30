@@ -1,23 +1,21 @@
 <%
-/*  Partial : filtre de base — recherche + tri + affichage + type
- *  Classes CSS : identiques au Codex (wiki-search-wrap, wiki-sort-select,
- *                wiki-ultra-btn, wiki-filter-toggles, etc.)
+/*  Partial : filtre de base — tri + affichage + type (ultra/irréaliste)
+ *  La barre de recherche est rendue séparément via partials/search-bar.ejs.
  *
  *  Paramètres :
- *    searchId      {string}   ID du <input> recherche        (requis)
- *    showSort      {boolean}  tri                            (défaut false)
- *    sortOptions   {Array}    [{value,label}]
- *    defaultSort   {string}                                  (défaut 'date-desc')
- *    showDisplay   {boolean}  nombre de colonnes             (défaut false)
- *    displayOptions{Array}    [{value,label}]
- *    defaultDisplay{string}                                  (défaut '3')
- *    showType      {boolean}  chips ultra/irréaliste         (défaut false)
- *    showObjet     {boolean}  chip Objets                    (défaut false)
+ *    searchId       {string}   ID du <input> recherche lié (pour dispatch)
+ *    showSort       {boolean}  tri                         (défaut false)
+ *    sortOptions    {Array}    [{value,label}]
+ *    defaultSort    {string}                               (défaut 'date-desc')
+ *    showDisplay    {boolean}  nombre de colonnes          (défaut false)
+ *    displayOptions {Array}    [{value,label}]
+ *    defaultDisplay {string}                               (défaut '3')
+ *    showType       {boolean}  chips ultra/irréaliste      (défaut false)
+ *    showObjet      {boolean}  chip Objets                 (défaut false)
  *
  *  Événement émis (bubbles) :
  *    'filterbase:change' → { search, sort, display,
  *                            types: { ultra, irrealiste, objet } }
- *                           (type : 0 neutre | 1 inclure seulement | 2 masquer)
  *
  *  Méthode DOM : block._reset()
  */
@@ -25,41 +23,25 @@
   var _bid     = _sid + '-base';
   var _srtId   = _sid + '-sort';
   var _dispId  = _sid + '-disp';
-  var _srt     = (typeof showSort       !== 'undefined') ? showSort       : false;
-  var _disp    = (typeof showDisplay    !== 'undefined') ? showDisplay    : false;
-  var _type    = (typeof showType       !== 'undefined') ? showType       : false;
-  var _srch    = (typeof showSearch     !== 'undefined') ? showSearch     : true;
-  var _objet   = (typeof showObjet      !== 'undefined') ? showObjet      : false;
-  var _srtOpts = (typeof sortOptions    !== 'undefined') ? sortOptions    : [
+  var _srt     = (typeof showSort        !== 'undefined') ? showSort        : false;
+  var _disp    = (typeof showDisplay     !== 'undefined') ? showDisplay     : false;
+  var _type    = (typeof showType        !== 'undefined') ? showType        : false;
+  var _objet   = (typeof showObjet       !== 'undefined') ? showObjet       : false;
+  var _srtOpts = (typeof sortOptions     !== 'undefined') ? sortOptions     : [
     { value: 'date-desc',  label: 'Plus récent'  },
     { value: 'date-asc',   label: 'Plus ancien'  },
     { value: 'alpha-asc',  label: 'Alphabétique' },
     { value: 'random',     label: 'Aléatoire'    }
   ];
-  var _defSrt  = (typeof defaultSort    !== 'undefined') ? defaultSort    : 'date-desc';
-  var _dispOpts= (typeof displayOptions !== 'undefined') ? displayOptions : [
+  var _defSrt  = (typeof defaultSort     !== 'undefined') ? defaultSort     : 'date-desc';
+  var _dispOpts= (typeof displayOptions  !== 'undefined') ? displayOptions  : [
     { value: '2', label: '2 col.' },
     { value: '3', label: '3 col.' },
     { value: '4', label: '4 col.' }
   ];
-  var _defDisp = (typeof defaultDisplay !== 'undefined') ? defaultDisplay : '3';
+  var _defDisp = (typeof defaultDisplay  !== 'undefined') ? defaultDisplay  : '3';
 %>
 <div class="filter-block filter-block--base" id="<%= _bid %>">
-
-  <%# ── Recherche (optionnelle : false si rendue directement dans le template) ── %>
-  <% if (_srch) { %>
-  <div class="wiki-filter-section">
-    <div class="wiki-search-wrap">
-      <div class="wiki-search-bar">
-        <input type="search" id="<%= _sid %>" class="wiki-search-input"
-          placeholder="Recherche" autocomplete="off" />
-        <button type="button" class="wiki-search-clear" id="<%= _sid %>-clear"
-          hidden aria-label="Effacer">&#215;</button>
-      </div>
-      <span class="wiki-result-count" id="<%= _sid %>-count" hidden></span>
-    </div>
-  </div>
-  <% } %>
 
   <%# ── Tri + affichage ── %>
   <% if (_srt || _disp) { %>

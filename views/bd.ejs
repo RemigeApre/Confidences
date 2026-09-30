@@ -7,23 +7,11 @@
   <%# ── SIDEBAR GAUCHE ──────────────────────────────────────────────── %>
   <aside class="wiki-cat-sidebar gallery-sidebar" id="mobile-filter-sidebar">
     <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
-    <div class="wiki-chapter-hero" style="--ch-hue: 28">
-      <div class="wiki-chapter-hero-top">
-        <span></span>
-        <h1 class="wiki-chapter-hero-title">BD</h1>
-        <span class="wiki-chapter-hero-count" id="bd-count-hero"><%= books.length %></span>
-      </div>
-    </div>
+    <%- include('partials/sidebar-hero', { title: 'BD', hue: 28, count: books.length, countId: 'bd-count-hero' }) %>
 
     <div class="wiki-sidebar-body">
 
-      <%# ── Recherche : toujours visible ── %>
-      <div class="wiki-search-wrap">
-        <div class="wiki-search-bar">
-          <input type="search" id="bd-search" class="wiki-search-input" placeholder="Recherche" autocomplete="off" />
-          <button type="button" id="bd-search-clear" class="wiki-search-clear" hidden>&#215;</button>
-        </div>
-      </div>
+      <%- include('partials/search-bar', { searchId: 'bd-search' }) %>
 
       <%# ── Filtres : toujours visible ── %>
       <details class="wiki-sidebar-filter-details" open>
@@ -31,9 +19,8 @@
         <div class="wiki-sidebar-filters">
 
           <%- include('partials/filters/filter-base', {
-                searchId:   'bd-search',
-                showSearch: false,
-                showType:   true
+                searchId: 'bd-search',
+                showType: true
               }) %>
 
           <%# Couleur (spécifique BD — dans son propre bloc toggles) %>
