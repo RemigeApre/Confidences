@@ -2803,11 +2803,12 @@ function listNouvellesByProtagoniste(protagonisteId) {
     .map(n => { try { n.tags = JSON.parse(n.tags); } catch { n.tags = []; } return n; });
 }
 function listGalleryImagesByProtagoniste(protagonisteId) {
-  return db.prepare(`SELECT id, filename, image_paths, title, title_visible, protagonist_ids FROM gallery_images WHERE protagonist_ids LIKE ? ORDER BY created_at DESC`)
+  return db.prepare(`SELECT id, filename, image_paths, title, title_visible, tags, protagonist_ids FROM gallery_images WHERE protagonist_ids LIKE ? ORDER BY created_at DESC`)
     .all(`%${protagonisteId}%`)
     .filter(r => { try { return JSON.parse(r.protagonist_ids || '[]').includes(protagonisteId); } catch { return false; } })
     .map(r => {
       try { r.imagePaths = JSON.parse(r.image_paths || '[]'); } catch { r.imagePaths = []; }
+      try { r.tags = JSON.parse(r.tags || '[]'); } catch { r.tags = []; }
       return r;
     });
 }

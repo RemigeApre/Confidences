@@ -73,8 +73,29 @@
 
   <%# ── Carrousel galerie ── %>
   <% if (galleryImages && galleryImages.length) { %>
+    <%
+      var IRREALISTE_TAGS = ['irréaliste', 'fantaisie'];
+      function imgSpecial(img) {
+        var t = (img.tags || []).map(function(x){ return String(x).toLowerCase(); });
+        if (t.indexOf('ultra') !== -1) return 'ultra';
+        if (IRREALISTE_TAGS.some(function(r){ return t.indexOf(r) !== -1; })) return 'irrealiste';
+        return '';
+      }
+      var hasUltra      = galleryImages.some(function(i){ return imgSpecial(i) === 'ultra'; });
+      var hasIrrealiste = galleryImages.some(function(i){ return imgSpecial(i) === 'irrealiste'; });
+    %>
     <section class="prot-section">
-      <h2 class="nv-strip-title">Apparaît dans <span class="prot-section-count">(<%= galleryImages.length %>)</span></h2>
+      <div class="prot-section-header">
+        <h2 class="nv-strip-title">Apparaît dans <span class="prot-section-count" id="prot-gallery-count">(<%= galleryImages.length %>)</span></h2>
+        <div class="prot-gallery-toggles">
+          <% if (hasUltra) { %>
+            <button type="button" class="wiki-ultra-btn" id="prot-ultra-toggle">Masquer Ultra</button>
+          <% } %>
+          <% if (hasIrrealiste) { %>
+            <button type="button" class="wiki-ultra-btn" id="prot-irrealiste-toggle">Masquer Irréaliste</button>
+          <% } %>
+        </div>
+      </div>
       <div class="prot-carousel" id="prot-carousel">
         <button type="button" class="prot-carousel-btn prot-carousel-prev" aria-label="Précédent">&#8249;</button>
         <div class="prot-carousel-track-wrap">
@@ -82,7 +103,9 @@
             <% galleryImages.forEach(function(img) { %>
               <% var thumb = (img.imagePaths || [])[0] || ''; %>
               <% if (thumb) { %>
-                <a href="/galerie" class="prot-carousel-item" title="<%= img.title || '' %>">
+                <a href="/galerie" class="prot-carousel-item"
+                  title="<%= img.title || '' %>"
+                  data-special="<%= imgSpecial(img) %>">
                   <img src="<%= thumb %>" alt="<%= img.title || protagoniste.name %>" loading="lazy" />
                 </a>
               <% } %>
@@ -184,28 +207,79 @@
 
 <script>
 (function() {
-  var track = document.getElementById('prot-carousel-track');
+  var track   = document.getElementById('prot-carousel-track');
   if (!track) return;
-  var wrap = track.parentElement;
-  var items = track.querySelectorAll('.prot-carousel-item');
-  if (items.length <= 1) return;
-  var prev = document.querySelector('.prot-carousel-prev');
-  var next = document.querySelector('.prot-carousel-next');
+  var wrap    = track.parentElement;
+  var prevBtn = document.querySelector('.prot-carousel-prev');
+  var nextBtn = document.querySelector('.prot-carousel-next');
+  var countEl = document.getElementById('prot-gallery-count');
   var pos = 0;
   var itemW = 0;
-  function getVisible() { return Math.max(1, Math.floor(wrap.clientWidth / (itemW || 160))); }
+
+  function visibleItems() { return Array.from(track.querySelectorAll('.prot-carousel-item:not([hidden])')); }
+
   function update() {
-    itemW = items[0] ? items[0].offsetWidth + 8 : 160;
-    var max = Math.max(0, items.length - getVisible());
+    var items = visibleItems();
+    if (!items.length) { track.style.transform = 'translateX(0)'; if (prevBtn) prevBtn.disabled = true; if (nextBtn) nextBtn.disabled = true; return; }
+    itemW = items[0].offsetWidth + 8;
+    var perPage = Math.max(1, Math.floor(wrap.clientWidth / itemW));
+    var max = Math.max(0, items.length - perPage);
     pos = Math.min(pos, max);
-    track.style.transform = 'translateX(-' + (pos * itemW) + 'px)';
-    if (prev) prev.disabled = pos === 0;
-    if (next) next.disabled = pos >= max;
+    // Translate par rapport à la position de items[pos] dans le track
+    var offset = items[pos] ? items[pos].offsetLeft : 0;
+    track.style.transform = 'translateX(-' + offset + 'px)';
+    if (prevBtn) prevBtn.disabled = pos === 0;
+    if (nextBtn) nextBtn.disabled = pos >= max;
+    if (countEl) countEl.textContent = '(' + items.length + ')';
   }
-  if (prev) prev.addEventListener('click', function() { pos = Math.max(0, pos - 1); update(); });
-  if (next) next.addEventListener('click', function() { pos++; update(); });
-  window.addEventListener('resize', update);
-  update();
+
+  if (prevBtn) prevBtn.addEventListener('click', function() { pos = Math.max(0, pos - 1); update(); });
+  if (nextBtn) nextBtn.addEventListener('click', function() { pos++; update(); });
+  window.addEventListener('resize', function() { pos = 0; update(); });
+
+  // ── Filtres Ultra / Irréaliste (reprend les mêmes clés localStorage que la galerie) ──
+  var hideUltra      = localStorage.getItem('gallery-hide-ultra') === '1';
+  var hideIrrealiste = localStorage.getItem('gallery-hide-irrealiste') === '1';
+
+  function applyFilters() {
+    Array.from(track.querySelectorAll('.prot-carousel-item')).forEach(function(item) {
+      var sp = item.dataset.special || '';
+      item.hidden = (hideUltra && sp === 'ultra') || (hideIrrealiste && sp === 'irrealiste');
+    });
+    pos = 0;
+    update();
+  }
+
+  function syncBtn(btn, hidden, labelHide, labelShow) {
+    if (!btn) return;
+    btn.textContent = hidden ? labelShow : labelHide;
+    btn.classList.toggle('active', hidden);
+  }
+
+  var ultraToggle      = document.getElementById('prot-ultra-toggle');
+  var irrealisteToggle = document.getElementById('prot-irrealiste-toggle');
+
+  syncBtn(ultraToggle,      hideUltra,      'Masquer Ultra',       'Afficher Ultra');
+  syncBtn(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste',  'Afficher Irréaliste');
+
+  if (ultraToggle) {
+    ultraToggle.addEventListener('click', function() {
+      hideUltra = !hideUltra;
+      localStorage.setItem('gallery-hide-ultra', hideUltra ? '1' : '0');
+      syncBtn(ultraToggle, hideUltra, 'Masquer Ultra', 'Afficher Ultra');
+      applyFilters();
+    });
+  }
+  if (irrealisteToggle) {
+    irrealisteToggle.addEventListener('click', function() {
+      hideIrrealiste = !hideIrrealiste;
+      localStorage.setItem('gallery-hide-irrealiste', hideIrrealiste ? '1' : '0');
+      syncBtn(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste', 'Afficher Irréaliste');
+      applyFilters();
+    });
+  }
+
+  applyFilters();
 })();
 </script>
 
