@@ -1698,6 +1698,8 @@
         '<input type="text" class="gallery-qedit-author wiki-title-input" placeholder="Auteur\u2026" autocomplete="off" />',
         '<div style="position:relative"><input type="text" class="gallery-qedit-parody wiki-title-input" placeholder="Parodie\u2026" autocomplete="off" /></div>',
         '<div style="position:relative"><input type="text" class="gallery-qedit-sub-parody wiki-title-input" placeholder="Sous-parodie\u2026" autocomplete="off" /></div>',
+        '<div class="gallery-qedit-prots lbep-chips"></div>',
+        '<div style="position:relative"><input type="text" class="gallery-qedit-prot-inp wiki-title-input" placeholder="Personnage\u2026" autocomplete="off" /><ul class="gallery-qedit-prot-drop lbep-ac-drop" hidden></ul></div>',
         '<div class="gallery-qedit-actions">',
           '<button type="button" class="gallery-qedit-save gallery-submit-btn">Enregistrer</button>',
           '<button type="button" class="gallery-qedit-cancel link-button">Annuler</button>',
@@ -1712,6 +1714,9 @@
     var qSave     = quickEditPanel.querySelector(".gallery-qedit-save");
     var qTagInput = quickEditPanel.querySelector(".gallery-qedit-tag-input");
     var qTagsEl   = quickEditPanel.querySelector(".gallery-qedit-tags");
+    var qProtsEl  = quickEditPanel.querySelector(".gallery-qedit-prots");
+    var qProtInp  = quickEditPanel.querySelector(".gallery-qedit-prot-inp");
+    var qProtDrop = quickEditPanel.querySelector(".gallery-qedit-prot-drop");
 
     function closeQEdit() { quickEditPanel.hidden = true; quickEditCurrentId = null; }
     if (qClose)  qClose.addEventListener("click", closeQEdit);
@@ -1728,6 +1733,38 @@
       });
     }
 
+    if (qProtInp && qProtDrop) {
+      var qProtTimer;
+      qProtInp.addEventListener("input", function() {
+        clearTimeout(qProtTimer);
+        var q = qProtInp.value.trim();
+        if (!q) { qProtDrop.innerHTML = ""; qProtDrop.hidden = true; return; }
+        qProtTimer = setTimeout(function() {
+          var prots = window.GALLERY_PROTAGONISTS || {};
+          var sel = Array.from(qProtsEl.querySelectorAll(".lbep-chip")).map(function(c){ return Number(c.dataset.protId); });
+          var matches = Object.keys(prots)
+            .filter(function(id){ return prots[id].toLowerCase().indexOf(q.toLowerCase()) !== -1 && sel.indexOf(Number(id)) === -1; })
+            .slice(0, 8);
+          qProtDrop.innerHTML = "";
+          if (!matches.length) { qProtDrop.hidden = true; return; }
+          matches.forEach(function(id) {
+            var li = document.createElement("li");
+            li.className = "lbep-ac-item";
+            li.textContent = prots[id];
+            li.addEventListener("mousedown", function(e) {
+              e.preventDefault();
+              addQEditProtChip(id, prots[id]);
+              qProtInp.value = "";
+              qProtDrop.innerHTML = ""; qProtDrop.hidden = true;
+            });
+            qProtDrop.appendChild(li);
+          });
+          qProtDrop.hidden = false;
+        }, 180);
+      });
+      qProtInp.addEventListener("blur", function() { setTimeout(function(){ qProtDrop.innerHTML = ""; qProtDrop.hidden = true; }, 160); });
+    }
+
     if (qSave) {
       qSave.addEventListener("click", function() {
         if (!quickEditCurrentId) return;
@@ -1735,7 +1772,8 @@
         var author = quickEditPanel.querySelector(".gallery-qedit-author").value.trim();
         var parody = quickEditPanel.querySelector(".gallery-qedit-parody").value.trim();
         var subParody = quickEditPanel.querySelector(".gallery-qedit-sub-parody").value.trim();
-        var body = { id: quickEditCurrentId, tags: tags, author: author, parody: parody, sub_parody: subParody };
+        var protagonistIds = Array.from(qProtsEl.querySelectorAll(".lbep-chip")).map(function(c){ return Number(c.dataset.protId); }).filter(Boolean);
+        var body = { id: quickEditCurrentId, tags: tags, author: author, parody: parody, sub_parody: subParody, protagonist_ids: protagonistIds };
         fetch("/galerie/image-meta", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1763,11 +1801,29 @@
     qTagsEl.appendChild(chip);
   }
 
+  function addQEditProtChip(id, name) {
+    if (!quickEditPanel) return;
+    var qProtsEl = quickEditPanel.querySelector(".gallery-qedit-prots");
+    var existing = Array.from(qProtsEl.querySelectorAll(".lbep-chip")).map(function(c){ return Number(c.dataset.protId); });
+    if (existing.indexOf(Number(id)) !== -1) return;
+    var span = document.createElement("span");
+    span.className = "lbep-chip";
+    span.dataset.protId = id;
+    var t = document.createElement("span"); t.textContent = name;
+    var x = document.createElement("button");
+    x.type = "button"; x.className = "lbep-chip-x"; x.innerHTML = "&times;";
+    x.addEventListener("click", function() { span.remove(); });
+    span.appendChild(t); span.appendChild(x);
+    qProtsEl.appendChild(span);
+  }
+
   function openQuickEdit(galleryId, card) {
     buildQuickEditPanel();
     quickEditCurrentId = galleryId;
-    var qTagsEl = quickEditPanel.querySelector(".gallery-qedit-tags");
+    var qTagsEl   = quickEditPanel.querySelector(".gallery-qedit-tags");
+    var qProtsEl  = quickEditPanel.querySelector(".gallery-qedit-prots");
     qTagsEl.innerHTML = "";
+    qProtsEl.innerHTML = "";
     quickEditPanel.querySelector(".gallery-qedit-author").value = "";
     quickEditPanel.querySelector(".gallery-qedit-parody").value = "";
     quickEditPanel.querySelector(".gallery-qedit-sub-parody").value = "";
@@ -1781,6 +1837,10 @@
           quickEditPanel.querySelector(".gallery-qedit-author").value = meta.author || "";
           quickEditPanel.querySelector(".gallery-qedit-parody").value = meta.parody || "";
           quickEditPanel.querySelector(".gallery-qedit-sub-parody").value = meta.subParody || "";
+          var prots = window.GALLERY_PROTAGONISTS || {};
+          (meta.protagonistIds || []).forEach(function(id) {
+            if (prots[id]) addQEditProtChip(id, prots[id]);
+          });
         });
     }
     quickEditPanel.hidden = false;
