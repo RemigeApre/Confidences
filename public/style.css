@@ -17194,3 +17194,239 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-zoom-avatar-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
 .lootbox-zoom-avatar-btn:disabled { opacity: .55; cursor: default; }
 .lootbox-zoom-avatar-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+/* ── Lootbox à choix — panel 3 options ───────────────────────────── */
+.lootbox-reveal:has(#lootbox-pick-choice:not([hidden])) {
+  max-width: min(95vw, 680px);
+}
+.lootbox-pick-choice {
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  width: 100%;
+  animation: card-reveal .3s cubic-bezier(.22,1,.36,1) forwards;
+}
+.lootbox-pick-choice[hidden] { display: none; }
+.lootbox-pick-choice-title {
+  font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted, #aaa); margin: 0;
+}
+.lootbox-pick-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+  width: 100%;
+}
+.lootbox-pick-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+  background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.02) 100%);
+  border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  padding: .6rem .5rem .75rem;
+  cursor: pointer;
+  transition: background .15s, transform .15s;
+  overflow: hidden;
+}
+.lootbox-pick-card:hover { background: rgba(255,255,255,.12); transform: translateY(-2px); }
+.lootbox-pick-card--rare      { border-color: color-mix(in srgb,var(--rarity-rare) 45%,transparent); }
+.lootbox-pick-card--epic      { border-color: color-mix(in srgb,var(--rarity-epic) 45%,transparent); }
+.lootbox-pick-card--legendary { border-color: color-mix(in srgb,var(--rarity-legendary) 55%,transparent); }
+.lootbox-pick-card--mythic    { border-color: color-mix(in srgb,var(--rarity-mythic) 65%,transparent); animation: mythic-pulse-border 2s ease-in-out infinite; }
+@keyframes mythic-pulse-border {
+  0%,100% { border-color: color-mix(in srgb,var(--rarity-mythic) 65%,transparent); }
+  50%     { border-color: color-mix(in srgb,var(--rarity-mythic) 90%,transparent); }
+}
+.lootbox-pick-card-img {
+  width: 100%; aspect-ratio: 1;
+  border-radius: 10px; overflow: hidden;
+  background: var(--surface-3, #111);
+  display: flex; align-items: center; justify-content: center;
+}
+.lootbox-pick-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lootbox-pick-card-img svg { color: var(--muted, #666); opacity: .4; }
+.lootbox-pick-card--rare      .lootbox-pick-card-img { box-shadow: 0 0 0 1.5px color-mix(in srgb,var(--rarity-rare) 55%,transparent), 0 0 14px 3px color-mix(in srgb,var(--rarity-rare) 28%,transparent); }
+.lootbox-pick-card--epic      .lootbox-pick-card-img { box-shadow: 0 0 0 1.5px color-mix(in srgb,var(--rarity-epic) 55%,transparent), 0 0 18px 4px color-mix(in srgb,var(--rarity-epic) 28%,transparent); }
+.lootbox-pick-card--legendary .lootbox-pick-card-img { box-shadow: 0 0 0 1.5px color-mix(in srgb,var(--rarity-legendary) 65%,transparent), 0 0 24px 6px color-mix(in srgb,var(--rarity-legendary) 38%,transparent); }
+.lootbox-pick-card--mythic    .lootbox-pick-card-img { box-shadow: 0 0 0 1.5px color-mix(in srgb,var(--rarity-mythic) 75%,transparent), 0 0 30px 8px color-mix(in srgb,var(--rarity-mythic) 44%,transparent); }
+.lootbox-pick-card-rarity {
+  font-size: .57rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  padding: .15rem .45rem; border-radius: 5px;
+  background: rgba(0,0,0,.45);
+  color: var(--muted, #aaa);
+}
+.lootbox-pick-card--rare      .lootbox-pick-card-rarity { color: var(--rarity-rare); }
+.lootbox-pick-card--epic      .lootbox-pick-card-rarity { color: var(--rarity-epic); }
+.lootbox-pick-card--legendary .lootbox-pick-card-rarity { color: var(--rarity-legendary); }
+.lootbox-pick-card--mythic    .lootbox-pick-card-rarity { color: var(--rarity-mythic); }
+
+/* ── Récompense charme ────────────────────────────────────────────── */
+.lootbox-charm-reveal {
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  width: 100%; padding: .5rem 1rem;
+  animation: card-reveal .45s cubic-bezier(.22,1,.36,1) forwards;
+}
+.lootbox-charm-reveal[hidden] { display: none; }
+.lootbox-charm-reveal-symbol {
+  font-size: 4.5rem; line-height: 1;
+  animation: charm-glow 2s ease-in-out infinite;
+}
+@keyframes charm-glow {
+  0%,100% { filter: drop-shadow(0 0 16px color-mix(in srgb,var(--rarity-legendary) 55%,transparent)); }
+  50%     { filter: drop-shadow(0 0 30px color-mix(in srgb,var(--rarity-legendary) 80%,transparent)); }
+}
+.lootbox-charm-reveal-label {
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--rarity-legendary, hsl(44,95%,55%));
+  margin: 0;
+}
+.lootbox-charm-reveal-hint {
+  font-size: .72rem; color: var(--muted, #888); margin: 0;
+}
+.lootbox-charm-reveal-hint[hidden] { display: none; }
+.lootbox-charm-equip-btn {
+  padding: .55rem 1.5rem;
+  border-radius: 10px;
+  border: 1.5px solid color-mix(in srgb,var(--rarity-legendary) 60%,transparent);
+  background: color-mix(in srgb,var(--rarity-legendary) 12%,transparent);
+  color: var(--rarity-legendary, hsl(44,95%,55%));
+  font-size: .85rem; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.lootbox-charm-equip-btn:hover { background: color-mix(in srgb,var(--rarity-legendary) 22%,transparent); }
+.lootbox-charm-equip-btn--done {
+  border-color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.06);
+  color: var(--muted, #aaa);
+  cursor: default;
+}
+.lootbox-charm-equip-btn--done:hover { background: rgba(255,255,255,.06); }
+.lootbox-charm-equip-btn[hidden] { display: none; }
+
+/* ── Récompense joker ─────────────────────────────────────────────── */
+.lootbox-joker-reveal {
+  display: flex; flex-direction: column; align-items: center; gap: .9rem;
+  width: 100%; padding: .5rem 1rem;
+  animation: card-reveal .45s cubic-bezier(.22,1,.36,1) forwards;
+}
+.lootbox-joker-reveal[hidden] { display: none; }
+.lootbox-joker-reveal-icon {
+  animation: joker-glow 2s ease-in-out infinite;
+}
+@keyframes joker-glow {
+  0%,100% { filter: drop-shadow(0 0 14px color-mix(in srgb,hsl(48,95%,55%) 45%,transparent)); }
+  50%     { filter: drop-shadow(0 0 28px color-mix(in srgb,hsl(48,95%,55%) 75%,transparent)); }
+}
+.lootbox-joker-reveal-title {
+  font-size: 1.05rem; font-weight: 700;
+  color: hsl(48,95%,62%); margin: 0;
+}
+.lootbox-joker-reveal-desc {
+  font-size: .78rem; color: var(--muted, #aaa);
+  text-align: center; margin: 0; max-width: 260px;
+}
+.lootbox-joker-use-btn {
+  padding: .55rem 1.5rem;
+  border-radius: 10px;
+  border: 1.5px solid color-mix(in srgb,hsl(48,95%,55%) 60%,transparent);
+  background: color-mix(in srgb,hsl(48,95%,55%) 12%,transparent);
+  color: hsl(48,95%,62%);
+  font-size: .85rem; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.lootbox-joker-use-btn:hover { background: color-mix(in srgb,hsl(48,95%,55%) 22%,transparent); }
+
+/* ── Joker picker overlay ─────────────────────────────────────────── */
+.lootbox-joker-picker {
+  position: fixed; inset: 0; z-index: 1500;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.82);
+  backdrop-filter: blur(6px);
+  animation: coffre-fade-in .15s ease;
+}
+.lootbox-joker-picker[hidden] { display: none; }
+.lootbox-joker-picker-box {
+  background: var(--surface-2, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px;
+  padding: 1.5rem;
+  width: min(90vw, 620px);
+  max-height: 85vh;
+  display: flex; flex-direction: column; gap: 1rem;
+  overflow: hidden;
+}
+.lootbox-joker-picker-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  flex-shrink: 0;
+}
+.lootbox-joker-picker-title {
+  font-size: 1rem; font-weight: 700; color: var(--text-1, #fff); margin: 0;
+}
+.lootbox-joker-picker-close {
+  background: none; border: none;
+  color: hsl(0,75%,62%);
+  cursor: pointer; padding: .2rem;
+  line-height: 0; flex-shrink: 0;
+  opacity: .85;
+  transition: opacity .15s, color .15s;
+}
+.lootbox-joker-picker-close:hover { opacity: 1; color: hsl(0,80%,75%); }
+.lootbox-joker-picker-close svg { width: 22px; height: 22px; display: block; }
+.lootbox-joker-picker-sub {
+  font-size: .75rem; color: var(--muted, #888); margin: 0; flex-shrink: 0;
+}
+.lootbox-joker-picker-status {
+  font-size: .8rem; color: var(--muted, #888);
+  text-align: center; min-height: 1.2em; flex-shrink: 0;
+}
+.lootbox-joker-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: .6rem;
+  overflow-y: auto;
+  padding-right: .25rem;
+}
+.lootbox-joker-picker-grid::-webkit-scrollbar { width: 4px; }
+.lootbox-joker-picker-grid::-webkit-scrollbar-track { background: transparent; }
+.lootbox-joker-picker-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+.lootbox-joker-image-card {
+  aspect-ratio: 1;
+  border-radius: 10px; overflow: hidden;
+  background: var(--surface-3, #111);
+  cursor: pointer;
+  border: 1.5px solid rgba(255,255,255,.08);
+  transition: transform .15s, border-color .15s;
+}
+.lootbox-joker-image-card:hover { transform: scale(1.05); border-color: rgba(255,255,255,.25); }
+.lootbox-joker-image-card.loading { opacity: .6; cursor: default; pointer-events: none; }
+.lootbox-joker-image-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lootbox-joker-image-card[data-rarity="rare"]      { box-shadow: 0 0 0 1.5px color-mix(in srgb,var(--rarity-rare) 50%,transparent), 0 0 12px 2px color-mix(in srgb,var(--rarity-rare) 26%,transparent); }
+.lootbox-joker-image-card[data-rarity="epic"]      { box-shadow: 0 0 0 1.5px color-mix(in srgb,var(--rarity-epic) 50%,transparent), 0 0 16px 3px color-mix(in srgb,var(--rarity-epic) 26%,transparent); }
+.lootbox-joker-image-card[data-rarity="legendary"] { box-shadow: 0 0 0 1.5px color-mix(in srgb,var(--rarity-legendary) 60%,transparent), 0 0 20px 5px color-mix(in srgb,var(--rarity-legendary) 34%,transparent); }
+.lootbox-joker-image-card[data-rarity="mythic"]    { box-shadow: 0 0 0 1.5px color-mix(in srgb,var(--rarity-mythic) 70%,transparent), 0 0 26px 7px color-mix(in srgb,var(--rarity-mythic) 40%,transparent); }
+.lootbox-joker-charm-list {
+  display: flex; flex-direction: column; gap: .5rem;
+  overflow-y: auto;
+}
+.lootbox-joker-charm-list::-webkit-scrollbar { width: 4px; }
+.lootbox-joker-charm-list::-webkit-scrollbar-track { background: transparent; }
+.lootbox-joker-charm-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+.lootbox-joker-charm-row {
+  display: flex; align-items: center; gap: .9rem;
+  padding: .75rem 1rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.lootbox-joker-charm-row:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.22); }
+.lootbox-joker-charm-row--owned { opacity: .42; cursor: default; pointer-events: none; }
+.lootbox-joker-charm-sym {
+  font-size: 1.8rem; line-height: 1; flex-shrink: 0;
+  color: var(--rarity-legendary, hsl(44,95%,55%));
+  filter: drop-shadow(0 0 8px color-mix(in srgb,var(--rarity-legendary) 50%,transparent));
+}
+.lootbox-joker-charm-lbl {
+  font-size: .9rem; font-weight: 600; color: var(--text-1, #eee);
+}

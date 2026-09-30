@@ -2,6 +2,22 @@
 <script src="/nav.js?v=<%= assetVersion %>"></script>
 
 <% if (currentUser) { %>
+<%# ── Charme actif : injection du symbole pour JS ─────────────── %>
+<% var _charmMap = { heart:'♥', diamond:'◆', moon:'☾', bolt:'⚡', flower:'✿' }; %>
+<% var _charmSym = _charmMap[currentUser.ratingCharm] || null; %>
+<% if (_charmSym) { %>
+<script>
+window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, symbol: <%- JSON.stringify(_charmSym) %> };
+(function() {
+  var sym = window.RATING_CHARM.symbol;
+  function patchStars() {
+    document.querySelectorAll('.gallery-star,.bd-star,.wiki-star,.wiki-card-star,.bd-card-star').forEach(function(el) { el.textContent = sym; });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', patchStars);
+  else patchStars();
+})();
+</script>
+<% } %>
 <%# ── Overlay d'ouverture ─────────────────────────────────────────── %>
 <div id="lootbox-overlay" class="lootbox-overlay" hidden aria-modal="true" role="dialog" aria-label="Ouverture de lootbox">
   <div class="lootbox-overlay-backdrop"></div>
@@ -87,6 +103,36 @@
       <div class="lootbox-batch-grid" id="lootbox-batch-grid"></div>
     </div>
 
+    <%# Lootbox à choix : 3 options, l'utilisateur en choisit une %>
+    <div class="lootbox-pick-choice" id="lootbox-pick-choice" hidden>
+      <p class="lootbox-pick-choice-title">Choisissez votre r&eacute;compense</p>
+      <div class="lootbox-pick-choice-grid" id="lootbox-pick-choice-grid"></div>
+    </div>
+
+    <%# Récompense charme %>
+    <div class="lootbox-charm-reveal" id="lootbox-charm-reveal" hidden>
+      <div class="lootbox-charm-reveal-symbol" id="lootbox-charm-symbol"></div>
+      <p class="lootbox-charm-reveal-label" id="lootbox-charm-label"></p>
+      <p class="lootbox-charm-reveal-hint" id="lootbox-charm-hint" hidden>Doublon &mdash; converti en pi&egrave;ces.</p>
+      <button class="lootbox-charm-equip-btn" id="lootbox-charm-equip-btn">&#10024; &Eacute;quiper ce charme</button>
+      <button class="lootbox-charm-equip-btn lootbox-charm-equip-btn--done" id="lootbox-charm-equip-done" hidden>Charm &eacute;quip&eacute; &#10003;</button>
+    </div>
+
+    <%# Récompense joker %>
+    <div class="lootbox-joker-reveal" id="lootbox-joker-reveal" hidden>
+      <div class="lootbox-joker-reveal-icon" aria-hidden="true">
+        <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" width="90" height="90">
+          <rect x="8" y="8" width="64" height="64" rx="10" fill="hsl(48,90%,28%)" stroke="hsl(48,95%,55%)" stroke-width="3"/>
+          <text x="40" y="52" text-anchor="middle" font-size="36" font-family="serif" fill="hsl(48,95%,65%)">&#9824;</text>
+          <text x="14" y="24" text-anchor="middle" font-size="13" font-family="sans-serif" font-weight="700" fill="hsl(48,95%,65%)">J</text>
+          <text x="66" y="70" text-anchor="middle" font-size="13" font-family="sans-serif" font-weight="700" fill="hsl(48,95%,65%)">J</text>
+        </svg>
+      </div>
+      <p class="lootbox-joker-reveal-title" id="lootbox-joker-title"></p>
+      <p class="lootbox-joker-reveal-desc" id="lootbox-joker-desc"></p>
+      <button class="lootbox-joker-use-btn" id="lootbox-joker-use-btn">Utiliser le joker</button>
+    </div>
+
     <%# Boutons d'action %>
     <div class="lootbox-reveal-actions" id="lootbox-reveal-actions">
       <button class="lootbox-reveal-btn lootbox-reveal-close" id="lootbox-reveal-close" hidden>Fermer</button>
@@ -124,6 +170,36 @@
 </div>
 
 <script src="/lootbox.js?v=<%= assetVersion %>"></script>
+
+<%# ── Joker image picker ──────────────────────────────────────── %>
+<div class="lootbox-joker-picker" id="lootbox-joker-image-picker" hidden aria-modal="true" role="dialog">
+  <div class="lootbox-joker-picker-box">
+    <div class="lootbox-joker-picker-head">
+      <h3 class="lootbox-joker-picker-title">Choisir une image &agrave; d&eacute;bloquer</h3>
+      <button class="lootbox-joker-picker-close" id="lootbox-joker-image-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p class="lootbox-joker-picker-sub">Les images d&eacute;j&agrave; poss&eacute;d&eacute;es ne sont pas affich&eacute;es.</p>
+    <div class="lootbox-joker-picker-grid" id="lootbox-joker-image-grid"></div>
+    <p class="lootbox-joker-picker-status" id="lootbox-joker-image-status"></p>
+  </div>
+</div>
+
+<%# ── Joker charme picker ─────────────────────────────────────── %>
+<div class="lootbox-joker-picker" id="lootbox-joker-charm-picker" hidden aria-modal="true" role="dialog">
+  <div class="lootbox-joker-picker-box">
+    <div class="lootbox-joker-picker-head">
+      <h3 class="lootbox-joker-picker-title">Choisir un charme &agrave; d&eacute;bloquer</h3>
+      <button class="lootbox-joker-picker-close" id="lootbox-joker-charm-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="lootbox-joker-charm-list" id="lootbox-joker-charm-list"></div>
+    <p class="lootbox-joker-picker-status" id="lootbox-joker-charm-status"></p>
+  </div>
+</div>
+
 <% } %>
 </body>
 </html>

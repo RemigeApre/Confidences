@@ -246,6 +246,7 @@ try { db.exec("ALTER TABLE users ADD COLUMN lootbox_allow_irrealiste INTEGER NOT
 // Paramètres de recadrage de la photo de profil (pan+zoom dans le cercle)
 // JSON : {x:50, y:50, scale:1} — x/y en % (object-position), scale = facteur de zoom
 try { db.exec("ALTER TABLE users ADD COLUMN profile_image_crop TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN rating_charm TEXT NOT NULL DEFAULT 'star'"); } catch (_) {}
 
 // ── Lootboxes et récompenses ───────────────────────────────────────────────
 // Lootboxes attribuées à un utilisateur (une ligne = une boîte, ouverte ou non).
@@ -254,12 +255,14 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     opened INTEGER NOT NULL DEFAULT 0,
+    loot_type TEXT NOT NULL DEFAULT 'standard',
     reward_ref_id INTEGER,
     reward_rarity TEXT,
     created_at TEXT NOT NULL,
     opened_at TEXT
   )
 `);
+try { db.exec("ALTER TABLE user_lootboxes ADD COLUMN loot_type TEXT NOT NULL DEFAULT 'standard'"); } catch (_) {}
 // Récompenses débloquées par utilisateur (une ligne = un objet possédé).
 // UNIQUE(user_id, item_type, ref_id) : on ne possède pas deux fois le même item.
 db.exec(`
@@ -273,6 +276,34 @@ db.exec(`
     UNIQUE(user_id, item_type, ref_id)
   )
 `);
+
+// ── Catalogue des charmes ─────────────────────────────────────────────────
+db.exec(`CREATE TABLE IF NOT EXISTS charms (
+  id INTEGER PRIMARY KEY,
+  key TEXT UNIQUE NOT NULL,
+  label TEXT NOT NULL,
+  symbol TEXT NOT NULL,
+  rarity TEXT NOT NULL DEFAULT 'legendary'
+)`);
+{
+  const _cs = db.prepare("INSERT OR IGNORE INTO charms (id, key, label, symbol, rarity) VALUES (?, ?, ?, ?, 'legendary')");
+  _cs.run(1, 'heart',   'Cœur',    '♥');
+  _cs.run(2, 'diamond', 'Losange',  '◆');
+  _cs.run(3, 'moon',    'Lune',     '☾');
+  _cs.run(4, 'bolt',    'Éclair',   '⚡');
+  _cs.run(5, 'flower',  'Fleur',    '✿');
+}
+
+// ── Sessions de choix (lootbox à choix) ──────────────────────────────────
+db.exec(`CREATE TABLE IF NOT EXISTS lootbox_choice_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  lootbox_id INTEGER NOT NULL,
+  options TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  picked INTEGER DEFAULT 0
+)`);
+
 // Migration one-shot : offrir 5 lootboxes de bienvenue aux comptes existants
 // qui n'en ont jamais reçu. La table lootbox vient d'être créée (ou existait
 // déjà) ; on vérifie simplement si l'utilisateur a déjà au moins une entrée.
@@ -554,6 +585,7 @@ function rowToUser(row) {
     lootboxAllowUltra: row.lootbox_allow_ultra == null ? 0 : !!row.lootbox_allow_ultra,
     lootboxAllowIrrealiste: row.lootbox_allow_irrealiste == null ? 1 : !!row.lootbox_allow_irrealiste,
     profileImageCrop: (() => { try { return JSON.parse(row.profile_image_crop || 'null'); } catch(_) { return null; } })(),
+    ratingCharm: row.rating_charm || 'star',
   };
 }
 
@@ -2646,11 +2678,25 @@ function getLootboxCount(userId) {
   return row ? row.cnt : 0;
 }
 
-function grantLootbox(userId, count) {
+const LOOT_TYPES = ['standard', 'image', 'charm', 'choice'];
+
+function grantLootbox(userId, count, lootType) {
   const n = Math.max(1, parseInt(count, 10) || 1);
-  const stmt = db.prepare("INSERT INTO user_lootboxes (user_id, opened, created_at) VALUES (?, 0, ?)");
+  const type = LOOT_TYPES.includes(lootType) ? lootType : 'standard';
+  const stmt = db.prepare("INSERT INTO user_lootboxes (user_id, opened, loot_type, created_at) VALUES (?, 0, ?, ?)");
   const now = new Date().toISOString();
-  for (let i = 0; i < n; i++) stmt.run(userId, now);
+  for (let i = 0; i < n; i++) stmt.run(userId, type, now);
+}
+
+function getLootboxCountByType(userId) {
+  const rows = db.prepare("SELECT loot_type, COUNT(*) as cnt FROM user_lootboxes WHERE user_id = ? AND opened = 0 GROUP BY loot_type").all(userId);
+  const result = { standard: 0, image: 0, charm: 0, choice: 0, total: 0 };
+  for (const r of rows) {
+    const k = LOOT_TYPES.includes(r.loot_type) ? r.loot_type : 'standard';
+    result[k] += r.cnt;
+    result.total += r.cnt;
+  }
+  return result;
 }
 
 // ── Lootboxes gagnées par actions ─────────────────────────────────────────
@@ -2719,16 +2765,77 @@ function checkAndGrantActionLootbox(userId, actionType, total, threshold) {
   return toGrant;
 }
 
-function openLootbox(userId) {
-  const box = db.prepare("SELECT id FROM user_lootboxes WHERE user_id = ? AND opened = 0 ORDER BY created_at ASC LIMIT 1").get(userId);
-  if (!box) return null;
+// ── Charmes ───────────────────────────────────────────────────────────────
+function listCharms() {
+  return db.prepare("SELECT id, key, label, symbol, rarity FROM charms ORDER BY id").all();
+}
+
+function getCharmByKey(key) {
+  return db.prepare("SELECT id, key, label, symbol, rarity FROM charms WHERE key = ?").get(key) || null;
+}
+
+function getUserUnlockedCharms(userId) {
+  const ownedIds = new Set(
+    db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'charm'").all(userId).map(r => r.ref_id)
+  );
+  return listCharms().map(c => ({ ...c, owned: ownedIds.has(c.id) }));
+}
+
+function setUserCharm(userId, charmKey) {
+  if (charmKey === 'star') {
+    db.prepare("UPDATE users SET rating_charm = 'star' WHERE id = ?").run(userId);
+    return { ok: true };
+  }
+  const charm = getCharmByKey(charmKey);
+  if (!charm) return { ok: false, error: 'unknown_charm' };
+  const owned = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'charm' AND ref_id = ?").get(userId, charm.id);
+  if (!owned) return { ok: false, error: 'not_owned' };
+  db.prepare("UPDATE users SET rating_charm = ? WHERE id = ?").run(charmKey, userId);
+  return { ok: true };
+}
+
+// ── Jokers ────────────────────────────────────────────────────────────────
+function getUserJokers(userId) {
+  return db.prepare("SELECT id, item_type, obtained_at FROM user_unlocks WHERE user_id = ? AND item_type IN ('joker_image', 'joker_charm') ORDER BY obtained_at ASC").all(userId)
+    .map(r => ({ id: r.id, type: r.item_type === 'joker_image' ? 'image' : 'charm', obtainedAt: r.obtained_at }));
+}
+
+function useJokerImage(userId, targetImageId) {
+  const joker = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'joker_image' ORDER BY obtained_at ASC LIMIT 1").get(userId);
+  if (!joker) return { ok: false, error: 'no_joker' };
+  const imgRow = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images WHERE id = ?").get(targetImageId);
+  if (!imgRow) return { ok: false, error: 'image_not_found' };
+  const already = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image' AND ref_id = ?").get(userId, targetImageId);
+  if (already) return { ok: false, error: 'already_owned' };
+  const now = new Date().toISOString();
+  const rarity = imgRow.rarity || 'common';
+  db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, targetImageId, rarity, now);
+  db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(joker.id);
+  let imagePaths = [];
+  try { imagePaths = JSON.parse(imgRow.image_paths || '[]'); } catch (_) {}
+  return { ok: true, imageId: targetImageId, title: imgRow.title || '', rarity, thumb: imagePaths[0] || null };
+}
+
+function useJokerCharm(userId, charmKey) {
+  const joker = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'joker_charm' ORDER BY obtained_at ASC LIMIT 1").get(userId);
+  if (!joker) return { ok: false, error: 'no_joker' };
+  const charm = getCharmByKey(charmKey);
+  if (!charm) return { ok: false, error: 'unknown_charm' };
+  const already = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'charm' AND ref_id = ?").get(userId, charm.id);
+  if (already) return { ok: false, error: 'already_owned' };
+  const now = new Date().toISOString();
+  db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, 'legendary', ?)").run(userId, charm.id, now);
+  db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(joker.id);
+  return { ok: true, charmKey: charm.key, label: charm.label, symbol: charm.symbol };
+}
+
+// ── Helpers internes ouverture ────────────────────────────────────────────
+function _buildImagePool(userId) {
   const user = db.prepare("SELECT lootbox_allow_ultra, lootbox_allow_irrealiste FROM users WHERE id = ?").get(userId);
   const allowUltra      = user ? !!user.lootbox_allow_ultra      : false;
   const allowIrrealiste = user ? !!user.lootbox_allow_irrealiste : true;
-  // Construire la liste des tags ultra/irréaliste pour le filtrage
   const ultraTags      = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'ultra'").all().map(r => r.tag));
   const irrealisteTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'irrealiste'").all().map(r => r.tag));
-  // Tirer un pool élargi pour avoir de la marge après filtrage
   let pool = db.prepare("SELECT id, image_paths, title, tags, rarity FROM gallery_images ORDER BY RANDOM() LIMIT 200").all();
   pool = pool.filter(img => {
     let tags = [];
@@ -2737,29 +2844,130 @@ function openLootbox(userId) {
     if (!allowIrrealiste && tags.some(t => irrealisteTags.has(t))) return false;
     return true;
   });
-  // Fallback : si le filtre est trop restrictif, utiliser le pool complet
   if (!pool.length) pool = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images ORDER BY RANDOM() LIMIT 30").all();
-  if (!pool.length) return null;
+  return pool;
+}
+
+function _grantImageReward(userId, boxId, imageFromPool) {
   const rarity = _pickRarity();
-  // Préférer les images de la bonne rareté ; fallback sur le pool complet
-  const rarityPool = pool.filter(img => (img.rarity || 'common') === rarity);
-  const image = rarityPool.length
-    ? rarityPool[Math.floor(Math.random() * rarityPool.length)]
-    : pool[Math.floor(Math.random() * pool.length)];
+  const rarityPool = imageFromPool.filter(img => (img.rarity || 'common') === rarity);
+  const image = rarityPool.length ? rarityPool[Math.floor(Math.random() * rarityPool.length)]
+                                  : imageFromPool[Math.floor(Math.random() * imageFromPool.length)];
   const now = new Date().toISOString();
-  // Tenter d'insérer dans les unlocks ; si déjà possédé → convertir en pièces
-  const insertResult = db.prepare(
-    "INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)"
-  ).run(userId, image.id, rarity, now);
-  const isDuplicate = insertResult.changes === 0;
+  const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, image.id, rarity, now);
+  const isDuplicate = ins.changes === 0;
   if (isDuplicate) {
-    const coins = RARITY_SELL_PRICE[rarity] || 1;
+    const coins = (getLootboxConfig().sellPrices[rarity]) || RARITY_SELL_PRICE[rarity] || 1;
     db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
   }
-  db.prepare("UPDATE user_lootboxes SET opened = 1, reward_ref_id = ?, reward_rarity = ?, opened_at = ? WHERE id = ?").run(image.id, rarity, now, box.id);
-  let imagePaths = [];
-  try { imagePaths = JSON.parse(image.image_paths || '[]'); } catch (_) {}
+  if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_ref_id=?, reward_rarity=?, opened_at=? WHERE id=?").run(image.id, rarity, now, boxId);
+  let imagePaths = []; try { imagePaths = JSON.parse(image.image_paths || '[]'); } catch (_) {}
   return { imageId: image.id, title: image.title || '', rarity, thumb: imagePaths[0] || null, isDuplicate };
+}
+
+function _grantJoker(userId, boxId, jokerType, rarity) {
+  const now = new Date().toISOString();
+  const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, ?, ?)").run(userId, jokerType, rarity, now);
+  const isDuplicate = ins.changes === 0;
+  if (isDuplicate) {
+    const coins = (getLootboxConfig().sellPrices[rarity]) || RARITY_SELL_PRICE[rarity] || 1;
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+  }
+  if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity=?, opened_at=? WHERE id=?").run(rarity, now, boxId);
+  return { isJoker: true, jokerType: jokerType === 'joker_image' ? 'image' : 'charm', rarity, isDuplicate };
+}
+
+// ── Ouverture lootbox (dispatching par type) ──────────────────────────────
+function openLootbox(userId) {
+  const box = db.prepare("SELECT id, loot_type FROM user_lootboxes WHERE user_id = ? AND opened = 0 ORDER BY created_at ASC LIMIT 1").get(userId);
+  if (!box) return null;
+  const type = box.loot_type || 'standard';
+
+  // ── Lootbox à choix : génère 3 options sans les accorder tout de suite
+  if (type === 'choice') {
+    const pool = _buildImagePool(userId);
+    if (!pool.length) return null;
+    const options = [];
+    const usedIds = new Set();
+    for (let i = 0; i < 8 && options.length < 3; i++) {
+      const rarity = _pickRarity();
+      const rp = pool.filter(img => (img.rarity || 'common') === rarity && !usedIds.has(img.id));
+      const fb = pool.filter(img => !usedIds.has(img.id));
+      const img = rp.length ? rp[Math.floor(Math.random() * rp.length)] : fb.length ? fb[Math.floor(Math.random() * fb.length)] : null;
+      if (!img) continue;
+      usedIds.add(img.id);
+      let paths = []; try { paths = JSON.parse(img.image_paths || '[]'); } catch (_) {}
+      options.push({ imageId: img.id, title: img.title || '', rarity, thumb: paths[0] || null });
+    }
+    if (!options.length) return null;
+    const now = new Date().toISOString();
+    db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
+    const sessionId = db.prepare("INSERT INTO lootbox_choice_sessions (user_id, lootbox_id, options, created_at) VALUES (?, ?, ?, ?)").run(userId, box.id, JSON.stringify(options), now).lastInsertRowid;
+    return { isChoice: true, sessionId, options };
+  }
+
+  // ── Lootbox charme : donne un charme aléatoire non possédé
+  if (type === 'charm') {
+    const allCharms = listCharms();
+    const ownedIds = new Set(db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'charm'").all(userId).map(r => r.ref_id));
+    const available = allCharms.filter(c => !ownedIds.has(c.id));
+    const now = new Date().toISOString();
+    if (!available.length) {
+      const coins = RARITY_SELL_PRICE.legendary;
+      db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+      db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity='legendary', opened_at=? WHERE id=?").run(now, box.id);
+      return { isCharm: true, isDuplicate: true, rarity: 'legendary', coins };
+    }
+    const charm = available[Math.floor(Math.random() * available.length)];
+    db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, 'legendary', ?)").run(userId, charm.id, now);
+    db.prepare("UPDATE user_lootboxes SET opened=1, reward_ref_id=?, reward_rarity='legendary', opened_at=? WHERE id=?").run(charm.id, now, box.id);
+    return { isCharm: true, charmKey: charm.key, label: charm.label, symbol: charm.symbol, rarity: 'legendary', isDuplicate: false };
+  }
+
+  // ── Lootbox standard / image : images + chance joker
+  const pool = _buildImagePool(userId);
+  if (!pool.length) return null;
+  const rarity = _pickRarity();
+  if (rarity === 'mythic'    && Math.random() < 0.40) return _grantJoker(userId, box.id, 'joker_charm',  'mythic');
+  if (rarity === 'legendary' && Math.random() < 0.08 && type !== 'image') return _grantJoker(userId, box.id, 'joker_image', 'legendary');
+  return _grantImageReward(userId, box.id, pool);
+}
+
+// ── Sélection du choix (lootbox à choix) ─────────────────────────────────
+function pickChoiceReward(userId, sessionId, optionIdx) {
+  const session = db.prepare("SELECT * FROM lootbox_choice_sessions WHERE id=? AND user_id=? AND picked=0").get(sessionId, userId);
+  if (!session) return null;
+  let options = []; try { options = JSON.parse(session.options); } catch (_) {}
+  const idx = parseInt(optionIdx, 10);
+  if (isNaN(idx) || idx < 0 || idx >= options.length) return null;
+  const chosen = options[idx];
+  const imgRow = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images WHERE id=?").get(chosen.imageId);
+  if (!imgRow) return null;
+  const rarity = chosen.rarity || imgRow.rarity || 'common';
+  const now = new Date().toISOString();
+  const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, chosen.imageId, rarity, now);
+  const isDuplicate = ins.changes === 0;
+  if (isDuplicate) {
+    const coins = (getLootboxConfig().sellPrices[rarity]) || RARITY_SELL_PRICE[rarity] || 1;
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+  }
+  db.prepare("UPDATE lootbox_choice_sessions SET picked=1 WHERE id=?").run(session.id);
+  let imagePaths = []; try { imagePaths = JSON.parse(imgRow.image_paths || '[]'); } catch (_) {}
+  return { imageId: chosen.imageId, title: imgRow.title || '', rarity, thumb: imagePaths[0] || null, isDuplicate };
+}
+
+function listUnownedImages(userId, limit) {
+  const lim = Math.min(Math.max(1, parseInt(limit, 10) || 60), 200);
+  const ownedIds = new Set(
+    db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").all(userId).map(r => r.ref_id)
+  );
+  return db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images ORDER BY RANDOM() LIMIT ?").all(lim * 2)
+    .filter(r => !ownedIds.has(r.id))
+    .slice(0, lim)
+    .map(r => {
+      let paths = []; try { paths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
+      return { id: r.id, title: r.title || '', rarity: r.rarity || 'common', thumb: paths[0] || null };
+    });
 }
 
 function getUserUnlocks(userId) {
@@ -3053,7 +3261,16 @@ module.exports = {
   getLootboxConfig,
   setLootboxConfigKey,
   setImageRarity,
+  getLootboxCountByType,
+  listCharms,
+  listUnownedImages,
+  getUserUnlockedCharms,
+  setUserCharm,
+  getUserJokers,
+  useJokerImage,
+  useJokerCharm,
   openLootbox,
+  pickChoiceReward,
   getUserUnlocks,
   sellUnlock,
   buyItem,

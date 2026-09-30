@@ -4,19 +4,17 @@
 
   // ── Éléments DOM ────────────────────────────────────────────────────────────
   var overlay  = document.getElementById("lootbox-overlay");
-  // Badges nav (desktop + mobile)
   var navBadge       = document.getElementById("nav-jeu-badge");
   var navBadgeMobile = document.getElementById("nav-jeu-badge-mobile");
 
-  // Écran de choix
+  // Écran de choix "1 ou tout"
   var choicePanel    = document.getElementById("lootbox-choice");
-  var choiceMsg      = document.getElementById("lootbox-choice-msg");
   var choiceCountLbl = document.getElementById("lootbox-choice-count-label");
   var choiceOneBtn   = document.getElementById("lootbox-choice-one");
   var choiceAllBtn   = document.getElementById("lootbox-choice-all");
   var choiceCancelBtn = document.getElementById("lootbox-choice-cancel");
 
-  // Ouverture normale
+  // Ouverture normale (image)
   var chest       = document.getElementById("lootbox-reveal-chest");
   var card        = document.getElementById("lootbox-reveal-card");
   var imgWrap     = document.getElementById("lootbox-reveal-img-wrap");
@@ -30,6 +28,24 @@
   var batchPanel  = document.getElementById("lootbox-batch-results");
   var batchGrid   = document.getElementById("lootbox-batch-grid");
 
+  // Lootbox à choix (pick-choice panel)
+  var pickChoicePanel = document.getElementById("lootbox-pick-choice");
+  var pickChoiceGrid  = document.getElementById("lootbox-pick-choice-grid");
+
+  // Récompense charme
+  var charmReveal     = document.getElementById("lootbox-charm-reveal");
+  var charmSymbolEl   = document.getElementById("lootbox-charm-symbol");
+  var charmLabelEl    = document.getElementById("lootbox-charm-label");
+  var charmHintEl     = document.getElementById("lootbox-charm-hint");
+  var charmEquipBtn   = document.getElementById("lootbox-charm-equip-btn");
+  var charmEquipDone  = document.getElementById("lootbox-charm-equip-done");
+
+  // Récompense joker
+  var jokerReveal     = document.getElementById("lootbox-joker-reveal");
+  var jokerTitleEl    = document.getElementById("lootbox-joker-title");
+  var jokerDescEl     = document.getElementById("lootbox-joker-desc");
+  var jokerUseBtn     = document.getElementById("lootbox-joker-use-btn");
+
   // Zoom
   var zoomOverlay  = document.getElementById("lootbox-zoom-overlay");
   var zoomImg      = document.getElementById("lootbox-zoom-img");
@@ -39,6 +55,16 @@
   var zoomCounter  = document.getElementById("lootbox-zoom-counter");
   var zoomAvatarBtn = document.getElementById("lootbox-zoom-avatar-btn");
   var zoomImgOuter = document.getElementById("lootbox-zoom-img-outer");
+
+  // Joker pickers
+  var jokerImagePicker  = document.getElementById("lootbox-joker-image-picker");
+  var jokerImageGrid    = document.getElementById("lootbox-joker-image-grid");
+  var jokerImageClose   = document.getElementById("lootbox-joker-image-close");
+  var jokerImageStatus  = document.getElementById("lootbox-joker-image-status");
+  var jokerCharmPicker  = document.getElementById("lootbox-joker-charm-picker");
+  var jokerCharmList    = document.getElementById("lootbox-joker-charm-list");
+  var jokerCharmClose   = document.getElementById("lootbox-joker-charm-close");
+  var jokerCharmStatus  = document.getElementById("lootbox-joker-charm-status");
 
   // Coffre page /jeu (optionnel)
   var jeuBtn   = document.getElementById("jeu-lootbox-btn");
@@ -50,10 +76,11 @@
   // ── État ─────────────────────────────────────────────────────────────────────
   var _count          = 0;
   var _opening        = false;
-  var _sessionRewards = [];   // toutes les récompenses ouvertes depuis l'overlay
-  var _zoomList       = [];   // liste courante dans le zoom (batch ou single)
-  var _zoomIdx        = 0;    // position courante dans _zoomList
-  var _avatarSetId    = null; // imageId déjà défini comme avatar cette session
+  var _sessionRewards = [];
+  var _zoomList       = [];
+  var _zoomIdx        = 0;
+  var _avatarSetId    = null;
+  var _pendingJokerType = null; // 'image' | 'charm'
 
   // ── Compteur ─────────────────────────────────────────────────────────────────
   function refreshCount() {
@@ -65,7 +92,6 @@
 
   function setCount(n) {
     _count = n;
-    // Badge rouge sur le lien "Jeu" dans le header
     var label = n > 99 ? "99+" : String(n);
     [navBadge, navBadgeMobile].forEach(function (el) {
       if (!el) return;
@@ -76,7 +102,7 @@
       if (n > 0) {
         jeuBtn.removeAttribute("disabled");
         jeuBtn.setAttribute("data-has-loot", "1");
-        if (jeuCount) { jeuCount.textContent = n > 99 ? "99+" : String(n); jeuCount.removeAttribute("hidden"); }
+        if (jeuCount) { jeuCount.textContent = label; jeuCount.removeAttribute("hidden"); }
         if (jeuLabel) jeuLabel.textContent = n === 1 ? "1 lootbox" : n + " lootboxes";
       } else {
         jeuBtn.setAttribute("disabled", "");
@@ -101,23 +127,22 @@
 
   if (jeuBtn) jeuBtn.addEventListener("click", onTrigger);
 
-  // ── Écran de choix ───────────────────────────────────────────────────────────
+  // ── Écran de choix "1 ou tout" ───────────────────────────────────────────────
   function showChoice() {
     _opening = true;
     overlay.removeAttribute("hidden");
     hideAll();
-    if (choiceMsg) choiceMsg.textContent = "Vous avez " + _count + " lootbox" + (_count > 1 ? "es" : "") + "\u00a0!";
     if (choiceCountLbl) choiceCountLbl.textContent = _count;
-    choicePanel.removeAttribute("hidden");
+    if (choicePanel) choicePanel.removeAttribute("hidden");
   }
 
   choiceOneBtn    && choiceOneBtn.addEventListener("click", function () {
-    choicePanel.setAttribute("hidden", "");
+    if (choicePanel) choicePanel.setAttribute("hidden", "");
     startOpeningOne();
   });
 
   choiceAllBtn    && choiceAllBtn.addEventListener("click", function () {
-    choicePanel.setAttribute("hidden", "");
+    if (choicePanel) choicePanel.setAttribute("hidden", "");
     startOpeningAll();
   });
 
@@ -127,19 +152,35 @@
   function startOpeningOne() {
     _opening = true;
     overlay.removeAttribute("hidden");
-    showChestAnimation(function (reward) {
-      if (!reward) { closeOverlay(); return; }
-      _sessionRewards.push(reward);
+    showChestAnimation(function (data) {
+      if (!data || !data.ok) { closeOverlay(); return; }
       setCount(_count - 1);
-      showRewardCard(reward, _count > 0);
+
+      if (data.isChoice) {
+        showPickChoicePanel(data.sessionId, data.options);
+        return;
+      }
+      if (data.isCharm) {
+        _sessionRewards.push({ itemType: 'charm', charmKey: data.reward.charmKey, symbol: data.reward.symbol, label: data.reward.label, rarity: data.reward.rarity });
+        showCharmReveal(data.reward, _count > 0);
+        return;
+      }
+      if (data.isJoker) {
+        _sessionRewards.push({ itemType: 'joker', jokerType: data.reward.jokerType, rarity: data.reward.rarity });
+        showJokerReveal(data.reward, _count > 0);
+        return;
+      }
+      _sessionRewards.push(data.reward);
+      showRewardCard(data.reward, _count > 0);
     });
   }
 
   function showChestAnimation(cb) {
     hideAll();
-    chest.removeAttribute("hidden");
-    chest.classList.remove("lootbox-chest--opening", "lootbox-chest--done");
-
+    if (chest) {
+      chest.removeAttribute("hidden");
+      chest.classList.remove("lootbox-chest--opening", "lootbox-chest--done");
+    }
     fetch("/lootbox/open", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -147,71 +188,309 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        requestAnimationFrame(function () {
-          requestAnimationFrame(function () { chest.classList.add("lootbox-chest--opening"); });
-        });
+        if (chest) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { chest.classList.add("lootbox-chest--opening"); });
+          });
+        }
         setTimeout(function () {
-          chest.classList.add("lootbox-chest--done");
-          chest.setAttribute("hidden", "");
-          if (!data.ok || !data.reward) { cb(null); return; }
-          cb(data.reward);
+          if (chest) { chest.classList.add("lootbox-chest--done"); chest.setAttribute("hidden", ""); }
+          cb(data);
         }, 900);
       })
       .catch(function () { setTimeout(closeOverlay, 600); });
   }
 
-  function showRewardCard(reward, hasNext) {
-    var rarity = reward.rarity || "common";
+  // ── Lootbox à choix : 3 options ──────────────────────────────────────────────
+  function showPickChoicePanel(sessionId, options) {
+    hideAll();
+    if (!pickChoicePanel || !pickChoiceGrid) { closeOverlay(); return; }
+    while (pickChoiceGrid.firstChild) pickChoiceGrid.removeChild(pickChoiceGrid.firstChild);
 
-    // Halo rareté via data-rarity
-    imgWrap.setAttribute("data-rarity", rarity);
+    options.forEach(function (opt, idx) {
+      var rarity = opt.rarity || 'common';
+      var card = document.createElement("div");
+      card.className = "lootbox-pick-card lootbox-pick-card--" + rarity;
+      card.setAttribute("data-rarity", rarity);
 
-    if (reward.thumb) {
-      imgEl.src = reward.thumb;
-      imgEl.alt = "";
-      imgEl.removeAttribute("hidden");
-      placeholder.setAttribute("hidden", "");
-    } else {
-      imgEl.setAttribute("hidden", "");
-      placeholder.removeAttribute("hidden");
-    }
+      var imgDiv = document.createElement("div");
+      imgDiv.className = "lootbox-pick-card-img";
+      if (opt.thumb) {
+        var img = document.createElement("img");
+        img.src = opt.thumb;
+        img.alt = opt.title || "";
+        imgDiv.appendChild(img);
+      } else {
+        imgDiv.innerHTML = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><rect x="4" y="4" width="40" height="40" rx="4"/><circle cx="17" cy="17" r="5"/><path d="M4 34l12-12 8 8 6-6 14 14"/></svg>';
+      }
+      var badge = document.createElement("span");
+      badge.className = "lootbox-pick-card-rarity";
+      badge.textContent = rarity;
 
-    if (reward.isDuplicate) {
-      hintEl.removeAttribute("hidden");
-    } else {
-      hintEl.setAttribute("hidden", "");
-    }
+      card.appendChild(imgDiv);
+      card.appendChild(badge);
 
-    card.removeAttribute("hidden");
-    card.classList.remove("lootbox-card--in");
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () { card.classList.add("lootbox-card--in"); });
+      (function (i) {
+        card.addEventListener("click", function () {
+          pickChoiceGrid.querySelectorAll(".lootbox-pick-card").forEach(function (c) { c.setAttribute("disabled", ""); c.style.pointerEvents = "none"; });
+          fetch("/lootbox/pick-choice", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: sessionId, optionIdx: i }),
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (!d.ok) { closeOverlay(); return; }
+              pickChoicePanel.setAttribute("hidden", "");
+              _sessionRewards.push(d.reward);
+              showRewardCard(d.reward, _count > 0);
+            })
+            .catch(closeOverlay);
+        });
+      }(idx));
+
+      pickChoiceGrid.appendChild(card);
     });
 
-    closeBtn.removeAttribute("hidden");
-    if (hasNext) {
-      nextBtn.removeAttribute("hidden");
+    pickChoicePanel.removeAttribute("hidden");
+  }
+
+  // ── Récompense image ─────────────────────────────────────────────────────────
+  function showRewardCard(reward, hasNext) {
+    var rarity = reward.rarity || "common";
+    if (imgWrap) imgWrap.setAttribute("data-rarity", rarity);
+    if (reward.thumb) {
+      if (imgEl)       { imgEl.src = reward.thumb; imgEl.alt = ""; imgEl.removeAttribute("hidden"); }
+      if (placeholder) placeholder.setAttribute("hidden", "");
     } else {
-      nextBtn.setAttribute("hidden", "");
+      if (imgEl)       imgEl.setAttribute("hidden", "");
+      if (placeholder) placeholder.removeAttribute("hidden");
+    }
+    if (hintEl) {
+      if (reward.isDuplicate) hintEl.removeAttribute("hidden");
+      else                    hintEl.setAttribute("hidden", "");
+    }
+    if (card) {
+      card.removeAttribute("hidden");
+      card.classList.remove("lootbox-card--in");
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { card.classList.add("lootbox-card--in"); });
+      });
+    }
+    if (closeBtn) closeBtn.removeAttribute("hidden");
+    if (nextBtn) {
+      if (hasNext) nextBtn.removeAttribute("hidden");
+      else         nextBtn.setAttribute("hidden", "");
     }
   }
 
   nextBtn && nextBtn.addEventListener("click", function () {
-    card.setAttribute("hidden", "");
-    closeBtn.setAttribute("hidden", "");
-    nextBtn.setAttribute("hidden", "");
+    if (card)     card.setAttribute("hidden", "");
+    if (closeBtn) closeBtn.setAttribute("hidden", "");
+    if (nextBtn)  nextBtn.setAttribute("hidden", "");
     startOpeningOne();
   });
 
-  // Clic sur la carte individuelle → zoom dans la session entière
   imgWrap && imgWrap.addEventListener("click", function () {
     if (imgEl && !imgEl.hasAttribute("hidden") && imgEl.src) {
-      var idx = _sessionRewards.length - 1;
-      openZoom(_sessionRewards, idx);
+      openZoom(_sessionRewards.filter(function(r) { return !r.itemType; }), _sessionRewards.filter(function(r) { return !r.itemType; }).length - 1);
     }
   });
 
-  // ── 3D tilt sur la carte récompense ─────────────────────────────────────────
+  // ── Récompense charme ────────────────────────────────────────────────────────
+  function showCharmReveal(reward, hasNext) {
+    hideAll();
+    if (!charmReveal) { closeOverlay(); return; }
+
+    var sym = reward.charmKey ? (window._CHARM_SYM_MAP && window._CHARM_SYM_MAP[reward.charmKey]) || reward.symbol || '★' : '★';
+    if (charmSymbolEl)  charmSymbolEl.textContent = sym;
+    if (charmLabelEl)   charmLabelEl.textContent  = reward.label || '';
+    if (charmHintEl)    { if (reward.isDuplicate) charmHintEl.removeAttribute("hidden"); else charmHintEl.setAttribute("hidden", ""); }
+    if (charmEquipBtn)  { charmEquipBtn.removeAttribute("hidden"); charmEquipBtn.disabled = false; charmEquipBtn.dataset.charmKey = reward.charmKey || ''; }
+    if (charmEquipDone) charmEquipDone.setAttribute("hidden", "");
+
+    charmReveal.setAttribute("data-rarity", reward.rarity || "legendary");
+    charmReveal.removeAttribute("hidden");
+
+    if (closeBtn) closeBtn.removeAttribute("hidden");
+    if (nextBtn)  { if (hasNext) nextBtn.removeAttribute("hidden"); else nextBtn.setAttribute("hidden", ""); }
+  }
+
+  charmEquipBtn && charmEquipBtn.addEventListener("click", function () {
+    var key = charmEquipBtn.dataset.charmKey;
+    if (!key) return;
+    charmEquipBtn.disabled = true;
+    fetch("/lootbox/set-charm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ charmKey: key }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          if (charmEquipBtn)  charmEquipBtn.setAttribute("hidden", "");
+          if (charmEquipDone) charmEquipDone.removeAttribute("hidden");
+          // Patch les étoiles visibles sur la page
+          var sym = charmEquipBtn.textContent; // fallback; better to use stored symbol
+          var stored = document.querySelector('#lootbox-charm-symbol');
+          if (stored) {
+            var s = stored.textContent;
+            document.querySelectorAll('.gallery-star,.bd-star,.wiki-star,.wiki-card-star,.bd-card-star').forEach(function(el) { el.textContent = s; });
+            window.RATING_CHARM = { key: key, symbol: s };
+          }
+        } else {
+          charmEquipBtn.disabled = false;
+        }
+      })
+      .catch(function () { charmEquipBtn.disabled = false; });
+  });
+
+  // ── Récompense joker ─────────────────────────────────────────────────────────
+  function showJokerReveal(reward, hasNext) {
+    hideAll();
+    if (!jokerReveal) { closeOverlay(); return; }
+
+    var isImage = reward.jokerType === 'image';
+    if (jokerTitleEl) jokerTitleEl.textContent = isImage ? 'Joker Image' : 'Joker Charme';
+    if (jokerDescEl)  jokerDescEl.textContent  = isImage
+      ? 'Débloque n\'importe quelle image de profil non possédée.'
+      : 'Débloque n\'importe quel charme non possédé.';
+    if (jokerUseBtn)  {
+      jokerUseBtn.dataset.jokerType = reward.jokerType;
+      jokerUseBtn.removeAttribute("hidden");
+      jokerUseBtn.disabled = !!reward.isDuplicate;
+    }
+    jokerReveal.setAttribute("data-rarity", reward.rarity || "legendary");
+    if (reward.isDuplicate && jokerDescEl) jokerDescEl.textContent += ' (Doublon — converti en pièces.)';
+    jokerReveal.removeAttribute("hidden");
+
+    if (closeBtn) closeBtn.removeAttribute("hidden");
+    if (nextBtn)  { if (hasNext) nextBtn.removeAttribute("hidden"); else nextBtn.setAttribute("hidden", ""); }
+  }
+
+  jokerUseBtn && jokerUseBtn.addEventListener("click", function () {
+    var type = jokerUseBtn.dataset.jokerType;
+    _pendingJokerType = type;
+    if (type === 'image')  openJokerImagePicker();
+    if (type === 'charm')  openJokerCharmPicker();
+  });
+
+  // ── Joker Image Picker ───────────────────────────────────────────────────────
+  function openJokerImagePicker() {
+    if (!jokerImagePicker || !jokerImageGrid) return;
+    while (jokerImageGrid.firstChild) jokerImageGrid.removeChild(jokerImageGrid.firstChild);
+    if (jokerImageStatus) jokerImageStatus.textContent = 'Chargement…';
+    jokerImagePicker.removeAttribute("hidden");
+
+    fetch("/lootbox/joker-picker?type=image")
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (jokerImageStatus) jokerImageStatus.textContent = '';
+        if (!d.images || !d.images.length) {
+          if (jokerImageStatus) jokerImageStatus.textContent = 'Aucune image disponible.';
+          return;
+        }
+        d.images.forEach(function (img) {
+          var card = document.createElement("div");
+          card.className = "lootbox-joker-image-card";
+          card.setAttribute("data-rarity", img.rarity || 'common');
+          if (img.thumb) {
+            var i = document.createElement("img");
+            i.src = img.thumb; i.alt = img.title || '';
+            card.appendChild(i);
+          }
+          card.addEventListener("click", function () {
+            if (card.classList.contains("loading")) return;
+            card.classList.add("loading");
+            if (jokerImageStatus) jokerImageStatus.textContent = 'Déverrouillage…';
+            fetch("/lootbox/use-joker", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ type: 'image', imageId: img.id }),
+            })
+              .then(function (r) { return r.json(); })
+              .then(function (res) {
+                if (res.ok) {
+                  if (jokerImageStatus) jokerImageStatus.textContent = '✓ Image déverrouillée !';
+                  setTimeout(function () { closeJokerPickers(); closeOverlay(); }, 1200);
+                } else {
+                  card.classList.remove("loading");
+                  if (jokerImageStatus) jokerImageStatus.textContent = res.error === 'already_owned' ? 'Déjà possédé.' : 'Erreur.';
+                }
+              })
+              .catch(function () { card.classList.remove("loading"); });
+          });
+          jokerImageGrid.appendChild(card);
+        });
+      })
+      .catch(function () { if (jokerImageStatus) jokerImageStatus.textContent = 'Erreur réseau.'; });
+  }
+
+  jokerImageClose && jokerImageClose.addEventListener("click", closeJokerPickers);
+  jokerImagePicker && jokerImagePicker.addEventListener("click", function (e) { if (e.target === jokerImagePicker) closeJokerPickers(); });
+
+  // ── Joker Charm Picker ───────────────────────────────────────────────────────
+  function openJokerCharmPicker() {
+    if (!jokerCharmPicker || !jokerCharmList) return;
+    while (jokerCharmList.firstChild) jokerCharmList.removeChild(jokerCharmList.firstChild);
+    if (jokerCharmStatus) jokerCharmStatus.textContent = 'Chargement…';
+    jokerCharmPicker.removeAttribute("hidden");
+
+    fetch("/lootbox/joker-picker?type=charm")
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (jokerCharmStatus) jokerCharmStatus.textContent = '';
+        if (!d.charms || !d.charms.length) {
+          if (jokerCharmStatus) jokerCharmStatus.textContent = 'Aucun charme disponible.';
+          return;
+        }
+        d.charms.forEach(function (charm) {
+          var row = document.createElement("div");
+          row.className = "lootbox-joker-charm-row" + (charm.owned ? " lootbox-joker-charm-row--owned" : "");
+          var sym = document.createElement("span");
+          sym.className = "lootbox-joker-charm-sym";
+          sym.textContent = charm.symbol;
+          var lbl = document.createElement("span");
+          lbl.className = "lootbox-joker-charm-lbl";
+          lbl.textContent = charm.label + (charm.owned ? ' — déjà possédé' : '');
+          row.appendChild(sym);
+          row.appendChild(lbl);
+          if (!charm.owned) {
+            row.addEventListener("click", function () {
+              if (jokerCharmStatus) jokerCharmStatus.textContent = 'Déverrouillage…';
+              fetch("/lootbox/use-joker", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: 'charm', charmKey: charm.key }),
+              })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                  if (res.ok) {
+                    if (jokerCharmStatus) jokerCharmStatus.textContent = '✓ Charme ' + charm.label + ' débloqué !';
+                    setTimeout(function () { closeJokerPickers(); closeOverlay(); }, 1200);
+                  } else {
+                    if (jokerCharmStatus) jokerCharmStatus.textContent = res.error === 'already_owned' ? 'Déjà possédé.' : 'Erreur.';
+                  }
+                })
+                .catch(function () { if (jokerCharmStatus) jokerCharmStatus.textContent = 'Erreur réseau.'; });
+            });
+          }
+          jokerCharmList.appendChild(row);
+        });
+      })
+      .catch(function () { if (jokerCharmStatus) jokerCharmStatus.textContent = 'Erreur réseau.'; });
+  }
+
+  jokerCharmClose && jokerCharmClose.addEventListener("click", closeJokerPickers);
+  jokerCharmPicker && jokerCharmPicker.addEventListener("click", function (e) { if (e.target === jokerCharmPicker) closeJokerPickers(); });
+
+  function closeJokerPickers() {
+    if (jokerImagePicker) jokerImagePicker.setAttribute("hidden", "");
+    if (jokerCharmPicker) jokerCharmPicker.setAttribute("hidden", "");
+    _pendingJokerType = null;
+  }
+
+  // ── Tilt 3D sur la carte récompense ─────────────────────────────────────────
   if (card) {
     card.addEventListener("mousemove", function (e) {
       if (card.hasAttribute("hidden")) return;
@@ -234,17 +513,15 @@
     var total = _count;
     var results = [];
     hideAll();
-
-    // Indicateur de chargement : grille vide visible
     while (batchGrid.firstChild) batchGrid.removeChild(batchGrid.firstChild);
-    batchPanel.removeAttribute("hidden");
+    if (batchPanel) batchPanel.removeAttribute("hidden");
 
     function openNext(remaining) {
       if (remaining <= 0) {
         setCount(0);
         results.forEach(function (r) { _sessionRewards.push(r); });
         renderBatchResults(results);
-        closeBtn.removeAttribute("hidden");
+        if (closeBtn) closeBtn.removeAttribute("hidden");
         return;
       }
       fetch("/lootbox/open", {
@@ -254,7 +531,14 @@
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (data.ok && data.reward) results.push(data.reward);
+          if (data.ok) {
+            if (data.isChoice || data.isCharm || data.isJoker) {
+              // Pour les types spéciaux dans un "tout ouvrir", on les ajoute quand même au log
+              results.push(data.reward || data);
+            } else if (data.reward) {
+              results.push(data.reward);
+            }
+          }
           openNext(remaining - 1);
         })
         .catch(function () { openNext(remaining - 1); });
@@ -265,39 +549,29 @@
 
   function renderBatchResults(rewards) {
     while (batchGrid.firstChild) batchGrid.removeChild(batchGrid.firstChild);
-
-    rewards.forEach(function (reward, i) {
+    var imageRewards = rewards.filter(function(r) { return r && r.imageId; });
+    imageRewards.forEach(function (reward, i) {
       var rarity = reward.rarity || "common";
       var item = document.createElement("div");
-      item.className = "lootbox-batch-card lootbox-batch-card--" + rarity
-        + (reward.isDuplicate ? " lootbox-batch-card--dupe" : "");
-
+      item.className = "lootbox-batch-card lootbox-batch-card--" + rarity + (reward.isDuplicate ? " lootbox-batch-card--dupe" : "");
       var imgDiv = document.createElement("div");
       imgDiv.className = "lootbox-batch-card-img";
       imgDiv.setAttribute("data-rarity", rarity);
-
       if (reward.thumb) {
         var img = document.createElement("img");
-        img.src = reward.thumb;
-        img.alt = "";
-        img.loading = "lazy";
+        img.src = reward.thumb; img.alt = ""; img.loading = "lazy";
         imgDiv.appendChild(img);
         imgDiv.style.cursor = "zoom-in";
-        // Fermeture pour capturer l'index correct
         (function (idx) {
-          imgDiv.addEventListener("click", function () {
-            openZoom(rewards, idx);
-          });
+          imgDiv.addEventListener("click", function () { openZoom(imageRewards, idx); });
         }(i));
       }
-
       if (reward.isDuplicate) {
         var dupeTag = document.createElement("span");
         dupeTag.className = "lootbox-batch-card-dupe-tag";
         dupeTag.textContent = "Doublon";
         imgDiv.appendChild(dupeTag);
       }
-
       item.appendChild(imgDiv);
       batchGrid.appendChild(item);
     });
@@ -307,13 +581,14 @@
   function closeOverlay() {
     overlay.setAttribute("hidden", "");
     closeZoom();
+    closeJokerPickers();
     hideAll();
     _opening = false;
     refreshCount();
   }
 
   function hideAll() {
-    [choicePanel, chest, card, batchPanel].forEach(function (el) {
+    [choicePanel, chest, card, batchPanel, pickChoicePanel, charmReveal, jokerReveal].forEach(function (el) {
       if (el) el.setAttribute("hidden", "");
     });
     if (closeBtn) closeBtn.setAttribute("hidden", "");
@@ -325,7 +600,6 @@
   }
 
   closeBtn && closeBtn.addEventListener("click", closeOverlay);
-
   overlay.addEventListener("click", function (e) {
     if (e.target === overlay || e.target.classList.contains("lootbox-overlay-backdrop")) closeOverlay();
   });
@@ -333,8 +607,8 @@
   // ── Zoom ─────────────────────────────────────────────────────────────────────
   function openZoom(list, idx) {
     if (!zoomOverlay || !zoomImg) return;
-    _zoomList = list || [];
-    _zoomIdx  = idx  || 0;
+    _zoomList = (list || []).filter(function(r) { return r && r.thumb; });
+    _zoomIdx  = Math.min(Math.max(0, idx || 0), _zoomList.length - 1);
     renderZoom();
     zoomOverlay.removeAttribute("hidden");
   }
@@ -342,15 +616,8 @@
   function renderZoom() {
     var reward = _zoomList[_zoomIdx];
     if (!reward) return;
-
-    // Image
     zoomImg.src = reward.thumb || "";
-    zoomImg.alt = "";
-
-    // Halo rareté sur le conteneur
     if (zoomImgOuter) zoomImgOuter.setAttribute("data-rarity", reward.rarity || "common");
-
-    // Compteur
     if (zoomCounter) {
       if (_zoomList.length > 1) {
         zoomCounter.textContent = (_zoomIdx + 1) + "\u00a0/\u00a0" + _zoomList.length;
@@ -359,18 +626,8 @@
         zoomCounter.setAttribute("hidden", "");
       }
     }
-
-    // Boutons nav
-    if (zoomPrev) {
-      if (_zoomIdx > 0) zoomPrev.removeAttribute("hidden");
-      else zoomPrev.setAttribute("hidden", "");
-    }
-    if (zoomNext) {
-      if (_zoomIdx < _zoomList.length - 1) zoomNext.removeAttribute("hidden");
-      else zoomNext.setAttribute("hidden", "");
-    }
-
-    // Bouton avatar
+    if (zoomPrev) { if (_zoomIdx > 0) zoomPrev.removeAttribute("hidden"); else zoomPrev.setAttribute("hidden", ""); }
+    if (zoomNext) { if (_zoomIdx < _zoomList.length - 1) zoomNext.removeAttribute("hidden"); else zoomNext.setAttribute("hidden", ""); }
     if (zoomAvatarBtn) {
       var imageId = reward.imageId || reward.id || null;
       if (imageId && imageId === _avatarSetId) {
@@ -386,8 +643,7 @@
   function closeZoom() {
     if (zoomOverlay) zoomOverlay.setAttribute("hidden", "");
     if (zoomImg) zoomImg.src = "";
-    _zoomList = [];
-    _zoomIdx  = 0;
+    _zoomList = []; _zoomIdx = 0;
   }
 
   function zoomNavigate(delta) {
@@ -397,27 +653,11 @@
     renderZoom();
   }
 
-  zoomClose && zoomClose.addEventListener("click", function (e) {
-    e.stopPropagation();
-    closeZoom();
-  });
+  zoomClose && zoomClose.addEventListener("click", function (e) { e.stopPropagation(); closeZoom(); });
+  zoomPrev  && zoomPrev.addEventListener("click",  function (e) { e.stopPropagation(); zoomNavigate(-1); });
+  zoomNext  && zoomNext.addEventListener("click",  function (e) { e.stopPropagation(); zoomNavigate(1); });
+  zoomOverlay && zoomOverlay.addEventListener("click", function (e) { if (e.target === zoomOverlay) closeZoom(); });
 
-  zoomPrev && zoomPrev.addEventListener("click", function (e) {
-    e.stopPropagation();
-    zoomNavigate(-1);
-  });
-
-  zoomNext && zoomNext.addEventListener("click", function (e) {
-    e.stopPropagation();
-    zoomNavigate(1);
-  });
-
-  // Clic sur le fond de l'overlay ferme (mais pas sur les contrôles)
-  zoomOverlay && zoomOverlay.addEventListener("click", function (e) {
-    if (e.target === zoomOverlay) closeZoom();
-  });
-
-  // Bouton "utiliser comme avatar"
   zoomAvatarBtn && zoomAvatarBtn.addEventListener("click", function (e) {
     e.stopPropagation();
     var reward = _zoomList[_zoomIdx];
@@ -426,40 +666,28 @@
     if (!imageId) return;
     zoomAvatarBtn.disabled = true;
     fetch("/lootbox/set-profile-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ imageId: imageId }),
     })
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        if (d.ok) {
-          _avatarSetId = imageId;
-          zoomAvatarBtn.textContent = "Photo de profil définie \u2713";
-          zoomAvatarBtn.setAttribute("disabled", "");
-        } else {
-          zoomAvatarBtn.disabled = false;
-        }
+        if (d.ok) { _avatarSetId = imageId; zoomAvatarBtn.textContent = "Photo de profil définie \u2713"; zoomAvatarBtn.setAttribute("disabled", ""); }
+        else       { zoomAvatarBtn.disabled = false; }
       })
       .catch(function () { zoomAvatarBtn.disabled = false; });
   });
 
   // ── Clavier global ───────────────────────────────────────────────────────────
   document.addEventListener("keydown", function (e) {
+    if (jokerImagePicker && !jokerImagePicker.hasAttribute("hidden") && e.key === "Escape") { closeJokerPickers(); return; }
+    if (jokerCharmPicker && !jokerCharmPicker.hasAttribute("hidden") && e.key === "Escape") { closeJokerPickers(); return; }
     if (zoomOverlay && !zoomOverlay.hasAttribute("hidden")) {
-      if (e.key === "Escape") {
-        closeZoom();
-      } else if (e.key === "ArrowLeft") {
-        zoomNavigate(-1);
-      } else if (e.key === "ArrowRight") {
-        zoomNavigate(1);
-      } else if (e.key === "Enter" && zoomAvatarBtn && !zoomAvatarBtn.disabled) {
-        zoomAvatarBtn.click();
-      }
-      return;
+      if (e.key === "Escape")     { closeZoom(); return; }
+      if (e.key === "ArrowLeft")  { zoomNavigate(-1); return; }
+      if (e.key === "ArrowRight") { zoomNavigate(1);  return; }
+      if (e.key === "Enter" && zoomAvatarBtn && !zoomAvatarBtn.disabled) { zoomAvatarBtn.click(); return; }
     }
-    if (!overlay.hasAttribute("hidden") && e.key === "Escape") {
-      closeOverlay();
-    }
+    if (!overlay.hasAttribute("hidden") && e.key === "Escape") closeOverlay();
   });
 
   // ── Init ─────────────────────────────────────────────────────────────────────
