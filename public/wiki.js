@@ -233,6 +233,8 @@
     chip.className = "wiki-chip";
     chip.style.setProperty("--h", hue);
     chip.dataset.tag = item.term;
+    chip.title = "Cliquer pour retirer";
+    chip.addEventListener("click", function () { onRemove(item.term); });
     var text = document.createElement("span");
     text.textContent = item.term;
     chip.appendChild(text);
@@ -248,13 +250,6 @@
       });
       chip.appendChild(enBtn);
     }
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "wiki-chip-remove";
-    btn.innerHTML = "&#215;";
-    btn.title = "Retirer";
-    btn.addEventListener("click", function () { onRemove(item.term); });
-    chip.appendChild(btn);
     return chip;
   }
 
@@ -264,6 +259,14 @@
     var hidden  = widget.querySelector(".wiki-tags-hidden");
     var suggestBox = widget.querySelector(".wiki-tag-suggestions");
     if (!board || !typer || !hidden) return;
+
+    // Zone des chips sélectionnés, au-dessus du champ de saisie
+    var chipsArea = widget.querySelector(".wiki-tags-chips");
+    if (!chipsArea) {
+      chipsArea = document.createElement("div");
+      chipsArea.className = "wiki-tags-chips";
+      board.parentNode.insertBefore(chipsArea, board);
+    }
 
     var isDerived = widget.classList.contains("wiki-derived-widget");
     var tags = []; // { term, en }
@@ -293,12 +296,12 @@
     }
 
     function renderBoard() {
-      // Supprime les chips existants (pas le typer)
-      Array.from(board.querySelectorAll(".wiki-chip")).forEach(function (c) { c.remove(); });
-      // Recrée dans l'ordre
+      // Supprime les chips existants de la zone dédiée
+      Array.from(chipsArea.querySelectorAll(".wiki-chip")).forEach(function (c) { c.remove(); });
+      // Recrée dans l'ordre dans la zone au-dessus du champ
       tags.forEach(function (t) {
         var chip = createChipEl(t, removeTag, isDerived, toggleEn);
-        board.insertBefore(chip, typer);
+        chipsArea.appendChild(chip);
       });
       syncHidden();
       syncSuggestions();
@@ -307,7 +310,9 @@
     function syncSuggestions() {
       if (!suggestBox) return;
       suggestBox.querySelectorAll(".wiki-tag-suggest-chip").forEach(function (chip) {
-        chip.classList.toggle("active", !!findTag(chip.dataset.tag));
+        var isSelected = !!findTag(chip.dataset.tag);
+        chip.classList.toggle("active", isSelected);
+        chip.hidden = isSelected;
       });
       // Sync special shortcut buttons outside the widget
       if (!isDerived) {

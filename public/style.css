@@ -2415,15 +2415,29 @@ input[type="text"], input[type="password"] {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.18rem 0.3rem 0.18rem 0.6rem;
+  padding: 0.18rem 0.6rem;
   border-radius: 999px;
   font-size: 0.8rem;
   background: hsl(var(--h), 35%, 20%);
   color: hsl(var(--h), 55%, 78%);
   border: 1px solid hsl(var(--h), 35%, 32%);
-  cursor: default;
+  cursor: pointer;
   user-select: none;
+  transition: background 0.12s, border-color 0.12s;
 }
+.wiki-chip:hover {
+  background: hsl(var(--h), 40%, 26%);
+  border-color: hsl(var(--h), 45%, 42%);
+}
+
+/* Zone chips au-dessus du champ de saisie */
+.wiki-tags-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-height: 0;
+}
+.wiki-tags-chips:empty { display: none; }
 
 .wiki-chip-remove {
   display: inline-flex;
@@ -14948,6 +14962,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .ef-block-header {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: .5rem;
   margin-bottom: .6rem;
 }
@@ -14965,8 +14980,15 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .ef-block-flags {
   display: flex;
   flex-wrap: wrap;
-  gap: .4rem;
-  margin: .5rem 0 .6rem;
+  justify-content: center;
+  gap: .5rem;
+  margin: .6rem 0 .5rem;
+}
+.ef-block--image {
+  text-align: center;
+}
+.ef-block--image .wiki-images-existing {
+  justify-content: center;
 }
 
 /* ── Auteur chip widget ───────────────────────────────────────────────────── */

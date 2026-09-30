@@ -4,7 +4,6 @@
   <a href="/galerie" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
     <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
-    <a href="/galerie" class="wf-cancel-link">Annuler</a>
   </div>
   <form method="POST" action="/galerie/<%= image.id %>/delete" class="wf-delete-form-fixed"
     onsubmit="return confirm('Supprimer cette image d\u00e9finitivement ?')">
@@ -55,7 +54,6 @@
 
     <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
     <div class="ef-block ef-block--image">
-      <div class="ef-block-label">Image</div>
       <% if (image.imagePaths && image.imagePaths.length) { %>
         <div class="wiki-images-existing">
           <% image.imagePaths.forEach(function(src) { %>
@@ -78,16 +76,13 @@
 
     <%# ── BLOC ORIGINES ───────────────────────────────────────────────────── %>
     <div class="ef-block ef-block--origins">
-      <div class="ef-block-label">Origines</div>
 
-      <%# Auteur (chip widget) %>
-      <div class="ef-author-widget" id="ef-author-widget">
-        <div class="ef-author-label">Auteur</div>
-        <div class="ef-author-board" id="ef-author-board">
-          <input type="text" class="wiki-tags-typing ef-author-typing" id="ef-author-input"
-            placeholder="Auteur / Dessinateur&hellip;" autocomplete="off" />
-        </div>
-        <input type="hidden" name="author" id="ef-author-hidden" value="<%= image.author || '' %>" />
+      <%# Auteur %>
+      <div style="position:relative;margin-bottom:.65rem">
+        <input type="text" name="author" id="ef-author-input"
+          class="wf-orce-name-input" style="width:100%;box-sizing:border-box"
+          value="<%= image.author || '' %>"
+          placeholder="Auteur / Dessinateur&hellip;" autocomplete="off" />
         <ul class="parody-ac-drop" id="ef-author-drop" hidden></ul>
       </div>
 
@@ -139,7 +134,6 @@
 
     <div class="wiki-form-actions wf-mobile-actions">
       <button type="submit">Enregistrer</button>
-      <a href="/galerie" class="link-button">Annuler</a>
     </div>
   </form>
 
@@ -179,39 +173,10 @@
 (function () {
   var IMAGE_ID = <%= image.id %>;
 
-  // ── Auteur chip widget ───────────────────────────────────────────────────
-  var authorHidden = document.getElementById('ef-author-hidden');
-  var authorBoard  = document.getElementById('ef-author-board');
-  var authorInput  = document.getElementById('ef-author-input');
-  var authorDrop   = document.getElementById('ef-author-drop');
-  var authorAcSel  = -1;
-
-  function renderAuthor() {
-    authorBoard.querySelectorAll('.ef-author-chip').forEach(function(c) { c.remove(); });
-    var val = authorHidden.value;
-    if (val) {
-      var chip = document.createElement('span');
-      chip.className = 'link-tag-pill ef-author-chip';
-      chip.style.cssText = 'background:hsl(220,40%,32%);color:#c8d8f0;cursor:pointer;margin:2px 4px 2px 0;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.8rem';
-      chip.textContent = val + ' \u00d7';
-      chip.addEventListener('click', function() {
-        authorHidden.value = '';
-        renderAuthor();
-        authorInput.style.display = '';
-        authorInput.focus();
-      });
-      authorBoard.insertBefore(chip, authorInput);
-      authorInput.style.display = 'none';
-    } else {
-      authorInput.style.display = '';
-    }
-  }
-
-  function setAuthor(val) {
-    authorHidden.value = val.trim();
-    renderAuthor();
-    closeAuthorAc();
-  }
+  // ── Auteur autocomplete ───────────────────────────────────────────────────
+  var authorInput = document.getElementById('ef-author-input');
+  var authorDrop  = document.getElementById('ef-author-drop');
+  var authorAcSel = -1;
 
   function clearAuthorAc() { while (authorDrop.firstChild) authorDrop.removeChild(authorDrop.firstChild); }
   function closeAuthorAc() { authorDrop.hidden = true; clearAuthorAc(); authorAcSel = -1; }
@@ -227,39 +192,30 @@
           var li = document.createElement('li');
           li.className = 'parody-ac-item';
           li.textContent = a;
-          li.addEventListener('mousedown', function(e) { e.preventDefault(); setAuthor(a); });
+          li.addEventListener('mousedown', function(e) { e.preventDefault(); authorInput.value = a; closeAuthorAc(); });
           authorDrop.appendChild(li);
         });
         authorDrop.hidden = false;
       });
   }
 
-  authorInput.addEventListener('input', function() { showAuthorAc(authorInput.value); });
-  authorInput.addEventListener('blur', function() {
-    setTimeout(function() {
-      if (authorInput.value.trim()) setAuthor(authorInput.value.trim());
-      closeAuthorAc();
-    }, 160);
-  });
-  authorInput.addEventListener('keydown', function(e) {
-    var items = authorDrop.querySelectorAll('.parody-ac-item');
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (authorAcSel >= 0 && items[authorAcSel]) setAuthor(items[authorAcSel].textContent);
-      else if (authorInput.value.trim()) setAuthor(authorInput.value.trim());
-    } else if (e.key === 'Escape') { closeAuthorAc(); }
-    else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      authorAcSel = Math.min(authorAcSel + 1, items.length - 1);
-      items.forEach(function(li, i) { li.classList.toggle('selected', i === authorAcSel); });
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      authorAcSel = Math.max(authorAcSel - 1, 0);
-      items.forEach(function(li, i) { li.classList.toggle('selected', i === authorAcSel); });
-    }
-  });
-
-  renderAuthor();
+  if (authorInput) {
+    authorInput.addEventListener('input', function() { showAuthorAc(authorInput.value); });
+    authorInput.addEventListener('blur', function() { setTimeout(closeAuthorAc, 160); });
+    authorInput.addEventListener('keydown', function(e) {
+      var items = authorDrop.querySelectorAll('.parody-ac-item');
+      if (e.key === 'Enter' && authorAcSel >= 0 && items[authorAcSel]) {
+        e.preventDefault(); authorInput.value = items[authorAcSel].textContent; closeAuthorAc();
+      } else if (e.key === 'Escape') { closeAuthorAc(); }
+      else if (e.key === 'ArrowDown') {
+        e.preventDefault(); authorAcSel = Math.min(authorAcSel + 1, items.length - 1);
+        items.forEach(function(li, i) { li.classList.toggle('selected', i === authorAcSel); });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault(); authorAcSel = Math.max(authorAcSel - 1, 0);
+        items.forEach(function(li, i) { li.classList.toggle('selected', i === authorAcSel); });
+      }
+    });
+  }
 
   // ── Séries ────────────────────────────────────────────────────────────────
   function showMsg(text, ok) {

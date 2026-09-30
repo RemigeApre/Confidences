@@ -5,7 +5,6 @@
   <a href="<%= nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' %>" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
     <button type="submit" form="nv-form" class="wf-save-btn">Enregistrer</button>
-    <a href="<%= nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' %>" class="wf-cancel-link">Annuler</a>
   </div>
   <% if (nouvelle) { %>
   <form method="POST" action="/nouvelles/<%= nouvelle.id %>/delete" class="wf-delete-form-fixed"
@@ -144,7 +143,6 @@
 
       <div class="wiki-form-actions wf-mobile-actions">
         <button type="submit">Enregistrer</button>
-        <a href="<%= nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' %>" class="link-button">Annuler</a>
       </div>
     </form>
   </div>
@@ -181,6 +179,14 @@
     var suggestBox = document.querySelector('.wiki-tag-suggestions');
     if (!board || !typer || !hidden) return;
 
+    // Zone chips au-dessus du champ
+    var chipsArea = document.querySelector('.wiki-tags-chips');
+    if (!chipsArea) {
+      chipsArea = document.createElement('div');
+      chipsArea.className = 'wiki-tags-chips';
+      board.parentNode.insertBefore(chipsArea, board);
+    }
+
     // Liste complète des tags disponibles (JSON embarqué ou chips rendus)
     var allAvail = (function () {
       var el = document.getElementById('nv-all-tags');
@@ -196,14 +202,15 @@
     function syncHidden() { hidden.value = tags.join(', '); }
 
     function renderBoard() {
-      board.querySelectorAll('.wiki-chip').forEach(function (c) { c.remove(); });
+      chipsArea.querySelectorAll('.wiki-chip').forEach(function (c) { c.remove(); });
       tags.forEach(function (t) {
         var chip = document.createElement('span');
         chip.className = 'link-tag-pill wiki-chip';
-        chip.style.cssText = 'background:hsl(340,50%,38%);color:#fff;cursor:pointer;margin:2px 3px 2px 0;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.75rem';
-        chip.textContent = t + ' ×';
+        chip.style.cssText = 'background:hsl(340,50%,38%);color:#fff;cursor:pointer;margin:2px 3px 2px 0;display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.75rem';
+        chip.textContent = t;
+        chip.title = 'Cliquer pour retirer';
         chip.addEventListener('click', function () { removeTag(t); });
-        board.insertBefore(chip, typer);
+        chipsArea.appendChild(chip);
       });
       syncHidden();
       syncSuggest();
@@ -213,7 +220,9 @@
     function syncSuggest() {
       if (!suggestBox) return;
       suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function (chip) {
-        chip.classList.toggle('active', findTag(chip.dataset.tag));
+        var isSelected = findTag(chip.dataset.tag);
+        chip.classList.toggle('active', isSelected);
+        chip.hidden = isSelected;
       });
     }
 

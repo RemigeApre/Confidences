@@ -4,7 +4,6 @@
   <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
     <button type="submit" form="bd-form" class="wf-save-btn">Enregistrer</button>
-    <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="wf-cancel-link">Annuler</a>
   </div>
   <% if (book) { %>
   <form method="POST" action="/bd/<%= book.id %>/delete" class="wf-delete-form-fixed"
@@ -36,7 +35,6 @@
     </div><%# /ef-block meta %>
 
     <div class="ef-block ef-block--origins">
-    <div class="ef-block-label">Origines</div>
 
     <%# Parodie %>
     <%- include('partials/parody-input', {
@@ -112,9 +110,9 @@
 
     <div class="wiki-form-actions wf-mobile-actions">
       <button type="submit">Enregistrer</button>
-      <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="link-button">Annuler</a>
     </div>
   </form>
 </main>
+<script src="/wiki.js?v=<%= assetVersion %>"></script>
 <script src="/bd.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>
