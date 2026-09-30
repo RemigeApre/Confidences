@@ -16449,28 +16449,117 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   flex-direction: column;
   overflow: hidden;
 }
-/* Contenu centré */
-.jeu-content {
+/* ── Grille de catégories ─────────────────────────────────────────────── */
+.jeu-categories {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Carte de catégorie */
+.jeu-cat-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: .5rem;
-  padding: 2rem;
-  pointer-events: none;
+  gap: .7rem;
+  width: 160px;
+  padding: 1.8rem 1rem 1.5rem;
+  border-radius: 18px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, filter .15s;
+  position: relative;
+  overflow: hidden;
 }
-.jeu-title {
-  font-size: clamp(1.6rem, 5vw, 2.8rem);
-  font-weight: 800;
-  letter-spacing: .04em;
-  margin: 0;
-  color: var(--text-1, #fff);
+.jeu-cat-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.06);
+  opacity: 0;
+  transition: opacity .15s;
 }
-.jeu-subtitle {
-  font-size: .9rem;
-  color: var(--muted, #777);
-  margin: 0;
+.jeu-cat-btn:hover { transform: translateY(-4px); }
+.jeu-cat-btn:hover::before { opacity: 1; }
+.jeu-cat-btn:active { transform: translateY(-1px); }
+
+.jeu-cat-icon {
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 14px;
+}
+.jeu-cat-icon svg { width: 30px; height: 30px; }
+
+.jeu-cat-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.jeu-cat-sub {
+  font-size: .72rem;
+  text-align: center;
+  line-height: 1.4;
+  opacity: .7;
+}
+
+/* ── Arcade — violet/indigo ── */
+.jeu-cat-btn--arcade {
+  background: linear-gradient(145deg, hsl(250,55%,22%), hsl(262,50%,17%));
+  border-color: hsl(258,60%,48%);
+  color: hsl(255,90%,88%);
+  box-shadow: 0 4px 24px rgba(109,77,255,.28), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.jeu-cat-btn--arcade .jeu-cat-icon {
+  background: rgba(139,92,246,.25);
+  color: hsl(262,100%,78%);
+}
+.jeu-cat-btn--arcade:hover {
+  box-shadow: 0 8px 32px rgba(109,77,255,.46), inset 0 1px 0 rgba(255,255,255,.12);
+  border-color: hsl(258,75%,62%);
+}
+
+/* ── Casino — or/ambre ── */
+.jeu-cat-btn--casino {
+  background: linear-gradient(145deg, hsl(36,55%,18%), hsl(30,50%,13%));
+  border-color: hsl(40,80%,44%);
+  color: hsl(44,95%,84%);
+  box-shadow: 0 4px 24px rgba(217,143,18,.22), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.jeu-cat-btn--casino .jeu-cat-icon {
+  background: rgba(217,143,18,.2);
+  color: hsl(44,98%,62%);
+}
+.jeu-cat-btn--casino:hover {
+  box-shadow: 0 8px 32px rgba(217,143,18,.4), inset 0 1px 0 rgba(255,255,255,.11);
+  border-color: hsl(44,90%,56%);
+}
+
+/* ── Aventure — vert émeraude ── */
+.jeu-cat-btn--aventure {
+  background: linear-gradient(145deg, hsl(152,45%,16%), hsl(160,40%,11%));
+  border-color: hsl(150,55%,36%);
+  color: hsl(148,75%,82%);
+  box-shadow: 0 4px 24px rgba(34,134,84,.2), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.jeu-cat-btn--aventure .jeu-cat-icon {
+  background: rgba(34,134,84,.2);
+  color: hsl(148,70%,55%);
+}
+.jeu-cat-btn--aventure:hover {
+  box-shadow: 0 8px 32px rgba(34,134,84,.36), inset 0 1px 0 rgba(255,255,255,.1);
+  border-color: hsl(148,65%,48%);
+}
+
+@media (max-width: 480px) {
+  .jeu-categories { gap: .9rem; padding: 1rem; }
+  .jeu-cat-btn { width: 130px; padding: 1.4rem .8rem 1.2rem; }
+  .jeu-cat-icon { width: 46px; height: 46px; }
+  .jeu-cat-icon svg { width: 24px; height: 24px; }
+  .jeu-cat-name { font-size: 1rem; }
 }
 
 /* ── Zone lootbox (bas droite) ─────────────────────────────────────── */
@@ -17641,20 +17730,15 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
    ARCADE
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Bouton arcade bas gauche ── */
-.jeu-arcade-area {
-  position: absolute; bottom: 1.5rem; left: 1.5rem; z-index: 10;
+/* ── Badge « Bientôt » sur les jeux indisponibles ── */
+.arcade-game-card--unavailable { opacity: .7; pointer-events: none; }
+.arcade-unavailable-badge {
+  display: inline-block;
+  background: rgba(100,116,139,.25); border: 1px solid rgba(100,116,139,.4);
+  color: #94a3b8; border-radius: 20px; padding: .25rem .75rem;
+  font-size: .75rem; font-weight: 700; letter-spacing: .05em;
+  white-space: nowrap; flex-shrink: 0;
 }
-.jeu-arcade-btn {
-  display: flex; align-items: center; gap: .45rem;
-  background: rgba(91,79,207,.22); border: 1.5px solid rgba(91,79,207,.5);
-  color: #a5b4fc; border-radius: 10px; padding: .55rem 1.1rem;
-  font-size: .9rem; font-weight: 700; cursor: pointer;
-  transition: background .15s, border-color .15s, color .15s;
-  backdrop-filter: blur(6px);
-}
-.jeu-arcade-btn:hover { background: rgba(91,79,207,.38); border-color: rgba(139,92,246,.75); color: #c4b5fd; }
-.jeu-arcade-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
 /* ── Overlay ── */
 .arcade-overlay {

@@ -16,18 +16,33 @@
   </button>
   </div>
 
-  <%# ── Contenu principal ── %>
-  <div class="jeu-content">
-    <h1 class="jeu-title">Jeu</h1>
-    <p class="jeu-subtitle">D&rsquo;autres r&eacute;compenses arrivent bient&ocirc;t&hellip;</p>
-  </div>
+  <%# ── Grille de catégories ── %>
+  <div class="jeu-categories">
 
-  <%# ── Arcade (bas gauche) ── %>
-  <div class="jeu-arcade-area">
-    <button class="jeu-arcade-btn" id="jeu-arcade-btn" aria-label="Arcade">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M8 12h2m-1-1v2M14 11h.01M16 13h.01"/></svg>
-      Arcade
+    <button class="jeu-cat-btn jeu-cat-btn--arcade" id="jeu-arcade-btn" aria-label="Arcade">
+      <span class="jeu-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M8 12h2m-1-1v2M14 11h.01M16 13h.01"/></svg>
+      </span>
+      <span class="jeu-cat-name">Arcade</span>
+      <span class="jeu-cat-sub">Memory &bull; et plus bient&ocirc;t</span>
     </button>
+
+    <button class="jeu-cat-btn jeu-cat-btn--casino" id="jeu-casino-btn" aria-label="Casino">
+      <span class="jeu-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1.5"/><rect x="14" y="2" width="8" height="8" rx="1.5"/><rect x="2" y="14" width="8" height="8" rx="1.5"/><rect x="14" y="14" width="8" height="8" rx="1.5"/><circle cx="6" cy="6" r="1.2" fill="currentColor"/><circle cx="18" cy="6" r="1.2" fill="currentColor"/><circle cx="18" cy="10" r="1.2" fill="currentColor"/><circle cx="6" cy="18" r="1.2" fill="currentColor"/><circle cx="18" cy="18" r="1.2" fill="currentColor"/></svg>
+      </span>
+      <span class="jeu-cat-name">Casino</span>
+      <span class="jeu-cat-sub">Roue du hasard &bull; Slots</span>
+    </button>
+
+    <button class="jeu-cat-btn jeu-cat-btn--aventure" id="jeu-aventure-btn" aria-label="Aventure">
+      <span class="jeu-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 10.5 L12 3 L9.5 10.5 L3 8 L7.5 14 L3 20 L12 17 L21 20 L16.5 14 L21 8 Z"/></svg>
+      </span>
+      <span class="jeu-cat-name">Aventure</span>
+      <span class="jeu-cat-sub">Bient&ocirc;t disponible</span>
+    </button>
+
   </div>
 
   <%# ── Lootbox (bas droite) ── %>
@@ -198,6 +213,53 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<%# ── Modal Casino ── %>
+<div class="arcade-overlay" id="casino-modal" hidden aria-modal="true" role="dialog">
+  <div class="arcade-modal">
+    <div class="arcade-modal-header">
+      <h2 class="arcade-modal-title">&#127920; Casino</h2>
+      <button class="arcade-close-btn" id="casino-close-btn" aria-label="Fermer">&#10005;</button>
+    </div>
+    <div class="arcade-screen">
+      <div class="arcade-games-list">
+        <div class="arcade-game-card arcade-game-card--unavailable">
+          <span class="arcade-game-card-icon">&#127744;</span>
+          <div class="arcade-game-card-info">
+            <strong>Roue du hasard</strong>
+            <span>Tentez votre chance et gagnez des r&eacute;compenses</span>
+          </div>
+          <span class="arcade-unavailable-badge">Bient&ocirc;t</span>
+        </div>
+        <div class="arcade-game-card arcade-game-card--unavailable">
+          <span class="arcade-game-card-icon">&#127921;</span>
+          <div class="arcade-game-card-info">
+            <strong>Slots</strong>
+            <span>Machine &agrave; sous &mdash; alignez les symboles</span>
+          </div>
+          <span class="arcade-unavailable-badge">Bient&ocirc;t</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── Modal Aventure ── %>
+<div class="arcade-overlay" id="aventure-modal" hidden aria-modal="true" role="dialog">
+  <div class="arcade-modal">
+    <div class="arcade-modal-header">
+      <h2 class="arcade-modal-title">&#9876; Aventure</h2>
+      <button class="arcade-close-btn" id="aventure-close-btn" aria-label="Fermer">&#10005;</button>
+    </div>
+    <div class="arcade-screen arcade-screen--result">
+      <div class="arcade-result-icon">&#9876;</div>
+      <h3 class="arcade-result-title">Bient&ocirc;t disponible</h3>
+      <p style="color:#64748b;font-size:.9rem;text-align:center;margin:.5rem 0 1.5rem">
+        Des jeux d&rsquo;aventure arrivent prochainement&hellip;
+      </p>
+    </div>
   </div>
 </div>
 
@@ -750,5 +812,27 @@
     clearProgress();
     showScreen(screenGames);
   });
+})();
+</script>
+
+<script>
+/* Casino + Aventure modals */
+(function () {
+  function simpleModal(overlayId, openBtnId, closeBtnId) {
+    var overlay  = document.getElementById(overlayId);
+    var openBtn  = document.getElementById(openBtnId);
+    var closeBtn = document.getElementById(closeBtnId);
+    if (!overlay) return;
+    function open()  { overlay.hidden = false; document.body.style.overflow = 'hidden'; }
+    function close() { overlay.hidden = true;  document.body.style.overflow = ''; }
+    openBtn  && openBtn.addEventListener('click', open);
+    closeBtn && closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && !overlay.hidden) close();
+    });
+  }
+  simpleModal('casino-modal',   'jeu-casino-btn',   'casino-close-btn');
+  simpleModal('aventure-modal', 'jeu-aventure-btn', 'aventure-close-btn');
 })();
 </script>
