@@ -26,6 +26,19 @@ function buildProtagonistesRouter(config) {
     res.redirect(`/protagonistes/${id}`);
   });
 
+  // API JSON : créer un·e protagoniste à la volée (depuis l'éditeur d'image)
+  router.post("/api/create", requireAdmin, express.json(), (req, res) => {
+    const name = String(req.body.name || "").slice(0, 200).trim();
+    if (!name) return res.json({ ok: false, error: "Nom vide" });
+    // Vérifier si un protagoniste du même nom existe déjà (insensible à la casse)
+    const existing = db.listProtagonistes().find(function(p) {
+      return p.name.toLowerCase() === name.toLowerCase();
+    });
+    if (existing) return res.json({ ok: true, id: existing.id, name: existing.name });
+    const id = db.createProtagoniste({ name, description: "", tags: [], parody: "", subParody: "" });
+    res.json({ ok: true, id, name });
+  });
+
   router.get("/:id", (req, res) => {
     const protagoniste = db.getProtagoniste(req.params.id);
     if (!protagoniste) return res.redirect("/protagonistes");

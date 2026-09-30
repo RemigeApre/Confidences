@@ -182,6 +182,30 @@
 
           inp.addEventListener('blur', function() { setTimeout(closeDrop, 160); });
 
+          function createOrAddByName(name) {
+            name = name.trim();
+            if (!name) return;
+            // Chercher d'abord dans la liste existante (insensible à la casse)
+            var existing = ALL_PROTS.find(function(p) { return p.name.toLowerCase() === name.toLowerCase(); });
+            if (existing) { addChip(existing); inp.value = ''; closeDrop(); return; }
+            // Sinon créer via l'API
+            inp.disabled = true;
+            fetch('/protagonistes/api/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: name })
+            }).then(function(r) { return r.json(); }).then(function(res) {
+              inp.disabled = false;
+              if (res.ok) {
+                var p = { id: res.id, name: res.name };
+                ALL_PROTS.push(p);
+                addChip(p);
+                inp.value = '';
+                closeDrop();
+              }
+            }).catch(function() { inp.disabled = false; });
+          }
+
           inp.addEventListener('keydown', function(e) {
             var items = drop.querySelectorAll('.parody-ac-item');
             if (e.key === 'ArrowDown') {
@@ -195,8 +219,12 @@
             } else if (e.key === 'Enter') {
               // e.preventDefault() est déjà géré par le listener global data-no-enter-submit
               if (!drop.hidden && items.length) {
+                // Sélection dans le dropdown
                 var target = acSel >= 0 ? items[acSel] : items[0];
                 if (target) target.dispatchEvent(new MouseEvent('mousedown'));
+              } else if (inp.value.trim()) {
+                // Aucune suggestion : créer ou retrouver par nom
+                createOrAddByName(inp.value);
               }
             } else if (e.key === 'Backspace' && inp.value === '') {
               var allChips = chips.querySelectorAll('.gf-prot-chip');
