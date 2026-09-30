@@ -126,6 +126,7 @@
   // ── Ouverture une par une ────────────────────────────────────────────────────
   function startOpeningOne() {
     _opening = true;
+    overlay.removeAttribute("hidden");
     showChestAnimation(function (reward) {
       if (!reward) { closeOverlay(); return; }
       _sessionRewards.push(reward);
