@@ -79,6 +79,26 @@
       <% } %>
     </section>
 
+    <%# ── Section Arcade ── %>
+    <% if (currentUser.arcadeMemoryBestLevel > 0) { %>
+    <section class="coffre-section">
+      <div class="coffre-section-header">
+        <h2 class="coffre-section-title">&#127918; Arcade</h2>
+        <a href="/jeu" class="coffre-voir-plus">Jouer &rarr;</a>
+      </div>
+      <div class="coffre-arcade-stats">
+        <div class="coffre-arcade-stat">
+          <span class="coffre-arcade-stat-value"><%= currentUser.arcadeMemoryBestLevel %></span>
+          <span class="coffre-arcade-stat-label">Niveau max Memory</span>
+        </div>
+        <div class="coffre-arcade-stat">
+          <span class="coffre-arcade-stat-value"><%= currentUser.arcadeMemoryBestScore.toLocaleString('fr-FR') %></span>
+          <span class="coffre-arcade-stat-label">Meilleur score</span>
+        </div>
+      </div>
+    </section>
+    <% } %>
+
     <% } else if (view === 'images') { %>
     <%# ════════════════════════════════════════════════════════════════ %>
     <%# ── VUE IMAGES COMPLÈTE ── %>

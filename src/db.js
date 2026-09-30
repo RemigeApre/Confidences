@@ -247,6 +247,8 @@ try { db.exec("ALTER TABLE users ADD COLUMN lootbox_allow_irrealiste INTEGER NOT
 // JSON : {x:50, y:50, scale:1} — x/y en % (object-position), scale = facteur de zoom
 try { db.exec("ALTER TABLE users ADD COLUMN profile_image_crop TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN rating_charm TEXT NOT NULL DEFAULT 'star'"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN arcade_memory_best_level INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN arcade_memory_best_score INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 // ── Lootboxes et récompenses ───────────────────────────────────────────────
 // Lootboxes attribuées à un utilisateur (une ligne = une boîte, ouverte ou non).
@@ -637,6 +639,8 @@ function rowToUser(row) {
     lootboxAllowIrrealiste: row.lootbox_allow_irrealiste == null ? 1 : !!row.lootbox_allow_irrealiste,
     profileImageCrop: (() => { try { return JSON.parse(row.profile_image_crop || 'null'); } catch(_) { return null; } })(),
     ratingCharm: row.rating_charm || 'star',
+    arcadeMemoryBestLevel: row.arcade_memory_best_level || 0,
+    arcadeMemoryBestScore: row.arcade_memory_best_score || 0,
   };
 }
 
@@ -3271,6 +3275,16 @@ function getMemoryTags(userId, minImages = 8) {
     .map(([tag, count]) => ({ tag, count }));
 }
 
+function updateArcadeStats(userId, level, score) {
+  const current = getUserById(userId);
+  if (!current) return;
+  const newLevel = Math.max(current.arcadeMemoryBestLevel, level);
+  const newScore = Math.max(current.arcadeMemoryBestScore, score);
+  db.prepare(
+    "UPDATE users SET arcade_memory_best_level = ?, arcade_memory_best_score = ? WHERE id = ?"
+  ).run(newLevel, newScore, userId);
+}
+
 module.exports = {
   db,
   insertSubmission,
@@ -3465,6 +3479,7 @@ module.exports = {
   grantLootbox,
   getMemoryImages,
   getMemoryTags,
+  updateArcadeStats,
   checkAndGrantActionLootbox,
   countUserRatingsAll,
   countUserFavoritesAll,

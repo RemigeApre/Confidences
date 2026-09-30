@@ -92,6 +92,7 @@
       .then(function (d) { setCount(d.count || 0); })
       .catch(function () {});
   }
+  window._lbRefreshCount = refreshCount;
 
   function setCount(n) {
     _count = n;

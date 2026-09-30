@@ -1,6 +1,6 @@
 const express = require('express');
 const { requireUserJson } = require('../auth');
-const { getMemoryImages, getMemoryTags, grantLootbox, getLootboxCount } = require('../db');
+const { getMemoryImages, getMemoryTags, grantLootbox, getLootboxCount, updateArcadeStats } = require('../db');
 const { thumbUrl } = require('../thumbs');
 
 function buildArcadeRouter() {
@@ -24,11 +24,13 @@ function buildArcadeRouter() {
     res.json({ ok: true, tags });
   });
 
-  // POST /arcade/memory-complete  { level, won }
-  router.post('/memory-complete', requireUserJson, (req, res) => {
-    const { level, won } = req.body;
+  // POST /arcade/memory-complete  { level, won, score }
+  router.post('/memory-complete', requireUserJson, express.json(), (req, res) => {
+    const { level, won, score } = req.body;
+    const lvl   = Math.max(1, parseInt(level) || 0);
+    const pts   = Math.max(0, parseInt(score)  || 0);
+    if (won) updateArcadeStats(req.user.id, lvl, pts);
     if (!won) return res.json({ ok: true, lootboxGranted: false });
-    const lvl = Math.max(1, parseInt(level) || 0);
     if (lvl % 5 === 0) {
       grantLootbox(req.user.id, 1, 'standard');
       const newCount = getLootboxCount(req.user.id);

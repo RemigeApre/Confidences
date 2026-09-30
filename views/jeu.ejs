@@ -105,9 +105,24 @@
       </div>
     </div>
 
+    <%# ── Memory : reprise de partie ── %>
+    <div id="arcade-screen-memory-resume" class="arcade-screen arcade-screen--result" hidden>
+      <div class="arcade-result-icon">&#128190;</div>
+      <h3 class="arcade-result-title">Partie sauvegard&eacute;e</h3>
+      <div class="arcade-resume-info">
+        <span>Niveau <strong id="resume-level">1</strong></span>
+        <span>Score <strong id="resume-score">0</strong></span>
+        <span id="resume-mode-label" class="arcade-resume-mode"></span>
+      </div>
+      <div class="arcade-result-footer">
+        <button class="arcade-btn arcade-btn--ghost" id="arcade-resume-restart">Nouvelle partie</button>
+        <button class="arcade-btn arcade-btn--primary" id="arcade-resume-continue">Reprendre &rarr;</button>
+      </div>
+    </div>
+
     <%# ── Memory : configuration ── %>
     <div id="arcade-screen-memory-setup" class="arcade-screen" hidden>
-      <p class="arcade-section-title">Memory &mdash; Configuration</p>
+      <p class="arcade-section-title" id="arcade-setup-title">Memory &mdash; Configuration</p>
 
       <div class="arcade-setup-row">
         <label class="arcade-radio-label">
@@ -164,8 +179,9 @@
       <h3 class="arcade-result-title">Niveau <span id="win-level">1</span> complet&eacute;&nbsp;!</h3>
       <div class="arcade-result-score">Score&nbsp;: <strong id="win-score">0</strong></div>
       <div id="win-lootbox" class="arcade-lootbox-reward" hidden>&#127873; <strong>+1&nbsp;lootbox</strong> d&eacute;bloqu&eacute;e&nbsp;!</div>
-      <div class="arcade-result-footer">
+      <div class="arcade-result-footer arcade-result-footer--3col">
         <button class="arcade-btn arcade-btn--ghost" id="win-quit-btn">Quitter</button>
+        <button class="arcade-btn arcade-btn--secondary" id="win-change-mode-btn">&#9881; Mode</button>
         <button class="arcade-btn arcade-btn--primary" id="win-next-btn">Niveau suivant &rarr;</button>
       </div>
     </div>
@@ -178,7 +194,7 @@
       <div class="arcade-result-score">Score&nbsp;: <strong id="lose-score">0</strong></div>
       <div class="arcade-result-footer">
         <button class="arcade-btn arcade-btn--ghost" id="lose-quit-btn">Quitter</button>
-        <button class="arcade-btn arcade-btn--primary" id="lose-retry-btn">Recommencer</button>
+        <button class="arcade-btn arcade-btn--primary" id="lose-retry-btn">Rejouer ce niveau</button>
       </div>
     </div>
 
@@ -283,55 +299,66 @@
 (function () {
   'use strict';
 
+  var SAVE_KEY = 'arcade_memory_save';
+
   // ── DOM ─────────────────────────────────────────────────────────────────────
-  var arcadeBtn      = document.getElementById('jeu-arcade-btn');
-  var arcadeOverlay  = document.getElementById('arcade-modal');
-  var arcadeCloseBtn = document.getElementById('arcade-close-btn');
-  var screenGames    = document.getElementById('arcade-screen-games');
-  var screenSetup    = document.getElementById('arcade-screen-memory-setup');
-  var screenGame     = document.getElementById('arcade-screen-memory-game');
-  var screenWin      = document.getElementById('arcade-screen-memory-win');
-  var screenLose     = document.getElementById('arcade-screen-memory-lose');
-  var memPlayBtn     = document.getElementById('arcade-memory-play-btn');
-  var memStartBtn    = document.getElementById('arcade-memory-start-btn');
-  var memSetupBack   = document.getElementById('arcade-memory-setup-back');
-  var tagPickerEl    = document.getElementById('arcade-tag-picker');
-  var tagSearchEl    = document.getElementById('arcade-tag-search');
-  var tagListEl      = document.getElementById('arcade-tag-list');
-  var memLevelEl     = document.getElementById('mem-level');
-  var memTimerEl     = document.getElementById('mem-timer');
-  var memScoreEl     = document.getElementById('mem-score');
-  var memGrid        = document.getElementById('arcade-memory-grid');
-  var winLevelEl     = document.getElementById('win-level');
-  var winScoreEl     = document.getElementById('win-score');
-  var winLootboxEl   = document.getElementById('win-lootbox');
-  var winNextBtn     = document.getElementById('win-next-btn');
-  var winQuitBtn     = document.getElementById('win-quit-btn');
-  var loseLevelEl    = document.getElementById('lose-level');
-  var loseScoreEl    = document.getElementById('lose-score');
-  var loseRetryBtn   = document.getElementById('lose-retry-btn');
-  var loseQuitBtn    = document.getElementById('lose-quit-btn');
+  var arcadeBtn        = document.getElementById('jeu-arcade-btn');
+  var arcadeOverlay    = document.getElementById('arcade-modal');
+  var arcadeCloseBtn   = document.getElementById('arcade-close-btn');
+  var screenGames      = document.getElementById('arcade-screen-games');
+  var screenResume     = document.getElementById('arcade-screen-memory-resume');
+  var screenSetup      = document.getElementById('arcade-screen-memory-setup');
+  var screenGame       = document.getElementById('arcade-screen-memory-game');
+  var screenWin        = document.getElementById('arcade-screen-memory-win');
+  var screenLose       = document.getElementById('arcade-screen-memory-lose');
+  var memPlayBtn       = document.getElementById('arcade-memory-play-btn');
+  var memStartBtn      = document.getElementById('arcade-memory-start-btn');
+  var memSetupBack     = document.getElementById('arcade-memory-setup-back');
+  var setupTitleEl     = document.getElementById('arcade-setup-title');
+  var tagPickerEl      = document.getElementById('arcade-tag-picker');
+  var tagSearchEl      = document.getElementById('arcade-tag-search');
+  var tagListEl        = document.getElementById('arcade-tag-list');
+  var memLevelEl       = document.getElementById('mem-level');
+  var memTimerEl       = document.getElementById('mem-timer');
+  var memScoreEl       = document.getElementById('mem-score');
+  var memGrid          = document.getElementById('arcade-memory-grid');
+  var winLevelEl       = document.getElementById('win-level');
+  var winScoreEl       = document.getElementById('win-score');
+  var winLootboxEl     = document.getElementById('win-lootbox');
+  var winNextBtn       = document.getElementById('win-next-btn');
+  var winChangeModeBtn = document.getElementById('win-change-mode-btn');
+  var winQuitBtn       = document.getElementById('win-quit-btn');
+  var loseLevelEl      = document.getElementById('lose-level');
+  var loseScoreEl      = document.getElementById('lose-score');
+  var loseRetryBtn     = document.getElementById('lose-retry-btn');
+  var loseQuitBtn      = document.getElementById('lose-quit-btn');
+  var resumeLevelEl    = document.getElementById('resume-level');
+  var resumeScoreEl    = document.getElementById('resume-score');
+  var resumeModeEl     = document.getElementById('resume-mode-label');
+  var resumeRestartBtn = document.getElementById('arcade-resume-restart');
+  var resumeContinueBtn= document.getElementById('arcade-resume-continue');
 
   if (!arcadeOverlay) return;
 
   // ── State ────────────────────────────────────────────────────────────────────
-  var _level      = 1;
-  var _totalScore = 0;
-  var _score      = 0;
-  var _pairs      = 4;
-  var _matched    = 0;
-  var _flipped    = [];
-  var _cards      = [];
-  var _locked     = false;
-  var _timer      = null;
-  var _timeLeft   = 0;
-  var _mode       = 'random';
+  var _level       = 1;
+  var _totalScore  = 0;
+  var _score       = 0;
+  var _pairs       = 4;
+  var _matched     = 0;
+  var _flipped     = [];
+  var _cards       = [];
+  var _locked      = false;
+  var _timer       = null;
+  var _timeLeft    = 0;
+  var _mode        = 'random';
   var _selectedTag = null;
-  var _allTags    = [];
+  var _allTags     = [];
   var _tagSearchTimeout = null;
+  var _midGame     = false; // true when changing mode between levels
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
-  var _SCREENS = [screenGames, screenSetup, screenGame, screenWin, screenLose];
+  var _SCREENS = [screenGames, screenResume, screenSetup, screenGame, screenWin, screenLose];
   function showScreen(el) {
     _SCREENS.forEach(function(s) { if (s) s.hidden = true; });
     if (el) el.hidden = false;
@@ -351,8 +378,29 @@
     return m + ':' + (ss < 10 ? '0' : '') + ss;
   }
 
-  function escAttr(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+
+  // ── Save / restore progress ───────────────────────────────────────────────────
+  function saveProgress() {
+    var inGame = screenGame && !screenGame.hidden;
+    var inLose = screenLose && !screenLose.hidden;
+    var inWin  = screenWin  && !screenWin.hidden;
+    if ((inGame || inLose || inWin) && (_level > 1 || _totalScore > 0)) {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify({
+          level: _level, totalScore: _totalScore,
+          mode: _mode, tag: _selectedTag || null,
+        }));
+      } catch (_) {}
+    }
+  }
+
+  function clearProgress() {
+    try { localStorage.removeItem(SAVE_KEY); } catch (_) {}
+  }
+
+  function loadSave() {
+    try { return JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (_) { return null; }
   }
 
   // ── Modal open/close ─────────────────────────────────────────────────────────
@@ -363,6 +411,7 @@
   }
 
   function closeArcade() {
+    saveProgress();
     clearInterval(_timer);
     arcadeOverlay.hidden = true;
     document.body.style.overflow = '';
@@ -375,18 +424,51 @@
     if (e.key === 'Escape' && arcadeOverlay && !arcadeOverlay.hidden) closeArcade();
   });
 
-  // ── Memory: setup ─────────────────────────────────────────────────────────────
+  // ── Memory: play button → resume or setup ─────────────────────────────────────
   memPlayBtn && memPlayBtn.addEventListener('click', function() {
-    _level = 1; _totalScore = 0;
-    // Reset mode radios
+    var saved = loadSave();
+    if (saved && saved.level > 1) {
+      if (resumeLevelEl) resumeLevelEl.textContent = saved.level;
+      if (resumeScoreEl) resumeScoreEl.textContent = saved.totalScore || 0;
+      if (resumeModeEl) resumeModeEl.textContent = saved.mode === 'tag' && saved.tag
+        ? 'Th\u00e8me\u00a0: ' + saved.tag
+        : 'Images al\u00e9atoires';
+      showScreen(screenResume);
+      loadTags();
+    } else {
+      startFreshSetup();
+    }
+  });
+
+  resumeRestartBtn && resumeRestartBtn.addEventListener('click', function() {
+    clearProgress();
+    startFreshSetup();
+  });
+
+  resumeContinueBtn && resumeContinueBtn.addEventListener('click', function() {
+    var saved = loadSave();
+    if (!saved) { startFreshSetup(); return; }
+    _level      = saved.level || 1;
+    _totalScore = saved.totalScore || 0;
+    _mode       = saved.mode || 'random';
+    _selectedTag= saved.tag || null;
+    clearProgress();
+    startLevel(_level);
+  });
+
+  function startFreshSetup() {
+    _level = 1; _totalScore = 0; _midGame = false;
     document.querySelectorAll('input[name="memory-mode"]').forEach(function(r) {
       if (r.value === 'random') r.checked = true;
     });
     _mode = 'random'; _selectedTag = null;
     if (tagPickerEl) tagPickerEl.hidden = true;
+    if (setupTitleEl) setupTitleEl.textContent = 'Memory \u2014 Configuration';
+    if (memStartBtn) memStartBtn.textContent = 'Commencer';
+    if (memSetupBack) memSetupBack.textContent = '\u2190 Retour';
     showScreen(screenSetup);
     loadTags();
-  });
+  }
 
   function loadTags() {
     fetch('/arcade/tags?min=8')
@@ -436,14 +518,31 @@
   }
 
   memSetupBack && memSetupBack.addEventListener('click', function() {
-    showScreen(screenGames);
+    if (_midGame) { _midGame = false; showScreen(screenWin); }
+    else showScreen(screenGames);
   });
 
   memStartBtn && memStartBtn.addEventListener('click', function() {
     if (_mode === 'tag' && !_selectedTag) {
       alert('Veuillez choisir un th\u00e8me.'); return;
     }
-    startLevel(_level);
+    var nextLvl = _midGame ? _level + 1 : _level;
+    _midGame = false;
+    startLevel(nextLvl);
+  });
+
+  // ── Win screen: change mode between levels ────────────────────────────────────
+  winChangeModeBtn && winChangeModeBtn.addEventListener('click', function() {
+    _midGame = true;
+    // Pre-populate radios to current mode
+    document.querySelectorAll('input[name="memory-mode"]').forEach(function(r) {
+      r.checked = r.value === _mode;
+    });
+    if (tagPickerEl) tagPickerEl.hidden = _mode !== 'tag';
+    if (setupTitleEl) setupTitleEl.textContent = 'Memory \u2014 Changer de mode';
+    if (memStartBtn) memStartBtn.textContent = 'Continuer au niveau ' + (_level + 1);
+    if (memSetupBack) memSetupBack.textContent = '\u2190 Annuler';
+    showScreen(screenSetup);
   });
 
   // ── Level start ───────────────────────────────────────────────────────────────
@@ -460,7 +559,13 @@
     if (memLevelEl) memLevelEl.textContent = lvl;
     if (memScoreEl) memScoreEl.textContent = _totalScore;
     if (memTimerEl) { memTimerEl.textContent = formatTime(_timeLeft); memTimerEl.style.color = ''; }
-    if (memGrid) memGrid.innerHTML = '<div style="grid-column:1/-1;color:#64748b;text-align:center;padding:2rem;font-size:.9rem">Chargement\u2026</div>';
+    if (memGrid) {
+      memGrid.innerHTML = '';
+      var ph = document.createElement('div');
+      ph.style.cssText = 'grid-column:1/-1;color:#64748b;text-align:center;padding:2rem;font-size:.9rem';
+      ph.textContent = 'Chargement\u2026';
+      memGrid.appendChild(ph);
+    }
     showScreen(screenGame);
 
     var url = '/arcade/memory-images?count=' + _pairs;
@@ -477,9 +582,7 @@
         if (imgs.length < _pairs) {
           _pairs = imgs.length;
           _timeLeft = timeForPairs(_pairs);
-          if (_mode === 'tag') {
-            _mode = 'random'; _selectedTag = null;
-          }
+          if (_mode === 'tag') { _mode = 'random'; _selectedTag = null; }
         }
         buildCardGrid(imgs);
         startTimer();
@@ -500,7 +603,6 @@
       cardData.push({ img: img, pairId: i });
       cardData.push({ img: img, pairId: i });
     });
-    // Fisher-Yates shuffle
     for (var i = cardData.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
       var tmp = cardData[i]; cardData[i] = cardData[j]; cardData[j] = tmp;
@@ -513,11 +615,29 @@
     cardData.forEach(function(data, idx) {
       var card = document.createElement('div');
       card.className = 'mem-card';
-      card.innerHTML =
-        '<div class="mem-card-inner">'
-        + '<div class="mem-card-back"><span class="mem-card-back-icon">\u2605</span></div>'
-        + '<div class="mem-card-front"><img src="' + escAttr(data.img.thumb) + '" alt="' + escAttr(data.img.title) + '" loading="eager" /></div>'
-        + '</div>';
+
+      var inner = document.createElement('div');
+      inner.className = 'mem-card-inner';
+
+      var back = document.createElement('div');
+      back.className = 'mem-card-back';
+      var backIcon = document.createElement('span');
+      backIcon.className = 'mem-card-back-icon';
+      backIcon.textContent = '\u2605';
+      back.appendChild(backIcon);
+
+      var front = document.createElement('div');
+      front.className = 'mem-card-front';
+      var img = document.createElement('img');
+      img.src = data.img.thumb;
+      img.alt = data.img.title || '';
+      img.loading = 'eager';
+      front.appendChild(img);
+
+      inner.appendChild(back);
+      inner.appendChild(front);
+      card.appendChild(inner);
+
       var capturedIdx = idx;
       card.addEventListener('click', function() { onCardClick(capturedIdx); });
       memGrid.appendChild(card);
@@ -539,7 +659,6 @@
     var a = _cards[_flipped[0]], b = _cards[_flipped[1]];
 
     if (a.pairId === b.pairId) {
-      // Match
       setTimeout(function() {
         a.matched = true; b.matched = true;
         a.el.classList.add('matched'); b.el.classList.add('matched');
@@ -552,7 +671,6 @@
         if (_matched >= _pairs) onLevelComplete();
       }, 350);
     } else {
-      // No match
       var penalty = Math.min(10, _totalScore);
       _totalScore = Math.max(0, _totalScore - penalty);
       if (memScoreEl) memScoreEl.textContent = _totalScore;
@@ -581,23 +699,25 @@
   // ── Level complete ────────────────────────────────────────────────────────────
   function onLevelComplete() {
     clearInterval(_timer);
-    var bonus = _timeLeft * 5;
-    _totalScore += bonus;
+    _totalScore += _timeLeft * 5;
 
     fetch('/arcade/memory-complete', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ level: _level, won: true }),
+      body: JSON.stringify({ level: _level, won: true, score: _totalScore }),
     })
       .then(function(r) { return r.json(); })
-      .then(function(d) { showWinScreen(d.lootboxGranted, d.newCount); })
-      .catch(function() { showWinScreen(false, null); });
+      .then(function(d) { showWinScreen(d.lootboxGranted); })
+      .catch(function() { showWinScreen(false); });
   }
 
-  function showWinScreen(lootboxGranted, newCount) {
+  function showWinScreen(lootboxGranted) {
     if (winLevelEl) winLevelEl.textContent = _level;
     if (winScoreEl) winScoreEl.textContent = _totalScore;
     if (winLootboxEl) winLootboxEl.hidden = !lootboxGranted;
-    if (lootboxGranted && newCount != null) updateLootboxCount(newCount);
+    if (lootboxGranted) {
+      // Synchronise le compteur lootbox dans lootbox.js (fix : _count était stale)
+      if (typeof window._lbRefreshCount === 'function') window._lbRefreshCount();
+    }
     showScreen(screenWin);
   }
 
@@ -607,41 +727,28 @@
   });
 
   winQuitBtn && winQuitBtn.addEventListener('click', function() {
+    clearProgress();
     showScreen(screenGames);
   });
 
   // ── Timer out ─────────────────────────────────────────────────────────────────
   function onTimerOut() {
+    fetch('/arcade/memory-complete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ level: _level, won: false, score: _totalScore }),
+    }).catch(function() {});
     if (loseLevelEl) loseLevelEl.textContent = _level;
     if (loseScoreEl) loseScoreEl.textContent = _totalScore;
     showScreen(screenLose);
   }
 
   loseRetryBtn && loseRetryBtn.addEventListener('click', function() {
-    _totalScore = 0;
     startLevel(_level);
   });
 
   loseQuitBtn && loseQuitBtn.addEventListener('click', function() {
+    clearProgress();
     showScreen(screenGames);
   });
-
-  // ── Update lootbox count in the existing jeu page ──────────────────────────────
-  function updateLootboxCount(count) {
-    var n = count || 0;
-    var label = n > 99 ? '99+' : String(n);
-    var navBadge = document.getElementById('nav-jeu-badge');
-    var navBadgeMobile = document.getElementById('nav-jeu-badge-mobile');
-    var jeuCount = document.getElementById('jeu-lootbox-count');
-    var jeuLabel = document.getElementById('jeu-lootbox-label');
-    var jeuBtn   = document.getElementById('jeu-lootbox-btn');
-    [navBadge, navBadgeMobile].forEach(function(el) {
-      if (!el) return;
-      el.textContent = label; el.removeAttribute('hidden');
-    });
-    if (jeuCount) { jeuCount.textContent = label; jeuCount.removeAttribute('hidden'); }
-    if (jeuLabel) jeuLabel.textContent = n === 1 ? '1 lootbox' : n + ' lootboxes';
-    if (jeuBtn) { jeuBtn.removeAttribute('disabled'); jeuBtn.setAttribute('data-has-loot', '1'); }
-  }
 })();
 </script>
