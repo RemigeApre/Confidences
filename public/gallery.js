@@ -420,14 +420,14 @@
 
   function sortCards() {
     if (!grid) return;
-    var cards = Array.from(grid.querySelectorAll(".gallery-card:not([hidden])"));
+    // Trie TOUTES les cartes (visibles ou non) pour que la pagination
+    // ne réordonne pas à chaque changement de page ou de filtre.
+    var cards = Array.from(grid.querySelectorAll(".gallery-card"));
     if (sortMode === "random") {
-      // Initialise les seeds sur TOUTES les cartes (une seule fois)
+      // Initialise les seeds une seule fois pour tout le set
       if (!randomSeeds) {
         randomSeeds = new Map();
-        Array.from(grid.querySelectorAll(".gallery-card")).forEach(function(c) {
-          randomSeeds.set(c, Math.random());
-        });
+        cards.forEach(function(c) { randomSeeds.set(c, Math.random()); });
       }
       cards.sort(function(a, b) { return (randomSeeds.get(a) || 0) - (randomSeeds.get(b) || 0); });
     } else {
@@ -623,7 +623,7 @@
   var hideAiToggle = document.getElementById("gallery-hide-ai-toggle");
   function syncHideAiBtn() {
     if (!hideAiToggle) return;
-    hideAiToggle.textContent = hideAiSuspected ? "Afficher IA" : "Masquer IA";
+    hideAiToggle.textContent = hideAiSuspected ? "Afficher images IA" : "Cacher images IA";
     hideAiToggle.classList.toggle("active", hideAiSuspected);
   }
   if (hideAiToggle) {
@@ -2051,7 +2051,11 @@
         '</div>',
         // Suspicion IA
         '<div class="lbep-section lbep-section--ai">',
-          '<label class="lbep-ai-label"><input type="checkbox" id="lbep-ai-suspected"> Suspicion IA</label>',
+          '<label class="lbep-ai-label">',
+            '<input type="checkbox" id="lbep-ai-suspected">',
+            '<span class="lbep-ai-label-text">Image IA suspecte</span>',
+            '<span class="lbep-ai-label-hint">(sera masquable via le filtre)</span>',
+          '</label>',
         '</div>',
         // Actions
         '<div class="lbep-actions">',
