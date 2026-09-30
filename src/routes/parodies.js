@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { requireUser } = require('../auth');
-const { listAllParodiesWithCounts, getContentByParody, listAllParodies, listAllSubParodies, normalizeParody } = require('../db');
+const db = require('../db');
+const { listAllParodiesWithCounts, getContentByParody, listAllParodies, listAllSubParodies, normalizeParody } = db;
 
 function buildParodiesRouter(config) {
   router.use(requireUser);
@@ -27,7 +28,8 @@ function buildParodiesRouter(config) {
     var parody = decodeURIComponent(req.params.name);
     var subParody = decodeURIComponent(req.params.sub);
     var content = getContentByParody(parody, subParody);
-    res.render('parody-detail', { config, parody, subParody, subs: [], content, currentUser: req.user || null });
+    var tagMeta = db.getAllTagMeta();
+    res.render('parody-detail', { config, parody, subParody, subs: [], content, tagMeta, currentUser: req.user || null });
   });
 
   router.get('/:name', function(req, res) {
@@ -36,7 +38,8 @@ function buildParodiesRouter(config) {
     var allWithCounts = listAllParodiesWithCounts();
     var entry = allWithCounts.find(function(e) { return e.parody === parody; });
     var subs = entry ? entry.subs : [];
-    res.render('parody-detail', { config, parody, subParody: null, subs, content, currentUser: req.user || null });
+    var tagMeta = db.getAllTagMeta();
+    res.render('parody-detail', { config, parody, subParody: null, subs, content, tagMeta, currentUser: req.user || null });
   });
 
   return router;

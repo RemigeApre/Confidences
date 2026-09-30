@@ -206,7 +206,8 @@ function buildGalleryRouter(config) {
     const seriesMap = galleryIds.length ? getSeriesMapForIds(galleryIds) : {};
     const allParodies = listAllParodies();
     const allProtagonists = listProtagonistes();
-    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap, allParodies, allProtagonists });
+    const tagMeta = db.getAllTagMeta();
+    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap, allParodies, allProtagonists, tagMeta });
   });
 
   // Chaque image est sa propre fiche, jamais regroupées automatiquement —

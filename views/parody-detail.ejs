@@ -76,10 +76,22 @@
   <% if (content.gallery.length) { %>
   <%
     var IRREALISTE_TAGS = ['irréaliste', 'fantaisie'];
+    // Map protagonist id → special type, pour héritage
+    var _protSpecialMap = {};
+    (content.protagonistes || []).forEach(function(p) {
+      var types = (p.tags || []).map(function(t){ return (tagMeta && tagMeta[t]) || ''; });
+      if (types.indexOf('ultra') !== -1) _protSpecialMap[p.id] = 'ultra';
+      else if (types.indexOf('irrealiste') !== -1) _protSpecialMap[p.id] = 'irrealiste';
+    });
     function imgSpecial(img) {
       var t = (img.tags || []).map(function(x){ return String(x).toLowerCase(); });
       if (t.indexOf('ultra') !== -1) return 'ultra';
       if (IRREALISTE_TAGS.some(function(r){ return t.indexOf(r) !== -1; })) return 'irrealiste';
+      // Héritage depuis les protagonistes de l'image
+      var ids = img.protagonistIds || [];
+      for (var _i = 0; _i < ids.length; _i++) {
+        if (_protSpecialMap[ids[_i]]) return _protSpecialMap[ids[_i]];
+      }
       return '';
     }
     var hasUltra      = content.gallery.some(function(i){ return imgSpecial(i) === 'ultra'; });

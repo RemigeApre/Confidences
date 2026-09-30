@@ -358,8 +358,12 @@
             return (evos[pid] || []).some(function(e) { return norm(e).indexOf(q) !== -1; });
           });
         })();
-      var okUltra       = !hideUltra || card.dataset.ultra !== "1";
-      var okIrrealiste  = !hideIrrealiste || card.dataset.irrealiste !== "1";
+      var _protSpecial = (window.GALLERY_PROT_SPECIAL || {});
+      var _cardProtIds = (card.dataset.protagonists || "").split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+      var _protIsUltra      = _cardProtIds.some(function(pid){ return _protSpecial[pid] === "ultra"; });
+      var _protIsIrrealiste = _cardProtIds.some(function(pid){ return _protSpecial[pid] === "irrealiste"; });
+      var okUltra       = !hideUltra || (card.dataset.ultra !== "1" && !_protIsUltra);
+      var okIrrealiste  = !hideIrrealiste || (card.dataset.irrealiste !== "1" && !_protIsIrrealiste);
       var okAi          = !hideAiSuspected || card.dataset.ai !== "1";
       var okRating   = !activeRating || Number(card.dataset.rating) >= activeRating;
       var okParody   = !activeParody || (card.dataset.parody || "") === activeParody;
