@@ -235,6 +235,9 @@ try { db.exec("ALTER TABLE users DROP COLUMN tag_nav_pref"); } catch (_) {}
 // image de galerie débloquée via lootbox utilisable comme photo de profil.
 try { db.exec("ALTER TABLE users ADD COLUMN profile_color TEXT NOT NULL DEFAULT '#6b7280'"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN profile_image_id INTEGER"); } catch (_) {}
+// Monnaie virtuelle : gagnée en ouvrant des lootboxes (doublons → pièces)
+// ou en revendant des items. Dépensée pour acheter des items en boutique.
+try { db.exec("ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 // ── Lootboxes et récompenses ───────────────────────────────────────────────
 // Lootboxes attribuées à un utilisateur (une ligne = une boîte, ouverte ou non).
@@ -539,6 +542,7 @@ function rowToUser(row) {
     canSeeOwned: !!row.can_see_owned,
     profileColor: row.profile_color || '#6b7280',
     profileImageId: row.profile_image_id || null,
+    coins: row.coins || 0,
   };
 }
 
@@ -2570,6 +2574,9 @@ function setGalleryLinks(galleryId, links) {
 
 // ── Lootbox functions ──────────────────────────────────────────────────────
 const RARITY_WEIGHTS = { common: 50, rare: 28, epic: 15, legendary: 5, mythic: 2 };
+// Prix d'achat et de revente par rareté (ratio fixe 10%)
+const RARITY_BUY_PRICE  = { common: 10, rare: 20, epic: 50, legendary: 100, mythic: 200 };
+const RARITY_SELL_PRICE = { common:  1, rare:  2, epic:  5, legendary:  10, mythic:  20 };
 
 function _pickRarity() {
   const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
@@ -2596,18 +2603,24 @@ function grantLootbox(userId, count) {
 function openLootbox(userId) {
   const box = db.prepare("SELECT id FROM user_lootboxes WHERE user_id = ? AND opened = 0 ORDER BY created_at ASC LIMIT 1").get(userId);
   if (!box) return null;
-  // Pick a random gallery image from the pool
   const images = db.prepare("SELECT id, image_paths, title FROM gallery_images ORDER BY RANDOM() LIMIT 30").all();
   if (!images.length) return null;
   const image = images[Math.floor(Math.random() * images.length)];
   const rarity = _pickRarity();
-  // Add to unlocks (ignore duplicate: user already owned it, still counts as opened)
-  db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, image.id, rarity, new Date().toISOString());
-  // Mark box as opened
-  db.prepare("UPDATE user_lootboxes SET opened = 1, reward_ref_id = ?, reward_rarity = ?, opened_at = ? WHERE id = ?").run(image.id, rarity, new Date().toISOString(), box.id);
+  const now = new Date().toISOString();
+  // Tenter d'insérer dans les unlocks ; si déjà possédé → convertir en pièces
+  const insertResult = db.prepare(
+    "INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)"
+  ).run(userId, image.id, rarity, now);
+  const isDuplicate = insertResult.changes === 0;
+  if (isDuplicate) {
+    const coins = RARITY_SELL_PRICE[rarity] || 1;
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+  }
+  db.prepare("UPDATE user_lootboxes SET opened = 1, reward_ref_id = ?, reward_rarity = ?, opened_at = ? WHERE id = ?").run(image.id, rarity, now, box.id);
   let imagePaths = [];
   try { imagePaths = JSON.parse(image.image_paths || '[]'); } catch (_) {}
-  return { imageId: image.id, title: image.title || '', rarity, thumb: imagePaths[0] || null };
+  return { imageId: image.id, title: image.title || '', rarity, thumb: imagePaths[0] || null, isDuplicate };
 }
 
 function getUserUnlocks(userId) {
@@ -2618,6 +2631,53 @@ function getUserUnlocks(userId) {
     try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
     return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at };
   });
+}
+
+// Revend un item débloqué → supprime de user_unlocks, crédite les pièces
+function sellUnlock(userId, unlockId) {
+  const row = db.prepare("SELECT id, ref_id, rarity FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, userId);
+  if (!row) return { ok: false, error: 'not_found' };
+  const coins = RARITY_SELL_PRICE[row.rarity] || 1;
+  db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(row.id);
+  // Si c'était la photo de profil active, la réinitialiser
+  db.prepare("UPDATE users SET coins = coins + ?, profile_image_id = CASE WHEN profile_image_id = ? THEN NULL ELSE profile_image_id END WHERE id = ?").run(coins, row.ref_id, userId);
+  return { ok: true, coins };
+}
+
+// Achète un item depuis la boutique → débite les pièces, ajoute à user_unlocks
+function buyItem(userId, itemType, refId) {
+  if (itemType !== 'profile_image') return { ok: false, error: 'invalid_type' };
+  const refIdInt = parseInt(refId, 10);
+  if (isNaN(refIdInt)) return { ok: false, error: 'invalid_ref' };
+  // Pour l'instant toutes les images sont "common"
+  const rarity = 'common';
+  const price = RARITY_BUY_PRICE[rarity];
+  const user = db.prepare("SELECT coins, profile_image_id FROM users WHERE id = ?").get(userId);
+  if (!user) return { ok: false, error: 'user_not_found' };
+  if (user.coins < price) return { ok: false, error: 'not_enough_coins', need: price, have: user.coins };
+  // Vérifier que la galerie existe
+  const img = db.prepare("SELECT id FROM gallery_images WHERE id = ?").get(refIdInt);
+  if (!img) return { ok: false, error: 'item_not_found' };
+  // Vérifier pas déjà possédé
+  const existing = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = ? AND ref_id = ?").get(userId, itemType, refIdInt);
+  if (existing) return { ok: false, error: 'already_owned' };
+  db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, ?, ?, ?)").run(userId, itemType, refIdInt, rarity, new Date().toISOString());
+  db.prepare("UPDATE users SET coins = coins - ? WHERE id = ?").run(price, userId);
+  return { ok: true, rarity, coinsSpent: price };
+}
+
+function getShopItems(userId) {
+  // Toutes les images de galerie non encore possédées par l'utilisateur
+  const ownedIds = new Set(
+    db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").all(userId).map(r => r.ref_id)
+  );
+  return db.prepare("SELECT id, image_paths, title FROM gallery_images ORDER BY id DESC").all()
+    .filter(r => !ownedIds.has(r.id))
+    .map(r => {
+      let imagePaths = [];
+      try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
+      return { id: r.id, title: r.title || '', thumb: imagePaths[0] || null, rarity: 'common', buyPrice: RARITY_BUY_PRICE.common };
+    });
 }
 
 function setProfileColor(userId, color) {
@@ -2833,6 +2893,11 @@ module.exports = {
   grantLootbox,
   openLootbox,
   getUserUnlocks,
+  sellUnlock,
+  buyItem,
+  getShopItems,
+  RARITY_BUY_PRICE,
+  RARITY_SELL_PRICE,
   setProfileColor,
   setProfileImageId,
 };

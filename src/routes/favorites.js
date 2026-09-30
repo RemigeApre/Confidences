@@ -31,6 +31,13 @@ const {
   removeFromCollection,
   listCollectionsForImagePopup,
   listHiddenBdPages,
+  getUserUnlocks,
+  getShopItems,
+  sellUnlock,
+  buyItem,
+  setProfileImageId,
+  RARITY_BUY_PRICE,
+  RARITY_SELL_PRICE,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -192,6 +199,50 @@ function buildFavoritesRouter(config) {
 
   router.get("/", requireUser, (req, res) => {
     renderFavoris(res, req);
+  });
+
+  // ── Coffre ────────────────────────────────────────────────────────────────
+  router.get("/coffre", requireUser, (req, res) => {
+    const unlocks   = getUserUnlocks(req.user.id);
+    const shopItems = getShopItems(req.user.id);
+    res.render("profil-coffre", {
+      config,
+      roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
+      unlocks,
+      shopItems,
+      RARITY_BUY_PRICE,
+      RARITY_SELL_PRICE,
+    });
+  });
+
+  // Revente d'un item débloqué
+  router.post("/coffre/sell", requireUserJson, express.json(), (req, res) => {
+    const unlockId = parseInt(req.body.unlockId, 10);
+    if (isNaN(unlockId)) return res.json({ ok: false, error: 'invalid' });
+    const result = sellUnlock(req.user.id, unlockId);
+    if (!result.ok) return res.json(result);
+    // Retourner le nouveau solde
+    const { getUserById } = require("../db");
+    const user = getUserById(req.user.id);
+    res.json({ ok: true, coinsEarned: result.coins, newBalance: user.coins });
+  });
+
+  // Achat d'un item depuis la boutique
+  router.post("/coffre/buy", requireUserJson, express.json(), (req, res) => {
+    const result = buyItem(req.user.id, String(req.body.itemType || 'profile_image'), req.body.refId);
+    if (!result.ok) return res.json(result);
+    const { getUserById } = require("../db");
+    const user = getUserById(req.user.id);
+    res.json({ ok: true, rarity: result.rarity, coinsSpent: result.coinsSpent, newBalance: user.coins });
+  });
+
+  // Choisir une image débloquée comme photo de profil
+  router.post("/coffre/set-avatar", requireUserJson, express.json(), (req, res) => {
+    const raw = req.body.imageId;
+    const imageId = raw === null || raw === undefined ? null : parseInt(raw, 10);
+    const ok = setProfileImageId(req.user.id, isNaN(imageId) ? null : imageId);
+    res.json({ ok });
   });
 
   router.get("/parametres", requireUser, (req, res) => {

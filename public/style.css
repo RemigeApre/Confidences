@@ -16052,6 +16052,177 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   PROFIL NAV — accordéon Activités / Gestion
+   ══════════════════════════════════════════════════════════════════════════ */
+.profil-nav-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.profil-nav-coins {
+  display: inline-flex; align-items: center; gap: .28rem;
+  font-size: .75rem; font-weight: 700;
+  color: hsl(44,90%,60%);
+  background: rgba(245,210,100,.08);
+  border: 1px solid rgba(245,210,100,.2);
+  border-radius: 20px;
+  padding: .15rem .5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.profil-nav-coin-icon { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Lien Coffre */
+.profil-nav-link--coffre { font-weight: 700; color: hsl(44,90%,62%); }
+.profil-nav-link--coffre.active,
+.profil-nav-link--coffre:hover { color: hsl(44,100%,72%); }
+
+/* Accordéon details/summary */
+.profil-nav-accordion { border: none; }
+.profil-nav-accordion-title {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .48rem .6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .83rem;
+  font-weight: 600;
+  color: var(--muted, #888);
+  list-style: none;
+  user-select: none;
+  transition: color .15s, background .15s;
+}
+.profil-nav-accordion-title::-webkit-details-marker { display: none; }
+.profil-nav-accordion-title:hover { color: var(--text-1, #eee); background: rgba(255,255,255,.05); }
+.profil-nav-accordion[open] .profil-nav-accordion-title { color: var(--text-1, #eee); }
+.profil-nav-chevron {
+  width: 14px; height: 14px;
+  margin-left: auto; flex-shrink: 0;
+  transition: transform .2s;
+}
+.profil-nav-accordion[open] .profil-nav-chevron { transform: rotate(180deg); }
+.profil-nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* Liens sub-volet indentés */
+.profil-nav-links--sub { padding-left: .6rem; margin-bottom: .25rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE COFFRE
+   ══════════════════════════════════════════════════════════════════════════ */
+.coffre-page { padding: 1.5rem 1rem 3rem; max-width: 900px; }
+.coffre-header {
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 2rem; flex-wrap: wrap;
+}
+.coffre-title { font-size: 1.4rem; font-weight: 800; margin: 0; }
+.coffre-coins {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: rgba(245,210,100,.08);
+  border: 1px solid rgba(245,210,100,.25);
+  border-radius: 24px; padding: .35rem .9rem;
+  font-size: .95rem; font-weight: 700;
+  color: hsl(44,90%,62%);
+}
+.coffre-coin-icon { width: 20px; height: 20px; flex-shrink: 0; }
+.coffre-coins-label { font-size: .75rem; font-weight: 400; color: var(--muted, #888); }
+
+.coffre-section { margin-bottom: 2.5rem; }
+.coffre-section-title {
+  font-size: 1rem; font-weight: 700;
+  margin: 0 0 1rem; padding-bottom: .5rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.coffre-shop-price-hint { font-size: .72rem; font-weight: 400; color: var(--muted, #888); }
+.coffre-empty { font-size: .85rem; color: var(--muted, #888); }
+
+/* Grille d'items */
+.coffre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+.coffre-item {
+  display: flex; flex-direction: column;
+  background: var(--surface-2, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.coffre-item--active { border-color: hsl(44,90%,55%); box-shadow: 0 0 0 1px hsl(44,90%,55%); }
+.coffre-item--locked { opacity: .85; }
+
+/* Image */
+.coffre-item-img-wrap {
+  position: relative;
+  width: 100%; aspect-ratio: 1;
+  background: var(--surface-3, #111);
+  overflow: hidden;
+}
+.coffre-item-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.coffre-item-img--blurred { filter: blur(6px) brightness(.7); }
+.coffre-item-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted, #666); opacity: .3;
+}
+.coffre-item-placeholder svg { width: 40px; height: 40px; }
+
+/* Cadenas overlay */
+.coffre-item-lock-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.35);
+}
+.coffre-item-lock-overlay svg { width: 32px; height: 32px; color: rgba(255,255,255,.7); }
+
+/* Badge rareté sur l'image */
+.coffre-item-rarity {
+  position: absolute; bottom: 4px; left: 4px;
+  font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  padding: .15rem .45rem; border-radius: 4px;
+  background: rgba(0,0,0,.6);
+}
+.coffre-item-rarity--common    { color: var(--rarity-common,    hsl(0,0%,70%)); }
+.coffre-item-rarity--rare      { color: var(--rarity-rare,      hsl(210,80%,65%)); }
+.coffre-item-rarity--epic      { color: var(--rarity-epic,      hsl(270,65%,70%)); }
+.coffre-item-rarity--legendary { color: var(--rarity-legendary, hsl(44,95%,55%)); }
+.coffre-item-rarity--mythic    { color: var(--rarity-mythic,    hsl(0,75%,60%)); }
+
+/* Badge photo active */
+.coffre-item-active-badge {
+  position: absolute; top: 4px; right: 4px;
+  font-size: .58rem; font-weight: 700; text-transform: uppercase;
+  padding: .15rem .45rem; border-radius: 4px;
+  background: hsl(44,90%,55%); color: #000;
+}
+
+/* Titre + actions */
+.coffre-item-title {
+  font-size: .75rem; padding: .4rem .6rem .15rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0; color: var(--text-1, #eee);
+}
+.coffre-item-title--muted { color: var(--muted, #888); }
+.coffre-item-actions {
+  display: flex; gap: .3rem; padding: .3rem .5rem .6rem;
+  flex-wrap: wrap;
+}
+.coffre-btn {
+  flex: 1; padding: .3rem .4rem;
+  border-radius: 6px; border: 1px solid rgba(255,255,255,.12);
+  font-size: .68rem; font-weight: 600;
+  cursor: pointer; background: rgba(255,255,255,.05);
+  color: var(--text-1, #eee); transition: background .15s;
+  white-space: nowrap;
+}
+.coffre-btn:hover { background: rgba(255,255,255,.12); }
+.coffre-btn--avatar { border-color: hsl(44,70%,40%); color: hsl(44,90%,65%); }
+.coffre-btn--avatar:hover { background: rgba(245,210,100,.12); }
+.coffre-btn--sell { border-color: rgba(255,80,80,.25); color: hsl(0,70%,65%); }
+.coffre-btn--sell:hover { background: rgba(255,80,80,.1); }
+.coffre-btn--buy { width: 100%; margin: 0 .5rem .5rem; flex: none;
+  border-color: hsl(210,70%,45%); color: hsl(210,80%,72%); }
+.coffre-btn--buy:hover { background: rgba(60,140,255,.12); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
    PAGE JEU — plein écran, sans scroll
    ══════════════════════════════════════════════════════════════════════════ */
 .jeu-viewport {
