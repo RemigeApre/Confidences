@@ -303,8 +303,8 @@
   <aside class="gallery-lb-panel">
     <button type="button" class="gallery-lb-panel-handle" aria-label="Remonter voir la photo"></button>
     <button type="button" class="gallery-lb-close" title="Fermer">&#215;</button>
-    <%# Barre "Explorer l'inconnu" (voir gallery.js) : uniquement pendant
-        une session d'exploration démarrée depuis le volet filtre. %>
+
+    <%# Barre "Explorer l'inconnu" — uniquement pendant une session d'exploration %>
     <div id="gallery-lb-explore-nav" class="gallery-lb-explore-nav" hidden>
       <span class="gallery-lb-explore-label">Mode exploration</span>
       <div class="gallery-lb-explore-actions">
@@ -313,37 +313,21 @@
       </div>
       <button type="button" id="gallery-lb-explore-exit" class="gallery-lb-explore-exit" title="Quitter le mode exploration" aria-label="Quitter le mode exploration">&times;</button>
     </div>
-    <div class="gallery-lb-tags"></div>
-    <a class="gallery-lb-wiki-btn" href="" hidden></a>
-    <div class="gallery-lb-notes"></div>
-    <div class="gallery-lb-actions" id="gallery-lb-actions" hidden>
-      <div class="gallery-lb-rating" id="gallery-lb-rating">
-        <% for (var lri = 1; lri <= 5; lri++) { %>
-          <span class="gallery-star" data-val="<%= lri %>">&#9733;</span>
-        <% } %>
-      </div>
-      <div class="gallery-lb-react-row">
-        <button type="button" class="gallery-lb-text-btn gallery-lb-fav-btn" id="gallery-lb-fav-btn" title="Favori">
-          <span class="gallery-lb-text-btn-icon">&#10084;</span><span>J&rsquo;adore</span>
-        </button>
-        <button type="button" class="gallery-lb-text-btn gallery-lb-hide-btn" id="gallery-lb-hide-btn" title="Retire cette image de vos listings (voir Profil &gt; Contenus masqu&eacute;s)">
-          <span class="gallery-lb-text-btn-icon">&#128065;</span><span>Masquer</span>
-        </button>
-        <button type="button" class="gallery-lb-text-btn gallery-lb-collection-btn" id="gallery-lb-collection-btn" title="Ajouter &agrave; une collection">
-          <span class="gallery-lb-text-btn-icon">&#128193;</span><span>Collection</span>
-        </button>
-      </div>
-      <%# Mode couple : révélé seulement une fois que le visiteur a lui-même
-          noté (voir gallery.js:syncPartnerReveal). %>
-      <div class="wiki-partner-reveal" id="gallery-lb-partner-reveal" data-partner-name="<%= locals.partnerUser ? partnerUser.displayName : '' %>" hidden></div>
-      <% if (currentUser && currentUser.isAdmin) { %>
-        <div class="gallery-lb-admin-row">
-          <a class="gallery-card-btn gallery-lb-edit-link" id="gallery-lb-edit-link" href="#" title="Modifier" hidden>&#9998;</a>
-          <button type="button" class="gallery-card-btn gallery-lb-delete-btn" id="gallery-lb-delete-btn" title="Supprimer" hidden>&#128465;</button>
-          <button type="button" class="gallery-lb-processed-btn link-button" id="gallery-lb-processed-btn" hidden>Marquer trait&#233;</button>
-        </div>
-      <% } %>
-    </div>
+
+    <%# Bloc méta : titre, parodies, auteur, protagonistes, tags, lien codex %>
+    <%- include('partials/lb-meta-block') %>
+
+    <%# Séparateur flexible : pousse les blocs admin + avis en bas du volet %>
+    <div class="lb-spacer"></div>
+
+    <%# Bloc admin : uniquement visible pour les administrateurs %>
+    <% if (currentUser && currentUser.isAdmin) { %>
+      <%- include('partials/lb-admin-block') %>
+    <% } %>
+
+    <%# Bloc avis : notation + j'adore / masquer / collection %>
+    <%- include('partials/lb-avis-block') %>
+
   </aside>
 
 </div>

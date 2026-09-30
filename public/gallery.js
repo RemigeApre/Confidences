@@ -839,6 +839,8 @@
   var lbPrev    = lightbox ? lightbox.querySelector(".gallery-lb-prev")      : null;
   var lbNext    = lightbox ? lightbox.querySelector(".gallery-lb-next")      : null;
   var lbActions    = document.getElementById("gallery-lb-actions");
+  var lbTitle      = document.getElementById("gallery-lb-title");
+  var lbAdminBlock = document.getElementById("gallery-lb-admin-block");
   var lbRating     = document.getElementById("gallery-lb-rating");
   var lbPartnerReveal = document.getElementById("gallery-lb-partner-reveal");
   var lbFavBtn     = document.getElementById("gallery-lb-fav-btn");
@@ -997,6 +999,7 @@
       }
     }
     preloadAdjacent();
+    if (lbTitle) lbTitle.textContent = displayTitle;
     if (lbTags) {
       lbTags.innerHTML = tags.map(function(t) { return window.buildTagBadgeHTML(t); }).join("");
     }
@@ -1106,43 +1109,37 @@
       fetch("/galerie/" + galleryIdStr + "/view", { method: "POST" }).catch(function(){});
     }
 
-    // Actions : rating, fav, edit (uniquement pour les images de galerie avec ID)
-    if (lbActions) {
-      lbActions.hidden = !galleryId;
-      if (galleryId) {
-        // Rating
-        var rating = Number(card.dataset.rating) || 0;
-        if (lbRating) {
-          lbRating.dataset.galleryId = galleryId;
-          lbRating.querySelectorAll(".gallery-star").forEach(function(s, i) {
-            s.classList.toggle("filled", i < rating);
-          });
-        }
-        syncPartnerReveal(card, rating);
-        // Fav
-        if (lbFavBtn) {
-          lbFavBtn.dataset.itemId = galleryId;
-          lbFavBtn.classList.toggle("active", card.dataset.fav === "1");
-        }
-        // Lien vers la page d'édition complète
-        if (lbEditLink) {
-          lbEditLink.href = "/galerie/" + galleryId + "/edit";
-          lbEditLink.hidden = false;
-        }
-        // Bouton suppression
-        if (lbDeleteBtn) {
-          lbDeleteBtn.dataset.galleryId = galleryId;
-          lbDeleteBtn.hidden = false;
-        }
-        // Masquer
-        if (lbHideBtn) lbHideBtn.dataset.galleryId = galleryId;
-        // Collections
-        if (lbCollectionBtn) lbCollectionBtn.dataset.galleryId = galleryId;
-        if (lbProcessBtn) {
-          lbProcessBtn.dataset.galleryId = galleryId;
-          lbProcessBtn.hidden = !window.GALLERY_CAN_EDIT;
-          lbProcessBtn.textContent = card.dataset.processed === "1" ? "Retirer trait\u00e9" : "Marquer trait\u00e9";
-        }
+    // Bloc avis : rating, fav, masquer, collection (uniquement pour les galeries avec ID)
+    if (lbActions) lbActions.hidden = !galleryId;
+    // Bloc admin : édition + traité (uniquement si admin et image avec ID)
+    if (lbAdminBlock) lbAdminBlock.hidden = !(galleryId && window.GALLERY_CAN_EDIT);
+
+    if (galleryId) {
+      // Rating
+      var rating = Number(card.dataset.rating) || 0;
+      if (lbRating) {
+        lbRating.dataset.galleryId = galleryId;
+        lbRating.querySelectorAll(".gallery-star").forEach(function(s, i) {
+          s.classList.toggle("filled", i < rating);
+        });
+      }
+      syncPartnerReveal(card, rating);
+      // Fav
+      if (lbFavBtn) {
+        lbFavBtn.dataset.itemId = galleryId;
+        lbFavBtn.classList.toggle("active", card.dataset.fav === "1");
+      }
+      // Masquer
+      if (lbHideBtn) lbHideBtn.dataset.galleryId = galleryId;
+      // Collections
+      if (lbCollectionBtn) lbCollectionBtn.dataset.galleryId = galleryId;
+      // Admin
+      if (lbEditLink) { lbEditLink.href = "/galerie/" + galleryId + "/edit"; lbEditLink.hidden = false; }
+      if (lbDeleteBtn) { lbDeleteBtn.dataset.galleryId = galleryId; lbDeleteBtn.hidden = false; }
+      if (lbProcessBtn) {
+        lbProcessBtn.dataset.galleryId = galleryId;
+        lbProcessBtn.hidden = false;
+        lbProcessBtn.textContent = card.dataset.processed === "1" ? "Retirer trait\u00e9" : "Marquer trait\u00e9";
       }
     }
   }
