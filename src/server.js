@@ -20,7 +20,7 @@ const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
 const { attachUser } = require("./auth");
 const {
-  db, getAllTagMeta, getAllTagCategories, setTagType, setTagCategory, createStandaloneTag, renameTagEverywhere,
+  db, getAllTagMeta, getAllTagCategories, getAllTagParents, setTagType, setTagCategory, setTagParent, createStandaloneTag, renameTagEverywhere,
   listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
@@ -260,6 +260,7 @@ app.use((req, res, next) => {
       galleryImages: req.user ? listGalleryImages() : [],
       bdBooks: req.user ? listBdBooks() : [],
       tagMeta: getAllTagMeta(),
+      tagParents: getAllTagParents(),
     });
   } catch (_) {
     res.locals.tagRegistry = {};
@@ -392,6 +393,9 @@ app.get("/tags", function (req, res) {
     try { listBlacklistedTags(req.user.id).forEach(function (r) { allKeys.delete(r.tag); }); } catch (_) {}
   }
 
+  var parentMap = {};
+  try { parentMap = getAllTagParents(); } catch (_) {}
+
   var tags = Array.from(allKeys).map(function (t) {
     return {
       tag:      t,
@@ -399,6 +403,7 @@ app.get("/tags", function (req, res) {
       breakdown:{ wiki: wiki[t] || 0, galerie: galerie[t] || 0, bd: bd[t] || 0 },
       type:     resolveTagType(t, metaMap),
       category: categoryMap[t] || "autre",
+      parent:   parentMap[t] || "",
     };
   }).sort(function (a, b) {
     var d = b.count - a.count;
@@ -442,6 +447,18 @@ app.put("/api/tags/category", function (req, res) {
   var category = String(req.body.category || "autre").toLowerCase().trim();
   if (!tag) return res.status(400).json({ ok: false, error: "Tag vide" });
   setTagCategory(tag, category);
+  res.json({ ok: true });
+});
+
+// ── API admin : définir le tag principal (agrégation) ─────────────────────
+app.put("/api/tags/parent", function (req, res) {
+  if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false, error: "Interdit" });
+  var tag    = String(req.body.tag    || "").toLowerCase().trim();
+  var parent = String(req.body.parent || "").toLowerCase().trim();
+  if (!tag) return res.status(400).json({ ok: false, error: "Tag vide" });
+  // Un tag ne peut pas être sa propre déclinaison
+  if (tag === parent) return res.json({ ok: false, error: "Circulaire" });
+  setTagParent(tag, parent);
   res.json({ ok: true });
 });
 

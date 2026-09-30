@@ -275,6 +275,18 @@
     var typer   = widget.querySelector(".wiki-tags-typing");
     var hidden  = widget.querySelector(".wiki-tags-hidden");
     var suggestBox = widget.querySelector(".wiki-tag-suggestions");
+    // Trier les suggestions : tags principaux (sans parent) en premier
+    if (suggestBox) {
+      var chips = Array.from(suggestBox.querySelectorAll(".wiki-tag-suggest-chip[data-tag]"));
+      chips.sort(function (a, b) {
+        var aParent = ((window.TAG_REGISTRY || {})[a.dataset.tag] || {}).parent || "";
+        var bParent = ((window.TAG_REGISTRY || {})[b.dataset.tag] || {}).parent || "";
+        if (!aParent && bParent) return -1;
+        if (aParent && !bParent) return 1;
+        return 0;
+      });
+      chips.forEach(function (c) { suggestBox.appendChild(c); });
+    }
     if (!board || !typer || !hidden) return;
 
     // Zone des chips sélectionnés, au-dessus du champ de saisie

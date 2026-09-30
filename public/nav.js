@@ -319,6 +319,8 @@ window.buildTagBadgeHTML = function (tag) {
   var typeBtnsWrap  = document.getElementById("tag-popup-type-btns");
   var catSelect     = document.getElementById("tag-popup-category-select");
   var catBtn        = document.getElementById("tag-popup-category-btn");
+  var parentInput   = document.getElementById("tag-popup-parent-input");
+  var parentBtn     = document.getElementById("tag-popup-parent-btn");
   var feedbackEl    = document.getElementById("tag-popup-admin-feedback");
   var blacklistBtn = document.getElementById("tag-popup-blacklist-btn");
 
@@ -369,6 +371,10 @@ window.buildTagBadgeHTML = function (tag) {
     bdBtn.hidden = true;
     if (feedbackEl) feedbackEl.textContent = "";
     if (renameInput) renameInput.value = tag;
+    if (parentInput) {
+      var tagMeta = (window.TAG_REGISTRY || {})[currentTag] || {};
+      parentInput.value = tagMeta.parent || "";
+    }
     syncTypeBtns();
     syncBlacklistBtn();
     if (adminPanel) adminPanel.hidden = !window.IS_ADMIN;
@@ -509,6 +515,42 @@ window.buildTagBadgeHTML = function (tag) {
           }
         })
         .catch(function () { if (feedbackEl) feedbackEl.textContent = "Erreur réseau"; });
+    });
+  }
+
+  if (parentBtn && parentInput) {
+    // Autocomplete léger : suggestions basées sur TAG_REGISTRY (tags existants)
+    parentInput.addEventListener("input", function () {
+      var q = parentInput.value.toLowerCase().trim();
+      // On ne fait pas de dropdown ici — le champ libre suffit
+    });
+    parentBtn.addEventListener("click", function () {
+      if (!currentTag) return;
+      var parent = parentInput.value.toLowerCase().trim();
+      fetch("/api/tags/parent", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag: currentTag, parent: parent }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok) {
+            if (feedbackEl) { feedbackEl.textContent = parent ? ("D\u00e9clinaison de \u00ab\u00a0" + parent + "\u00a0\u00bb enregistr\u00e9e.") : "Tag principal (plus de d\u00e9clinaison)."; feedbackEl.style.color = "var(--accent)"; }
+            // Mettre à jour le TAG_REGISTRY local
+            if (window.TAG_REGISTRY && window.TAG_REGISTRY[currentTag]) {
+              window.TAG_REGISTRY[currentTag].parent = parent;
+            } else if (window.TAG_REGISTRY) {
+              window.TAG_REGISTRY[currentTag] = { parent: parent };
+            }
+            // Mettre à jour data-parent sur les .tags-item de la page /tags
+            document.querySelectorAll('.tags-item[data-tag="' + currentTag + '"]').forEach(function (el) {
+              el.dataset.parent = parent;
+            });
+          } else {
+            if (feedbackEl) { feedbackEl.textContent = (d && d.error) || "Erreur"; feedbackEl.style.color = "#e05555"; }
+          }
+        })
+        .catch(function () { if (feedbackEl) feedbackEl.textContent = "Erreur r\u00e9seau"; });
     });
   }
 

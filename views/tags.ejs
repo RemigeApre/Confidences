@@ -45,6 +45,14 @@
           </div>
         </div>
 
+        <%# ─ Filtre déclinaisons ─ %>
+        <div class="wiki-filter-section">
+          <label class="tags-variant-toggle">
+            <input type="checkbox" id="tags-hide-variants" />
+            <span>Masquer les d&eacute;clinaisons</span>
+          </label>
+        </div>
+
         <%# ─ Filtre par type ─ %>
         <div class="wiki-filter-section">
           <span class="wiki-filter-label">Type</span>
@@ -112,10 +120,11 @@
         <div class="tags-cat-body">
           <% catItems.forEach(function(item, idx) { %>
           <% var wikiId = wikiPageByTitle[item.tag.toLowerCase()] || null; %>
-          <div class="tags-item tags-item--<%= item.type %><%= wikiId ? ' tags-item--wiki-page' : '' %>"
+          <div class="tags-item tags-item--<%= item.type %><%= wikiId ? ' tags-item--wiki-page' : '' %><%= item.parent ? ' tags-item--variant' : '' %>"
                data-tag="<%= item.tag %>"
                data-type="<%= item.type %>"
                data-category="<%= item.category || 'autre' %>"
+               data-parent="<%= item.parent || '' %>"
                data-wiki-id="<%= wikiId || '' %>"
                data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
                <% if (idx >= CAT_MAX) { %>data-cat-overflow="1"<% } %>
@@ -139,10 +148,11 @@
     <div id="tags-filtered-view" hidden>
       <% tags.forEach(function(item) { %>
       <% var wikiId = wikiPageByTitle[item.tag.toLowerCase()] || null; %>
-      <div class="tags-item tags-item--<%= item.type %><%= wikiId ? ' tags-item--wiki-page' : '' %>"
+      <div class="tags-item tags-item--<%= item.type %><%= wikiId ? ' tags-item--wiki-page' : '' %><%= item.parent ? ' tags-item--variant' : '' %>"
            data-tag="<%= item.tag %>"
            data-type="<%= item.type %>"
            data-category="<%= item.category || 'autre' %>"
+           data-parent="<%= item.parent || '' %>"
            data-wiki-id="<%= wikiId || '' %>"
            data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
            style="--tag-pct: <%= item.pct.toFixed(3) %>">
@@ -204,11 +214,13 @@
   /* ── État des filtres ── */
   var typeStates   = {};   // type → 0 neutre / 1 inclus / 2 exclu
   var activeCat    = "";   // catégorie active (vide = toutes)
+  var hideVariants = false; // masquer les déclinaisons (tags avec parent)
 
   function hasAnyFilter() {
     var q = searchInput ? searchInput.value.trim() : "";
     if (q) return true;
     if (activeCat) return true;
+    if (hideVariants) return true;
     if (Object.values(typeStates).some(function (v) { return v > 0; })) return true;
     return false;
   }
@@ -241,7 +253,8 @@
       var matchType = (includedTypes.length === 0 || includedTypes.indexOf(t) !== -1)
                     && excludedTypes.indexOf(t) === -1;
       var matchCat  = !activeCat || item.dataset.category === activeCat;
-      var show = matchQ && matchType && matchCat;
+      var matchVariant = !hideVariants || !item.dataset.parent;
+      var show = matchQ && matchType && matchCat && matchVariant;
       item.hidden = !show;
       if (show) visible++;
     });
@@ -322,6 +335,15 @@
         if (allChip) allChip.classList.toggle("active", !anyActive);
         applyFilters();
       });
+    });
+  }
+
+  /* ── Filtre : masquer les déclinaisons ── */
+  var hideVariantsChk = document.getElementById("tags-hide-variants");
+  if (hideVariantsChk) {
+    hideVariantsChk.addEventListener("change", function () {
+      hideVariants = hideVariantsChk.checked;
+      applyFilters();
     });
   }
 

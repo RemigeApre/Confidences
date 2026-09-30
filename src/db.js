@@ -374,11 +374,13 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS tag_meta (
     tag      TEXT PRIMARY KEY,
     type     TEXT NOT NULL DEFAULT 'normal',
-    category TEXT NOT NULL DEFAULT 'autre'
+    category TEXT NOT NULL DEFAULT 'autre',
+    parent   TEXT NOT NULL DEFAULT ''
   )
 `);
 // Migration : ajouter la colonne category si elle n'existe pas encore
 try { db.exec("ALTER TABLE tag_meta ADD COLUMN category TEXT NOT NULL DEFAULT 'autre'"); } catch (_) {}
+try { db.exec("ALTER TABLE tag_meta ADD COLUMN parent TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 // Blacklist personnelle de tags (bouton "Masquer le tag" de la popup tag,
 // gérée depuis /tags/masques) : tout contenu portant un de ces tags reste
@@ -2030,6 +2032,20 @@ function getAllTagCategories() {
   return result;
 }
 
+function getAllTagParents() {
+  const rows = db.prepare("SELECT tag, parent FROM tag_meta WHERE parent != ''").all();
+  const result = {};
+  rows.forEach((r) => { result[r.tag] = r.parent; });
+  return result;
+}
+
+function setTagParent(tag, parent) {
+  const t = String(tag || "").toLowerCase().trim();
+  const p = String(parent || "").toLowerCase().trim();
+  if (!t) return;
+  db.prepare("INSERT INTO tag_meta (tag, type, category, parent) VALUES (?, 'normal', 'autre', ?) ON CONFLICT(tag) DO UPDATE SET parent = excluded.parent").run(t, p);
+}
+
 function setTagType(tag, type) {
   if (!VALID_TAG_TYPES.has(type)) type = "normal";
   db.prepare("INSERT INTO tag_meta (tag, type, category) VALUES (?, ?, 'autre') ON CONFLICT(tag) DO UPDATE SET type = excluded.type").run(tag, type);
@@ -2204,11 +2220,13 @@ function renameTagEverywhere(oldTag, newTag) {
     }
   }
   // Déplace les métadonnées vers le nouveau nom
-  const meta = db.prepare("SELECT type, category FROM tag_meta WHERE tag = ?").get(oldTag);
+  const meta = db.prepare("SELECT type, category, parent FROM tag_meta WHERE tag = ?").get(oldTag);
   if (meta) {
     db.prepare("DELETE FROM tag_meta WHERE tag = ?").run(oldTag);
-    db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type, category) VALUES (?, ?, ?)").run(newTag, meta.type, meta.category || "autre");
+    db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type, category, parent) VALUES (?, ?, ?, ?)").run(newTag, meta.type, meta.category || "autre", meta.parent || "");
   }
+  // Si oldTag était un parent, mettre à jour toutes les déclinaisons qui le référencent
+  db.prepare("UPDATE tag_meta SET parent = ? WHERE parent = ?").run(newTag, oldTag);
 }
 
 // ── Custom Quizzes ───────────────────────────────────────────────────────────
@@ -2556,8 +2574,10 @@ module.exports = {
   setUserNote,
   getAllTagMeta,
   getAllTagCategories,
+  getAllTagParents,
   setTagType,
   setTagCategory,
+  setTagParent,
   createStandaloneTag,
   renameTagEverywhere,
   deleteUser,
