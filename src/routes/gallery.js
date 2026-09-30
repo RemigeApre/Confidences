@@ -159,6 +159,7 @@ function buildItems(galleryImages, wikiPages) {
     interested: img.interested,
     partnerReaction: img.partnerReaction || null,
     processed: !!img.processed,
+    titleVisible: !!img.titleVisible,
     author: img.author || "",
     parody: img.parody || "",
     subParody: img.subParody || "",

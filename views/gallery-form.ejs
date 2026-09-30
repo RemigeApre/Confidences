@@ -98,22 +98,76 @@
             mainPh:    'Parodie (optionnel)\u2026'
           }) %>
 
-      <%# Protagonistes %>
-      <% if (allProtagonists && allProtagonists.length) { %>
-      <div class="nv-form-prot-row">
-        <span class="nv-form-prot-label">Protagonistes</span>
-        <div class="nv-form-prot-chips">
-          <% allProtagonists.forEach(function(p) {
+      <%# Protagonistes — autocomplete avec chips %>
+      <div class="gf-prot-widget" id="gf-prot-widget">
+        <div class="gf-prot-chips" id="gf-prot-chips">
+          <% if (allProtagonists) { allProtagonists.forEach(function(p) {
             var checked = image.protagonistIds && image.protagonistIds.indexOf(p.id) !== -1;
-          %>
-            <label class="nv-form-prot-chip">
-              <input type="checkbox" name="protagonist_ids" value="<%= p.id %>" <%= checked ? 'checked' : '' %> />
-              <span><%= p.name %></span>
-            </label>
-          <% }) %>
+            if (checked) { %>
+              <span class="gf-prot-chip" data-id="<%= p.id %>">
+                <%= p.name %>
+                <input type="checkbox" name="protagonist_ids" value="<%= p.id %>" checked style="display:none" />
+              </span>
+          <% } }) } %>
         </div>
+        <div style="position:relative">
+          <input type="text" class="wf-orce-name-input" id="gf-prot-input"
+            placeholder="Ajouter un protagoniste&hellip;" autocomplete="off"
+            style="width:100%;box-sizing:border-box" />
+          <ul class="parody-ac-drop" id="gf-prot-drop" hidden></ul>
+        </div>
+        <script>
+        (function() {
+          var ALL_PROTS = <%- JSON.stringify((allProtagonists || []).map(function(p){ return { id: p.id, name: p.name }; })) %>;
+          var chips = document.getElementById('gf-prot-chips');
+          var inp   = document.getElementById('gf-prot-input');
+          var drop  = document.getElementById('gf-prot-drop');
+          if (!inp) return;
+          function selectedIds() {
+            return Array.from(chips.querySelectorAll('[name="protagonist_ids"]')).map(function(c){ return Number(c.value); });
+          }
+          function renderDrop(q) {
+            drop.innerHTML = '';
+            var sel = selectedIds();
+            var matches = ALL_PROTS.filter(function(p) {
+              return p.name.toLowerCase().includes(q.toLowerCase()) && !sel.includes(p.id);
+            }).slice(0, 8);
+            if (!matches.length) { drop.hidden = true; return; }
+            matches.forEach(function(p) {
+              var li = document.createElement('li');
+              li.className = 'parody-ac-item';
+              li.textContent = p.name;
+              li.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                addChip(p);
+                inp.value = '';
+                drop.hidden = true;
+              });
+              drop.appendChild(li);
+            });
+            drop.hidden = false;
+          }
+          function addChip(p) {
+            if (selectedIds().includes(p.id)) return;
+            var span = document.createElement('span');
+            span.className = 'gf-prot-chip';
+            span.dataset.id = p.id;
+            span.textContent = p.name;
+            var cb = document.createElement('input');
+            cb.type = 'checkbox'; cb.name = 'protagonist_ids'; cb.value = p.id; cb.checked = true; cb.style.display = 'none';
+            span.appendChild(cb);
+            span.addEventListener('click', function() { span.remove(); });
+            chips.appendChild(span);
+          }
+          // click to remove existing chips
+          chips.querySelectorAll('.gf-prot-chip').forEach(function(chip) {
+            chip.addEventListener('click', function() { chip.remove(); });
+          });
+          inp.addEventListener('input', function() { if (inp.value.trim()) renderDrop(inp.value); else drop.hidden = true; });
+          inp.addEventListener('blur', function() { setTimeout(function(){ drop.hidden = true; }, 160); });
+        })();
+        </script>
       </div>
-      <% } %>
 
     </div>
 

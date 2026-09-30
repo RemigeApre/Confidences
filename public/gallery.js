@@ -12,6 +12,8 @@
   }
 
   document.querySelectorAll(".wiki-tags-widget").forEach(function (widget) {
+    // Skip if wiki.js has already initialized this widget (avoids double-init on edit forms)
+    if (widget.querySelector(".wiki-tags-chips")) return;
     var board   = widget.querySelector(".wiki-tags-board");
     var typing  = widget.querySelector(".wiki-tags-typing");
     var hidden  = widget.querySelector(".wiki-tags-hidden");
