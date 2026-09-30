@@ -63,15 +63,15 @@
           data-nature="<%= p.nature || '' %>"
           data-parody="<%= p.parody || '' %>">
 
-          <%# ── Bandeau nature (si pas humain) ── %>
-          <% if (p.nature && p.nature !== 'humain') { %>
-            <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
-          <% } %>
-
           <% if (p.image_path) { %>
             <div class="prot-card-img-wrap">
+              <% if (p.nature && p.nature !== 'humain') { %>
+                <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
+              <% } %>
               <img src="<%= p.image_path %>" alt="<%= p.name %>" class="prot-card-img" loading="lazy" />
             </div>
+          <% } else if (p.nature && p.nature !== 'humain') { %>
+            <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
           <% } %>
 
           <div class="prot-card-body">

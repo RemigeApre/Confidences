@@ -55,12 +55,11 @@
         <div class="prot-gender-btns">
           <%
             var genderOpts = [
-              { value: '', label: '—' },
               { value: 'femme', label: 'Femme' },
               { value: 'homme', label: 'Homme' },
               { value: 'autre', label: 'Autre' }
             ];
-            var currentGender = protagoniste ? (protagoniste.gender || '') : '';
+            var currentGender = protagoniste ? (protagoniste.gender || 'autre') : 'autre';
           %>
           <% genderOpts.forEach(function(opt) { %>
             <label class="prot-gender-btn prot-gender-btn--<%= opt.value || 'none' %><%= currentGender === opt.value ? ' active' : '' %>">
@@ -139,6 +138,9 @@
     var pickBtn    = document.getElementById('prot-img-pick-btn');
     var pickLabel  = document.getElementById('prot-img-pick-label');
 
+    // Sync initial visibility
+    if (imgHolder && imgHolder.style.display !== 'none' && pickBtn) pickBtn.hidden = true;
+
     if (imgInput) {
       imgInput.addEventListener('change', function() {
         var file = imgInput.files[0];
@@ -146,7 +148,7 @@
         imgThumb.src = URL.createObjectURL(file);
         imgHolder.style.display = '';
         if (removeHid) removeHid.value = '';
-        if (pickLabel) pickLabel.textContent = 'Remplacer\u2026';
+        if (pickBtn) pickBtn.hidden = true;
       });
     }
     if (removeBtn) {
@@ -155,7 +157,7 @@
         imgThumb.src = '';
         if (removeHid) removeHid.value = '1';
         if (imgInput) imgInput.value = '';
-        if (pickLabel) pickLabel.textContent = 'Choisir une image\u2026';
+        if (pickBtn) pickBtn.hidden = false;
       });
     }
 

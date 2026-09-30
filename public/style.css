@@ -14828,17 +14828,19 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .prot-card:hover { border-color: hsl(340,45%,40%); }
 
-/* Nature banner — bande colorée en haut de la carte */
+/* Nature banner — overlay en haut de l'image (position absolute = pas de décalage) */
+.prot-card-img-wrap { position: relative; aspect-ratio: 3/4; overflow: hidden; }
 .prot-card-nature-banner {
   font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
-  text-align: center; padding: .2rem .5rem; line-height: 1.4;
+  text-align: center; padding: .22rem .5rem; line-height: 1.4;
+}
+.prot-card-img-wrap .prot-card-nature-banner {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
 }
 .prot-card-nature-banner--monstre { background: hsl(0,55%,22%);   color: hsl(0,80%,82%); }
 .prot-card-nature-banner--animal  { background: hsl(30,55%,20%);  color: hsl(30,80%,82%); }
 .prot-card-nature-banner--pokemon { background: hsl(15,70%,22%);  color: hsl(15,90%,82%); }
 .prot-card-nature-banner--autre   { background: hsl(200,40%,20%); color: hsl(200,70%,82%); }
-
-.prot-card-img-wrap { aspect-ratio: 3/4; overflow: hidden; }
 .prot-card-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prot-card-body { padding: .55rem .75rem .7rem; display: flex; flex-direction: column; gap: .25rem; flex: 1; }
 
@@ -14886,14 +14888,6 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* Nature (non-humain) */
 .prot-detail-nature { margin-bottom: .5rem; }
-
-/* Lien retour vers la liste (desktop uniquement, mobile = nav-back-btn) */
-.prot-detail-back {
-  display: none;
-  font-size: .78rem; color: var(--muted); text-decoration: none; margin-bottom: .75rem;
-}
-.prot-detail-back:hover { color: var(--fg); }
-@media (min-width: 641px) { .prot-detail-back { display: block; } }
 
 /* Univers — visuellement distinct des tags, cliquable */
 .prot-detail-univers {
@@ -14975,21 +14969,21 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .prot-form-img-thumb { display: block; width: 120px; height: 120px; object-fit: cover; }
 .prot-form-img-remove-btn {
   position: absolute; top: .3rem; right: .3rem;
-  width: 1.6rem; height: 1.6rem; border-radius: 50%;
-  background: rgba(0,0,0,.7); border: none; cursor: pointer;
+  width: 1.5rem; height: 1.5rem; border-radius: 4px;
+  background: rgba(0,0,0,.55); border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center; color: #fff;
   transition: background .15s;
 }
-.prot-form-img-remove-btn:hover { background: rgba(180,30,30,.85); }
-.prot-form-img-remove-btn svg { width: .8rem; height: .8rem; stroke-width: 2.5; }
+.prot-form-img-remove-btn:hover { background: rgba(160,20,20,.8); }
+.prot-form-img-remove-btn svg { width: .75rem; height: .75rem; stroke-width: 2.5; }
 .prot-form-img-pick {
-  display: inline-flex; align-items: center; gap: .45rem;
-  padding: .35rem .75rem; border-radius: 6px; font-size: .82rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .3rem .65rem; border-radius: 6px; font-size: .8rem; cursor: pointer;
   background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); color: var(--text);
   transition: background .15s;
 }
 .prot-form-img-pick:hover { background: rgba(255,255,255,.13); }
-.prot-form-img-pick svg { width: .95rem; height: .95rem; flex-shrink: 0; }
+.prot-form-img-pick svg { width: .9rem; height: .9rem; flex-shrink: 0; }
 
 /* Genre — boutons radio */
 .prot-gender-btns { display: flex; gap: .45rem; flex-wrap: wrap; }
