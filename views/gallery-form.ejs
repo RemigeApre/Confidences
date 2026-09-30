@@ -3,115 +3,51 @@
   <%- include('partials/top-nav', { config: config }) %>
   <a href="/galerie" class="link-button">&larr; Retour à la galerie</a>
 
-  <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form">
-    <h2 class="wiki-detail-title">Modifier l&apos;image</h2>
+  <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form gf-form" id="gf-form">
 
-    <div class="wiki-form-top-row">
-      <select name="category" class="wiki-cat-inline-select">
-        <option value="">Sans cat&eacute;gorie</option>
-        <% categories.forEach(function (c) { %>
-          <option value="<%= c.key %>" data-hue="<%= c.hue %>" <%= c.key === image.category ? 'selected' : '' %>><%= c.label %></option>
-        <% }) %>
-      </select>
-    </div>
-
-    <input type="text" name="title" class="wiki-title-input" value="<%= image.title %>" placeholder="Titre&hellip;" />
-
-    <div class="wiki-tags-widget">
-      <div class="wiki-tags-board">
-        <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag&hellip;" autocomplete="off" />
-      </div>
-      <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= image.tags.join(', ') %>" />
-      <% if (allTags.length) { %>
-        <div class="wiki-tag-suggestions">
-          <% allTags.forEach(function(t) { %>
-            <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
+    <%# ── BLOC 1 : META ──────────────────────────────────────────────────── %>
+    <div class="ef-block">
+      <div class="ef-block-header">
+        <select name="category" class="wiki-cat-inline-select">
+          <option value="">Sans cat&eacute;gorie</option>
+          <% categories.forEach(function (c) { %>
+            <option value="<%= c.key %>" data-hue="<%= c.hue %>" <%= c.key === image.category ? 'selected' : '' %>><%= c.label %></option>
           <% }) %>
+        </select>
+      </div>
+
+      <input type="text" name="title" class="wiki-title-input ef-block-title" value="<%= image.title %>" placeholder="Titre&hellip;" />
+
+      <div class="ef-block-flags">
+        <label class="chip-option wiki-owned-chip">
+          <input type="checkbox" name="ultra" <%= image.tags.some(function(t){ return t.toLowerCase() === 'ultra'; }) ? 'checked' : '' %> />
+          <span>&#128274;&nbsp;Ultra</span>
+        </label>
+        <label class="chip-option">
+          <input type="checkbox" name="irrealiste" <%= image.tags.some(function(t){ return t.toLowerCase() === 'irr\u00e9aliste'; }) ? 'checked' : '' %> />
+          <span>&#10024;&nbsp;Irr&eacute;aliste</span>
+        </label>
+      </div>
+
+      <div class="wiki-tags-widget">
+        <div class="wiki-tags-board">
+          <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag&hellip;" autocomplete="off" />
         </div>
-      <% } %>
-    </div>
-
-    <label class="chip-option wiki-owned-chip">
-      <input type="checkbox" name="ultra" <%= image.tags.some(function(t){ return t.toLowerCase() === 'ultra'; }) ? 'checked' : '' %> />
-      <span>&#128274;&nbsp;Marquer Ultra</span>
-    </label>
-
-    <%# ─ Note et réactions ─ %>
-    <div class="wiki-meta-group">
-      <p class="wiki-meta-label">Note</p>
-      <div class="wiki-meta-options">
-        <% for (var ri = 0; ri <= 5; ri++) { %>
-          <label class="chip-option">
-            <input type="radio" name="rating" value="<%= ri %>" <%= (image.rating || 0) === ri ? 'checked' : '' %> />
-            <span><%= ri === 0 ? "Aucune" : ri + " ★" %></span>
-          </label>
+        <input type="hidden" name="tags" class="wiki-tags-hidden"
+          value="<%= image.tags.filter(function(t){ return t.toLowerCase() !== 'ultra' && t.toLowerCase() !== 'irr\u00e9aliste'; }).join(', ') %>" />
+        <% if (allTags.length) { %>
+          <div class="wiki-tag-suggestions">
+            <% allTags.filter(function(t){ return t.toLowerCase() !== 'ultra' && t.toLowerCase() !== 'irr\u00e9aliste'; }).slice(0, 20).forEach(function(t) { %>
+              <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
+            <% }) %>
+          </div>
         <% } %>
       </div>
     </div>
-    <div class="wiki-derived-row">
-      <label class="chip-option">
-        <input type="checkbox" name="flame" <%= image.flame ? 'checked' : '' %> />
-        <span>&#128293;&nbsp;J&apos;adore</span>
-      </label>
-      <label class="chip-option">
-        <input type="checkbox" name="interested" <%= image.interested ? 'checked' : '' %> />
-        <span>&#10024;&nbsp;<%= interestedLabel %></span>
-      </label>
-    </div>
 
-    <%# ─ Page wiki liée ─ %>
-    <div class="gallery-wiki-link-field">
-      <p class="wiki-meta-label">Page codex li&eacute;e</p>
-      <input type="hidden" name="wiki_page_id" id="gallery-wiki-link-hidden" value="<%= image.wikiPageId || '' %>" />
-      <div class="gallery-wiki-link-current" id="gallery-wiki-link-current" <%= linkedPage ? '' : 'hidden' %>>
-        <% if (linkedPage) { %>
-          <% var lcat = categories.find(function (c) { return c.key === linkedPage.category; }); %>
-          <a href="/wiki/<%= linkedPage.id %>" class="wiki-pl-card" target="_blank" rel="noopener">
-            <span class="wiki-pl-badge" style="background: hsl(<%= lcat ? lcat.hue : 220 %>, 55%, 45%)"><%= lcat ? lcat.label : linkedPage.category %></span>
-            <span class="wiki-pl-title"><%= linkedPage.title %></span>
-          </a>
-          <button type="button" class="item-wiki-popover-remove" id="gallery-wiki-link-remove" title="Retirer le lien">&#215;</button>
-        <% } %>
-      </div>
-      <div class="gallery-wiki-link-search-wrap" id="gallery-wiki-link-search-wrap" <%= linkedPage ? 'hidden' : '' %>>
-        <input type="text" class="wiki-pl-search" id="gallery-wiki-link-search" placeholder="Lier une page codex&hellip;" autocomplete="off" />
-        <ul class="wiki-pl-results" id="gallery-wiki-link-results"></ul>
-      </div>
-    </div>
-
-    <div class="gallery-author-row">
-      <input type="text" name="author" class="wiki-title-input gallery-author-input" value="<%= image.author || '' %>" placeholder="Auteur / Dessinateur&hellip;" autocomplete="off" />
-    </div>
-    <%- include('partials/parody-input', {
-          idPrefix:  'gf',
-          mainValue: image.parody    || '',
-          subValue:  image.subParody || '',
-          mainPh:    'Parodie (optionnel)\u2026'
-        }) %>
-
-    <% if (allProtagonists && allProtagonists.length) { %>
-    <div class="nv-form-prot-row">
-      <span class="nv-form-prot-label">Protagonistes :</span>
-      <div class="nv-form-prot-chips">
-        <% allProtagonists.forEach(function(p) {
-          var checked = image.protagonistIds && image.protagonistIds.indexOf(p.id) !== -1;
-        %>
-          <label class="nv-form-prot-chip">
-            <input type="checkbox" name="protagonist_ids" value="<%= p.id %>" <%= checked ? 'checked' : '' %> />
-            <span><%= p.name %></span>
-          </label>
-        <% }) %>
-      </div>
-    </div>
-    <% } %>
-
-    <textarea name="notes" class="wiki-textarea gallery-notes-input" rows="4" placeholder="Notes&hellip;"><%= image.notes %></textarea>
-
-    <%# ─ Image(s) de cette fiche — chaque image est indépendante : les
-        nouveaux fichiers ajoutés ci-dessous deviennent chacun leur propre
-        fiche, jamais fusionnés ici (voir routes/gallery.js). Les vignettes
-        listées ne servent qu'à retirer une image d'une fiche existante. ─ %>
-    <div class="wiki-image-field">
+    <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
+    <div class="ef-block ef-block--image">
+      <div class="ef-block-label">Image</div>
       <% if (image.imagePaths && image.imagePaths.length) { %>
         <div class="wiki-images-existing">
           <% image.imagePaths.forEach(function(src) { %>
@@ -130,6 +66,67 @@
         <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
       </label>
       <div class="wiki-new-previews"></div>
+    </div>
+
+    <%# ── BLOC ORIGINES ───────────────────────────────────────────────────── %>
+    <div class="ef-block ef-block--origins">
+      <div class="ef-block-label">Origines</div>
+
+      <%# Auteur (chip widget) %>
+      <div class="ef-author-widget" id="ef-author-widget">
+        <div class="ef-author-label">Auteur</div>
+        <div class="ef-author-board" id="ef-author-board">
+          <input type="text" class="wiki-tags-typing ef-author-typing" id="ef-author-input"
+            placeholder="Auteur / Dessinateur&hellip;" autocomplete="off" />
+        </div>
+        <input type="hidden" name="author" id="ef-author-hidden" value="<%= image.author || '' %>" />
+        <ul class="parody-ac-drop" id="ef-author-drop" hidden></ul>
+      </div>
+
+      <%# Parodie %>
+      <%- include('partials/parody-input', {
+            idPrefix:  'gf',
+            mainValue: image.parody    || '',
+            subValue:  image.subParody || '',
+            mainPh:    'Parodie (optionnel)\u2026'
+          }) %>
+
+      <%# Protagonistes %>
+      <% if (allProtagonists && allProtagonists.length) { %>
+      <div class="nv-form-prot-row">
+        <span class="nv-form-prot-label">Protagonistes</span>
+        <div class="nv-form-prot-chips">
+          <% allProtagonists.forEach(function(p) {
+            var checked = image.protagonistIds && image.protagonistIds.indexOf(p.id) !== -1;
+          %>
+            <label class="nv-form-prot-chip">
+              <input type="checkbox" name="protagonist_ids" value="<%= p.id %>" <%= checked ? 'checked' : '' %> />
+              <span><%= p.name %></span>
+            </label>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <%# Page codex liée %>
+      <div class="gallery-wiki-link-field">
+        <p class="wiki-meta-label">Page codex li&eacute;e</p>
+        <input type="hidden" name="wiki_page_id" id="gallery-wiki-link-hidden" value="<%= image.wikiPageId || '' %>" />
+        <div class="gallery-wiki-link-current" id="gallery-wiki-link-current" <%= linkedPage ? '' : 'hidden' %>>
+          <% if (linkedPage) { %>
+            <% var lcat = categories.find(function (c) { return c.key === linkedPage.category; }); %>
+            <a href="/wiki/<%= linkedPage.id %>" class="wiki-pl-card" target="_blank" rel="noopener">
+              <span class="wiki-pl-badge" style="background: hsl(<%= lcat ? lcat.hue : 220 %>, 55%, 45%)"><%= lcat ? lcat.label : linkedPage.category %></span>
+              <span class="wiki-pl-title"><%= linkedPage.title %></span>
+            </a>
+            <button type="button" class="item-wiki-popover-remove" id="gallery-wiki-link-remove" title="Retirer le lien">&#215;</button>
+          <% } %>
+        </div>
+        <div class="gallery-wiki-link-search-wrap" id="gallery-wiki-link-search-wrap" <%= linkedPage ? 'hidden' : '' %>>
+          <input type="text" class="wiki-pl-search" id="gallery-wiki-link-search" placeholder="Lier une page codex&hellip;" autocomplete="off" />
+          <ul class="wiki-pl-results" id="gallery-wiki-link-results"></ul>
+        </div>
+      </div>
     </div>
 
     <div class="wiki-form-actions">
@@ -177,41 +174,122 @@
 (function () {
   var IMAGE_ID = <%= image.id %>;
 
+  // ── Auteur chip widget ───────────────────────────────────────────────────
+  var authorHidden = document.getElementById('ef-author-hidden');
+  var authorBoard  = document.getElementById('ef-author-board');
+  var authorInput  = document.getElementById('ef-author-input');
+  var authorDrop   = document.getElementById('ef-author-drop');
+  var authorAcSel  = -1;
+
+  function renderAuthor() {
+    authorBoard.querySelectorAll('.ef-author-chip').forEach(function(c) { c.remove(); });
+    var val = authorHidden.value;
+    if (val) {
+      var chip = document.createElement('span');
+      chip.className = 'link-tag-pill ef-author-chip';
+      chip.style.cssText = 'background:hsl(220,40%,32%);color:#c8d8f0;cursor:pointer;margin:2px 4px 2px 0;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.8rem';
+      chip.textContent = val + ' \u00d7';
+      chip.addEventListener('click', function() {
+        authorHidden.value = '';
+        renderAuthor();
+        authorInput.style.display = '';
+        authorInput.focus();
+      });
+      authorBoard.insertBefore(chip, authorInput);
+      authorInput.style.display = 'none';
+    } else {
+      authorInput.style.display = '';
+    }
+  }
+
+  function setAuthor(val) {
+    authorHidden.value = val.trim();
+    renderAuthor();
+    closeAuthorAc();
+  }
+
+  function clearAuthorAc() { while (authorDrop.firstChild) authorDrop.removeChild(authorDrop.firstChild); }
+  function closeAuthorAc() { authorDrop.hidden = true; clearAuthorAc(); authorAcSel = -1; }
+
+  function showAuthorAc(q) {
+    if (!q.trim()) { closeAuthorAc(); return; }
+    fetch('/galerie/autocomplete/authors?q=' + encodeURIComponent(q))
+      .then(function(r) { return r.json(); })
+      .then(function(list) {
+        if (!list.length) { closeAuthorAc(); return; }
+        clearAuthorAc(); authorAcSel = -1;
+        list.slice(0, 8).forEach(function(a) {
+          var li = document.createElement('li');
+          li.className = 'parody-ac-item';
+          li.textContent = a;
+          li.addEventListener('mousedown', function(e) { e.preventDefault(); setAuthor(a); });
+          authorDrop.appendChild(li);
+        });
+        authorDrop.hidden = false;
+      });
+  }
+
+  authorInput.addEventListener('input', function() { showAuthorAc(authorInput.value); });
+  authorInput.addEventListener('blur', function() {
+    setTimeout(function() {
+      if (authorInput.value.trim()) setAuthor(authorInput.value.trim());
+      closeAuthorAc();
+    }, 160);
+  });
+  authorInput.addEventListener('keydown', function(e) {
+    var items = authorDrop.querySelectorAll('.parody-ac-item');
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (authorAcSel >= 0 && items[authorAcSel]) setAuthor(items[authorAcSel].textContent);
+      else if (authorInput.value.trim()) setAuthor(authorInput.value.trim());
+    } else if (e.key === 'Escape') { closeAuthorAc(); }
+    else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      authorAcSel = Math.min(authorAcSel + 1, items.length - 1);
+      items.forEach(function(li, i) { li.classList.toggle('selected', i === authorAcSel); });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      authorAcSel = Math.max(authorAcSel - 1, 0);
+      items.forEach(function(li, i) { li.classList.toggle('selected', i === authorAcSel); });
+    }
+  });
+
+  renderAuthor();
+
+  // ── Séries ────────────────────────────────────────────────────────────────
   function showMsg(text, ok) {
-    var el = document.getElementById("gf-series-msg");
+    var el = document.getElementById('gf-series-msg');
     if (!el) return;
     el.textContent = text;
-    el.className = "gs-add-msg " + (ok ? "gs-add-msg--ok" : "gs-add-msg--err");
+    el.className = 'gs-add-msg ' + (ok ? 'gs-add-msg--ok' : 'gs-add-msg--err');
     el.hidden = false;
     setTimeout(function () { el.hidden = true; }, 3000);
   }
 
-  // Ajouter à une série
-  var addBtn = document.getElementById("gf-series-add-btn");
-  var addSel = document.getElementById("gf-series-select");
+  var addBtn = document.getElementById('gf-series-add-btn');
+  var addSel = document.getElementById('gf-series-select');
   if (addBtn && addSel) {
-    addBtn.addEventListener("click", function () {
+    addBtn.addEventListener('click', function () {
       var sid = Number(addSel.value);
       if (!sid) return;
-      fetch("/galerie/series/" + sid + "/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      fetch('/galerie/series/' + sid + '/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ galleryId: IMAGE_ID }),
       }).then(function (r) { return r.json(); }).then(function (d) {
-        if (d.ok) { showMsg("Ajouté ! Rechargez pour voir.", true); location.reload(); }
-        else showMsg("Erreur.", false);
+        if (d.ok) { showMsg('Ajouté ! Rechargez pour voir.', true); location.reload(); }
+        else showMsg('Erreur.', false);
       });
     });
   }
 
-  // Retirer d'une série
-  document.querySelectorAll(".gs-form-rm").forEach(function (btn) {
-    btn.addEventListener("click", function () {
+  document.querySelectorAll('.gs-form-rm').forEach(function (btn) {
+    btn.addEventListener('click', function () {
       var sid = Number(btn.dataset.seriesId);
       var gid = Number(btn.dataset.galleryId);
-      fetch("/galerie/series/" + sid + "/remove", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      fetch('/galerie/series/' + sid + '/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ galleryId: gid }),
       }).then(function () { location.reload(); });
     });

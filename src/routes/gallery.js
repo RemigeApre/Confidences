@@ -477,7 +477,7 @@ function buildGalleryRouter(config) {
     const imageSeries = getImageSeries(id);
     const allSeries = listSeries();
     const allProtagonists = listProtagonistes();
-    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage, imageSeries, allSeries, allProtagonists });
+    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage, imageSeries, allSeries, allProtagonists, allAuthors: listGalleryAuthors() });
   });
 
   router.post("/:id/view", (req, res) => {
@@ -511,12 +511,17 @@ function buildGalleryRouter(config) {
     const imagePaths = image.imagePaths.filter((p) => !toRemove.includes(p));
     unlinkFiles(toRemove);
 
-    const tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
+    var baseTags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
+    var irrTag = "irr\u00e9aliste";
+    var hasIrr = baseTags.some(function(t) { return t.toLowerCase() === "irr\u00e9aliste"; });
+    if (req.body.irrealiste === "on" && !hasIrr) baseTags = baseTags.concat([irrTag]);
+    else if (req.body.irrealiste !== "on" && hasIrr) baseTags = baseTags.filter(function(t) { return t.toLowerCase() !== "irr\u00e9aliste"; });
+    const tags = baseTags;
     const category = normalizeCategory(req.body.category);
     const wikiPageIdRaw = Number(req.body.wiki_page_id);
     const wikiPageId = Number.isInteger(wikiPageIdRaw) && wikiPageIdRaw > 0 ? wikiPageIdRaw : null;
     const title = String(req.body.title || "").trim();
-    const notes = String(req.body.notes || "").trim();
+    const notes = image.notes || "";
     const author = String(req.body.author || "").trim();
     const parody = normalizeParody(String(req.body.parody || ""));
     const subParody = normalizeParody(String(req.body.sub_parody || ""));
@@ -527,14 +532,7 @@ function buildGalleryRouter(config) {
     const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
     added.forEach((p) => {
       generateThumb(p);
-      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, wikiPageId, author, parody, protagonistIds });
-    });
-
-    const rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
-    reactGalleryImage(id, req.user.id, {
-      rating,
-      flame: req.body.flame === "on",
-      interested: req.body.interested === "on",
+      insertGalleryImage({ imagePaths: [p], title, tags, notes, category, wikiPageId, author, parody, subParody, protagonistIds });
     });
 
     res.redirect("/galerie");

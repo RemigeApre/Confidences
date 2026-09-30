@@ -7,6 +7,8 @@
 
   <form method="POST" action="<%= book ? '/bd/' + book.id : '/bd' %>" enctype="multipart/form-data" class="wiki-form" id="bd-form">
 
+    <div class="ef-block">
+
     <input type="text" name="title" class="wiki-title-input" required
       value="<%= book ? book.title : '' %>" placeholder="Titre&hellip;" />
 
@@ -21,6 +23,11 @@
       <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= book ? book.tags.join(', ') : '' %>" />
     </div>
 
+    </div><%# /ef-block meta %>
+
+    <div class="ef-block ef-block--origins">
+    <div class="ef-block-label">Origines</div>
+
     <%# Parodie %>
     <%- include('partials/parody-input', {
           idPrefix:  'bdf',
@@ -28,6 +35,8 @@
           subValue:  book ? book.subParody : '',
           mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
         }) %>
+
+    </div><%# /ef-block origines %>
 
     <%# Langue %>
     <div class="bd-form-chips">

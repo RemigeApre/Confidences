@@ -6,6 +6,8 @@
     <form method="POST" action="<%= nouvelle ? '/nouvelles/' + nouvelle.id + '/update' : '/nouvelles/new' %>"
       class="nv-form" id="nv-form">
 
+      <div class="ef-block">
+
       <input type="text" name="title" class="nv-form-title-input" required maxlength="300"
         value="<%= nouvelle ? nouvelle.title : '' %>" placeholder="Titre de la nouvelle…" />
 
@@ -103,6 +105,12 @@
         <% } %>
       </div>
 
+      </div><%# /ef-block meta %>
+
+      <%# ── BLOC ORIGINES ── %>
+      <div class="ef-block ef-block--origins">
+      <div class="ef-block-label">Origines</div>
+
       <%# ── Parodie ─────────────────────────────────────────────────────────── %>
       <%- include('partials/parody-input', {
             idPrefix:  'nvf',
@@ -110,6 +118,8 @@
             subValue:  nouvelle ? nouvelle.subParody : '',
             mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
           }) %>
+
+      </div><%# /ef-block origines %>
 
       <div class="nv-wordcount-bar">
         <span class="nv-wc-label" id="nv-wc">0 mot</span>
