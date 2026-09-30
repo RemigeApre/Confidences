@@ -1,0 +1,188 @@
+<%#
+  Partial : bloc de liens multi-types (Codex / Quizz / Nouvelles)
+
+  Paramètres :
+    idPrefix      {string}  préfixe d'ID unique dans la page         (requis)
+    existingLinks {Array}   [{type, id, label}] liens déjà sauvegardés (défaut [])
+    hiddenName    {string}  name de l'input caché                     (défaut 'gallery_links')
+%>
+<%
+  var _lnkPfx   = idPrefix || 'lnk';
+  var _lnkLinks = (typeof existingLinks !== 'undefined' && existingLinks) ? existingLinks : [];
+  var _lnkHid   = (typeof hiddenName !== 'undefined' && hiddenName) ? hiddenName : 'gallery_links';
+%>
+<div class="ef-block ef-block--liens" id="<%= _lnkPfx %>-liens-block">
+
+  <%# ─ Codex ─ %>
+  <div class="ef-liens-section">
+    <span class="ef-liens-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><path d="M6 3h9a2 2 0 0 1 2 2v16l-6.5-4.2L4 21V5a2 2 0 0 1 2-2Z"/></svg>
+      Codex
+    </span>
+    <div class="ef-liens-chips" id="<%= _lnkPfx %>-chips-wiki"></div>
+    <div class="ef-liens-search-wrap">
+      <input type="text" class="ef-liens-search" id="<%= _lnkPfx %>-search-wiki"
+        placeholder="Lier une page codex&hellip;" autocomplete="off" />
+      <ul class="ef-liens-drop" id="<%= _lnkPfx %>-drop-wiki" hidden></ul>
+    </div>
+  </div>
+
+  <%# ─ Quizz ─ %>
+  <div class="ef-liens-section">
+    <span class="ef-liens-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Quizz
+    </span>
+    <div class="ef-liens-chips" id="<%= _lnkPfx %>-chips-quiz"></div>
+    <div class="ef-liens-search-wrap">
+      <input type="text" class="ef-liens-search" id="<%= _lnkPfx %>-search-quiz"
+        placeholder="Lier une question quizz&hellip;" autocomplete="off" />
+      <ul class="ef-liens-drop" id="<%= _lnkPfx %>-drop-quiz" hidden></ul>
+    </div>
+  </div>
+
+  <%# ─ Nouvelles ─ %>
+  <div class="ef-liens-section">
+    <span class="ef-liens-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Nouvelles
+    </span>
+    <div class="ef-liens-chips" id="<%= _lnkPfx %>-chips-nouvelle"></div>
+    <div class="ef-liens-search-wrap">
+      <input type="text" class="ef-liens-search" id="<%= _lnkPfx %>-search-nouvelle"
+        placeholder="Lier une nouvelle&hellip;" autocomplete="off" />
+      <ul class="ef-liens-drop" id="<%= _lnkPfx %>-drop-nouvelle" hidden></ul>
+    </div>
+  </div>
+
+  <input type="hidden" name="<%= _lnkHid %>" id="<%= _lnkPfx %>-liens-hidden"
+    value="<%- JSON.stringify(_lnkLinks) %>" />
+</div>
+
+<script>
+(function () {
+  var PFX = '<%= _lnkPfx %>';
+  var hiddenEl = document.getElementById(PFX + '-liens-hidden');
+  if (!hiddenEl) return;
+
+  var links = [];
+  try { links = JSON.parse(hiddenEl.value || '[]'); } catch (_) {}
+  if (!Array.isArray(links)) links = [];
+
+  function syncHidden() { hiddenEl.value = JSON.stringify(links); }
+
+  function findLink(type, id) {
+    return links.findIndex(function(l) { return l.type === type && String(l.id) === String(id); });
+  }
+
+  function addLink(type, id, label) {
+    if (findLink(type, id) === -1) { links.push({ type: type, id: String(id), label: label }); }
+    syncHidden();
+    renderChips(type);
+  }
+
+  function removeLink(type, id) {
+    var idx = findLink(type, id);
+    if (idx !== -1) links.splice(idx, 1);
+    syncHidden();
+    renderChips(type);
+  }
+
+  function makeChip(type, id, label) {
+    var chip = document.createElement('span');
+    chip.className = 'ef-liens-chip';
+    chip.title = 'Cliquer pour retirer';
+    var t = document.createElement('span');
+    t.textContent = label;
+    chip.appendChild(t);
+    chip.addEventListener('click', function() { removeLink(type, id); });
+    return chip;
+  }
+
+  function renderChips(type) {
+    var container = document.getElementById(PFX + '-chips-' + type);
+    if (!container) return;
+    container.innerHTML = '';
+    links.filter(function(l) { return l.type === type; }).forEach(function(l) {
+      container.appendChild(makeChip(l.type, l.id, l.label));
+    });
+  }
+
+  function makeAcWidget(type, searchUrl, resultMapper) {
+    var inp  = document.getElementById(PFX + '-search-' + type);
+    var drop = document.getElementById(PFX + '-drop-' + type);
+    if (!inp || !drop) return;
+
+    var timer = null;
+    var acSel = -1;
+
+    function clearDrop() { drop.innerHTML = ''; }
+    function closeDrop() { drop.hidden = true; clearDrop(); acSel = -1; }
+
+    function showDrop(items) {
+      clearDrop(); acSel = -1;
+      if (!items || !items.length) { closeDrop(); return; }
+      items.slice(0, 10).forEach(function(item) {
+        var li = document.createElement('li');
+        li.className = 'ef-liens-drop-item';
+        li.textContent = item.label;
+        li.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          addLink(type, item.id, item.label);
+          inp.value = '';
+          closeDrop();
+        });
+        drop.appendChild(li);
+      });
+      drop.hidden = false;
+    }
+
+    inp.addEventListener('input', function() {
+      clearTimeout(timer);
+      var q = inp.value.trim();
+      if (!q) { closeDrop(); return; }
+      timer = setTimeout(function() {
+        fetch(searchUrl(q))
+          .then(function(r) { return r.json(); })
+          .then(function(data) { showDrop(data.map(resultMapper)); })
+          .catch(function() {});
+      }, 180);
+    });
+
+    inp.addEventListener('blur', function() { setTimeout(closeDrop, 160); });
+
+    inp.addEventListener('keydown', function(e) {
+      if (drop.hidden) return;
+      var items = drop.querySelectorAll('.ef-liens-drop-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault(); acSel = Math.min(acSel + 1, items.length - 1);
+        items.forEach(function(li, i) { li.classList.toggle('selected', i === acSel); });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault(); acSel = Math.max(acSel - 1, 0);
+        items.forEach(function(li, i) { li.classList.toggle('selected', i === acSel); });
+      } else if (e.key === 'Enter' && acSel >= 0 && items[acSel]) {
+        e.preventDefault(); items[acSel].dispatchEvent(new MouseEvent('mousedown'));
+      } else if (e.key === 'Escape') { closeDrop(); }
+    });
+  }
+
+  // Initialiser les chips existants
+  ['wiki', 'quiz', 'nouvelle'].forEach(function(t) { renderChips(t); });
+
+  // Widgets d'autocomplétion
+  makeAcWidget('wiki',
+    function(q) { return '/wiki/search?q=' + encodeURIComponent(q); },
+    function(r) { return { id: r.id, label: r.title }; }
+  );
+
+  makeAcWidget('quiz',
+    function(q) { return '/wiki/question-search?q=' + encodeURIComponent(q); },
+    function(r) { return { id: r.section_key + '::' + r.question_id, label: r.section_title + ' — ' + r.question_text }; }
+  );
+
+  makeAcWidget('nouvelle',
+    function(q) { return '/nouvelles/search?q=' + encodeURIComponent(q); },
+    function(r) { return { id: r.id, label: r.title }; }
+  );
+})();
+</script>

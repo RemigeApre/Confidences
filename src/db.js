@@ -119,6 +119,17 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN protagonist_ids TEXT NOT NU
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN wiki_synced INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS gallery_links (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    gallery_id INTEGER NOT NULL,
+    link_type  TEXT NOT NULL,
+    linked_id  TEXT NOT NULL,
+    label      TEXT NOT NULL DEFAULT '',
+    UNIQUE(gallery_id, link_type, linked_id)
+  )
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS bd_books (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -2418,6 +2429,18 @@ function getAllQuizAnswers(quizId) {
   `).all(quizId);
 }
 
+function getGalleryLinks(galleryId) {
+  return db.prepare("SELECT link_type, linked_id, label FROM gallery_links WHERE gallery_id = ? ORDER BY id").all(galleryId);
+}
+
+function setGalleryLinks(galleryId, links) {
+  db.prepare("DELETE FROM gallery_links WHERE gallery_id = ?").run(galleryId);
+  const stmt = db.prepare("INSERT OR IGNORE INTO gallery_links (gallery_id, link_type, linked_id, label) VALUES (?, ?, ?, ?)");
+  for (const { type, id, label } of (links || [])) {
+    if (type && id) stmt.run(galleryId, type, String(id), label || "");
+  }
+}
+
 module.exports = {
   db,
   insertSubmission,
@@ -2523,6 +2546,8 @@ module.exports = {
   listUnexploredWikiPages,
   listUnexploredGalleryImages,
   setGalleryImageFeatured,
+  getGalleryLinks,
+  setGalleryLinks,
   logGalleryView,
   logBdView,
   getWikiKPIs,

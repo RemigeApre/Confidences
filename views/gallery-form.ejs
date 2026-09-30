@@ -111,26 +111,14 @@
       </div>
       <% } %>
 
-      <%# Page codex liée %>
-      <div class="gallery-wiki-link-field">
-        <p class="wiki-meta-label">Page codex li&eacute;e</p>
-        <input type="hidden" name="wiki_page_id" id="gallery-wiki-link-hidden" value="<%= image.wikiPageId || '' %>" />
-        <div class="gallery-wiki-link-current" id="gallery-wiki-link-current" <%= linkedPage ? '' : 'hidden' %>>
-          <% if (linkedPage) { %>
-            <% var lcat = categories.find(function (c) { return c.key === linkedPage.category; }); %>
-            <a href="/wiki/<%= linkedPage.id %>" class="wiki-pl-card" target="_blank" rel="noopener">
-              <span class="wiki-pl-badge" style="background: hsl(<%= lcat ? lcat.hue : 220 %>, 55%, 45%)"><%= lcat ? lcat.label : linkedPage.category %></span>
-              <span class="wiki-pl-title"><%= linkedPage.title %></span>
-            </a>
-            <button type="button" class="item-wiki-popover-remove" id="gallery-wiki-link-remove" title="Retirer le lien">&#215;</button>
-          <% } %>
-        </div>
-        <div class="gallery-wiki-link-search-wrap" id="gallery-wiki-link-search-wrap" <%= linkedPage ? 'hidden' : '' %>>
-          <input type="text" class="wiki-pl-search" id="gallery-wiki-link-search" placeholder="Lier une page codex&hellip;" autocomplete="off" />
-          <ul class="wiki-pl-results" id="gallery-wiki-link-results"></ul>
-        </div>
-      </div>
     </div>
+
+    <%# ── BLOC LIENS ───────────────────────────────────────────────────────── %>
+    <%- include('partials/ef-block-liens', {
+          idPrefix:      'gf',
+          existingLinks: existingLinks || [],
+          hiddenName:    'gallery_links'
+        }) %>
 
     <div class="wiki-form-actions wf-mobile-actions">
       <button type="submit">Enregistrer</button>

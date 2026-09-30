@@ -48,6 +48,17 @@ function buildNouvellesRouter(config) {
   const router = express.Router();
   router.use(requireUser);
 
+  // Recherche de nouvelles (pour liens depuis la galerie/formulaires)
+  router.get("/search", requireUser, (req, res) => {
+    const q = String(req.query.q || "").toLowerCase().trim();
+    const all = db.listNouvelles();
+    const visible = all.filter(n => n.stage === 'publiee' || n.stage === 'publié' || n.stage !== 'brouillon');
+    const results = q
+      ? visible.filter(n => (n.title || "").toLowerCase().includes(q)).slice(0, 12)
+      : visible.slice(0, 12);
+    res.json(results.map(n => ({ id: n.id, title: n.title })));
+  });
+
   // ── Index ──────────────────────────────────────────────────────────────────
   router.get("/", (req, res) => {
     const allRaw     = db.listNouvelles().map(parseNouvelle);

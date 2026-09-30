@@ -37,6 +37,10 @@ const {
   listAllParodies,
   listProtagonistes,
   normalizeParody,
+  getGalleryLinks,
+  setGalleryLinks,
+  getNouvelleById,
+  listNouvelles,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -473,11 +477,14 @@ function buildGalleryRouter(config) {
     if (!image) return res.redirect("/galerie");
     Object.assign(image, getUserReaction(req.user.id, "gallery", id));
     const { allTags } = getCtx(req.user);
-    const linkedPage = image.wikiPageId ? getWikiPage(image.wikiPageId) : null;
     const imageSeries = getImageSeries(id);
     const allSeries = listSeries();
     const allProtagonists = listProtagonistes();
-    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, linkedPage, imageSeries, allSeries, allProtagonists, allAuthors: listGalleryAuthors() });
+    const rawLinks = getGalleryLinks(id);
+    const existingLinks = rawLinks.map(function(l) {
+      return { type: l.link_type, id: l.linked_id, label: l.label };
+    });
+    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, imageSeries, allSeries, allProtagonists, existingLinks, allAuthors: listGalleryAuthors() });
   });
 
   router.post("/:id/view", (req, res) => {
@@ -518,8 +525,10 @@ function buildGalleryRouter(config) {
     else if (req.body.irrealiste !== "on" && hasIrr) baseTags = baseTags.filter(function(t) { return t.toLowerCase() !== "irr\u00e9aliste"; });
     const tags = baseTags;
     const category = normalizeCategory(req.body.category);
-    const wikiPageIdRaw = Number(req.body.wiki_page_id);
-    const wikiPageId = Number.isInteger(wikiPageIdRaw) && wikiPageIdRaw > 0 ? wikiPageIdRaw : null;
+    const wikiPageId = null; // Replaced by gallery_links system
+    let galleryLinksData = [];
+    try { galleryLinksData = JSON.parse(req.body.gallery_links || "[]"); } catch (_) {}
+    if (!Array.isArray(galleryLinksData)) galleryLinksData = [];
     const title = String(req.body.title || "").trim();
     const notes = image.notes || "";
     const author = String(req.body.author || "").trim();
@@ -528,6 +537,7 @@ function buildGalleryRouter(config) {
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Number.isInteger);
 
     updateGalleryImage(id, { title, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds });
+    setGalleryLinks(id, galleryLinksData);
 
     const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
     added.forEach((p) => {

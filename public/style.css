@@ -15100,6 +15100,106 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   color: #e0e0e0;
 }
 
+/* ── Bloc liens multi-types ──────────────────────────────────────────────── */
+.ef-block--liens {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.ef-liens-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.ef-liens-section + .ef-liens-section {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.ef-liens-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.ef-liens-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-height: 0;
+}
+.ef-liens-chips:empty { display: none; }
+.ef-liens-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  background: rgba(91,79,207,0.2);
+  color: #c8bfff;
+  border: 1px solid rgba(91,79,207,0.4);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s, border-color 0.12s;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ef-liens-chip:hover {
+  background: rgba(220,50,80,0.25);
+  border-color: rgba(220,50,80,0.5);
+  color: #ffb3c2;
+}
+.ef-liens-search-wrap {
+  position: relative;
+}
+.ef-liens-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.38rem 0.7rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  background: var(--surface-3, #1a1a2e);
+  color: var(--fg);
+  font-size: 0.82rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.ef-liens-search:focus { outline: none; border-color: rgba(91,79,207,0.6); }
+.ef-liens-search::placeholder { color: var(--muted); }
+.ef-liens-drop {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0; right: 0;
+  background: var(--card, #16162a);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  list-style: none;
+  margin: 0; padding: 0.2rem 0;
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.ef-liens-drop[hidden] { display: none; }
+.ef-liens-drop-item {
+  padding: 0.42rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--fg);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s;
+}
+.ef-liens-drop-item:hover,
+.ef-liens-drop-item.selected { background: rgba(255,255,255,0.07); }
+
 /* ── Edit-form blocks (ef-block) ─────────────────────────────────────────── */
 .ef-block {
   background: var(--surface-2, #12121e);
