@@ -49,7 +49,8 @@ function buildProtagonistesRouter(config) {
   router.get("/", (req, res) => {
     const all = db.listProtagonistes();
     const parodies = [...new Set(all.map(p => p.parody).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
-    res.render("protagonistes", { config, protagonistes: all, parodies });
+    const tagMeta = db.getAllTagMeta();
+    res.render("protagonistes", { config, protagonistes: all, parodies, tagMeta });
   });
 
   router.get("/new", requireAdmin, (req, res) => {

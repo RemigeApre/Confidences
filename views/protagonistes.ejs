@@ -48,6 +48,15 @@
         </div>
         <% } %>
 
+        <%# Ultra / Irréaliste %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Contenu</span>
+          <div class="links-filter">
+            <button type="button" class="wiki-ultra-btn" id="prot-ultra-toggle">Afficher Ultra</button>
+            <button type="button" class="wiki-ultra-btn" id="prot-irrealiste-toggle">Masquer Irréaliste</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </aside>
@@ -58,10 +67,19 @@
   <% } else { %>
     <div class="prot-grid" id="prot-grid">
       <% protagonistes.forEach(function(p) { %>
+        <%
+          var _pSpecial = '';
+          if (p.tags && tagMeta) {
+            var _pt = p.tags.map(function(t){ return tagMeta[t] || ''; });
+            if (_pt.indexOf('ultra') !== -1) _pSpecial = 'ultra';
+            else if (_pt.indexOf('irrealiste') !== -1) _pSpecial = 'irrealiste';
+          }
+        %>
         <a href="/protagonistes/<%= p.id %>" class="prot-card"
           data-gender="<%= p.gender || '' %>"
           data-nature="<%= p.nature || '' %>"
-          data-parody="<%= p.parody || '' %>">
+          data-parody="<%= p.parody || '' %>"
+          data-special="<%= _pSpecial %>">
 
           <% if (p.image_path) { %>
             <div class="prot-card-img-wrap">
@@ -119,6 +137,8 @@
   var activeGender = '';
   var activeNature = '';
   var activeParody = '';
+  var hideUltra      = localStorage.getItem('gallery-hide-ultra') !== '0';   // masqué par défaut
+  var hideIrrealiste = localStorage.getItem('gallery-hide-irrealiste') === '1';
 
   function applyFilters() {
     var shown = 0;
@@ -127,11 +147,43 @@
       if (activeGender && c.dataset.gender !== activeGender) ok = false;
       if (activeNature && c.dataset.nature !== activeNature) ok = false;
       if (activeParody && c.dataset.parody !== activeParody) ok = false;
+      var sp = c.dataset.special || '';
+      if (hideUltra && sp === 'ultra') ok = false;
+      if (hideIrrealiste && sp === 'irrealiste') ok = false;
       c.hidden = !ok;
       if (ok) shown++;
     });
     if (noResults) noResults.hidden = shown > 0;
     if (countEl) countEl.textContent = shown;
+  }
+
+  function syncToggle(btn, hidden, labelHide, labelShow) {
+    if (!btn) return;
+    btn.textContent = hidden ? labelShow : labelHide;
+    btn.classList.toggle('active', hidden);
+  }
+
+  var ultraToggle      = document.getElementById('prot-ultra-toggle');
+  var irrealisteToggle = document.getElementById('prot-irrealiste-toggle');
+
+  syncToggle(ultraToggle,      hideUltra,      'Masquer Ultra',       'Afficher Ultra');
+  syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste',  'Afficher Irréaliste');
+
+  if (ultraToggle) {
+    ultraToggle.addEventListener('click', function() {
+      hideUltra = !hideUltra;
+      localStorage.setItem('gallery-hide-ultra', hideUltra ? '1' : '0');
+      syncToggle(ultraToggle, hideUltra, 'Masquer Ultra', 'Afficher Ultra');
+      applyFilters();
+    });
+  }
+  if (irrealisteToggle) {
+    irrealisteToggle.addEventListener('click', function() {
+      hideIrrealiste = !hideIrrealiste;
+      localStorage.setItem('gallery-hide-irrealiste', hideIrrealiste ? '1' : '0');
+      syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste', 'Afficher Irréaliste');
+      applyFilters();
+    });
   }
 
   function wireChips(containerId, key, setter) {
