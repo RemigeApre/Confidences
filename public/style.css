@@ -16643,7 +16643,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
    PROFILE AVATAR
    ══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --avatar-size: 52px;
+  --avatar-size: 44px;
   --rarity-common:    hsl(0,0%,60%);
   --rarity-rare:      hsl(210,80%,60%);
   --rarity-epic:      hsl(270,65%,65%);
@@ -16795,13 +16795,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   align-items: center;
   gap: 1.5rem;
   padding: 2rem 1.5rem;
-  max-width: 360px;
+  max-width: min(90vw, 420px);
   width: 90vw;
   transition: max-width .25s ease;
 }
 /* Quand le panneau batch est visible, élargir le conteneur */
 .lootbox-reveal:has(#lootbox-batch-results:not([hidden])) {
-  max-width: 680px;
+  max-width: min(95vw, 700px);
 }
 
 /* Coffre animé */
@@ -16861,8 +16861,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* Image débloquée */
 .lootbox-reveal-img-wrap {
-  width: 220px;
-  height: 220px;
+  width: min(72vw, 320px);
+  height: min(72vw, 320px);
   border-radius: 14px;
   overflow: hidden;
   background: var(--surface-3, #111);
@@ -17014,15 +17014,15 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   font-size: 1rem; font-weight: 700; color: var(--text-1,#fff); margin: 0;
 }
 .jeu-info-close {
-  width: 28px; height: 28px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13);
-  border-radius: 50%; cursor: pointer; color: var(--muted,#aaa);
-  flex-shrink: 0;
-  transition: background .15s;
+  background: none; border: none;
+  color: hsl(0,75%,62%);
+  cursor: pointer; padding: .2rem;
+  line-height: 0; flex-shrink: 0;
+  opacity: .85;
+  transition: opacity .15s, color .15s;
 }
-.jeu-info-close:hover { background: rgba(255,255,255,.15); color: var(--text-1,#eee); }
-.jeu-info-close svg { width: 12px; height: 12px; }
+.jeu-info-close:hover { opacity: 1; color: hsl(0,80%,75%); }
+.jeu-info-close svg { width: 22px; height: 22px; display: block; }
 .jeu-info-section-title {
   font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
   color: var(--muted,#888); margin: 0 0 .6rem;
@@ -17112,37 +17112,41 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .lootbox-zoom-overlay[hidden] { display: none; }
 
-/* Bouton fermer (coin haut-droit) */
+/* Bouton fermer — croix rouge simple, sans forme */
 .lootbox-zoom-close {
   position: absolute; top: 1rem; right: 1rem;
-  width: 38px; height: 38px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
-  border-radius: 50%; cursor: pointer; color: var(--text-1,#eee);
-  transition: background .15s;
+  background: none; border: none;
+  color: hsl(0,75%,62%);
+  cursor: pointer; padding: .3rem;
+  line-height: 0;
+  opacity: .9;
+  z-index: 10;
+  transition: opacity .15s, color .15s;
 }
-.lootbox-zoom-close:hover { background: rgba(255,255,255,.18); }
-.lootbox-zoom-close svg { width: 16px; height: 16px; }
+.lootbox-zoom-close:hover { opacity: 1; color: hsl(0,80%,75%); }
+.lootbox-zoom-close svg { width: 32px; height: 32px; display: block; stroke-width: 3; }
 
-/* Boutons de navigation latéraux */
+/* Boutons de navigation latéraux — gros, contrastés */
 .lootbox-zoom-nav {
   flex-shrink: 0;
-  width: 48px; height: 48px;
+  width: 60px; height: 60px;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
-  border-radius: 50%; cursor: pointer; color: var(--text-1,#eee);
-  transition: background .15s, transform .1s;
-  z-index: 1;
+  background: rgba(0,0,0,.55);
+  border: 2px solid rgba(255,255,255,.4);
+  border-radius: 50%;
+  cursor: pointer; color: #fff;
+  transition: background .15s, border-color .15s;
+  z-index: 2;
 }
-.lootbox-zoom-nav:hover { background: rgba(255,255,255,.18); transform: scale(1.08); }
+.lootbox-zoom-nav:hover { background: rgba(0,0,0,.82); border-color: rgba(255,255,255,.75); }
 .lootbox-zoom-nav[hidden] { visibility: hidden; pointer-events: none; }
-.lootbox-zoom-nav svg { width: 20px; height: 20px; }
+.lootbox-zoom-nav svg { width: 32px; height: 32px; stroke-width: 3; }
 
 /* Zone centrale (image + footer) */
 .lootbox-zoom-center {
   display: flex; flex-direction: column; align-items: center; gap: .9rem;
   flex: 1 1 auto; min-width: 0;
-  max-width: min(80vw, 600px);
+  max-width: min(70vw, 700px);
 }
 
 /* Conteneur image avec halo */
@@ -17150,6 +17154,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-radius: 12px; overflow: hidden;
   transition: box-shadow .3s ease;
   animation: coffre-pop-in .2s cubic-bezier(.22,1,.36,1);
+  line-height: 0;
+  max-width: min(70vw, 700px);
 }
 .lootbox-zoom-img-outer[data-rarity="rare"]      { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-rare) 60%,transparent), 0 0 32px 8px color-mix(in srgb,var(--rarity-rare) 35%,transparent); }
 .lootbox-zoom-img-outer[data-rarity="epic"]      { box-shadow: 0 0 0 2px color-mix(in srgb,var(--rarity-epic) 60%,transparent), 0 0 38px 10px color-mix(in srgb,var(--rarity-epic) 35%,transparent); }
@@ -17158,8 +17164,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 .lootbox-zoom-img {
   display: block;
-  max-width: min(80vw, 600px);
-  max-height: 72vh;
+  max-width: min(70vw, 700px);
+  max-height: 78vh;
   object-fit: contain;
   border-radius: 12px;
 }

@@ -99,7 +99,6 @@
     }
   }
 
-  if (btn)    btn.addEventListener("click", onTrigger);
   if (jeuBtn) jeuBtn.addEventListener("click", onTrigger);
 
   // ── Écran de choix ───────────────────────────────────────────────────────────
