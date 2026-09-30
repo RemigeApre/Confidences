@@ -5483,17 +5483,7 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .gallery-select-check { display: none; }
 .gallery-grid.gallery-selecting .gallery-select-check { display: block; }
 
-.gallery-processed-badge {
-  position: absolute;
-  top: 0; left: 0;
-  width: 0; height: 0;
-  border-style: solid;
-  border-width: 28px 28px 0 0;
-  border-color: transparent;
-  z-index: 3;
-}
-.gallery-processed-badge--done { border-color: #22c55e transparent transparent transparent; }
-.gallery-processed-badge--todo { border-color: #f97316 transparent transparent transparent; }
+.gallery-processed-badge { display: none; }
 
 /* Bouton wiki élégant */
 .gallery-lb-wiki-btn {
@@ -15361,34 +15351,34 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   height: 2rem;
   flex-shrink: 0;
   padding: 0;
-  color: #60a5fa;
+  color: #fff;
   text-decoration: none;
   border-radius: 7px;
-  border: 1px solid rgba(96,165,250,0.3);
-  background: rgba(96,165,250,0.08);
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  transition: background 0.15s, border-color 0.15s;
 }
-.lb-admin-edit:hover { background: rgba(96,165,250,0.2); color: #93c5fd; border-color: rgba(96,165,250,0.55); }
+.lb-admin-edit:hover { background: #1d4ed8; border-color: #1d4ed8; }
 .lb-admin-edit[hidden] { display: none; }
 
 .lb-admin-processed {
   flex: 1;
   font-size: 0.74rem;
-  font-weight: 500;
-  color: rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  font-weight: 600;
+  color: #fff;
+  background: #6b7280;
+  border: 1px solid #6b7280;
   cursor: pointer;
   padding: 0.28rem 0.5rem;
   border-radius: 7px;
   text-align: center;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
-.lb-admin-processed:hover { color: #a78bfa; background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.3); }
-.lb-admin-processed--todo { color: #fb923c; border-color: rgba(251,146,60,0.35); background: rgba(251,146,60,0.08); }
-.lb-admin-processed--todo:hover { color: #fdba74; background: rgba(251,146,60,0.18); border-color: rgba(251,146,60,0.55); }
-.lb-admin-processed--done { color: #4ade80; border-color: rgba(74,222,128,0.35); background: rgba(74,222,128,0.08); }
-.lb-admin-processed--done:hover { color: #86efac; background: rgba(74,222,128,0.18); border-color: rgba(74,222,128,0.55); }
+.lb-admin-processed:hover { background: #4b5563; border-color: #4b5563; }
+.lb-admin-processed--todo { background: #c2410c; border-color: #c2410c; }
+.lb-admin-processed--todo:hover { background: #9a3412; border-color: #9a3412; }
+.lb-admin-processed--done { background: #15803d; border-color: #15803d; }
+.lb-admin-processed--done:hover { background: #166534; border-color: #166534; }
 .lb-admin-processed[hidden] { display: none; }
 
 .lb-admin-delete {
@@ -15400,13 +15390,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   padding: 0;
   flex-shrink: 0;
   border-radius: 7px;
-  border: 1px solid rgba(224,92,92,0.35);
-  background: rgba(224,92,92,0.09);
-  color: #e05c5c;
+  border: 1px solid #dc2626;
+  background: #dc2626;
+  color: #fff;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
-.lb-admin-delete:hover { color: #ff8080; background: rgba(224,92,92,0.22); border-color: rgba(224,92,92,0.6); }
+.lb-admin-delete:hover { background: #b91c1c; border-color: #b91c1c; }
 .lb-admin-delete[hidden] { display: none; }
 
 /* Bloc avis (tout en bas du volet) */
@@ -15445,6 +15435,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .lb-react-icon-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
 .lb-react-icon-btn.active { /* per-button active styles below */ }
+.gallery-lb-collection-btn { color: #d97706; border-color: #d97706; background: rgba(217,119,6,0.12); }
+.gallery-lb-collection-btn:hover { background: #d97706; color: #fff; border-color: #d97706; }
 .lb-react-main-btn {
   flex: 1;
   padding: 0.5rem 0.75rem;
