@@ -21,23 +21,19 @@
         value="<%= protagoniste ? protagoniste.name : '' %>" placeholder="Nom du personnage…" />
 
       <%# ── Image du personnage ── %>
-      <div class="prot-form-img-section">
+      <div class="prot-form-img-section prot-form-img-section--centered">
         <div class="prot-form-field-label">Photo / Illustration</div>
         <div class="prot-form-img-wrap" id="prot-img-wrap">
           <% if (protagoniste && protagoniste.image_path) { %>
             <div class="prot-form-img-holder" id="prot-img-holder">
               <img src="<%= protagoniste.image_path %>" alt="Image actuelle" class="prot-form-img-thumb" id="prot-img-thumb" />
-              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
               <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
             </div>
           <% } else { %>
             <div class="prot-form-img-holder" id="prot-img-holder" style="display:none">
               <img src="" alt="Aperçu" class="prot-form-img-thumb" id="prot-img-thumb" />
-              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
               <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
             </div>
           <% } %>

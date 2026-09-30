@@ -295,7 +295,8 @@ function buildGalleryRouter(config) {
     var protagonistIds = req.body.protagonist_ids !== undefined
       ? [].concat(req.body.protagonist_ids).map(Number).filter(Boolean)
       : undefined;
-    updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, protagonistIds });
+    var aiSuspected = req.body.ai_suspected !== undefined ? !!req.body.ai_suspected : undefined;
+    updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, protagonistIds, aiSuspected });
     if (req.body.gallery_links !== undefined) {
       var links = req.body.gallery_links;
       if (!Array.isArray(links)) { try { links = JSON.parse(links); } catch (_) { links = []; } }

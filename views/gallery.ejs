@@ -37,6 +37,7 @@
       <div class="wiki-filter-section wiki-filter-toggles">
         <button type="button" id="gallery-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
         <button type="button" id="gallery-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
+        <button type="button" id="gallery-hide-ai-toggle" class="wiki-ultra-btn">Masquer IA</button>
       </div>
 
       <%# Catégories %>
@@ -145,12 +146,16 @@
         data-parody="<%= (item.parody || '').replace(/"/g, '') %>"
         data-sub-parody="<%= (item.subParody || '').replace(/"/g, '') %>"
         data-protagonists="<%= (item.protagonistIds || []).join(',') %>"
+        data-ai="<%= item.aiSuspected ? '1' : '0' %>"
         data-series="<%= itemSeries.map(function(s){ return s.seriesId; }).join(',') %>">
 
         <% if (cat) { %><span class="wiki-card-accent" style="background: hsl(<%= cat.hue %>, 55%, 45%)"></span><% } %>
 
         <% if (item.type === 'gallery' && currentUser && currentUser.isAdmin) { %>
           <span class="gallery-processed-badge gallery-processed-badge--<%= item.processed ? 'done' : 'todo' %>" aria-label="<%= item.processed ? 'Trait\u00e9' : '\u00c0 traiter' %>"></span>
+        <% } %>
+        <% if (item.aiSuspected) { %>
+          <span class="gallery-ai-badge" title="Nous sommes oppos&eacute;s &agrave; l&rsquo;usage de l&rsquo;IA dans l&rsquo;art. Certaines &oelig;uvres restent pourtant difficiles &agrave; d&eacute;finir, certaines peuvent nous &eacute;chapper, ou des sc&egrave;nes repr&eacute;sent&eacute;es nous semblent utiles &agrave; garder malgr&eacute; le doute. Vous pouvez masquer ces images via les filtres.">IA?</span>
         <% } %>
 
         <% if (item.type === 'gallery' && item.id) { %>

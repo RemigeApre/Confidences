@@ -5501,6 +5501,20 @@ a.wiki-ql-label:hover .wiki-ql-text {
 
 .gallery-processed-badge { display: none; }
 
+/* Badge suspicion IA */
+.gallery-ai-badge {
+  position: absolute;
+  top: .35rem; left: .35rem;
+  background: rgba(130,60,200,.88);
+  color: #fff;
+  font-size: .58rem; font-weight: 800; letter-spacing: .06em;
+  padding: .12rem .32rem;
+  border-radius: 4px;
+  cursor: help;
+  z-index: 4;
+  user-select: none;
+}
+
 /* Bouton wiki élégant */
 .gallery-lb-wiki-btn {
   display: flex;
@@ -14962,6 +14976,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* Image upload */
 .prot-form-img-section { margin: .85rem 0; }
+.prot-form-img-section--centered { text-align: center; }
 .prot-form-img-holder {
   position: relative; display: inline-block; margin-bottom: .5rem;
   border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,.12);
@@ -14969,13 +14984,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .prot-form-img-thumb { display: block; width: 120px; height: 120px; object-fit: cover; }
 .prot-form-img-remove-btn {
   position: absolute; top: .3rem; right: .3rem;
-  width: 1.5rem; height: 1.5rem; border-radius: 4px;
-  background: rgba(0,0,0,.55); border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; color: #fff;
+  width: 1.6rem; height: 1.6rem; border-radius: 4px;
+  background: rgba(180,20,20,.85); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 1.1rem; line-height: 1; font-weight: 700;
   transition: background .15s;
 }
-.prot-form-img-remove-btn:hover { background: rgba(160,20,20,.8); }
-.prot-form-img-remove-btn svg { width: .75rem; height: .75rem; stroke-width: 2.5; }
+.prot-form-img-remove-btn:hover { background: rgba(220,30,30,1); }
 .prot-form-img-pick {
   display: inline-flex; align-items: center; gap: .4rem;
   padding: .3rem .65rem; border-radius: 6px; font-size: .8rem; cursor: pointer;
@@ -15502,6 +15517,12 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 
 /* Actions */
+.lbep-section--ai { border-bottom: none; padding-bottom: 0; }
+.lbep-ai-label {
+  display: flex; align-items: center; gap: .4rem;
+  font-size: .8rem; color: rgba(255,255,255,.7); cursor: pointer;
+}
+.lbep-ai-label input[type="checkbox"] { accent-color: rgb(130,60,200); cursor: pointer; }
 .lbep-actions {
   display: flex;
   gap: 0.5rem;

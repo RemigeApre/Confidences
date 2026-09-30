@@ -111,6 +111,7 @@ try { db.exec("UPDATE gallery_images SET content_type = 'image' WHERE content_ty
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN processed INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN protagonist_ids TEXT NOT NULL DEFAULT '[]'"); } catch(_) {}
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN ai_suspected INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 // Distingue une fiche créée automatiquement à partir d'une image de page
 // codex (voir syncPageGalleryImages, routes/wiki.js) d'une fiche liée
 // manuellement via l'upload direct dans la Galerie (champ "Page codex" du
@@ -1822,6 +1823,7 @@ function rowToGalleryImage(row) {
     processed: !!row.processed,
     featured: !!row.featured,
     protagonistIds: (() => { try { return JSON.parse(row.protagonist_ids || "[]"); } catch(_) { return []; } })(),
+    aiSuspected: !!row.ai_suspected,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -2002,13 +2004,14 @@ function getContentByParody(parody, subParody) {
   return { gallery, bd, nouvelles, wiki, protagonistes };
 }
 
-function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, processed, protagonistIds } = {}) {
+function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, processed, protagonistIds, aiSuspected } = {}) {
   const sets = ["tags = ?", "author = ?", "parody = ?", "sub_parody = ?", "updated_at = ?"];
   const params = [JSON.stringify(tags || []), author || "", parody || "", subParody || "", new Date().toISOString()];
   if (title          !== undefined) { sets.splice(sets.length - 1, 0, "title = ?");           params.splice(params.length - 1, 0, title); }
   if (notes          !== undefined) { sets.splice(sets.length - 1, 0, "notes = ?");           params.splice(params.length - 1, 0, notes); }
   if (typeof processed === "number") { sets.splice(sets.length - 1, 0, "processed = ?");      params.splice(params.length - 1, 0, processed); }
   if (protagonistIds !== undefined) { sets.splice(sets.length - 1, 0, "protagonist_ids = ?"); params.splice(params.length - 1, 0, JSON.stringify(protagonistIds || [])); }
+  if (typeof aiSuspected === "boolean") { sets.splice(sets.length - 1, 0, "ai_suspected = ?"); params.splice(params.length - 1, 0, aiSuspected ? 1 : 0); }
   params.push(id);
   db.prepare(`UPDATE gallery_images SET ${sets.join(", ")} WHERE id = ?`).run(...params);
   return true;

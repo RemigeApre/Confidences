@@ -308,6 +308,7 @@
   var storedHideIrrealiste = localStorage.getItem("gallery-hide-irrealiste");
   var hideUltra      = storedHideUltra !== null ? storedHideUltra === "1" : (window.ULTRA_MODE || "hidden") === "hidden";
   var hideIrrealiste = storedHideIrrealiste !== null ? storedHideIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") === "hidden";
+  var hideAiSuspected = localStorage.getItem("gallery-hide-ai") === "1";
   var activeParody   = "";
   var activeProcessed = ""; // "" = tous, "0" = à traiter, "1" = traité
   var activeRating   = 0;
@@ -344,6 +345,7 @@
       var okSearch   = !q || norm(card.dataset.title).indexOf(q) !== -1 || cardTags.some(function(t){ return norm(t).indexOf(q) !== -1; });
       var okUltra       = !hideUltra || card.dataset.ultra !== "1";
       var okIrrealiste  = !hideIrrealiste || card.dataset.irrealiste !== "1";
+      var okAi          = !hideAiSuspected || card.dataset.ai !== "1";
       var okRating   = !activeRating || Number(card.dataset.rating) >= activeRating;
       var okParody   = !activeParody || (card.dataset.parody || "") === activeParody;
 
@@ -353,7 +355,7 @@
       var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
 
       var okProcessed = !activeProcessed || card.dataset.processed === activeProcessed;
-      var passes = okCategory && okSearch && okUltra && okIrrealiste && okRating && okParody && okTag && okBlacklist && okProcessed;
+      var passes = okCategory && okSearch && okUltra && okIrrealiste && okAi && okRating && okParody && okTag && okBlacklist && okProcessed;
       card.dataset.filtered = passes ? "1" : "0";
       if (passes) filteredCards.push(card);
     });
@@ -604,6 +606,23 @@
     });
   }
   syncIrrealisteBtn();
+
+  // Masquer IA toggle
+  var hideAiToggle = document.getElementById("gallery-hide-ai-toggle");
+  function syncHideAiBtn() {
+    if (!hideAiToggle) return;
+    hideAiToggle.textContent = hideAiSuspected ? "Afficher IA" : "Masquer IA";
+    hideAiToggle.classList.toggle("active", hideAiSuspected);
+  }
+  if (hideAiToggle) {
+    hideAiToggle.addEventListener("click", function() {
+      hideAiSuspected = !hideAiSuspected;
+      localStorage.setItem("gallery-hide-ai", hideAiSuspected ? "1" : "0");
+      syncHideAiBtn();
+      applyFilters();
+    });
+  }
+  syncHideAiBtn();
 
   // Reset filters
   var resetFiltersBtn = document.getElementById("gallery-reset-btn");
@@ -1986,6 +2005,10 @@
             '<div class="lbep-ac-wrap"><input type="text" class="lbep-input" id="lbep-link-nouvelle-inp" placeholder="Lier une nouvelle\u2026" autocomplete="off"><ul class="lbep-ac-drop" id="lbep-link-nouvelle-drop" hidden></ul></div>',
           '</div>',
         '</div>',
+        // Suspicion IA
+        '<div class="lbep-section lbep-section--ai">',
+          '<label class="lbep-ai-label"><input type="checkbox" id="lbep-ai-suspected"> Suspicion IA</label>',
+        '</div>',
         // Actions
         '<div class="lbep-actions">',
           '<button type="button" class="lbep-save">Enregistrer</button>',
@@ -2188,6 +2211,8 @@
       document.getElementById("lbep-parody-inp").value  = card.dataset.parody    || "";
       document.getElementById("lbep-sub-inp").value     = card.dataset.subParody || "";
       document.getElementById("lbep-author-inp").value  = card.dataset.author    || "";
+      var aiCb = document.getElementById("lbep-ai-suspected");
+      if (aiCb) aiCb.checked = card.dataset.ai === "1";
       document.getElementById("lbep-prot-chips").innerHTML = "";
       document.getElementById("lbep-tag-chips").innerHTML  = "";
       ["lbep-link-wiki-chips", "lbep-link-quiz-chips", "lbep-link-nouvelle-chips"].forEach(function (id) {
@@ -2242,6 +2267,7 @@
       var card = currentCard();
       var tags = Array.from(document.getElementById("lbep-tag-chips").querySelectorAll(".lbep-chip")).map(function (c) { return c.dataset.tag; }).filter(Boolean);
       var protagonistIds = Array.from(document.getElementById("lbep-prot-chips").querySelectorAll(".lbep-chip")).map(function (c) { return Number(c.dataset.protId); }).filter(Boolean);
+      var aiSuspected = !!(document.getElementById("lbep-ai-suspected") || {}).checked;
       var saveBtn = editPanel.querySelector(".lbep-save");
       saveBtn.disabled = true; saveBtn.textContent = "Enregistrement\u2026";
       fetch("/galerie/image-meta", {
@@ -2254,6 +2280,7 @@
           parody:         document.getElementById("lbep-parody-inp").value.trim(),
           sub_parody:     document.getElementById("lbep-sub-inp").value.trim(),
           protagonist_ids: protagonistIds,
+          ai_suspected:   aiSuspected,
           gallery_links:  editLinks,
         }),
       })
@@ -2268,6 +2295,18 @@
           card.dataset.parody       = document.getElementById("lbep-parody-inp").value.trim();
           card.dataset.subParody    = document.getElementById("lbep-sub-inp").value.trim();
           card.dataset.protagonists = protagonistIds.join(",");
+          card.dataset.ai = aiSuspected ? "1" : "0";
+          // Mettre à jour le badge IA sur la carte
+          var existingAiBadge = card.querySelector(".gallery-ai-badge");
+          if (aiSuspected && !existingAiBadge) {
+            var badge = document.createElement("span");
+            badge.className = "gallery-ai-badge";
+            badge.title = "Nous sommes oppos\u00e9s \u00e0 l\u2019usage de l\u2019IA dans l\u2019art. Certaines \u0153uvres restent pourtant difficiles \u00e0 d\u00e9finir. Vous pouvez masquer ces images via les filtres.";
+            badge.textContent = "IA?";
+            card.appendChild(badge);
+          } else if (!aiSuspected && existingAiBadge) {
+            existingAiBadge.remove();
+          }
         }
         exitEdit();
         renderLightbox();
