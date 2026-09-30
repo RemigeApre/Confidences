@@ -573,7 +573,7 @@
         <% if (currentUser) { %>
           <div class="wiki-detail-rating wiki-right-rating" data-id="<%= page.id %>" data-rating="<%= page.rating %>">
             <% for (var i = 1; i <= 5; i++) { %>
-              <button type="button" class="wiki-star wiki-star-lg" data-value="<%= i %>"><%- i <= page.rating ? '&#9733;' : '&#9734;' %></button>
+              <button type="button" class="wiki-star wiki-star-lg<%= i <= page.rating ? ' filled' : '' %>" data-value="<%= i %>"><%- i <= page.rating ? '&#9733;' : '&#9734;' %></button>
             <% } %>
           </div>
           <%# Mode couple : révélé seulement une fois que le visiteur a

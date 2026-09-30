@@ -464,9 +464,9 @@ function buildAdminRouter(config) {
 
   // ── Offrir un item (image ou charme) à un utilisateur ─────────────────────
   router.post("/recompenses/gift", requireAdmin, express.json(), (req, res) => {
-    const targetUserId = parseInt(req.body.userId, 10);
-    const itemType = String(req.body.itemType || '');
-    const itemId   = parseInt(req.body.itemId, 10);
+    const targetUserId = parseInt(req.body.targetUserId, 10);
+    const itemType = String(req.body.type || '');
+    const itemId   = parseInt(itemType === 'image' ? req.body.imageId : req.body.charmId, 10);
     if (!targetUserId || !['charm', 'image'].includes(itemType) || isNaN(itemId)) {
       return res.json({ ok: false, error: 'params_invalides' });
     }

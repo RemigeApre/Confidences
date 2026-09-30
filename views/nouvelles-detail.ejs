@@ -110,7 +110,7 @@
         <div class="nv-right-reactions" data-id="<%= nouvelle.id %>" data-rating="<%= userRating %>" data-flame="<%= userFlame ? '1' : '0' %>">
           <div class="wiki-detail-rating nv-right-rating">
             <% for (var i = 1; i <= 5; i++) { %>
-              <button type="button" class="wiki-star wiki-star-lg" data-value="<%= i %>"><%- i <= userRating ? '&#9733;' : '&#9734;' %></button>
+              <button type="button" class="wiki-star wiki-star-lg<%= i <= userRating ? ' filled' : '' %>" data-value="<%= i %>"><%- i <= userRating ? '&#9733;' : '&#9734;' %></button>
             <% } %>
           </div>
           <button type="button" class="wiki-react-btn wiki-react-flame nv-right-flame<%= userFlame ? ' active' : '' %>" data-key="flame">
@@ -147,9 +147,9 @@
   function renderStars() {
     starBtns.forEach(function(btn) {
       var v = Number(btn.dataset.value);
-      btn.innerHTML = v <= nvRating ? '&#9733;' : '&#9734;';
-      btn.classList.toggle('active', v <= nvRating);
+      btn.classList.toggle('filled', v <= nvRating);
     });
+    if (typeof patchStars === 'function') patchStars();
   }
   renderStars();
 
@@ -157,8 +157,9 @@
     var v = Number(btn.dataset.value);
     btn.addEventListener('mouseenter', function() {
       starBtns.forEach(function(b) {
-        b.innerHTML = Number(b.dataset.value) <= v ? '&#9733;' : '&#9734;';
+        b.classList.toggle('filled', Number(b.dataset.value) <= v);
       });
+      if (typeof patchStars === 'function') patchStars();
     });
     btn.addEventListener('mouseleave', renderStars);
     btn.addEventListener('click', function() {
