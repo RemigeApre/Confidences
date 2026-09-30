@@ -1,42 +1,130 @@
 <%- include('partials/head', { title: 'Parodies' }) %>
-<main class="container" style="max-width: 860px; margin: 0 auto">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Parodies', navBack: '/wiki' }) %>
+<main class="container wide gallery-has-sidebar" style="--ch-hue: 50">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Parodies', navBack: '/' }) %>
+  <%- include('partials/mobile-filter-toggle') %>
 
-  <div class="prot-header">
-    <h1 class="prot-page-title">Parodies</h1>
-    <p class="prot-page-sub">Œuvres parodiées dans le contenu du site</p>
-  </div>
+  <%# ── Volet gauche ──────────────────────────────────────────────────── %>
+  <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
+    <%- include('partials/sidebar-hero', { title: 'Parodies', hue: 50, count: parodies.length, countId: 'par-count-hero' }) %>
 
+    <div class="wiki-sidebar-body">
+      <div class="wiki-sidebar-filters">
+
+        <%# Recherche %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Recherche</span>
+          <div class="wiki-search-wrap">
+            <div class="wiki-search-bar">
+              <input type="text" class="wiki-search-input" id="par-search" placeholder="Nom de la parodie…" autocomplete="off" />
+            </div>
+          </div>
+        </div>
+
+        <%# Contenu %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Contient</span>
+          <div class="links-filter" id="par-type-filter">
+            <button type="button" class="tag-chip active" data-type="">Tout</button>
+            <button type="button" class="tag-chip" data-type="gallery">Images</button>
+            <button type="button" class="tag-chip" data-type="protagonistes">Personnages</button>
+            <button type="button" class="tag-chip" data-type="bd">BD</button>
+            <button type="button" class="tag-chip" data-type="nouvelles">Nouvelles</button>
+            <button type="button" class="tag-chip" data-type="wiki">Codex</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </aside>
+
+  <%# ── Grille principale ─────────────────────────────────────────────── %>
   <% if (!parodies.length) { %>
     <p class="nv-empty">Aucune parodie enregistrée pour le moment.</p>
   <% } else { %>
-    <div class="parody-grid">
+    <div class="prot-grid" id="par-grid">
       <% parodies.forEach(function(item) { %>
-        <div class="parody-card">
-          <a href="/parodies/<%= encodeURIComponent(item.parody) %>" class="parody-card-name"><%= item.parody %></a>
-          <div class="parody-card-counts">
-            <% if (item.counts.gallery)      { %><span class="parody-count-chip">📷 <%= item.counts.gallery %></span><% } %>
-            <% if (item.counts.bd)           { %><span class="parody-count-chip">📚 <%= item.counts.bd %></span><% } %>
-            <% if (item.counts.nouvelles)    { %><span class="parody-count-chip">📝 <%= item.counts.nouvelles %></span><% } %>
-            <% if (item.counts.wiki)         { %><span class="parody-count-chip">🔖 <%= item.counts.wiki %></span><% } %>
-            <% if (item.counts.protagonistes){ %><span class="parody-count-chip">👤 <%= item.counts.protagonistes %></span><% } %>
+        <a href="/parodies/<%= encodeURIComponent(item.parody) %>" class="prot-card par-card"
+          data-name="<%= item.parody.toLowerCase() %>"
+          data-has-gallery="<%= item.counts.gallery ? '1' : '0' %>"
+          data-has-protagonistes="<%= item.counts.protagonistes ? '1' : '0' %>"
+          data-has-bd="<%= item.counts.bd ? '1' : '0' %>"
+          data-has-nouvelles="<%= item.counts.nouvelles ? '1' : '0' %>"
+          data-has-wiki="<%= item.counts.wiki ? '1' : '0' %>">
+
+          <div class="prot-card-body">
+            <div class="prot-card-name"><%= item.parody %></div>
+
+            <div class="par-card-counts">
+              <% if (item.counts.gallery)      { %><span class="par-count-badge par-count-badge--gallery"><%= item.counts.gallery %> image<%= item.counts.gallery > 1 ? 's' : '' %></span><% } %>
+              <% if (item.counts.protagonistes){ %><span class="par-count-badge par-count-badge--prot"><%= item.counts.protagonistes %> perso<%= item.counts.protagonistes > 1 ? 's' : '' %></span><% } %>
+              <% if (item.counts.bd)           { %><span class="par-count-badge par-count-badge--bd"><%= item.counts.bd %> BD</span><% } %>
+              <% if (item.counts.nouvelles)    { %><span class="par-count-badge par-count-badge--nouv"><%= item.counts.nouvelles %> nouvelle<%= item.counts.nouvelles > 1 ? 's' : '' %></span><% } %>
+              <% if (item.counts.wiki)         { %><span class="par-count-badge par-count-badge--wiki"><%= item.counts.wiki %> codex</span><% } %>
+            </div>
+
+            <% if (item.subs && item.subs.length) { %>
+              <div class="par-sub-chips">
+                <% item.subs.forEach(function(s) { %>
+                  <span class="par-sub-chip"><%= s.sub %></span>
+                <% }) %>
+              </div>
+            <% } %>
           </div>
-          <% if (item.subs && item.subs.length) { %>
-          <ul class="parody-subs-list">
-            <% item.subs.forEach(function(s) { %>
-              <li>
-                <a href="/parodies/<%= encodeURIComponent(item.parody) %>/<%= encodeURIComponent(s.sub) %>" class="parody-sub-link">
-                  <span class="parody-sub-arrow">›</span> <%= s.sub %>
-                  <span class="parody-sub-count"><%= s.counts.total %></span>
-                </a>
-              </li>
-            <% }) %>
-          </ul>
-          <% } %>
-        </div>
+        </a>
       <% }) %>
     </div>
+    <p class="nv-empty" id="par-no-results" hidden>Aucune parodie ne correspond aux filtres.</p>
   <% } %>
 
 </main>
+
+<script>
+(function() {
+  var grid = document.getElementById('par-grid');
+  if (!grid) return;
+  var cards = Array.from(grid.querySelectorAll('.par-card'));
+  var noResults = document.getElementById('par-no-results');
+  var countEl = document.getElementById('par-count-hero');
+  var searchEl = document.getElementById('par-search');
+
+  var activeType = '';
+  var searchQ    = '';
+
+  function applyFilters() {
+    var shown = 0;
+    cards.forEach(function(c) {
+      var ok = true;
+      if (searchQ && c.dataset.name.indexOf(searchQ) === -1) ok = false;
+      if (activeType && c.dataset['has' + activeType.charAt(0).toUpperCase() + activeType.slice(1)] !== '1') ok = false;
+      c.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (noResults) noResults.hidden = shown > 0;
+    if (countEl) countEl.textContent = shown;
+  }
+
+  if (searchEl) {
+    searchEl.addEventListener('input', function() {
+      searchQ = searchEl.value.toLowerCase().trim();
+      applyFilters();
+    });
+  }
+
+  var typeFilter = document.getElementById('par-type-filter');
+  if (typeFilter) {
+    typeFilter.querySelectorAll('.tag-chip').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        typeFilter.querySelectorAll('.tag-chip').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        activeType = btn.dataset.type || '';
+        applyFilters();
+      });
+    });
+  }
+
+  applyFilters();
+})();
+</script>
+
 <%- include('partials/foot') %>
