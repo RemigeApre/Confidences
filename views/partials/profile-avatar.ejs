@@ -1,0 +1,19 @@
+<%#
+  Affiche l'avatar de profil de currentUser :
+  - une image de galerie débloquée si profile_image_id est défini
+  - sinon un losange coloré avec profile_color
+  Taille : 28×28 px (responsive via CSS var --avatar-size).
+%>
+<% var _pu = locals.currentUser; %>
+<% if (_pu && _pu.profileImageId && locals.profileAvatarThumb) { %>
+  <span class="profile-avatar profile-avatar--img" aria-hidden="true">
+    <img src="<%= profileAvatarThumb %>" alt="" class="profile-avatar-img" loading="lazy" />
+  </span>
+<% } else if (_pu) { %>
+  <span class="profile-avatar profile-avatar--shape" aria-hidden="true"
+        style="--avatar-color: <%= _pu.profileColor || '#6b7280' %>">
+    <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <polygon points="14,2 26,14 14,26 2,14" fill="var(--avatar-color)" />
+    </svg>
+  </span>
+<% } %>

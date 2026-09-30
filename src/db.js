@@ -231,6 +231,37 @@ try { db.exec("ALTER TABLE users ADD COLUMN can_see_owned INTEGER NOT NULL DEFAU
 // faire. Colonne supprimee si le moteur SQLite le permet (>= 3.35), sinon
 // laissee inerte (plus lue nulle part).
 try { db.exec("ALTER TABLE users DROP COLUMN tag_nav_pref"); } catch (_) {}
+// Personnalisation du profil : couleur de l'avatar (forme géométrique) et
+// image de galerie débloquée via lootbox utilisable comme photo de profil.
+try { db.exec("ALTER TABLE users ADD COLUMN profile_color TEXT NOT NULL DEFAULT '#6b7280'"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN profile_image_id INTEGER"); } catch (_) {}
+
+// ── Lootboxes et récompenses ───────────────────────────────────────────────
+// Lootboxes attribuées à un utilisateur (une ligne = une boîte, ouverte ou non).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_lootboxes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    opened INTEGER NOT NULL DEFAULT 0,
+    reward_ref_id INTEGER,
+    reward_rarity TEXT,
+    created_at TEXT NOT NULL,
+    opened_at TEXT
+  )
+`);
+// Récompenses débloquées par utilisateur (une ligne = un objet possédé).
+// UNIQUE(user_id, item_type, ref_id) : on ne possède pas deux fois le même item.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_unlocks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    item_type TEXT NOT NULL DEFAULT 'profile_image',
+    ref_id INTEGER NOT NULL,
+    rarity TEXT NOT NULL DEFAULT 'common',
+    obtained_at TEXT NOT NULL,
+    UNIQUE(user_id, item_type, ref_id)
+  )
+`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS favorites (
@@ -491,6 +522,8 @@ function rowToUser(row) {
     historyRetention: row.history_retention || "1mois",
     partnerId: row.partner_id || null,
     canSeeOwned: !!row.can_see_owned,
+    profileColor: row.profile_color || '#6b7280',
+    profileImageId: row.profile_image_id || null,
   };
 }
 
@@ -2515,6 +2548,77 @@ function setGalleryLinks(galleryId, links) {
   }
 }
 
+// ── Lootbox functions ──────────────────────────────────────────────────────
+const RARITY_WEIGHTS = { common: 50, rare: 28, epic: 15, legendary: 5, mythic: 2 };
+
+function _pickRarity() {
+  const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (const [key, weight] of Object.entries(RARITY_WEIGHTS)) {
+    r -= weight;
+    if (r <= 0) return key;
+  }
+  return 'common';
+}
+
+function getLootboxCount(userId) {
+  const row = db.prepare("SELECT COUNT(*) as cnt FROM user_lootboxes WHERE user_id = ? AND opened = 0").get(userId);
+  return row ? row.cnt : 0;
+}
+
+function grantLootbox(userId, count) {
+  const n = Math.max(1, parseInt(count, 10) || 1);
+  const stmt = db.prepare("INSERT INTO user_lootboxes (user_id, opened, created_at) VALUES (?, 0, ?)");
+  const now = new Date().toISOString();
+  for (let i = 0; i < n; i++) stmt.run(userId, now);
+}
+
+function openLootbox(userId) {
+  const box = db.prepare("SELECT id FROM user_lootboxes WHERE user_id = ? AND opened = 0 ORDER BY created_at ASC LIMIT 1").get(userId);
+  if (!box) return null;
+  // Pick a random gallery image from the pool
+  const images = db.prepare("SELECT id, image_paths, title FROM gallery_images ORDER BY RANDOM() LIMIT 30").all();
+  if (!images.length) return null;
+  const image = images[Math.floor(Math.random() * images.length)];
+  const rarity = _pickRarity();
+  // Add to unlocks (ignore duplicate: user already owned it, still counts as opened)
+  db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, image.id, rarity, new Date().toISOString());
+  // Mark box as opened
+  db.prepare("UPDATE user_lootboxes SET opened = 1, reward_ref_id = ?, reward_rarity = ?, opened_at = ? WHERE id = ?").run(image.id, rarity, new Date().toISOString(), box.id);
+  let imagePaths = [];
+  try { imagePaths = JSON.parse(image.image_paths || '[]'); } catch (_) {}
+  return { imageId: image.id, title: image.title || '', rarity, thumb: imagePaths[0] || null };
+}
+
+function getUserUnlocks(userId) {
+  return db.prepare(
+    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
+  ).all(userId).map(r => {
+    let imagePaths = [];
+    try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
+    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at };
+  });
+}
+
+function setProfileColor(userId, color) {
+  if (!/^#[0-9a-fA-F]{3,8}$/.test(color)) return false;
+  db.prepare("UPDATE users SET profile_color = ? WHERE id = ?").run(color, userId);
+  return true;
+}
+
+function setProfileImageId(userId, imageId) {
+  if (imageId === null || imageId === undefined) {
+    db.prepare("UPDATE users SET profile_image_id = NULL WHERE id = ?").run(userId);
+    return true;
+  }
+  const id = parseInt(imageId, 10);
+  if (isNaN(id)) return false;
+  const unlock = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image' AND ref_id = ?").get(userId, id);
+  if (!unlock) return false;
+  db.prepare("UPDATE users SET profile_image_id = ? WHERE id = ?").run(id, userId);
+  return true;
+}
+
 module.exports = {
   db,
   insertSubmission,
@@ -2705,6 +2809,12 @@ module.exports = {
   createAiProfile,
   updateAiProfile,
   deleteAiProfile,
+  getLootboxCount,
+  grantLootbox,
+  openLootbox,
+  getUserUnlocks,
+  setProfileColor,
+  setProfileImageId,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

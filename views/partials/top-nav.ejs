@@ -79,7 +79,7 @@
         <% if (currentUser) { %>
           <% var _roleClass = currentUser.isAdmin ? 'pc-key-admin' : (currentUser.isTest ? 'pc-key-test' : 'pc-key-user'); %>
           <div class="pc-nav-item pc-has-drop pc-hover-menu">
-            <button type="button" class="pc-icon-btn <%= _roleClass %>" title="<%= currentUser.displayName %>"><%- include('key-icon') %></button>
+            <button type="button" class="pc-icon-btn pc-avatar-btn <%= _roleClass %>" title="<%= currentUser.displayName %>"><%- include('profile-avatar') %></button>
             <div class="pc-drop pc-drop-right">
               <a href="/favoris" class="pc-drop-link">Profil</a>
               <% if (locals.partnerUser) { %>

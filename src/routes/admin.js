@@ -33,6 +33,8 @@ const {
   listActivitySessions,
   setCouplePartners,
   clearCouplePartner,
+  grantLootbox,
+  getLootboxCount,
   listCollections,
   getCollection,
   getCollectionImages,
@@ -259,6 +261,15 @@ function buildAdminRouter(config) {
     res.redirect("/admin#tab-utilisateurs");
   });
 
+  // Attribuer des lootboxes à un utilisateur
+  // Attribuer des lootboxes à un utilisateur
+  router.post("/profils/:id/grant-lootbox", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const count = Math.min(20, Math.max(1, parseInt(req.body.count, 10) || 1));
+    if (Number.isInteger(id)) grantLootbox(id, count);
+    res.redirect(`/admin/profils/${id}`);
+  });
+
   router.post("/profils/:id/delete", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (Number.isInteger(id) && id !== req.session.userId) {
@@ -308,7 +319,8 @@ function buildAdminRouter(config) {
     const attempt = getAttempt(tokenForUser(detail.user));
     const liveScores = attempt ? computeScores(config, attempt.data) : null;
     const matrixSections = config.sections.filter((s) => s.type === "matrix");
-    res.render("admin-user-detail", { config, detail, attempt, liveScores, matrixSections, roleHue: roleHue(detail.user) });
+    const lootboxCount = getLootboxCount(detail.user.id);
+    res.render("admin-user-detail", { config, detail, attempt, liveScores, matrixSections, lootboxCount, roleHue: roleHue(detail.user) });
   });
 
   router.get("/utilisateur/:id/codex", requireAdmin, (req, res) => {

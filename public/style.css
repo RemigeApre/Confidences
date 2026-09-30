@@ -16050,3 +16050,269 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   padding: .15rem 0;
   font-size: .82rem;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFILE AVATAR
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --avatar-size: 28px;
+  --rarity-common:    hsl(0,0%,60%);
+  --rarity-rare:      hsl(210,80%,60%);
+  --rarity-epic:      hsl(270,65%,65%);
+  --rarity-legendary: hsl(44,95%,55%);
+  --rarity-mythic:    hsl(0,75%,55%);
+}
+
+.profile-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.profile-avatar--shape svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--avatar-color, #6b7280) 40%, transparent));
+}
+.profile-avatar--img {
+  background: var(--surface-2, #111);
+}
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Anneau coloré selon le rôle, réutilise les classes existantes sur le bouton */
+.pc-avatar-btn.pc-key-admin .profile-avatar--shape svg polygon { stroke: hsl(262,70%,60%); stroke-width: 1; }
+.pc-avatar-btn.pc-key-test .profile-avatar--shape svg polygon  { stroke: hsl(32,80%,55%); stroke-width: 1; }
+.pc-avatar-btn { line-height: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOOTBOX WIDGET (fixe bas-droite)
+   ══════════════════════════════════════════════════════════════════════════ */
+.lootbox-widget {
+  position: fixed;
+  bottom: 84px;   /* au-dessus de la tabbar mobile */
+  right: 16px;
+  z-index: 900;
+}
+@media (min-width: 769px) {
+  .lootbox-widget { bottom: 24px; }
+}
+
+.lootbox-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.15);
+  background: var(--surface-2, #1a1a2e);
+  color: var(--muted, #888);
+  cursor: pointer;
+  transition: border-color .2s, color .2s, box-shadow .2s;
+}
+.lootbox-btn[data-has-loot] {
+  border-color: var(--rarity-legendary);
+  color: var(--rarity-legendary);
+  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--rarity-legendary) 35%, transparent);
+  animation: lootbox-pulse 2.2s ease-in-out infinite;
+}
+@keyframes lootbox-pulse {
+  0%, 100% { box-shadow: 0 0 12px 2px color-mix(in srgb, var(--rarity-legendary) 30%, transparent); }
+  50%       { box-shadow: 0 0 22px 6px color-mix(in srgb, var(--rarity-legendary) 55%, transparent); }
+}
+
+/* Icônes coffre : empty vs. plein */
+.lootbox-icon { width: 26px; height: 26px; display: block; }
+.lootbox-icon--open { display: none; }
+.lootbox-btn[data-has-loot] .lootbox-icon--closed { display: none; }
+.lootbox-btn[data-has-loot] .lootbox-icon--open   { display: block; }
+
+/* Badge compteur */
+.lootbox-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--rarity-legendary);
+  color: #000;
+  font-size: .68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ── Overlay d'ouverture ──────────────────────────────────────────────── */
+.lootbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lootbox-overlay[hidden] { display: none; }
+.lootbox-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(4px);
+}
+
+.lootbox-reveal {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem 1.5rem;
+  max-width: 360px;
+  width: 90vw;
+}
+
+/* Coffre animé */
+.lootbox-reveal-chest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lootbox-reveal-svg {
+  width: 120px;
+  height: 120px;
+  color: var(--rarity-legendary);
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--rarity-legendary) 50%, transparent));
+  transform-origin: center bottom;
+}
+@keyframes chest-shake {
+  0%,100% { transform: rotate(0deg) scale(1); }
+  15%      { transform: rotate(-6deg) scale(1.04); }
+  30%      { transform: rotate(6deg) scale(1.04); }
+  45%      { transform: rotate(-4deg) scale(1.06); }
+  60%      { transform: rotate(4deg) scale(1.08); }
+  75%      { transform: rotate(-2deg) scale(1.1); }
+  90%      { transform: rotate(2deg) scale(1.12); }
+}
+@keyframes chest-open {
+  0%   { transform: scale(1); opacity: 1; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.lootbox-chest--opening .lootbox-reveal-svg {
+  animation: chest-shake .4s ease-in-out, chest-open .5s .4s ease-in forwards;
+}
+
+/* Carte récompense */
+.lootbox-reveal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  background: var(--surface-2, #1a1a2e);
+  border: 2px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  padding: 1.25rem;
+  width: 100%;
+  transform: scale(.85) translateY(20px);
+  opacity: 0;
+  transition: none;
+}
+.lootbox-reveal-card[hidden] { display: none; }
+.lootbox-card--in {
+  animation: card-reveal .45s cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes card-reveal {
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Rareté */
+.lootbox-reveal-rarity {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  padding: .2rem .75rem;
+  border-radius: 99px;
+  background: rgba(255,255,255,.06);
+}
+.lootbox-reveal-rarity--common    { color: var(--rarity-common);    border: 1px solid var(--rarity-common); }
+.lootbox-reveal-rarity--rare      { color: var(--rarity-rare);      border: 1px solid var(--rarity-rare); }
+.lootbox-reveal-rarity--epic      { color: var(--rarity-epic);      border: 1px solid var(--rarity-epic); }
+.lootbox-reveal-rarity--legendary { color: var(--rarity-legendary); border: 1px solid var(--rarity-legendary); box-shadow: 0 0 8px color-mix(in srgb, var(--rarity-legendary) 40%, transparent); }
+.lootbox-reveal-rarity--mythic    { color: var(--rarity-mythic);    border: 1px solid var(--rarity-mythic);    box-shadow: 0 0 8px color-mix(in srgb, var(--rarity-mythic) 40%, transparent); }
+
+/* Image débloquée */
+.lootbox-reveal-img-wrap {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-3, #111);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lootbox-reveal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lootbox-reveal-img[hidden] { display: none; }
+.lootbox-reveal-img-placeholder {
+  color: var(--muted, #666);
+  opacity: .4;
+  width: 48px;
+  height: 48px;
+}
+.lootbox-reveal-img-placeholder[hidden] { display: none; }
+
+/* Titre et hint */
+.lootbox-reveal-title {
+  font-size: .9rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-1, #fff);
+  margin: 0;
+}
+.lootbox-reveal-hint {
+  font-size: .72rem;
+  color: var(--muted, #888);
+  text-align: center;
+  margin: 0;
+}
+
+/* Bouton fermer */
+.lootbox-reveal-close {
+  padding: .5rem 1.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.06);
+  color: var(--text-1, #eee);
+  font-size: .85rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+.lootbox-reveal-close:hover { background: rgba(255,255,255,.12); }
+.lootbox-reveal-close[hidden] { display: none; }
+
+/* Bord coloré selon la rareté sur la carte */
+.lootbox-reveal-card:has(.lootbox-reveal-rarity--rare)      { border-color: color-mix(in srgb, var(--rarity-rare) 40%, transparent); }
+.lootbox-reveal-card:has(.lootbox-reveal-rarity--epic)      { border-color: color-mix(in srgb, var(--rarity-epic) 40%, transparent); }
+.lootbox-reveal-card:has(.lootbox-reveal-rarity--legendary) { border-color: color-mix(in srgb, var(--rarity-legendary) 60%, transparent); }
+.lootbox-reveal-card:has(.lootbox-reveal-rarity--mythic)    { border-color: color-mix(in srgb, var(--rarity-mythic) 60%, transparent); }

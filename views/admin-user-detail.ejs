@@ -66,6 +66,19 @@
       <% } %>
     </div>
 
+    <%# ── Lootboxes ── %>
+    <div class="aud-section">
+      <h2 class="aud-section-title">&#127381; Lootboxes</h2>
+      <p class="admin-muted">
+        En attente d&rsquo;ouverture&nbsp;: <strong><%= lootboxCount %></strong>
+      </p>
+      <form method="POST" action="/admin/profils/<%= detail.user.id %>/grant-lootbox" class="aud-grant-form">
+        <label class="admin-label" for="grant-count-<%= detail.user.id %>">Attribuer</label>
+        <input type="number" id="grant-count-<%= detail.user.id %>" name="count" value="1" min="1" max="20" class="admin-input admin-input--sm" />
+        <button type="submit" class="admin-btn-primary">Accorder</button>
+      </form>
+    </div>
+
   </main>
 </div>
 <%- include('partials/foot') %>

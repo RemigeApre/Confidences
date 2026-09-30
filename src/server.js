@@ -21,7 +21,7 @@ const buildProtagonistesRouter = require("./routes/protagonistes");
 const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, getAllTagCategories, getAllTagParents, getAllTagSubcategories, setTagType, setTagCategory, setTagParent, setTagSubcategory, createStandaloneTag, renameTagEverywhere,
-  listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
+  listWikiPages, listGalleryImages, getGalleryImage, listBdBooks, recordActivityPing,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
   getUserById,
@@ -219,6 +219,16 @@ backfillThumbs("bd");
 
 app.use((req, res, next) => {
   res.locals.thumbUrl = thumbUrl;
+  // Vignette de l'avatar de profil : pré-calculée ici pour que la nav
+  // l'ait sans requête supplémentaire dans le partial profile-avatar.
+  if (req.user && req.user.profileImageId) {
+    const img = getGalleryImage(req.user.profileImageId);
+    if (img) {
+      let paths = [];
+      try { paths = JSON.parse(img.image_paths || '[]'); } catch (_) {}
+      res.locals.profileAvatarThumb = paths[0] ? thumbUrl(paths[0]) : null;
+    }
+  }
   next();
 });
 
@@ -612,6 +622,7 @@ app.delete("/api/filter-profils/:id", function (req, res) {
 
 const buildCustomQuizRouter = require("./routes/custom-quiz");
 const buildParodiesRouter = require("./routes/parodies");
+const buildLootboxRouter = require("./routes/lootbox");
 app.use("/quizz", buildCustomQuizRouter(config));
 app.use("/", buildQuizRouter(config));
 app.use("/admin", buildAdminRouter(config));
@@ -625,6 +636,7 @@ app.use("/couple", buildCoupleRouter(config));
 app.use("/nouvelles", buildNouvellesRouter(config));
 app.use("/protagonistes", buildProtagonistesRouter(config));
 app.use("/parodies", buildParodiesRouter(config));
+app.use("/lootbox", buildLootboxRouter(config));
 
 if (usingHttps) {
   https
