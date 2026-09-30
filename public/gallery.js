@@ -2021,72 +2021,94 @@
         function (item) { document.getElementById("lbep-author-inp").value = item.value; }
       );
 
-      // Protagonistes
+      // Protagonistes — même logique que gallery-form.ejs (sans debounce)
       var protChips = document.getElementById("lbep-prot-chips");
       var protInp   = document.getElementById("lbep-prot-inp");
       var protDrop  = document.getElementById("lbep-prot-drop");
+      var protAcSel = -1;
+
+      // Déplacer le dropdown dans body pour échapper à overflow du panneau
+      document.body.appendChild(protDrop);
+      protDrop.style.cssText = "position:fixed;z-index:9999;";
+      function posProtDrop() {
+        var r = protInp.getBoundingClientRect();
+        protDrop.style.top = (r.bottom + 2) + "px";
+        protDrop.style.left = r.left + "px";
+        protDrop.style.width = r.width + "px";
+      }
+
+      function closeProtDrop() { protDrop.innerHTML = ""; protDrop.hidden = true; protAcSel = -1; }
+
+      function renderProtDrop(q) {
+        protDrop.innerHTML = ""; protAcSel = -1;
+        var prots = window.GALLERY_PROTAGONISTS || {};
+        var sel = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function(c) { return Number(c.dataset.protId); });
+        var matches = Object.keys(prots)
+          .filter(function(id) { return prots[id].toLowerCase().indexOf(q.toLowerCase()) !== -1 && sel.indexOf(Number(id)) === -1; })
+          .slice(0, 8);
+        if (!matches.length) { protDrop.hidden = true; return; }
+        matches.forEach(function(id) {
+          var li = document.createElement("li");
+          li.className = "lbep-ac-item";
+          li.textContent = prots[id];
+          li.addEventListener("mousedown", function(e) {
+            e.preventDefault();
+            addProtChip(Number(id), prots[id]);
+            protInp.value = "";
+            closeProtDrop();
+          });
+          protDrop.appendChild(li);
+        });
+        posProtDrop();
+        protDrop.hidden = false;
+      }
 
       function addProtChip(id, label) {
-        var existing = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function (c) { return Number(c.dataset.protId); });
-        if (existing.indexOf(Number(id)) !== -1) return false;
+        var existing = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function(c) { return Number(c.dataset.protId); });
+        if (existing.indexOf(Number(id)) !== -1) return;
         var chip = makeChip(label, null);
         chip.dataset.protId = id;
         protChips.appendChild(chip);
-        return true;
       }
 
-      // Dropdown : position fixed pour échapper à l'overflow du panneau
-      document.body.appendChild(protDrop);
-      protDrop.style.position = "fixed";
-      protDrop.style.zIndex   = "9999";
-      function repositionProtDrop() {
-        var rect = protInp.getBoundingClientRect();
-        protDrop.style.top   = (rect.bottom + 2) + "px";
-        protDrop.style.left  = rect.left + "px";
-        protDrop.style.width = rect.width + "px";
-        protDrop.style.right = "auto";
-      }
-
-      makeAc(protInp, protDrop,
-        function (q, cb) {
-          var prots = window.GALLERY_PROTAGONISTS || {};
-          var sel   = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function (c) { return Number(c.dataset.protId); });
-          var results = Object.keys(prots)
-            .filter(function (id) { return prots[id].toLowerCase().indexOf(q.toLowerCase()) !== -1 && sel.indexOf(Number(id)) === -1; })
-            .slice(0, 8).map(function (id) { return { id: Number(id), label: prots[id] }; });
-          cb(results);
-          if (results.length) repositionProtDrop();
-        },
-        function (item) {
-          addProtChip(item.id, item.label);
-          protInp.value = "";
-        }
-      );
-      protInp.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
+      protInp.addEventListener("input", function() {
+        var v = protInp.value.trim();
+        if (v) renderProtDrop(v); else closeProtDrop();
+      });
+      protInp.addEventListener("blur", function() { setTimeout(closeProtDrop, 160); });
+      protInp.addEventListener("keydown", function(e) {
+        var items = protDrop.querySelectorAll(".lbep-ac-item");
+        if (e.key === "ArrowDown") {
           e.preventDefault();
-          var q = protInp.value.trim();
-          if (!q) return;
-          // Essai via dropdown (même s'il est hors de la vue)
-          var firstItem = protDrop.querySelector(".lbep-ac-item");
-          if (firstItem) {
-            firstItem.dispatchEvent(new MouseEvent("mousedown"));
-            return;
+          protAcSel = Math.min(protAcSel + 1, items.length - 1);
+          items.forEach(function(li, i) { li.classList.toggle("selected", i === protAcSel); });
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          protAcSel = Math.max(protAcSel - 1, 0);
+          items.forEach(function(li, i) { li.classList.toggle("selected", i === protAcSel); });
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (!protDrop.hidden && items.length) {
+            var target = protAcSel >= 0 ? items[protAcSel] : items[0];
+            if (target) target.dispatchEvent(new MouseEvent("mousedown"));
+          } else if (protInp.value.trim()) {
+            // Fallback : correspondance directe dans GALLERY_PROTAGONISTS
+            var lq = protInp.value.trim().toLowerCase();
+            var prots = window.GALLERY_PROTAGONISTS || {};
+            var match = null;
+            Object.keys(prots).forEach(function(id) {
+              if (!match && prots[id].toLowerCase() === lq) match = { id: Number(id), label: prots[id] };
+            });
+            if (!match) Object.keys(prots).forEach(function(id) {
+              if (!match && prots[id].toLowerCase().indexOf(lq) !== -1) match = { id: Number(id), label: prots[id] };
+            });
+            if (match) { addProtChip(match.id, match.label); protInp.value = ""; closeProtDrop(); }
           }
-          // Recherche directe dans GALLERY_PROTAGONISTS (fallback si debounce pas encore déclenché)
-          var lq = q.toLowerCase();
-          var prots = window.GALLERY_PROTAGONISTS || {};
-          var match = null;
-          Object.keys(prots).forEach(function (id) {
-            if (!match && prots[id].toLowerCase() === lq) match = { id: Number(id), label: prots[id] };
-          });
-          if (!match) Object.keys(prots).forEach(function (id) {
-            if (!match && prots[id].toLowerCase().indexOf(lq) !== -1) match = { id: Number(id), label: prots[id] };
-          });
-          if (match) { addProtChip(match.id, match.label); protInp.value = ""; }
         } else if (e.key === "Backspace" && protInp.value === "") {
           var all = protChips.querySelectorAll(".lbep-chip");
           if (all.length) all[all.length - 1].remove();
+        } else if (e.key === "Escape") {
+          closeProtDrop();
         }
       });
 
