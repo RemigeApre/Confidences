@@ -175,11 +175,6 @@
             chip.addEventListener('click', function() { chip.remove(); });
           });
 
-          inp.addEventListener('input', function() {
-            if (inp.value.trim()) renderDrop(inp.value);
-            else closeDrop();
-          });
-
           inp.addEventListener('blur', function() { setTimeout(closeDrop, 160); });
 
           function createOrAddByName(name) {
@@ -206,6 +201,22 @@
             }).catch(function() { inp.disabled = false; });
           }
 
+          inp.addEventListener('input', function() {
+            var v = inp.value;
+            // Virgule → valider immédiatement
+            if (v.indexOf(',') !== -1) {
+              var parts = v.split(',');
+              // Tout sauf la dernière partie (qui reste dans le champ)
+              parts.slice(0, -1).forEach(function(part) {
+                if (part.trim()) createOrAddByName(part);
+              });
+              inp.value = parts[parts.length - 1];
+              v = inp.value;
+            }
+            if (v.trim()) renderDrop(v);
+            else closeDrop();
+          });
+
           inp.addEventListener('keydown', function(e) {
             var items = drop.querySelectorAll('.parody-ac-item');
             if (e.key === 'ArrowDown') {
@@ -219,11 +230,9 @@
             } else if (e.key === 'Enter') {
               // e.preventDefault() est déjà géré par le listener global data-no-enter-submit
               if (!drop.hidden && items.length) {
-                // Sélection dans le dropdown
                 var target = acSel >= 0 ? items[acSel] : items[0];
                 if (target) target.dispatchEvent(new MouseEvent('mousedown'));
               } else if (inp.value.trim()) {
-                // Aucune suggestion : créer ou retrouver par nom
                 createOrAddByName(inp.value);
               }
             } else if (e.key === 'Backspace' && inp.value === '') {
