@@ -113,6 +113,10 @@ function buildProtagonistesRouter(config) {
     if (req.file && protagoniste.image_path) {
       try { fs.unlinkSync(path.join(uploadsDir, path.basename(protagoniste.image_path))); } catch (_) {}
     }
+    let evolutions = [];
+    try { evolutions = JSON.parse(req.body.evolutions || "[]"); } catch (_) {}
+    if (!Array.isArray(evolutions)) evolutions = [];
+    evolutions = evolutions.map(e => String(e).trim()).filter(Boolean).slice(0, 20);
     db.updateProtagoniste(protagoniste.id, {
       name:        String(req.body.name || "").slice(0, 200).trim() || protagoniste.name,
       description: String(req.body.description || ""),
@@ -122,6 +126,7 @@ function buildProtagonistesRouter(config) {
       gender,
       nature,
       imagePath,
+      evolutions,
     });
     res.redirect(`/protagonistes/${protagoniste.id}`);
   });

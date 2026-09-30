@@ -2,6 +2,8 @@
 <main class="container" style="max-width: 860px; margin: 0 auto">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste.name, navBack: '/protagonistes' }) %>
 
+  <a href="/protagonistes" class="prot-back-link" aria-label="Retour aux personnages">&#8592; Personnages</a>
+
   <div class="prot-detail-header">
 
     <% if (protagoniste.image_path) { %>
@@ -27,6 +29,17 @@
         <% } %>
         <h1 class="prot-detail-name"><%= protagoniste.name %></h1>
       </div>
+
+      <%# ── Chaîne d'évolution ── %>
+      <% if (protagoniste.evolutions && protagoniste.evolutions.length) { %>
+        <div class="prot-detail-evo-chain">
+          <% protagoniste.evolutions.forEach(function(evo) { %>
+            <span class="prot-detail-evo-stage"><%= evo %></span>
+            <span class="prot-detail-evo-arrow" aria-hidden="true">→</span>
+          <% }) %>
+          <span class="prot-detail-evo-stage prot-detail-evo-stage--final"><%= protagoniste.name %></span>
+        </div>
+      <% } %>
 
       <%# ── Nature (seulement si pas humain) ── %>
       <% if (protagoniste.nature && protagoniste.nature !== 'humain') { %>

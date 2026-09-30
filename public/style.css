@@ -14901,6 +14901,16 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .prot-edit-btn   { position: absolute; top: .5rem; right: .6rem; font-size: .8rem; color: rgba(255,255,255,.5); text-decoration: none; background: rgba(0,0,0,.5); border-radius: 4px; padding: .1rem .3rem; }
 .prot-edit-btn:hover { color: #fff; }
 
+/* Bouton retour — dans le flux, visible desktop seulement (mobile = top-nav) */
+.prot-back-link {
+  display: inline-flex; align-items: center; gap: .3rem;
+  margin: .5rem 1rem 1rem;
+  font-size: .82rem; color: var(--muted); text-decoration: none;
+  transition: color .12s;
+}
+.prot-back-link:hover { color: #fff; }
+@media (max-width: 640px) { .prot-back-link { display: none; } }
+
 /* Detail page */
 .prot-detail-header {
   display: flex; gap: 1.5rem; align-items: flex-start;
@@ -14909,6 +14919,23 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .prot-detail-img-wrap { flex-shrink: 0; width: 160px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); }
 .prot-detail-img { width: 100%; display: block; }
 .prot-detail-info { flex: 1; min-width: 0; }
+
+/* Chaîne d'évolution — fiche détail */
+.prot-detail-evo-chain {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .25rem .4rem;
+  margin-bottom: .6rem;
+}
+.prot-detail-evo-stage {
+  font-size: .8rem; font-weight: 600;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px; padding: .18rem .65rem;
+  color: rgba(255,255,255,.65);
+}
+.prot-detail-evo-stage--final {
+  background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3);
+  color: #fff;
+}
+.prot-detail-evo-arrow { font-size: .8rem; opacity: .4; }
 
 /* Ligne nom + icône genre */
 .prot-detail-top { display: flex; align-items: center; gap: .6rem; margin-bottom: .4rem; }
@@ -14990,6 +15017,48 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .prot-nouvelle-row:hover { border-color: hsl(340,40%,35%); }
 .prot-nouvelle-title   { font-size: .88rem; font-weight: 600; color: var(--text); }
 .prot-nouvelle-summary { font-size: .73rem; color: var(--muted); }
+
+/* Éditeur chaîne d'évolution (formulaire) */
+.prot-evo-chain { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .5rem; }
+.prot-evo-entry { display: flex; align-items: center; gap: .35rem; }
+.prot-evo-entry .prot-evo-inp { flex: 1; }
+.prot-evo-btn {
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.7); border-radius: 5px; padding: .2rem .4rem;
+  font-size: .78rem; cursor: pointer; transition: background .12s;
+  line-height: 1;
+}
+.prot-evo-btn:hover { background: rgba(255,255,255,.16); }
+.prot-evo-remove { color: rgba(220,80,80,.85); }
+.prot-evo-final {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .3rem .5rem; border-radius: 6px;
+  background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.15);
+  font-size: .82rem; color: rgba(255,255,255,.7); margin-bottom: .4rem;
+}
+.prot-evo-arrow { opacity: .4; }
+.prot-evo-final-name { font-weight: 700; color: #fff; }
+.prot-evo-add-btn {
+  background: transparent; border: 1px dashed rgba(255,255,255,.2);
+  color: rgba(255,255,255,.5); border-radius: 6px; padding: .3rem .7rem;
+  font-size: .78rem; cursor: pointer; transition: border-color .12s, color .12s;
+}
+.prot-evo-add-btn:hover { border-color: rgba(255,255,255,.4); color: rgba(255,255,255,.8); }
+
+/* lbep — évolution dans dropdown et chips */
+.lbep-evo-hint {
+  margin-left: .4rem; font-size: .72rem; color: rgba(255,255,255,.4);
+  font-style: italic;
+}
+.lbep-chip-evo-tag {
+  margin-left: .3rem; font-size: .68rem; color: rgba(255,255,255,.4);
+  font-style: italic;
+}
+
+/* Lightbox — hint évolution dans badge protagoniste */
+.lb-prot-evo-hint {
+  margin-left: .25rem; font-size: .7rem; opacity: .5; font-style: italic;
+}
 
 /* Form */
 .prot-form-field-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .4rem; display: block; }

@@ -351,8 +351,11 @@
         || norm(card.dataset.category || "").indexOf(q) !== -1
         || (function() {
           var prots = window.GALLERY_PROTAGONISTS || {};
+          var evos  = window.GALLERY_PROT_EVOS || {};
           return (card.dataset.protagonists || "").split(",").some(function(pid) {
-            pid = pid.trim(); return pid && norm(prots[pid] || "").indexOf(q) !== -1;
+            pid = pid.trim(); if (!pid) return false;
+            if (norm(prots[pid] || "").indexOf(q) !== -1) return true;
+            return (evos[pid] || []).some(function(e) { return norm(e).indexOf(q) !== -1; });
           });
         })();
       var okUltra       = !hideUltra || card.dataset.ultra !== "1";
@@ -706,6 +709,10 @@
       activeProtagonist = 0;
       if (protFilterEl) protFilterEl.querySelectorAll(".gallery-prot-chip").forEach(function(c) { c.classList.remove("active"); });
       if (protSearchInput) { protSearchInput.value = ""; if (protFilterEl) protFilterEl.querySelectorAll(".gallery-prot-chip").forEach(function(c) { c.hidden = false; }); }
+      // Effacer note et tri
+      activeRating = 0; sortMode = "date-desc"; if (sortSelect) sortSelect.value = sortMode;
+      activeProcessed = "";
+      try { localStorage.removeItem(FILTERS_STORE_KEY); } catch(_) {}
       applyFilters();
     });
   }
@@ -892,6 +899,111 @@
     applySize(savedSize);
     sizeSelect.addEventListener("change", function() { applySize(sizeSelect.value); });
   }
+
+  // ── Persistance des filtres entre rechargements ──────────────────────────
+  var FILTERS_STORE_KEY = "gallery-filters-v1";
+
+  function saveFilterState() {
+    try {
+      localStorage.setItem(FILTERS_STORE_KEY, JSON.stringify({
+        searchQ:           searchQ,
+        activeCategory:    activeCategory,
+        activeParody:      activeParody,
+        activeProtagonist: activeProtagonist,
+        tagStates:         tagStates,
+        activeRating:      activeRating,
+        sortMode:          sortMode,
+        activeProcessed:   activeProcessed
+      }));
+    } catch (_) {}
+  }
+
+  function restoreFilterState() {
+    var raw;
+    try { raw = JSON.parse(localStorage.getItem(FILTERS_STORE_KEY)); } catch (_) {}
+    if (!raw) return;
+
+    // Recherche
+    if (raw.searchQ) {
+      searchQ = String(raw.searchQ);
+      if (searchInput) { searchInput.value = searchQ; }
+      if (searchClear) searchClear.hidden = !searchQ;
+    }
+
+    // Tags
+    if (raw.tagStates && typeof raw.tagStates === "object") {
+      tagStates = raw.tagStates;
+      if (tagFilter) {
+        tagFilter.querySelectorAll(".wiki-tag-chip[data-tag]").forEach(function(c) {
+          var s = tagStates[(c.dataset.tag || "").toLowerCase()] || 0;
+          c.dataset.state = String(s);
+          c.classList.toggle("chip-include", s === 1);
+          c.classList.toggle("chip-exclude", s === 2);
+        });
+      }
+    }
+
+    // Catégorie
+    if (raw.activeCategory) {
+      activeCategory = String(raw.activeCategory);
+      if (categoryFilter) {
+        categoryFilter.querySelectorAll(".tag-chip[data-category]").forEach(function(c) {
+          c.classList.toggle("active", (c.dataset.category || "") === activeCategory);
+        });
+      }
+    }
+
+    // Parodie
+    if (raw.activeParody) {
+      activeParody = String(raw.activeParody);
+      var parodyCloud = document.getElementById("gallery-parody-filter");
+      if (parodyCloud) {
+        var pChip = parodyCloud.querySelector('[data-parody="' + activeParody.replace(/"/g, "") + '"]');
+        if (pChip) { pChip.dataset.state = "1"; pChip.classList.add("chip-include"); }
+      }
+    }
+
+    // Personnage
+    if (raw.activeProtagonist) {
+      activeProtagonist = Number(raw.activeProtagonist) || 0;
+      if (activeProtagonist && protFilterEl) {
+        protFilterEl.querySelectorAll(".gallery-prot-chip").forEach(function(c) {
+          c.classList.toggle("active", Number(c.dataset.protId) === activeProtagonist);
+        });
+      }
+    }
+
+    // Note
+    if (raw.activeRating) {
+      activeRating = Number(raw.activeRating) || 0;
+    }
+
+    // Tri
+    if (raw.sortMode) {
+      sortMode = String(raw.sortMode);
+      if (sortSelect) sortSelect.value = sortMode;
+      if (sortMode === "random") randomSeeds = null;
+    }
+
+    // Traitement (admin)
+    if (raw.activeProcessed !== undefined && raw.activeProcessed !== "") {
+      activeProcessed = String(raw.activeProcessed);
+      var _pf = document.getElementById("gallery-processed-filter");
+      if (_pf) {
+        _pf.querySelectorAll("[data-processed-filter]").forEach(function(b) {
+          b.classList.toggle("active", b.dataset.processedFilter === activeProcessed);
+        });
+      }
+    }
+  }
+
+  // Accrocher saveFilterState à chaque applyFilters (s'ajoute à syncSaveBtn)
+  (function() {
+    var _prev = applyFilters;
+    applyFilters = function() { _prev(); saveFilterState(); };
+  })();
+
+  restoreFilterState();
 
   // Support ?tag= URL param (navigation depuis un tag wiki)
   var _urlGalleryTag = new URLSearchParams(window.location.search).get("tag");
@@ -1159,17 +1271,28 @@
       var hasProts = false;
       if (protagonistIdStr) {
         var protagonistsMap = window.GALLERY_PROTAGONISTS || {};
+        var cardEvoMap = {};
+        try { cardEvoMap = JSON.parse(card.dataset.protagonistEvos || "{}"); } catch (_) {}
         protagonistIdStr.split(",").forEach(function(pid) {
           pid = pid.trim();
           if (!pid) return;
-          var name = protagonistsMap[pid];
-          if (!name) return;
+          var mainName = protagonistsMap[pid];
+          if (!mainName) return;
           hasProts = true;
+          var evoName = cardEvoMap[pid] || null;
           var r = document.createElement("a");
           r.className = "tag-badge tag-badge--protagonist";
           r.href = "/protagonistes/" + pid;
-          r.textContent = name;
           r.addEventListener("click", function(e) { e.stopPropagation(); });
+          if (evoName) {
+            r.textContent = evoName;
+            var hint = document.createElement("span");
+            hint.className = "lb-prot-evo-hint";
+            hint.textContent = "\u2192 " + mainName;
+            r.appendChild(hint);
+          } else {
+            r.textContent = mainName;
+          }
           protChips.appendChild(r);
         });
       }
@@ -2114,30 +2237,46 @@
         protDrop.innerHTML = ""; protAcSel = -1;
         var prots = window.GALLERY_PROTAGONISTS || {};
         var meta  = window.GALLERY_PROT_META || {};
+        var evos  = window.GALLERY_PROT_EVOS || {};
         var currentParody = (document.getElementById("lbep-parody-inp") || {}).value || "";
         var sel = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function(c) { return Number(c.dataset.protId); });
-        var matches = Object.keys(prots)
-          .filter(function(id) {
-            if (prots[id].toLowerCase().indexOf(q.toLowerCase()) === -1) return false;
-            if (sel.indexOf(Number(id)) !== -1) return false;
-            // Si une parodie est saisie, ne montrer que les personnages de cette parodie ou sans parodie
-            if (currentParody.trim()) {
-              var pm = meta[id]; var pp = pm ? pm.parody : "";
-              if (pp && pp.toLowerCase() !== currentParody.trim().toLowerCase()) return false;
+        var results = []; // {id, label, evoName?}
+        var ql = q.toLowerCase();
+
+        Object.keys(prots).forEach(function(id) {
+          if (sel.indexOf(Number(id)) !== -1) return;
+          if (currentParody.trim()) {
+            var pm = meta[id]; var pp = pm ? pm.parody : "";
+            if (pp && pp.toLowerCase() !== currentParody.trim().toLowerCase()) return;
+          }
+          // Nom principal
+          if (prots[id].toLowerCase().indexOf(ql) !== -1) {
+            results.push({ id: Number(id), label: prots[id] });
+          }
+          // Évolutions précédentes
+          (evos[id] || []).forEach(function(evoName) {
+            if (evoName.toLowerCase().indexOf(ql) !== -1) {
+              results.push({ id: Number(id), label: evoName, evoName: evoName, mainName: prots[id] });
             }
-            return true;
-          })
-          .slice(0, 8);
-        if (!matches.length) { protDrop.hidden = true; return; }
-        matches.forEach(function(id) {
+          });
+        });
+
+        results = results.slice(0, 10);
+        if (!results.length) { protDrop.hidden = true; return; }
+        results.forEach(function(item) {
           var li = document.createElement("li");
           li.className = "lbep-ac-item";
-          li.textContent = prots[id];
+          if (item.evoName) {
+            var nameSpan = document.createElement("span"); nameSpan.textContent = item.evoName;
+            var hintSpan = document.createElement("span"); hintSpan.className = "lbep-evo-hint"; hintSpan.textContent = "\u2192 " + item.mainName;
+            li.appendChild(nameSpan); li.appendChild(hintSpan);
+          } else {
+            li.textContent = item.label;
+          }
           li.addEventListener("mousedown", function(e) {
             e.preventDefault();
-            addProtChip(Number(id), prots[id]);
-            protInp.value = "";
-            closeProtDrop();
+            addProtChip(item.id, item.evoName || item.label, item.evoName || null);
+            protInp.value = ""; closeProtDrop();
           });
           protDrop.appendChild(li);
         });
@@ -2145,11 +2284,19 @@
         protDrop.hidden = false;
       }
 
-      function addProtChip(id, label) {
+      function addProtChip(id, label, evoName) {
         var existing = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function(c) { return Number(c.dataset.protId); });
         if (existing.indexOf(Number(id)) !== -1) return;
         var chip = makeChip(label, null);
         chip.dataset.protId = id;
+        if (evoName) {
+          chip.dataset.evoName = evoName;
+          // Ajouter indicateur visuel d'évolution
+          var evoTag = document.createElement("span");
+          evoTag.className = "lbep-chip-evo-tag";
+          evoTag.textContent = "\u2192 " + (window.GALLERY_PROTAGONISTS || {})[id];
+          chip.appendChild(evoTag);
+        }
         protChips.appendChild(chip);
         // Auto-remplir la parodie si le personnage en a une et le champ est vide
         var meta = (window.GALLERY_PROT_META || {})[id];
@@ -2298,14 +2445,17 @@
         });
       }
 
-      // Protagonistes (IDs comma-séparés)
+      // Protagonistes (IDs comma-séparés + évolutions)
       var protChips = document.getElementById("lbep-prot-chips");
       var prots = window.GALLERY_PROTAGONISTS || {};
       if (card.dataset.protagonists) {
+        var evoMap = {};
+        try { evoMap = JSON.parse(card.dataset.protagonistEvos || "{}"); } catch (_) {}
         card.dataset.protagonists.split(",").forEach(function (pid) {
           pid = pid.trim(); if (!pid) return;
-          var name = prots[pid]; if (!name) return;
-          var chip = makeChip(name, null); chip.dataset.protId = pid; protChips.appendChild(chip);
+          var mainName = prots[pid]; if (!mainName) return;
+          var evoName = evoMap[pid] || null;
+          addProtChip(Number(pid), evoName || mainName, evoName);
         });
       }
 
@@ -2335,7 +2485,10 @@
       if (!editCurrentId) return;
       var card = currentCard();
       var tags = Array.from(document.getElementById("lbep-tag-chips").querySelectorAll(".lbep-chip")).map(function (c) { return c.dataset.tag; }).filter(Boolean);
-      var protagonistIds = Array.from(document.getElementById("lbep-prot-chips").querySelectorAll(".lbep-chip")).map(function (c) { return Number(c.dataset.protId); }).filter(Boolean);
+      var protChipsList = Array.from(document.getElementById("lbep-prot-chips").querySelectorAll(".lbep-chip"));
+      var protagonistIds = protChipsList.map(function(c) { return Number(c.dataset.protId); }).filter(Boolean);
+      var protagonistEvos = {};
+      protChipsList.forEach(function(c) { if (c.dataset.evoName) protagonistEvos[c.dataset.protId] = c.dataset.evoName; });
       var aiSuspected = !!(document.getElementById("lbep-ai-suspected") || {}).checked;
       var saveBtn = editPanel.querySelector(".lbep-save");
       saveBtn.disabled = true; saveBtn.textContent = "Enregistrement\u2026";
@@ -2343,14 +2496,15 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id:             editCurrentId,
-          tags:           tags,
-          author:         document.getElementById("lbep-author-inp").value.trim(),
-          parody:         document.getElementById("lbep-parody-inp").value.trim(),
-          sub_parody:     document.getElementById("lbep-sub-inp").value.trim(),
+          id:              editCurrentId,
+          tags:            tags,
+          author:          document.getElementById("lbep-author-inp").value.trim(),
+          parody:          document.getElementById("lbep-parody-inp").value.trim(),
+          sub_parody:      document.getElementById("lbep-sub-inp").value.trim(),
           protagonist_ids: protagonistIds,
-          ai_suspected:   aiSuspected,
-          gallery_links:  editLinks,
+          protagonist_evos: protagonistEvos,
+          ai_suspected:    aiSuspected,
+          gallery_links:   editLinks,
         }),
       })
       .then(function (r) { return r.json(); })
@@ -2364,6 +2518,7 @@
           card.dataset.parody       = document.getElementById("lbep-parody-inp").value.trim();
           card.dataset.subParody    = document.getElementById("lbep-sub-inp").value.trim();
           card.dataset.protagonists = protagonistIds.join(",");
+          card.dataset.protagonistEvos = JSON.stringify(protagonistEvos);
           card.dataset.ai = aiSuspected ? "1" : "0";
           // Mettre à jour le badge IA sur la carte
           var existingAiBadge = card.querySelector(".gallery-ai-badge");

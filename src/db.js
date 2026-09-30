@@ -119,6 +119,7 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN ai_suspected INTEGER NOT NU
 // on ne doit jamais toucher aux images/tags d'une fiche liée à la main.
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN wiki_synced INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN title_visible INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN protagonist_evos TEXT NOT NULL DEFAULT '{}'"); } catch(_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS gallery_links (
@@ -1823,6 +1824,7 @@ function rowToGalleryImage(row) {
     processed: !!row.processed,
     featured: !!row.featured,
     protagonistIds: (() => { try { return JSON.parse(row.protagonist_ids || "[]"); } catch(_) { return []; } })(),
+    protagonistEvos: (() => { try { return JSON.parse(row.protagonist_evos || "{}"); } catch(_) { return {}; } })(),
     aiSuspected: !!row.ai_suspected,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -2004,13 +2006,14 @@ function getContentByParody(parody, subParody) {
   return { gallery, bd, nouvelles, wiki, protagonistes };
 }
 
-function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, processed, protagonistIds, aiSuspected } = {}) {
+function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, processed, protagonistIds, protagonistEvos, aiSuspected } = {}) {
   const sets = ["tags = ?", "author = ?", "parody = ?", "sub_parody = ?", "updated_at = ?"];
   const params = [JSON.stringify(tags || []), author || "", parody || "", subParody || "", new Date().toISOString()];
   if (title          !== undefined) { sets.splice(sets.length - 1, 0, "title = ?");           params.splice(params.length - 1, 0, title); }
   if (notes          !== undefined) { sets.splice(sets.length - 1, 0, "notes = ?");           params.splice(params.length - 1, 0, notes); }
   if (typeof processed === "number") { sets.splice(sets.length - 1, 0, "processed = ?");      params.splice(params.length - 1, 0, processed); }
   if (protagonistIds !== undefined) { sets.splice(sets.length - 1, 0, "protagonist_ids = ?"); params.splice(params.length - 1, 0, JSON.stringify(protagonistIds || [])); }
+  if (protagonistEvos !== undefined) { sets.splice(sets.length - 1, 0, "protagonist_evos = ?"); params.splice(params.length - 1, 0, JSON.stringify(protagonistEvos || {})); }
   if (typeof aiSuspected === "boolean") { sets.splice(sets.length - 1, 0, "ai_suspected = ?"); params.splice(params.length - 1, 0, aiSuspected ? 1 : 0); }
   params.push(id);
   db.prepare(`UPDATE gallery_images SET ${sets.join(", ")} WHERE id = ?`).run(...params);
@@ -2765,24 +2768,27 @@ try { db.exec("ALTER TABLE protagonistes ADD COLUMN sub_parody TEXT NOT NULL DEF
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN gender TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN nature TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN image_path TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN evolutions TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
+
+function parseEvolutions(raw) { try { const a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a.filter(Boolean) : []; } catch { return []; } }
 
 function listProtagonistes() {
-  return db.prepare(`SELECT id, name, description, tags, parody, sub_parody, gender, nature, image_path, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
-    .map(p => { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } return p; });
+  return db.prepare(`SELECT id, name, description, tags, parody, sub_parody, gender, nature, image_path, evolutions, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
+    .map(p => { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } p.evolutions = parseEvolutions(p.evolutions); return p; });
 }
 function getProtagoniste(id) {
   const p = db.prepare(`SELECT * FROM protagonistes WHERE id=?`).get(id);
-  if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } }
+  if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } p.evolutions = parseEvolutions(p.evolutions); }
   return p;
 }
-function createProtagoniste({ name, description, tags, parody, subParody, gender, nature, imagePath }) {
-  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags, parody, sub_parody, gender, nature, image_path) VALUES (?,?,?,?,?,?,?,?)`)
-    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || '', imagePath || '');
+function createProtagoniste({ name, description, tags, parody, subParody, gender, nature, imagePath, evolutions }) {
+  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags, parody, sub_parody, gender, nature, image_path, evolutions) VALUES (?,?,?,?,?,?,?,?,?)`)
+    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || '', imagePath || '', JSON.stringify(evolutions || []));
   return r.lastInsertRowid;
 }
-function updateProtagoniste(id, { name, description, tags, parody, subParody, gender, nature, imagePath }) {
-  const sets = ['name=?', 'description=?', 'tags=?', 'parody=?', 'sub_parody=?', 'gender=?', 'nature=?', 'updated_at=unixepoch()'];
-  const params = [name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || ''];
+function updateProtagoniste(id, { name, description, tags, parody, subParody, gender, nature, imagePath, evolutions }) {
+  const sets = ['name=?', 'description=?', 'tags=?', 'parody=?', 'sub_parody=?', 'gender=?', 'nature=?', 'evolutions=?', 'updated_at=unixepoch()'];
+  const params = [name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || '', JSON.stringify(evolutions || [])];
   if (imagePath !== undefined) { sets.splice(sets.length - 1, 0, 'image_path=?'); params.push(imagePath || ''); }
   params.push(id);
   db.prepare(`UPDATE protagonistes SET ${sets.join(',')} WHERE id=?`).run(...params);

@@ -280,7 +280,7 @@ function buildGalleryRouter(config) {
     var links = getGalleryLinks(img.id).map(function(l) {
       return { type: l.link_type, id: l.linked_id, label: l.label };
     });
-    res.json({ id: img.id, tags: img.tags, author: img.author, parody: img.parody, subParody: img.subParody, protagonistIds: img.protagonistIds || [], links });
+    res.json({ id: img.id, tags: img.tags, author: img.author, parody: img.parody, subParody: img.subParody, protagonistIds: img.protagonistIds || [], protagonistEvos: img.protagonistEvos || {}, links });
   });
 
   router.post("/image-meta", requireAdmin, express.json(), function(req, res) {
@@ -295,8 +295,11 @@ function buildGalleryRouter(config) {
     var protagonistIds = req.body.protagonist_ids !== undefined
       ? [].concat(req.body.protagonist_ids).map(Number).filter(Boolean)
       : undefined;
+    var protagonistEvos = req.body.protagonist_evos !== undefined
+      ? (typeof req.body.protagonist_evos === "object" && !Array.isArray(req.body.protagonist_evos) ? req.body.protagonist_evos : {})
+      : undefined;
     var aiSuspected = req.body.ai_suspected !== undefined ? !!req.body.ai_suspected : undefined;
-    updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, protagonistIds, aiSuspected });
+    updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, protagonistIds, protagonistEvos, aiSuspected });
     if (req.body.gallery_links !== undefined) {
       var links = req.body.gallery_links;
       if (!Array.isArray(links)) { try { links = JSON.parse(links); } catch (_) { links = []; } }

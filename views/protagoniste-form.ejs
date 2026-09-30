@@ -86,6 +86,32 @@
         </select>
       </div>
 
+      <%# ── Évolutions (Pokémon / nature évolutive) ── %>
+      <div class="prot-form-field-group prot-evo-section" id="prot-evo-section">
+        <div class="prot-form-field-label">Chaîne d'évolution <span style="font-weight:400;font-size:.75rem;opacity:.6">(formes précédentes, dans l'ordre)</span></div>
+        <input type="hidden" name="evolutions" id="prot-evo-hidden"
+          value="<%= protagoniste && protagoniste.evolutions ? JSON.stringify(protagoniste.evolutions) : '[]' %>" />
+        <div class="prot-evo-chain" id="prot-evo-chain">
+          <%
+            var evols = (protagoniste && protagoniste.evolutions) ? protagoniste.evolutions : [];
+            evols.forEach(function(evo, i) {
+          %>
+            <div class="prot-evo-entry" data-idx="<%= i %>">
+              <input type="text" class="prot-evo-inp lbep-input" value="<%= evo %>" placeholder="Forme précédente…" maxlength="100" />
+              <button type="button" class="prot-evo-btn prot-evo-up" title="Monter">↑</button>
+              <button type="button" class="prot-evo-btn prot-evo-down" title="Descendre">↓</button>
+              <button type="button" class="prot-evo-btn prot-evo-remove" title="Supprimer">×</button>
+            </div>
+          <% }) %>
+        </div>
+        <div class="prot-evo-final">
+          <span class="prot-evo-arrow">→</span>
+          <span class="prot-evo-final-name"><%= protagoniste ? protagoniste.name : '(forme finale)' %></span>
+          <span style="font-size:.7rem;opacity:.5;margin-left:.4rem">forme principale</span>
+        </div>
+        <button type="button" class="prot-evo-add-btn" id="prot-evo-add">+ Ajouter une forme précédente</button>
+      </div>
+
       <textarea name="description" class="nv-form-content" rows="10"
         placeholder="Description, traits de caractère, apparence…"
         style="resize:vertical"><%= protagoniste ? protagoniste.description : '' %></textarea>
@@ -240,6 +266,54 @@
         else if (e.key==='Escape') closeAc();
       }, true);
       renderBoard();
+    });
+  })();
+
+  // ── Évolutions ──
+  (function() {
+    var chain   = document.getElementById('prot-evo-chain');
+    var hidden  = document.getElementById('prot-evo-hidden');
+    var addBtn  = document.getElementById('prot-evo-add');
+    if (!chain || !hidden || !addBtn) return;
+
+    function syncHidden() {
+      var vals = Array.from(chain.querySelectorAll('.prot-evo-inp')).map(function(i) { return i.value.trim(); }).filter(Boolean);
+      hidden.value = JSON.stringify(vals);
+    }
+
+    function makeEntry(val) {
+      var row = document.createElement('div');
+      row.className = 'prot-evo-entry';
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'prot-evo-inp lbep-input';
+      inp.value = val || ''; inp.placeholder = 'Forme précédente…'; inp.maxLength = 100;
+      inp.addEventListener('input', syncHidden);
+      var upBtn = document.createElement('button'); upBtn.type = 'button'; upBtn.className = 'prot-evo-btn prot-evo-up'; upBtn.title = 'Monter'; upBtn.textContent = '↑';
+      var dnBtn = document.createElement('button'); dnBtn.type = 'button'; dnBtn.className = 'prot-evo-btn prot-evo-down'; dnBtn.title = 'Descendre'; dnBtn.textContent = '↓';
+      var rmBtn = document.createElement('button'); rmBtn.type = 'button'; rmBtn.className = 'prot-evo-btn prot-evo-remove'; rmBtn.title = 'Supprimer'; rmBtn.textContent = '×';
+      upBtn.addEventListener('click', function() { var prev = row.previousElementSibling; if (prev && prev.classList.contains('prot-evo-entry')) { chain.insertBefore(row, prev); syncHidden(); } });
+      dnBtn.addEventListener('click', function() { var next = row.nextElementSibling; if (next && next.classList.contains('prot-evo-entry')) { chain.insertBefore(next, row); syncHidden(); } });
+      rmBtn.addEventListener('click', function() { row.remove(); syncHidden(); });
+      row.appendChild(inp); row.appendChild(upBtn); row.appendChild(dnBtn); row.appendChild(rmBtn);
+      return row;
+    }
+
+    // Wire existing entries rendered server-side
+    chain.querySelectorAll('.prot-evo-entry').forEach(function(row) {
+      var inp = row.querySelector('.prot-evo-inp');
+      var upBtn = row.querySelector('.prot-evo-up');
+      var dnBtn = row.querySelector('.prot-evo-down');
+      var rmBtn = row.querySelector('.prot-evo-remove');
+      if (inp) inp.addEventListener('input', syncHidden);
+      if (upBtn) upBtn.addEventListener('click', function() { var prev = row.previousElementSibling; if (prev && prev.classList.contains('prot-evo-entry')) { chain.insertBefore(row, prev); syncHidden(); } });
+      if (dnBtn) dnBtn.addEventListener('click', function() { var next = row.nextElementSibling; if (next && next.classList.contains('prot-evo-entry')) { chain.insertBefore(next, row); syncHidden(); } });
+      if (rmBtn) rmBtn.addEventListener('click', function() { row.remove(); syncHidden(); });
+    });
+
+    addBtn.addEventListener('click', function() {
+      chain.appendChild(makeEntry(''));
+      var newInp = chain.lastElementChild.querySelector('.prot-evo-inp');
+      if (newInp) newInp.focus();
     });
   })();
   </script>

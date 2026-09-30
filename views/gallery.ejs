@@ -161,6 +161,7 @@
         data-parody="<%= (item.parody || '').replace(/"/g, '') %>"
         data-sub-parody="<%= (item.subParody || '').replace(/"/g, '') %>"
         data-protagonists="<%= (item.protagonistIds || []).join(',') %>"
+        data-protagonist-evos="<%= JSON.stringify(item.protagonistEvos || {}).replace(/"/g, '&quot;') %>"
         data-ai="<%= item.aiSuspected ? '1' : '0' %>"
         data-series="<%= itemSeries.map(function(s){ return s.seriesId; }).join(',') %>">
 
@@ -385,6 +386,7 @@
 window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;
 window.GALLERY_PROTAGONISTS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;
 window.GALLERY_PROT_META = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = { parody: p.parody || '', sub_parody: p.sub_parody || '' }; return m; }, {})) %>;
+window.GALLERY_PROT_EVOS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { if (p.evolutions && p.evolutions.length) m[p.id] = p.evolutions; return m; }, {})) %>;
 </script>
 <script src="/gallery.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>
