@@ -303,6 +303,37 @@ try { db.exec("ALTER TABLE charms ADD COLUMN symbol_empty TEXT NOT NULL DEFAULT 
   _cse.run('✦', 'bolt');
   _cse.run('✾', 'flower');
 }
+// ── Ajout étoile (charme commun de base, possédé par tous) ───────────────
+db.prepare("INSERT OR IGNORE INTO charms (id, key, label, symbol, symbol_empty, rarity) VALUES (0, 'star', 'Étoile', '★', '☆', 'common')").run();
+// Migration : lune pointée vers le haut + bolt empty corrigé
+db.prepare("UPDATE charms SET symbol = '⌣', symbol_empty = '⌢' WHERE key = 'moon'").run();
+db.prepare("UPDATE charms SET symbol_empty = '✧' WHERE key = 'bolt'").run();
+// ── Nouveaux charmes ──────────────────────────────────────────────────────
+{
+  const _csnew = db.prepare("INSERT OR IGNORE INTO charms (id, key, label, symbol, symbol_empty, rarity) VALUES (?, ?, ?, ?, ?, ?)");
+  _csnew.run(6,  'sparkle',  'Étincelle',  '✦', '✧', 'epic');
+  _csnew.run(7,  'crown',    'Couronne',   '♛', '♕', 'mythic');
+  _csnew.run(8,  'clover',   'Trèfle',     '♣', '♧', 'epic');
+  _csnew.run(9,  'spade',    'Pique',      '♠', '♤', 'rare');
+  _csnew.run(10, 'drop',     'Goutte',     '▼', '▽', 'rare');
+  _csnew.run(11, 'sun',      'Soleil',     '☀', '☼', 'legendary');
+  _csnew.run(12, 'eye',      'Œil',        '◎', '⊙', 'epic');
+  _csnew.run(13, 'square',   'Carré',      '■', '□', 'common');
+  _csnew.run(14, 'triangle', 'Triangle',   '▲', '△', 'common');
+  _csnew.run(15, 'pentagon', 'Pentagone',  '⬟', '⬠', 'rare');
+  _csnew.run(16, 'skull',    'Crâne',      '☠', '⊗', 'epic');
+  _csnew.run(17, 'rose',     'Rose',       '✽', '✼', 'epic');
+  _csnew.run(18, 'gem',      'Pierre',     '✤', '✣', 'mythic');
+}
+// Migration : offrir l'étoile à tous les utilisateurs existants
+{
+  const _starRow = db.prepare("SELECT id FROM charms WHERE key = 'star'").get();
+  if (_starRow) {
+    const _now = new Date().toISOString();
+    const _grantStar = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, 'common', ?)");
+    for (const u of db.prepare("SELECT id FROM users").all()) _grantStar.run(u.id, _starRow.id, _now);
+  }
+}
 // Migration one-shot : corriger les raretés user_unlocks pour correspondre à gallery_images
 {
   db.prepare(`
@@ -2793,7 +2824,14 @@ function listCharms() {
 }
 
 function getCharmByKey(key) {
-  return db.prepare("SELECT id, key, label, symbol, rarity FROM charms WHERE key = ?").get(key) || null;
+  return db.prepare("SELECT id, key, label, symbol, symbol_empty, rarity FROM charms WHERE key = ?").get(key) || null;
+}
+
+function setCharmRarity(charmId, rarity) {
+  const VALID = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+  if (!VALID.includes(rarity)) return false;
+  db.prepare("UPDATE charms SET rarity = ? WHERE id = ?").run(rarity, charmId);
+  return true;
 }
 
 function getUserUnlockedCharms(userId) {
@@ -2945,13 +2983,15 @@ function openLootbox(userId) {
     for (let i = 0; i < 3; i++) {
       const remaining = allCharms.filter(c => !ownedIds.has(c.id) && !rewards.find(r => r.charmKey === c.key));
       if (!remaining.length) {
-        const coins = RARITY_SELL_PRICE.legendary;
+        const cfg = getLootboxConfig();
+        const coins = Math.ceil((cfg.buyPrices.legendary || RARITY_BUY_PRICE.legendary) / 2);
         db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
-        rewards.push({ isCharm: true, isDuplicate: true, rarity: 'legendary', coins });
+        rewards.push({ isCoins: true, coins, rarity: 'legendary' });
       } else {
         const charm = remaining[Math.floor(Math.random() * remaining.length)];
-        db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, 'legendary', ?)").run(userId, charm.id, now);
-        rewards.push({ isCharm: true, charmKey: charm.key, label: charm.label, symbol: charm.symbol, rarity: 'legendary', isDuplicate: false });
+        const charmRarity = charm.rarity || 'legendary';
+        db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, ?, ?)").run(userId, charm.id, charmRarity, now);
+        rewards.push({ isCharm: true, charmKey: charm.key, label: charm.label, symbol: charm.symbol, rarity: charmRarity, isDuplicate: false });
       }
     }
     return { rewards };
@@ -3313,6 +3353,7 @@ module.exports = {
   getLootboxConfig,
   setLootboxConfigKey,
   setImageRarity,
+  setCharmRarity,
   getLootboxCountByType,
   listCharms,
   listUnownedImages,

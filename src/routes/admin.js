@@ -45,6 +45,7 @@ const {
   getLootboxConfig,
   setLootboxConfigKey,
   setImageRarity,
+  setCharmRarity,
   listCharms,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
@@ -411,7 +412,11 @@ function buildAdminRouter(config) {
     const lootboxConfig = getLootboxConfig();
     const charms = listCharms();
     const section = ['images', 'charms', 'config'].includes(req.query.section) ? req.query.section : 'images';
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section });
+    const images = section === 'images' ? listGalleryImages().map(img => {
+      const imagePaths = img.imagePaths || [];
+      return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null };
+    }) : [];
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -430,6 +435,13 @@ function buildAdminRouter(config) {
       return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null, imagePaths };
     });
     res.render("admin-recompenses-images", { config, images });
+  });
+
+  router.post("/recompenses/charms/:id/rarity", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const rarity = String(req.body.rarity || '');
+    const ok = setCharmRarity(id, rarity);
+    res.json({ ok });
   });
 
   router.post("/recompenses/images-profil/:id/rarity", requireAdmin, express.json(), (req, res) => {
