@@ -2,56 +2,46 @@
 <script src="/nav.js?v=<%= assetVersion %>"></script>
 
 <% if (currentUser) { %>
-<%# ── Lootbox widget ──────────────────────────────────────────────── %>
-<div id="lootbox-widget" class="lootbox-widget" aria-live="polite" hidden>
-  <button class="lootbox-btn" id="lootbox-btn" aria-label="Ouvrir les lootboxes">
-    <svg class="lootbox-icon lootbox-icon--closed" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="3" y="17" width="30" height="16" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
-      <rect x="3" y="17" width="30" height="7" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
-      <rect x="13" y="14" width="10" height="6" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
-      <line x1="3" y1="24" x2="33" y2="24" stroke="currentColor" stroke-width="1.5"/>
-      <circle cx="18" cy="24" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-    </svg>
-    <svg class="lootbox-icon lootbox-icon--open" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="3" y="17" width="30" height="16" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
-      <path d="M3 17 Q3 10 13 14 L23 14 Q33 10 33 17" stroke="currentColor" stroke-width="2" fill="none"/>
-      <rect x="13" y="10" width="10" height="6" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
-      <line x1="18" y1="7" x2="18" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      <line x1="23" y1="9" x2="25" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      <line x1="13" y1="9" x2="11" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-    <span class="lootbox-count" id="lootbox-count" aria-label="lootboxes disponibles"></span>
-  </button>
-</div>
-
 <%# ── Overlay d'ouverture ─────────────────────────────────────────── %>
 <div id="lootbox-overlay" class="lootbox-overlay" hidden aria-modal="true" role="dialog" aria-label="Ouverture de lootbox">
   <div class="lootbox-overlay-backdrop"></div>
   <div class="lootbox-reveal" id="lootbox-reveal-wrap">
 
-    <%# Écran de choix (affiché quand count ≥ 2) %>
+    <%# Écran de choix simplifié (affiché quand count ≥ 2) %>
     <div class="lootbox-choice" id="lootbox-choice" hidden>
-      <p class="lootbox-choice-msg" id="lootbox-choice-msg"></p>
-      <div class="lootbox-choice-coins" aria-hidden="true">
-        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="4" y="24" width="52" height="28" rx="5" fill="hsl(35,60%,22%)" stroke="hsl(44,80%,45%)" stroke-width="2"/>
-          <path d="M4 28 Q4 10 30 10 Q56 10 56 28 Z" fill="hsl(35,55%,28%)" stroke="hsl(44,80%,45%)" stroke-width="2"/>
-          <rect x="3" y="23" width="54" height="7" rx="2" fill="hsl(44,90%,50%)" stroke="hsl(44,70%,35%)" stroke-width="1.5"/>
-          <rect x="24" y="23" width="12" height="9" rx="3" fill="hsl(44,90%,50%)" stroke="hsl(44,70%,35%)" stroke-width="1.5"/>
-          <circle cx="30" cy="38" r="5" stroke="hsl(44,80%,55%)" stroke-width="2" fill="none"/>
+      <button class="lootbox-choice-close" id="lootbox-choice-cancel" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="lootbox-choice-chest" aria-hidden="true">
+        <svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="cb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(28,70%,38%)"/><stop offset="100%" stop-color="hsl(28,60%,22%)"/></linearGradient>
+            <linearGradient id="cl" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(28,65%,44%)"/><stop offset="100%" stop-color="hsl(28,60%,30%)"/></linearGradient>
+            <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(44,95%,62%)"/><stop offset="100%" stop-color="hsl(38,85%,40%)"/></linearGradient>
+          </defs>
+          <ellipse cx="50" cy="77" rx="38" ry="4" fill="rgba(0,0,0,.3)"/>
+          <rect x="6" y="44" width="88" height="32" rx="4" fill="url(#cb)" stroke="hsl(44,80%,42%)" stroke-width="2"/>
+          <path d="M6 46 Q6 18 50 18 Q94 18 94 46 Z" fill="url(#cl)" stroke="hsl(44,80%,42%)" stroke-width="2"/>
+          <path d="M16 40 Q30 24 50 22 Q70 24 84 40" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2.5" stroke-linecap="round"/>
+          <rect x="4" y="42" width="92" height="7" rx="2.5" fill="url(#cg)" stroke="hsl(38,75%,32%)" stroke-width="1.2"/>
+          <rect x="12" y="40" width="12" height="11" rx="2.5" fill="url(#cg)" stroke="hsl(38,75%,32%)" stroke-width="1"/>
+          <rect x="76" y="40" width="12" height="11" rx="2.5" fill="url(#cg)" stroke="hsl(38,75%,32%)" stroke-width="1"/>
+          <rect x="40" y="42" width="20" height="13" rx="3" fill="url(#cg)" stroke="hsl(38,70%,30%)" stroke-width="1.2"/>
+          <path d="M44 42 Q44 35 50 35 Q56 35 56 42" fill="none" stroke="url(#cg)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="50" cy="49" r="3" fill="hsl(28,55%,18%)"/>
+          <polygon points="50,22 54,27 50,31 46,27" fill="hsl(270,80%,68%)" stroke="hsl(270,70%,50%)" stroke-width="1" opacity=".9"/>
         </svg>
       </div>
       <div class="lootbox-choice-btns">
         <button class="lootbox-choice-btn" id="lootbox-choice-one">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="14" height="9" rx="2"/><path d="M3 9 Q3 3 10 3 Q17 3 17 9"/><circle cx="10" cy="14" r="1.5"/></svg>
-          Ouvrir une par une
+          Ouvrir une bo&icirc;te
         </button>
         <button class="lootbox-choice-btn lootbox-choice-btn--all" id="lootbox-choice-all">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 8 10 2 3 8"/><rect x="3" y="8" width="14" height="10" rx="2"/><line x1="10" y1="13" x2="10" y2="18"/></svg>
           Tout ouvrir (<span id="lootbox-choice-count-label"></span>)
         </button>
       </div>
-      <button class="lootbox-choice-cancel" id="lootbox-choice-cancel">Annuler</button>
     </div>
 
     <%# Coffre animé %>
@@ -89,7 +79,7 @@
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="4"/><circle cx="17" cy="17" r="5"/><path d="M4 34l12-12 8 8 6-6 14 14"/></svg>
         </div>
       </div>
-      <p class="lootbox-reveal-hint" id="lootbox-reveal-hint" hidden>Doublon — converti en pi&egrave;ces.</p>
+      <p class="lootbox-reveal-hint" id="lootbox-reveal-hint" hidden>Doublon &mdash; converti en pi&egrave;ces.</p>
     </div>
 
     <%# Résultats "tout ouvrir" — grille large sans titre %>

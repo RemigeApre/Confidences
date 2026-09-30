@@ -16558,11 +16558,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 
 /* ── Bouton paramètres (haut droite de .jeu-viewport) ─────────────────── */
-.jeu-settings-btn {
-  position: absolute;
-  top: 14px;
-  right: 16px;
+/* Groupe de boutons haut-droite sur /jeu */
+.jeu-top-btns {
+  position: absolute; top: 14px; right: 16px;
+  display: flex; flex-direction: column; gap: .4rem;
   z-index: 10;
+}
+.jeu-settings-btn {
   background: rgba(255,255,255,.07);
   border: 1px solid rgba(255,255,255,.13);
   border-radius: 10px;
@@ -16641,7 +16643,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
    PROFILE AVATAR
    ══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --avatar-size: 38px;
+  --avatar-size: 52px;
   --rarity-common:    hsl(0,0%,60%);
   --rarity-rare:      hsl(210,80%,60%);
   --rarity-epic:      hsl(270,65%,65%);
@@ -16741,6 +16743,31 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   justify-content: center;
   line-height: 1;
   pointer-events: none;
+}
+
+/* ── Badge lootbox sur le lien "Jeu" du header ─────────────────────── */
+.pc-nav-link--jeu,
+.mobile-tabbar-link--jeu {
+  position: relative;
+}
+.lootbox-nav-badge {
+  position: absolute;
+  top: -5px; right: -10px;
+  min-width: 17px; height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: hsl(0,75%,52%);
+  color: #fff;
+  font-size: .58rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+.lootbox-nav-badge[hidden] { display: none; }
+/* Badge sur la tabbar mobile (lien Jeu) */
+.mobile-tabbar-link--jeu .lootbox-nav-badge {
+  top: 2px; right: 2px;
 }
 
 /* ── Overlay d'ouverture ──────────────────────────────────────────────── */
@@ -16903,30 +16930,39 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .lootbox-reveal-next:hover { background: rgba(245,210,100,.12); }
 
-/* ── Écran de choix ──────────────────────────────────────────────── */
+/* ── Écran de choix (simplifié) ──────────────────────────────────── */
 .lootbox-choice {
-  display: flex; flex-direction: column; align-items: center; gap: 1.1rem;
-  padding: .5rem 0;
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 1.4rem;
+  padding: 1rem .5rem .25rem;
   animation: card-reveal .3s cubic-bezier(.22,1,.36,1) forwards;
 }
 .lootbox-choice[hidden] { display: none; }
-.lootbox-choice-msg {
-  font-size: 1.1rem; font-weight: 700;
-  color: var(--text-1, #fff); margin: 0;
-  text-align: center;
+/* Croix fermer */
+.lootbox-choice-close {
+  position: absolute; top: -4px; right: -4px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%; cursor: pointer; color: var(--muted,#aaa);
+  transition: background .15s, color .15s;
 }
-.lootbox-choice-coins svg {
-  width: 72px; height: 72px;
-  filter: drop-shadow(0 0 14px rgba(245,210,100,.4));
+.lootbox-choice-close:hover { background: rgba(255,255,255,.15); color: var(--text-1,#eee); }
+.lootbox-choice-close svg { width: 14px; height: 14px; }
+/* Coffre illustratif */
+.lootbox-choice-chest svg {
+  width: 96px; height: 80px;
+  filter: drop-shadow(0 4px 18px rgba(245,190,60,.35));
 }
+/* Boutons */
 .lootbox-choice-btns {
   display: flex; flex-direction: column; gap: .55rem; width: 100%;
 }
-@media (min-width: 420px) {
+@media (min-width: 380px) {
   .lootbox-choice-btns { flex-direction: row; }
 }
 .lootbox-choice-btn {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: .5rem;
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: .45rem;
   padding: .65rem 1rem;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.15);
@@ -16937,19 +16973,86 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   transition: background .15s, border-color .15s;
   white-space: nowrap;
 }
-.lootbox-choice-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.lootbox-choice-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 .lootbox-choice-btn:hover { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.28); }
 .lootbox-choice-btn--all {
   border-color: hsl(44,70%,38%); color: hsl(44,90%,65%);
   background: rgba(245,210,100,.07);
 }
 .lootbox-choice-btn--all:hover { background: rgba(245,210,100,.15); }
-.lootbox-choice-cancel {
-  font-size: .75rem; color: var(--muted, #888);
-  background: none; border: none; cursor: pointer; padding: .2rem .5rem;
-  text-decoration: underline;
+
+/* ── Bouton info (coffre) + popover rareté sur /jeu ─────────────── */
+.jeu-info-btn {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.13);
+  border-radius: 10px; cursor: pointer; color: var(--muted,#aaa);
+  padding: .45rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
 }
-.lootbox-choice-cancel:hover { color: var(--text-1, #eee); }
+.jeu-info-btn:hover { background: rgba(255,255,255,.12); color: var(--text-1,#eee); }
+.jeu-info-btn svg { width: 22px; height: 20px; }
+.jeu-info-popover {
+  position: fixed; inset: 0; z-index: 1300;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  animation: coffre-fade-in .15s ease;
+}
+.jeu-info-popover[hidden] { display: none; }
+.jeu-info-inner {
+  background: var(--surface-2,#1a1a2e);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  max-width: 340px; width: 90vw;
+  display: flex; flex-direction: column; gap: 1.25rem;
+}
+.jeu-info-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem;
+}
+.jeu-info-title {
+  font-size: 1rem; font-weight: 700; color: var(--text-1,#fff); margin: 0;
+}
+.jeu-info-close {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13);
+  border-radius: 50%; cursor: pointer; color: var(--muted,#aaa);
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.jeu-info-close:hover { background: rgba(255,255,255,.15); color: var(--text-1,#eee); }
+.jeu-info-close svg { width: 12px; height: 12px; }
+.jeu-info-section-title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted,#888); margin: 0 0 .6rem;
+}
+.jeu-info-rarity-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: .35rem;
+}
+.jeu-info-rarity-item {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .85rem;
+}
+.jeu-info-rarity-dot {
+  display: inline-block;
+  width: 10px; height: 10px; border-radius: 50%;
+  margin-right: .5rem; flex-shrink: 0;
+}
+.jeu-info-rarity-name { color: var(--text-1,#eee); display: flex; align-items: center; }
+.jeu-info-rarity-pct  { color: var(--muted,#888); font-size: .78rem; font-variant-numeric: tabular-nums; }
+.jeu-info-types {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+}
+.jeu-info-type-tag {
+  font-size: .75rem; font-weight: 600;
+  padding: .2rem .6rem;
+  border-radius: 6px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.13);
+  color: var(--text-1,#eee);
+}
 
 /* ── Résultats "tout ouvrir" ─────────────────────────────────────── */
 .lootbox-batch-results {

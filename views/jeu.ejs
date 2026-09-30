@@ -3,13 +3,25 @@
 
 <div class="jeu-viewport">
 
-  <%# ── Engrenage paramètres (haut droite) ── %>
+  <%# ── Boutons haut-droite ── %>
+  <div class="jeu-top-btns">
   <button class="jeu-settings-btn" id="jeu-settings-btn" aria-label="Paramètres des récompenses" title="Paramètres des récompenses">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3"/>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
   </button>
+
+  <button class="jeu-info-btn" id="jeu-info-btn" aria-label="Informations sur les récompenses" title="Informations sur les récompenses">
+    <svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="6" y="44" width="88" height="32" rx="4" stroke="currentColor" stroke-width="3.5" fill="none"/>
+      <path d="M6 46 Q6 18 50 18 Q94 18 94 46 Z" stroke="currentColor" stroke-width="3.5" fill="none"/>
+      <rect x="4" y="42" width="92" height="7" rx="2.5" stroke="currentColor" stroke-width="2.5" fill="none"/>
+      <rect x="40" y="42" width="20" height="13" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
+      <path d="M44 42 Q44 35 50 35 Q56 35 56 42" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </svg>
+  </button>
+  </div>
 
   <%# ── Contenu principal ── %>
   <div class="jeu-content">
@@ -108,6 +120,57 @@
   </div>
 </div>
 
+<%# ── Popover info rareté ── %>
+<div class="jeu-info-popover" id="jeu-info-popover" hidden aria-modal="true" role="dialog" aria-labelledby="jeu-info-title">
+  <div class="jeu-info-inner">
+    <div class="jeu-info-header">
+      <p class="jeu-info-title" id="jeu-info-title">R&eacute;compenses des lootboxes</p>
+      <button class="jeu-info-close" id="jeu-info-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div>
+      <p class="jeu-info-section-title">Niveaux de raret&eacute;</p>
+      <ul class="jeu-info-rarity-list">
+        <li class="jeu-info-rarity-item">
+          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(0,0%,60%)"></span>Commun</span>
+          <span class="jeu-info-rarity-pct">50 %</span>
+        </li>
+        <li class="jeu-info-rarity-item">
+          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(210,80%,60%)"></span>Rare</span>
+          <span class="jeu-info-rarity-pct">28 %</span>
+        </li>
+        <li class="jeu-info-rarity-item">
+          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(270,65%,65%)"></span>&Eacute;pique</span>
+          <span class="jeu-info-rarity-pct">15 %</span>
+        </li>
+        <li class="jeu-info-rarity-item">
+          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(44,95%,55%)"></span>L&eacute;gendaire</span>
+          <span class="jeu-info-rarity-pct">5 %</span>
+        </li>
+        <li class="jeu-info-rarity-item">
+          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(0,75%,55%)"></span>Mythique</span>
+          <span class="jeu-info-rarity-pct">2 %</span>
+        </li>
+      </ul>
+    </div>
+
+    <div>
+      <p class="jeu-info-section-title">Types de contenu actuels</p>
+      <div class="jeu-info-types">
+        <span class="jeu-info-type-tag">Normal</span>
+        <% if (currentUser.lootboxAllowIrrealiste) { %>
+          <span class="jeu-info-type-tag">Irr&eacute;aliste</span>
+        <% } %>
+        <% if (currentUser.lootboxAllowUltra) { %>
+          <span class="jeu-info-type-tag">Ultra</span>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
 <%- include('partials/foot') %>
 
 <script>
@@ -149,5 +212,20 @@
 
   ultraChk      && ultraChk.addEventListener('change',      saveSettings);
   irrealisteChk && irrealisteChk.addEventListener('change', saveSettings);
+
+  // Info popup (coffre)
+  var infoBtn   = document.getElementById('jeu-info-btn');
+  var infoPop   = document.getElementById('jeu-info-popover');
+  var infoClose = document.getElementById('jeu-info-close');
+  function openInfo()  { infoPop.removeAttribute('hidden'); infoClose.focus(); }
+  function closeInfo() { infoPop.setAttribute('hidden', ''); infoBtn.focus(); }
+  infoBtn   && infoBtn.addEventListener('click', openInfo);
+  infoClose && infoClose.addEventListener('click', closeInfo);
+  infoPop   && infoPop.addEventListener('click', function(e) {
+    if (e.target === infoPop) closeInfo();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && infoPop && !infoPop.hidden) closeInfo();
+  });
 })();
 </script>

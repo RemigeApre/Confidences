@@ -3,10 +3,10 @@
   "use strict";
 
   // ── Éléments DOM ────────────────────────────────────────────────────────────
-  var widget   = document.getElementById("lootbox-widget");
-  var btn      = document.getElementById("lootbox-btn");
-  var countEl  = document.getElementById("lootbox-count");
   var overlay  = document.getElementById("lootbox-overlay");
+  // Badges nav (desktop + mobile)
+  var navBadge       = document.getElementById("nav-jeu-badge");
+  var navBadgeMobile = document.getElementById("nav-jeu-badge-mobile");
 
   // Écran de choix
   var choicePanel    = document.getElementById("lootbox-choice");
@@ -47,9 +47,6 @@
 
   if (!overlay) return;
 
-  // Sur la page /jeu, le widget flottant est masqué
-  if (jeuBtn && widget) widget.setAttribute("hidden", "");
-
   // ── État ─────────────────────────────────────────────────────────────────────
   var _count          = 0;
   var _opening        = false;
@@ -68,17 +65,13 @@
 
   function setCount(n) {
     _count = n;
-    if (widget && btn && countEl && !jeuBtn) {
-      if (n > 0) {
-        widget.removeAttribute("hidden");
-        countEl.textContent = n > 99 ? "99+" : String(n);
-        countEl.removeAttribute("hidden");
-        btn.setAttribute("data-has-loot", "1");
-      } else {
-        widget.setAttribute("hidden", "");
-        btn.removeAttribute("data-has-loot");
-      }
-    }
+    // Badge rouge sur le lien "Jeu" dans le header
+    var label = n > 99 ? "99+" : String(n);
+    [navBadge, navBadgeMobile].forEach(function (el) {
+      if (!el) return;
+      if (n > 0) { el.textContent = label; el.removeAttribute("hidden"); }
+      else        { el.setAttribute("hidden", ""); }
+    });
     if (jeuBtn) {
       if (n > 0) {
         jeuBtn.removeAttribute("disabled");
@@ -114,7 +107,7 @@
     _opening = true;
     overlay.removeAttribute("hidden");
     hideAll();
-    choiceMsg.textContent = "Vous avez " + _count + " lootbox" + (_count > 1 ? "es" : "") + "\u00a0!";
+    if (choiceMsg) choiceMsg.textContent = "Vous avez " + _count + " lootbox" + (_count > 1 ? "es" : "") + "\u00a0!";
     if (choiceCountLbl) choiceCountLbl.textContent = _count;
     choicePanel.removeAttribute("hidden");
   }

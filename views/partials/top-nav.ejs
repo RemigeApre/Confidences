@@ -55,7 +55,7 @@
           </div>
         </div>
         <a href="/quizz" class="pc-nav-link pc-nav-link--quizz<%= _onQuizz ? ' pc-nav-link--active' : '' %>">Quizz</a>
-        <a href="/jeu" class="pc-nav-link pc-nav-link--jeu<%= _onJeu ? ' pc-nav-link--active' : '' %>">Jeu</a>
+        <a href="/jeu" class="pc-nav-link pc-nav-link--jeu<%= _onJeu ? ' pc-nav-link--active' : '' %>">Jeu<span class="lootbox-nav-badge" id="nav-jeu-badge" hidden></span></a>
       <% } %>
     </div>
 
@@ -119,8 +119,9 @@
   <% } %>
   <a href="/" class="mobile-tabbar-home<%= _path === '/' ? ' active' : '' %>" aria-label="Accueil" title="Accueil">C</a>
   <% if (currentUser) { %>
-    <a href="/jeu" class="mobile-tabbar-link<%= _onJeu ? ' active' : '' %>" aria-label="Jeu" title="Jeu">
+    <a href="/jeu" class="mobile-tabbar-link mobile-tabbar-link--jeu<%= _onJeu ? ' active' : '' %>" aria-label="Jeu" title="Jeu" style="position:relative">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="13" rx="3"/><path d="M9 11v4M7 13h4"/><circle cx="16" cy="13" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="11" r="1" fill="currentColor" stroke="none"/></svg>
+      <span class="lootbox-nav-badge" id="nav-jeu-badge-mobile" hidden></span>
     </a>
     <a href="/favoris" class="mobile-tabbar-link<%= _onProfil ? ' active' : '' %>" aria-label="Profil" title="Profil">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
