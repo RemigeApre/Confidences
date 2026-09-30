@@ -16052,28 +16052,125 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   PAGE JEU
+   PAGE JEU — plein écran, sans scroll
    ══════════════════════════════════════════════════════════════════════════ */
-.jeu-page { max-width: 720px; margin: 2rem auto; padding: 0 1rem; display: flex; flex-direction: column; gap: 2.5rem; }
-.jeu-section-title { font-size: 1.1rem; font-weight: 700; margin: 0 0 .4rem; }
-.jeu-section-desc { font-size: .85rem; color: var(--muted, #888); margin: 0 0 1rem; }
-.jeu-couple-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .75rem; }
-.jeu-card {
-  display: flex; flex-direction: column; align-items: center; gap: .5rem;
-  padding: 1.2rem .75rem; border-radius: 12px;
-  background: var(--surface-2, #1a1a2e); border: 1px solid rgba(255,255,255,.08);
-  text-decoration: none; color: var(--text-1, #eee);
-  transition: background .15s, border-color .15s;
+.jeu-viewport {
+  position: fixed;
+  inset: 0;
+  top: var(--topnav-h, 56px);   /* sous la nav */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.jeu-card:hover { background: var(--surface-3, #222); border-color: rgba(255,255,255,.18); }
-.jeu-card-icon { font-size: 1.6rem; line-height: 1; }
-.jeu-card-label { font-size: .8rem; font-weight: 600; }
-.jeu-lootbox-hint {
-  display: inline-flex; align-items: baseline; gap: .4rem;
-  background: var(--surface-2, #1a1a2e); border: 1px solid rgba(255,255,255,.08);
-  border-radius: 10px; padding: .6rem 1rem; font-size: .88rem;
+/* Contenu centré */
+.jeu-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: 2rem;
+  pointer-events: none;
 }
-.jeu-lootbox-hint-count { font-size: 1.4rem; font-weight: 700; color: var(--rarity-legendary, hsl(44,95%,55%)); }
+.jeu-title {
+  font-size: clamp(1.6rem, 5vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: .04em;
+  margin: 0;
+  color: var(--text-1, #fff);
+}
+.jeu-subtitle {
+  font-size: .9rem;
+  color: var(--muted, #777);
+  margin: 0;
+}
+
+/* ── Zone lootbox (bas droite) ─────────────────────────────────────── */
+.jeu-lootbox-area {
+  position: absolute;
+  bottom: 28px;
+  right: 28px;
+}
+@media (max-width: 768px) {
+  .jeu-lootbox-area { bottom: 80px; right: 16px; } /* au-dessus de la tabbar */
+}
+
+.jeu-lootbox-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .45rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+  transition: transform .2s;
+  /* désactivé par défaut */
+  opacity: .38;
+  pointer-events: none;
+}
+.jeu-lootbox-btn:not([disabled]) {
+  opacity: 1;
+  pointer-events: auto;
+}
+.jeu-lootbox-btn:not([disabled]):hover { transform: scale(1.06) translateY(-3px); }
+.jeu-lootbox-btn:not([disabled]):active { transform: scale(.97); }
+
+/* Coffre SVG */
+.jeu-chest-svg {
+  width: clamp(100px, 18vw, 160px);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 4px 18px rgba(200,120,0,.18));
+  transition: filter .3s;
+}
+.jeu-lootbox-btn[data-has-loot] .jeu-chest-svg {
+  filter:
+    drop-shadow(0 0 12px rgba(245,210,100,.55))
+    drop-shadow(0 4px 18px rgba(200,120,0,.4));
+  animation: chest-idle 2.8s ease-in-out infinite;
+}
+@keyframes chest-idle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%       { transform: translateY(-4px) rotate(-1.5deg); }
+  75%       { transform: translateY(-2px) rotate(1.5deg); }
+}
+
+/* Badge compteur sur le coffre */
+.jeu-lootbox-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 13px;
+  background: var(--rarity-legendary, hsl(44,95%,55%));
+  color: #000;
+  font-size: .78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.jeu-lootbox-count[hidden] { display: none; }
+
+/* Label sous le coffre */
+.jeu-lootbox-label {
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted, #888);
+  white-space: nowrap;
+}
+.jeu-lootbox-btn[data-has-loot] .jeu-lootbox-label {
+  color: var(--rarity-legendary, hsl(44,95%,55%));
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PROFILE AVATAR

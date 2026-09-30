@@ -262,6 +262,21 @@ db.exec(`
     UNIQUE(user_id, item_type, ref_id)
   )
 `);
+// Migration one-shot : offrir 5 lootboxes de bienvenue aux comptes existants
+// qui n'en ont jamais reçu. La table lootbox vient d'être créée (ou existait
+// déjà) ; on vérifie simplement si l'utilisateur a déjà au moins une entrée.
+{
+  const _WELCOME = 5;
+  const _now = new Date().toISOString();
+  const _stmt = db.prepare("INSERT INTO user_lootboxes (user_id, opened, created_at) VALUES (?, 0, ?)");
+  const _users = db.prepare("SELECT id FROM users").all();
+  for (const _u of _users) {
+    const _existing = db.prepare("SELECT COUNT(*) as cnt FROM user_lootboxes WHERE user_id = ?").get(_u.id);
+    if (_existing.cnt === 0) {
+      for (let _i = 0; _i < _WELCOME; _i++) _stmt.run(_u.id, _now);
+    }
+  }
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS favorites (
@@ -543,13 +558,18 @@ function clearCouplePartner(userId) {
   db.prepare("UPDATE users SET partner_id = NULL WHERE id = ?").run(userId);
 }
 
+const WELCOME_LOOTBOXES = 5;
+
 function createUser({ username, displayName, passwordHash, isAdmin, isTest }) {
   const info = db
     .prepare(
       "INSERT INTO users (username, display_name, password_hash, is_admin, is_test, created_at) VALUES (?, ?, ?, ?, ?, ?)"
     )
     .run(username, displayName, passwordHash, isAdmin ? 1 : 0, isTest ? 1 : 0, new Date().toISOString());
-  return info.lastInsertRowid;
+  const userId = info.lastInsertRowid;
+  // Cadeau de bienvenue
+  grantLootbox(userId, WELCOME_LOOTBOXES);
+  return userId;
 }
 
 // Modifie un profil existant cote admin (identite, role, sexe). Le pseudo et

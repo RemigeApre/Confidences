@@ -3,7 +3,7 @@
   "use strict";
 
   var widget   = document.getElementById("lootbox-widget");
-  var btn      = document.getElementById("lootbox-btn");
+  var btn      = document.getElementById("lootbox-btn");        // widget flottant (autres pages)
   var countEl  = document.getElementById("lootbox-count");
   var overlay  = document.getElementById("lootbox-overlay");
   var chest    = document.getElementById("lootbox-reveal-chest");
@@ -14,7 +14,12 @@
   var titleEl  = document.getElementById("lootbox-reveal-title");
   var closeBtn = document.getElementById("lootbox-reveal-close");
 
-  if (!widget || !btn) return;
+  // Bouton coffre de la page /jeu (optionnel)
+  var jeuBtn       = document.getElementById("jeu-lootbox-btn");
+  var jeuCount     = document.getElementById("jeu-lootbox-count");
+  var jeuLabel     = document.getElementById("jeu-lootbox-label");
+
+  if (!overlay) return;
 
   var _count = 0;
   var _opening = false;
@@ -31,49 +36,65 @@
   function refreshCount() {
     fetch("/lootbox/count")
       .then(function (r) { return r.json(); })
-      .then(function (data) {
-        setCount(data.count || 0);
-      })
+      .then(function (data) { setCount(data.count || 0); })
       .catch(function () {});
   }
 
   function setCount(n) {
     _count = n;
-    if (n > 0) {
-      widget.removeAttribute("hidden");
-      countEl.textContent = n > 99 ? "99+" : String(n);
-      countEl.removeAttribute("hidden");
-      btn.setAttribute("data-has-loot", "1");
-    } else {
-      // On masque complètement le widget si rien à ouvrir
-      widget.setAttribute("hidden", "");
-      btn.removeAttribute("data-has-loot");
+
+    // Widget flottant (toutes les pages)
+    if (widget && btn && countEl) {
+      if (n > 0) {
+        widget.removeAttribute("hidden");
+        countEl.textContent = n > 99 ? "99+" : String(n);
+        countEl.removeAttribute("hidden");
+        btn.setAttribute("data-has-loot", "1");
+      } else {
+        widget.setAttribute("hidden", "");
+        btn.removeAttribute("data-has-loot");
+      }
+    }
+
+    // Coffre de la page /jeu
+    if (jeuBtn) {
+      if (n > 0) {
+        jeuBtn.removeAttribute("disabled");
+        jeuBtn.setAttribute("data-has-loot", "1");
+        if (jeuCount) { jeuCount.textContent = n > 99 ? "99+" : String(n); jeuCount.removeAttribute("hidden"); }
+        if (jeuLabel) jeuLabel.textContent = n === 1 ? "1 lootbox" : n + " lootboxes";
+      } else {
+        jeuBtn.setAttribute("disabled", "");
+        jeuBtn.removeAttribute("data-has-loot");
+        if (jeuCount) jeuCount.setAttribute("hidden", "");
+        if (jeuLabel) jeuLabel.textContent = "Aucune lootbox";
+      }
     }
   }
 
-  // ── Click sur le bouton ───────────────────────────────────────────────────
-  btn.addEventListener("click", function () {
+  // ── Déclencheurs ─────────────────────────────────────────────────────────
+  function onBtnClick() {
     if (_opening || _count <= 0) return;
     openLootbox();
-  });
+  }
+
+  if (btn)    btn.addEventListener("click", onBtnClick);
+  if (jeuBtn) jeuBtn.addEventListener("click", onBtnClick);
 
   function openLootbox() {
     _opening = true;
-    // Afficher l'overlay
     overlay.removeAttribute("hidden");
     card.setAttribute("hidden", "");
     chest.removeAttribute("hidden");
     closeBtn.setAttribute("hidden", "");
     chest.classList.remove("lootbox-chest--opening", "lootbox-chest--done");
 
-    // Animation d'ouverture du coffre (0.8s)
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         chest.classList.add("lootbox-chest--opening");
       });
     });
 
-    // Appel API pendant l'animation
     fetch("/lootbox/open", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -81,25 +102,16 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (!data.ok || !data.reward) {
-          closeOverlay();
-          return;
-        }
-        // Attendre la fin de l'animation du coffre (800ms)
-        setTimeout(function () {
-          showReward(data.reward);
-        }, 900);
+        if (!data.ok || !data.reward) { closeOverlay(); return; }
+        setTimeout(function () { showReward(data.reward); }, 900);
       })
-      .catch(function () {
-        setTimeout(closeOverlay, 600);
-      });
+      .catch(function () { setTimeout(closeOverlay, 600); });
   }
 
   function showReward(reward) {
     chest.classList.add("lootbox-chest--done");
     chest.setAttribute("hidden", "");
 
-    // Renseigner la carte
     var rarity = reward.rarity || "common";
     rarityEl.textContent = RARITY_LABELS[rarity] || rarity;
     rarityEl.className = "lootbox-reveal-rarity lootbox-reveal-rarity--" + rarity;
@@ -117,9 +129,7 @@
     card.removeAttribute("hidden");
     card.classList.remove("lootbox-card--in");
     requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        card.classList.add("lootbox-card--in");
-      });
+      requestAnimationFrame(function () { card.classList.add("lootbox-card--in"); });
     });
     closeBtn.removeAttribute("hidden");
     setCount(_count - 1);
@@ -131,19 +141,13 @@
     _opening = false;
   }
 
-  // ── Fermeture ─────────────────────────────────────────────────────────────
   closeBtn.addEventListener("click", closeOverlay);
-
   overlay.addEventListener("click", function (e) {
-    if (e.target === overlay || e.target.classList.contains("lootbox-overlay-backdrop")) {
-      closeOverlay();
-    }
+    if (e.target === overlay || e.target.classList.contains("lootbox-overlay-backdrop")) closeOverlay();
   });
-
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !overlay.hasAttribute("hidden")) closeOverlay();
   });
 
-  // ── Init ──────────────────────────────────────────────────────────────────
   refreshCount();
 })();
