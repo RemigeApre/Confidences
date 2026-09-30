@@ -2092,8 +2092,9 @@
             var target = protAcSel >= 0 ? items[protAcSel] : items[0];
             if (target) target.dispatchEvent(new MouseEvent("mousedown"));
           } else if (protInp.value.trim()) {
-            // Fallback : correspondance directe dans GALLERY_PROTAGONISTS
-            var lq = protInp.value.trim().toLowerCase();
+            // Correspondance directe ou création (comme gallery-form)
+            var nameToAdd = protInp.value.trim();
+            var lq = nameToAdd.toLowerCase();
             var prots = window.GALLERY_PROTAGONISTS || {};
             var match = null;
             Object.keys(prots).forEach(function(id) {
@@ -2102,7 +2103,22 @@
             if (!match) Object.keys(prots).forEach(function(id) {
               if (!match && prots[id].toLowerCase().indexOf(lq) !== -1) match = { id: Number(id), label: prots[id] };
             });
-            if (match) { addProtChip(match.id, match.label); protInp.value = ""; closeProtDrop(); }
+            if (match) {
+              addProtChip(match.id, match.label); protInp.value = ""; closeProtDrop();
+            } else {
+              protInp.disabled = true;
+              fetch("/protagonistes/api/create", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: nameToAdd })
+              }).then(function(r) { return r.json(); }).then(function(res) {
+                protInp.disabled = false;
+                if (res.ok) {
+                  window.GALLERY_PROTAGONISTS[res.id] = res.name;
+                  addProtChip(res.id, res.name);
+                  protInp.value = ""; closeProtDrop();
+                }
+              }).catch(function() { protInp.disabled = false; });
+            }
           }
         } else if (e.key === "Backspace" && protInp.value === "") {
           var all = protChips.querySelectorAll(".lbep-chip");
