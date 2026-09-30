@@ -134,13 +134,15 @@
         </div>
         <input type="hidden" name="tags" class="wiki-tags-hidden"
           value="<%= protagoniste && protagoniste.tags ? protagoniste.tags.join(', ') : '' %>" />
-        <% if (allTags && allTags.length) { %>
-          <div class="wiki-tag-suggestions">
+        <div class="wiki-tag-suggestions">
+          <button type="button" class="wiki-tag-suggest-chip wiki-tag-suggest-chip--special" data-tag="ultra">ultra</button>
+          <button type="button" class="wiki-tag-suggest-chip wiki-tag-suggest-chip--special" data-tag="irréaliste">irréaliste</button>
+          <% if (allTags && allTags.length) { %>
             <% allTags.slice(0, 20).forEach(function(t) { %>
               <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
             <% }) %>
-          </div>
-        <% } %>
+          <% } %>
+        </div>
       </div>
 
       <div class="wiki-form-actions wf-mobile-actions">
