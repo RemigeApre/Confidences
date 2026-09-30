@@ -95,6 +95,14 @@
         <% } %>
       </div>
 
+      <div class="coffre-filter-bar" id="coffre-img-filter">
+        <button class="coffre-filter-btn active" data-filter="all">Tout</button>
+        <button class="coffre-filter-btn" data-filter="common">Commun</button>
+        <button class="coffre-filter-btn" data-filter="rare">Rare</button>
+        <button class="coffre-filter-btn" data-filter="epic">&Eacute;pique</button>
+        <button class="coffre-filter-btn" data-filter="legendary">L&eacute;g.</button>
+        <button class="coffre-filter-btn" data-filter="mythic">Mythique</button>
+      </div>
       <% if (!unlocks.length) { %>
         <p class="coffre-empty">Ouvrez des lootboxes depuis la <a href="/jeu">page Jeu</a> pour débloquer des images.</p>
       <% } else { %>
@@ -117,6 +125,12 @@
                 <% if (currentUser.profileImageId === u.refId) { %>
                   <div class="coffre-item-active-badge">Photo active</div>
                 <% } %>
+                <button class="coffre-fav-btn js-fav-toggle<%= u.isFavorite ? ' coffre-fav-btn--active' : '' %>"
+                        data-unlock-id="<%= u.id %>"
+                        title="<%= u.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' %>"
+                        aria-label="<%= u.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' %>">
+                  <%= u.isFavorite ? '♥' : '♡' %>
+                </button>
               </div>
               <p class="coffre-item-title"><%= u.title || 'Sans titre' %></p>
               <div class="coffre-item-actions js-item-normal-actions">
@@ -189,6 +203,15 @@
       <h2 class="coffre-section-title">Charmes</h2>
       <p class="coffre-section-subtitle">Les charmes remplacent les étoiles &#9733; dans les notes.</p>
 
+      <div class="coffre-filter-bar" id="coffre-charm-filter">
+        <button class="coffre-filter-btn active" data-filter="all">Tout</button>
+        <button class="coffre-filter-btn" data-filter="common">Commun</button>
+        <button class="coffre-filter-btn" data-filter="rare">Rare</button>
+        <button class="coffre-filter-btn" data-filter="epic">&Eacute;pique</button>
+        <button class="coffre-filter-btn" data-filter="legendary">L&eacute;g.</button>
+        <button class="coffre-filter-btn" data-filter="mythic">Mythique</button>
+      </div>
+
       <div class="coffre-charms-grid">
         <% charms.forEach(function(c) { %>
           <%
@@ -197,6 +220,7 @@
             var isActive = currentUser.ratingCharm === c.key;
           %>
           <div class="coffre-charm-card<%= c.owned ? ' coffre-charm-card--owned' : ' coffre-charm-card--locked' %><%= isActive ? ' coffre-charm-card--active' : '' %>"
+               data-rarity="<%= c.rarity %>"
                style="--charm-color:<%= rarityColor %>">
             <div class="coffre-charm-card-symbols">
               <span class="coffre-charm-card-sym coffre-charm-card-sym--filled"><%= c.symbol %></span>
@@ -213,11 +237,23 @@
                 </button>
               <% } else { %>
                 <button class="coffre-btn coffre-charm-btn js-charm-equip" data-charm-key="<%= c.key %>">
-                  Équiper
+                  &Eacute;quiper
+                </button>
+              <% } %>
+              <% if (c.unlockId) { %>
+                <button class="coffre-fav-btn js-charm-fav<%= c.isFavorite ? ' coffre-fav-btn--active' : '' %>"
+                        data-unlock-id="<%= c.unlockId %>"
+                        title="<%= c.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' %>"
+                        style="position:static;width:auto;height:auto;border-radius:20px;padding:.2rem .55rem;font-size:.78rem;gap:.25rem;display:inline-flex;align-items:center">
+                  <%= c.isFavorite ? '♥' : '♡' %>
                 </button>
               <% } %>
             <% } else { %>
-              <span class="coffre-charm-card-locked">Non obtenu</span>
+              <button class="coffre-btn coffre-charm-btn coffre-charm-btn--buy js-buy-charm"
+                      data-charm-id="<%= c.id %>"
+                      data-price="<%= CHARM_BUY_PRICE[c.rarity] || 100 %>">
+                Acheter &bull; <%= CHARM_BUY_PRICE[c.rarity] || 100 %>&thinsp;P
+              </button>
             <% } %>
           </div>
         <% }) %>
@@ -455,6 +491,34 @@
       body: JSON.stringify({ x: Math.round(cropX * 10) / 10, y: Math.round(cropY * 10) / 10, scale: Math.round(cropScale * 100) / 100 }),
     }).then(function(r) { return r.json(); }).then(function(d) { cropSaveBtn.disabled = false; if (d.ok) { closeCropModal(); window.location.reload(); } }).catch(function() { cropSaveBtn.disabled = false; });
   });
+
+  // ── Filtre par rareté — images ────────────────────────────────────────
+  var imgFilter = document.getElementById('coffre-img-filter');
+  imgFilter && imgFilter.addEventListener('click', function(e) {
+    var btn = e.target.closest('.coffre-filter-btn'); if (!btn) return;
+    imgFilter.querySelectorAll('.coffre-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var f = btn.dataset.filter;
+    document.querySelectorAll('#coffre-unlocked-grid .coffre-item').forEach(function(card) {
+      card.hidden = f !== 'all' && card.dataset.rarity !== f;
+    });
+  });
+
+  // ── Favori images ─────────────────────────────────────────────────────
+  document.querySelectorAll('.js-fav-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      fetch('/favoris/coffre/favorite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unlockId: parseInt(btn.dataset.unlockId) }),
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) return;
+        btn.classList.toggle('coffre-fav-btn--active', !!d.isFavorite);
+        btn.textContent = d.isFavorite ? '♥' : '♡';
+        btn.title = d.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris';
+      });
+    });
+  });
 })();
 </script>
 
@@ -466,6 +530,8 @@
 <script>
 (function() {
   var coinsEl = document.getElementById('coffre-coins-value');
+
+  // ── Équiper charme ────────────────────────────────────────────────────
   document.querySelectorAll('.js-charm-equip').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var key = btn.dataset.charmKey;
@@ -476,6 +542,56 @@
         if (d.ok) window.location.reload();
         else alert(d.error || 'Erreur');
       });
+    });
+  });
+
+  // ── Filtre rareté charmes ─────────────────────────────────────────────
+  var charmFilter = document.getElementById('coffre-charm-filter');
+  charmFilter && charmFilter.addEventListener('click', function(e) {
+    var btn = e.target.closest('.coffre-filter-btn'); if (!btn) return;
+    charmFilter.querySelectorAll('.coffre-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var f = btn.dataset.filter;
+    document.querySelectorAll('.coffre-charm-card').forEach(function(card) {
+      card.hidden = f !== 'all' && card.dataset.rarity !== f;
+    });
+  });
+
+  // ── Favori charmes ────────────────────────────────────────────────────
+  document.querySelectorAll('.js-charm-fav').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      fetch('/favoris/coffre/favorite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unlockId: parseInt(btn.dataset.unlockId) }),
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) return;
+        btn.classList.toggle('coffre-fav-btn--active', !!d.isFavorite);
+        btn.textContent = d.isFavorite ? '♥' : '♡';
+        btn.title = d.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris';
+      });
+    });
+  });
+
+  // ── Achat charme ──────────────────────────────────────────────────────
+  document.querySelectorAll('.js-buy-charm').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var price = btn.dataset.price;
+      var balance = parseInt(coinsEl ? coinsEl.textContent : '0', 10);
+      if (balance < parseInt(price, 10)) {
+        alert('Pas assez de pièces (il vous en faut ' + price + ', vous en avez ' + balance + ').');
+        return;
+      }
+      if (!confirm('Acheter ce charme pour ' + price + ' pièce(s) ?')) return;
+      btn.disabled = true;
+      fetch('/favoris/coffre/buy-charm', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ charmId: parseInt(btn.dataset.charmId) }),
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) { alert(d.error || 'Erreur'); btn.disabled = false; return; }
+        if (coinsEl) coinsEl.textContent = d.newBalance;
+        window.location.reload();
+      }).catch(function() { btn.disabled = false; });
     });
   });
 })();

@@ -289,7 +289,6 @@ db.exec(`CREATE TABLE IF NOT EXISTS charms (
   const _cs = db.prepare("INSERT OR IGNORE INTO charms (id, key, label, symbol, rarity) VALUES (?, ?, ?, ?, 'legendary')");
   _cs.run(1, 'heart',   'Cœur',    '♥');
   _cs.run(2, 'diamond', 'Losange',  '◆');
-  _cs.run(3, 'moon',    'Lune',     '☾');
   _cs.run(4, 'bolt',    'Éclair',   '⚡');
   _cs.run(5, 'flower',  'Fleur',    '✿');
 }
@@ -299,15 +298,15 @@ try { db.exec("ALTER TABLE charms ADD COLUMN symbol_empty TEXT NOT NULL DEFAULT 
   const _cse = db.prepare("UPDATE charms SET symbol_empty = ? WHERE key = ? AND symbol_empty = ''");
   _cse.run('♡', 'heart');
   _cse.run('◇', 'diamond');
-  _cse.run('○', 'moon');
   _cse.run('✦', 'bolt');
   _cse.run('✾', 'flower');
 }
 // ── Ajout étoile (charme commun de base, possédé par tous) ───────────────
 db.prepare("INSERT OR IGNORE INTO charms (id, key, label, symbol, symbol_empty, rarity) VALUES (0, 'star', 'Étoile', '★', '☆', 'common')").run();
-// Migration : lune pointée vers le haut + bolt empty corrigé
-db.prepare("UPDATE charms SET symbol = '⌣', symbol_empty = '⌢' WHERE key = 'moon'").run();
+// bolt empty corrigé
 db.prepare("UPDATE charms SET symbol_empty = '✧' WHERE key = 'bolt'").run();
+// Suppression des charmes retirés
+db.prepare("DELETE FROM charms WHERE key IN ('moon', 'eye', 'rose', 'gem')").run();
 // ── Nouveaux charmes ──────────────────────────────────────────────────────
 {
   const _csnew = db.prepare("INSERT OR IGNORE INTO charms (id, key, label, symbol, symbol_empty, rarity) VALUES (?, ?, ?, ?, ?, ?)");
@@ -317,13 +316,10 @@ db.prepare("UPDATE charms SET symbol_empty = '✧' WHERE key = 'bolt'").run();
   _csnew.run(9,  'spade',    'Pique',      '♠', '♤', 'rare');
   _csnew.run(10, 'drop',     'Goutte',     '▼', '▽', 'rare');
   _csnew.run(11, 'sun',      'Soleil',     '☀', '☼', 'legendary');
-  _csnew.run(12, 'eye',      'Œil',        '◎', '⊙', 'epic');
   _csnew.run(13, 'square',   'Carré',      '■', '□', 'common');
   _csnew.run(14, 'triangle', 'Triangle',   '▲', '△', 'common');
   _csnew.run(15, 'pentagon', 'Pentagone',  '⬟', '⬠', 'rare');
   _csnew.run(16, 'skull',    'Crâne',      '☠', '⊗', 'epic');
-  _csnew.run(17, 'rose',     'Rose',       '✽', '✼', 'epic');
-  _csnew.run(18, 'gem',      'Pierre',     '✤', '✣', 'mythic');
 }
 // Migration : offrir l'étoile à tous les utilisateurs existants
 {
@@ -344,6 +340,10 @@ db.prepare("UPDATE charms SET symbol_empty = '✧' WHERE key = 'bolt'").run();
       AND rarity != (SELECT rarity FROM gallery_images WHERE id = user_unlocks.ref_id)
   `).run();
 }
+// Migration one-shot : is_favorite sur user_unlocks
+try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+// Migration one-shot : gift_data sur user_lootboxes
+try { db.exec("ALTER TABLE user_lootboxes ADD COLUMN gift_data TEXT"); } catch (_) {}
 
 // ── Sessions de choix (lootbox à choix) ──────────────────────────────────
 db.exec(`CREATE TABLE IF NOT EXISTS lootbox_choice_sessions (
@@ -2835,10 +2835,14 @@ function setCharmRarity(charmId, rarity) {
 }
 
 function getUserUnlockedCharms(userId) {
-  const ownedIds = new Set(
-    db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'charm'").all(userId).map(r => r.ref_id)
-  );
-  return listCharms().map(c => ({ ...c, owned: ownedIds.has(c.id) }));
+  const owned = db.prepare("SELECT ref_id, id as unlock_id, is_favorite FROM user_unlocks WHERE user_id = ? AND item_type = 'charm'").all(userId);
+  const ownedMap = new Map(owned.map(r => [r.ref_id, { unlockId: r.unlock_id, isFavorite: !!r.is_favorite }]));
+  return listCharms().map(c => ({
+    ...c,
+    owned: ownedMap.has(c.id),
+    unlockId: ownedMap.has(c.id) ? ownedMap.get(c.id).unlockId : null,
+    isFavorite: ownedMap.has(c.id) ? ownedMap.get(c.id).isFavorite : false,
+  }));
 }
 
 function setUserCharm(userId, charmKey) {
@@ -2944,7 +2948,7 @@ function _grantJoker(userId, boxId, jokerType, rarity) {
 
 // ── Ouverture lootbox (dispatching par type) ──────────────────────────────
 function openLootbox(userId) {
-  const box = db.prepare("SELECT id, loot_type FROM user_lootboxes WHERE user_id = ? AND opened = 0 ORDER BY created_at ASC LIMIT 1").get(userId);
+  const box = db.prepare("SELECT id, loot_type, gift_data FROM user_lootboxes WHERE user_id = ? AND opened = 0 ORDER BY CASE WHEN loot_type='gift' THEN 0 ELSE 1 END, created_at ASC LIMIT 1").get(userId);
   if (!box) return null;
   const type = box.loot_type || 'standard';
 
@@ -2995,6 +2999,37 @@ function openLootbox(userId) {
       }
     }
     return { rewards };
+  }
+
+  // ── Lootbox cadeau : offre un item spécifique de la part d'un admin
+  if (type === 'gift') {
+    let giftData = {}; try { giftData = JSON.parse(box.gift_data || '{}'); } catch (_) {}
+    db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
+    if (giftData.type === 'charm') {
+      const charm = db.prepare("SELECT id, key, label, symbol, symbol_empty, rarity FROM charms WHERE id=?").get(giftData.charmId);
+      if (!charm) return null;
+      const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, ?, ?)").run(userId, charm.id, charm.rarity, now);
+      if (ins.changes === 0) {
+        const coins = Math.ceil((getLootboxConfig().buyPrices[charm.rarity] || RARITY_BUY_PRICE[charm.rarity]) / 2);
+        db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+        return { rewards: [{ isCoins: true, coins, rarity: charm.rarity }], isGift: true };
+      }
+      return { rewards: [{ isCharm: true, charmKey: charm.key, label: charm.label, symbol: charm.symbol, rarity: charm.rarity, isDuplicate: false }], isGift: true };
+    }
+    if (giftData.type === 'image') {
+      const img = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images WHERE id=?").get(giftData.imageId);
+      if (!img) return null;
+      const imageRarity = img.rarity || 'common';
+      let imagePaths = []; try { imagePaths = JSON.parse(img.image_paths || '[]'); } catch (_) {}
+      const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, img.id, imageRarity, now);
+      if (ins.changes === 0) {
+        const coins = Math.ceil((getLootboxConfig().buyPrices[imageRarity] || RARITY_BUY_PRICE[imageRarity]) / 2);
+        db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+        return { rewards: [{ isCoins: true, coins, rarity: imageRarity }], isGift: true };
+      }
+      return { rewards: [{ imageId: img.id, title: img.title || '', rarity: imageRarity, thumb: imagePaths[0] || null, isDuplicate: false }], isGift: true };
+    }
+    return null;
   }
 
   // ── Lootbox standard / image : 3 récompenses (images + chance joker)
@@ -3064,11 +3099,11 @@ function listUnownedImages(userId, limit) {
 
 function getUserUnlocks(userId) {
   return db.prepare(
-    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
+    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
   ).all(userId).map(r => {
     let imagePaths = [];
     try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
-    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at };
+    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at, isFavorite: !!r.is_favorite };
   });
 }
 
@@ -3085,6 +3120,24 @@ function sellUnlock(userId, unlockId) {
 
 // Achète un item depuis la boutique → débite les pièces, ajoute à user_unlocks
 function buyItem(userId, itemType, refId) {
+  if (itemType === 'charm') {
+    const charmId = parseInt(refId, 10);
+    if (isNaN(charmId)) return { ok: false, error: 'invalid_ref' };
+    const charm = db.prepare("SELECT id, rarity FROM charms WHERE id = ?").get(charmId);
+    if (!charm) return { ok: false, error: 'item_not_found' };
+    const rarity = charm.rarity || 'legendary';
+    const cfgBuy = getLootboxConfig().buyPrices;
+    const price = cfgBuy[rarity] || RARITY_BUY_PRICE[rarity] || RARITY_BUY_PRICE.legendary;
+    const user = db.prepare("SELECT coins FROM users WHERE id = ?").get(userId);
+    if (!user) return { ok: false, error: 'user_not_found' };
+    if (user.coins < price) return { ok: false, error: 'not_enough_coins', need: price, have: user.coins };
+    const already = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'charm' AND ref_id = ?").get(userId, charmId);
+    if (already) return { ok: false, error: 'already_owned' };
+    const now = new Date().toISOString();
+    db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'charm', ?, ?, ?)").run(userId, charmId, rarity, now);
+    db.prepare("UPDATE users SET coins = coins - ? WHERE id = ?").run(price, userId);
+    return { ok: true, rarity, coinsSpent: price };
+  }
   if (itemType !== 'profile_image') return { ok: false, error: 'invalid_type' };
   const refIdInt = parseInt(refId, 10);
   if (isNaN(refIdInt)) return { ok: false, error: 'invalid_ref' };
@@ -3103,6 +3156,21 @@ function buyItem(userId, itemType, refId) {
   db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, ?, ?, ?)").run(userId, itemType, refIdInt, rarity, new Date().toISOString());
   db.prepare("UPDATE users SET coins = coins - ? WHERE id = ?").run(price, userId);
   return { ok: true, rarity, coinsSpent: price };
+}
+
+// Toggle favori sur un item débloqué
+function toggleUnlockFavorite(userId, unlockId) {
+  const row = db.prepare("SELECT id, is_favorite FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, userId);
+  if (!row) return { ok: false };
+  const newVal = row.is_favorite ? 0 : 1;
+  db.prepare("UPDATE user_unlocks SET is_favorite = ? WHERE id = ?").run(newVal, row.id);
+  return { ok: true, isFavorite: !!newVal };
+}
+
+// Offre un item précis en tant que cadeau (admin) → crée une lootbox gift
+function grantGiftLootbox(targetUserId, giftData) {
+  const now = new Date().toISOString();
+  db.prepare("INSERT INTO user_lootboxes (user_id, loot_type, gift_data, opened, created_at) VALUES (?, 'gift', ?, 0, ?)").run(targetUserId, JSON.stringify(giftData), now);
 }
 
 function getShopItems(userId) {
@@ -3354,6 +3422,8 @@ module.exports = {
   setLootboxConfigKey,
   setImageRarity,
   setCharmRarity,
+  toggleUnlockFavorite,
+  grantGiftLootbox,
   getLootboxCountByType,
   listCharms,
   listUnownedImages,

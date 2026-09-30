@@ -36,10 +36,12 @@ const {
   getShopItems,
   sellUnlock,
   buyItem,
+  toggleUnlockFavorite,
   setProfileImageId,
   setProfileImageCrop,
   RARITY_BUY_PRICE,
   RARITY_SELL_PRICE,
+  getLootboxConfig,
   checkAndGrantActionLootbox,
   countUserFavoritesAll,
 } = require("../db");
@@ -211,6 +213,7 @@ function buildFavoritesRouter(config) {
     const unlocks   = getUserUnlocks(req.user.id);
     const charms    = getUserUnlockedCharms(req.user.id);
     const shopItems = view === 'images' ? getShopItems(req.user.id) : [];
+    const cfgBuy    = getLootboxConfig().buyPrices;
     res.render("profil-coffre", {
       config,
       roleHue: roleHue(req.user),
@@ -221,6 +224,7 @@ function buildFavoritesRouter(config) {
       view,
       RARITY_BUY_PRICE,
       RARITY_SELL_PRICE,
+      CHARM_BUY_PRICE: cfgBuy,
     });
   });
 
@@ -244,6 +248,22 @@ function buildFavoritesRouter(config) {
   // Achat d'un item depuis la boutique
   router.post("/coffre/buy", requireUserJson, express.json(), (req, res) => {
     const result = buyItem(req.user.id, String(req.body.itemType || 'profile_image'), req.body.refId);
+    if (!result.ok) return res.json(result);
+    const { getUserById } = require("../db");
+    const user = getUserById(req.user.id);
+    res.json({ ok: true, rarity: result.rarity, coinsSpent: result.coinsSpent, newBalance: user.coins });
+  });
+
+  // Toggle favori sur un item du coffre
+  router.post("/coffre/favorite", requireUserJson, express.json(), (req, res) => {
+    const unlockId = parseInt(req.body.unlockId, 10);
+    if (isNaN(unlockId)) return res.json({ ok: false });
+    res.json(toggleUnlockFavorite(req.user.id, unlockId));
+  });
+
+  // Acheter un charme directement
+  router.post("/coffre/buy-charm", requireUserJson, express.json(), (req, res) => {
+    const result = buyItem(req.user.id, 'charm', req.body.charmId);
     if (!result.ok) return res.json(result);
     const { getUserById } = require("../db");
     const user = getUserById(req.user.id);

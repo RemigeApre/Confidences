@@ -32,6 +32,7 @@ function buildLootboxRouter(config) {
     // Tableau de 3 récompenses — chaque élément peut être image, charm ou joker
     res.json({
       ok: true,
+      isGift: !!result.isGift,
       rewards: result.rewards.map(r => {
         if (r.isJoker) return { isJoker: true, jokerType: r.jokerType, rarity: r.rarity, isDuplicate: !!r.isDuplicate };
         if (r.isCharm) return { isCharm: true, charmKey: r.charmKey || null, label: r.label || null, symbol: r.symbol || null, rarity: r.rarity || 'legendary', isDuplicate: !!r.isDuplicate, coins: r.coins || 0 };

@@ -46,6 +46,7 @@ const {
   setLootboxConfigKey,
   setImageRarity,
   setCharmRarity,
+  grantGiftLootbox,
   listCharms,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
@@ -451,6 +452,28 @@ function buildAdminRouter(config) {
     if (!VALID.includes(rarity)) return res.json({ ok: false });
     setImageRarity(id, rarity);
     res.json({ ok: true, rarity });
+  });
+
+  // ── Liste utilisateurs pour le sélecteur de cadeau ────────────────────────
+  router.get("/users-for-gift", requireAdmin, (req, res) => {
+    const q = (req.query.q || '').toLowerCase().trim();
+    const users = listUsers().map(u => ({ id: u.id, username: u.username, displayName: u.display_name || u.username }));
+    const filtered = q ? users.filter(u => u.username.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q)) : users;
+    res.json({ users: filtered.slice(0, 30) });
+  });
+
+  // ── Offrir un item (image ou charme) à un utilisateur ─────────────────────
+  router.post("/recompenses/gift", requireAdmin, express.json(), (req, res) => {
+    const targetUserId = parseInt(req.body.userId, 10);
+    const itemType = String(req.body.itemType || '');
+    const itemId   = parseInt(req.body.itemId, 10);
+    if (!targetUserId || !['charm', 'image'].includes(itemType) || isNaN(itemId)) {
+      return res.json({ ok: false, error: 'params_invalides' });
+    }
+    const targetUser = getUserById(targetUserId);
+    if (!targetUser) return res.json({ ok: false, error: 'utilisateur_introuvable' });
+    grantGiftLootbox(targetUserId, { type: itemType, ...(itemType === 'charm' ? { charmId: itemId } : { imageId: itemId }) });
+    res.json({ ok: true, username: targetUser.username || targetUser.display_name || String(targetUserId) });
   });
 
   router.get("/:id", requireAdmin, (req, res) => {

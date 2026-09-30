@@ -150,6 +150,11 @@
           <% }) %>
         </select>
         <span class="ari-charm-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
+        <button class="js-admin-gift-charm" data-charm-id="<%= charm.id %>" data-charm-label="<%= charm.label %>"
+          style="width:100%;background:rgba(251,191,36,.08);border:1.5px solid rgba(251,191,36,.4);color:#fbbf24;border-radius:5px;padding:.28rem .5rem;font-size:.72rem;font-weight:700;cursor:pointer;transition:background .12s"
+          onmouseover="this.style.background='rgba(251,191,36,.18)'" onmouseout="this.style.background='rgba(251,191,36,.08)'">
+          &#127873; Offrir
+        </button>
       </div>
       <% }) %>
     </div>
@@ -245,6 +250,12 @@
         </div>
         <p class="ari-save-status" id="ariSaveStatus" style="color:#4ade80;margin:.4rem 0 0">&nbsp;</p>
       </div>
+      <div>
+        <button id="ariGiftBtn" style="width:100%;background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.5);color:#fbbf24;border-radius:7px;padding:.4rem .75rem;font-size:.82rem;font-weight:700;cursor:pointer;transition:background .12s"
+          onmouseover="this.style.background='rgba(251,191,36,.2)'" onmouseout="this.style.background='rgba(251,191,36,.1)'">
+          &#127873; Offrir cette image
+        </button>
+      </div>
       <div class="ari-nav-btns" style="margin-top:auto">
         <button class="ari-nav-btn" id="ariNavPrev" title="Précédent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
         <button class="ari-nav-btn" id="ariNavNext" title="Suivant"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
@@ -306,6 +317,12 @@
   overlay.addEventListener('click', function(e) { if (e.target === overlay) closeZoom(); });
   document.getElementById('ariNavPrev').addEventListener('click', () => navigate(-1));
   document.getElementById('ariNavNext').addEventListener('click', () => navigate(1));
+  const giftBtn = document.getElementById('ariGiftBtn');
+  giftBtn && giftBtn.addEventListener('click', function() {
+    const d = data[visibleIdxs[zoomIdx]];
+    if (!d || !window._adminOpenGiftModal) return;
+    window._adminOpenGiftModal({ type: 'image', id: d.id, label: d.title || ('Image #' + d.id) });
+  });
   document.addEventListener('keydown', function(e) {
     if (!overlay || overlay.hidden) return;
     if (e.key === 'Escape') closeZoom();
@@ -346,6 +363,14 @@
 <script>
 (function() {
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
+  document.querySelectorAll('.js-admin-gift-charm').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (window._adminOpenGiftModal) {
+        window._adminOpenGiftModal({ type: 'charm', id: parseInt(btn.dataset.charmId), label: btn.dataset.charmLabel });
+      }
+    });
+  });
+
   document.querySelectorAll('.js-charm-rarity').forEach(function(sel) {
     sel.addEventListener('change', async function() {
       const charmId = sel.dataset.charmId;
@@ -367,5 +392,140 @@
 })();
 </script>
 <% } %>
+
+<!-- ── Modal offrir ── -->
+<div id="adminGiftModal" style="position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center">
+  <div style="background:#1e293b;border-radius:14px;padding:1.5rem;width:min(95vw,420px);display:flex;flex-direction:column;gap:.85rem;max-height:90vh;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="margin:0;font-size:.95rem;font-weight:700;color:#f1f5f9">Offrir à un utilisateur</h3>
+      <button id="adminGiftClose" style="background:none;border:none;color:#f87171;cursor:pointer;padding:.25rem;line-height:0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p id="adminGiftItemLabel" style="margin:0;font-size:.82rem;color:#94a3b8;background:rgba(255,255,255,.05);padding:.5rem .75rem;border-radius:6px"></p>
+    <input id="adminGiftSearch" type="text" placeholder="Rechercher un utilisateur…" autocomplete="off"
+      style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:7px;color:#f1f5f9;padding:.5rem .75rem;font-size:.88rem;outline:none">
+    <div id="adminGiftUserList" style="min-height:60px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:.3rem">
+      <p style="color:#64748b;font-size:.82rem;text-align:center;margin:.75rem 0">Tapez pour rechercher un utilisateur…</p>
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;align-items:center">
+      <span id="adminGiftStatus" style="flex:1;font-size:.78rem;color:#4ade80;min-height:1em"></span>
+      <button id="adminGiftCancel" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#94a3b8;border-radius:7px;padding:.4rem .9rem;font-size:.85rem;cursor:pointer">Annuler</button>
+      <button id="adminGiftConfirm" disabled style="background:#fbbf24;border:none;color:#0f172a;border-radius:7px;padding:.4rem .9rem;font-size:.85rem;font-weight:700;cursor:pointer;opacity:.45">Offrir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var modal = document.getElementById('adminGiftModal');
+  var closeBtn = document.getElementById('adminGiftClose');
+  var cancelBtn = document.getElementById('adminGiftCancel');
+  var confirmBtn = document.getElementById('adminGiftConfirm');
+  var searchInput = document.getElementById('adminGiftSearch');
+  var userList = document.getElementById('adminGiftUserList');
+  var itemLabel = document.getElementById('adminGiftItemLabel');
+  var statusEl = document.getElementById('adminGiftStatus');
+  if (!modal) return;
+
+  var _giftTarget = null;
+  var _selectedUserId = null;
+  var _searchTimeout = null;
+
+  function openModal(target) {
+    _giftTarget = target;
+    _selectedUserId = null;
+    if (itemLabel) itemLabel.textContent = '\uD83C\uDF81 ' + (target.type === 'image' ? 'Image' : 'Charme') + ' : ' + target.label;
+    if (searchInput) searchInput.value = '';
+    if (userList) userList.innerHTML = '<p style="color:#64748b;font-size:.82rem;text-align:center;margin:.75rem 0">Tapez pour rechercher un utilisateur\u2026</p>';
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '.45'; }
+    if (statusEl) statusEl.textContent = '';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    setTimeout(function() { if (searchInput) searchInput.focus(); }, 50);
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    _giftTarget = null;
+    _selectedUserId = null;
+  }
+
+  closeBtn && closeBtn.addEventListener('click', closeModal);
+  cancelBtn && cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && modal.style.display === 'flex') closeModal(); });
+
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function renderUsers(users) {
+    if (!userList) return;
+    userList.innerHTML = '';
+    if (!users.length) {
+      userList.innerHTML = '<p style="color:#64748b;font-size:.82rem;text-align:center;margin:.75rem 0">Aucun utilisateur trouv\u00e9</p>';
+      return;
+    }
+    users.forEach(function(u) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.style.cssText = 'width:100%;text-align:left;background:rgba(255,255,255,.05);border:1.5px solid transparent;border-radius:7px;padding:.45rem .75rem;color:#f1f5f9;font-size:.85rem;cursor:pointer;transition:background .12s,border-color .12s;display:flex;align-items:center;gap:.5rem';
+      row.innerHTML = '<span style="font-weight:600">' + escHtml(u.username) + '</span>'
+        + (u.email ? '<span style="color:#64748b;font-size:.78rem">' + escHtml(u.email) + '</span>' : '');
+      row.dataset.userId = u.id;
+      row.addEventListener('click', function() {
+        userList.querySelectorAll('button').forEach(function(b) { b.style.borderColor = 'transparent'; b.style.background = 'rgba(255,255,255,.05)'; });
+        row.style.borderColor = '#fbbf24';
+        row.style.background = 'rgba(251,191,36,.12)';
+        _selectedUserId = u.id;
+        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.style.opacity = '1'; }
+      });
+      userList.appendChild(row);
+    });
+  }
+
+  searchInput && searchInput.addEventListener('input', function() {
+    var q = searchInput.value.trim();
+    clearTimeout(_searchTimeout);
+    if (!q) {
+      if (userList) userList.innerHTML = '<p style="color:#64748b;font-size:.82rem;text-align:center;margin:.75rem 0">Tapez pour rechercher un utilisateur\u2026</p>';
+      return;
+    }
+    _searchTimeout = setTimeout(function() {
+      fetch('/admin/users-for-gift?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(d) { renderUsers(d.users || []); })
+        .catch(function() {});
+    }, 300);
+  });
+
+  confirmBtn && confirmBtn.addEventListener('click', function() {
+    if (!_selectedUserId || !_giftTarget) return;
+    confirmBtn.disabled = true;
+    var body = { targetUserId: _selectedUserId, type: _giftTarget.type };
+    if (_giftTarget.type === 'image') body.imageId = _giftTarget.id;
+    else body.charmId = _giftTarget.id;
+    fetch('/admin/recompenses/gift', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) {
+        if (statusEl) { statusEl.textContent = '\u2713 Cadeau envoy\u00e9 !'; statusEl.style.color = '#4ade80'; }
+        setTimeout(closeModal, 1500);
+      } else {
+        if (statusEl) { statusEl.textContent = '\u2717 ' + (d.error || 'Erreur'); statusEl.style.color = '#f87171'; }
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+      }
+    }).catch(function() {
+      if (statusEl) { statusEl.textContent = '\u2717 Erreur r\u00e9seau'; statusEl.style.color = '#f87171'; }
+      confirmBtn.disabled = false;
+      confirmBtn.style.opacity = '1';
+    });
+  });
+
+  window._adminOpenGiftModal = openModal;
+})();
+</script>
 
 <%- include('partials/foot') %>

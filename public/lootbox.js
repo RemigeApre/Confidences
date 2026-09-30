@@ -167,7 +167,9 @@
 
       // 3 récompenses en file d'attente
       var rewards = data.rewards || [];
+      var isGift = !!data.isGift;
       rewards.forEach(function (r) {
+        r._isGift = isGift;
         _sessionRewards.push(r);
         _rewardQueue.push(r);
       });
@@ -351,6 +353,15 @@
       else                    hintEl.setAttribute("hidden", "");
     }
     if (card) {
+      // Gift banner
+      var _gb = card.querySelector('.lootbox-gift-banner');
+      if (_gb) _gb.remove();
+      if (reward._isGift) {
+        var _gb = document.createElement('div');
+        _gb.className = 'lootbox-gift-banner';
+        _gb.textContent = '\uD83C\uDF81 Cadeau sp\u00e9cial';
+        card.insertBefore(_gb, card.firstChild);
+      }
       card.removeAttribute("hidden");
       card.classList.remove("lootbox-card--in");
       requestAnimationFrame(function () {
@@ -394,6 +405,15 @@
     if (charmEquipDone) charmEquipDone.setAttribute("hidden", "");
 
     charmReveal.setAttribute("data-rarity", reward.rarity || "legendary");
+    // Gift banner
+    var _cg = charmReveal.querySelector('.lootbox-gift-banner');
+    if (_cg) _cg.remove();
+    if (reward._isGift) {
+      var _cgb = document.createElement('div');
+      _cgb.className = 'lootbox-gift-banner';
+      _cgb.textContent = '\uD83C\uDF81 Cadeau sp\u00e9cial';
+      charmReveal.insertBefore(_cgb, charmReveal.firstChild);
+    }
     charmReveal.removeAttribute("hidden");
 
     if (closeBtn) closeBtn.removeAttribute("hidden");

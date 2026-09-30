@@ -17586,3 +17586,51 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .coffre-charm-btn:hover { background: rgba(255,255,255,.14); color: #f1f5f9; }
 .coffre-charm-btn--active { border-color: var(--charm-color, #fbbf24); color: var(--charm-color, #fbbf24); }
+
+/* ── Coffre — filtre par rareté ── */
+.coffre-filter-bar {
+  display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem;
+}
+.coffre-filter-btn {
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.5); border-radius: 5px; padding: .3rem .65rem;
+  font-size: .75rem; font-weight: 600; cursor: pointer;
+  text-transform: uppercase; letter-spacing: .04em;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.coffre-filter-btn:hover { background: rgba(255,255,255,.1); color: #e2e8f0; }
+.coffre-filter-btn.active {
+  background: rgba(255,255,255,.13); color: #f1f5f9;
+  border-color: rgba(255,255,255,.35);
+}
+
+/* ── Coffre — bouton favori ── */
+.coffre-fav-btn {
+  position: absolute; top: 5px; right: 5px;
+  background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 50%; width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; line-height: 1; cursor: pointer; color: rgba(255,255,255,.45);
+  transition: background .15s, color .15s, border-color .15s;
+  z-index: 2;
+}
+.coffre-fav-btn:hover { background: rgba(0,0,0,.75); color: #f87171; }
+.coffre-fav-btn--active { color: #f87171; border-color: rgba(248,113,113,.5); }
+
+/* ── Charm card — bouton achat ── */
+.coffre-charm-btn--buy {
+  border-color: rgba(96,165,250,.5); color: #60a5fa;
+  background: rgba(96,165,250,.08);
+}
+.coffre-charm-btn--buy:hover { background: rgba(96,165,250,.18); color: #93c5fd; }
+
+/* ── Lootbox — bannière cadeau ── */
+.lootbox-gift-banner {
+  position: absolute; top: 0; left: 0; right: 0;
+  background: linear-gradient(135deg, rgba(251,191,36,.25), rgba(251,191,36,.1));
+  border-bottom: 1px solid rgba(251,191,36,.4);
+  color: #fbbf24; font-size: .8rem; font-weight: 700;
+  text-align: center; padding: .35rem .5rem;
+  letter-spacing: .04em; text-transform: uppercase;
+  z-index: 1;
+}
