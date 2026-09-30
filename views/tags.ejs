@@ -1,9 +1,11 @@
 <%- include('partials/head', { title: 'Tous les tags' }) %>
 <%
-  var CAT_LABELS = { femme: 'Femme', homme: 'Homme', rapport: 'Rapport', lieu: 'Lieu', relation: 'Relation', objet: 'Objet', autre: 'Autre' };
-  var CAT_ORDER  = ['femme', 'homme', 'rapport', 'lieu', 'relation', 'objet', 'autre'];
-  var CAT_MAX    = 20;
-  // Regrouper les tags par catégorie (déjà triés par count desc côté serveur)
+  var CAT_LABELS   = { femme: 'Femme', homme: 'Homme', rapport: 'Rapport', lieu: 'Lieu', relation: 'Relation', objet: 'Objet', autre: 'Autre' };
+  var CAT_ORDER    = ['femme', 'homme', 'rapport', 'lieu', 'relation', 'objet', 'autre'];
+  var CAT_WITH_SUB = { femme: true, homme: true };
+  var SUBCAT_ORDER  = ['physique', 'fantastique', 'vetements', 'autre'];
+  var SUBCAT_LABELS = { physique: 'Physique', fantastique: 'Fantastique et impossible', vetements: 'V\u00eatements', autre: 'Autre' };
+  var CAT_MAX = 20;
   var tagsByCat = {};
   CAT_ORDER.forEach(function(c) { tagsByCat[c] = []; });
   tags.forEach(function(item) {
@@ -42,6 +44,18 @@
             <% CAT_ORDER.forEach(function(cat) { %>
             <button type="button" class="tag-chip" data-cat-filter="<%= cat %>"><%= CAT_LABELS[cat] %></button>
             <% }) %>
+          </div>
+        </div>
+
+        <%# ─ Filtre sous-catégorie (femme / homme uniquement, affiché via JS) ─ %>
+        <div class="wiki-filter-section" id="tags-subcat-filter-section" hidden>
+          <span class="wiki-filter-label" id="tags-subcat-filter-label"></span>
+          <div class="links-filter tags-cat-filter-wrap" id="tags-subcat-filter">
+            <button type="button" class="tag-chip active" data-subcat-filter="">Toutes</button>
+            <button type="button" class="tag-chip" data-subcat-filter="physique">Physique</button>
+            <button type="button" class="tag-chip" data-subcat-filter="fantastique">Fantastique et impossible</button>
+            <button type="button" class="tag-chip" data-subcat-filter="vetements">V&ecirc;tements</button>
+            <button type="button" class="tag-chip" data-subcat-filter="autre">Autre</button>
           </div>
         </div>
 
@@ -111,12 +125,53 @@
       <div class="tags-cat-group" data-category="<%= cat %>">
         <div class="tags-cat-header">
           <span class="tags-cat-label"><%= CAT_LABELS[cat] %></span>
-          <% if (catItems.length > CAT_MAX) { %>
+          <% if (!CAT_WITH_SUB[cat] && catItems.length > CAT_MAX) { %>
           <button type="button" class="tags-cat-more-btn" data-cat="<%= cat %>">
             +<%= catItems.length - CAT_MAX %> &rarr;
           </button>
           <% } %>
         </div>
+        <% if (CAT_WITH_SUB[cat]) { %>
+        <%# ── Vue sous-catégorisée (femme / homme) ── %>
+        <%
+          var tagsBySubcat = {};
+          SUBCAT_ORDER.forEach(function(s){ tagsBySubcat[s] = []; });
+          tagsBySubcat[''] = [];
+          catItems.forEach(function(item){
+            var s = item.subcategory || '';
+            (tagsBySubcat[s] || (tagsBySubcat[''] = tagsBySubcat[''])).push(item);
+          });
+        %>
+        <% SUBCAT_ORDER.forEach(function(subcat) { %>
+        <%   var subcatItems = tagsBySubcat[subcat] || []; %>
+        <%   if (subcat === 'autre') subcatItems = subcatItems.concat(tagsBySubcat['']); %>
+        <%   if (subcatItems.length === 0) { return; } %>
+        <div class="tags-subcat-group">
+          <span class="tags-subcat-label"><%= SUBCAT_LABELS[subcat] %></span>
+          <div class="tags-cat-body">
+            <% subcatItems.forEach(function(item) { %>
+            <% var wikiId = wikiPageByTitle[item.tag.toLowerCase()] || null; %>
+            <div class="tags-item tags-item--<%= item.type %><%= wikiId ? ' tags-item--wiki-page' : '' %><%= item.parent ? ' tags-item--variant' : '' %>"
+                 data-tag="<%= item.tag %>"
+                 data-type="<%= item.type %>"
+                 data-category="<%= item.category || 'autre' %>"
+                 data-subcategory="<%= item.subcategory || '' %>"
+                 data-parent="<%= item.parent || '' %>"
+                 data-wiki-id="<%= wikiId || '' %>"
+                 data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
+                 style="--tag-pct: <%= item.pct.toFixed(3) %>">
+              <span class="tags-item-name"><%= item.tag %></span>
+              <span class="tags-item-right">
+                <span class="tags-item-count"><%= item.count %></span>
+                <% if (wikiId) { %><a href="/wiki/<%= wikiId %>" class="tags-item-wiki-link" title="Voir la page codex" aria-label="Voir la page codex">&#8599;</a><% } %>
+              </span>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+        <% }) %>
+        <% } else { %>
+        <%# ── Vue plate (autres catégories) ── %>
         <div class="tags-cat-body">
           <% catItems.forEach(function(item, idx) { %>
           <% var wikiId = wikiPageByTitle[item.tag.toLowerCase()] || null; %>
@@ -124,6 +179,7 @@
                data-tag="<%= item.tag %>"
                data-type="<%= item.type %>"
                data-category="<%= item.category || 'autre' %>"
+               data-subcategory=""
                data-parent="<%= item.parent || '' %>"
                data-wiki-id="<%= wikiId || '' %>"
                data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
@@ -132,13 +188,12 @@
             <span class="tags-item-name"><%= item.tag %></span>
             <span class="tags-item-right">
               <span class="tags-item-count"><%= item.count %></span>
-              <% if (wikiId) { %>
-                <a href="/wiki/<%= wikiId %>" class="tags-item-wiki-link" title="Voir la page codex" aria-label="Voir la page codex">&#8599;</a>
-              <% } %>
+              <% if (wikiId) { %><a href="/wiki/<%= wikiId %>" class="tags-item-wiki-link" title="Voir la page codex" aria-label="Voir la page codex">&#8599;</a><% } %>
             </span>
           </div>
           <% }) %>
         </div>
+        <% } %>
       </div>
       <% } %>
       <% }) %>
@@ -152,6 +207,7 @@
            data-tag="<%= item.tag %>"
            data-type="<%= item.type %>"
            data-category="<%= item.category || 'autre' %>"
+           data-subcategory="<%= item.subcategory || '' %>"
            data-parent="<%= item.parent || '' %>"
            data-wiki-id="<%= wikiId || '' %>"
            data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
@@ -214,12 +270,26 @@
   /* ── État des filtres ── */
   var typeStates   = {};   // type → 0 neutre / 1 inclus / 2 exclu
   var activeCat    = "";   // catégorie active (vide = toutes)
-  var hideVariants = false; // masquer les déclinaisons (tags avec parent)
+  var activeSubcat = "";   // sous-catégorie active (femme/homme uniquement)
+  var hideVariants = false;
+
+  var CATS_WITH_SUBCAT = { femme: true, homme: true };
+  var subcatSection    = document.getElementById("tags-subcat-filter-section");
+  var subcatLabel      = document.getElementById("tags-subcat-filter-label");
+  var subcatFilter     = document.getElementById("tags-subcat-filter");
+
+  function syncSubcatPanel() {
+    var show = CATS_WITH_SUBCAT[activeCat];
+    if (subcatSection) subcatSection.hidden = !show;
+    if (show && subcatLabel) subcatLabel.textContent = (activeCat === 'femme' ? 'Femme' : 'Homme') + ' — sous-catégorie';
+    if (!show) { activeSubcat = ""; if (subcatFilter) subcatFilter.querySelectorAll(".tag-chip").forEach(function(b){ b.classList.toggle("active", (b.dataset.subcatFilter || "") === ""); }); }
+  }
 
   function hasAnyFilter() {
     var q = searchInput ? searchInput.value.trim() : "";
     if (q) return true;
     if (activeCat) return true;
+    if (activeSubcat) return true;
     if (hideVariants) return true;
     if (Object.values(typeStates).some(function (v) { return v > 0; })) return true;
     return false;
@@ -252,9 +322,10 @@
       var t         = item.dataset.type || "normal";
       var matchType = (includedTypes.length === 0 || includedTypes.indexOf(t) !== -1)
                     && excludedTypes.indexOf(t) === -1;
-      var matchCat  = !activeCat || item.dataset.category === activeCat;
+      var matchCat    = !activeCat || item.dataset.category === activeCat;
+      var matchSubcat = !activeSubcat || (item.dataset.subcategory || "") === activeSubcat;
       var matchVariant = !hideVariants || !item.dataset.parent;
-      var show = matchQ && matchType && matchCat && matchVariant;
+      var show = matchQ && matchType && matchCat && matchSubcat && matchVariant;
       item.hidden = !show;
       if (show) visible++;
     });
@@ -298,6 +369,21 @@
         }
         catFilter.querySelectorAll(".tag-chip").forEach(function (b) {
           b.classList.toggle("active", (b.dataset.catFilter || "") === activeCat);
+        });
+        syncSubcatPanel();
+        applyFilters();
+      });
+    });
+  }
+
+  /* ── Filtre sous-catégorie ── */
+  if (subcatFilter) {
+    subcatFilter.querySelectorAll(".tag-chip[data-subcat-filter]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var val = btn.dataset.subcatFilter || "";
+        activeSubcat = (activeSubcat === val && val !== "") ? "" : val;
+        subcatFilter.querySelectorAll(".tag-chip").forEach(function (b) {
+          b.classList.toggle("active", (b.dataset.subcatFilter || "") === activeSubcat);
         });
         applyFilters();
       });

@@ -321,6 +321,9 @@ window.buildTagBadgeHTML = function (tag) {
   var catBtn        = document.getElementById("tag-popup-category-btn");
   var parentInput   = document.getElementById("tag-popup-parent-input");
   var parentBtn     = document.getElementById("tag-popup-parent-btn");
+  var subcatRow     = document.getElementById("tag-popup-subcat-row");
+  var subcatSelect  = document.getElementById("tag-popup-subcat-select");
+  var subcatBtn     = document.getElementById("tag-popup-subcat-btn");
   var feedbackEl    = document.getElementById("tag-popup-admin-feedback");
   var blacklistBtn = document.getElementById("tag-popup-blacklist-btn");
 
@@ -374,6 +377,13 @@ window.buildTagBadgeHTML = function (tag) {
     if (parentInput) {
       var tagMeta = (window.TAG_REGISTRY || {})[currentTag] || {};
       parentInput.value = tagMeta.parent || "";
+    }
+    if (subcatRow && subcatSelect) {
+      var _meta2 = (window.TAG_REGISTRY || {})[currentTag] || {};
+      var _cat2  = _meta2.category || "";
+      var showSubcat = (_cat2 === "femme" || _cat2 === "homme");
+      subcatRow.hidden = !showSubcat;
+      if (showSubcat) subcatSelect.value = _meta2.subcategory || "";
     }
     syncTypeBtns();
     syncBlacklistBtn();
@@ -546,6 +556,30 @@ window.buildTagBadgeHTML = function (tag) {
             document.querySelectorAll('.tags-item[data-tag="' + currentTag + '"]').forEach(function (el) {
               el.dataset.parent = parent;
             });
+          } else {
+            if (feedbackEl) { feedbackEl.textContent = (d && d.error) || "Erreur"; feedbackEl.style.color = "#e05555"; }
+          }
+        })
+        .catch(function () { if (feedbackEl) feedbackEl.textContent = "Erreur r\u00e9seau"; });
+    });
+  }
+
+  if (subcatBtn && subcatSelect) {
+    subcatBtn.addEventListener("click", function () {
+      if (!currentTag) return;
+      var subcategory = subcatSelect.value;
+      fetch("/api/tags/subcategory", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag: currentTag, subcategory: subcategory }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok) {
+            if (feedbackEl) { feedbackEl.textContent = subcategory ? ("Sous-cat\u00e9gorie \u00ab\u00a0" + subcategory + "\u00a0\u00bb enregistr\u00e9e.") : "Sous-cat\u00e9gorie effac\u00e9e."; feedbackEl.style.color = "var(--accent)"; }
+            if (window.TAG_REGISTRY && window.TAG_REGISTRY[currentTag]) {
+              window.TAG_REGISTRY[currentTag].subcategory = subcategory;
+            }
           } else {
             if (feedbackEl) { feedbackEl.textContent = (d && d.error) || "Erreur"; feedbackEl.style.color = "#e05555"; }
           }

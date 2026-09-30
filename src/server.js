@@ -20,7 +20,7 @@ const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
 const { attachUser } = require("./auth");
 const {
-  db, getAllTagMeta, getAllTagCategories, getAllTagParents, setTagType, setTagCategory, setTagParent, createStandaloneTag, renameTagEverywhere,
+  db, getAllTagMeta, getAllTagCategories, getAllTagParents, getAllTagSubcategories, setTagType, setTagCategory, setTagParent, setTagSubcategory, createStandaloneTag, renameTagEverywhere,
   listWikiPages, listGalleryImages, listBdBooks, recordActivityPing,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
@@ -261,6 +261,8 @@ app.use((req, res, next) => {
       bdBooks: req.user ? listBdBooks() : [],
       tagMeta: getAllTagMeta(),
       tagParents: getAllTagParents(),
+      tagCategories: getAllTagCategories(),
+      tagSubcategories: getAllTagSubcategories(),
     });
   } catch (_) {
     res.locals.tagRegistry = {};
@@ -395,15 +397,18 @@ app.get("/tags", function (req, res) {
 
   var parentMap = {};
   try { parentMap = getAllTagParents(); } catch (_) {}
+  var subcategoryMap = {};
+  try { subcategoryMap = getAllTagSubcategories(); } catch (_) {}
 
   var tags = Array.from(allKeys).map(function (t) {
     return {
-      tag:      t,
-      count:    (wiki[t] || 0) + (galerie[t] || 0) + (bd[t] || 0),
-      breakdown:{ wiki: wiki[t] || 0, galerie: galerie[t] || 0, bd: bd[t] || 0 },
-      type:     resolveTagType(t, metaMap),
-      category: categoryMap[t] || "autre",
-      parent:   parentMap[t] || "",
+      tag:         t,
+      count:       (wiki[t] || 0) + (galerie[t] || 0) + (bd[t] || 0),
+      breakdown:   { wiki: wiki[t] || 0, galerie: galerie[t] || 0, bd: bd[t] || 0 },
+      type:        resolveTagType(t, metaMap),
+      category:    categoryMap[t] || "autre",
+      parent:      parentMap[t] || "",
+      subcategory: subcategoryMap[t] || "",
     };
   }).sort(function (a, b) {
     var d = b.count - a.count;
@@ -459,6 +464,16 @@ app.put("/api/tags/parent", function (req, res) {
   // Un tag ne peut pas être sa propre déclinaison
   if (tag === parent) return res.json({ ok: false, error: "Circulaire" });
   setTagParent(tag, parent);
+  res.json({ ok: true });
+});
+
+// ── API admin : définir la sous-catégorie d'un tag ────────────────────────
+app.put("/api/tags/subcategory", function (req, res) {
+  if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false, error: "Interdit" });
+  var tag         = String(req.body.tag         || "").toLowerCase().trim();
+  var subcategory = String(req.body.subcategory || "").toLowerCase().trim();
+  if (!tag) return res.status(400).json({ ok: false, error: "Tag vide" });
+  setTagSubcategory(tag, subcategory);
   res.json({ ok: true });
 });
 

@@ -11,7 +11,7 @@ function resolveTagType(tagName, metaMap) {
   return AUTO_TYPES[tagName] || "normal";
 }
 
-function buildTagRegistry({ wikiPages, galleryImages, bdBooks, tagMeta, tagParents }) {
+function buildTagRegistry({ wikiPages, galleryImages, bdBooks, tagMeta, tagParents, tagCategories, tagSubcategories }) {
   const metaMap = tagMeta || {};
   const counts = {};
   function countTags(items) {
@@ -60,8 +60,10 @@ function buildTagRegistry({ wikiPages, galleryImages, bdBooks, tagMeta, tagParen
     else tier = "normal";
     const count = counts[tag] || 0;
     const pct = tier === "normal" && maxNormalCount > 0 ? Math.min(1, count / maxNormalCount) : 0;
-    const parent = (tagParents || {})[tag] || "";
-    return { tier, wikiPageId: page ? page.wikiPageId : null, count, pct: Math.round(pct * 100) / 100, parent };
+    const parent      = (tagParents || {})[tag] || "";
+    const category    = (tagCategories || {})[tag] || "";
+    const subcategory = (tagSubcategories || {})[tag] || "";
+    return { tier, wikiPageId: page ? page.wikiPageId : null, count, pct: Math.round(pct * 100) / 100, parent, category, subcategory };
   }
 
   const registry = {};
