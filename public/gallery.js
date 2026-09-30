@@ -310,6 +310,7 @@
   var hideIrrealiste = storedHideIrrealiste !== null ? storedHideIrrealiste === "1" : (window.IRREALISTE_MODE || "visible") === "hidden";
   var hideAiSuspected = localStorage.getItem("gallery-hide-ai") === "1";
   var activeParody   = "";
+  var activeProtagonist = 0; // 0 = tous, sinon ID du personnage filtré
   var activeProcessed = ""; // "" = tous, "0" = à traiter, "1" = traité
   var activeRating   = 0;
   var sortMode       = "date-desc";
@@ -342,7 +343,18 @@
       var cardTags = (card.dataset.tags || "").split("|").filter(Boolean);
 
       var okCategory = !activeCategory || card.dataset.category === activeCategory;
-      var okSearch   = !q || norm(card.dataset.title).indexOf(q) !== -1 || cardTags.some(function(t){ return norm(t).indexOf(q) !== -1; });
+      var okProtagonist = !activeProtagonist || (card.dataset.protagonists || "").split(",").map(Number).indexOf(activeProtagonist) !== -1;
+      var okSearch   = !q || norm(card.dataset.title).indexOf(q) !== -1
+        || cardTags.some(function(t){ return norm(t).indexOf(q) !== -1; })
+        || norm(card.dataset.parody || "").indexOf(q) !== -1
+        || norm(card.dataset.author || "").indexOf(q) !== -1
+        || norm(card.dataset.category || "").indexOf(q) !== -1
+        || (function() {
+          var prots = window.GALLERY_PROTAGONISTS || {};
+          return (card.dataset.protagonists || "").split(",").some(function(pid) {
+            pid = pid.trim(); return pid && norm(prots[pid] || "").indexOf(q) !== -1;
+          });
+        })();
       var okUltra       = !hideUltra || card.dataset.ultra !== "1";
       var okIrrealiste  = !hideIrrealiste || card.dataset.irrealiste !== "1";
       var okAi          = !hideAiSuspected || card.dataset.ai !== "1";
@@ -355,7 +367,7 @@
       var okBlacklist = blacklistSet.size === 0 || !cardTags.some(function(t) { return blacklistSet.has(t); });
 
       var okProcessed = !activeProcessed || card.dataset.processed === activeProcessed;
-      var passes = okCategory && okSearch && okUltra && okIrrealiste && okAi && okRating && okParody && okTag && okBlacklist && okProcessed;
+      var passes = okCategory && okSearch && okUltra && okIrrealiste && okAi && okRating && okParody && okProtagonist && okTag && okBlacklist && okProcessed;
       card.dataset.filtered = passes ? "1" : "0";
       if (passes) filteredCards.push(card);
     });
@@ -374,7 +386,7 @@
 
     var total = filteredCards.length;
     var totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
-    var hasFilter = Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating || activeParody || activeProcessed;
+    var hasFilter = Object.keys(tagStates).some(function(t){ return tagStates[t]; }) || activeCategory || q || hideUltra || hideIrrealiste || activeRating || activeParody || activeProtagonist || activeProcessed;
     if (countHero) countHero.textContent = hasFilter ? (total + "/" + cards.length) : cards.length;
     if (resultCount) { resultCount.hidden = !hasFilter; if (hasFilter) resultCount.textContent = total + " / " + cards.length; }
 
@@ -624,6 +636,34 @@
   }
   syncHideAiBtn();
 
+  // Filtre personnages
+  var protFilterEl    = document.getElementById("gallery-prot-filter");
+  var protSearchInput = document.getElementById("gallery-prot-search");
+  if (protFilterEl) {
+    protFilterEl.querySelectorAll(".gallery-prot-chip").forEach(function(chip) {
+      chip.addEventListener("click", function() {
+        var pid = Number(chip.dataset.protId);
+        if (activeProtagonist === pid) {
+          activeProtagonist = 0;
+          chip.classList.remove("active");
+        } else {
+          activeProtagonist = pid;
+          protFilterEl.querySelectorAll(".gallery-prot-chip").forEach(function(c) { c.classList.remove("active"); });
+          chip.classList.add("active");
+        }
+        applyFilters();
+      });
+    });
+  }
+  if (protSearchInput && protFilterEl) {
+    protSearchInput.addEventListener("input", function() {
+      var q = norm(protSearchInput.value.trim());
+      protFilterEl.querySelectorAll(".gallery-prot-chip").forEach(function(chip) {
+        chip.hidden = q.length > 0 && norm(chip.querySelector(".wtc-label").textContent).indexOf(q) === -1;
+      });
+    });
+  }
+
   // Reset filters
   var resetFiltersBtn = document.getElementById("gallery-reset-btn");
   if (resetFiltersBtn) {
@@ -662,6 +702,10 @@
       activeParody = "";
       var parodyBlock = document.getElementById("gallery-parody-filter-block");
       if (parodyBlock && typeof parodyBlock._reset === "function") parodyBlock._reset();
+      // Effacer personnage
+      activeProtagonist = 0;
+      if (protFilterEl) protFilterEl.querySelectorAll(".gallery-prot-chip").forEach(function(c) { c.classList.remove("active"); });
+      if (protSearchInput) { protSearchInput.value = ""; if (protFilterEl) protFilterEl.querySelectorAll(".gallery-prot-chip").forEach(function(c) { c.hidden = false; }); }
       applyFilters();
     });
   }
@@ -2065,9 +2109,20 @@
       function renderProtDrop(q) {
         protDrop.innerHTML = ""; protAcSel = -1;
         var prots = window.GALLERY_PROTAGONISTS || {};
+        var meta  = window.GALLERY_PROT_META || {};
+        var currentParody = (document.getElementById("lbep-parody-inp") || {}).value || "";
         var sel = Array.from(protChips.querySelectorAll(".lbep-chip")).map(function(c) { return Number(c.dataset.protId); });
         var matches = Object.keys(prots)
-          .filter(function(id) { return prots[id].toLowerCase().indexOf(q.toLowerCase()) !== -1 && sel.indexOf(Number(id)) === -1; })
+          .filter(function(id) {
+            if (prots[id].toLowerCase().indexOf(q.toLowerCase()) === -1) return false;
+            if (sel.indexOf(Number(id)) !== -1) return false;
+            // Si une parodie est saisie, ne montrer que les personnages de cette parodie ou sans parodie
+            if (currentParody.trim()) {
+              var pm = meta[id]; var pp = pm ? pm.parody : "";
+              if (pp && pp.toLowerCase() !== currentParody.trim().toLowerCase()) return false;
+            }
+            return true;
+          })
           .slice(0, 8);
         if (!matches.length) { protDrop.hidden = true; return; }
         matches.forEach(function(id) {
@@ -2092,6 +2147,16 @@
         var chip = makeChip(label, null);
         chip.dataset.protId = id;
         protChips.appendChild(chip);
+        // Auto-remplir la parodie si le personnage en a une et le champ est vide
+        var meta = (window.GALLERY_PROT_META || {})[id];
+        if (meta && meta.parody) {
+          var parodyInpEl = document.getElementById("lbep-parody-inp");
+          var subInpEl    = document.getElementById("lbep-sub-inp");
+          if (parodyInpEl && !parodyInpEl.value.trim()) {
+            parodyInpEl.value = meta.parody;
+            if (subInpEl && !subInpEl.value.trim() && meta.sub_parody) subInpEl.value = meta.sub_parody;
+          }
+        }
       }
 
       protInp.addEventListener("input", function() {

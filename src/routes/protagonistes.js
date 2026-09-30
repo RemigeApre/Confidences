@@ -5,9 +5,14 @@ const multer = require("multer");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
 const { normalizeParody } = db;
+const { insertGalleryImage } = db;
+const { generateThumb } = require("../thumbs");
 
 const uploadsDir = path.join(__dirname, "..", "..", "data", "uploads", "personnages");
 fs.mkdirSync(uploadsDir, { recursive: true });
+
+const galleryUploadsDir = path.join(__dirname, "..", "..", "data", "uploads", "gallery");
+fs.mkdirSync(galleryUploadsDir, { recursive: true });
 
 const ALLOWED_EXT = { "image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp" };
 const upload = multer({
@@ -20,6 +25,18 @@ const upload = multer({
   }),
   fileFilter(req, file, cb) { cb(null, !!ALLOWED_EXT[file.mimetype]); },
   limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+const galleryUpload = multer({
+  storage: multer.diskStorage({
+    destination: galleryUploadsDir,
+    filename(req, file, cb) {
+      const ext = ALLOWED_EXT[file.mimetype] || "";
+      cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+    },
+  }),
+  fileFilter(req, file, cb) { cb(null, !!ALLOWED_EXT[file.mimetype]); },
+  limits: { fileSize: 20 * 1024 * 1024 },
 });
 
 const VALID_GENDERS = new Set(["femme", "homme", "autre", ""]);
@@ -115,6 +132,30 @@ function buildProtagonistesRouter(config) {
     }
     db.deleteProtagoniste(req.params.id);
     res.redirect("/protagonistes");
+  });
+
+  router.post("/:id/gallery-upload", requireAdmin, galleryUpload.array("images", 50), (req, res) => {
+    const protagoniste = db.getProtagoniste(req.params.id);
+    if (!protagoniste) return res.redirect("/protagonistes");
+    const files = req.files || [];
+    const parody    = normalizeParody(String(req.body.parody    || protagoniste.parody    || ""));
+    const subParody = normalizeParody(String(req.body.sub_parody || protagoniste.sub_parody || ""));
+    files.forEach((f) => {
+      const p = `/uploads/gallery/${f.filename}`;
+      generateThumb(p);
+      insertGalleryImage({
+        imagePaths:     [p],
+        title:          "",
+        tags:           [],
+        notes:          "",
+        category:       "",
+        author:         "",
+        parody,
+        subParody,
+        protagonistIds: [protagoniste.id],
+      });
+    });
+    res.redirect(`/protagonistes/${protagoniste.id}`);
   });
 
   return router;

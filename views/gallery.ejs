@@ -93,6 +93,21 @@
             }) %>
       <% } %>
 
+      <% if (allProtagonists && allProtagonists.length) { %>
+      <details class="wiki-subpanel-details">
+        <summary class="wiki-subpanel-summary">Personnages</summary>
+        <input type="search" id="gallery-prot-search" class="wiki-tag-search-input"
+          placeholder="Chercher un personnage" autocomplete="off" />
+        <div class="wiki-tag-cloud" id="gallery-prot-filter">
+          <% allProtagonists.forEach(function(p) { %>
+            <button type="button" class="wiki-tag-chip gallery-prot-chip" data-prot-id="<%= p.id %>">
+              <span class="wtc-label"><%= p.name %></span>
+            </button>
+          <% }) %>
+        </div>
+      </details>
+      <% } %>
+
       </details>
 
       <%- include('partials/filters/filter-reset', {
@@ -369,6 +384,7 @@
 <script>
 window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;
 window.GALLERY_PROTAGONISTS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;
+window.GALLERY_PROT_META = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = { parody: p.parody || '', sub_parody: p.sub_parody || '' }; return m; }, {})) %>;
 </script>
 <script src="/gallery.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

@@ -115,6 +115,51 @@
     <p class="nv-empty" style="margin-top:2rem">Ce personnage n'apparaît dans aucun contenu pour le moment.</p>
   <% } %>
 
+  <%# ── Upload images galerie (admin) ── %>
+  <% if (currentUser && currentUser.isAdmin) { %>
+    <section class="prot-section prot-section--upload">
+      <h2 class="nv-strip-title">Ajouter des images à la galerie</h2>
+      <form method="POST" action="/protagonistes/<%= protagoniste.id %>/gallery-upload"
+        enctype="multipart/form-data" class="prot-upload-form">
+        <label class="prot-upload-dropzone" id="prot-gal-drop">
+          <input type="file" name="images" accept="image/*" multiple id="prot-gal-input" style="display:none" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:2rem;height:2rem;opacity:.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <span id="prot-gal-label">Choisir des images…</span>
+        </label>
+        <div class="prot-upload-previews" id="prot-gal-previews"></div>
+        <button type="submit" class="wf-save-btn" id="prot-gal-submit" disabled>Envoyer</button>
+      </form>
+    </section>
+    <script>
+    (function() {
+      var inp = document.getElementById("prot-gal-input");
+      var lbl = document.getElementById("prot-gal-label");
+      var prev = document.getElementById("prot-gal-previews");
+      var btn = document.getElementById("prot-gal-submit");
+      var drop = document.getElementById("prot-gal-drop");
+      function update(files) {
+        lbl.textContent = files.length ? files.length + " image(s) sélectionnée(s)" : "Choisir des images…";
+        btn.disabled = !files.length;
+        prev.innerHTML = "";
+        Array.from(files).forEach(function(f) {
+          var img = document.createElement("img");
+          img.src = URL.createObjectURL(f);
+          img.className = "prot-upload-preview-img";
+          prev.appendChild(img);
+        });
+      }
+      if (inp) inp.addEventListener("change", function() { update(inp.files); });
+      ["dragover","dragenter"].forEach(function(ev) { drop.addEventListener(ev, function(e) { e.preventDefault(); drop.classList.add("drag-over"); }); });
+      ["dragleave","dragend"].forEach(function(ev) { drop.addEventListener(ev, function() { drop.classList.remove("drag-over"); }); });
+      drop.addEventListener("drop", function(e) {
+        e.preventDefault(); drop.classList.remove("drag-over");
+        try { var dt = new DataTransfer(); Array.from(e.dataTransfer.files).forEach(function(f) { dt.items.add(f); }); inp.files = dt.files; } catch(_) {}
+        update(e.dataTransfer.files);
+      });
+    })();
+    </script>
+  <% } %>
+
   <%# ── Bouton modifier (bas-droite fixe, admin uniquement) ── %>
   <% if (currentUser && currentUser.isAdmin) { %>
     <a href="/protagonistes/<%= protagoniste.id %>/edit" class="prot-edit-fab" title="Modifier le personnage" aria-label="Modifier le personnage">
