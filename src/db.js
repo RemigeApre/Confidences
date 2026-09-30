@@ -1871,19 +1871,27 @@ function setGalleryImageWikiSynced(id, synced) {
   db.prepare("UPDATE gallery_images SET wiki_synced = ? WHERE id = ?").run(synced ? 1 : 0, id);
 }
 
-function updateGalleryImage(id, { title, titleVisible, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds }) {
-  const existing = db.prepare("SELECT image_paths, filename FROM gallery_images WHERE id = ?").get(id);
-  if (!existing) return false;
-  // Si imagePaths n'est pas fourni, conserver les images existantes
-  let finalImagePaths = imagePaths;
-  if (finalImagePaths === undefined) {
-    finalImagePaths = JSON.parse(existing.image_paths || "[]");
-    if (!finalImagePaths.length && existing.filename) finalImagePaths = [existing.filename];
-  }
+function updateGalleryImage(id, updates) {
+  const row = db.prepare("SELECT * FROM gallery_images WHERE id = ?").get(id);
+  if (!row) return false;
+  const img = rowToGalleryImage(row);
+  // Chaque champ utilise la valeur fournie, sinon conserve la valeur existante.
+  const u = updates || {};
+  const title          = u.title          !== undefined ? (u.title          || "")  : img.title;
+  const titleVisible   = u.titleVisible   !== undefined ? u.titleVisible             : img.titleVisible;
+  const category       = u.category       !== undefined ? (u.category       || "")  : img.category;
+  const tags           = u.tags           !== undefined ? (u.tags           || [])  : img.tags;
+  const notes          = u.notes          !== undefined ? (u.notes          || "")  : img.notes;
+  const author         = u.author         !== undefined ? (u.author         || "")  : img.author;
+  const parody         = u.parody         !== undefined ? (u.parody         || "")  : img.parody;
+  const subParody      = u.subParody      !== undefined ? (u.subParody      || "")  : img.subParody;
+  const protagonistIds = u.protagonistIds !== undefined ? (u.protagonistIds || [])  : img.protagonistIds;
+  const wikiPageId     = u.wikiPageId     !== undefined ? u.wikiPageId               : img.wikiPageId;
+  let imagePaths       = u.imagePaths     !== undefined ? u.imagePaths               : img.imagePaths;
   db.prepare(
     `UPDATE gallery_images SET title = ?, title_visible = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title || "", titleVisible ? 1 : 0, category || "", JSON.stringify(tags || []), notes || "", finalImagePaths[0] || "", JSON.stringify(finalImagePaths), wikiPageId || null, author || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), new Date().toISOString(), id);
+  ).run(title, titleVisible ? 1 : 0, category, JSON.stringify(tags), notes, imagePaths[0] || "", JSON.stringify(imagePaths), wikiPageId || null, author, parody, subParody, JSON.stringify(protagonistIds), new Date().toISOString(), id);
   return true;
 }
 
