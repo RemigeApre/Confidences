@@ -2610,6 +2610,72 @@ function grantLootbox(userId, count) {
   for (let i = 0; i < n; i++) stmt.run(userId, now);
 }
 
+// ── Lootboxes gagnées par actions ─────────────────────────────────────────
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS user_action_lootboxes (
+    user_id    INTEGER NOT NULL,
+    action_type TEXT   NOT NULL,
+    granted    INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, action_type)
+  )`);
+} catch (_) {}
+
+const _stmtActionGranted = db.prepare(
+  "SELECT granted FROM user_action_lootboxes WHERE user_id = ? AND action_type = ?"
+);
+const _stmtActionUpsert = db.prepare(
+  `INSERT INTO user_action_lootboxes (user_id, action_type, granted) VALUES (?, ?, ?)
+   ON CONFLICT(user_id, action_type) DO UPDATE SET granted = excluded.granted`
+);
+
+/** Compte les notes (rating > 0) posées sur wiki + galerie par un utilisateur. */
+function countUserRatingsAll(userId) {
+  const row = db.prepare(
+    `SELECT COUNT(*) AS n FROM content_reactions
+     WHERE user_id = ? AND item_type IN ('wiki','gallery') AND rating > 0`
+  ).get(userId);
+  return row ? row.n : 0;
+}
+
+/** Compte les favoris totaux d'un utilisateur (toutes origines). */
+function countUserFavoritesAll(userId) {
+  const row = db.prepare(
+    "SELECT COUNT(*) AS n FROM favorites WHERE user_id = ?"
+  ).get(userId);
+  return row ? row.n : 0;
+}
+
+/** Compte les pages BD notées (rating > 0) par un utilisateur. */
+function countUserBdRatings(userId) {
+  const row = db.prepare(
+    "SELECT COUNT(*) AS n FROM bd_page_reactions WHERE user_id = ? AND rating > 0"
+  ).get(userId);
+  return row ? row.n : 0;
+}
+
+/**
+ * Vérifie si de nouvelles lootboxes doivent être attribuées pour une action
+ * donnée et les accorde si nécessaire. Idempotent : peut être appelé à chaque
+ * action sans risque de double-attribution.
+ * @param {number} userId
+ * @param {string} actionType  'notes' | 'love_fav' | 'bd_notes'
+ * @param {number} total       Nombre total actuel d'actions de ce type
+ * @param {number} threshold   Seuil pour 1 lootbox (ex. 10 pour les notes)
+ * @returns {number} Nombre de lootboxes accordées (0 si aucune)
+ */
+function checkAndGrantActionLootbox(userId, actionType, total, threshold) {
+  const shouldHave = Math.floor(total / threshold);
+  if (shouldHave <= 0) return 0;
+  const row = _stmtActionGranted.get(userId, actionType);
+  const alreadyGranted = row ? row.granted : 0;
+  const toGrant = shouldHave - alreadyGranted;
+  if (toGrant > 0) {
+    grantLootbox(userId, toGrant);
+    _stmtActionUpsert.run(userId, actionType, shouldHave);
+  }
+  return toGrant;
+}
+
 function openLootbox(userId) {
   const box = db.prepare("SELECT id FROM user_lootboxes WHERE user_id = ? AND opened = 0 ORDER BY created_at ASC LIMIT 1").get(userId);
   if (!box) return null;
@@ -2931,6 +2997,10 @@ module.exports = {
   deleteAiProfile,
   getLootboxCount,
   grantLootbox,
+  checkAndGrantActionLootbox,
+  countUserRatingsAll,
+  countUserFavoritesAll,
+  countUserBdRatings,
   openLootbox,
   getUserUnlocks,
   sellUnlock,

@@ -266,8 +266,14 @@ function buildCustomQuizRouter(config) {
     });
 
     const isLast = stepIdx >= steps.length - 1;
+    const wasCompleted = existing && existing.completed;
     const complete = req.body.complete === "1" && isLast ? 1 : (existing ? existing.completed : 0);
     db.saveCustomQuizAnswer(quiz.id, req.user.id, answers, complete);
+
+    // Lootbox : 1 par quizz complété (seulement la première fois)
+    if (req.body.complete === "1" && isLast && !wasCompleted) {
+      db.grantLootbox(req.user.id, 1);
+    }
 
     if (req.body.complete === "1" && isLast) return res.redirect(`/quizz/${quiz.id}?step=done`);
     const nextStep = isLast ? stepIdx : stepIdx + 1;

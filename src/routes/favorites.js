@@ -39,6 +39,8 @@ const {
   setProfileImageCrop,
   RARITY_BUY_PRICE,
   RARITY_SELL_PRICE,
+  checkAndGrantActionLootbox,
+  countUserFavoritesAll,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -455,6 +457,8 @@ function buildFavoritesRouter(config) {
       removeFavorite(req.user.id, itemType, itemId);
     } else {
       addFavorite(req.user.id, itemType, itemId);
+      // Lootbox : toutes les 2 favoris ajoutés
+      checkAndGrantActionLootbox(req.user.id, "love_fav", countUserFavoritesAll(req.user.id), 2);
     }
     res.json({ ok: true, active: !already });
   });

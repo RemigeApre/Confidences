@@ -41,6 +41,8 @@ const {
   setGalleryLinks,
   getNouvelleById,
   listNouvelles,
+  checkAndGrantActionLootbox,
+  countUserRatingsAll,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -576,6 +578,10 @@ function buildGalleryRouter(config) {
     if (req.body.rating !== undefined) payload.rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
     if (req.body.hidden !== undefined) payload.hidden = !!req.body.hidden;
     reactGalleryImage(id, req.user.id, payload);
+    // Lootbox : toutes les 10 notes
+    if (payload.rating !== undefined) {
+      checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsAll(req.user.id), 10);
+    }
     res.json({ ok: true, hidden: !!req.body.hidden });
   });
 

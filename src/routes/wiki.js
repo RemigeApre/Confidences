@@ -40,6 +40,9 @@ const {
   listUnexploredWikiPages,
   listBlacklistedTags,
   normalizeParody,
+  checkAndGrantActionLootbox,
+  countUserRatingsAll,
+  countUserFavoritesAll,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
@@ -957,6 +960,13 @@ function buildWikiRouter(config) {
     // J'adore = favori : synchro avec la table favorites
     if (flame) addFavorite(req.user.id, "wiki", id);
     else removeFavorite(req.user.id, "wiki", id);
+    // Lootbox : toutes les 10 notes, toutes les 2 favoris/j'adore
+    if (rating !== undefined) {
+      checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsAll(req.user.id), 10);
+    }
+    if (flame !== undefined) {
+      checkAndGrantActionLootbox(req.user.id, "love_fav", countUserFavoritesAll(req.user.id), 2);
+    }
     res.json({ ok: true });
   });
 
