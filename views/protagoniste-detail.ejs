@@ -1,6 +1,7 @@
 <%- include('partials/head', { title: protagoniste.name }) %>
 <main class="container" style="max-width: 860px; margin: 0 auto">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste.name, navBack: '/protagonistes' }) %>
+  <a href="/protagonistes" class="prot-detail-back">&#8592; Personnages</a>
 
   <div class="prot-detail-header">
 
@@ -37,16 +38,16 @@
 
       <%# ── Univers (parodie) — visuellement distinct des tags ── %>
       <% if (protagoniste.parody) { %>
-        <div class="prot-detail-univers">
+        <a href="/parodies/<%= encodeURIComponent(protagoniste.parody) %><% if (protagoniste.sub_parody) { %>/<%= encodeURIComponent(protagoniste.sub_parody) %><% } %>" class="prot-detail-univers">
           <svg class="prot-detail-univers-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 0 0 18"/><path d="M12 3a14.5 14.5 0 0 1 0 18"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
           <span class="prot-detail-univers-text"><%= protagoniste.parody %><% if (protagoniste.sub_parody) { %><span class="prot-detail-univers-sub"> › <%= protagoniste.sub_parody %></span><% } %></span>
-        </div>
+        </a>
       <% } %>
 
       <%# ── Tags ── %>
       <% if (protagoniste.tags && protagoniste.tags.length) { %>
-        <div class="prot-card-tags prot-detail-tags">
-          <% protagoniste.tags.forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
+        <div class="prot-detail-tags">
+          <% protagoniste.tags.forEach(function(t) { %><span class="tag-badge tag-badge--<%= (tagMeta && tagMeta[t]) || 'normal' %>"><%= t %></span><% }) %>
         </div>
       <% } %>
 

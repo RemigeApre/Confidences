@@ -5414,6 +5414,22 @@ a.wiki-ql-label:hover .wiki-ql-text {
 .gallery-lb-meta-pill--protagonist { background: rgba(200,120,255,0.15); border-color: rgba(200,120,255,0.3); }
 .gallery-lb-meta-pill--protagonist:hover { background: rgba(200,120,255,0.28); }
 
+/* Encart univers (parodie) — même style que fiche personnage */
+.lb-meta-univers {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: rgba(255,200,100,.08); border: 1px solid rgba(255,200,100,.22);
+  border-radius: 6px; padding: .3rem .65rem;
+  font-size: .82rem; text-decoration: none;
+  transition: background .15s, border-color .15s;
+}
+.lb-meta-univers:hover { background: rgba(255,200,100,.16); border-color: rgba(255,200,100,.4); }
+.lb-meta-univers-icon { width: .85rem; height: .85rem; flex-shrink: 0; stroke: rgba(255,200,100,.7); }
+.lb-meta-univers-text { color: hsl(50,80%,75%); font-weight: 500; }
+.lb-meta-univers-sub  { color: rgba(255,200,100,.55); font-weight: 400; }
+/* Masquer le label "Parodie" quand l'encart univers est utilisé */
+#gallery-lb-meta-parody .lb-meta-label { display: none; }
+#gallery-lb-meta-parody .lb-meta-chips { justify-content: flex-start; }
+
 /* Dots de l'album, dans la lightbox */
 .gallery-lb-dots {
   display: flex;
@@ -14811,23 +14827,42 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   transition: border-color .15s;
 }
 .prot-card:hover { border-color: hsl(340,45%,40%); }
+
+/* Nature banner — bande colorée en haut de la carte */
+.prot-card-nature-banner {
+  font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  text-align: center; padding: .2rem .5rem; line-height: 1.4;
+}
+.prot-card-nature-banner--monstre { background: hsl(0,55%,22%);   color: hsl(0,80%,82%); }
+.prot-card-nature-banner--animal  { background: hsl(30,55%,20%);  color: hsl(30,80%,82%); }
+.prot-card-nature-banner--pokemon { background: hsl(15,70%,22%);  color: hsl(15,90%,82%); }
+.prot-card-nature-banner--autre   { background: hsl(200,40%,20%); color: hsl(200,70%,82%); }
+
 .prot-card-img-wrap { aspect-ratio: 3/4; overflow: hidden; }
 .prot-card-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.prot-card-body { padding: .6rem .75rem .75rem; display: flex; flex-direction: column; gap: .25rem; flex: 1; }
-.prot-card-name  { font-size: .88rem; font-weight: 700; color: var(--text); }
-.prot-card-meta  { display: flex; flex-wrap: wrap; gap: .25rem; }
+.prot-card-body { padding: .55rem .75rem .7rem; display: flex; flex-direction: column; gap: .25rem; flex: 1; }
+
+/* En-tête de carte : icône genre + nom coloré */
+.prot-card-header { display: flex; align-items: center; gap: .3rem; }
+.prot-card-name {
+  font-size: 1rem; font-weight: 700; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; min-width: 0;
+}
+.prot-card-name--femme { color: hsl(340,70%,72%); }
+.prot-card-name--homme { color: hsl(210,70%,70%); }
+.prot-card-name--autre { color: hsl(270,65%,78%); }
+
+/* Icône genre sur la carte (petite) */
+.prot-card-gender-icon { display: flex; flex-shrink: 0; }
+.prot-card-gender-icon svg { width: .95rem; height: .95rem; stroke-width: 2.2; }
+.prot-card-gender-icon--femme svg { stroke: hsl(340,70%,65%); }
+.prot-card-gender-icon--homme svg { stroke: hsl(210,70%,60%); }
+.prot-card-gender-icon--autre svg { stroke: hsl(270,60%,70%); }
+
 .prot-card-desc  { font-size: .72rem; color: var(--muted); margin: 0; line-height: 1.5; }
-.prot-card-tags  { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .1rem; }
-.prot-tag        { font-size: .6rem; padding: .1rem .4rem; border-radius: 20px; background: rgba(255,255,255,.08); color: var(--muted); }
 .prot-edit-btn   { position: absolute; top: .5rem; right: .6rem; font-size: .8rem; color: rgba(255,255,255,.5); text-decoration: none; background: rgba(0,0,0,.5); border-radius: 4px; padding: .1rem .3rem; }
 .prot-edit-btn:hover { color: #fff; }
-
-/* Badges nature (petit, sur les cards) */
-.prot-badge {
-  font-size: .6rem; text-transform: uppercase; letter-spacing: .06em;
-  padding: .15rem .45rem; border-radius: 20px; font-weight: 600;
-}
-.prot-badge--nature { background: rgba(255,255,255,.1); color: var(--muted); }
 
 /* Detail page */
 .prot-detail-header {
@@ -14852,19 +14887,30 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 /* Nature (non-humain) */
 .prot-detail-nature { margin-bottom: .5rem; }
 
-/* Univers — visuellement distinct des tags */
+/* Lien retour vers la liste (desktop uniquement, mobile = nav-back-btn) */
+.prot-detail-back {
+  display: none;
+  font-size: .78rem; color: var(--muted); text-decoration: none; margin-bottom: .75rem;
+}
+.prot-detail-back:hover { color: var(--fg); }
+@media (min-width: 641px) { .prot-detail-back { display: block; } }
+
+/* Univers — visuellement distinct des tags, cliquable */
 .prot-detail-univers {
   display: inline-flex; align-items: center; gap: .4rem;
   background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
   border-radius: 6px; padding: .3rem .65rem; margin-bottom: .75rem;
-  font-size: .8rem; color: var(--muted);
+  font-size: .8rem; color: var(--muted); text-decoration: none;
+  transition: border-color .15s, background .15s;
 }
+.prot-detail-univers:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.25); }
 .prot-detail-univers-icon { width: .85rem; height: .85rem; flex-shrink: 0; stroke: var(--muted); }
 .prot-detail-univers-text { color: var(--text); font-weight: 500; }
 .prot-detail-univers-sub { color: var(--muted); font-weight: 400; }
 
-/* Tags (sous l'univers) */
-.prot-detail-tags { margin-bottom: .75rem; }
+/* Tags sur la fiche détail — plus gros avec tag-badge */
+.prot-detail-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .75rem; }
+.prot-detail-tags .tag-badge { font-size: .78rem; cursor: default; }
 
 .prot-detail-desc   { font-size: .88rem; line-height: 1.7; color: var(--muted); }
 .prot-detail-desc p { margin: 0 0 .9em; }

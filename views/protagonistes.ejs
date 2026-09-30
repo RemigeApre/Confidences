@@ -62,28 +62,38 @@
           data-gender="<%= p.gender || '' %>"
           data-nature="<%= p.nature || '' %>"
           data-parody="<%= p.parody || '' %>">
+
+          <%# ── Bandeau nature (si pas humain) ── %>
+          <% if (p.nature && p.nature !== 'humain') { %>
+            <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
+          <% } %>
+
           <% if (p.image_path) { %>
             <div class="prot-card-img-wrap">
               <img src="<%= p.image_path %>" alt="<%= p.name %>" class="prot-card-img" loading="lazy" />
             </div>
           <% } %>
+
           <div class="prot-card-body">
-            <div class="prot-card-name"><%= p.name %></div>
-            <% if (p.gender || p.nature) { %>
-              <div class="prot-card-meta">
-                <% if (p.gender) { %><span class="prot-badge prot-badge--<%= p.gender %>"><%= p.gender %></span><% } %>
-                <% if (p.nature) { %><span class="prot-badge prot-badge--nature"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></span><% } %>
-              </div>
-            <% } %>
+            <div class="prot-card-header">
+              <% if (p.gender) { %>
+                <span class="prot-card-gender-icon prot-card-gender-icon--<%= p.gender %>" aria-hidden="true">
+                  <% if (p.gender === 'femme') { %>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+                  <% } else if (p.gender === 'homme') { %>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+                  <% } else { %>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+                  <% } %>
+                </span>
+              <% } %>
+              <div class="prot-card-name<% if (p.gender) { %> prot-card-name--<%= p.gender %><% } %>"><%= p.name %></div>
+            </div>
             <% if (p.description) { %>
-              <p class="prot-card-desc"><%= p.description.slice(0, 100) %><%= p.description.length > 100 ? '\u2026' : '' %></p>
-            <% } %>
-            <% if (p.tags && p.tags.length) { %>
-              <div class="prot-card-tags">
-                <% p.tags.slice(0, 4).forEach(function(t) { %><span class="prot-tag"><%= t %></span><% }) %>
-              </div>
+              <p class="prot-card-desc"><%= p.description.slice(0, 80) %><%= p.description.length > 80 ? '\u2026' : '' %></p>
             <% } %>
           </div>
+
           <% if (currentUser && currentUser.isAdmin) { %>
             <a href="/protagonistes/<%= p.id %>/edit" class="prot-edit-btn" onclick="event.preventDefault();event.stopPropagation();location.href=this.href">&#9998;</a>
           <% } %>

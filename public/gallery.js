@@ -1049,22 +1049,25 @@
       var parodyChips = lbMetaParody.querySelector(".lb-meta-chips");
       parodyChips.innerHTML = "";
       if (parody) {
-        var pLink = document.createElement("a");
-        pLink.className = "gallery-lb-meta-pill gallery-lb-meta-pill--parody";
-        pLink.href = "/parodies/" + encodeURIComponent(parody);
-        pLink.textContent = parody;
-        parodyChips.appendChild(pLink);
+        var globeSvg = '<svg class="lb-meta-univers-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 0 0 18"/><path d="M12 3a14.5 14.5 0 0 1 0 18"/><line x1="3" y1="12" x2="21" y2="12"/></svg>';
+        var href = subParody
+          ? "/parodies/" + encodeURIComponent(parody) + "/" + encodeURIComponent(subParody)
+          : "/parodies/" + encodeURIComponent(parody);
+        var block = document.createElement("a");
+        block.className = "lb-meta-univers";
+        block.href = href;
+        block.innerHTML = globeSvg;
+        var textSpan = document.createElement("span");
+        textSpan.className = "lb-meta-univers-text";
+        textSpan.textContent = parody;
+        block.appendChild(textSpan);
         if (subParody) {
-          var pSep = document.createElement("span");
-          pSep.className = "gallery-lb-parody-sep";
-          pSep.textContent = " \u203a ";
-          parodyChips.appendChild(pSep);
-          var sLink = document.createElement("a");
-          sLink.className = "gallery-lb-meta-pill gallery-lb-meta-pill--parody gallery-lb-meta-pill--sub-parody";
-          sLink.href = "/parodies/" + encodeURIComponent(parody) + "/" + encodeURIComponent(subParody);
-          sLink.textContent = subParody;
-          parodyChips.appendChild(sLink);
+          var subSpan = document.createElement("span");
+          subSpan.className = "lb-meta-univers-sub";
+          subSpan.textContent = " \u203a " + subParody;
+          block.appendChild(subSpan);
         }
+        parodyChips.appendChild(block);
         lbMetaParody.hidden = false;
       } else {
         lbMetaParody.hidden = true;

@@ -71,7 +71,8 @@ function buildProtagonistesRouter(config) {
       .filter(n => !req.user?.isAdmin ? (n.stage !== "brouillon" && !n.hidden) : true);
     const galleryImages = db.listGalleryImagesByProtagoniste(protagoniste.id);
     const codexPages = protagoniste.name ? db.listWikiPagesByTag(protagoniste.name) : [];
-    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, codexPages });
+    const tagMeta = db.getAllTagMeta();
+    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, codexPages, tagMeta });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
