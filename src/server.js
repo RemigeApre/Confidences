@@ -220,55 +220,89 @@ function readGamesJson() {
   try { return JSON.parse(fs.readFileSync(GAMES_JSON, "utf8")); } catch { return []; }
 }
 
-// Route d'entrée du jeu : sert le HTML de départ avec un wrapper localStorage
-// injecté pour que chaque utilisateur ait ses propres sauvegardes.
-app.get("/games/:slug/play", (req, res) => {
-  if (!req.user) return res.status(403).end();
-  const game = readGamesJson().find(g => g.slug === req.params.slug);
-  if (!game) return res.status(404).end();
+// ── Injection dans les pages HTML des jeux ───────────────────────────────────
+// Toutes les pages .html d'un jeu (entry + pages internes comme gloryhole.html)
+// sont servies dynamiquement avec deux scripts injectés :
+//   1. Wrapper localStorage → isole les saves par utilisateur (préfixe u<id>_)
+//   2. Shim Electron → remplace ipcRenderer / fs par des équivalents navigateur
+//      (openOffline/openOnline, saveGame/getSavedGame, saveGallery/getGallerySave)
 
-  const entryPath = path.join(GAMES_DIR, game.dir, game.entrypoint);
-  let html;
-  try { html = fs.readFileSync(entryPath, "utf8"); }
-  catch { return res.status(404).end(); }
+function buildGameInject(userId, game) {
+  const prefix = "u" + userId + "_";
+  const slug   = game.slug;
+  const onlineUrl = game.online_url ? JSON.stringify(game.online_url) : "null";
 
-  // Préfixe les clés localStorage avec l'ID utilisateur pour isoler les saves.
-  const prefix = "u" + req.user.id + "_";
-  const inject = `<script>(function(){` +
-    `var p=${JSON.stringify(prefix)},s=window.localStorage;` +
-    `function ns(){` +
-      `this.getItem=function(k){return s.getItem(p+k)};` +
-      `this.setItem=function(k,v){return s.setItem(p+k,v)};` +
-      `this.removeItem=function(k){return s.removeItem(p+k)};` +
-      `this.clear=function(){var r=[];for(var i=0;i<s.length;i++){var k=s.key(i);if(k&&k.indexOf(p)===0)r.push(k);}r.forEach(function(k){s.removeItem(k)})};` +
-      `this.key=function(n){var c=0;for(var i=0;i<s.length;i++){var k=s.key(i);if(k&&k.indexOf(p)===0){if(c===n)return k.slice(p.length);c++;}}return null};` +
-      `Object.defineProperty(this,'length',{get:function(){var c=0;for(var i=0;i<s.length;i++){var k=s.key(i);if(k&&k.indexOf(p)===0)c++;}return c}});` +
+  return (
+    `<script>(function(){` +
+    // ── 1. Wrapper localStorage ──────────────────────────────────────────────
+    `var p=${JSON.stringify(prefix)},_s=window.localStorage;` +
+    `function NS(){` +
+      `this.getItem=function(k){return _s.getItem(p+k)};` +
+      `this.setItem=function(k,v){return _s.setItem(p+k,v)};` +
+      `this.removeItem=function(k){return _s.removeItem(p+k)};` +
+      `this.clear=function(){var r=[];for(var i=0;i<_s.length;i++){var k=_s.key(i);if(k&&k.indexOf(p)===0)r.push(k);}r.forEach(function(k){_s.removeItem(k)})};` +
+      `this.key=function(n){var c=0;for(var i=0;i<_s.length;i++){var k=_s.key(i);if(k&&k.indexOf(p)===0){if(c===n)return k.slice(p.length);c++;}}return null};` +
+      `Object.defineProperty(this,"length",{get:function(){var c=0;for(var i=0;i<_s.length;i++){var k=_s.key(i);if(k&&k.indexOf(p)===0)c++;}return c}});` +
     `}` +
-    `try{Object.defineProperty(window,'localStorage',{get:function(){return _ns}})}catch(e){}` +
-    `var _ns=new ns();` +
-  `}());</script>`;
+    `var _ns=new NS();` +
+    `try{Object.defineProperty(window,"localStorage",{get:function(){return _ns}})}catch(e){}` +
+    // ── 2. Shim Electron ────────────────────────────────────────────────────
+    // Navigation entre pages du jeu
+    `window.openOffline=window.openOffline||function(){location.href="gloryhole.html"};` +
+    `window.openOnline=window.openOnline||function(){var u=${onlineUrl};if(u)window.open(u,"_blank")};` +
+    // Saves via localStorage (remplace fs.writeFileSync du preload Electron)
+    `window.saveGame=window.saveGame||function(c){try{localStorage.setItem("save",c)}catch(e){}};` +
+    `window.getSavedGame=window.getSavedGame||function(){` +
+      `var d=localStorage.getItem("save");if(!d)throw new Error("No save");return JSON.parse(d)};` +
+    `window.saveGallery=window.saveGallery||function(c){try{localStorage.setItem("gallery",c)}catch(e){}};` +
+    `window.getGallerySave=window.getGallerySave||function(){` +
+      `var d=localStorage.getItem("gallery");if(!d)throw new Error("No gallery");return JSON.parse(d)};` +
+    // getContent lit un fichier JSON via XHR synchrone (héritage Electron/fs)
+    `window.getContent=window.getContent||function(){` +
+      `var x=new XMLHttpRequest();x.open("GET","static/json/v5_1.json",false);x.send();` +
+      `return JSON.parse(x.responseText)};` +
+    `}());</script>`
+  );
+}
 
-  // Injection aussi tôt que possible dans le document.
-  if (html.includes("<head>")) {
-    html = html.replace("<head>", "<head>" + inject);
-  } else if (/<html/i.test(html)) {
-    html = html.replace(/(<html[^>]*>)/i, "$1" + inject);
-  } else {
-    html = inject + html;
-  }
-
+function serveGameHtml(req, res, next, game, filePath) {
+  let html;
+  try { html = fs.readFileSync(filePath, "utf8"); }
+  catch { return next(); }
+  const inject = buildGameInject(req.user.id, game);
+  if (html.includes("<head>")) html = html.replace("<head>", "<head>" + inject);
+  else if (/<html/i.test(html)) html = html.replace(/(<html[^>]*>)/i, "$1" + inject);
+  else html = inject + html;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.send(html);
+}
+
+// /play → page d'entrée du jeu (URL propre exposée aux utilisateurs)
+app.get("/games/:slug/play", (req, res, next) => {
+  if (!req.user) return res.status(403).end();
+  const game = readGamesJson().find(g => g.slug === req.params.slug);
+  if (!game) return res.status(404).end();
+  serveGameHtml(req, res, next, game, path.join(GAMES_DIR, game.dir, game.entrypoint));
 });
 
-// Assets statiques des jeux (JS, CSS, images…) — servis par slug via games.json.
+// *.html internes → permet la navigation entre pages du jeu (ex. onlineoffline → gloryhole)
+app.get("/games/:slug/*.html", (req, res, next) => {
+  if (!req.user) return res.status(403).end();
+  const game = readGamesJson().find(g => g.slug === req.params.slug);
+  if (!game) return res.status(404).end();
+  const gameDir  = path.resolve(GAMES_DIR, game.dir);
+  const filePath = path.resolve(gameDir, req.params[0] + ".html");
+  if (!filePath.startsWith(gameDir + path.sep) && filePath !== gameDir) return res.status(403).end();
+  serveGameHtml(req, res, next, game, filePath);
+});
+
+// Assets statiques des jeux (JS, CSS, images…)
 app.use("/games/:slug", (req, res, next) => {
   if (!req.user) return res.status(403).end();
   const game = readGamesJson().find(g => g.slug === req.params.slug);
   if (!game) return res.status(404).end();
-  const gameDir = path.join(GAMES_DIR, game.dir);
-  express.static(gameDir, { maxAge: "1d" })(req, res, next);
+  express.static(path.join(GAMES_DIR, game.dir), { maxAge: "1d" })(req, res, next);
 });
 
 // THOG référence ses assets avec des chemins absolus /static/... (héritage Electron).
