@@ -516,12 +516,15 @@
   var _allTags     = [];
   var _tagSearchTimeout = null;
   var _midGame     = false; // true when changing mode between levels
+  var _inProgress  = false; // true as soon as a level has been started
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   var _SCREENS = [screenGames, screenResume, screenSetup, screenGame, screenWin, screenLose,
     document.getElementById('arcade-screen-wordle')];
   var _arcadeHdrBack = document.getElementById('arcade-hdr-back-btn');
   function showScreen(el) {
+    // Sauvegarder avant de revenir à la liste des jeux (couvre le bouton ← et fermeture)
+    if (el === screenGames) saveProgress();
     _SCREENS.forEach(function(s) { if (s) s.hidden = true; });
     if (el) el.hidden = false;
     if (_arcadeHdrBack) _arcadeHdrBack.hidden = (el === screenGames);
@@ -565,25 +568,24 @@
 
 
   // ── Save / restore progress ───────────────────────────────────────────────────
+  // Utilise _inProgress plutôt que l'état des écrans : la navigation entre écrans
+  // (ex. bouton ←) cache les écrans avant que closeArcade() appelle saveProgress(),
+  // ce qui causait des sauvegardes manquées.
   function saveProgress() {
-    var inGame = screenGame && !screenGame.hidden;
-    var inLose = screenLose && !screenLose.hidden;
-    var inWin  = screenWin  && !screenWin.hidden;
-    // Sauvegarder dès qu'une partie est en cours, peu importe le niveau ou le score
-    if (inGame || inLose || inWin) {
-      try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify({
-          level: _level, totalScore: _totalScore,
-          mode: _mode, tag: _selectedTag || null,
-        }));
-      } catch (_e) {}
-    }
+    if (!_inProgress) return;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        level: _level, totalScore: _totalScore,
+        mode: _mode, tag: _selectedTag || null,
+      }));
+    } catch (_e) {}
   }
 
   // Sauvegarde aussi quand la page se ferme / rafraîchit
   window.addEventListener('beforeunload', saveProgress);
 
   function clearProgress() {
+    _inProgress = false;
     try { localStorage.removeItem(SAVE_KEY); } catch (_) {}
   }
 
@@ -735,6 +737,7 @@
 
   // ── Level start ───────────────────────────────────────────────────────────────
   function startLevel(lvl) {
+    _inProgress = true;
     _level = lvl;
     _score = 0;
     _matched = 0;
@@ -906,6 +909,7 @@
       // Synchronise le compteur lootbox dans lootbox.js (fix : _count était stale)
       if (typeof window._lbRefreshCount === 'function') window._lbRefreshCount();
     }
+    saveProgress(); // sauvegarde immédiate après chaque niveau complété
     showScreen(screenWin);
   }
 
@@ -927,6 +931,7 @@
     }).catch(function() {});
     if (loseLevelEl) loseLevelEl.textContent = _level;
     if (loseScoreEl) loseScoreEl.textContent = _totalScore;
+    saveProgress(); // sauvegarde le niveau en cours (perdu)
     showScreen(screenLose);
   }
 
