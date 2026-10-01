@@ -490,6 +490,24 @@ function buildAdminRouter(config) {
     res.json({ ok: true, username: targetUser.username || targetUser.display_name || String(targetUserId) });
   });
 
+  // ── Gestion des jeux ─────────────────────────────────────────────────────
+  const GAMES_DEST = path.join(__dirname, "..", "..", "games", "mjlc", "resources", "app");
+
+  router.get("/jeux", requireAdmin, (req, res) => {
+    const installed = fs.existsSync(path.join(GAMES_DEST, "gloryhole.html"));
+    res.render("admin-jeux", { config, installed, success: req.query.success, error: req.query.error });
+  });
+
+  router.post("/jeux/upload", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
+    if (!req.file) return res.redirect("/admin/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
+    fs.mkdirSync(GAMES_DEST, { recursive: true });
+    execFile("unzip", ["-o", req.file.path, "-d", GAMES_DEST], (err) => {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
+      res.redirect("/admin/jeux?success=1");
+    });
+  });
+
   router.get("/:id", requireAdmin, (req, res) => {
     const submission = getSubmission(Number(req.params.id));
     if (!submission) return res.redirect("/admin");
@@ -551,26 +569,6 @@ function buildAdminRouter(config) {
   router.post("/ia/:id/delete", requireAdmin, (req, res) => {
     deleteAiProfile(Number(req.params.id));
     res.redirect("/admin#tab-ia");
-  });
-
-  // ── Gestion des jeux ─────────────────────────────────────────────────────
-  const GAMES_DEST = path.join(__dirname, "..", "..", "games", "mjlc", "resources", "app");
-
-  router.get("/jeux", requireAdmin, (req, res) => {
-    const installed = fs.existsSync(path.join(GAMES_DEST, "gloryhole.html"));
-    res.render("admin-jeux", { config, installed, success: req.query.success, error: req.query.error });
-  });
-
-  router.post("/jeux/upload", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
-    if (!req.file) return res.redirect("/admin/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
-
-    fs.mkdirSync(GAMES_DEST, { recursive: true });
-
-    execFile("unzip", ["-o", req.file.path, "-d", GAMES_DEST], (err) => {
-      try { fs.unlinkSync(req.file.path); } catch (_) {}
-      if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
-      res.redirect("/admin/jeux?success=1");
-    });
   });
 
   return router;
