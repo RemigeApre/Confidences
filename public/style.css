@@ -17909,6 +17909,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   padding: .75rem; overflow: hidden;
 }
 .arcade-screen--result {
+  position: relative;
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: .55rem; text-align: center; min-height: 220px;
 }
@@ -18048,10 +18049,22 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   width: 2.6rem; height: 2.6rem; background: #1e2438; border: 1.5px solid #2d3655;
   border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex;
   align-items: center; justify-content: center; transition: border-color .12s;
+  position: relative;
 }
-.shop-icon-btn:hover { border-color: #4a5578; }
+.shop-icon-btn:hover:not(:disabled) { border-color: #4a5578; }
 .shop-icon-btn--active { border-color: #6d28d9; background: #2d1654; }
+.shop-icon-btn--locked { opacity: .45; cursor: default; }
+.shop-icon-lock { position: absolute; bottom: 1px; right: 2px; font-size: .6rem; line-height: 1; }
 .shop-empty { font-size: .78rem; color: #475569; margin: 0; }
+/* Bouton panier en coin (écran reprise) */
+.arcade-shop-corner-btn {
+  position: absolute; top: .6rem; right: .6rem;
+  background: none; border: none; padding: .35rem; cursor: pointer;
+  color: #94a3b8; border-radius: 6px; display: flex; align-items: center;
+  transition: color .15s;
+}
+.arcade-shop-corner-btn:hover { color: #f1f5f9; }
+.arcade-shop-corner-btn svg { width: 1.3rem; height: 1.3rem; }
 .shop-color-grid { display: flex; flex-wrap: wrap; gap: .5rem; }
 .shop-color-swatch {
   width: 4.2rem; height: 3.5rem; border-radius: 8px; border: 2px solid;

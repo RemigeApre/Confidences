@@ -169,6 +169,9 @@
 
     <%# ── Memory : reprise de partie ── %>
     <div id="arcade-screen-memory-resume" class="arcade-screen arcade-screen--result" hidden>
+      <button class="arcade-shop-corner-btn" id="resume-shop-btn" aria-label="Boutique" title="Boutique">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </button>
       <div class="arcade-resume-level-display">
         <span class="arcade-resume-level-num" id="resume-level">1</span>
         <span class="arcade-resume-level-label">niveau</span>
@@ -176,7 +179,6 @@
       <span id="resume-mode-label" class="arcade-resume-mode"></span>
       <div class="arcade-result-footer" style="margin-top:1rem">
         <button class="arcade-btn arcade-btn--danger" id="arcade-resume-restart">Nouvelle partie</button>
-        <button class="arcade-btn arcade-btn--ghost" id="resume-shop-btn">&#127873;</button>
         <button class="arcade-btn arcade-btn--success" id="arcade-resume-continue">Reprendre</button>
       </div>
       <p class="arcade-resume-warning">Nouvelle partie&nbsp;: votre progression actuelle sera perdue. Votre meilleur niveau et les r&eacute;compenses d&eacute;j&agrave; obtenues restent acquis.</p>
@@ -605,7 +607,7 @@
     var starBtn = document.createElement('button');
     starBtn.className = 'shop-icon-btn' + (!selectedId ? ' shop-icon-btn--active' : '');
     starBtn.textContent = '\u2605';
-    starBtn.title = 'Étoile (par défaut)';
+    starBtn.title = '\u00c9toile (par d\u00e9faut)';
     starBtn.addEventListener('click', function() {
       _cardIcon = '\u2605';
       fetch('/arcade/memory/shop/icon', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ charmId: null }) });
@@ -618,22 +620,38 @@
     if (!charms.length) {
       var msg = document.createElement('p');
       msg.className = 'shop-empty';
-      msg.textContent = 'Aucun charme possédé — obtenez des coffres pour en débloquer !';
+      msg.textContent = 'Aucun charme disponible.';
       shopIconGrid.appendChild(msg);
       return;
     }
     charms.forEach(function(c) {
       var btn = document.createElement('button');
-      btn.className = 'shop-icon-btn' + (selectedId === c.id ? ' shop-icon-btn--active' : '');
-      btn.textContent = c.symbol;
-      btn.title = c.label;
-      btn.addEventListener('click', function() {
-        _cardIcon = c.symbol;
-        fetch('/arcade/memory/shop/icon', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ charmId: c.id }) });
-        shopIconGrid.querySelectorAll('.shop-icon-btn').forEach(function(b) { b.classList.remove('shop-icon-btn--active'); });
-        btn.classList.add('shop-icon-btn--active');
-        applyCardStyle();
-      });
+      var isOwned = !!c.owned;
+      btn.className = 'shop-icon-btn'
+        + (isOwned ? '' : ' shop-icon-btn--locked')
+        + (isOwned && selectedId === c.id ? ' shop-icon-btn--active' : '');
+      btn.title = isOwned ? c.label : c.label + ' \u2014 non poss\u00e9d\u00e9';
+      btn.disabled = !isOwned;
+
+      var sym = document.createElement('span');
+      sym.textContent = c.symbol;
+      btn.appendChild(sym);
+      if (!isOwned) {
+        var lock = document.createElement('span');
+        lock.className = 'shop-icon-lock';
+        lock.textContent = '\uD83D\uDD12';
+        btn.appendChild(lock);
+      }
+
+      if (isOwned) {
+        btn.addEventListener('click', function() {
+          _cardIcon = c.symbol;
+          fetch('/arcade/memory/shop/icon', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ charmId: c.id }) });
+          shopIconGrid.querySelectorAll('.shop-icon-btn').forEach(function(b) { b.classList.remove('shop-icon-btn--active'); });
+          btn.classList.add('shop-icon-btn--active');
+          applyCardStyle();
+        });
+      }
       shopIconGrid.appendChild(btn);
     });
   }
