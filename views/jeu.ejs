@@ -183,35 +183,22 @@
 
     <%# ── Memory : configuration ── %>
     <div id="arcade-screen-memory-setup" class="arcade-screen" hidden>
-      <p class="arcade-section-title" id="arcade-setup-title">Memory &mdash; Configuration</p>
+      <p class="arcade-setup-title" id="arcade-setup-title">Choix de vos images</p>
 
-      <div class="arcade-setup-row">
-        <label class="arcade-radio-label">
-          <input type="radio" name="memory-mode" value="random" checked>
-          <span>
-            Images al&eacute;atoires
-            <small>Selon vos filtres de contenu</small>
-          </span>
-        </label>
-        <label class="arcade-radio-label">
-          <input type="radio" name="memory-mode" value="tag">
-          <span>
-            Choisir un th&egrave;me
-            <small>Toutes les images du th&egrave;me choisi</small>
-          </span>
-        </label>
+      <div id="arcade-mode-btns" class="arcade-mode-btns">
+        <button class="arcade-mode-btn" id="arcade-mode-random">
+          <span class="arcade-mode-btn-label">Images al&eacute;atoires</span>
+        </button>
+        <button class="arcade-mode-btn" id="arcade-mode-tag">
+          <span class="arcade-mode-btn-label">Choisir votre th&egrave;me</span>
+        </button>
       </div>
 
       <div id="arcade-tag-picker" class="arcade-tag-picker" hidden>
-        <input type="text" id="arcade-tag-search" class="arcade-tag-search" placeholder="Rechercher un th&egrave;me&hellip;" autocomplete="off">
+        <input type="text" id="arcade-tag-search" class="arcade-tag-search" placeholder="Rechercher&hellip;" autocomplete="off">
         <div id="arcade-tag-list" class="arcade-tag-list">
           <p style="color:#64748b;font-size:.82rem;text-align:center;margin:.5rem 0">Chargement&hellip;</p>
         </div>
-      </div>
-
-      <div class="arcade-setup-footer">
-        <button class="arcade-btn arcade-btn--ghost" id="arcade-memory-setup-back">&larr; Retour</button>
-        <button class="arcade-btn arcade-btn--primary" id="arcade-memory-start-btn">Commencer</button>
       </div>
     </div>
 
@@ -472,8 +459,9 @@
   var screenWin        = document.getElementById('arcade-screen-memory-win');
   var screenLose       = document.getElementById('arcade-screen-memory-lose');
   var memPlayBtn       = document.getElementById('arcade-memory-play-btn');
-  var memStartBtn      = document.getElementById('arcade-memory-start-btn');
-  var memSetupBack     = document.getElementById('arcade-memory-setup-back');
+  var modeRandomBtn    = document.getElementById('arcade-mode-random');
+  var modeTagBtn       = document.getElementById('arcade-mode-tag');
+  var modeBtnsEl       = document.getElementById('arcade-mode-btns');
   var setupTitleEl     = document.getElementById('arcade-setup-title');
   var tagPickerEl      = document.getElementById('arcade-tag-picker');
   var tagSearchEl      = document.getElementById('arcade-tag-search');
@@ -648,14 +636,10 @@
 
   function startFreshSetup() {
     _level = 1; _totalScore = 0; _midGame = false;
-    document.querySelectorAll('input[name="memory-mode"]').forEach(function(r) {
-      if (r.value === 'random') r.checked = true;
-    });
     _mode = 'random'; _selectedTag = null;
     if (tagPickerEl) tagPickerEl.hidden = true;
-    if (setupTitleEl) setupTitleEl.textContent = 'Memory \u2014 Configuration';
-    if (memStartBtn) memStartBtn.textContent = 'Commencer';
-    if (memSetupBack) memSetupBack.textContent = '\u2190 Retour';
+    if (modeBtnsEl) modeBtnsEl.hidden = false;
+    if (setupTitleEl) setupTitleEl.textContent = 'Choix de vos images';
     showScreen(screenSetup);
     loadTags();
   }
@@ -667,12 +651,20 @@
       .catch(function() {});
   }
 
-  document.querySelectorAll('input[name="memory-mode"]').forEach(function(radio) {
-    radio.addEventListener('change', function() {
-      _mode = radio.value;
-      if (tagPickerEl) tagPickerEl.hidden = _mode !== 'tag';
-      if (_mode === 'random') _selectedTag = null;
-    });
+  // ── Mode selection ────────────────────────────────────────────────────────────
+  modeRandomBtn && modeRandomBtn.addEventListener('click', function() {
+    _mode = 'random'; _selectedTag = null;
+    var nextLvl = _midGame ? _level + 1 : _level;
+    _midGame = false;
+    startLevel(nextLvl);
+  });
+
+  modeTagBtn && modeTagBtn.addEventListener('click', function() {
+    _mode = 'tag'; _selectedTag = null;
+    if (tagPickerEl) tagPickerEl.hidden = false;
+    if (modeBtnsEl) modeBtnsEl.hidden = true;
+    if (tagSearchEl) tagSearchEl.value = '';
+    renderTagList('');
   });
 
   tagSearchEl && tagSearchEl.addEventListener('input', function() {
@@ -694,44 +686,25 @@
     list.forEach(function(t) {
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'arcade-tag-btn' + (_selectedTag === t.tag ? ' arcade-tag-btn--active' : '');
+      btn.className = 'arcade-tag-btn';
       btn.textContent = t.tag + ' (' + t.count + ')';
       btn.dataset.tag = t.tag;
       btn.addEventListener('click', function() {
         _selectedTag = t.tag;
-        tagListEl.querySelectorAll('.arcade-tag-btn').forEach(function(b) {
-          b.classList.toggle('arcade-tag-btn--active', b.dataset.tag === t.tag);
-        });
+        var nextLvl = _midGame ? _level + 1 : _level;
+        _midGame = false;
+        startLevel(nextLvl);
       });
       tagListEl.appendChild(btn);
     });
   }
 
-  memSetupBack && memSetupBack.addEventListener('click', function() {
-    if (_midGame) { _midGame = false; showScreen(screenWin); }
-    else showScreen(screenGames);
-  });
-
-  memStartBtn && memStartBtn.addEventListener('click', function() {
-    if (_mode === 'tag' && !_selectedTag) {
-      alert('Veuillez choisir un th\u00e8me.'); return;
-    }
-    var nextLvl = _midGame ? _level + 1 : _level;
-    _midGame = false;
-    startLevel(nextLvl);
-  });
-
   // ── Win screen: change mode between levels ────────────────────────────────────
   winChangeModeBtn && winChangeModeBtn.addEventListener('click', function() {
     _midGame = true;
-    // Pre-populate radios to current mode
-    document.querySelectorAll('input[name="memory-mode"]').forEach(function(r) {
-      r.checked = r.value === _mode;
-    });
-    if (tagPickerEl) tagPickerEl.hidden = _mode !== 'tag';
-    if (setupTitleEl) setupTitleEl.textContent = 'Memory \u2014 Changer de mode';
-    if (memStartBtn) memStartBtn.textContent = 'Continuer au niveau ' + (_level + 1);
-    if (memSetupBack) memSetupBack.textContent = '\u2190 Annuler';
+    if (setupTitleEl) setupTitleEl.textContent = 'Changer de mode';
+    if (tagPickerEl) tagPickerEl.hidden = true;
+    if (modeBtnsEl) modeBtnsEl.hidden = false;
     showScreen(screenSetup);
   });
 
