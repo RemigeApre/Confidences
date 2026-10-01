@@ -81,38 +81,51 @@
     <h2 class="admin-modal-title">Nouveau jeu</h2>
 
     <div class="admin-modal-form" id="jeux-add-form-wrap">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
-        <label class="admin-modal-field">
-          <span>Titre *</span>
-          <input type="text" id="add-title" placeholder="Mon jeu" autocomplete="off">
-        </label>
-        <label class="admin-modal-field">
-          <span>Slug <small style="color:#475569;">(auto si vide)</small></span>
-          <input type="text" id="add-slug" placeholder="mon-jeu" autocomplete="off" style="font-family:monospace;">
-        </label>
-      </div>
+
+      <%# Titre %>
       <label class="admin-modal-field">
-        <span>Description</span>
-        <input type="text" id="add-desc" placeholder="Courte description…" autocomplete="off">
+        <span>Titre <small style="color:#475569;">(auto depuis le zip si vide)</small></span>
+        <input type="text" id="add-title" placeholder="Mon jeu" autocomplete="off">
       </label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
-        <label class="admin-modal-field">
-          <span>Fichier d&rsquo;entr&eacute;e</span>
-          <input type="text" id="add-entrypoint" value="index.html" style="font-family:monospace;" autocomplete="off">
-        </label>
-        <label class="admin-modal-field">
-          <span>URL online <small style="color:#475569;">(optionnel)</small></span>
-          <input type="url" id="add-online-url" placeholder="https://…" autocomplete="off">
+
+      <%# Dropzone glisser-déposer %>
+      <div id="add-dropzone" class="admin-game-dropzone admin-game-dropzone--lg">
+        <input type="file" id="add-zipfile" accept=".zip" style="display:none">
+        <label for="add-zipfile" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.5rem;width:100%;">
+          <span class="add-drop-icon">&#128230;</span>
+          <span id="add-zip-label" style="font-size:.85rem;color:#64748b;">Glisser le .zip ici ou cliquer</span>
         </label>
       </div>
 
-      <div id="add-dropzone" class="admin-game-dropzone">
-        <input type="file" id="add-zipfile" accept=".zip" style="display:none">
-        <label for="add-zipfile" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.4rem;">
-          <span style="font-size:1.6rem;">&#128230;</span>
-          <span id="add-zip-label" style="font-size:.82rem;color:#64748b;">Choisir un fichier .zip *</span>
-        </label>
-      </div>
+      <%# Options avancées %>
+      <details class="admin-modal-extra-details" id="add-advanced">
+        <summary class="admin-modal-extra-summary">Options avanc&eacute;es &rsaquo;</summary>
+        <div class="admin-modal-extra-body" style="padding-top:.75rem;display:flex;flex-direction:column;gap:.65rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+            <label class="admin-modal-field">
+              <span>Slug <small style="color:#475569;">(auto si vide)</small></span>
+              <input type="text" id="add-slug" placeholder="mon-jeu" autocomplete="off" style="font-family:monospace;">
+            </label>
+            <label class="admin-modal-field">
+              <span>Description</span>
+              <input type="text" id="add-desc" placeholder="Courte description…" autocomplete="off">
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+            <label class="admin-modal-field" id="add-entrypoint-field">
+              <span style="display:flex;align-items:center;gap:.5rem;">
+                <input type="checkbox" id="add-entry-toggle" style="margin:0;accent-color:#60a5fa;">
+                Fichier d&rsquo;entr&eacute;e manuel
+              </span>
+              <input type="text" id="add-entrypoint" value="" placeholder="auto-d&eacute;tect&eacute;" style="font-family:monospace;opacity:.4;" disabled autocomplete="off">
+            </label>
+            <label class="admin-modal-field">
+              <span>URL online <small style="color:#475569;">(optionnel)</small></span>
+              <input type="url" id="add-online-url" placeholder="https://…" autocomplete="off">
+            </label>
+          </div>
+        </div>
+      </details>
 
       <div id="add-progress" hidden>
         <div style="height:5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-bottom:.35rem;">
@@ -285,7 +298,7 @@
   function openModal(m)  { show(m); }
   function closeModal(m) { hide(m); }
 
-  qs('#jeux-add-btn').addEventListener('click', function () { openModal(addModal); });
+  // Le listener de #jeux-add-btn est défini plus bas (avec reset du formulaire)
   qs('#jeux-add-modal-close').addEventListener('click', function () { closeModal(addModal); });
   qs('#jeux-edit-modal-close').addEventListener('click', function () { closeModal(editModal); });
 
@@ -517,17 +530,72 @@
     });
   });
 
-  /* ── Dropzone "Ajouter" ── */
-  var addInput  = qs('#add-zipfile');
-  var addLabel  = qs('#add-zip-label');
-  var addSubmit = qs('#jeux-add-submit');
+  /* ── Dropzone "Ajouter" (clic + glisser-déposer) ── */
+  var addInput    = qs('#add-zipfile');
+  var addLabel    = qs('#add-zip-label');
+  var addSubmit   = qs('#jeux-add-submit');
+  var addDropzone = qs('#add-dropzone');
+
+  function addSetFile(file) {
+    if (!file) return;
+    addLabel.textContent = file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' Mo)';
+    addSubmit.disabled = false;
+    addSubmit.style.opacity = '1';
+    addDropzone.classList.add('admin-game-dropzone--filled');
+  }
 
   addInput.addEventListener('change', function () {
-    if (this.files && this.files[0]) {
-      addLabel.textContent = this.files[0].name + ' (' + (this.files[0].size/1024/1024).toFixed(1) + ' Mo)';
-      addSubmit.disabled = false;
-      addSubmit.style.opacity = '1';
+    if (this.files && this.files[0]) addSetFile(this.files[0]);
+  });
+
+  addDropzone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    addDropzone.classList.add('admin-game-dropzone--drag');
+  });
+  addDropzone.addEventListener('dragleave', function () {
+    addDropzone.classList.remove('admin-game-dropzone--drag');
+  });
+  addDropzone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    addDropzone.classList.remove('admin-game-dropzone--drag');
+    var file = e.dataTransfer.files[0];
+    if (file && (file.name.endsWith('.zip') || file.type === 'application/zip')) {
+      // Injecte le fichier dans l'input via DataTransfer
+      try {
+        var dt = new DataTransfer();
+        dt.items.add(file);
+        addInput.files = dt.files;
+      } catch(_) {}
+      addSetFile(file);
     }
+  });
+
+  /* ── Toggle entrypoint manuel ── */
+  var entryToggle = qs('#add-entry-toggle');
+  var entryInput  = qs('#add-entrypoint');
+  if (entryToggle && entryInput) {
+    entryToggle.addEventListener('change', function () {
+      entryInput.disabled = !this.checked;
+      entryInput.style.opacity = this.checked ? '1' : '.4';
+      if (this.checked) { entryInput.focus(); entryInput.select(); }
+    });
+  }
+
+  /* ── Reset modal add à l'ouverture ── */
+  qs('#jeux-add-btn').addEventListener('click', function () {
+    qs('#add-title').value = '';
+    qs('#add-slug').value  = '';
+    qs('#add-desc').value  = '';
+    qs('#add-online-url').value = '';
+    addInput.value = '';
+    addLabel.textContent = 'Glisser le .zip ici ou cliquer';
+    addDropzone.classList.remove('admin-game-dropzone--filled','admin-game-dropzone--drag');
+    addSubmit.disabled = true; addSubmit.style.opacity = '.5';
+    if (entryToggle) { entryToggle.checked = false; entryInput.disabled = true; entryInput.style.opacity = '.4'; entryInput.value = ''; }
+    qs('#add-advanced').removeAttribute('open');
+    hide(qs('#add-progress'));
+    qs('#add-progress-bar').style.width = '0%';
+    openModal(addModal);
   });
 
   /* ── Dropzone "Modifier — re-upload" ── */
@@ -580,10 +648,10 @@
     var title    = qs('#add-title').value.trim();
     var slug     = qs('#add-slug').value.trim();
     var desc     = qs('#add-desc').value.trim();
-    var entry    = qs('#add-entrypoint').value.trim() || 'index.html';
+    // entrypoint : seulement si l'utilisateur a activé le toggle
+    var entry    = (entryToggle && entryToggle.checked) ? (qs('#add-entrypoint').value.trim() || '') : '';
     var onlineUrl= qs('#add-online-url').value.trim();
     var file     = addInput.files[0];
-    if (!title) { alert('Le titre est requis.'); return; }
     if (!file)  { alert('Veuillez choisir un .zip.'); return; }
     var fd = new FormData();
     fd.append('title', title);
