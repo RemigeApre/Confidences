@@ -1,4 +1,6 @@
 const express = require("express");
+const path = require("path");
+const fs = require("fs");
 const {
   listSubmissions,
   getSubmission,
@@ -53,6 +55,18 @@ const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
 const { createThrottle } = require("../loginThrottle");
 const { slugify, computeScores, flattenItemsRaw } = require("../scoring");
+const multer = require("multer");
+const os = require("os");
+const { execFile } = require("child_process");
+
+const zipUpload = multer({
+  storage: multer.diskStorage({
+    destination: os.tmpdir(),
+    filename: (_req, _file, cb) => cb(null, `game-upload-${Date.now()}.zip`),
+  }),
+  limits: { fileSize: 600 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => cb(null, file.mimetype === "application/zip" || file.originalname.endsWith(".zip")),
+});
 
 const loginThrottle = createThrottle();
 const SEXE_VALUES = ["", "femme", "homme", "autre"];
@@ -537,6 +551,26 @@ function buildAdminRouter(config) {
   router.post("/ia/:id/delete", requireAdmin, (req, res) => {
     deleteAiProfile(Number(req.params.id));
     res.redirect("/admin#tab-ia");
+  });
+
+  // ── Gestion des jeux ─────────────────────────────────────────────────────
+  const GAMES_DEST = path.join(__dirname, "..", "..", "games", "mjlc", "resources", "app");
+
+  router.get("/jeux", requireAdmin, (req, res) => {
+    const installed = fs.existsSync(path.join(GAMES_DEST, "gloryhole.html"));
+    res.render("admin-jeux", { installed, success: req.query.success, error: req.query.error });
+  });
+
+  router.post("/jeux/upload", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
+    if (!req.file) return res.redirect("/admin/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
+
+    fs.mkdirSync(GAMES_DEST, { recursive: true });
+
+    execFile("unzip", ["-o", req.file.path, "-d", GAMES_DEST], (err) => {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
+      res.redirect("/admin/jeux?success=1");
+    });
   });
 
   return router;

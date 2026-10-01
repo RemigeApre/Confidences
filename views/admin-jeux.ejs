@@ -1,0 +1,124 @@
+<%- include('partials/head', { title: 'Admin — Jeux', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <span class="admin-topbar-title">Gestion des jeux</span>
+  <form method="POST" action="/admin/logout" style="margin:0">
+    <button type="submit" class="admin-topbar-logout">Déconnexion</button>
+  </form>
+</div>
+
+<nav class="admin-tabs-nav">
+  <a href="/admin" class="admin-tab-btn">← Dashboard</a>
+</nav>
+
+<main class="admin-main" style="max-width:640px;margin:2rem auto;padding:0 1rem;">
+
+  <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1.5rem;">The Hole of Glory</h2>
+
+  <% if (locals.success) { %>
+    <p class="admin-flash admin-flash--ok">Jeu installé avec succès.</p>
+  <% } %>
+  <% if (locals.error) { %>
+    <p class="admin-flash admin-flash--err"><%= error %></p>
+  <% } %>
+
+  <div class="admin-card" style="padding:1.5rem;margin-bottom:2rem;">
+    <p style="margin:0 0 .5rem;font-size:.85rem;color:var(--muted,#888);">État</p>
+    <p style="margin:0;font-weight:600;">
+      <% if (installed) { %>
+        <span style="color:#4ade80;">● Installé</span>
+      <% } else { %>
+        <span style="color:#f87171;">● Non installé</span>
+      <% } %>
+    </p>
+    <% if (installed) { %>
+      <p style="margin:.75rem 0 0;font-size:.8rem;color:var(--muted,#888);">
+        <a href="/games/thog/gloryhole.html" target="_blank" style="color:inherit;text-decoration:underline;">Tester le jeu ↗</a>
+      </p>
+    <% } %>
+  </div>
+
+  <div class="admin-card" style="padding:1.5rem;">
+    <p style="margin:0 0 1rem;font-size:.9rem;">
+      Uploadez un fichier <code>.zip</code> contenant les fichiers du jeu
+      (le contenu du dossier <code>resources/app/</code> de l'Electron app).
+    </p>
+
+    <form method="POST" action="/admin/jeux/upload" enctype="multipart/form-data" id="upload-form">
+      <div class="admin-upload-dropzone" id="dropzone">
+        <input type="file" name="zipfile" id="zipfile-input" accept=".zip" required style="display:none">
+        <label for="zipfile-input" class="admin-upload-label" id="upload-label">
+          <span class="admin-upload-icon">📦</span>
+          <span id="upload-text">Choisir un fichier .zip</span>
+        </label>
+      </div>
+
+      <div id="upload-progress" hidden style="margin:.75rem 0 0;">
+        <div class="admin-upload-bar-track"><div class="admin-upload-bar-fill" id="upload-bar"></div></div>
+        <p id="upload-status" style="font-size:.78rem;color:var(--muted,#888);margin:.35rem 0 0;"></p>
+      </div>
+
+      <button type="submit" class="admin-btn-primary" id="upload-btn" style="margin-top:1.25rem;" disabled>
+        Installer
+      </button>
+    </form>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  const input   = document.getElementById('zipfile-input');
+  const label   = document.getElementById('upload-label');
+  const text    = document.getElementById('upload-text');
+  const btn     = document.getElementById('upload-btn');
+  const form    = document.getElementById('upload-form');
+  const progress= document.getElementById('upload-progress');
+  const bar     = document.getElementById('upload-bar');
+  const status  = document.getElementById('upload-status');
+
+  input.addEventListener('change', function () {
+    if (this.files && this.files[0]) {
+      const mb = (this.files[0].size / 1024 / 1024).toFixed(1);
+      text.textContent = this.files[0].name + ' (' + mb + ' Mo)';
+      btn.disabled = false;
+    }
+  });
+
+  form.addEventListener('submit', function (e) {
+    if (!input.files || !input.files[0]) return;
+    btn.disabled = true;
+    btn.textContent = 'Installation en cours…';
+    progress.hidden = false;
+    status.textContent = 'Upload en cours…';
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/admin/jeux/upload');
+
+    xhr.upload.addEventListener('progress', function (ev) {
+      if (!ev.lengthComputable) return;
+      const pct = Math.round(ev.loaded / ev.total * 100);
+      bar.style.width = pct + '%';
+      status.textContent = 'Upload : ' + pct + '%' + (pct === 100 ? ' — Extraction…' : '');
+    });
+
+    xhr.addEventListener('load', function () {
+      // Serveur redirige → suivre manuellement
+      const dest = xhr.responseURL || '/admin/jeux';
+      window.location.href = dest;
+    });
+
+    xhr.addEventListener('error', function () {
+      status.textContent = 'Erreur réseau.';
+      btn.disabled = false;
+      btn.textContent = 'Installer';
+    });
+
+    e.preventDefault();
+    const fd = new FormData(form);
+    xhr.send(fd);
+  });
+})();
+</script>
+
+<%- include('partials/foot') %>

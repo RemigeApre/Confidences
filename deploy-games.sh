@@ -6,8 +6,8 @@
 #   ./deploy-games.sh ubuntu@mon-vps.com /var/www/lequizz
 #   ./deploy-games.sh                    (utilise les valeurs par défaut ci-dessous)
 
-REMOTE_USER_HOST="${1:-ubuntu@mon-vps.com}"
-REMOTE_APP_PATH="${2:-/var/www/lequizz}"
+REMOTE_USER_HOST="${1:-debien@51.91.158.21}"
+REMOTE_APP_PATH="${2:-/home/quizz}"
 
 echo "→ Synchronisation de games/ vers $REMOTE_USER_HOST:$REMOTE_APP_PATH/games/"
 
