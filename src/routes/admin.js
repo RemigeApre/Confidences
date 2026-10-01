@@ -606,6 +606,11 @@ function buildAdminRouter(config) {
   function detectGameEngine(gameRoot) {
     if (fs.existsSync(path.join(gameRoot, "js", "rmmz_core.js"))) return "rpgm-mz";
     if (fs.existsSync(path.join(gameRoot, "js", "rpg_core.js")))  return "rpgm-mv";
+    // Godot web export : présence d'un .pck ou d'un .wasm à côté du HTML
+    try {
+      const files = fs.readdirSync(gameRoot);
+      if (files.some(f => f.endsWith(".pck")) || files.some(f => f.endsWith(".wasm"))) return "godot";
+    } catch (_) {}
     return "html5";
   }
 

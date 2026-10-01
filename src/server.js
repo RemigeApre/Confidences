@@ -309,10 +309,12 @@ app.get("/games/:slug/*.html", (req, res, next) => {
 app.use("/game-covers", express.static(path.join(GAMES_DIR, "covers"), { maxAge: "7d" }));
 
 // Assets statiques des jeux (JS, CSS, images…)
+// Godot exige Content-Type: application/wasm pour les .wasm, sinon le navigateur refuse
 app.use("/games/:slug", (req, res, next) => {
   if (!req.user) return res.status(403).end();
   const game = readGamesJson().find(g => g.slug === req.params.slug);
   if (!game) return res.status(404).end();
+  if (req.path.endsWith(".wasm")) res.setHeader("Content-Type", "application/wasm");
   express.static(path.join(GAMES_DIR, game.dir), { maxAge: "1d" })(req, res, next);
 });
 
