@@ -550,7 +550,12 @@ function buildAdminRouter(config) {
   // iframe navigateur. Renvoie un tableau de { severity, message }.
   function scanGameCompat(gameDir, entrypoint) {
     const PATTERNS = [
-      { re: /\brequire\s*\(/,            msg: "appel require() — API Node.js/Electron" },
+      // require() : on cible uniquement les imports de modules Electron/Node dangereux.
+      // Les librairies UMD (JSZip, jQuery…) contiennent require() dans un guard
+      // "typeof module !== undefined" qui n'est jamais exécuté dans un navigateur —
+      // un require() générique est donc un faux positif.
+      { re: /require\s*\(\s*['"](?:electron|ipcRenderer|ipcMain|fs|path|os|child_process|net|crypto|shell|app|dialog|clipboard)['"]/,
+        msg: "require() d'un module Electron/Node natif" },
       { re: /\bipcRenderer\b/,           msg: "ipcRenderer — API Electron" },
       { re: /\bipcMain\b/,               msg: "ipcMain — API Electron" },
       { re: /process\.versions\.electron/, msg: "process.versions.electron — détection Electron" },
@@ -559,7 +564,7 @@ function buildAdminRouter(config) {
       { re: /\bBrowserWindow\b/,         msg: "BrowserWindow — API Electron" },
       { re: /\bnativeImage\b/,           msg: "nativeImage — API Electron" },
       { re: /\bwebContents\b/,           msg: "webContents — API Electron" },
-      { re: /\belectron\b/,              msg: "référence à 'electron' (require/import)" },
+      { re: /require\s*\(\s*['"]electron['"]/,  msg: "require('electron') — API Electron" },
     ];
     const WARN_PATTERNS = [
       { re: /src=["']\/(?!games\/|static\/)[^"']+["']/,
