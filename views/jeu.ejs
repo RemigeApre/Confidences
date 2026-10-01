@@ -941,6 +941,7 @@
     if (jeuHomeView) jeuHomeView.hidden = true;
     arcadeOverlay.hidden = false;
     showScreen(screenGames);
+    history.replaceState(null, '', '#arcade');
     // Pre-load card style preferences
     fetch('/arcade/memory/shop')
       .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
@@ -960,9 +961,11 @@
     clearInterval(_timer);
     arcadeOverlay.hidden = true;
     if (jeuHomeView) jeuHomeView.hidden = false;
+    if (location.hash === '#arcade') history.replaceState(null, '', location.pathname);
   }
 
   arcadeBtn && arcadeBtn.addEventListener('click', openArcade);
+  if (location.hash === '#arcade') openArcade();
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && arcadeOverlay && !arcadeOverlay.hidden) closeArcade();
   });
@@ -1564,10 +1567,12 @@
   function openAventure() {
     if (homeView) homeView.hidden = true;
     if (aventureView) aventureView.hidden = false;
+    history.replaceState(null, '', '#aventure');
   }
   function closeAventure() {
     if (aventureView) aventureView.hidden = true;
     if (homeView) homeView.hidden = false;
+    if (location.hash === '#aventure') history.replaceState(null, '', location.pathname);
   }
   function sendVolume(vol, muted) {
     if (!gameIframe || !gameIframe.contentWindow) return;
@@ -1619,6 +1624,7 @@
 
   openBtn    && openBtn.addEventListener('click', openAventure);
   backBtn    && backBtn.addEventListener('click', closeAventure);
+  if (location.hash === '#aventure') openAventure();
   gameQuitBtn && gameQuitBtn.addEventListener('click', closeGame);
 
   // Boutons Jouer génériques — chaque carte a data-game-url
@@ -1678,14 +1684,17 @@
     overlay.hidden = false;
     document.body.style.overflow = 'hidden';
     showScreen(screenGames);
+    history.replaceState(null, '', '#casino');
   }
   function closeCasino() {
     overlay.hidden = true;
     document.body.style.overflow = '';
+    if (location.hash === '#casino') history.replaceState(null, '', location.pathname);
   }
 
   openBtn  && openBtn.addEventListener('click', openCasino);
   closeBtn && closeBtn.addEventListener('click', closeCasino);
+  if (location.hash === '#casino') openCasino();
   overlay.addEventListener('click', function(e) { if (e.target === overlay) closeCasino(); });
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !overlay.hidden) closeCasino(); });
 

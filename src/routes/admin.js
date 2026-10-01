@@ -534,35 +534,62 @@ function buildAdminRouter(config) {
   // typiques d'une racine de jeu (.js, .css, assets/, img/…).
   const SKIP_DIRS = new Set(["node_modules", ".git", "__MACOSX", ".DS_Store", "locales"]);
 
+  // Retourne { dir, entrypoint } ou null.
+  // 1. Cherche le fichier d'entrée spécifié.
+  // 2. Si introuvable, cherche n'importe quel .html dans l'arbre (fallback auto-détection).
   function findGameRoot(baseDir, entrypoint) {
-    const candidates = [];
+    function scoreDir(dir, depth, entries) {
+      const names = entries.map(e => e.name.toLowerCase());
+      let score = -depth * 10;
+      if (names.some(n => n.endsWith(".js")))  score += 5;
+      if (names.some(n => n.endsWith(".css"))) score += 3;
+      if (names.some(n => ["assets","img","images","audio","sounds","js","css","data","www","build"].includes(n))) score += 8;
+      return score;
+    }
 
-    function walk(dir, depth) {
-      if (depth > 12) return;
+    function walk(dir, depth, target) {
+      if (depth > 12) return [];
       let entries;
-      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-
-      if (fs.existsSync(path.join(dir, entrypoint))) {
-        // Score : pénalise la profondeur, récompense la présence de fichiers-clés
-        const names = entries.map(e => e.name.toLowerCase());
-        let score = -depth * 10;
-        if (names.some(n => n.endsWith(".js")))   score += 5;
-        if (names.some(n => n.endsWith(".css")))  score += 3;
-        if (names.some(n => ["assets","img","images","audio","sounds","js","css","data","www","build"].includes(n))) score += 8;
-        candidates.push({ dir, score });
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return []; }
+      const results = [];
+      if (fs.existsSync(path.join(dir, target))) {
+        results.push({ dir, entrypoint: target, score: scoreDir(dir, depth, entries) });
       }
-
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
         if (SKIP_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
-        walk(path.join(dir, entry.name), depth + 1);
+        results.push(...walk(path.join(dir, entry.name), depth + 1, target));
       }
+      return results;
     }
 
-    walk(baseDir, 0);
-    if (candidates.length === 0) return null;
-    candidates.sort((a, b) => b.score - a.score);
-    return candidates[0].dir;
+    // Passe 1 : entrypoint demandé
+    const pass1 = walk(baseDir, 0, entrypoint);
+    if (pass1.length > 0) {
+      pass1.sort((a, b) => b.score - a.score);
+      return pass1[0];
+    }
+
+    // Passe 2 : fallback — cherche tout fichier .html dans l'arbre
+    const htmlCandidates = [];
+    function walkHtml(dir, depth) {
+      if (depth > 12) return;
+      let entries;
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      const htmlFiles = entries.filter(e => e.isFile() && e.name.toLowerCase().endsWith(".html"));
+      for (const f of htmlFiles) {
+        htmlCandidates.push({ dir, entrypoint: f.name, score: scoreDir(dir, depth, entries) });
+      }
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        if (SKIP_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
+        walkHtml(path.join(dir, entry.name), depth + 1);
+      }
+    }
+    walkHtml(baseDir, 0);
+    if (htmlCandidates.length === 0) return null;
+    htmlCandidates.sort((a, b) => b.score - a.score);
+    return htmlCandidates[0];
   }
 
   // ── Détection moteur ────────────────────────────────────────────────────────
@@ -706,17 +733,19 @@ function buildAdminRouter(config) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
-      const gameRoot = findGameRoot(gameDir, entrypoint);
-      if (!gameRoot) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
-        `Fichier d'entrée '${entrypoint}' introuvable dans le zip extrait`
+      const rootResult = findGameRoot(gameDir, entrypoint);
+      if (!rootResult) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
+        `Aucun fichier HTML trouvé dans le zip`
       ));
+      let rootDir         = rootResult.dir;
+      const detectedEntry = rootResult.entrypoint; // peut différer si fallback auto
 
       // Auto-détection moteur
-      const engine = detectGameEngine(gameRoot);
+      const engine = detectGameEngine(rootDir);
 
       // Auto-titre depuis data/System.json pour RPGM si titre non fourni
       if (!title && (engine === "rpgm-mv" || engine === "rpgm-mz")) {
-        title = readRpgmTitle(gameRoot) || "";
+        title = readRpgmTitle(rootDir) || "";
       }
 
       const slug = rawSlug ? toSlug(rawSlug) : (title ? toSlug(title) : tmpSlug);
@@ -726,15 +755,16 @@ function buildAdminRouter(config) {
       const finalGameDir = path.join(GAMES_DIR, slug);
       if (tmpSlug !== slug && !fs.existsSync(finalGameDir)) {
         try { fs.renameSync(gameDir, finalGameDir); } catch (_) {}
+        rootDir = rootDir.replace(gameDir, finalGameDir);
       }
-      const actualRoot = gameRoot.replace(gameDir, finalGameDir);
 
-      const relDir   = path.relative(GAMES_DIR, actualRoot).replace(/\\/g, "/");
-      const warnings = scanGameCompat(actualRoot, entrypoint);
-      const games    = readGames();
-      const idx      = games.findIndex(g => g.slug === slug);
-      const gameData = { slug, title, description, engine, dir: relDir, entrypoint,
-                         ...(onlineUrl ? { online_url: onlineUrl } : {}), warnings };
+      const finalEntry = detectedEntry; // entrypoint effectivement trouvé
+      const relDir     = path.relative(GAMES_DIR, rootDir).replace(/\\/g, "/");
+      const warnings   = scanGameCompat(rootDir, finalEntry);
+      const games      = readGames();
+      const idx        = games.findIndex(g => g.slug === slug);
+      const gameData   = { slug, title, description, engine, dir: relDir, entrypoint: finalEntry,
+                           ...(onlineUrl ? { online_url: onlineUrl } : {}), warnings };
       if (idx >= 0) games[idx] = { ...games[idx], ...gameData };
       else games.push(gameData);
       writeGames(games);
@@ -768,16 +798,18 @@ function buildAdminRouter(config) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
-      const gameRoot = findGameRoot(gameDir, entrypoint);
-      if (!gameRoot) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
-        `Fichier d'entrée '${entrypoint}' introuvable dans le zip extrait`
+      const rootResult = findGameRoot(gameDir, entrypoint);
+      if (!rootResult) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
+        `Aucun fichier HTML trouvé dans le zip`
       ));
+      const rootDir      = rootResult.dir;
+      const finalEntry   = rootResult.entrypoint;
 
-      const relDir   = path.relative(GAMES_DIR, gameRoot).replace(/\\/g, "/");
-      const engine   = detectGameEngine(gameRoot);
-      const warnings = scanGameCompat(gameRoot, entrypoint);
+      const relDir   = path.relative(GAMES_DIR, rootDir).replace(/\\/g, "/");
+      const engine   = detectGameEngine(rootDir);
+      const warnings = scanGameCompat(rootDir, finalEntry);
       const idx      = games.findIndex(g => g.slug === slug);
-      games[idx]     = { ...existing, dir: relDir, entrypoint, engine, warnings };
+      games[idx]     = { ...existing, dir: relDir, entrypoint: finalEntry, engine, warnings };
       writeGames(games);
 
       const hasErrors = warnings.some(w => w.severity === "error");
