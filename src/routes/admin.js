@@ -739,7 +739,9 @@ function buildAdminRouter(config) {
     const gameDir = path.join(GAMES_DIR, tmpSlug);
     fs.mkdirSync(gameDir, { recursive: true });
 
-    execFile("7z", ["x", req.file.path, `-o${gameDir}`, "-y"], (err) => {
+    const isZip = req.file.originalname.toLowerCase().endsWith(".zip");
+    const extractArgs = ["x", req.file.path, `-o${gameDir}`, "-y", ...(isZip ? ["-mcp=932"] : [])];
+    execFile("7z", extractArgs, (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
@@ -804,7 +806,9 @@ function buildAdminRouter(config) {
     const gameDir    = path.join(GAMES_DIR, slug);
     fs.mkdirSync(gameDir, { recursive: true });
 
-    execFile("7z", ["x", req.file.path, `-o${gameDir}`, "-y"], (err) => {
+    const isZip2 = req.file.originalname.toLowerCase().endsWith(".zip");
+    const extractArgs2 = ["x", req.file.path, `-o${gameDir}`, "-y", ...(isZip2 ? ["-mcp=932"] : [])];
+    execFile("7z", extractArgs2, (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
