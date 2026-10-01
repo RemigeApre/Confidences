@@ -3419,24 +3419,29 @@ const MEMORY_COLOR_PRICE = 1;
 const VALID_MEMORY_COLORS = new Set(['default','purple','red','forest','navy','slate']);
 
 function getMemoryShop(userId) {
-  const user = db.prepare("SELECT memory_card_charm_id, memory_card_color, coins FROM users WHERE id=?").get(userId);
-  if (!user) return null;
-  const charms = db.prepare(`
-    SELECT c.id, c.symbol, c.label, c.rarity,
-      CASE WHEN u.ref_id IS NOT NULL THEN 1 ELSE 0 END AS owned
-    FROM charms c
-    LEFT JOIN user_unlocks u ON u.ref_id = c.id AND u.item_type = 'charm' AND u.user_id = ?
-    ORDER BY owned DESC, c.label
-  `).all(userId);
-  const ownedColors = db.prepare("SELECT color_key FROM user_memory_colors WHERE user_id=?").all(userId).map(r => r.color_key);
-  if (!ownedColors.includes('default')) ownedColors.unshift('default');
-  return {
-    selectedCharmId: user.memory_card_charm_id || null,
-    selectedColor: user.memory_card_color || 'default',
-    coins: user.coins || 0,
-    charms,
-    ownedColors,
-  };
+  try {
+    const user = db.prepare("SELECT memory_card_charm_id, memory_card_color, coins FROM users WHERE id=?").get(userId);
+    if (!user) return null;
+    const charms = db.prepare(`
+      SELECT c.id, c.symbol, c.label, c.rarity,
+        CASE WHEN u.ref_id IS NOT NULL THEN 1 ELSE 0 END AS owned
+      FROM charms c
+      LEFT JOIN user_unlocks u ON u.ref_id = c.id AND u.item_type = 'charm' AND u.user_id = ?
+      ORDER BY owned DESC, c.label
+    `).all(userId);
+    const ownedColors = db.prepare("SELECT color_key FROM user_memory_colors WHERE user_id=?").all(userId).map(r => r.color_key);
+    if (!ownedColors.includes('default')) ownedColors.unshift('default');
+    return {
+      selectedCharmId: user.memory_card_charm_id || null,
+      selectedColor: user.memory_card_color || 'default',
+      coins: user.coins || 0,
+      charms,
+      ownedColors,
+    };
+  } catch (e) {
+    console.error('[getMemoryShop] error:', e.message);
+    return null;
+  }
 }
 
 function setMemoryCardIcon(userId, charmId) {

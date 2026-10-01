@@ -586,18 +586,25 @@
   function openShop(returnScreen) {
     _shopReturn = returnScreen;
     showScreen(screenShop);
-    if (_hdrBack) _hdrBack.hidden = false; // always show back in shop
+    // Affichage immédiat avec les données locales (évite l'écran vide)
+    if (shopCoinsEl) shopCoinsEl.textContent = _shopCoins;
+    renderShopIcons([], null);         // au moins l'étoile par défaut
+    renderShopColors(['default'], _cardColor); // au moins la couleur par défaut
+    // Mise à jour depuis le serveur
     fetch('/arcade/memory/shop')
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then(function(d) {
-        if (!d.ok) return;
+        if (!d.ok) { console.warn('memory/shop: ok false'); return; }
         _shopCoins = d.coins;
         if (shopCoinsEl) shopCoinsEl.textContent = _shopCoins;
-        // Load from server selections if no local state yet
         if (d.selectedColor) _cardColor = d.selectedColor;
-        renderShopIcons(d.charms, d.selectedCharmId);
-        renderShopColors(d.ownedColors, d.selectedColor);
-      });
+        renderShopIcons(d.charms || [], d.selectedCharmId);
+        renderShopColors(d.ownedColors || ['default'], d.selectedColor || 'default');
+      })
+      .catch(function(err) { console.error('memory/shop fetch:', err); });
   }
 
   function renderShopIcons(charms, selectedId) {
@@ -815,16 +822,16 @@
     showScreen(screenGames);
     // Pre-load card style preferences
     fetch('/arcade/memory/shop')
-      .then(function(r) { return r.json(); })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function(d) {
-        if (!d.ok) return;
+        if (!d.ok) { console.warn('openArcade shop preload: ok false'); return; }
         _shopCoins = d.coins;
         _cardColor = d.selectedColor || 'default';
         if (d.selectedCharmId && d.charms) {
-          var found = d.charms.filter(function(c) { return c.id === d.selectedCharmId; })[0];
+          var found = (d.charms || []).filter(function(c) { return c.id === d.selectedCharmId; })[0];
           if (found) _cardIcon = found.symbol;
         }
-      }).catch(function() {});
+      }).catch(function(e) { console.error('openArcade shop preload:', e); });
   }
 
   function closeArcade() {

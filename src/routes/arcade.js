@@ -65,9 +65,14 @@ function buildArcadeRouter() {
   // ── Memory boutique ───────────────────────────────────────────────────────
 
   router.get('/memory/shop', requireUserJson, (req, res) => {
-    const shop = getMemoryShop(req.user.id);
-    if (!shop) return res.json({ ok: false });
-    res.json({ ok: true, ...shop });
+    try {
+      const shop = getMemoryShop(req.user.id);
+      if (!shop) { console.warn('[arcade/memory/shop] getMemoryShop returned null for user', req.user.id); return res.json({ ok: false }); }
+      res.json({ ok: true, ...shop });
+    } catch (e) {
+      console.error('[arcade/memory/shop] error:', e.message);
+      res.status(500).json({ ok: false, error: e.message });
+    }
   });
 
   router.post('/memory/shop/icon', requireUserJson, express.json(), (req, res) => {
