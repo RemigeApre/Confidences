@@ -505,6 +505,45 @@ function buildAdminRouter(config) {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
   }
 
+  // ── Détection du répertoire racine du jeu ───────────────────────────────────
+  // Les zips contiennent souvent un dossier préfixe (ex. MonJeu-v1.0/index.html).
+  // On collecte TOUS les répertoires contenant l'entrypoint (en ignorant les
+  // dossiers parasites : node_modules, .git, __MACOSX…), puis on choisit le
+  // meilleur candidat selon un score : profondeur minimale + présence de fichiers
+  // typiques d'une racine de jeu (.js, .css, assets/, img/…).
+  const SKIP_DIRS = new Set(["node_modules", ".git", "__MACOSX", ".DS_Store", "locales"]);
+
+  function findGameRoot(baseDir, entrypoint) {
+    const candidates = [];
+
+    function walk(dir, depth) {
+      if (depth > 12) return;
+      let entries;
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+
+      if (fs.existsSync(path.join(dir, entrypoint))) {
+        // Score : pénalise la profondeur, récompense la présence de fichiers-clés
+        const names = entries.map(e => e.name.toLowerCase());
+        let score = -depth * 10;
+        if (names.some(n => n.endsWith(".js")))   score += 5;
+        if (names.some(n => n.endsWith(".css")))  score += 3;
+        if (names.some(n => ["assets","img","images","audio","sounds","js","css","data","www","build"].includes(n))) score += 8;
+        candidates.push({ dir, score });
+      }
+
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        if (SKIP_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
+        walk(path.join(dir, entry.name), depth + 1);
+      }
+    }
+
+    walk(baseDir, 0);
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates[0].dir;
+  }
+
   // ── Scan de compatibilité navigateur ────────────────────────────────────────
   // Lit le HTML d'entrée + les <script src> de premier niveau (max 20 fichiers,
   // 100 Ko par fichier) et cherche des APIs Electron/Node incompatibles avec un
@@ -595,10 +634,18 @@ function buildAdminRouter(config) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
-      const warnings = scanGameCompat(gameDir, entrypoint);
+      // Trouver le vrai répertoire racine (l'entrypoint peut être dans un sous-dossier du zip)
+      const gameRoot = findGameRoot(gameDir, entrypoint);
+      if (!gameRoot) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
+        `Fichier d'entrée '${entrypoint}' introuvable dans le zip extrait`
+      ));
+
+      // dir relatif à GAMES_DIR (ex. "myjeu/MonJeu-v1.0" si le zip avait un préfixe)
+      const relDir   = path.relative(GAMES_DIR, gameRoot).replace(/\\/g, "/");
+      const warnings = scanGameCompat(gameRoot, entrypoint);
       const games    = readGames();
       const idx      = games.findIndex(g => g.slug === slug);
-      const gameData = { slug, title, description, dir: slug, entrypoint, warnings };
+      const gameData = { slug, title, description, dir: relDir, entrypoint, warnings };
       if (idx >= 0) games[idx] = gameData; else games.push(gameData);
       writeGames(games);
 
