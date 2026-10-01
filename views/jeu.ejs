@@ -1073,7 +1073,16 @@
     }
 
     var cols = _pairs <= 4 ? 4 : (_pairs <= 6 ? 4 : (_pairs <= 8 ? 4 : 5));
-    memGrid.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+    var rows = Math.ceil(cardData.length / cols);
+    // Calcule la taille max qui tient en largeur ET en hauteur
+    var hudEl = screenGame ? screenGame.querySelector('.arcade-memory-hud') : null;
+    var gapPx  = 7;  // ~0.45rem
+    var padPx  = 12; // ~0.75rem
+    var availW = (screenGame ? screenGame.clientWidth  : window.innerWidth)  - padPx * 2 - gapPx * (cols - 1);
+    var availH = (screenGame ? screenGame.clientHeight : window.innerHeight) - (hudEl ? hudEl.offsetHeight : 52) - padPx * 2 - gapPx * 2 - gapPx * (rows - 1);
+    var sz = Math.max(Math.floor(Math.min(availW / cols, availH / rows)), 44);
+    memGrid.style.gridTemplateColumns = 'repeat(' + cols + ', ' + sz + 'px)';
+    memGrid.style.gridAutoRows = sz + 'px';
 
     _cards = [];
     cardData.forEach(function(data, idx) {

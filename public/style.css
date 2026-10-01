@@ -18054,12 +18054,12 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* ── Screens ── */
 .arcade-screen {
-  padding: 1.25rem; overflow-y: auto; flex: 1;
+  padding: 1.25rem; overflow-y: auto; flex: 1; min-height: 0;
 }
 .arcade-screen[hidden] { display: none !important; }
 .arcade-screen--game {
   display: flex; flex-direction: column; gap: .65rem;
-  padding: .75rem; overflow: hidden;
+  padding: .75rem; overflow: hidden; min-height: 0;
 }
 .arcade-screen--result {
   position: relative;
@@ -18283,7 +18283,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* ── Memory grid & cards ── */
 .arcade-memory-grid {
-  display: grid; gap: .45rem; flex: 1; align-content: center;
+  display: grid; gap: .45rem; flex: 1; min-height: 0;
+  align-content: center; justify-content: center;
   overflow: hidden;
 }
 .mem-card { aspect-ratio: 1; cursor: pointer; perspective: 600px; }
