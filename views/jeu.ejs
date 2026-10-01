@@ -547,6 +547,7 @@
   var _tagSearchTimeout = null;
   var _midGame     = false; // true when changing mode between levels
   var _inProgress  = false; // true as soon as a level has been started
+  var _savedLevel  = 1;    // niveau à sauvegarder (= _level+1 après victoire)
   var _shopCoins   = 0;    // local coin cache (synced from server)
   var _shopReturn  = null; // screen to return to after closing shop
   var _cardIcon    = '\u2605'; // current card back icon (symbol)
@@ -736,8 +737,7 @@
   });
   pauseQuitBtn && pauseQuitBtn.addEventListener('click', function() {
     clearInterval(_timer);
-    clearProgress();
-    showScreen(screenGames);
+    showScreen(screenGames); // saveProgress() appelé dans showScreen
   });
 
   // ── Time boost ────────────────────────────────────────────────────────────────
@@ -794,10 +794,8 @@
   function saveProgress() {
     if (!_inProgress) return;
     try {
-      // Si l'écran de victoire est affiché, sauvegarder le niveau suivant
-      var saveLevel = (screenWin && !screenWin.hidden) ? _level + 1 : _level;
       localStorage.setItem(SAVE_KEY, JSON.stringify({
-        level: saveLevel, totalScore: _totalScore,
+        level: _savedLevel, totalScore: _totalScore,
         mode: _mode, tag: _selectedTag || null,
       }));
     } catch (_e) {}
@@ -963,6 +961,7 @@
   function startLevel(lvl) {
     _inProgress = true;
     _level = lvl;
+    _savedLevel = lvl; // niveau de reprise = niveau en cours
     _score = 0;
     _matched = 0;
     _flipped = [];
@@ -1133,6 +1132,7 @@
       // Synchronise le compteur lootbox dans lootbox.js (fix : _count était stale)
       if (typeof window._lbRefreshCount === 'function') window._lbRefreshCount();
     }
+    _savedLevel = _level + 1; // niveau suivant à reprendre
     saveProgress(); // sauvegarde immédiate après chaque niveau complété
     showScreen(screenWin);
   }
@@ -1159,8 +1159,7 @@
   });
 
   loseQuitBtn && loseQuitBtn.addEventListener('click', function() {
-    clearProgress();
-    showScreen(screenGames);
+    showScreen(screenGames); // saveProgress() appelé dans showScreen
   });
 })();
 </script>
