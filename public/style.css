@@ -17832,26 +17832,27 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* ── Badge « Bientôt » sur les jeux indisponibles ── */
 .arcade-game-card--unavailable { opacity: .7; pointer-events: none; }
+.arcade-games-list { display: flex; flex-direction: column; gap: .65rem; }
+.arcade-game-entry { display: flex; flex-direction: column; }
 .arcade-game-card-actions { display: flex; align-items: center; gap: .45rem; flex-shrink: 0; }
 .arcade-game-info-btn {
-  background: none; border: 1.5px solid rgba(255,255,255,.18); color: rgba(255,255,255,.5);
-  border-radius: 7px; width: 2rem; height: 2rem; font-size: .9rem; cursor: pointer;
+  background: #334155; border: none; color: #94a3b8;
+  border-radius: 7px; width: 2rem; height: 2rem; font-size: .88rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: border-color .15s, color .15s; flex-shrink: 0;
+  transition: background .15s, color .15s; flex-shrink: 0;
 }
-.arcade-game-info-btn:hover { border-color: rgba(255,255,255,.4); color: #f1f5f9; }
-.arcade-info-tooltip {
-  position: absolute; left: 1.25rem; right: 1.25rem;
-  background: #1e2035; border: 1.5px solid rgba(139,92,246,.4);
-  border-radius: 12px; padding: .9rem 1.1rem; z-index: 10;
-  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+.arcade-game-info-btn:hover { background: #475569; color: #f1f5f9; }
+.arcade-info-panel {
+  background: #1a1f35; border: 1px solid #2d3655;
+  border-top: none; border-radius: 0 0 10px 10px;
+  padding: .85rem 1.1rem .9rem;
 }
-.arcade-info-tooltip p { margin: 0 0 .4rem; font-size: .82rem; color: #cbd5e1; }
-.arcade-info-tooltip p strong { color: #f1f5f9; }
-.arcade-info-tooltip ul { margin: 0 0 .5rem; padding-left: 1.2rem; }
-.arcade-info-tooltip li { font-size: .8rem; color: #94a3b8; margin-bottom: .2rem; }
-.arcade-tip-correct { color: hsl(145,60%,50%); font-weight: 700; }
-.arcade-tip-present { color: hsl(44,90%,60%); font-weight: 700; }
+.arcade-info-panel p { margin: 0 0 .35rem; font-size: .82rem; color: #94a3b8; }
+.arcade-info-panel p strong { color: #e2e8f0; font-size: .83rem; }
+.arcade-info-panel ul { margin: 0 0 .45rem; padding-left: 1.1rem; }
+.arcade-info-panel li { font-size: .8rem; color: #64748b; margin-bottom: .18rem; }
+.arcade-tip-correct { color: hsl(145,55%,48%); font-weight: 600; }
+.arcade-tip-present { color: hsl(44,85%,55%); font-weight: 600; }
 .arcade-unavailable-badge {
   display: inline-block;
   background: rgba(100,116,139,.25); border: 1px solid rgba(100,116,139,.4);
@@ -17913,24 +17914,26 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 
 /* ── Game list ── */
-.arcade-games-list { display: flex; flex-direction: column; gap: .65rem; position: relative; }
 .arcade-game-card {
   display: flex; align-items: center; gap: 1rem;
-  background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.1);
-  border-radius: 12px; padding: .9rem 1.15rem;
+  background: rgba(255,255,255,.04); border: 1px solid #2d3655;
+  border-radius: 10px; padding: .9rem 1.15rem;
   transition: border-color .15s, background .15s;
 }
-.arcade-game-card:hover { background: rgba(255,255,255,.07); border-color: rgba(139,92,246,.4); }
+.arcade-game-entry:has(.arcade-info-panel:not([hidden])) .arcade-game-card {
+  border-radius: 10px 10px 0 0; border-bottom-color: transparent;
+}
+.arcade-game-card:hover { background: rgba(255,255,255,.06); border-color: #3d4a6b; }
 .arcade-game-card-icon { font-size: 1.8rem; flex-shrink: 0; line-height: 1; }
 .arcade-game-card-info { flex: 1; display: flex; align-items: center; }
 .arcade-game-card-info strong { font-size: .95rem; color: #f1f5f9; }
 .arcade-game-play-btn {
-  background: rgba(139,92,246,.22); border: 1.5px solid rgba(139,92,246,.5);
-  color: #a78bfa; border-radius: 8px; padding: .42rem 1rem;
+  background: #6d28d9; border: none; color: #fff;
+  border-radius: 8px; padding: .42rem 1rem;
   font-size: .85rem; font-weight: 700; cursor: pointer; flex-shrink: 0;
   transition: background .15s;
 }
-.arcade-game-play-btn:hover { background: rgba(139,92,246,.4); }
+.arcade-game-play-btn:hover { background: #7c3aed; }
 
 /* ── Setup ── */
 .arcade-section-title {

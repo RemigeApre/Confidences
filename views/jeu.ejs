@@ -110,58 +110,61 @@
     <%# ── Liste des jeux ── %>
     <div id="arcade-screen-games" class="arcade-screen">
       <div class="arcade-games-list">
-        <div class="arcade-game-card">
-          <span class="arcade-game-card-icon">&#127183;</span>
-          <div class="arcade-game-card-info">
-            <strong>Memory</strong>
+
+        <div class="arcade-game-entry">
+          <div class="arcade-game-card">
+            <span class="arcade-game-card-icon">&#127183;</span>
+            <div class="arcade-game-card-info">
+              <strong>Memory</strong>
+            </div>
+            <div class="arcade-game-card-actions">
+              <button class="arcade-game-info-btn" id="arcade-memory-info-btn" aria-label="Comment jouer">&#8505;</button>
+              <button class="arcade-game-play-btn" id="arcade-memory-play-btn">Jouer</button>
+            </div>
           </div>
-          <div class="arcade-game-card-actions">
-            <button class="arcade-game-info-btn" id="arcade-memory-info-btn" aria-label="Comment jouer">&#8505;</button>
-            <button class="arcade-game-play-btn" id="arcade-memory-play-btn">Jouer</button>
+          <div class="arcade-info-panel" id="arcade-memory-info-tooltip" hidden>
+            <p><strong>Comment jouer</strong></p>
+            <p>Retrouvez toutes les paires de cartes avant la fin du temps imparti.</p>
+            <p><strong>R&eacute;compenses</strong></p>
+            <ul>
+              <li>Tous les 5&nbsp;niveaux&nbsp;&rarr; 1&nbsp;&#127873; coffre</li>
+              <li>Seuls les nouveaux paliers comptent</li>
+            </ul>
           </div>
         </div>
-        <div class="arcade-game-card">
-          <span class="arcade-game-card-icon">&#127344;</span>
-          <div class="arcade-game-card-info">
-            <strong>Wordle</strong>
+
+        <div class="arcade-game-entry">
+          <div class="arcade-game-card">
+            <span class="arcade-game-card-icon">&#127344;</span>
+            <div class="arcade-game-card-info">
+              <strong>Wordle</strong>
+            </div>
+            <div class="arcade-game-card-actions">
+              <button class="arcade-game-info-btn" id="arcade-wordle-info-btn" aria-label="Comment jouer">&#8505;</button>
+              <button class="arcade-game-play-btn" id="arcade-wordle-play-btn">Jouer</button>
+            </div>
           </div>
-          <div class="arcade-game-card-actions">
-            <button class="arcade-game-info-btn" id="arcade-wordle-info-btn" aria-label="Comment jouer">&#8505;</button>
-            <button class="arcade-game-play-btn" id="arcade-wordle-play-btn">Jouer</button>
+          <div class="arcade-info-panel" id="arcade-wordle-info-tooltip" hidden>
+            <p><strong>Comment jouer</strong></p>
+            <p>Trouvez le mot du Codex en 6&nbsp;essais. Les couleurs vous guident&nbsp;:</p>
+            <ul>
+              <li><span class="arcade-tip-correct">Vert</span>&nbsp;&mdash; bonne lettre, bonne place</li>
+              <li><span class="arcade-tip-present">Jaune</span>&nbsp;&mdash; lettre pr&eacute;sente, mauvaise place</li>
+              <li>Gris&nbsp;&mdash; lettre absente</li>
+            </ul>
+            <p><strong>R&eacute;compenses</strong> (par victoire)</p>
+            <ul>
+              <li>1&nbsp;essai&nbsp;&rarr; 5&nbsp;&#127873;</li>
+              <li>2&nbsp;essais&nbsp;&rarr; 4&nbsp;&#127873;</li>
+              <li>3&nbsp;essais&nbsp;&rarr; 3&nbsp;&#127873;</li>
+              <li>4&nbsp;essais&nbsp;&rarr; 2&nbsp;&#127873;</li>
+              <li>5&nbsp;essais&nbsp;&rarr; 1&nbsp;&#127873;</li>
+              <li>6&nbsp;essais ou &eacute;chec&nbsp;&rarr; 0&nbsp;&#127873;</li>
+            </ul>
           </div>
         </div>
+
       </div>
-    </div>
-
-    <%# ── Tooltip infos Memory ── %>
-    <div class="arcade-info-tooltip" id="arcade-memory-info-tooltip" hidden>
-      <p><strong>Comment jouer</strong></p>
-      <p>Retrouvez toutes les paires de cartes avant la fin du temps imparti.</p>
-      <p><strong>R&eacute;compenses</strong></p>
-      <ul>
-        <li>Tous les 5&nbsp;niveaux&nbsp;&rarr; 1&nbsp;&#127873; coffre</li>
-        <li>Seuls les nouveaux paliers comptent</li>
-      </ul>
-    </div>
-
-    <%# ── Tooltip infos Wordle ── %>
-    <div class="arcade-info-tooltip" id="arcade-wordle-info-tooltip" hidden>
-      <p><strong>Comment jouer</strong></p>
-      <p>Trouvez le mot du Codex en 6&nbsp;essais. Les couleurs vous guident&nbsp;:</p>
-      <ul>
-        <li><span class="arcade-tip-correct">Vert</span>&nbsp;&mdash; bonne lettre, bonne place</li>
-        <li><span class="arcade-tip-present">Jaune</span>&nbsp;&mdash; lettre pr&eacute;sente, mauvaise place</li>
-        <li>Gris&nbsp;&mdash; lettre absente</li>
-      </ul>
-      <p><strong>R&eacute;compenses</strong> (par victoire)</p>
-      <ul>
-        <li>1&nbsp;essai&nbsp;&rarr; 5&nbsp;&#127873;</li>
-        <li>2&nbsp;essais&nbsp;&rarr; 4&nbsp;&#127873;</li>
-        <li>3&nbsp;essais&nbsp;&rarr; 3&nbsp;&#127873;</li>
-        <li>4&nbsp;essais&nbsp;&rarr; 2&nbsp;&#127873;</li>
-        <li>5&nbsp;essais&nbsp;&rarr; 1&nbsp;&#127873;</li>
-        <li>6&nbsp;essais ou &eacute;chec&nbsp;&rarr; 0&nbsp;&#127873;</li>
-      </ul>
     </div>
 
     <%# ── Memory : reprise de partie ── %>
