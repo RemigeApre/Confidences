@@ -114,19 +114,54 @@
           <span class="arcade-game-card-icon">&#127183;</span>
           <div class="arcade-game-card-info">
             <strong>Memory</strong>
-            <span>Retrouvez les paires &bull; Toutes les 5&nbsp;niveaux &rarr; &#127873; lootbox</span>
           </div>
-          <button class="arcade-game-play-btn" id="arcade-memory-play-btn">Jouer</button>
+          <div class="arcade-game-card-actions">
+            <button class="arcade-game-info-btn" id="arcade-memory-info-btn" aria-label="Comment jouer">&#8505;</button>
+            <button class="arcade-game-play-btn" id="arcade-memory-play-btn">Jouer</button>
+          </div>
         </div>
         <div class="arcade-game-card">
-          <span class="arcade-game-card-icon">&#128195;</span>
+          <span class="arcade-game-card-icon">&#127344;</span>
           <div class="arcade-game-card-info">
-            <strong>Mot du Codex</strong>
-            <span>Un mot par jour &bull; Jusqu&rsquo;&agrave; 5&nbsp;&#127873; selon votre nombre d&rsquo;essais</span>
+            <strong>Wordle</strong>
           </div>
-          <button class="arcade-game-play-btn" id="arcade-wordle-play-btn">Jouer</button>
+          <div class="arcade-game-card-actions">
+            <button class="arcade-game-info-btn" id="arcade-wordle-info-btn" aria-label="Comment jouer">&#8505;</button>
+            <button class="arcade-game-play-btn" id="arcade-wordle-play-btn">Jouer</button>
+          </div>
         </div>
       </div>
+    </div>
+
+    <%# ── Tooltip infos Memory ── %>
+    <div class="arcade-info-tooltip" id="arcade-memory-info-tooltip" hidden>
+      <p><strong>Comment jouer</strong></p>
+      <p>Retrouvez toutes les paires de cartes avant la fin du temps imparti.</p>
+      <p><strong>R&eacute;compenses</strong></p>
+      <ul>
+        <li>Tous les 5&nbsp;niveaux&nbsp;&rarr; 1&nbsp;&#127873; coffre</li>
+        <li>Seuls les nouveaux paliers comptent</li>
+      </ul>
+    </div>
+
+    <%# ── Tooltip infos Wordle ── %>
+    <div class="arcade-info-tooltip" id="arcade-wordle-info-tooltip" hidden>
+      <p><strong>Comment jouer</strong></p>
+      <p>Trouvez le mot du Codex en 6&nbsp;essais. Les couleurs vous guident&nbsp;:</p>
+      <ul>
+        <li><span class="arcade-tip-correct">Vert</span>&nbsp;&mdash; bonne lettre, bonne place</li>
+        <li><span class="arcade-tip-present">Jaune</span>&nbsp;&mdash; lettre pr&eacute;sente, mauvaise place</li>
+        <li>Gris&nbsp;&mdash; lettre absente</li>
+      </ul>
+      <p><strong>R&eacute;compenses</strong> (par victoire)</p>
+      <ul>
+        <li>1&nbsp;essai&nbsp;&rarr; 5&nbsp;&#127873;</li>
+        <li>2&nbsp;essais&nbsp;&rarr; 4&nbsp;&#127873;</li>
+        <li>3&nbsp;essais&nbsp;&rarr; 3&nbsp;&#127873;</li>
+        <li>4&nbsp;essais&nbsp;&rarr; 2&nbsp;&#127873;</li>
+        <li>5&nbsp;essais&nbsp;&rarr; 1&nbsp;&#127873;</li>
+        <li>6&nbsp;essais ou &eacute;chec&nbsp;&rarr; 0&nbsp;&#127873;</li>
+      </ul>
     </div>
 
     <%# ── Memory : reprise de partie ── %>
@@ -310,7 +345,7 @@
 <div class="arcade-overlay" id="aventure-modal" hidden aria-modal="true" role="dialog">
   <div class="arcade-modal">
     <div class="arcade-modal-header">
-      <span class="arcade-hdr-back" style="display:inline-block;width:2rem"></span>
+      <span></span>
       <h2 class="arcade-modal-title">&#9876; Aventure</h2>
       <button class="arcade-close-btn" id="aventure-close-btn" aria-label="Fermer">&#10005;</button>
     </div>
@@ -481,7 +516,8 @@
   var _midGame     = false; // true when changing mode between levels
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
-  var _SCREENS = [screenGames, screenResume, screenSetup, screenGame, screenWin, screenLose];
+  var _SCREENS = [screenGames, screenResume, screenSetup, screenGame, screenWin, screenLose,
+    document.getElementById('arcade-screen-wordle')];
   var _arcadeHdrBack = document.getElementById('arcade-hdr-back-btn');
   function showScreen(el) {
     _SCREENS.forEach(function(s) { if (s) s.hidden = true; });
@@ -490,6 +526,24 @@
   }
   _arcadeHdrBack && _arcadeHdrBack.addEventListener('click', function() {
     showScreen(screenGames);
+  });
+
+  // ── Info tooltips ─────────────────────────────────────────────────────────────
+  function initInfoTooltip(btnId, tooltipId) {
+    var btn = document.getElementById(btnId);
+    var tip = document.getElementById(tooltipId);
+    if (!btn || !tip) return;
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var isOpen = !tip.hidden;
+      document.querySelectorAll('.arcade-info-tooltip').forEach(function(t) { t.hidden = true; });
+      tip.hidden = isOpen;
+    });
+  }
+  initInfoTooltip('arcade-memory-info-btn', 'arcade-memory-info-tooltip');
+  initInfoTooltip('arcade-wordle-info-btn', 'arcade-wordle-info-tooltip');
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.arcade-info-tooltip').forEach(function(t) { t.hidden = true; });
   });
 
   function pairsForLevel(lvl) {
