@@ -565,11 +565,32 @@ function buildAdminRouter(config) {
     return candidates[0].dir;
   }
 
+  // ── Détection moteur ────────────────────────────────────────────────────────
+  function detectGameEngine(gameRoot) {
+    if (fs.existsSync(path.join(gameRoot, "js", "rmmz_core.js"))) return "rpgm-mz";
+    if (fs.existsSync(path.join(gameRoot, "js", "rpg_core.js")))  return "rpgm-mv";
+    return "html5";
+  }
+
+  // Lit le titre depuis data/System.json (RPG Maker MV/MZ)
+  function readRpgmTitle(gameRoot) {
+    try {
+      const raw = fs.readFileSync(path.join(gameRoot, "data", "System.json"), "utf8");
+      const sys = JSON.parse(raw);
+      return (sys.gameTitle || sys.title || "").trim() || null;
+    } catch { return null; }
+  }
+
   // ── Scan de compatibilité navigateur ────────────────────────────────────────
   // Lit le HTML d'entrée + les <script src> de premier niveau (max 20 fichiers,
   // 100 Ko par fichier) et cherche des APIs Electron/Node incompatibles avec un
   // iframe navigateur. Renvoie un tableau de { severity, message }.
   function scanGameCompat(gameDir, entrypoint) {
+    // Pour RPGM MV/MZ : les fichiers framework (rpg_core.js, rmmz_core.js…)
+    // contiennent du code NW.js / détection de plateforme qui génèrent de faux
+    // positifs. On ne scanne que js/plugins/ (code tiers potentiellement problématique).
+    const engine = detectGameEngine(gameDir);
+    const isRpgm = engine === "rpgm-mv" || engine === "rpgm-mz";
     const PATTERNS = [
       // require() : on cible uniquement les imports de modules Electron/Node dangereux.
       // Les librairies UMD (JSZip, jQuery…) contiennent require() dans un guard
@@ -622,8 +643,19 @@ function buildAdminRouter(config) {
     const srcs = [];
     while ((m = scriptRe.exec(html)) !== null) srcs.push(m[1]);
 
+    // Fichiers framework RPGM MV/MZ — safe, faux positifs garantis
+    const RPGM_FRAMEWORK = new Set([
+      "js/rpg_core.js", "js/rpg_managers.js", "js/rpg_objects.js",
+      "js/rpg_scenes.js", "js/rpg_sprites.js", "js/rpg_windows.js",
+      "js/rmmz_core.js", "js/rmmz_managers.js", "js/rmmz_objects.js",
+      "js/rmmz_scenes.js", "js/rmmz_sprites.js", "js/rmmz_windows.js",
+      "js/main.js", "js/plugins.js",
+    ]);
+
     for (const src of srcs.slice(0, 20)) {
       if (/^https?:\/\//.test(src)) continue; // skip CDN
+      // Pour RPGM : ignore les fichiers framework, scanne seulement js/plugins/
+      if (isRpgm && RPGM_FRAMEWORK.has(src.replace(/^\.\//, ""))) continue;
       const rel = src.startsWith("/") ? src.slice(1) : src;
       const jsPath = path.resolve(gameDir, rel);
       // Empêche la traversée en dehors de gameDir
@@ -657,17 +689,17 @@ function buildAdminRouter(config) {
           : "Erreur upload : " + uploadErr.message;
         return res.redirect("/admin/jeux?error=" + encodeURIComponent(msg));
       }
-    const title       = String(req.body.title       || "").trim();
-    const description = String(req.body.description || "").trim();
-    const entrypoint  = String(req.body.entrypoint  || "index.html").trim();
-    const onlineUrl   = String(req.body.online_url  || "").trim();
-    const rawSlug     = String(req.body.slug        || "").trim();
-    const slug        = rawSlug ? toSlug(rawSlug) : toSlug(title);
+    let title        = String(req.body.title       || "").trim();
+    const description= String(req.body.description || "").trim();
+    const entrypoint = String(req.body.entrypoint  || "index.html").trim();
+    const onlineUrl  = String(req.body.online_url  || "").trim();
+    const rawSlug    = String(req.body.slug        || "").trim();
 
-    if (!slug || !title) return res.redirect("/admin/jeux?error=Titre+requis");
-    if (!req.file)       return res.redirect("/admin/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
+    if (!req.file) return res.redirect("/admin/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
 
-    const gameDir = path.join(GAMES_DIR, slug);
+    // Extraction d'abord, puis auto-détection moteur + titre RPGM si besoin
+    const tmpSlug = rawSlug ? toSlug(rawSlug) : (title ? toSlug(title) : `game-${Date.now()}`);
+    const gameDir = path.join(GAMES_DIR, tmpSlug);
     fs.mkdirSync(gameDir, { recursive: true });
 
     execFile("unzip", ["-o", req.file.path, "-d", gameDir], (err) => {
@@ -679,11 +711,29 @@ function buildAdminRouter(config) {
         `Fichier d'entrée '${entrypoint}' introuvable dans le zip extrait`
       ));
 
-      const relDir   = path.relative(GAMES_DIR, gameRoot).replace(/\\/g, "/");
-      const warnings = scanGameCompat(gameRoot, entrypoint);
+      // Auto-détection moteur
+      const engine = detectGameEngine(gameRoot);
+
+      // Auto-titre depuis data/System.json pour RPGM si titre non fourni
+      if (!title && (engine === "rpgm-mv" || engine === "rpgm-mz")) {
+        title = readRpgmTitle(gameRoot) || "";
+      }
+
+      const slug = rawSlug ? toSlug(rawSlug) : (title ? toSlug(title) : tmpSlug);
+      if (!slug || !title) return res.redirect("/admin/jeux?error=Titre+requis+(non+d%C3%A9tect%C3%A9+automatiquement)");
+
+      // Renomme le dossier si le slug final diffère du slug temporaire
+      const finalGameDir = path.join(GAMES_DIR, slug);
+      if (tmpSlug !== slug && !fs.existsSync(finalGameDir)) {
+        try { fs.renameSync(gameDir, finalGameDir); } catch (_) {}
+      }
+      const actualRoot = gameRoot.replace(gameDir, finalGameDir);
+
+      const relDir   = path.relative(GAMES_DIR, actualRoot).replace(/\\/g, "/");
+      const warnings = scanGameCompat(actualRoot, entrypoint);
       const games    = readGames();
       const idx      = games.findIndex(g => g.slug === slug);
-      const gameData = { slug, title, description, dir: relDir, entrypoint,
+      const gameData = { slug, title, description, engine, dir: relDir, entrypoint,
                          ...(onlineUrl ? { online_url: onlineUrl } : {}), warnings };
       if (idx >= 0) games[idx] = { ...games[idx], ...gameData };
       else games.push(gameData);
@@ -724,9 +774,10 @@ function buildAdminRouter(config) {
       ));
 
       const relDir   = path.relative(GAMES_DIR, gameRoot).replace(/\\/g, "/");
+      const engine   = detectGameEngine(gameRoot);
       const warnings = scanGameCompat(gameRoot, entrypoint);
       const idx      = games.findIndex(g => g.slug === slug);
-      games[idx]     = { ...existing, dir: relDir, entrypoint, warnings };
+      games[idx]     = { ...existing, dir: relDir, entrypoint, engine, warnings };
       writeGames(games);
 
       const hasErrors = warnings.some(w => w.severity === "error");

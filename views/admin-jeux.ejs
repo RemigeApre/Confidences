@@ -59,9 +59,9 @@
         <div class="admin-game-card-body">
           <div class="admin-game-card-badges">
             <% if (game.disabled) { %><span class="admin-game-hs-badge">HS</span><% } %>
-            <% if (hasWarnings) { %>
-              <span class="admin-game-compat-badge" title="<%= hasErrors ? 'Problèmes compatibilité' : 'Avertissements compatibilité' %>">⚠</span>
-            <% } %>
+            <% if (hasWarnings) { %><span class="admin-game-compat-badge" title="<%= hasErrors ? 'Problèmes compatibilité' : 'Avertissements compatibilité' %>">⚠</span><% } %>
+            <% if (game.engine === 'rpgm-mv') { %><span class="admin-game-engine-badge">RPG MV</span><% } %>
+            <% if (game.engine === 'rpgm-mz') { %><span class="admin-game-engine-badge">RPG MZ</span><% } %>
           </div>
           <div class="admin-game-card-title"><%= game.title %></div>
           <div class="admin-game-card-slug"><%= game.slug %></div>
