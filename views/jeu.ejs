@@ -320,7 +320,8 @@
         </aside>
         <div class="arcade-games-grid">
 
-          <div class="ag-card ag-card--thog">
+          <% games.forEach(function(game, i) { %>
+          <div class="ag-card">
             <div class="ag-card-visual">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -328,14 +329,19 @@
             </div>
             <div class="ag-card-body">
               <div class="ag-card-head">
-                <span class="ag-card-name">The Hole of Glory</span>
+                <span class="ag-card-name"><%= game.title %></span>
               </div>
-              <p class="ag-card-desc">Jeu de cartes roguelike. Construisez votre deck et gérez vos clients.</p>
+              <% if (game.description) { %><p class="ag-card-desc"><%= game.description %></p><% } %>
               <div class="ag-card-footer">
-                <button class="ag-card-play" id="thog-play-btn">Jouer</button>
+                <button class="ag-card-play" data-game-url="/games/<%= game.slug %>/play">Jouer</button>
               </div>
             </div>
           </div>
+          <% }) %>
+
+          <% if (games.length === 0) { %>
+          <p style="color:#64748b;font-size:.88rem;grid-column:1/-1;">Aucun jeu disponible pour le moment.</p>
+          <% } %>
 
         </div><%# /arcade-games-grid %>
       </div>
@@ -1529,7 +1535,6 @@
   var aventureView  = document.getElementById('aventure-view');
   var openBtn       = document.getElementById('jeu-aventure-btn');
   var backBtn       = document.getElementById('aventure-hdr-back-btn');
-  var thogPlayBtn   = document.getElementById('thog-play-btn');
   var gameFs        = document.getElementById('game-fullscreen');
   var gameIframe    = document.getElementById('game-iframe');
   var gameQuitBtn   = document.getElementById('game-quit-btn');
@@ -1543,10 +1548,9 @@
     if (homeView) homeView.hidden = false;
   }
   function openGame(src) {
-    // Charge le jeu uniquement au premier clic (lazy) pour ne pas impacter les perf
-    if (gameIframe && !gameIframe.getAttribute('data-loaded')) {
+    if (gameIframe && gameIframe.getAttribute('data-src') !== src) {
       gameIframe.src = src;
-      gameIframe.setAttribute('data-loaded', '1');
+      gameIframe.setAttribute('data-src', src);
     }
     if (gameFs) gameFs.hidden = false;
   }
@@ -1557,8 +1561,12 @@
 
   openBtn    && openBtn.addEventListener('click', openAventure);
   backBtn    && backBtn.addEventListener('click', closeAventure);
-  thogPlayBtn && thogPlayBtn.addEventListener('click', function() { openGame('/games/thog/gloryhole.html'); });
   gameQuitBtn && gameQuitBtn.addEventListener('click', closeGame);
+
+  // Boutons Jouer génériques — chaque carte a data-game-url
+  document.querySelectorAll('.ag-card-play[data-game-url]').forEach(function(btn) {
+    btn.addEventListener('click', function() { openGame(btn.dataset.gameUrl); });
+  });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && gameFs && !gameFs.hidden) closeGame();
   });

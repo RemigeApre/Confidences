@@ -8,14 +8,18 @@
   </form>
 </div>
 
-<div style="max-width:640px;margin:2rem auto;padding:0 1rem;">
-
-  <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1.5rem;">The Hole of Glory</h2>
+<div style="max-width:680px;margin:2rem auto;padding:0 1rem;">
 
   <% if (locals.success) { %>
-    <p style="background:hsl(142,30%,12%);border:1px solid hsl(142,35%,28%);color:#86efac;border-radius:8px;padding:.65rem 1rem;font-size:.85rem;font-weight:600;margin-bottom:1.25rem;">
-      Jeu install&eacute; avec succ&egrave;s.
-    </p>
+    <% if (locals.compat_warn) { %>
+      <p style="background:hsl(38,30%,10%);border:1px solid hsl(38,50%,28%);color:#fcd34d;border-radius:8px;padding:.65rem 1rem;font-size:.85rem;font-weight:600;margin-bottom:1.25rem;">
+        Jeu install&eacute; mais des probl&egrave;mes de compatibilit&eacute; ont &eacute;t&eacute; d&eacute;tect&eacute;s &mdash; voir ci-dessous.
+      </p>
+    <% } else { %>
+      <p style="background:hsl(142,30%,12%);border:1px solid hsl(142,35%,28%);color:#86efac;border-radius:8px;padding:.65rem 1rem;font-size:.85rem;font-weight:600;margin-bottom:1.25rem;">
+        Op&eacute;ration r&eacute;ussie.
+      </p>
+    <% } %>
   <% } %>
   <% if (locals.error) { %>
     <p style="background:hsl(0,30%,12%);border:1px solid hsl(0,35%,28%);color:#fca5a5;border-radius:8px;padding:.65rem 1rem;font-size:.85rem;font-weight:600;margin-bottom:1.25rem;">
@@ -23,26 +27,86 @@
     </p>
   <% } %>
 
-  <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
-    <p style="margin:0 0 .5rem;font-size:.85rem;color:#64748b;">État</p>
-    <p style="margin:0;font-weight:600;">
-      <% if (installed) { %>
-        <span style="color:#4ade80;">&#9679; Install&eacute;</span>
-        &nbsp;&nbsp;<a href="/games/thog/gloryhole.html" target="_blank" style="font-size:.8rem;color:#64748b;">Tester &#8599;</a>
-      <% } else { %>
-        <span style="color:#f87171;">&#9679; Non install&eacute;</span>
-      <% } %>
-    </p>
-  </div>
+  <%# ── Liste des jeux installés ── %>
+  <h2 style="font-size:1.1rem;font-weight:700;margin:0 0 1rem;">Jeux install&eacute;s (<%= games.length %>)</h2>
+
+  <% if (games.length === 0) { %>
+    <p style="color:#64748b;font-size:.88rem;margin-bottom:1.5rem;">Aucun jeu install&eacute;.</p>
+  <% } else { %>
+    <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:2rem;">
+      <% games.forEach(function(game) { %>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;">
+          <div style="flex:1;min-width:0;">
+            <p style="margin:0;font-weight:600;font-size:.92rem;"><%= game.title %></p>
+            <p style="margin:.2rem 0 0;font-size:.78rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= game.description || '—' %></p>
+            <p style="margin:.25rem 0 0;font-size:.72rem;color:#475569;">slug&nbsp;: <code style="font-family:monospace;background:rgba(255,255,255,.06);padding:.1rem .3rem;border-radius:4px;"><%= game.slug %></code> &nbsp;&bull;&nbsp; entr&eacute;e&nbsp;: <code style="font-family:monospace;background:rgba(255,255,255,.06);padding:.1rem .3rem;border-radius:4px;"><%= game.entrypoint %></code></p>
+            <% if (game.warnings && game.warnings.length > 0) { %>
+              <details style="margin-top:.5rem;">
+                <summary style="font-size:.75rem;cursor:pointer;color:<%= game.warnings.some(w=>w.severity==='error') ? '#f87171' : '#fbbf24' %>;">
+                  <% var errCount = game.warnings.filter(w=>w.severity==='error').length; %>
+                  <% var warnCount = game.warnings.filter(w=>w.severity==='warn').length; %>
+                  &#9888;&nbsp;<%= errCount > 0 ? errCount + ' probl\u00e8me' + (errCount>1?'s':'') + ' Electron' : '' %><%= errCount>0 && warnCount>0 ? ', ' : '' %><%= warnCount > 0 ? warnCount + ' avertissement' + (warnCount>1?'s':'') : '' %>
+                </summary>
+                <ul style="margin:.4rem 0 0 1rem;padding:0;list-style:disc;font-size:.73rem;line-height:1.6;">
+                  <% game.warnings.forEach(function(w) { %>
+                    <li style="color:<%= w.severity==='error' ? '#fca5a5' : '#fcd34d' %>;">
+                      <strong style="font-family:monospace;"><%= w.source %></strong> — <%= w.message %>
+                    </li>
+                  <% }) %>
+                </ul>
+              </details>
+            <% } else if (game.warnings) { %>
+              <p style="margin-top:.4rem;font-size:.73rem;color:#4ade80;">&#10003; Aucun probl&egrave;me d&eacute;tect&eacute;</p>
+            <% } %>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-shrink:0;">
+            <a href="/games/<%= game.slug %>/play" target="_blank" style="font-size:.78rem;color:#64748b;text-decoration:none;padding:.3rem .7rem;border:1px solid rgba(255,255,255,.1);border-radius:6px;">Tester &#8599;</a>
+            <form method="POST" action="/admin/jeux/<%= game.slug %>/delete" style="margin:0" onsubmit="return confirm('Supprimer <%= game.title %> de la liste ?')">
+              <button type="submit" style="font-size:.78rem;color:#f87171;background:none;border:1px solid rgba(248,113,113,.25);border-radius:6px;padding:.3rem .7rem;cursor:pointer;">Retirer</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <%# ── Formulaire ajout / mise à jour ── %>
+  <h2 style="font-size:1.1rem;font-weight:700;margin:0 0 1rem;">Ajouter / mettre &agrave; jour un jeu</h2>
 
   <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
-    <p style="margin:0 0 1rem;font-size:.9rem;">
-      Uploadez un fichier <code>.zip</code> contenant les fichiers du jeu
-      (contenu du dossier <code>resources/app/</code>).
+    <p style="margin:0 0 1rem;font-size:.85rem;color:#94a3b8;">
+      Uploadez un <code>.zip</code> contenant les fichiers du jeu.<br>
+      Si le slug existe d&eacute;j&agrave;, les fichiers seront &eacute;cras&eacute;s et les m&eacute;tadonn&eacute;es mises &agrave; jour.
     </p>
 
     <form method="POST" action="/admin/jeux/upload" enctype="multipart/form-data" id="upload-form">
-      <div id="dropzone" style="border:2px dashed rgba(255,255,255,.15);border-radius:10px;padding:2rem 1rem;text-align:center;cursor:pointer;transition:border-color .15s;">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+        <label style="display:flex;flex-direction:column;gap:.3rem;font-size:.82rem;color:#94a3b8;">
+          Titre *
+          <input type="text" name="title" required placeholder="Mon super jeu"
+            style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.45rem .7rem;color:#e2e8f0;font-size:.88rem;outline:none;">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:.3rem;font-size:.82rem;color:#94a3b8;">
+          Slug (optionnel &mdash; g&eacute;n&eacute;r&eacute; depuis le titre)
+          <input type="text" name="slug" placeholder="mon-super-jeu"
+            style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.45rem .7rem;color:#e2e8f0;font-size:.88rem;font-family:monospace;outline:none;">
+        </label>
+      </div>
+
+      <label style="display:flex;flex-direction:column;gap:.3rem;font-size:.82rem;color:#94a3b8;margin-bottom:.75rem;">
+        Description
+        <input type="text" name="description" placeholder="Court texte de pr&eacute;sentation"
+          style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.45rem .7rem;color:#e2e8f0;font-size:.88rem;outline:none;">
+      </label>
+
+      <label style="display:flex;flex-direction:column;gap:.3rem;font-size:.82rem;color:#94a3b8;margin-bottom:1rem;">
+        Fichier d&rsquo;entr&eacute;e (ex.&nbsp;<code style="font-family:monospace">index.html</code>)
+        <input type="text" name="entrypoint" value="index.html" placeholder="index.html"
+          style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.45rem .7rem;color:#e2e8f0;font-size:.88rem;font-family:monospace;outline:none;">
+      </label>
+
+      <div id="dropzone" style="border:2px dashed rgba(255,255,255,.15);border-radius:10px;padding:2rem 1rem;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:1rem;">
         <input type="file" name="zipfile" id="zipfile-input" accept=".zip" required style="display:none">
         <label for="zipfile-input" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.5rem;">
           <span style="font-size:2rem;">&#128230;</span>
@@ -50,7 +114,7 @@
         </label>
       </div>
 
-      <div id="upload-progress" hidden style="margin:.75rem 0 0;">
+      <div id="upload-progress" hidden style="margin:.75rem 0;">
         <div style="height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;">
           <div id="upload-bar" style="height:100%;width:0%;background:#60a5fa;border-radius:99px;transition:width .2s;"></div>
         </div>
@@ -58,7 +122,7 @@
       </div>
 
       <button type="submit" id="upload-btn" disabled
-        style="margin-top:1.25rem;background:#f87171;border:none;color:#fff;border-radius:8px;padding:.5rem 1.25rem;font-size:.88rem;font-weight:700;cursor:pointer;opacity:.5;transition:opacity .15s;">
+        style="background:#60a5fa;border:none;color:#0f172a;border-radius:8px;padding:.5rem 1.25rem;font-size:.88rem;font-weight:700;cursor:pointer;opacity:.5;transition:opacity .15s;">
         Installer
       </button>
     </form>

@@ -491,21 +491,127 @@ function buildAdminRouter(config) {
   });
 
   // ── Gestion des jeux ─────────────────────────────────────────────────────
-  const GAMES_DEST = path.join(__dirname, "..", "..", "games", "mjlc", "resources", "app");
+  const GAMES_DIR  = path.join(__dirname, "..", "..", "games");
+  const GAMES_JSON = path.join(GAMES_DIR, "games.json");
+
+  function readGames() {
+    try { return JSON.parse(fs.readFileSync(GAMES_JSON, "utf8")); } catch { return []; }
+  }
+  function writeGames(games) {
+    fs.mkdirSync(GAMES_DIR, { recursive: true });
+    fs.writeFileSync(GAMES_JSON, JSON.stringify(games, null, 2));
+  }
+  function toSlug(str) {
+    return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+  }
+
+  // ── Scan de compatibilité navigateur ────────────────────────────────────────
+  // Lit le HTML d'entrée + les <script src> de premier niveau (max 20 fichiers,
+  // 100 Ko par fichier) et cherche des APIs Electron/Node incompatibles avec un
+  // iframe navigateur. Renvoie un tableau de { severity, message }.
+  function scanGameCompat(gameDir, entrypoint) {
+    const PATTERNS = [
+      { re: /\brequire\s*\(/,            msg: "appel require() — API Node.js/Electron" },
+      { re: /\bipcRenderer\b/,           msg: "ipcRenderer — API Electron" },
+      { re: /\bipcMain\b/,               msg: "ipcMain — API Electron" },
+      { re: /process\.versions\.electron/, msg: "process.versions.electron — détection Electron" },
+      { re: /app\.getPath\s*\(/,         msg: "app.getPath() — API Electron" },
+      { re: /shell\.openExternal/,       msg: "shell.openExternal — API Electron" },
+      { re: /\bBrowserWindow\b/,         msg: "BrowserWindow — API Electron" },
+      { re: /\bnativeImage\b/,           msg: "nativeImage — API Electron" },
+      { re: /\bwebContents\b/,           msg: "webContents — API Electron" },
+      { re: /\belectron\b/,              msg: "référence à 'electron' (require/import)" },
+    ];
+    const WARN_PATTERNS = [
+      { re: /src=["']\/(?!games\/|static\/)[^"']+["']/,
+        msg: "chemin absolu /... dans src= — peut nécessiter une route dédiée (comme /static pour THOG)" },
+    ];
+
+    const warnings = [];
+    const seen = new Set();
+
+    function checkContent(content, label) {
+      const sample = content.slice(0, 100_000);
+      PATTERNS.forEach(({ re, msg }) => {
+        if (re.test(sample) && !warnings.some(w => w.message === msg))
+          warnings.push({ severity: "error", message: msg, source: label });
+      });
+      WARN_PATTERNS.forEach(({ re, msg }) => {
+        if (re.test(sample) && !warnings.some(w => w.message === msg))
+          warnings.push({ severity: "warn", message: msg, source: label });
+      });
+    }
+
+    // Lecture du HTML d'entrée
+    const entryFile = path.join(gameDir, entrypoint);
+    let html = "";
+    try { html = fs.readFileSync(entryFile, "utf8"); }
+    catch {
+      return [{ severity: "error", message: `Fichier d'entrée introuvable : ${entrypoint}`, source: "—" }];
+    }
+    checkContent(html, entrypoint);
+
+    // Scripts de premier niveau référencés dans le HTML
+    const scriptRe = /<script[^>]+src=["']([^"']+)["']/gi;
+    let m;
+    const srcs = [];
+    while ((m = scriptRe.exec(html)) !== null) srcs.push(m[1]);
+
+    for (const src of srcs.slice(0, 20)) {
+      if (/^https?:\/\//.test(src)) continue; // skip CDN
+      const rel = src.startsWith("/") ? src.slice(1) : src;
+      const jsPath = path.resolve(gameDir, rel);
+      // Empêche la traversée en dehors de gameDir
+      if (!jsPath.startsWith(gameDir)) continue;
+      if (seen.has(jsPath)) continue;
+      seen.add(jsPath);
+      let content = "";
+      try { content = fs.readFileSync(jsPath, "utf8"); } catch { continue; }
+      checkContent(content, src);
+    }
+
+    return warnings;
+  }
 
   router.get("/jeux", requireAdmin, (req, res) => {
-    const installed = fs.existsSync(path.join(GAMES_DEST, "gloryhole.html"));
-    res.render("admin-jeux", { config, installed, success: req.query.success, error: req.query.error });
+    res.render("admin-jeux", { config, games: readGames(), success: req.query.success, error: req.query.error });
   });
 
+  // Upload (ajout ou mise à jour) d'un jeu
   router.post("/jeux/upload", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
-    if (!req.file) return res.redirect("/admin/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
-    fs.mkdirSync(GAMES_DEST, { recursive: true });
-    execFile("unzip", ["-o", req.file.path, "-d", GAMES_DEST], (err) => {
+    const title       = String(req.body.title       || "").trim();
+    const description = String(req.body.description || "").trim();
+    const entrypoint  = String(req.body.entrypoint  || "index.html").trim();
+    const rawSlug     = String(req.body.slug        || "").trim();
+    const slug        = rawSlug ? toSlug(rawSlug) : toSlug(title);
+
+    if (!slug || !title) return res.redirect("/admin/jeux?error=Titre+requis");
+    if (!req.file)       return res.redirect("/admin/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
+
+    const gameDir = path.join(GAMES_DIR, slug);
+    fs.mkdirSync(gameDir, { recursive: true });
+
+    execFile("unzip", ["-o", req.file.path, "-d", gameDir], (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
-      res.redirect("/admin/jeux?success=1");
+
+      const warnings = scanGameCompat(gameDir, entrypoint);
+      const games    = readGames();
+      const idx      = games.findIndex(g => g.slug === slug);
+      const gameData = { slug, title, description, dir: slug, entrypoint, warnings };
+      if (idx >= 0) games[idx] = gameData; else games.push(gameData);
+      writeGames(games);
+
+      const hasErrors = warnings.some(w => w.severity === "error");
+      res.redirect("/admin/jeux?success=1" + (hasErrors ? "&compat_warn=" + slug : ""));
     });
+  });
+
+  // Suppression d'un jeu (retire de games.json, ne supprime pas les fichiers)
+  router.post("/jeux/:slug/delete", requireAdmin, (req, res) => {
+    const slug = toSlug(req.params.slug);
+    writeGames(readGames().filter(g => g.slug !== slug));
+    res.redirect("/admin/jeux?success=1");
   });
 
   router.get("/:id", requireAdmin, (req, res) => {

@@ -210,19 +210,72 @@ app.use(
   express.static(uploadsDir, { maxAge: "1y", immutable: true })
 );
 
-// Jeux statiques (HTML5) : servis uniquement aux utilisateurs connectés.
-// Chaque jeu a son propre chemin court (ex. /games/thog/ → games/mjlc/resources/app/).
+// Jeux statiques (HTML5) : servis dynamiquement selon games/games.json.
+// Chaque jeu a un slug (ex. "thog") et un répertoire relatif dans games/.
 // maxAge court (1j) car les assets peuvent changer entre updates.
-app.use(
-  "/games/thog",
-  (req, res, next) => (req.user ? next() : res.status(403).end()),
-  express.static(path.join(__dirname, "..", "games", "mjlc", "resources", "app"), { maxAge: "1d" })
-);
-// Le jeu référence ses assets avec des chemins absolus /static/... — on les sert ici.
+const GAMES_DIR = path.join(__dirname, "..", "games");
+const GAMES_JSON = path.join(GAMES_DIR, "games.json");
+
+function readGamesJson() {
+  try { return JSON.parse(fs.readFileSync(GAMES_JSON, "utf8")); } catch { return []; }
+}
+
+// Route d'entrée du jeu : sert le HTML de départ avec un wrapper localStorage
+// injecté pour que chaque utilisateur ait ses propres sauvegardes.
+app.get("/games/:slug/play", (req, res) => {
+  if (!req.user) return res.status(403).end();
+  const game = readGamesJson().find(g => g.slug === req.params.slug);
+  if (!game) return res.status(404).end();
+
+  const entryPath = path.join(GAMES_DIR, game.dir, game.entrypoint);
+  let html;
+  try { html = fs.readFileSync(entryPath, "utf8"); }
+  catch { return res.status(404).end(); }
+
+  // Préfixe les clés localStorage avec l'ID utilisateur pour isoler les saves.
+  const prefix = "u" + req.user.id + "_";
+  const inject = `<script>(function(){` +
+    `var p=${JSON.stringify(prefix)},s=window.localStorage;` +
+    `function ns(){` +
+      `this.getItem=function(k){return s.getItem(p+k)};` +
+      `this.setItem=function(k,v){return s.setItem(p+k,v)};` +
+      `this.removeItem=function(k){return s.removeItem(p+k)};` +
+      `this.clear=function(){var r=[];for(var i=0;i<s.length;i++){var k=s.key(i);if(k&&k.indexOf(p)===0)r.push(k);}r.forEach(function(k){s.removeItem(k)})};` +
+      `this.key=function(n){var c=0;for(var i=0;i<s.length;i++){var k=s.key(i);if(k&&k.indexOf(p)===0){if(c===n)return k.slice(p.length);c++;}}return null};` +
+      `Object.defineProperty(this,'length',{get:function(){var c=0;for(var i=0;i<s.length;i++){var k=s.key(i);if(k&&k.indexOf(p)===0)c++;}return c}});` +
+    `}` +
+    `try{Object.defineProperty(window,'localStorage',{get:function(){return _ns}})}catch(e){}` +
+    `var _ns=new ns();` +
+  `}());</script>`;
+
+  // Injection aussi tôt que possible dans le document.
+  if (html.includes("<head>")) {
+    html = html.replace("<head>", "<head>" + inject);
+  } else if (/<html/i.test(html)) {
+    html = html.replace(/(<html[^>]*>)/i, "$1" + inject);
+  } else {
+    html = inject + html;
+  }
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.send(html);
+});
+
+// Assets statiques des jeux (JS, CSS, images…) — servis par slug via games.json.
+app.use("/games/:slug", (req, res, next) => {
+  if (!req.user) return res.status(403).end();
+  const game = readGamesJson().find(g => g.slug === req.params.slug);
+  if (!game) return res.status(404).end();
+  const gameDir = path.join(GAMES_DIR, game.dir);
+  express.static(gameDir, { maxAge: "1d" })(req, res, next);
+});
+
+// THOG référence ses assets avec des chemins absolus /static/... (héritage Electron).
 app.use(
   "/static",
   (req, res, next) => (req.user ? next() : res.status(403).end()),
-  express.static(path.join(__dirname, "..", "games", "mjlc", "resources", "app", "static"), { maxAge: "1d" })
+  express.static(path.join(GAMES_DIR, "mjlc", "resources", "app", "static"), { maxAge: "1d" })
 );
 
 // Genere en tache de fond les vignettes manquantes pour les images deja
