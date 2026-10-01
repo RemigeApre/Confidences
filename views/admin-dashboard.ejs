@@ -642,6 +642,7 @@
   }
 
   tabBtns.forEach(function(btn) {
+    if (btn.tagName === "A") return;
     btn.addEventListener("click", function() { activateTab(btn.dataset.tab); });
   });
 
