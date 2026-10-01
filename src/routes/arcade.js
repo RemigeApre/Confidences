@@ -5,6 +5,7 @@ const {
   updateArcadeStats, getUserById,
   listCharms, adjustCoins, grantCharmDirect,
   getLootboxConfig, RARITY_BUY_PRICE,
+  getMemoryShop, setMemoryCardIcon, buyOrSetMemoryColor,
   getWordleDaily, getWordleUserGame, saveWordleGuess, updateWordleStreakAndStats, normalizeWordleWord,
 } = require('../db');
 const { thumbUrl } = require('../thumbs');
@@ -59,6 +60,33 @@ function buildArcadeRouter() {
       return res.json({ ok: true, lootboxGranted: true, newCount });
     }
     res.json({ ok: true, lootboxGranted: false });
+  });
+
+  // ── Memory boutique ───────────────────────────────────────────────────────
+
+  router.get('/memory/shop', requireUserJson, (req, res) => {
+    const shop = getMemoryShop(req.user.id);
+    if (!shop) return res.json({ ok: false });
+    res.json({ ok: true, ...shop });
+  });
+
+  router.post('/memory/shop/icon', requireUserJson, express.json(), (req, res) => {
+    const charmId = req.body.charmId ? parseInt(req.body.charmId, 10) : null;
+    setMemoryCardIcon(req.user.id, charmId);
+    res.json({ ok: true });
+  });
+
+  router.post('/memory/shop/color', requireUserJson, express.json(), (req, res) => {
+    const colorKey = String(req.body.colorKey || 'default');
+    res.json(buyOrSetMemoryColor(req.user.id, colorKey));
+  });
+
+  router.post('/memory/time-boost', requireUserJson, (req, res) => {
+    const user = getUserById(req.user.id);
+    if (!user || user.coins < 5) return res.json({ ok: false, error: 'not_enough_coins' });
+    adjustCoins(req.user.id, -5);
+    const newCoins = (getUserById(req.user.id) || {}).coins || 0;
+    res.json({ ok: true, newCoins });
   });
 
   // ── Machine à charmes ─────────────────────────────────────────────────────

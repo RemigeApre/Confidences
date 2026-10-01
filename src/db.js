@@ -253,6 +253,13 @@ try { db.exec("ALTER TABLE users ADD COLUMN wordle_current_streak INTEGER NOT NU
 try { db.exec("ALTER TABLE users ADD COLUMN wordle_best_streak INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN wordle_total_played INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN wordle_total_wins INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN memory_card_charm_id INTEGER"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN memory_card_color TEXT NOT NULL DEFAULT 'default'"); } catch (_) {}
+db.exec(`CREATE TABLE IF NOT EXISTS user_memory_colors (
+  user_id INTEGER NOT NULL,
+  color_key TEXT NOT NULL,
+  PRIMARY KEY (user_id, color_key)
+)`);
 
 // ── Wordle du Codex ──────────────────────────────────────────────────────────
 db.exec(`
@@ -673,6 +680,8 @@ function rowToUser(row) {
     wordleBestStreak: row.wordle_best_streak || 0,
     wordleTotalPlayed: row.wordle_total_played || 0,
     wordleTotalWins: row.wordle_total_wins || 0,
+    memoryCardCharmId: row.memory_card_charm_id || null,
+    memoryCardColor: row.memory_card_color || 'default',
   };
 }
 
@@ -3405,6 +3414,47 @@ function saveWordleGuess(userId, date, guesses, solved, rewardGranted, gameEnded
   `).run(userId, date, JSON.stringify(guesses), solved ? 1 : 0, rewardGranted ? 1 : 0, gameEnded ? 1 : 0);
 }
 
+// ── Memory boutique ────────────────────────────────────────────────────────────
+const MEMORY_COLOR_PRICE = 1;
+const VALID_MEMORY_COLORS = new Set(['default','purple','red','forest','navy','slate']);
+
+function getMemoryShop(userId) {
+  const user = db.prepare("SELECT memory_card_charm_id, memory_card_color, coins FROM users WHERE id=?").get(userId);
+  if (!user) return null;
+  const charms = db.prepare(`
+    SELECT c.id, c.symbol, c.label FROM charms c
+    INNER JOIN user_unlocks u ON u.ref_id = c.id AND u.item_type = 'charm' AND u.user_id = ?
+    ORDER BY c.label
+  `).all(userId);
+  const ownedColors = db.prepare("SELECT color_key FROM user_memory_colors WHERE user_id=?").all(userId).map(r => r.color_key);
+  if (!ownedColors.includes('default')) ownedColors.unshift('default');
+  return {
+    selectedCharmId: user.memory_card_charm_id || null,
+    selectedColor: user.memory_card_color || 'default',
+    coins: user.coins || 0,
+    charms,
+    ownedColors,
+  };
+}
+
+function setMemoryCardIcon(userId, charmId) {
+  db.prepare("UPDATE users SET memory_card_charm_id=? WHERE id=?").run(charmId || null, userId);
+}
+
+function buyOrSetMemoryColor(userId, colorKey) {
+  if (!VALID_MEMORY_COLORS.has(colorKey)) return { ok: false, error: 'invalid_color' };
+  const isOwned = colorKey === 'default' || !!db.prepare("SELECT 1 FROM user_memory_colors WHERE user_id=? AND color_key=?").get(userId, colorKey);
+  if (!isOwned) {
+    const user = db.prepare("SELECT coins FROM users WHERE id=?").get(userId);
+    if (!user || user.coins < MEMORY_COLOR_PRICE) return { ok: false, error: 'not_enough_coins' };
+    db.prepare("UPDATE users SET coins = MAX(0, coins - ?) WHERE id=?").run(MEMORY_COLOR_PRICE, userId);
+    db.prepare("INSERT OR IGNORE INTO user_memory_colors (user_id, color_key) VALUES (?,?)").run(userId, colorKey);
+  }
+  db.prepare("UPDATE users SET memory_card_color=? WHERE id=?").run(colorKey, userId);
+  const newCoins = (db.prepare("SELECT coins FROM users WHERE id=?").get(userId) || {}).coins || 0;
+  return { ok: true, newCoins };
+}
+
 function updateWordleStreakAndStats(userId, date, solved) {
   const user = db.prepare("SELECT wordle_current_streak, wordle_best_streak, wordle_total_played, wordle_total_wins FROM users WHERE id = ?").get(userId);
   if (!user) return;
@@ -3660,6 +3710,9 @@ module.exports = {
   setProfileImageId,
   setProfileImageCrop,
   setLootboxFilters,
+  getMemoryShop,
+  setMemoryCardIcon,
+  buyOrSetMemoryColor,
   getWordleDaily,
   getWordleUserGame,
   saveWordleGuess,

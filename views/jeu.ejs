@@ -174,8 +174,9 @@
         <span class="arcade-resume-level-label">niveau</span>
       </div>
       <span id="resume-mode-label" class="arcade-resume-mode"></span>
-      <div class="arcade-result-footer" style="margin-top:1.5rem">
+      <div class="arcade-result-footer" style="margin-top:1rem">
         <button class="arcade-btn arcade-btn--danger" id="arcade-resume-restart">Nouvelle partie</button>
+        <button class="arcade-btn arcade-btn--ghost" id="resume-shop-btn">&#127873;</button>
         <button class="arcade-btn arcade-btn--success" id="arcade-resume-continue">Reprendre</button>
       </div>
       <p class="arcade-resume-warning">Nouvelle partie&nbsp;: votre progression actuelle sera perdue. Votre meilleur niveau et les r&eacute;compenses d&eacute;j&agrave; obtenues restent acquis.</p>
@@ -192,6 +193,9 @@
         <button class="arcade-mode-btn" id="arcade-mode-tag">
           <span class="arcade-mode-btn-label">Choisir votre th&egrave;me</span>
         </button>
+      </div>
+      <div style="text-align:center;margin-top:.75rem">
+        <button class="shop-open-btn" id="setup-shop-btn">&#127873; Boutique</button>
       </div>
 
       <div id="arcade-tag-picker" class="arcade-tag-picker" hidden>
@@ -214,11 +218,39 @@
           <span class="arcade-hud-value" id="mem-timer">1:40</span>
         </div>
         <div class="arcade-hud-item">
-          <span class="arcade-hud-label">Score</span>
-          <span class="arcade-hud-value" id="mem-score">0</span>
+          <button class="mem-boost-btn" id="mem-boost-btn" title="+30 secondes">+30s &bull; 5&#129689;</button>
+        </div>
+        <div class="arcade-hud-item">
+          <button class="mem-pause-btn" id="mem-pause-btn" aria-label="Pause">&#9646;&#9646;</button>
         </div>
       </div>
       <div class="arcade-memory-grid" id="arcade-memory-grid"></div>
+    </div>
+
+    <%# ── Memory : pause ── %>
+    <div id="arcade-screen-memory-pause" class="arcade-screen arcade-screen--result" hidden>
+      <h3 class="arcade-result-title">Pause</h3>
+      <div class="arcade-pause-actions">
+        <button class="arcade-btn arcade-btn--success" id="mem-pause-resume-btn">Reprendre</button>
+        <button class="arcade-btn arcade-btn--ghost" id="mem-pause-shop-btn">&#127873; Boutique</button>
+        <button class="arcade-btn arcade-btn--danger" id="mem-pause-quit-btn">Quitter</button>
+      </div>
+    </div>
+
+    <%# ── Memory : boutique ── %>
+    <div id="arcade-screen-memory-shop" class="arcade-screen" hidden>
+      <div class="shop-header">
+        <p class="arcade-setup-title" style="margin:0">Boutique</p>
+        <span class="shop-coins-display">&#129689; <strong id="shop-coins">0</strong></span>
+      </div>
+      <div class="shop-section">
+        <p class="shop-section-label">Ic&ocirc;ne du dos des cartes</p>
+        <div class="shop-icon-grid" id="shop-icon-grid"></div>
+      </div>
+      <div class="shop-section">
+        <p class="shop-section-label">Couleur des cartes <span class="shop-price-hint">(1&#129689; par couleur)</span></p>
+        <div class="shop-color-grid" id="shop-color-grid"></div>
+      </div>
     </div>
 
     <%# ── Memory : victoire ── %>
@@ -466,6 +498,18 @@
   var tagPickerEl      = document.getElementById('arcade-tag-picker');
   var tagSearchEl      = document.getElementById('arcade-tag-search');
   var tagListEl        = document.getElementById('arcade-tag-list');
+  var screenPause      = document.getElementById('arcade-screen-memory-pause');
+  var screenShop       = document.getElementById('arcade-screen-memory-shop');
+  var memPauseBtn      = document.getElementById('mem-pause-btn');
+  var memBoostBtn      = document.getElementById('mem-boost-btn');
+  var pauseResumeBtn   = document.getElementById('mem-pause-resume-btn');
+  var pauseShopBtn     = document.getElementById('mem-pause-shop-btn');
+  var pauseQuitBtn     = document.getElementById('mem-pause-quit-btn');
+  var setupShopBtn     = document.getElementById('setup-shop-btn');
+  var resumeShopBtn    = document.getElementById('resume-shop-btn');
+  var shopCoinsEl      = document.getElementById('shop-coins');
+  var shopIconGrid     = document.getElementById('shop-icon-grid');
+  var shopColorGrid    = document.getElementById('shop-color-grid');
   var memLevelEl       = document.getElementById('mem-level');
   var memTimerEl       = document.getElementById('mem-timer');
   var memScoreEl       = document.getElementById('mem-score');
@@ -505,10 +549,24 @@
   var _tagSearchTimeout = null;
   var _midGame     = false; // true when changing mode between levels
   var _inProgress  = false; // true as soon as a level has been started
+  var _shopCoins   = 0;    // local coin cache (synced from server)
+  var _shopReturn  = null; // screen to return to after closing shop
+  var _cardIcon    = '\u2605'; // current card back icon (symbol)
+  var _cardColor   = 'default'; // current card back color key
+
+  // Color definitions (client-side display)
+  var MEMORY_COLORS = [
+    { key: 'default', label: 'Nuit',     bg: '#1e293b', border: '#334155' },
+    { key: 'purple',  label: 'Violet',   bg: '#2d1654', border: '#6d28d9' },
+    { key: 'red',     label: 'Rubis',    bg: '#4c1111', border: '#991b1b' },
+    { key: 'forest',  label: 'For\u00eat',  bg: '#0f3320', border: '#166534' },
+    { key: 'navy',    label: 'Marine',   bg: '#0f2447', border: '#1e40af' },
+    { key: 'slate',   label: 'Ardoise',  bg: '#1f2937', border: '#4b5563' },
+  ];
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   var _SCREENS = [screenGames, screenResume, screenSetup, screenGame, screenWin, screenLose,
-    document.getElementById('arcade-screen-wordle')];
+    screenPause, screenShop, document.getElementById('arcade-screen-wordle')];
   var _arcadeHdrBack = document.getElementById('arcade-hdr-back-btn');
   function showScreen(el) {
     // Sauvegarder avant de revenir à la liste des jeux (couvre le bouton ← et fermeture)
@@ -518,7 +576,160 @@
     if (_arcadeHdrBack) _arcadeHdrBack.hidden = (el === screenGames);
   }
   _arcadeHdrBack && _arcadeHdrBack.addEventListener('click', function() {
+    if (screenShop && !screenShop.hidden && _shopReturn) {
+      var ret = _shopReturn; _shopReturn = null;
+      showScreen(ret);
+    } else {
+      showScreen(screenGames);
+    }
+  });
+
+  // ── Boutique ─────────────────────────────────────────────────────────────────
+  function openShop(returnScreen) {
+    _shopReturn = returnScreen;
+    showScreen(screenShop);
+    if (_hdrBack) _hdrBack.hidden = false; // always show back in shop
+    fetch('/arcade/memory/shop')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.ok) return;
+        _shopCoins = d.coins;
+        if (shopCoinsEl) shopCoinsEl.textContent = _shopCoins;
+        // Load from server selections if no local state yet
+        if (d.selectedColor) _cardColor = d.selectedColor;
+        renderShopIcons(d.charms, d.selectedCharmId);
+        renderShopColors(d.ownedColors, d.selectedColor);
+      });
+  }
+
+  function renderShopIcons(charms, selectedId) {
+    if (!shopIconGrid) return;
+    shopIconGrid.innerHTML = '';
+    // Default: star (no charm)
+    var starBtn = document.createElement('button');
+    starBtn.className = 'shop-icon-btn' + (!selectedId ? ' shop-icon-btn--active' : '');
+    starBtn.textContent = '\u2605';
+    starBtn.title = 'Étoile (par défaut)';
+    starBtn.addEventListener('click', function() {
+      _cardIcon = '\u2605';
+      fetch('/arcade/memory/shop/icon', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ charmId: null }) });
+      shopIconGrid.querySelectorAll('.shop-icon-btn').forEach(function(b) { b.classList.remove('shop-icon-btn--active'); });
+      starBtn.classList.add('shop-icon-btn--active');
+      applyCardStyle();
+    });
+    shopIconGrid.appendChild(starBtn);
+
+    if (!charms.length) {
+      var msg = document.createElement('p');
+      msg.className = 'shop-empty';
+      msg.textContent = 'Aucun charme possédé — obtenez des coffres pour en débloquer !';
+      shopIconGrid.appendChild(msg);
+      return;
+    }
+    charms.forEach(function(c) {
+      var btn = document.createElement('button');
+      btn.className = 'shop-icon-btn' + (selectedId === c.id ? ' shop-icon-btn--active' : '');
+      btn.textContent = c.symbol;
+      btn.title = c.label;
+      btn.addEventListener('click', function() {
+        _cardIcon = c.symbol;
+        fetch('/arcade/memory/shop/icon', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ charmId: c.id }) });
+        shopIconGrid.querySelectorAll('.shop-icon-btn').forEach(function(b) { b.classList.remove('shop-icon-btn--active'); });
+        btn.classList.add('shop-icon-btn--active');
+        applyCardStyle();
+      });
+      shopIconGrid.appendChild(btn);
+    });
+  }
+
+  function renderShopColors(ownedColors, selectedColor) {
+    if (!shopColorGrid) return;
+    shopColorGrid.innerHTML = '';
+    MEMORY_COLORS.forEach(function(c) {
+      var owned = ownedColors.indexOf(c.key) !== -1;
+      var btn = document.createElement('button');
+      btn.className = 'shop-color-swatch' + (selectedColor === c.key ? ' shop-color-swatch--active' : '');
+      btn.style.background = c.bg;
+      btn.style.borderColor = c.border;
+      btn.title = c.label + (owned ? '' : ' — 1🪙');
+      var label = document.createElement('span');
+      label.className = 'shop-color-label';
+      label.textContent = c.label;
+      btn.appendChild(label);
+      if (!owned) {
+        var price = document.createElement('span');
+        price.className = 'shop-color-price';
+        price.textContent = '1\uD83E\uDE99';
+        btn.appendChild(price);
+      }
+      btn.addEventListener('click', function() {
+        fetch('/arcade/memory/shop/color', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ colorKey: c.key }) })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (!d.ok) { if (d.error === 'not_enough_coins') showShopMsg('Pas assez de pièces !'); return; }
+            _cardColor = c.key;
+            _shopCoins = d.newCoins;
+            if (shopCoinsEl) shopCoinsEl.textContent = _shopCoins;
+            if (!owned) {
+              owned = true;
+              price && price.remove();
+              ownedColors.push(c.key);
+            }
+            shopColorGrid.querySelectorAll('.shop-color-swatch').forEach(function(b) { b.classList.remove('shop-color-swatch--active'); });
+            btn.classList.add('shop-color-swatch--active');
+            applyCardStyle();
+          });
+      });
+      shopColorGrid.appendChild(btn);
+    });
+  }
+
+  function showShopMsg(msg) {
+    var el = shopColorGrid && shopColorGrid.parentElement;
+    if (!el) return;
+    var m = document.createElement('p');
+    m.style.cssText = 'color:#f87171;font-size:.78rem;text-align:center;margin:.3rem 0 0';
+    m.textContent = msg;
+    el.appendChild(m);
+    setTimeout(function() { m.remove(); }, 2000);
+  }
+
+  function applyCardStyle() {
+    if (!memGrid) return;
+    memGrid.dataset.color = _cardColor;
+    memGrid.querySelectorAll('.mem-card-back-icon').forEach(function(el) { el.textContent = _cardIcon; });
+  }
+
+  setupShopBtn  && setupShopBtn.addEventListener('click', function() { openShop(screenSetup); });
+  resumeShopBtn && resumeShopBtn.addEventListener('click', function() { openShop(screenResume); });
+  pauseShopBtn  && pauseShopBtn.addEventListener('click', function() { openShop(screenPause); });
+
+  // ── Pause ─────────────────────────────────────────────────────────────────────
+  memPauseBtn && memPauseBtn.addEventListener('click', function() {
+    clearInterval(_timer);
+    showScreen(screenPause);
+  });
+  pauseResumeBtn && pauseResumeBtn.addEventListener('click', function() {
+    showScreen(screenGame);
+    startTimer();
+  });
+  pauseQuitBtn && pauseQuitBtn.addEventListener('click', function() {
+    clearInterval(_timer);
+    clearProgress();
     showScreen(screenGames);
+  });
+
+  // ── Time boost ────────────────────────────────────────────────────────────────
+  memBoostBtn && memBoostBtn.addEventListener('click', function() {
+    if (_shopCoins < 5) { return; }
+    fetch('/arcade/memory/time-boost', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.ok) return;
+        _timeLeft += 30;
+        _shopCoins = d.newCoins;
+        if (memTimerEl) { memTimerEl.textContent = formatTime(_timeLeft); memTimerEl.style.color = ''; }
+      });
   });
 
   // ── Info tooltips ─────────────────────────────────────────────────────────────
@@ -586,6 +797,18 @@
     arcadeOverlay.hidden = false;
     document.body.style.overflow = 'hidden';
     showScreen(screenGames);
+    // Pre-load card style preferences
+    fetch('/arcade/memory/shop')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.ok) return;
+        _shopCoins = d.coins;
+        _cardColor = d.selectedColor || 'default';
+        if (d.selectedCharmId && d.charms) {
+          var found = d.charms.filter(function(c) { return c.id === d.selectedCharmId; })[0];
+          if (found) _cardIcon = found.symbol;
+        }
+      }).catch(function() {});
   }
 
   function closeArcade() {
@@ -787,7 +1010,7 @@
       back.className = 'mem-card-back';
       var backIcon = document.createElement('span');
       backIcon.className = 'mem-card-back-icon';
-      backIcon.textContent = '\u2605';
+      backIcon.textContent = _cardIcon;
       back.appendChild(backIcon);
 
       var front = document.createElement('div');
@@ -807,6 +1030,7 @@
       memGrid.appendChild(card);
       _cards.push({ el: card, pairId: data.pairId, matched: false, flipped: false });
     });
+    memGrid.dataset.color = _cardColor;
   }
 
   // ── Card logic ────────────────────────────────────────────────────────────────

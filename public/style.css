@@ -18008,6 +18008,72 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 
 /* ── Memory HUD ── */
+/* ── HUD extras ── */
+.mem-pause-btn {
+  background: #334155; border: none; color: #f1f5f9;
+  border-radius: 6px; padding: .3rem .55rem; font-size: .85rem;
+  cursor: pointer; line-height: 1; transition: background .15s;
+}
+.mem-pause-btn:hover { background: #475569; }
+.mem-boost-btn {
+  background: #1e3a5f; border: none; color: #93c5fd;
+  border-radius: 6px; padding: .3rem .5rem; font-size: .72rem;
+  font-weight: 700; cursor: pointer; line-height: 1.2;
+  white-space: nowrap; transition: background .15s;
+}
+.mem-boost-btn:hover { background: #1e40af; color: #fff; }
+/* ── Pause screen ── */
+.arcade-pause-actions {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .5rem; width: 100%; max-width: 220px; margin-top: .75rem;
+}
+.arcade-pause-actions .arcade-btn { width: 100%; justify-content: center; }
+/* ── Shop open button (setup/resume) ── */
+.shop-open-btn {
+  background: none; border: 1px solid #2d3655; color: #64748b;
+  border-radius: 8px; padding: .4rem 1rem; font-size: .82rem;
+  cursor: pointer; transition: border-color .15s, color .15s;
+}
+.shop-open-btn:hover { border-color: #4a5578; color: #94a3b8; }
+/* ── Shop screen ── */
+.shop-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem;
+}
+.shop-coins-display { font-size: .85rem; color: #94a3b8; }
+.shop-section { margin-bottom: 1rem; }
+.shop-section-label { font-size: .78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 .5rem; }
+.shop-price-hint { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: .74rem; }
+.shop-icon-grid { display: flex; flex-wrap: wrap; gap: .4rem; }
+.shop-icon-btn {
+  width: 2.6rem; height: 2.6rem; background: #1e2438; border: 1.5px solid #2d3655;
+  border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: border-color .12s;
+}
+.shop-icon-btn:hover { border-color: #4a5578; }
+.shop-icon-btn--active { border-color: #6d28d9; background: #2d1654; }
+.shop-empty { font-size: .78rem; color: #475569; margin: 0; }
+.shop-color-grid { display: flex; flex-wrap: wrap; gap: .5rem; }
+.shop-color-swatch {
+  width: 4.2rem; height: 3.5rem; border-radius: 8px; border: 2px solid;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; padding-bottom: .3rem; transition: transform .12s, opacity .12s;
+}
+.shop-color-swatch:hover { transform: scale(1.05); }
+.shop-color-swatch--active { outline: 2.5px solid #fff; outline-offset: 2px; }
+.shop-color-label { font-size: .65rem; color: rgba(255,255,255,.7); font-weight: 600; }
+.shop-color-price { font-size: .62rem; color: rgba(255,255,255,.5); }
+/* ── Card color variants ── */
+.arcade-memory-grid[data-color="purple"] .mem-card-back { background: linear-gradient(135deg, #2d1654 0%, #1a0a35 100%); border-color: rgba(109,40,217,.4); }
+.arcade-memory-grid[data-color="purple"] .mem-card-back-icon { color: rgba(167,139,250,.6); }
+.arcade-memory-grid[data-color="red"] .mem-card-back { background: linear-gradient(135deg, #4c1111 0%, #2a0808 100%); border-color: rgba(153,27,27,.4); }
+.arcade-memory-grid[data-color="red"] .mem-card-back-icon { color: rgba(252,165,165,.5); }
+.arcade-memory-grid[data-color="forest"] .mem-card-back { background: linear-gradient(135deg, #0f3320 0%, #061a10 100%); border-color: rgba(22,101,52,.4); }
+.arcade-memory-grid[data-color="forest"] .mem-card-back-icon { color: rgba(134,239,172,.5); }
+.arcade-memory-grid[data-color="navy"] .mem-card-back { background: linear-gradient(135deg, #0f2447 0%, #060e25 100%); border-color: rgba(30,64,175,.4); }
+.arcade-memory-grid[data-color="navy"] .mem-card-back-icon { color: rgba(147,197,253,.5); }
+.arcade-memory-grid[data-color="slate"] .mem-card-back { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); border-color: rgba(75,85,99,.4); }
+.arcade-memory-grid[data-color="slate"] .mem-card-back-icon { color: rgba(209,213,219,.4); }
+
 .arcade-memory-hud {
   display: flex; align-items: center; gap: 1rem;
   background: rgba(255,255,255,.04); border-radius: 8px;
