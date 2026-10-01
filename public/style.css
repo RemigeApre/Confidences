@@ -16469,13 +16469,138 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  padding: .75rem 1rem 1.5rem;
+  overflow: hidden;
 }
+/* Neutralise la boîte popup quand elle est en mode in-page */
 .arcade-inpage > .arcade-modal {
-  max-height: none; /* pas de contrainte de hauteur en in-page */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   width: 100%;
+  max-height: none;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── En-tête de la page Arcade ───────────────────────────────────────── */
+.arcade-page-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+  flex-shrink: 0;
+}
+.arcade-page-back {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .4rem;
+  border-radius: 8px;
+  transition: color .15s, background .15s;
+  flex-shrink: 0;
+}
+.arcade-page-back:hover { color: #fff; background: rgba(255,255,255,.08); }
+.arcade-page-back svg { width: 1.35rem; height: 1.35rem; }
+.arcade-page-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: -.03em;
+}
+
+/* ── Cartes de jeux ──────────────────────────────────────────────────── */
+.ag-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.35rem 1.5rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.09);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s;
+}
+.ag-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(0,0,0,.45);
+  border-color: rgba(255,255,255,.18);
+}
+.ag-card--memory {
+  background: linear-gradient(135deg,
+    rgba(200,140,30,.18) 0%,
+    rgba(120,70,10,.09) 100%);
+  border-color: rgba(200,140,30,.22);
+}
+.ag-card--memory:hover { border-color: rgba(200,150,40,.4); }
+.ag-card--wordle {
+  background: linear-gradient(135deg,
+    rgba(30,160,140,.18) 0%,
+    rgba(15,90,90,.09) 100%);
+  border-color: rgba(30,170,150,.22);
+}
+.ag-card--wordle:hover { border-color: rgba(40,190,170,.4); }
+
+.ag-card-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ag-card--memory .ag-card-icon {
+  background: linear-gradient(145deg, hsl(40,90%,58%) 0%, hsl(28,80%,40%) 100%);
+  color: #fff;
+}
+.ag-card--wordle .ag-card-icon {
+  background: linear-gradient(145deg, hsl(172,65%,48%) 0%, hsl(175,60%,32%) 100%);
+  color: rgba(255,255,255,.9);
+}
+.ag-card-icon svg { width: 1.5rem; height: 1.5rem; }
+
+.ag-card-body { flex: 1; min-width: 0; }
+.ag-card-head {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .3rem;
+}
+.ag-card-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+.ag-card-desc {
+  margin: 0;
+  font-size: .82rem;
+  color: rgba(255,255,255,.45);
+  line-height: 1.45;
+}
+
+.ag-card-play {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.18);
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: .55rem 1.3rem;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s, color .15s;
+  letter-spacing: .03em;
+}
+.ag-card-play:hover {
+  background: rgba(255,255,255,.2);
+  border-color: rgba(255,255,255,.35);
+  color: #fff;
 }
 /* ── Grille de catégories ─────────────────────────────────────────────── */
 .jeu-categories {
@@ -17940,6 +18065,11 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   position: relative;
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: .55rem; text-align: center; min-height: 220px;
+}
+.arcade-screen--gamelist {
+  padding: 0 1.25rem 2rem;
+  gap: 1rem;
+  overflow-y: auto;
 }
 
 /* ── Game list ── */

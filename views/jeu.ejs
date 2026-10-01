@@ -101,71 +101,62 @@
   <%# ── Arcade en-page ── %>
   <div id="arcade-modal" class="arcade-inpage" hidden>
     <div class="arcade-modal">
-      <div class="arcade-modal-header">
-        <button class="arcade-hdr-back" id="arcade-hdr-back-btn" aria-label="Retour">&#8592;</button>
-        <h2 class="arcade-modal-title">&#127918; Arcade</h2>
-        <span></span>
+
+      <%# ── En-tête page ── %>
+      <div class="arcade-page-header">
+        <button class="arcade-page-back" id="arcade-hdr-back-btn" aria-label="Retour">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <h1 class="arcade-page-title">Arcade</h1>
       </div>
 
     <%# ── Liste des jeux ── %>
-    <div id="arcade-screen-games" class="arcade-screen">
-      <div class="arcade-games-list">
+    <div id="arcade-screen-games" class="arcade-screen arcade-screen--gamelist">
 
-        <div class="arcade-game-entry">
-          <div class="arcade-game-card">
-            <span class="arcade-game-card-icon">&#127183;</span>
-            <div class="arcade-game-card-info">
-              <strong>Memory</strong>
-              <span class="arcade-game-level-badge" id="arcade-memory-level-badge" hidden></span>
-            </div>
-            <div class="arcade-game-card-actions">
-              <button class="arcade-game-info-btn" id="arcade-memory-info-btn" aria-label="Comment jouer">&#8505;</button>
-              <button class="arcade-game-play-btn" id="arcade-memory-play-btn">Jouer</button>
-            </div>
-          </div>
-          <div class="arcade-info-panel" id="arcade-memory-info-tooltip" hidden>
-            <p><strong>Comment jouer</strong></p>
-            <p>Retrouvez toutes les paires de cartes avant la fin du temps imparti.</p>
-            <p><strong>R&eacute;compenses</strong></p>
-            <ul>
-              <li>Tous les 5&nbsp;niveaux&nbsp;&rarr; 1&nbsp;&#127873; coffre</li>
-              <li>Seuls les nouveaux paliers comptent</li>
-            </ul>
-          </div>
+      <%# Memory %>
+      <div class="ag-card ag-card--memory">
+        <div class="ag-card-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <rect x="2"  y="2"  width="9" height="9" rx="2.2"/>
+            <rect x="13" y="2"  width="9" height="9" rx="2.2"/>
+            <rect x="2"  y="13" width="9" height="9" rx="2.2"/>
+            <rect x="13" y="13" width="9" height="9" rx="2.2"/>
+          </svg>
         </div>
-
-        <div class="arcade-game-entry">
-          <div class="arcade-game-card">
-            <span class="arcade-game-card-icon">&#127344;</span>
-            <div class="arcade-game-card-info">
-              <strong>Wordle</strong>
-            </div>
-            <div class="arcade-game-card-actions">
-              <button class="arcade-game-info-btn" id="arcade-wordle-info-btn" aria-label="Comment jouer">&#8505;</button>
-              <button class="arcade-game-play-btn" id="arcade-wordle-play-btn">Jouer</button>
-            </div>
+        <div class="ag-card-body">
+          <div class="ag-card-head">
+            <span class="ag-card-name">Memory</span>
+            <span class="arcade-game-level-badge" id="arcade-memory-level-badge" hidden></span>
           </div>
-          <div class="arcade-info-panel" id="arcade-wordle-info-tooltip" hidden>
-            <p><strong>Comment jouer</strong></p>
-            <p>Trouvez le mot du Codex en 6&nbsp;essais. Les couleurs vous guident&nbsp;:</p>
-            <ul>
-              <li><span class="arcade-tip-correct">Vert</span>&nbsp;&mdash; bonne lettre, bonne place</li>
-              <li><span class="arcade-tip-present">Jaune</span>&nbsp;&mdash; lettre pr&eacute;sente, mauvaise place</li>
-              <li>Gris&nbsp;&mdash; lettre absente</li>
-            </ul>
-            <p><strong>R&eacute;compenses</strong> (par victoire)</p>
-            <ul>
-              <li>1&nbsp;essai&nbsp;&rarr; 5&nbsp;&#127873;</li>
-              <li>2&nbsp;essais&nbsp;&rarr; 4&nbsp;&#127873;</li>
-              <li>3&nbsp;essais&nbsp;&rarr; 3&nbsp;&#127873;</li>
-              <li>4&nbsp;essais&nbsp;&rarr; 2&nbsp;&#127873;</li>
-              <li>5&nbsp;essais&nbsp;&rarr; 1&nbsp;&#127873;</li>
-              <li>6&nbsp;essais ou &eacute;chec&nbsp;&rarr; 0&nbsp;&#127873;</li>
-            </ul>
-          </div>
+          <p class="ag-card-desc">Retrouvez toutes les paires avant la fin du temps.</p>
         </div>
-
+        <button class="ag-card-play" id="arcade-memory-play-btn">Jouer</button>
       </div>
+
+      <%# Wordle %>
+      <div class="ag-card ag-card--wordle">
+        <div class="ag-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3"  y="3"  width="5" height="5" rx="1.2"/>
+            <rect x="9.5" y="3"  width="5" height="5" rx="1.2"/>
+            <rect x="16" y="3"  width="5" height="5" rx="1.2"/>
+            <rect x="3"  y="9.5" width="5" height="5" rx="1.2"/>
+            <rect x="9.5" y="9.5" width="5" height="5" rx="1.2" fill="currentColor" opacity=".5"/>
+            <rect x="16" y="9.5" width="5" height="5" rx="1.2"/>
+            <rect x="3"  y="16" width="5" height="5" rx="1.2"/>
+            <rect x="9.5" y="16" width="5" height="5" rx="1.2"/>
+            <rect x="16" y="16" width="5" height="5" rx="1.2"/>
+          </svg>
+        </div>
+        <div class="ag-card-body">
+          <div class="ag-card-head">
+            <span class="ag-card-name">Wordle</span>
+          </div>
+          <p class="ag-card-desc">Trouvez le mot du Codex en&nbsp;6 essais.</p>
+        </div>
+        <button class="ag-card-play" id="arcade-wordle-play-btn">Jouer</button>
+      </div>
+
     </div>
 
     <%# ── Memory : reprise de partie ── %>
@@ -1268,7 +1259,7 @@
   function showWordleScreen(el) {
     _allScreens.forEach(function(s) { s.hidden = true; });
     if (el) el.hidden = false;
-    if (_hdrBack) _hdrBack.hidden = (el !== screenWordle);
+    if (_hdrBack) _hdrBack.hidden = false; // toujours visible en mode in-page
   }
 
   // ── Open wordle ──────────────────────────────────────────────────────────
