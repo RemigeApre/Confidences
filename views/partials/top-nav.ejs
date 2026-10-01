@@ -72,11 +72,12 @@
         <% if (currentUser) { %>
         <button type="button" class="pc-icon-btn pc-discreet-btn" id="pc-discreet-btn" aria-pressed="false" title="Masquer les images" aria-label="Masquer les images"><%- include('eye-icon') %></button>
         <% } %>
-        <div class="pc-search-inline" id="pc-search-inline">
-          <button type="button" class="pc-icon-btn" id="pc-search-btn" aria-label="Rechercher sur tout le site" aria-expanded="false"><%- include('search-icon') %></button>
-          <input type="search" id="pc-search-input" class="pc-search-inline-input" placeholder="Rechercher&hellip;" autocomplete="off" aria-label="Rechercher sur tout le site" />
-          <div class="pc-search-results" id="pc-search-results" hidden></div>
+        <% if (currentUser) { %>
+        <div class="pc-nav-coins" title="Vos pi&egrave;ces">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="1.5"/><text x="10" y="14.5" text-anchor="middle" font-size="10" font-weight="bold" fill="hsl(44,40%,20%)">P</text></svg>
+          <span class="pc-nav-coins-count"><%= currentUser.coins || 0 %></span>
         </div>
+        <% } %>
         <% if (currentUser) { %>
           <% var _roleClass = currentUser.isAdmin ? 'pc-key-admin' : (currentUser.isTest ? 'pc-key-test' : 'pc-key-user'); %>
           <div class="pc-nav-item pc-has-drop pc-hover-menu">
