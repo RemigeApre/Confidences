@@ -218,6 +218,12 @@ app.use(
   (req, res, next) => (req.user ? next() : res.status(403).end()),
   express.static(path.join(__dirname, "..", "games", "mjlc", "resources", "app"), { maxAge: "1d" })
 );
+// Le jeu référence ses assets avec des chemins absolus /static/... — on les sert ici.
+app.use(
+  "/static",
+  (req, res, next) => (req.user ? next() : res.status(403).end()),
+  express.static(path.join(__dirname, "..", "games", "mjlc", "resources", "app", "static"), { maxAge: "1d" })
+);
 
 // Genere en tache de fond les vignettes manquantes pour les images deja
 // uploadees avant l'ajout de cette fonctionnalite (voir src/thumbs.js).
