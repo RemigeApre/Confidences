@@ -1352,3 +1352,81 @@
   border-radius: 99px;
   transition: width .2s;
 }
+
+/* ── Cartes jeux : cover image ─────────────────────────────────────────── */
+.admin-utile--game,
+.admin-utile--game-hs {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-game-cover {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: hsl(225, 16%, 11%);
+  transition: transform .3s ease;
+}
+.admin-utile:hover .admin-game-cover { transform: scale(1.04); }
+
+.admin-game-cover--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, hsl(225,20%,12%) 0%, hsl(240,18%,16%) 100%);
+}
+.admin-game-cover-letter {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.12);
+  user-select: none;
+}
+
+.admin-game-card-body {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: .6rem .75rem .65rem;
+  background: linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.55) 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.admin-game-card-badges {
+  display: flex;
+  gap: .3rem;
+  margin-bottom: .1rem;
+}
+.admin-game-card-title {
+  font-size: .82rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.95);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-game-card-slug {
+  font-size: .65rem;
+  font-family: monospace;
+  color: rgba(255,255,255,.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Preview illustration dans la modale */
+.admin-game-cover-preview {
+  width: 100%;
+  aspect-ratio: 16/7;
+  border-radius: 8px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}

@@ -305,6 +305,9 @@ app.get("/games/:slug/*.html", (req, res, next) => {
   serveGameHtml(req, res, next, game, filePath);
 });
 
+// Illustrations des jeux (pas d'auth requise — images publiques)
+app.use("/game-covers", express.static(path.join(GAMES_DIR, "covers"), { maxAge: "7d" }));
+
 // Assets statiques des jeux (JS, CSS, images…)
 app.use("/games/:slug", (req, res, next) => {
   if (!req.user) return res.status(403).end();

@@ -45,44 +45,26 @@
         data-game-sub-parody="<%= game.sub_parody || '' %>"
         data-game-tags="<%= (game.tags || []).join(', ') %>"
         data-game-protagonist-ids="<%= JSON.stringify(game.protagonist_ids || []) %>"
-        data-game-warnings="<%= hasWarnings ? JSON.stringify(game.warnings).replace(/"/g,'&quot;') : '' %>">
+        data-game-warnings="<%= hasWarnings ? JSON.stringify(game.warnings).replace(/"/g,'&quot;') : '' %>"
+        data-game-cover="<%= game.cover || '' %>">
 
-        <div class="admin-utile-top">
-          <div class="admin-utile-avatar"><%= game.title.charAt(0).toUpperCase() %></div>
-          <% if (hasWarnings) { %>
-            <span class="admin-game-compat-badge" title="<%= hasErrors ? 'Problèmes de compatibilité Electron' : 'Avertissements de compatibilité' %>">
-              <%= hasErrors ? '⚠' : '⚠' %>
-            </span>
-          <% } %>
-        </div>
+        <% if (game.cover) { %>
+          <div class="admin-game-cover" style="background-image:url('/game-covers/<%= game.slug %>.<%= game.cover %>')"></div>
+        <% } else { %>
+          <div class="admin-game-cover admin-game-cover--empty">
+            <span class="admin-game-cover-letter"><%= game.title.charAt(0).toUpperCase() %></span>
+          </div>
+        <% } %>
 
-        <button type="button" class="admin-utile-body-link admin-game-edit-btn">
-          <div class="admin-utile-name">
-            <%= game.title %>
-            <% if (game.disabled) { %>
-              <span class="admin-game-hs-badge">HS</span>
+        <div class="admin-game-card-body">
+          <div class="admin-game-card-badges">
+            <% if (game.disabled) { %><span class="admin-game-hs-badge">HS</span><% } %>
+            <% if (hasWarnings) { %>
+              <span class="admin-game-compat-badge" title="<%= hasErrors ? 'Problèmes compatibilité' : 'Avertissements compatibilité' %>">⚠</span>
             <% } %>
           </div>
-          <div class="admin-utile-login" style="font-family:monospace;font-size:.72rem;"><%= game.entrypoint %></div>
-        </button>
-
-        <div class="admin-utile-stats">
-          <div class="admin-utile-stat">
-            <span class="admin-utile-stat-val" style="color:<%= game.disabled ? '#f87171' : '#4ade80' %>">
-              <%= game.disabled ? 'HS' : 'Actif' %>
-            </span>
-            <span class="admin-utile-stat-key">Statut</span>
-          </div>
-          <div class="admin-utile-stat">
-            <span class="admin-utile-stat-val"><%= game.slug %></span>
-            <span class="admin-utile-stat-key">Slug</span>
-          </div>
-          <div class="admin-utile-stat">
-            <span class="admin-utile-stat-val" style="color:<%= hasErrors ? '#f87171' : (hasWarnings ? '#fbbf24' : '#4ade80') %>">
-              <%= hasErrors ? '⚠ err' : (hasWarnings ? '⚠ warn' : '✓') %>
-            </span>
-            <span class="admin-utile-stat-key">Compat.</span>
-          </div>
+          <div class="admin-game-card-title"><%= game.title %></div>
+          <div class="admin-game-card-slug"><%= game.slug %></div>
         </div>
       </div>
     <% }) %>
@@ -236,6 +218,26 @@
 
       <button type="submit" class="admin-btn-primary">Enregistrer</button>
     </form>
+
+    <%# Illustration %>
+    <details class="admin-modal-extra-details" style="margin-top:.5rem;">
+      <summary class="admin-modal-extra-summary">Illustration &rsaquo;</summary>
+      <div class="admin-modal-extra-body" style="padding-top:.75rem;">
+        <form method="POST" id="jeux-cover-form" action="/admin/jeux/__SLUG__/cover" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:.65rem;">
+          <div class="admin-game-cover-preview" id="edit-cover-preview">
+            <span id="edit-cover-preview-text" style="color:#475569;font-size:.8rem;">Aucune illustration</span>
+          </div>
+          <label class="admin-game-dropzone" style="cursor:pointer;">
+            <input type="file" name="coverfile" id="edit-coverfile" accept="image/*" style="display:none">
+            <span style="font-size:1.4rem;">🖼</span>
+            <span id="edit-cover-label" style="font-size:.8rem;color:#64748b;">Choisir une image (JPG, PNG, WebP…)</span>
+          </label>
+          <button type="submit" id="jeux-cover-submit" class="admin-btn-primary" disabled style="opacity:.5;">
+            Enregistrer l'illustration
+          </button>
+        </form>
+      </div>
+    </details>
 
     <%# Re-upload zip (optionnel) %>
     <details class="admin-modal-extra-details" style="margin-top:.5rem;">
@@ -426,6 +428,28 @@
     window._editProtsReset = resetProts;
   })();
 
+  /* ── Cover image input ── */
+  (function () {
+    var inp    = qs('#edit-coverfile');
+    var label  = qs('#edit-cover-label');
+    var submit = qs('#jeux-cover-submit');
+    var prev   = qs('#edit-cover-preview');
+    var prevTxt= qs('#edit-cover-preview-text');
+    if (!inp) return;
+    inp.addEventListener('change', function () {
+      if (!this.files || !this.files[0]) return;
+      label.textContent = this.files[0].name;
+      submit.disabled = false;
+      submit.style.opacity = '1';
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        prev.style.backgroundImage = "url('" + e.target.result + "')";
+        prevTxt.style.display = 'none';
+      };
+      reader.readAsDataURL(this.files[0]);
+    });
+  })();
+
   /* ── Cartes → modal modifier ── */
   document.querySelectorAll('.admin-utile[data-game-slug]').forEach(function (card) {
     card.addEventListener('click', function () {
@@ -447,6 +471,21 @@
       qs('#edit-entrypoint').value  = entry;
       qs('#edit-online-url').value  = onlineUrl;
       qs('#edit-disabled').checked  = disabled;
+
+      /* Illustration */
+      var coverForm = qs('#jeux-cover-form');
+      coverForm.action = '/admin/jeux/' + slug + '/cover';
+      var coverExt = card.dataset.gameCover || '';
+      var prevText = qs('#edit-cover-preview-text');
+      var prevEl   = qs('#edit-cover-preview');
+      prevEl.style.backgroundImage = coverExt
+        ? "url('/game-covers/" + slug + "." + coverExt + "?t=" + Date.now() + "')"
+        : '';
+      prevText.style.display = coverExt ? 'none' : '';
+      qs('#edit-coverfile').value = '';
+      qs('#edit-cover-label').textContent = 'Choisir une image (JPG, PNG, WebP…)';
+      qs('#jeux-cover-submit').disabled = true;
+      qs('#jeux-cover-submit').style.opacity = '.5';
 
       /* Parodie */
       qs('#edit-parody').value     = parody;

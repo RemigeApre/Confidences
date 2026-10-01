@@ -71,6 +71,24 @@ const zipUpload = multer({
   fileFilter: (_req, file, cb) => cb(null, file.mimetype === "application/zip" || file.originalname.endsWith(".zip")),
 });
 
+const coverUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, _file, cb) => {
+      const coversDir = path.join(path.join(__dirname, "..", "..", "games"), "covers");
+      fs.mkdirSync(coversDir, { recursive: true });
+      cb(null, coversDir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
+      cb(null, `_tmp_${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    cb(null, /image\/(jpeg|png|gif|webp)/.test(file.mimetype));
+  },
+});
+
 const loginThrottle = createThrottle();
 const SEXE_VALUES = ["", "femme", "homme", "autre"];
 
@@ -746,6 +764,38 @@ function buildAdminRouter(config) {
     games[idx] = updated;
     writeGames(games);
     res.redirect("/admin/jeux?success=1");
+  });
+
+  // ── Changer l'illustration d'un jeu ───────────────────────────────────────
+  router.post("/jeux/:slug/cover", requireAdmin, (req, res) => {
+    const slug = toSlug(req.params.slug);
+    const games = readGames();
+    const idx = games.findIndex(g => g.slug === slug);
+    if (idx < 0) return res.redirect("/admin/jeux?error=Jeu+introuvable");
+
+    coverUpload.single("coverfile")(req, res, (uploadErr) => {
+      if (uploadErr) {
+        return res.redirect("/admin/jeux?error=" + encodeURIComponent("Erreur image : " + uploadErr.message));
+      }
+      if (!req.file) return res.redirect("/admin/jeux?error=Aucune+image+reçue");
+
+      const coversDir = path.join(GAMES_DIR, "covers");
+      const ext = path.extname(req.file.filename);
+      const finalName = slug + ext;
+      const finalPath = path.join(coversDir, finalName);
+
+      // Remove old cover files for this slug (any extension)
+      try {
+        fs.readdirSync(coversDir).filter(f => f.startsWith(slug + ".")).forEach(f => {
+          try { fs.unlinkSync(path.join(coversDir, f)); } catch (_) {}
+        });
+      } catch (_) {}
+
+      fs.renameSync(req.file.path, finalPath);
+      games[idx] = { ...games[idx], cover: ext.slice(1) };
+      writeGames(games);
+      res.redirect("/admin/jeux?success=1");
+    });
   });
 
   // ── Supprimer un jeu de la liste ───────────────────────────────────────────
