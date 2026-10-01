@@ -255,14 +255,12 @@
 
     <%# ── Memory : victoire ── %>
     <div id="arcade-screen-memory-win" class="arcade-screen arcade-screen--result" hidden>
-      <div class="arcade-result-icon">&#9989;</div>
-      <h3 class="arcade-result-title">Niveau <span id="win-level">1</span> complet&eacute;&nbsp;!</h3>
-      <div class="arcade-result-score">Score&nbsp;: <strong id="win-score">0</strong></div>
+      <h3 class="arcade-result-title arcade-result-title--victory">Victoire&nbsp;!</h3>
+      <p class="arcade-result-subtitle">Niveau <span id="win-level">1</span> termin&eacute;</p>
       <div id="win-lootbox" class="arcade-lootbox-reward" hidden>&#127873; <strong>+1&nbsp;lootbox</strong> d&eacute;bloqu&eacute;e&nbsp;!</div>
-      <div class="arcade-result-footer arcade-result-footer--3col">
-        <button class="arcade-btn arcade-btn--ghost" id="win-quit-btn">Quitter</button>
+      <div class="arcade-result-footer">
         <button class="arcade-btn arcade-btn--secondary" id="win-change-mode-btn">&#9881; Mode</button>
-        <button class="arcade-btn arcade-btn--primary" id="win-next-btn">Niveau suivant &rarr;</button>
+        <button class="arcade-btn arcade-btn--primary" id="win-next-btn">Niveau suivant</button>
       </div>
     </div>
 
@@ -515,11 +513,9 @@
   var memScoreEl       = document.getElementById('mem-score');
   var memGrid          = document.getElementById('arcade-memory-grid');
   var winLevelEl       = document.getElementById('win-level');
-  var winScoreEl       = document.getElementById('win-score');
   var winLootboxEl     = document.getElementById('win-lootbox');
   var winNextBtn       = document.getElementById('win-next-btn');
   var winChangeModeBtn = document.getElementById('win-change-mode-btn');
-  var winQuitBtn       = document.getElementById('win-quit-btn');
   var loseLevelEl      = document.getElementById('lose-level');
   var loseScoreEl      = document.getElementById('lose-score');
   var loseRetryBtn     = document.getElementById('lose-retry-btn');
@@ -773,8 +769,10 @@
   function saveProgress() {
     if (!_inProgress) return;
     try {
+      // Si l'écran de victoire est affiché, sauvegarder le niveau suivant
+      var saveLevel = (screenWin && !screenWin.hidden) ? _level + 1 : _level;
       localStorage.setItem(SAVE_KEY, JSON.stringify({
-        level: _level, totalScore: _totalScore,
+        level: saveLevel, totalScore: _totalScore,
         mode: _mode, tag: _selectedTag || null,
       }));
     } catch (_e) {}
@@ -820,7 +818,12 @@
 
   arcadeBtn      && arcadeBtn.addEventListener('click', openArcade);
   arcadeCloseBtn && arcadeCloseBtn.addEventListener('click', closeArcade);
-  arcadeOverlay.addEventListener('click', function(e) { if (e.target === arcadeOverlay) closeArcade(); });
+  arcadeOverlay.addEventListener('click', function(e) {
+    if (e.target !== arcadeOverlay) return;
+    var memScreens = [screenGame, screenWin, screenLose, screenPause, screenSetup, screenResume, screenShop];
+    if (memScreens.some(function(s) { return s && !s.hidden; })) return;
+    closeArcade();
+  });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && arcadeOverlay && !arcadeOverlay.hidden) closeArcade();
   });
@@ -1100,7 +1103,6 @@
 
   function showWinScreen(lootboxGranted) {
     if (winLevelEl) winLevelEl.textContent = _level;
-    if (winScoreEl) winScoreEl.textContent = _totalScore;
     if (winLootboxEl) winLootboxEl.hidden = !lootboxGranted;
     if (lootboxGranted) {
       // Synchronise le compteur lootbox dans lootbox.js (fix : _count était stale)
@@ -1113,11 +1115,6 @@
   winNextBtn && winNextBtn.addEventListener('click', function() {
     _level++;
     startLevel(_level);
-  });
-
-  winQuitBtn && winQuitBtn.addEventListener('click', function() {
-    clearProgress();
-    showScreen(screenGames);
   });
 
   // ── Timer out ─────────────────────────────────────────────────────────────────
