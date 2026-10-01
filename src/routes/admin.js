@@ -65,10 +65,20 @@ const { execFile } = require("child_process");
 const zipUpload = multer({
   storage: multer.diskStorage({
     destination: os.tmpdir(),
-    filename: (_req, _file, cb) => cb(null, `game-upload-${Date.now()}.zip`),
+    filename: (_req, file, cb) => {
+      const ext = file.originalname.toLowerCase().endsWith(".rar") ? ".rar" : ".zip";
+      cb(null, `game-upload-${Date.now()}${ext}`);
+    },
   }),
   limits: { fileSize: 600 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => cb(null, file.mimetype === "application/zip" || file.originalname.endsWith(".zip")),
+  fileFilter: (_req, file, cb) => {
+    const name = file.originalname.toLowerCase();
+    const ok = name.endsWith(".zip") || name.endsWith(".rar")
+      || file.mimetype === "application/zip"
+      || file.mimetype === "application/x-rar-compressed"
+      || file.mimetype === "application/vnd.rar";
+    cb(null, ok);
+  },
 });
 
 const coverUpload = multer({
@@ -729,7 +739,7 @@ function buildAdminRouter(config) {
     const gameDir = path.join(GAMES_DIR, tmpSlug);
     fs.mkdirSync(gameDir, { recursive: true });
 
-    execFile("unzip", ["-o", req.file.path, "-d", gameDir], (err) => {
+    execFile("unar", ["-o", gameDir, "-force-overwrite", "-no-directory", req.file.path], (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
@@ -794,7 +804,7 @@ function buildAdminRouter(config) {
     const gameDir    = path.join(GAMES_DIR, slug);
     fs.mkdirSync(gameDir, { recursive: true });
 
-    execFile("unzip", ["-o", req.file.path, "-d", gameDir], (err) => {
+    execFile("unar", ["-o", gameDir, "-force-overwrite", "-no-directory", req.file.path], (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
