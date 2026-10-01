@@ -16586,6 +16586,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .ag-card--memory .ag-card-visual { background: hsl(36,28%,12%);  color: hsl(36,60%,52%); }
 .ag-card--wordle  .ag-card-visual { background: hsl(172,22%,10%); color: hsl(172,50%,44%); }
+.ag-card--thog    .ag-card-visual { background: hsl(260,20%,10%); color: hsl(260,45%,62%); }
 .ag-card-visual svg { width: 2.6rem; height: 2.6rem; }
 
 /* Corps */
@@ -16630,6 +16631,44 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-color: #555;
   color: #fff;
 }
+/* ── Fullscreen game overlay ─────────────────────────────────────────── */
+.game-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+.game-fullscreen[hidden] { display: none; }
+.game-fullscreen-quit {
+  position: absolute;
+  top: .75rem;
+  left: .85rem;
+  z-index: 1001;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.8);
+  border-radius: 8px;
+  padding: .35rem .85rem;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background .15s, color .15s;
+}
+.game-fullscreen-quit:hover {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+.game-iframe {
+  flex: 1;
+  border: none;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /* ── Grille de catégories ─────────────────────────────────────────────── */
 .jeu-categories {
   flex: 1;

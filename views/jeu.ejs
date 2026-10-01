@@ -303,6 +303,55 @@
     </div>
   </div>
 
+  <%# ── Aventure en-page ── %>
+  <div id="aventure-view" class="arcade-inpage" hidden>
+    <div class="arcade-modal">
+
+      <div class="arcade-page-header">
+        <button class="arcade-page-back" id="aventure-hdr-back-btn" aria-label="Retour">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <h1 class="arcade-page-title">Aventure</h1>
+      </div>
+
+      <div class="arcade-screen arcade-screen--gamelist">
+        <aside class="arcade-sidebar">
+          <p class="arcade-sidebar-title">Filtres</p>
+        </aside>
+        <div class="arcade-games-grid">
+
+          <div class="ag-card ag-card--thog">
+            <div class="ag-card-visual">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </div>
+            <div class="ag-card-body">
+              <div class="ag-card-head">
+                <span class="ag-card-name">The Hole of Glory</span>
+              </div>
+              <p class="ag-card-desc">Jeu de cartes roguelike. Construisez votre deck et gérez vos clients.</p>
+              <div class="ag-card-footer">
+                <button class="ag-card-play" id="thog-play-btn">Jouer</button>
+              </div>
+            </div>
+          </div>
+
+        </div><%# /arcade-games-grid %>
+      </div>
+
+    </div>
+  </div>
+
+</div><%# /jeu-viewport %>
+
+<%# ── Overlay plein écran pour les jeux HTML5 ── %>
+<div id="game-fullscreen" class="game-fullscreen" hidden>
+  <button class="game-fullscreen-quit" id="game-quit-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1rem;height:1rem;vertical-align:middle;margin-right:.3rem"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Quitter
+  </button>
+  <iframe id="game-iframe" class="game-iframe" src="" allowfullscreen title="Jeu"></iframe>
 </div>
 
 <%# ── Modal Casino ── %>
@@ -376,23 +425,6 @@
   </div>
 </div>
 
-<%# ── Modal Aventure ── %>
-<div class="arcade-overlay" id="aventure-modal" hidden aria-modal="true" role="dialog">
-  <div class="arcade-modal">
-    <div class="arcade-modal-header">
-      <span></span>
-      <h2 class="arcade-modal-title">&#9876; Aventure</h2>
-      <button class="arcade-close-btn" id="aventure-close-btn" aria-label="Fermer">&#10005;</button>
-    </div>
-    <div class="arcade-screen arcade-screen--result">
-      <div class="arcade-result-icon">&#9876;</div>
-      <h3 class="arcade-result-title">Bient&ocirc;t disponible</h3>
-      <p style="color:#64748b;font-size:.9rem;text-align:center;margin:.5rem 0 1.5rem">
-        Des jeux d&rsquo;aventure arrivent prochainement&hellip;
-      </p>
-    </div>
-  </div>
-</div>
 
 <%# ── Popup info + paramètres lootbox ── %>
 <div class="jeu-info-popover" id="jeu-info-popover" hidden aria-modal="true" role="dialog" aria-labelledby="jeu-info-title">
@@ -1490,19 +1522,46 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   AVENTURE — modal simple
+   AVENTURE — vue en-page + overlay fullscreen jeu
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
-  var overlay  = document.getElementById('aventure-modal');
-  var openBtn  = document.getElementById('jeu-aventure-btn');
-  var closeBtn = document.getElementById('aventure-close-btn');
-  if (!overlay) return;
-  function open()  { overlay.hidden = false; document.body.style.overflow = 'hidden'; }
-  function close() { overlay.hidden = true;  document.body.style.overflow = ''; }
-  openBtn  && openBtn.addEventListener('click', open);
-  closeBtn && closeBtn.addEventListener('click', close);
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
-  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !overlay.hidden) close(); });
+  var homeView      = document.getElementById('jeu-home-view');
+  var aventureView  = document.getElementById('aventure-view');
+  var openBtn       = document.getElementById('jeu-aventure-btn');
+  var backBtn       = document.getElementById('aventure-hdr-back-btn');
+  var thogPlayBtn   = document.getElementById('thog-play-btn');
+  var gameFs        = document.getElementById('game-fullscreen');
+  var gameIframe    = document.getElementById('game-iframe');
+  var gameQuitBtn   = document.getElementById('game-quit-btn');
+
+  function openAventure() {
+    if (homeView) homeView.hidden = true;
+    if (aventureView) aventureView.hidden = false;
+  }
+  function closeAventure() {
+    if (aventureView) aventureView.hidden = true;
+    if (homeView) homeView.hidden = false;
+  }
+  function openGame(src) {
+    // Charge le jeu uniquement au premier clic (lazy) pour ne pas impacter les perf
+    if (gameIframe && !gameIframe.getAttribute('data-loaded')) {
+      gameIframe.src = src;
+      gameIframe.setAttribute('data-loaded', '1');
+    }
+    if (gameFs) gameFs.hidden = false;
+  }
+  function closeGame() {
+    if (gameFs) gameFs.hidden = true;
+    // On garde l'iframe chargée pour ne pas perdre la progression
+  }
+
+  openBtn    && openBtn.addEventListener('click', openAventure);
+  backBtn    && backBtn.addEventListener('click', closeAventure);
+  thogPlayBtn && thogPlayBtn.addEventListener('click', function() { openGame('/games/thog/gloryhole.html'); });
+  gameQuitBtn && gameQuitBtn.addEventListener('click', closeGame);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && gameFs && !gameFs.hidden) closeGame();
+  });
 })();
 </script>
 
