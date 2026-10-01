@@ -3415,8 +3415,8 @@ function saveWordleGuess(userId, date, guesses, solved, rewardGranted, gameEnded
 }
 
 // ── Memory boutique ────────────────────────────────────────────────────────────
-const MEMORY_COLOR_PRICE = 1;
-const VALID_MEMORY_COLORS = new Set(['default','purple','red','forest','navy','slate']);
+const VALID_MEMORY_COLORS = new Set(['default','purple','red','forest','navy','slate','gold','darkred']);
+const MEMORY_COLOR_PRICES = { default:0, purple:1, red:1, forest:1, navy:1, slate:1, gold:10, darkred:10 };
 
 function getMemoryShop(userId) {
   try {
@@ -3452,9 +3452,10 @@ function buyOrSetMemoryColor(userId, colorKey) {
   if (!VALID_MEMORY_COLORS.has(colorKey)) return { ok: false, error: 'invalid_color' };
   const isOwned = colorKey === 'default' || !!db.prepare("SELECT 1 FROM user_memory_colors WHERE user_id=? AND color_key=?").get(userId, colorKey);
   if (!isOwned) {
+    const price = MEMORY_COLOR_PRICES[colorKey] || 1;
     const user = db.prepare("SELECT coins FROM users WHERE id=?").get(userId);
-    if (!user || user.coins < MEMORY_COLOR_PRICE) return { ok: false, error: 'not_enough_coins' };
-    db.prepare("UPDATE users SET coins = MAX(0, coins - ?) WHERE id=?").run(MEMORY_COLOR_PRICE, userId);
+    if (!user || user.coins < price) return { ok: false, error: 'not_enough_coins' };
+    db.prepare("UPDATE users SET coins = MAX(0, coins - ?) WHERE id=?").run(price, userId);
     db.prepare("INSERT OR IGNORE INTO user_memory_colors (user_id, color_key) VALUES (?,?)").run(userId, colorKey);
   }
   db.prepare("UPDATE users SET memory_card_color=? WHERE id=?").run(colorKey, userId);

@@ -18023,6 +18023,14 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   white-space: nowrap; transition: background .15s;
 }
 .mem-boost-btn:hover { background: #1e40af; color: #fff; }
+.arcade-hud-powerups { display: flex; flex-direction: column; gap: .25rem; }
+.mem-power-btn {
+  background: #1e293b; border: 1px solid #334155; color: #cbd5e1;
+  padding: .2rem .5rem; border-radius: 5px; font-size: .72rem; cursor: pointer;
+  white-space: nowrap; transition: background .12s;
+}
+.mem-power-btn:hover:not(:disabled) { background: #334155; }
+.mem-power-btn:disabled { opacity: .4; cursor: default; }
 /* ── Pause screen ── */
 .arcade-pause-actions {
   display: flex; flex-direction: column; align-items: center;
@@ -18055,6 +18063,20 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .shop-icon-btn--active { border-color: #6d28d9; background: #2d1654; }
 .shop-icon-btn--locked { opacity: .45; cursor: default; }
 .shop-icon-lock { position: absolute; bottom: 1px; right: 2px; font-size: .6rem; line-height: 1; }
+/* Shop preview card */
+.shop-preview-wrap { display: flex; flex-direction: column; align-items: center; gap: .3rem; margin: .5rem 0 .75rem; }
+.shop-preview-card {
+  width: 3.5rem; height: 4.8rem; background: #1e293b; border: 2px solid #334155;
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; transition: background .2s, border-color .2s;
+}
+.shop-preview-label { font-size: .68rem; color: #475569; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+/* Level badge on game card */
+.arcade-game-level-badge {
+  display: inline-block; font-size: .68rem; font-weight: 700;
+  background: #6d28d9; color: #fff; padding: .15rem .45rem; border-radius: 9999px;
+  margin-top: .15rem; letter-spacing: .02em;
+}
 .shop-empty { font-size: .78rem; color: #475569; margin: 0; }
 /* Bouton panier en coin (écran reprise) */
 .arcade-shop-corner-btn {
@@ -18086,6 +18108,10 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .arcade-memory-grid[data-color="navy"] .mem-card-back-icon { color: rgba(147,197,253,.5); }
 .arcade-memory-grid[data-color="slate"] .mem-card-back { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); border-color: rgba(75,85,99,.4); }
 .arcade-memory-grid[data-color="slate"] .mem-card-back-icon { color: rgba(209,213,219,.4); }
+[data-color="gold"] .mem-card-back { background: #2d1d00; border-color: #b45309; }
+[data-color="gold"] .mem-card-back-icon { color: #fbbf24; }
+[data-color="darkred"] .mem-card-back { background: #2d0000; border-color: #7f1d1d; }
+[data-color="darkred"] .mem-card-back-icon { color: #fca5a5; }
 
 .arcade-memory-hud {
   display: flex; align-items: center; gap: 1rem;

@@ -94,6 +94,14 @@ function buildArcadeRouter() {
     res.json({ ok: true, newCoins });
   });
 
+  router.post('/memory/reveal', requireUserJson, (req, res) => {
+    const user = getUserById(req.user.id);
+    if (!user || user.coins < 5) return res.json({ ok: false, error: 'not_enough_coins' });
+    adjustCoins(req.user.id, -5);
+    const newCoins = (getUserById(req.user.id) || {}).coins || 0;
+    res.json({ ok: true, newCoins });
+  });
+
   // ── Machine à charmes ─────────────────────────────────────────────────────
 
   router.get('/charm-slots/info', requireUserJson, (req, res) => {
