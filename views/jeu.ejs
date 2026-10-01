@@ -113,50 +113,63 @@
     <%# ── Liste des jeux ── %>
     <div id="arcade-screen-games" class="arcade-screen arcade-screen--gamelist">
 
-      <%# Memory %>
-      <div class="ag-card ag-card--memory">
-        <div class="ag-card-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <rect x="2"  y="2"  width="9" height="9" rx="2.2"/>
-            <rect x="13" y="2"  width="9" height="9" rx="2.2"/>
-            <rect x="2"  y="13" width="9" height="9" rx="2.2"/>
-            <rect x="13" y="13" width="9" height="9" rx="2.2"/>
-          </svg>
-        </div>
-        <div class="ag-card-body">
-          <div class="ag-card-head">
-            <span class="ag-card-name">Memory</span>
-            <span class="arcade-game-level-badge" id="arcade-memory-level-badge" hidden></span>
-          </div>
-          <p class="ag-card-desc">Retrouvez toutes les paires avant la fin du temps.</p>
-        </div>
-        <button class="ag-card-play" id="arcade-memory-play-btn">Jouer</button>
-      </div>
+      <%# Volet gauche — filtres (vide pour l'instant) %>
+      <aside class="arcade-sidebar">
+        <p class="arcade-sidebar-title">Filtres</p>
+      </aside>
 
-      <%# Wordle %>
-      <div class="ag-card ag-card--wordle">
-        <div class="ag-card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3"  y="3"  width="5" height="5" rx="1.2"/>
-            <rect x="9.5" y="3"  width="5" height="5" rx="1.2"/>
-            <rect x="16" y="3"  width="5" height="5" rx="1.2"/>
-            <rect x="3"  y="9.5" width="5" height="5" rx="1.2"/>
-            <rect x="9.5" y="9.5" width="5" height="5" rx="1.2" fill="currentColor" opacity=".5"/>
-            <rect x="16" y="9.5" width="5" height="5" rx="1.2"/>
-            <rect x="3"  y="16" width="5" height="5" rx="1.2"/>
-            <rect x="9.5" y="16" width="5" height="5" rx="1.2"/>
-            <rect x="16" y="16" width="5" height="5" rx="1.2"/>
-          </svg>
-        </div>
-        <div class="ag-card-body">
-          <div class="ag-card-head">
-            <span class="ag-card-name">Wordle</span>
-          </div>
-          <p class="ag-card-desc">Trouvez le mot du Codex en&nbsp;6 essais.</p>
-        </div>
-        <button class="ag-card-play" id="arcade-wordle-play-btn">Jouer</button>
-      </div>
+      <%# Grille de jeux %>
+      <div class="arcade-games-grid">
 
+        <%# Memory %>
+        <div class="ag-card ag-card--memory">
+          <div class="ag-card-visual">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="2"  y="2"  width="9" height="9" rx="2.2"/>
+              <rect x="13" y="2"  width="9" height="9" rx="2.2"/>
+              <rect x="2"  y="13" width="9" height="9" rx="2.2"/>
+              <rect x="13" y="13" width="9" height="9" rx="2.2"/>
+            </svg>
+          </div>
+          <div class="ag-card-body">
+            <div class="ag-card-head">
+              <span class="ag-card-name">Memory</span>
+              <span class="arcade-game-level-badge" id="arcade-memory-level-badge" hidden></span>
+            </div>
+            <p class="ag-card-desc">Retrouvez toutes les paires de cartes avant la fin du temps imparti.</p>
+            <div class="ag-card-footer">
+              <button class="ag-card-play" id="arcade-memory-play-btn">Jouer</button>
+            </div>
+          </div>
+        </div>
+
+        <%# Wordle %>
+        <div class="ag-card ag-card--wordle">
+          <div class="ag-card-visual">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3"   y="3"   width="5" height="5" rx="1.2"/>
+              <rect x="9.5" y="3"   width="5" height="5" rx="1.2"/>
+              <rect x="16"  y="3"   width="5" height="5" rx="1.2"/>
+              <rect x="3"   y="9.5" width="5" height="5" rx="1.2"/>
+              <rect x="9.5" y="9.5" width="5" height="5" rx="1.2" fill="currentColor" opacity=".4"/>
+              <rect x="16"  y="9.5" width="5" height="5" rx="1.2"/>
+              <rect x="3"   y="16"  width="5" height="5" rx="1.2"/>
+              <rect x="9.5" y="16"  width="5" height="5" rx="1.2"/>
+              <rect x="16"  y="16"  width="5" height="5" rx="1.2"/>
+            </svg>
+          </div>
+          <div class="ag-card-body">
+            <div class="ag-card-head">
+              <span class="ag-card-name">Wordle</span>
+            </div>
+            <p class="ag-card-desc">Trouvez le mot du Codex en&nbsp;6 essais. Quotidien.</p>
+            <div class="ag-card-footer">
+              <button class="ag-card-play" id="arcade-wordle-play-btn">Jouer</button>
+            </div>
+          </div>
+        </div>
+
+      </div><%# /arcade-games-grid %>
     </div>
 
     <%# ── Memory : reprise de partie ── %>
