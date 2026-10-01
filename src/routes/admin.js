@@ -618,14 +618,16 @@ function buildAdminRouter(config) {
   }
 
   router.get("/jeux", requireAdmin, (req, res) => {
-    res.render("admin-jeux", { config, games: readGames(), success: req.query.success, error: req.query.error });
+    res.render("admin-jeux", { config, games: readGames(),
+      success: req.query.success, error: req.query.error, compat_warn: req.query.compat_warn });
   });
 
-  // Upload (ajout ou mise à jour) d'un jeu
-  router.post("/jeux/upload", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
+  // ── Ajouter un nouveau jeu (avec zip) ──────────────────────────────────────
+  router.post("/jeux/add", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
     const title       = String(req.body.title       || "").trim();
     const description = String(req.body.description || "").trim();
     const entrypoint  = String(req.body.entrypoint  || "index.html").trim();
+    const onlineUrl   = String(req.body.online_url  || "").trim();
     const rawSlug     = String(req.body.slug        || "").trim();
     const slug        = rawSlug ? toSlug(rawSlug) : toSlug(title);
 
@@ -639,19 +641,19 @@ function buildAdminRouter(config) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
-      // Trouver le vrai répertoire racine (l'entrypoint peut être dans un sous-dossier du zip)
       const gameRoot = findGameRoot(gameDir, entrypoint);
       if (!gameRoot) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
         `Fichier d'entrée '${entrypoint}' introuvable dans le zip extrait`
       ));
 
-      // dir relatif à GAMES_DIR (ex. "myjeu/MonJeu-v1.0" si le zip avait un préfixe)
       const relDir   = path.relative(GAMES_DIR, gameRoot).replace(/\\/g, "/");
       const warnings = scanGameCompat(gameRoot, entrypoint);
       const games    = readGames();
       const idx      = games.findIndex(g => g.slug === slug);
-      const gameData = { slug, title, description, dir: relDir, entrypoint, warnings };
-      if (idx >= 0) games[idx] = gameData; else games.push(gameData);
+      const gameData = { slug, title, description, dir: relDir, entrypoint,
+                         ...(onlineUrl ? { online_url: onlineUrl } : {}), warnings };
+      if (idx >= 0) games[idx] = { ...games[idx], ...gameData };
+      else games.push(gameData);
       writeGames(games);
 
       const hasErrors = warnings.some(w => w.severity === "error");
@@ -659,7 +661,62 @@ function buildAdminRouter(config) {
     });
   });
 
-  // Suppression d'un jeu (retire de games.json, ne supprime pas les fichiers)
+  // ── Mettre à jour les fichiers d'un jeu existant (zip uniquement) ──────────
+  router.post("/jeux/:slug/upload", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
+    const slug      = toSlug(req.params.slug);
+    const games     = readGames();
+    const existing  = games.find(g => g.slug === slug);
+    if (!existing) return res.redirect("/admin/jeux?error=Jeu+introuvable");
+    if (!req.file)  return res.redirect("/admin/jeux?error=Aucun+fichier+reçu");
+
+    const entrypoint = String(req.body.entrypoint || existing.entrypoint || "index.html").trim();
+    const gameDir    = path.join(GAMES_DIR, slug);
+    fs.mkdirSync(gameDir, { recursive: true });
+
+    execFile("unzip", ["-o", req.file.path, "-d", gameDir], (err) => {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
+
+      const gameRoot = findGameRoot(gameDir, entrypoint);
+      if (!gameRoot) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
+        `Fichier d'entrée '${entrypoint}' introuvable dans le zip extrait`
+      ));
+
+      const relDir   = path.relative(GAMES_DIR, gameRoot).replace(/\\/g, "/");
+      const warnings = scanGameCompat(gameRoot, entrypoint);
+      const idx      = games.findIndex(g => g.slug === slug);
+      games[idx]     = { ...existing, dir: relDir, entrypoint, warnings };
+      writeGames(games);
+
+      const hasErrors = warnings.some(w => w.severity === "error");
+      res.redirect("/admin/jeux?success=1" + (hasErrors ? "&compat_warn=" + slug : ""));
+    });
+  });
+
+  // ── Modifier les métadonnées d'un jeu (sans zip) ───────────────────────────
+  router.post("/jeux/:slug/edit", requireAdmin, (req, res) => {
+    const slug      = toSlug(req.params.slug);
+    const games     = readGames();
+    const idx       = games.findIndex(g => g.slug === slug);
+    if (idx < 0) return res.redirect("/admin/jeux?error=Jeu+introuvable");
+
+    const title      = String(req.body.title       || "").trim();
+    const description= String(req.body.description || "").trim();
+    const entrypoint = String(req.body.entrypoint  || "index.html").trim();
+    const onlineUrl  = String(req.body.online_url  || "").trim();
+    const disabled   = req.body.disabled === "1";
+
+    if (!title) return res.redirect("/admin/jeux?error=Titre+requis");
+
+    const updated = { ...games[idx], title, description, entrypoint, disabled };
+    if (onlineUrl) updated.online_url = onlineUrl;
+    else delete updated.online_url;
+    games[idx] = updated;
+    writeGames(games);
+    res.redirect("/admin/jeux?success=1");
+  });
+
+  // ── Supprimer un jeu de la liste ───────────────────────────────────────────
   router.post("/jeux/:slug/delete", requireAdmin, (req, res) => {
     const slug = toSlug(req.params.slug);
     writeGames(readGames().filter(g => g.slug !== slug));

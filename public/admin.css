@@ -408,6 +408,69 @@
 }
 .admin-utile--test:hover { border-color: rgba(245, 158, 11, 0.7); }
 
+/* Tuiles jeux */
+.admin-utile--game { }
+.admin-utile--game-hs {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: linear-gradient(150deg, hsl(0,22%,13%) 0%, hsl(220,18%,12%) 100%);
+  opacity: .75;
+}
+.admin-utile--game-hs:hover { border-color: rgba(248,113,113,0.55); opacity: 1; }
+.admin-utile--game-hs .admin-utile-avatar { background: rgba(239,68,68,0.2); color: #f87171; }
+
+.admin-game-compat-badge {
+  font-size: .82rem;
+  color: #fbbf24;
+  line-height: 1;
+  margin-left: auto;
+  padding: .2rem .3rem;
+}
+.admin-game-hs-badge {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: #f87171;
+  background: rgba(239,68,68,.15);
+  border: 1px solid rgba(239,68,68,.3);
+  border-radius: 4px;
+  padding: .1rem .35rem;
+  vertical-align: middle;
+  margin-left: .35rem;
+}
+.admin-game-dropzone {
+  border: 2px dashed rgba(255,255,255,.12);
+  border-radius: 8px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s;
+  margin: .25rem 0;
+}
+.admin-game-dropzone:hover { border-color: rgba(255,255,255,.28); }
+
+/* Toggle switch (HS) */
+.admin-toggle { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; }
+.admin-toggle input { opacity: 0; width: 0; height: 0; }
+.admin-toggle-track {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 99px;
+  transition: background .2s;
+  cursor: pointer;
+}
+.admin-toggle-track::before {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  left: 2px; top: 2px;
+  background: #94a3b8;
+  border-radius: 50%;
+  transition: transform .2s, background .2s;
+}
+.admin-toggle input:checked + .admin-toggle-track { background: rgba(239,68,68,.35); border-color: rgba(239,68,68,.5); }
+.admin-toggle input:checked + .admin-toggle-track::before { transform: translateX(16px); background: #f87171; }
+
 /* Tuile "créer" */
 .admin-utile--create {
   border: 1.5px dashed rgba(255,255,255,0.13);

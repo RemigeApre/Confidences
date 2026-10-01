@@ -321,7 +321,7 @@
         <div class="arcade-games-grid">
 
           <% games.forEach(function(game, i) { %>
-          <div class="ag-card">
+          <div class="ag-card<%= game.disabled ? ' ag-card--disabled' : '' %>">
             <div class="ag-card-visual">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -330,10 +330,13 @@
             <div class="ag-card-body">
               <div class="ag-card-head">
                 <span class="ag-card-name"><%= game.title %></span>
+                <% if (game.disabled) { %><span class="ag-card-hs-badge">Indisponible</span><% } %>
               </div>
               <% if (game.description) { %><p class="ag-card-desc"><%= game.description %></p><% } %>
               <div class="ag-card-footer">
-                <button class="ag-card-play" data-game-url="/games/<%= game.slug %>/play">Jouer</button>
+                <% if (!game.disabled) { %>
+                  <button class="ag-card-play" data-game-url="/games/<%= game.slug %>/play">Jouer</button>
+                <% } %>
               </div>
             </div>
           </div>
@@ -353,10 +356,22 @@
 
 <%# ── Overlay plein écran pour les jeux HTML5 ── %>
 <div id="game-fullscreen" class="game-fullscreen" hidden>
-  <button class="game-fullscreen-quit" id="game-quit-btn">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1rem;height:1rem;vertical-align:middle;margin-right:.3rem"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-    Quitter
-  </button>
+  <div class="game-overlay-ctrl">
+    <button class="game-fullscreen-quit" id="game-quit-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1rem;height:1rem;vertical-align:middle;margin-right:.3rem"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Quitter
+    </button>
+    <div class="game-vol-ctrl">
+      <button class="game-vol-mute" id="game-mute-btn" aria-label="Couper le son" title="Couper le son">
+        <svg id="game-vol-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path id="game-vol-wave1" d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          <path id="game-vol-wave2" d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+      </button>
+      <input type="range" class="game-vol-slider" id="game-vol-slider" min="0" max="100" value="80" aria-label="Volume">
+    </div>
+  </div>
   <iframe id="game-iframe" class="game-iframe" src="" allowfullscreen title="Jeu"></iframe>
 </div>
 
@@ -1538,6 +1553,13 @@
   var gameFs        = document.getElementById('game-fullscreen');
   var gameIframe    = document.getElementById('game-iframe');
   var gameQuitBtn   = document.getElementById('game-quit-btn');
+  var gameMuteBtn   = document.getElementById('game-mute-btn');
+  var gameVolSlider = document.getElementById('game-vol-slider');
+  var gameVolWave1  = document.getElementById('game-vol-wave1');
+  var gameVolWave2  = document.getElementById('game-vol-wave2');
+
+  var gameMuted = false;
+  var gameVol   = 0.8; // valeur initiale (slider à 80)
 
   function openAventure() {
     if (homeView) homeView.hidden = true;
@@ -1547,16 +1569,52 @@
     if (aventureView) aventureView.hidden = true;
     if (homeView) homeView.hidden = false;
   }
+  function sendVolume(vol, muted) {
+    if (!gameIframe || !gameIframe.contentWindow) return;
+    try { gameIframe.contentWindow.postMessage({ type: 'gh_setVolume', volume: muted ? 0 : vol }, '*'); } catch(_) {}
+  }
+  function updateVolIcon(vol, muted) {
+    var v = muted ? 0 : vol;
+    if (gameVolWave1) gameVolWave1.style.display = v < 0.05 ? 'none' : '';
+    if (gameVolWave2) gameVolWave2.style.display = v < 0.5  ? 'none' : '';
+  }
   function openGame(src) {
     if (gameIframe && gameIframe.getAttribute('data-src') !== src) {
       gameIframe.src = src;
       gameIframe.setAttribute('data-src', src);
+      // Appliquer le volume dès que l'iframe est chargée
+      gameIframe.onload = function() { sendVolume(gameVol, gameMuted); };
     }
     if (gameFs) gameFs.hidden = false;
   }
   function closeGame() {
+    // Couper le son avant de décharger — évite le flash audio
+    sendVolume(0, true);
+    if (gameIframe) {
+      gameIframe.src = 'about:blank';
+      gameIframe.removeAttribute('data-src');
+    }
     if (gameFs) gameFs.hidden = true;
-    // On garde l'iframe chargée pour ne pas perdre la progression
+  }
+
+  // Volume slider
+  if (gameVolSlider) {
+    gameVolSlider.addEventListener('input', function() {
+      gameVol = this.value / 100;
+      gameMuted = gameVol === 0;
+      updateVolIcon(gameVol, gameMuted);
+      sendVolume(gameVol, gameMuted);
+    });
+  }
+
+  // Mute toggle
+  if (gameMuteBtn) {
+    gameMuteBtn.addEventListener('click', function() {
+      gameMuted = !gameMuted;
+      gameMuteBtn.style.opacity = gameMuted ? '.45' : '1';
+      updateVolIcon(gameVol, gameMuted);
+      sendVolume(gameVol, gameMuted);
+    });
   }
 
   openBtn    && openBtn.addEventListener('click', openAventure);

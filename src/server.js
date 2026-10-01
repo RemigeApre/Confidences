@@ -261,6 +261,12 @@ function buildGameInject(userId, game) {
     `window.getContent=window.getContent||function(){` +
       `var x=new XMLHttpRequest();x.open("GET","static/json/v5_1.json",false);x.send();` +
       `return JSON.parse(x.responseText)};` +
+    // Contrôle volume depuis le parent via postMessage
+    `window.addEventListener("message",function(e){` +
+      `if(!e.data||e.data.type!=="gh_setVolume")return;` +
+      `var v=Math.max(0,Math.min(1,Number(e.data.volume)||0));` +
+      `document.querySelectorAll("audio,video").forEach(function(a){a.volume=v;a.muted=v===0;});` +
+    `});` +
     `}());</script>`
   );
 }
@@ -283,6 +289,7 @@ app.get("/games/:slug/play", (req, res, next) => {
   if (!req.user) return res.status(403).end();
   const game = readGamesJson().find(g => g.slug === req.params.slug);
   if (!game) return res.status(404).end();
+  if (game.disabled) return res.status(403).send("Ce jeu est temporairement indisponible.");
   serveGameHtml(req, res, next, game, path.join(GAMES_DIR, game.dir, game.entrypoint));
 });
 
@@ -291,6 +298,7 @@ app.get("/games/:slug/*.html", (req, res, next) => {
   if (!req.user) return res.status(403).end();
   const game = readGamesJson().find(g => g.slug === req.params.slug);
   if (!game) return res.status(404).end();
+  if (game.disabled) return res.status(403).send("Ce jeu est temporairement indisponible.");
   const gameDir  = path.resolve(GAMES_DIR, game.dir);
   const filePath = path.resolve(gameDir, req.params[0] + ".html");
   if (!filePath.startsWith(gameDir + path.sep) && filePath !== gameDir) return res.status(403).end();

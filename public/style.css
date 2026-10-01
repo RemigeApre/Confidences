@@ -16632,6 +16632,14 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-color: #555;
   color: #fff;
 }
+.ag-card--disabled { opacity: .45; pointer-events: none; filter: grayscale(.6); }
+.ag-card--disabled .ag-card-visual { background: hsl(220,10%,10%); color: #475569; }
+.ag-card-hs-badge {
+  font-size: .62rem; font-weight: 700; letter-spacing: .04em;
+  color: #94a3b8; background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1); border-radius: 4px;
+  padding: .1rem .3rem; vertical-align: middle; margin-left: .3rem;
+}
 /* ── Fullscreen game overlay ─────────────────────────────────────────── */
 .game-fullscreen {
   position: fixed;
@@ -16642,11 +16650,63 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   flex-direction: column;
 }
 .game-fullscreen[hidden] { display: none; }
-.game-fullscreen-quit {
+.game-overlay-ctrl {
   position: absolute;
   top: .75rem;
   left: .85rem;
   z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .45rem;
+}
+.game-vol-ctrl {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  padding: .3rem .6rem;
+  backdrop-filter: blur(6px);
+}
+.game-vol-mute {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.7);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color .15s;
+}
+.game-vol-mute:hover { color: #fff; }
+.game-vol-mute svg { width: 1rem; height: 1rem; }
+.game-vol-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  background: rgba(255,255,255,.2);
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+}
+.game-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.85);
+  cursor: pointer;
+}
+.game-vol-slider::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.85);
+  border: none;
+  cursor: pointer;
+}
+.game-fullscreen-quit {
   background: rgba(0,0,0,.55);
   border: 1px solid rgba(255,255,255,.15);
   color: rgba(255,255,255,.8);
