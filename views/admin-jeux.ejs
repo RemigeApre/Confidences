@@ -1,122 +1,106 @@
-<%- include('partials/head', { title: 'Admin — Jeux', extraCss: ['admin.css'] }) %>
+<%- include('partials/head', { title: 'Admin : Jeux', extraCss: ['admin.css'] }) %>
 
 <div class="admin-topbar">
-  <span class="admin-topbar-title">Gestion des jeux</span>
+  <a href="/admin" class="admin-topbar-back">&#8592; Retour</a>
+  <span class="admin-topbar-title"><%= config.title %> &mdash; Jeux</span>
   <form method="POST" action="/admin/logout" style="margin:0">
-    <button type="submit" class="admin-topbar-logout">Déconnexion</button>
+    <button type="submit" class="admin-topbar-logout">D&eacute;connexion</button>
   </form>
 </div>
 
-<nav class="admin-tabs-nav">
-  <a href="/admin" class="admin-tab-btn">← Dashboard</a>
-</nav>
-
-<main class="admin-main" style="max-width:640px;margin:2rem auto;padding:0 1rem;">
+<div style="max-width:640px;margin:2rem auto;padding:0 1rem;">
 
   <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1.5rem;">The Hole of Glory</h2>
 
   <% if (locals.success) { %>
-    <p class="admin-flash admin-flash--ok">Jeu installé avec succès.</p>
+    <p style="background:hsl(142,30%,12%);border:1px solid hsl(142,35%,28%);color:#86efac;border-radius:8px;padding:.65rem 1rem;font-size:.85rem;font-weight:600;margin-bottom:1.25rem;">
+      Jeu install&eacute; avec succ&egrave;s.
+    </p>
   <% } %>
   <% if (locals.error) { %>
-    <p class="admin-flash admin-flash--err"><%= error %></p>
+    <p style="background:hsl(0,30%,12%);border:1px solid hsl(0,35%,28%);color:#fca5a5;border-radius:8px;padding:.65rem 1rem;font-size:.85rem;font-weight:600;margin-bottom:1.25rem;">
+      <%= error %>
+    </p>
   <% } %>
 
-  <div class="admin-card" style="padding:1.5rem;margin-bottom:2rem;">
-    <p style="margin:0 0 .5rem;font-size:.85rem;color:var(--muted,#888);">État</p>
+  <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
+    <p style="margin:0 0 .5rem;font-size:.85rem;color:#64748b;">État</p>
     <p style="margin:0;font-weight:600;">
       <% if (installed) { %>
-        <span style="color:#4ade80;">● Installé</span>
+        <span style="color:#4ade80;">&#9679; Install&eacute;</span>
+        &nbsp;&nbsp;<a href="/games/thog/gloryhole.html" target="_blank" style="font-size:.8rem;color:#64748b;">Tester &#8599;</a>
       <% } else { %>
-        <span style="color:#f87171;">● Non installé</span>
+        <span style="color:#f87171;">&#9679; Non install&eacute;</span>
       <% } %>
     </p>
-    <% if (installed) { %>
-      <p style="margin:.75rem 0 0;font-size:.8rem;color:var(--muted,#888);">
-        <a href="/games/thog/gloryhole.html" target="_blank" style="color:inherit;text-decoration:underline;">Tester le jeu ↗</a>
-      </p>
-    <% } %>
   </div>
 
-  <div class="admin-card" style="padding:1.5rem;">
+  <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
     <p style="margin:0 0 1rem;font-size:.9rem;">
       Uploadez un fichier <code>.zip</code> contenant les fichiers du jeu
-      (le contenu du dossier <code>resources/app/</code> de l'Electron app).
+      (contenu du dossier <code>resources/app/</code>).
     </p>
 
     <form method="POST" action="/admin/jeux/upload" enctype="multipart/form-data" id="upload-form">
-      <div class="admin-upload-dropzone" id="dropzone">
+      <div id="dropzone" style="border:2px dashed rgba(255,255,255,.15);border-radius:10px;padding:2rem 1rem;text-align:center;cursor:pointer;transition:border-color .15s;">
         <input type="file" name="zipfile" id="zipfile-input" accept=".zip" required style="display:none">
-        <label for="zipfile-input" class="admin-upload-label" id="upload-label">
-          <span class="admin-upload-icon">📦</span>
-          <span id="upload-text">Choisir un fichier .zip</span>
+        <label for="zipfile-input" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.5rem;">
+          <span style="font-size:2rem;">&#128230;</span>
+          <span id="upload-text" style="font-size:.85rem;color:#64748b;">Choisir un fichier .zip</span>
         </label>
       </div>
 
       <div id="upload-progress" hidden style="margin:.75rem 0 0;">
-        <div class="admin-upload-bar-track"><div class="admin-upload-bar-fill" id="upload-bar"></div></div>
-        <p id="upload-status" style="font-size:.78rem;color:var(--muted,#888);margin:.35rem 0 0;"></p>
+        <div style="height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;">
+          <div id="upload-bar" style="height:100%;width:0%;background:#60a5fa;border-radius:99px;transition:width .2s;"></div>
+        </div>
+        <p id="upload-status" style="font-size:.78rem;color:#64748b;margin:.35rem 0 0;"></p>
       </div>
 
-      <button type="submit" class="admin-btn-primary" id="upload-btn" style="margin-top:1.25rem;" disabled>
+      <button type="submit" id="upload-btn" disabled
+        style="margin-top:1.25rem;background:#f87171;border:none;color:#fff;border-radius:8px;padding:.5rem 1.25rem;font-size:.88rem;font-weight:700;cursor:pointer;opacity:.5;transition:opacity .15s;">
         Installer
       </button>
     </form>
   </div>
 
-</main>
+</div>
 
 <script>
 (function () {
-  const input   = document.getElementById('zipfile-input');
-  const label   = document.getElementById('upload-label');
-  const text    = document.getElementById('upload-text');
-  const btn     = document.getElementById('upload-btn');
-  const form    = document.getElementById('upload-form');
-  const progress= document.getElementById('upload-progress');
-  const bar     = document.getElementById('upload-bar');
-  const status  = document.getElementById('upload-status');
+  var input  = document.getElementById('zipfile-input');
+  var text   = document.getElementById('upload-text');
+  var btn    = document.getElementById('upload-btn');
+  var form   = document.getElementById('upload-form');
+  var prog   = document.getElementById('upload-progress');
+  var bar    = document.getElementById('upload-bar');
+  var status = document.getElementById('upload-status');
 
   input.addEventListener('change', function () {
     if (this.files && this.files[0]) {
-      const mb = (this.files[0].size / 1024 / 1024).toFixed(1);
-      text.textContent = this.files[0].name + ' (' + mb + ' Mo)';
+      text.textContent = this.files[0].name + ' (' + (this.files[0].size/1024/1024).toFixed(1) + ' Mo)';
       btn.disabled = false;
+      btn.style.opacity = '1';
     }
   });
 
   form.addEventListener('submit', function (e) {
-    if (!input.files || !input.files[0]) return;
+    e.preventDefault();
     btn.disabled = true;
-    btn.textContent = 'Installation en cours…';
-    progress.hidden = false;
-    status.textContent = 'Upload en cours…';
-
-    const xhr = new XMLHttpRequest();
+    btn.textContent = 'Installation\u2026';
+    prog.hidden = false;
+    status.textContent = 'Upload en cours\u2026';
+    var xhr = new XMLHttpRequest();
     xhr.open('POST', '/admin/jeux/upload');
-
     xhr.upload.addEventListener('progress', function (ev) {
       if (!ev.lengthComputable) return;
-      const pct = Math.round(ev.loaded / ev.total * 100);
+      var pct = Math.round(ev.loaded / ev.total * 100);
       bar.style.width = pct + '%';
-      status.textContent = 'Upload : ' + pct + '%' + (pct === 100 ? ' — Extraction…' : '');
+      status.textContent = pct === 100 ? 'Extraction\u2026' : 'Upload\u00a0: ' + pct + '%';
     });
-
-    xhr.addEventListener('load', function () {
-      // Serveur redirige → suivre manuellement
-      const dest = xhr.responseURL || '/admin/jeux';
-      window.location.href = dest;
-    });
-
-    xhr.addEventListener('error', function () {
-      status.textContent = 'Erreur réseau.';
-      btn.disabled = false;
-      btn.textContent = 'Installer';
-    });
-
-    e.preventDefault();
-    const fd = new FormData(form);
-    xhr.send(fd);
+    xhr.addEventListener('load', function () { window.location.href = xhr.responseURL || '/admin/jeux'; });
+    xhr.addEventListener('error', function () { status.textContent = 'Erreur r\u00e9seau.'; btn.disabled = false; btn.textContent = 'Installer'; });
+    xhr.send(new FormData(form));
   });
 })();
 </script>

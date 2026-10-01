@@ -558,7 +558,7 @@ function buildAdminRouter(config) {
 
   router.get("/jeux", requireAdmin, (req, res) => {
     const installed = fs.existsSync(path.join(GAMES_DEST, "gloryhole.html"));
-    res.render("admin-jeux", { installed, success: req.query.success, error: req.query.error });
+    res.render("admin-jeux", { config, installed, success: req.query.success, error: req.query.error });
   });
 
   router.post("/jeux/upload", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
