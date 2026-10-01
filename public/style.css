@@ -16457,6 +16457,27 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   flex-direction: column;
   overflow: hidden;
 }
+/* ── Vue accueil (wraps catégories + lootbox) ────────────────────────── */
+#jeu-home-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative; /* pour le lootbox positionné en absolu */
+}
+/* ── Vue arcade in-page ──────────────────────────────────────────────── */
+.arcade-inpage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: .75rem 1rem 1.5rem;
+}
+.arcade-inpage > .arcade-modal {
+  max-height: none; /* pas de contrainte de hauteur en in-page */
+  width: 100%;
+  flex: 1;
+}
 /* ── Grille de catégories ─────────────────────────────────────────────── */
 .jeu-categories {
   flex: 1;
