@@ -249,6 +249,10 @@ try { db.exec("ALTER TABLE users ADD COLUMN profile_image_crop TEXT"); } catch (
 try { db.exec("ALTER TABLE users ADD COLUMN rating_charm TEXT NOT NULL DEFAULT 'star'"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN arcade_memory_best_level INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN arcade_memory_best_score INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN wordle_current_streak INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN wordle_best_streak INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN wordle_total_played INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN wordle_total_wins INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 // ── Wordle du Codex ──────────────────────────────────────────────────────────
 db.exec(`
@@ -268,9 +272,11 @@ db.exec(`
     guesses TEXT NOT NULL DEFAULT '[]',
     solved INTEGER NOT NULL DEFAULT 0,
     reward_granted INTEGER NOT NULL DEFAULT 0,
+    game_ended INTEGER NOT NULL DEFAULT 0,
     UNIQUE(user_id, date)
   )
 `);
+try { db.exec(`ALTER TABLE wordle_user_game ADD COLUMN game_ended INTEGER NOT NULL DEFAULT 0`); } catch (_) {}
 
 // ── Lootboxes et récompenses ───────────────────────────────────────────────
 // Lootboxes attribuées à un utilisateur (une ligne = une boîte, ouverte ou non).
@@ -663,6 +669,10 @@ function rowToUser(row) {
     ratingCharm: row.rating_charm || 'star',
     arcadeMemoryBestLevel: row.arcade_memory_best_level || 0,
     arcadeMemoryBestScore: row.arcade_memory_best_score || 0,
+    wordleCurrentStreak: row.wordle_current_streak || 0,
+    wordleBestStreak: row.wordle_best_streak || 0,
+    wordleTotalPlayed: row.wordle_total_played || 0,
+    wordleTotalWins: row.wordle_total_wins || 0,
   };
 }
 
@@ -3332,9 +3342,14 @@ function normalizeWordleWord(str) {
 }
 
 function getWordlePool() {
-  const rows = db.prepare("SELECT id, title, meta FROM wiki_pages").all();
+  const rows = db.prepare("SELECT id, title, meta, tags FROM wiki_pages").all();
   const words = new Map(); // normalized → [original display string, pageId]
   for (const row of rows) {
+    // Exclude pages tagged "ultra"
+    let tags = [];
+    try { tags = JSON.parse(row.tags || '[]'); } catch (_) {}
+    if (tags.map(t => String(t).toLowerCase()).includes('ultra')) continue;
+
     const title = (row.title || '').trim();
     const norm = normalizeWordleWord(title);
     if (norm.length >= 4 && norm.length <= 10) words.set(norm, [title, row.id]);
@@ -3374,18 +3389,48 @@ function getWordleDaily() {
 }
 
 function getWordleUserGame(userId, date) {
-  const row = db.prepare("SELECT guesses, solved, reward_granted FROM wordle_user_game WHERE user_id = ? AND date = ?").get(userId, date);
-  if (!row) return { guesses: [], solved: false, rewardGranted: false };
+  const row = db.prepare("SELECT guesses, solved, reward_granted, game_ended FROM wordle_user_game WHERE user_id = ? AND date = ?").get(userId, date);
+  if (!row) return { guesses: [], solved: false, rewardGranted: false, gameEnded: false };
   let guesses = [];
   try { guesses = JSON.parse(row.guesses || '[]'); } catch (_) {}
-  return { guesses, solved: !!row.solved, rewardGranted: !!row.reward_granted };
+  return { guesses, solved: !!row.solved, rewardGranted: !!row.reward_granted, gameEnded: !!row.game_ended };
 }
 
-function saveWordleGuess(userId, date, guesses, solved, rewardGranted) {
+function saveWordleGuess(userId, date, guesses, solved, rewardGranted, gameEnded) {
   db.prepare(`
-    INSERT INTO wordle_user_game (user_id, date, guesses, solved, reward_granted) VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(user_id, date) DO UPDATE SET guesses=excluded.guesses, solved=excluded.solved, reward_granted=excluded.reward_granted
-  `).run(userId, date, JSON.stringify(guesses), solved ? 1 : 0, rewardGranted ? 1 : 0);
+    INSERT INTO wordle_user_game (user_id, date, guesses, solved, reward_granted, game_ended) VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, date) DO UPDATE SET
+      guesses=excluded.guesses, solved=excluded.solved,
+      reward_granted=excluded.reward_granted, game_ended=excluded.game_ended
+  `).run(userId, date, JSON.stringify(guesses), solved ? 1 : 0, rewardGranted ? 1 : 0, gameEnded ? 1 : 0);
+}
+
+function updateWordleStreakAndStats(userId, date, solved) {
+  const user = db.prepare("SELECT wordle_current_streak, wordle_best_streak, wordle_total_played, wordle_total_wins FROM users WHERE id = ?").get(userId);
+  if (!user) return;
+
+  let streak = 0;
+  if (solved) {
+    // Count consecutive days going backwards from yesterday
+    const pastSolved = db.prepare(
+      "SELECT date FROM wordle_user_game WHERE user_id = ? AND solved = 1 AND date < ? ORDER BY date DESC"
+    ).all(userId, date).map(r => r.date);
+    streak = 1;
+    let prev = date;
+    for (const d of pastSolved) {
+      const prevDate = new Date(prev + 'T00:00:00Z');
+      prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+      if (d === prevDate.toISOString().slice(0, 10)) { streak++; prev = d; }
+      else break;
+    }
+  }
+
+  const bestStreak = Math.max(user.wordle_best_streak || 0, streak);
+  const totalPlayed = (user.wordle_total_played || 0) + 1;
+  const totalWins   = (user.wordle_total_wins   || 0) + (solved ? 1 : 0);
+  db.prepare(`
+    UPDATE users SET wordle_current_streak=?, wordle_best_streak=?, wordle_total_played=?, wordle_total_wins=? WHERE id=?
+  `).run(streak, bestStreak, totalPlayed, totalWins, userId);
 }
 
 module.exports = {
@@ -3618,6 +3663,7 @@ module.exports = {
   getWordleDaily,
   getWordleUserGame,
   saveWordleGuess,
+  updateWordleStreakAndStats,
   normalizeWordleWord,
   getFrenchDate,
 };

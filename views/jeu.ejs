@@ -956,7 +956,7 @@
         });
 
         if (d.gameOver) {
-          showResult(d.solved, d.word, d.sourceTitle, d.sourceId, 0, d.rewardGranted);
+          showResult(d.solved, d.word, d.sourceTitle, d.sourceId, 0, d.rewardGranted, d.currentStreak, d.bestStreak);
         } else {
           renderCurrentRow();
         }
@@ -1058,7 +1058,7 @@
         if (d.gameOver) {
           _gameOver = true;
           setTimeout(function() {
-            showResult(d.solved, d.word, d.sourceTitle, d.sourceId, d.lootboxGranted, false);
+            showResult(d.solved, d.word, d.sourceTitle, d.sourceId, d.lootboxGranted, false, d.currentStreak, d.bestStreak);
             if (d.lootboxGranted > 0 && typeof window._lbRefreshCount === 'function') {
               window._lbRefreshCount();
             }
@@ -1081,7 +1081,7 @@
 
   // ── Result panel ─────────────────────────────────────────────────────────
   // alreadyRewarded = true only when reloading a finished game (rewardGranted from server)
-  function showResult(solved, word, sourceTitle, sourceId, lootboxGranted, alreadyRewarded) {
+  function showResult(solved, word, sourceTitle, sourceId, lootboxGranted, alreadyRewarded, currentStreak, bestStreak) {
     if (!resultEl) return;
     resultEl.hidden = false;
     resultEl.textContent = '';
@@ -1097,6 +1097,20 @@
       winMsg.className = 'wordle-result-reward';
       winMsg.textContent = coffres;
       resultEl.appendChild(winMsg);
+
+      // Streak info
+      if (currentStreak && currentStreak > 0) {
+        var streakEl = document.createElement('div');
+        streakEl.className = 'wordle-result-streak';
+        var flame = currentStreak >= 3 ? ' \uD83D\uDD25' : '';
+        streakEl.textContent = currentStreak + ' jour' + (currentStreak > 1 ? 's' : '') + ' de suite' + flame;
+        if (bestStreak && bestStreak > currentStreak) {
+          streakEl.textContent += ' \u2014 record\u00a0: ' + bestStreak;
+        } else if (bestStreak && bestStreak === currentStreak && currentStreak > 1) {
+          streakEl.textContent += ' \u2014 nouveau record\u00a0! \uD83C\uDFC6';
+        }
+        resultEl.appendChild(streakEl);
+      }
 
       if (sourceTitle && sourceId) {
         var link = document.createElement('a');

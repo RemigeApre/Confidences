@@ -5,7 +5,7 @@ const {
   updateArcadeStats, getUserById,
   listCharms, adjustCoins, grantCharmDirect,
   getLootboxConfig, RARITY_BUY_PRICE,
-  getWordleDaily, getWordleUserGame, saveWordleGuess, normalizeWordleWord,
+  getWordleDaily, getWordleUserGame, saveWordleGuess, updateWordleStreakAndStats, normalizeWordleWord,
 } = require('../db');
 const { thumbUrl } = require('../thumbs');
 
@@ -111,6 +111,7 @@ function buildArcadeRouter() {
     if (!daily) return res.json({ ok: false, error: 'no_words' });
     const userGame = getWordleUserGame(req.user.id, daily.date);
     const gameOver = userGame.solved || userGame.guesses.length >= WORDLE_MAX_GUESSES;
+    const userStats = getUserById(req.user.id) || {};
     res.json({
       ok: true,
       wordLength: daily.word.length,
@@ -122,6 +123,8 @@ function buildArcadeRouter() {
       word: gameOver ? daily.word : null,
       sourceTitle: gameOver ? daily.sourceTitle : null,
       sourceId: gameOver ? daily.sourceId : null,
+      currentStreak: userStats.wordleCurrentStreak || 0,
+      bestStreak: userStats.wordleBestStreak || 0,
     });
   });
 
@@ -139,6 +142,7 @@ function buildArcadeRouter() {
     const solved = guess === daily.word;
     const newGuesses = [...userGame.guesses, { guess, feedback }];
     const gameOver = solved || newGuesses.length >= WORDLE_MAX_GUESSES;
+    const firstEnd = gameOver && !userGame.gameEnded;
     let lootboxGranted = 0;
     let rewardGranted = userGame.rewardGranted;
     if (solved && !userGame.rewardGranted) {
@@ -146,14 +150,18 @@ function buildArcadeRouter() {
       if (lootboxGranted > 0) grantLootbox(req.user.id, lootboxGranted, 'standard');
       rewardGranted = true;
     }
-    saveWordleGuess(req.user.id, daily.date, newGuesses, solved, rewardGranted);
+    saveWordleGuess(req.user.id, daily.date, newGuesses, solved, rewardGranted, gameOver);
+    if (firstEnd) updateWordleStreakAndStats(req.user.id, daily.date, solved);
     const lootboxCount = lootboxGranted > 0 ? getLootboxCount(req.user.id) : null;
+    const freshStats = gameOver ? (getUserById(req.user.id) || {}) : null;
     res.json({
       ok: true, feedback, solved, guessCount: newGuesses.length, gameOver,
       lootboxGranted, lootboxCount,
       word: gameOver ? daily.word : null,
       sourceTitle: gameOver ? daily.sourceTitle : null,
       sourceId: gameOver ? daily.sourceId : null,
+      currentStreak: freshStats ? (freshStats.wordleCurrentStreak || 0) : null,
+      bestStreak:    freshStats ? (freshStats.wordleBestStreak    || 0) : null,
     });
   });
 

@@ -80,12 +80,13 @@
     </section>
 
     <%# ── Section Arcade ── %>
-    <% if (currentUser.arcadeMemoryBestLevel > 0) { %>
+    <% if (currentUser.arcadeMemoryBestLevel > 0 || currentUser.wordleBestStreak > 0) { %>
     <section class="coffre-section">
       <div class="coffre-section-header">
         <h2 class="coffre-section-title">&#127918; Arcade</h2>
         <a href="/jeu" class="coffre-voir-plus">Jouer &rarr;</a>
       </div>
+      <% if (currentUser.arcadeMemoryBestLevel > 0) { %>
       <div class="coffre-arcade-stats">
         <div class="coffre-arcade-stat">
           <span class="coffre-arcade-stat-value"><%= currentUser.arcadeMemoryBestLevel %></span>
@@ -96,6 +97,23 @@
           <span class="coffre-arcade-stat-label">Meilleur score</span>
         </div>
       </div>
+      <% } %>
+      <% if (currentUser.wordleBestStreak > 0) { %>
+      <div class="coffre-arcade-stats" style="margin-top:<%= currentUser.arcadeMemoryBestLevel > 0 ? '.75rem' : '0' %>">
+        <div class="coffre-arcade-stat">
+          <span class="coffre-arcade-stat-value">
+            <%= currentUser.wordleCurrentStreak %><% if (currentUser.wordleCurrentStreak >= 3) { %>&nbsp;&#128293;<% } %>
+          </span>
+          <span class="coffre-arcade-stat-label">S&eacute;rie actuelle</span>
+        </div>
+        <div class="coffre-arcade-stat">
+          <span class="coffre-arcade-stat-value"><%= currentUser.wordleBestStreak %></span>
+          <span class="coffre-arcade-stat-label">Meilleure s&eacute;rie</span>
+        </div>
+      </div>
+      <%# Stats invisibles pour usage futur %>
+      <!-- wordle_total_played:<%= currentUser.wordleTotalPlayed %> wordle_total_wins:<%= currentUser.wordleTotalWins %> -->
+      <% } %>
     </section>
     <% } %>
 
