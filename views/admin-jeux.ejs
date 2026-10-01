@@ -41,6 +41,10 @@
         data-game-entrypoint="<%= game.entrypoint %>"
         data-game-online-url="<%= game.online_url || '' %>"
         data-game-disabled="<%= game.disabled ? '1' : '0' %>"
+        data-game-parody="<%= game.parody || '' %>"
+        data-game-sub-parody="<%= game.sub_parody || '' %>"
+        data-game-tags="<%= (game.tags || []).join(', ') %>"
+        data-game-protagonist-ids="<%= JSON.stringify(game.protagonist_ids || []) %>"
         data-game-warnings="<%= hasWarnings ? JSON.stringify(game.warnings).replace(/"/g,'&quot;') : '' %>">
 
         <div class="admin-utile-top">
@@ -177,6 +181,47 @@
         </label>
       </div>
 
+      <%# Parodie %>
+      <div class="admin-modal-field">
+        <span>Parodie / Sous-parodie</span>
+        <%- include('partials/parody-input', {
+          idPrefix:   'edit',
+          mainValue:  '',
+          subValue:   '',
+          mainName:   'parody',
+          subName:    'sub_parody',
+        }) %>
+      </div>
+
+      <%# Tags %>
+      <div class="admin-modal-field">
+        <span>Tags</span>
+        <div class="wiki-tags-widget" id="edit-tags-widget">
+          <div class="wiki-tags-board" id="edit-tags-board">
+            <input type="text" class="wiki-tags-typing" id="edit-tags-typing" placeholder="Ajouter un tag…" autocomplete="off">
+          </div>
+          <input type="hidden" name="tags" id="edit-tags-hidden" value="">
+          <% if (allTags && allTags.length) { %>
+            <div class="wiki-tag-suggestions" id="edit-tag-suggestions">
+              <% allTags.slice(0, 20).forEach(function(t) { %>
+                <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <%# Personnages %>
+      <div class="admin-modal-field">
+        <span>Personnages</span>
+        <div class="gf-prot-widget" id="edit-prot-widget" style="position:relative;">
+          <div class="gf-prot-chips wiki-tags-board" id="edit-prot-chips">
+            <input type="text" id="edit-prot-input" class="wiki-tags-typing" placeholder="Chercher un personnage…" autocomplete="off" style="min-width:140px;">
+          </div>
+          <ul class="parody-ac-drop" id="edit-prot-drop" hidden></ul>
+        </div>
+      </div>
+
       <%# Toggle HS %>
       <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.65rem 1rem;margin:.25rem 0;">
         <div>
@@ -245,16 +290,155 @@
   addModal.addEventListener('click', function (e) { if (e.target === addModal) closeModal(addModal); });
   editModal.addEventListener('click', function (e) { if (e.target === editModal) closeModal(editModal); });
 
+  /* ── Données protagonistes (pour widget) ── */
+  var ALL_PROTS = <%- JSON.stringify((allProtagonistes || []).map(function(p){ return { id: p.id, name: p.name }; })) %>;
+
+  /* ── Widget Tags ── */
+  (function () {
+    var board   = qs('#edit-tags-board');
+    var typing  = qs('#edit-tags-typing');
+    var hidden  = qs('#edit-tags-hidden');
+    var sugWrap = qs('#edit-tag-suggestions');
+    if (!board || !typing) return;
+
+    function currentTags() {
+      return Array.from(board.querySelectorAll('.wiki-chip')).map(function (c) { return c.dataset.tag; });
+    }
+    function syncHidden() { hidden.value = currentTags().join(', '); }
+
+    function addChip(tag) {
+      tag = tag.trim();
+      if (!tag) return;
+      if (currentTags().indexOf(tag) !== -1) return;
+      var span = document.createElement('span');
+      span.className = 'wiki-chip';
+      span.dataset.tag = tag;
+      span.appendChild(document.createTextNode(tag));
+      var x = document.createElement('button');
+      x.type = 'button'; x.className = 'wiki-chip-remove'; x.textContent = '×';
+      x.addEventListener('click', function () { span.remove(); syncHidden(); updateSuggestions(); });
+      span.appendChild(x);
+      board.insertBefore(span, typing);
+      syncHidden();
+      updateSuggestions();
+    }
+
+    function updateSuggestions() {
+      if (!sugWrap) return;
+      var active = currentTags();
+      sugWrap.querySelectorAll('.wiki-tag-suggest-chip').forEach(function (btn) {
+        btn.classList.toggle('active', active.indexOf(btn.dataset.tag) !== -1);
+      });
+    }
+
+    function resetTags(tagList) {
+      board.querySelectorAll('.wiki-chip').forEach(function (c) { c.remove(); });
+      tagList.forEach(addChip);
+      syncHidden();
+      updateSuggestions();
+    }
+
+    typing.addEventListener('keydown', function (e) {
+      if ((e.key === 'Enter' || e.key === ',') && typing.value.trim()) {
+        e.preventDefault();
+        addChip(typing.value);
+        typing.value = '';
+      } else if (e.key === 'Backspace' && typing.value === '') {
+        var chips = board.querySelectorAll('.wiki-chip');
+        if (chips.length) { chips[chips.length - 1].remove(); syncHidden(); updateSuggestions(); }
+      }
+    });
+
+    if (sugWrap) {
+      sugWrap.addEventListener('click', function (e) {
+        var btn = e.target.closest('.wiki-tag-suggest-chip');
+        if (!btn) return;
+        var tag = btn.dataset.tag;
+        if (currentTags().indexOf(tag) !== -1) {
+          board.querySelectorAll('.wiki-chip').forEach(function (c) { if (c.dataset.tag === tag) c.remove(); });
+          syncHidden(); updateSuggestions();
+        } else {
+          addChip(tag);
+        }
+      });
+    }
+
+    /* expose pour le handler de carte */
+    window._editTagsReset = resetTags;
+  })();
+
+  /* ── Widget Protagonistes ── */
+  (function () {
+    var chips = qs('#edit-prot-chips');
+    var inp   = qs('#edit-prot-input');
+    var drop  = qs('#edit-prot-drop');
+    if (!chips || !inp) return;
+
+    function selectedIds() {
+      return Array.from(chips.querySelectorAll('[name="protagonist_ids"]')).map(function (c) { return Number(c.value); });
+    }
+    function closeDrop() { drop.innerHTML = ''; drop.hidden = true; }
+
+    function addChip(id, name) {
+      if (selectedIds().indexOf(Number(id)) !== -1) return;
+      var span = document.createElement('span');
+      span.className = 'gf-prot-chip';
+      var label = document.createTextNode(name + ' ');
+      span.appendChild(label);
+      var hid = document.createElement('input');
+      hid.type = 'hidden'; hid.name = 'protagonist_ids'; hid.value = id;
+      span.appendChild(hid);
+      var x = document.createElement('button');
+      x.type = 'button'; x.textContent = '×';
+      x.style.cssText = 'background:none;border:none;cursor:pointer;color:inherit;padding:0 0 0 .2rem;font-size:.9em;';
+      x.addEventListener('click', function (e) { e.stopPropagation(); span.remove(); });
+      span.appendChild(x);
+      chips.insertBefore(span, inp);
+    }
+
+    function resetProts(ids) {
+      chips.querySelectorAll('.gf-prot-chip').forEach(function (c) { c.remove(); });
+      ids.forEach(function (id) {
+        var prot = ALL_PROTS.find(function (p) { return p.id === Number(id); });
+        if (prot) addChip(prot.id, prot.name);
+      });
+    }
+
+    inp.addEventListener('input', function () {
+      var q = inp.value.toLowerCase().trim();
+      drop.innerHTML = ''; drop.hidden = true;
+      if (!q) return;
+      var matches = ALL_PROTS.filter(function (p) { return p.name.toLowerCase().indexOf(q) !== -1 && selectedIds().indexOf(p.id) === -1; }).slice(0, 8);
+      if (!matches.length) return;
+      matches.forEach(function (p) {
+        var li = document.createElement('li');
+        li.className = 'parody-ac-item';
+        li.textContent = p.name;
+        li.addEventListener('mousedown', function (e) { e.preventDefault(); addChip(p.id, p.name); inp.value = ''; closeDrop(); });
+        drop.appendChild(li);
+      });
+      drop.hidden = false;
+    });
+
+    inp.addEventListener('blur', function () { setTimeout(closeDrop, 200); });
+
+    /* expose pour le handler de carte */
+    window._editProtsReset = resetProts;
+  })();
+
   /* ── Cartes → modal modifier ── */
-  document.querySelectorAll('.admin-game-edit-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var card = btn.closest('.admin-utile');
+  document.querySelectorAll('.admin-utile[data-game-slug]').forEach(function (card) {
+    card.addEventListener('click', function () {
       var slug       = card.dataset.gameSlug;
       var title      = card.dataset.gameTitle;
       var desc       = card.dataset.gameDesc;
       var entry      = card.dataset.gameEntrypoint;
       var onlineUrl  = card.dataset.gameOnlineUrl;
       var disabled   = card.dataset.gameDisabled === '1';
+      var parody     = card.dataset.gameParody || '';
+      var subParody  = card.dataset.gameSubParody || '';
+      var tagsStr    = card.dataset.gameTags || '';
+      var protIds    = JSON.parse(card.dataset.gameProtagonistIds || '[]');
 
       qs('#jeux-edit-modal-title').textContent = title;
       qs('#edit-title').value       = title;
@@ -263,6 +447,18 @@
       qs('#edit-entrypoint').value  = entry;
       qs('#edit-online-url').value  = onlineUrl;
       qs('#edit-disabled').checked  = disabled;
+
+      /* Parodie */
+      qs('#edit-parody').value     = parody;
+      qs('#edit-sub-parody').value = subParody;
+
+      /* Tags */
+      if (window._editTagsReset) {
+        window._editTagsReset(tagsStr ? tagsStr.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : []);
+      }
+
+      /* Protagonistes */
+      if (window._editProtsReset) window._editProtsReset(protIds);
 
       var form = qs('#jeux-edit-form');
       form.action = '/admin/jeux/' + slug + '/edit';
@@ -321,7 +517,17 @@
       barEl.style.width = pct + '%';
       statusEl.textContent = pct === 100 ? 'Extraction\u2026' : 'Upload\u00a0: ' + pct + '%';
     });
-    xhr.addEventListener('load', function () { onDone(xhr); });
+    xhr.addEventListener('load', function () {
+      if (xhr.status >= 400) {
+        statusEl.textContent = xhr.status === 413
+          ? 'Fichier trop volumineux.'
+          : 'Erreur\u00a0' + xhr.status + '.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Installer';
+        return;
+      }
+      onDone(xhr);
+    });
     xhr.addEventListener('error', function () {
       statusEl.textContent = 'Erreur r\u00e9seau.';
       submitBtn.disabled = false;

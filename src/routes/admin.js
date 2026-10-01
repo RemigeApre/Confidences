@@ -50,6 +50,9 @@ const {
   setCharmRarity,
   grantGiftLootbox,
   listCharms,
+  listAllSiteTags,
+  listProtagonistes,
+  listAllParodies,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -618,12 +621,24 @@ function buildAdminRouter(config) {
   }
 
   router.get("/jeux", requireAdmin, (req, res) => {
-    res.render("admin-jeux", { config, games: readGames(),
-      success: req.query.success, error: req.query.error, compat_warn: req.query.compat_warn });
+    res.render("admin-jeux", {
+      config, games: readGames(),
+      allTags: listAllSiteTags(),
+      allProtagonistes: listProtagonistes(),
+      allParodies: listAllParodies(),
+      success: req.query.success, error: req.query.error, compat_warn: req.query.compat_warn,
+    });
   });
 
   // ── Ajouter un nouveau jeu (avec zip) ──────────────────────────────────────
-  router.post("/jeux/add", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
+  router.post("/jeux/add", requireAdmin, (req, res) => {
+    zipUpload.single("zipfile")(req, res, (uploadErr) => {
+      if (uploadErr) {
+        const msg = uploadErr.code === "LIMIT_FILE_SIZE"
+          ? "Fichier trop volumineux (max 600 Mo)"
+          : "Erreur upload : " + uploadErr.message;
+        return res.redirect("/admin/jeux?error=" + encodeURIComponent(msg));
+      }
     const title       = String(req.body.title       || "").trim();
     const description = String(req.body.description || "").trim();
     const entrypoint  = String(req.body.entrypoint  || "index.html").trim();
@@ -659,10 +674,18 @@ function buildAdminRouter(config) {
       const hasErrors = warnings.some(w => w.severity === "error");
       res.redirect("/admin/jeux?success=1" + (hasErrors ? "&compat_warn=" + slug : ""));
     });
+    }); // fin zipUpload callback
   });
 
   // ── Mettre à jour les fichiers d'un jeu existant (zip uniquement) ──────────
-  router.post("/jeux/:slug/upload", requireAdmin, zipUpload.single("zipfile"), (req, res) => {
+  router.post("/jeux/:slug/upload", requireAdmin, (req, res) => {
+    zipUpload.single("zipfile")(req, res, (uploadErr) => {
+      if (uploadErr) {
+        const msg = uploadErr.code === "LIMIT_FILE_SIZE"
+          ? "Fichier trop volumineux (max 600 Mo)"
+          : "Erreur upload : " + uploadErr.message;
+        return res.redirect("/admin/jeux?error=" + encodeURIComponent(msg));
+      }
     const slug      = toSlug(req.params.slug);
     const games     = readGames();
     const existing  = games.find(g => g.slug === slug);
@@ -691,6 +714,7 @@ function buildAdminRouter(config) {
       const hasErrors = warnings.some(w => w.severity === "error");
       res.redirect("/admin/jeux?success=1" + (hasErrors ? "&compat_warn=" + slug : ""));
     });
+    }); // fin zipUpload callback
   });
 
   // ── Modifier les métadonnées d'un jeu (sans zip) ───────────────────────────
@@ -705,12 +729,20 @@ function buildAdminRouter(config) {
     const entrypoint = String(req.body.entrypoint  || "index.html").trim();
     const onlineUrl  = String(req.body.online_url  || "").trim();
     const disabled   = req.body.disabled === "1";
+    const parody     = String(req.body.parody      || "").trim();
+    const subParody  = String(req.body.sub_parody  || "").trim();
+    const tagsRaw    = String(req.body.tags        || "").trim();
+    const tags       = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
+    const protRaw    = req.body.protagonist_ids;
+    const protagonistIds = (Array.isArray(protRaw) ? protRaw : protRaw ? [protRaw] : [])
+      .map(Number).filter(n => !isNaN(n) && n > 0);
 
     if (!title) return res.redirect("/admin/jeux?error=Titre+requis");
 
-    const updated = { ...games[idx], title, description, entrypoint, disabled };
-    if (onlineUrl) updated.online_url = onlineUrl;
-    else delete updated.online_url;
+    const updated = { ...games[idx], title, description, entrypoint, disabled, tags, protagonist_ids: protagonistIds };
+    if (onlineUrl) updated.online_url = onlineUrl; else delete updated.online_url;
+    if (parody)    updated.parody    = parody;    else delete updated.parody;
+    if (subParody) updated.sub_parody = subParody; else delete updated.sub_parody;
     games[idx] = updated;
     writeGames(games);
     res.redirect("/admin/jeux?success=1");
