@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache unar
+RUN apk add --no-cache p7zip
 
 WORKDIR /app
 

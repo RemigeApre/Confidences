@@ -739,7 +739,7 @@ function buildAdminRouter(config) {
     const gameDir = path.join(GAMES_DIR, tmpSlug);
     fs.mkdirSync(gameDir, { recursive: true });
 
-    execFile("unar", ["-o", gameDir, "-force-overwrite", "-no-directory", req.file.path], (err) => {
+    execFile("7z", ["x", req.file.path, `-o${gameDir}`, "-y"], (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
@@ -804,7 +804,7 @@ function buildAdminRouter(config) {
     const gameDir    = path.join(GAMES_DIR, slug);
     fs.mkdirSync(gameDir, { recursive: true });
 
-    execFile("unar", ["-o", gameDir, "-force-overwrite", "-no-directory", req.file.path], (err) => {
+    execFile("7z", ["x", req.file.path, `-o${gameDir}`, "-y"], (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
