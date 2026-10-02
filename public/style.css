@@ -14377,30 +14377,60 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* Question item */
 .qe-question {
-  display: flex; align-items: flex-start; gap: .6rem;
-  padding: .6rem .5rem; border-radius: 8px;
+  display: flex; flex-direction: column;
+  padding: .45rem .55rem .55rem; border-radius: 8px;
   background: hsl(220,14%,14%); border: 1px solid var(--border);
-  margin-bottom: .35rem; cursor: default;
-  transition: opacity .15s, box-shadow .15s, border-color .15s;
-  flex-wrap: wrap;
+  margin-bottom: .4rem;
+  transition: border-color .15s;
 }
 .qe-question:hover { border-color: hsl(220,20%,30%); }
 .qe-question.qe-q-dragging { opacity: .4; }
+/* ── En-tête de la carte : poignée centrée + croix droite ── */
+.qe-q-header {
+  display: flex; align-items: center; justify-content: center;
+  position: relative; padding-bottom: .3rem; margin-bottom: .35rem;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
 .qe-q-handle {
-  color: var(--muted); cursor: grab; font-size: .9rem;
-  padding-top: .15rem; flex-shrink: 0; user-select: none;
+  color: var(--muted); cursor: grab; font-size: .85rem; user-select: none;
 }
 .qe-q-handle:active { cursor: grabbing; }
-.qe-q-body { flex: 1; min-width: 0; cursor: pointer; }
-.qe-q-body:hover .qe-q-text { color: hsl(220,80%,78%); }
-.qe-q-text { margin: 0 0 .3rem; font-size: .85rem; font-weight: 600; }
 .qe-q-del {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
   background: none; border: none; cursor: pointer;
-  color: var(--muted); font-size: 1rem; padding: .15rem .3rem;
-  border-radius: 4px; flex-shrink: 0; line-height: 1;
+  color: var(--muted); font-size: .95rem; padding: .1rem .25rem;
+  border-radius: 4px; line-height: 1;
   transition: color .15s, background .15s;
 }
 .qe-q-del:hover { color: hsl(0,70%,65%); background: hsl(0,30%,18%); }
+/* ── Texte de la question : éditable en place ── */
+.qe-q-text {
+  margin: 0 0 .4rem; font-size: .85rem; font-weight: 600;
+  cursor: text; border-radius: 4px; padding: .15rem .25rem; margin-left: -.25rem;
+  outline: none; transition: background .15s;
+}
+.qe-q-text:focus { background: rgba(255,255,255,.05); box-shadow: 0 0 0 2px rgba(255,255,255,.1); }
+/* ── Rangée des contrôles (selects + boutons), centrée ── */
+.qe-q-controls {
+  display: flex; gap: .4rem; flex-wrap: wrap; justify-content: center;
+  margin-bottom: .35rem;
+}
+/* ── Options ── */
+.qe-q-opts { margin: .25rem 0; }
+/* ── Champ Codex ── */
+.qe-q-codex-field { margin: .25rem 0; position: relative; }
+/* ── Pied de carte (bouton sauvegarder) ── */
+.qe-q-footer {
+  display: flex; justify-content: center;
+  margin-top: .35rem; padding-top: .35rem;
+  border-top: 1px solid rgba(255,255,255,.05);
+}
+/* ── Badge Codex (avant init JS) ── */
+.qe-codex-name-badge {
+  display: inline-block; font-size: .72rem; padding: .1rem .45rem;
+  border-radius: 20px; background: hsl(200,35%,16%); color: hsl(200,65%,65%);
+  border: 1px solid hsl(200,40%,28%); margin-left: .25rem; vertical-align: middle;
+}
 
 /* Drop indicator */
 .qe-drop-indicator {
@@ -14483,25 +14513,32 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   width: 100%; box-sizing: border-box;
   background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
   border-radius: 8px; padding: .45rem .65rem;
-  font-size: 1rem; font-weight: 700; color: #fff;
+  font-size: 1rem; font-weight: 700; color: #fff; text-align: center;
   transition: border-color .15s, background .15s;
 }
 .qe-sidebar-title:focus {
   outline: none; border-color: rgba(255,255,255,.38); background: rgba(255,255,255,.12);
 }
+.qe-sidebar .qe-field-label { text-align: center; }
 .qe-sidebar-toggles {
-  display: flex; flex-direction: column; gap: .4rem; margin-top: .2rem;
+  display: flex; flex-direction: row; gap: .75rem; flex-wrap: wrap;
+  justify-content: center; margin-top: .2rem;
+}
+/* ── Pied du volet : 3 boutons sur une ligne ── */
+.qe-sidebar-footer {
+  flex-direction: row; gap: .4rem; align-items: stretch;
 }
 .qe-sidebar-save-btn {
-  width: 100%; padding: .55rem .75rem;
-  background: var(--accent); color: #fff;
+  flex: 1; padding: .55rem .5rem;
+  background: hsl(140,45%,26%); color: #fff;
   border: none; border-radius: 8px;
-  font-size: .85rem; font-weight: 700; cursor: pointer;
+  font-size: .82rem; font-weight: 700; cursor: pointer;
   transition: background .15s;
 }
-.qe-sidebar-save-btn:hover { background: color-mix(in srgb, var(--accent) 80%, #fff); }
+.qe-sidebar-save-btn:hover { background: hsl(140,50%,32%); }
 .qe-sidebar-csv-btn {
-  display: block; text-align: center; padding: .42rem .75rem;
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  padding: .45rem .6rem;
   background: rgba(255,255,255,.06); color: rgba(255,255,255,.65);
   border: 1px solid rgba(255,255,255,.13); border-radius: 8px;
   font-size: .8rem; text-decoration: none;
@@ -14509,13 +14546,23 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .qe-sidebar-csv-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
 .qe-sidebar-del-btn {
-  width: 100%; padding: .38rem .75rem;
+  flex: 0 0 auto; padding: .38rem .6rem;
   background: transparent; color: hsl(0,55%,60%);
   border: 1px solid hsl(0,30%,26%); border-radius: 8px;
   font-size: .78rem; cursor: pointer;
   transition: background .15s, color .15s, border-color .15s;
 }
 .qe-sidebar-del-btn:hover { background: hsl(0,35%,18%); color: hsl(0,70%,72%); border-color: hsl(0,45%,40%); }
+/* ── Select catégorie dans la sidebar ── */
+.qe-cat-select {
+  width: 100%; box-sizing: border-box;
+  padding: .35rem .65rem; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: hsl(220,14%,16%); color: rgba(255,255,255,.85);
+  font-size: .82rem; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+}
+.qe-cat-select:focus { outline: none; border-color: rgba(255,255,255,.38); }
 
 /* Desktop : panneau fixe pleine hauteur à gauche (même motif que .wiki-cat-sidebar).
    Seuil 1340 px : à ce point (100vw − 900) / 2 = 220 px exactement. */

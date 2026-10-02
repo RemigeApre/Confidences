@@ -335,7 +335,32 @@ function buildCustomQuizRouter(config) {
     res.redirect(`/quizz/${quiz.id}?step=${nextStep}`);
   });
 
-  // Export données (admin)
+  // Export questions (admin) — structure uniquement, sans réponses utilisateurs
+  router.get("/:id/export-questions", requireAdmin, (req, res) => {
+    const quiz = db.getCustomQuiz(req.params.id);
+    if (!quiz) return res.status(404).send("Quiz introuvable");
+    const questions = db.getCustomQuizQuestions(quiz.id);
+    const typeLabels = { gradient:'Gradient', single:'Choix unique', multiple:'Choix multiple', ranking:'Mise en ordre', visual:'Visuel', points:'Points' };
+    const subtypeLabels = { '':'Générique', gout:'Goût', pratique:'Pratique', excitation:'Excitation' };
+    const tendanceLabels = { '':'Aucune', positive:'Positive', negative:'Négative' };
+    const rows = [['Question','Mode','Sous-mode','Tendance','Donner/Subir','Lien Codex']];
+    questions.forEach(q => {
+      rows.push([
+        q.text,
+        typeLabels[q.type] || q.type,
+        subtypeLabels[q.subtype || ''] || '',
+        tendanceLabels[q.tendency || ''] || '',
+        q.has_sides ? 'Oui' : 'Non',
+        q.wiki_link_title || (q.wiki_link_id ? `#${q.wiki_link_id}` : ''),
+      ]);
+    });
+    const csv = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="quiz-${quiz.id}-questions.csv"`);
+    res.send('\uFEFF' + csv);
+  });
+
+  // Export données utilisateurs (admin)
   router.get("/:id/export", requireAdmin, (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.status(404).send("Quiz introuvable");

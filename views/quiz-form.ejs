@@ -13,13 +13,13 @@
       <div class="qe-sidebar-body">
         <label class="qe-field-label">Description</label>
         <textarea name="description" class="wf-stats-note-input qe-desc-input"
-          rows="4" placeholder="Description courte…" style="resize:vertical"><%= quiz.description || '' %></textarea>
+          rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz.description || '' %></textarea>
         <div class="qe-sidebar-toggles">
           <label class="wiki-display-opt-label" style="margin:0">
             <input type="checkbox" name="featured" value="1"
               <%= quiz.featured ? 'checked' : '' %> hidden />
             <span class="wiki-display-opt-track"></span>
-            <span class="wiki-display-opt-text">Mettre en avant</span>
+            <span class="wiki-display-opt-text">En avant</span>
           </label>
           <label class="wiki-display-opt-label qe-status-toggle" style="margin:0">
             <input type="checkbox" name="status" value="public"
@@ -28,24 +28,17 @@
             <span class="wiki-display-opt-text qe-status-text"><%= (quiz.status || 'draft') === 'public' ? 'Public' : 'Brouillon' %></span>
           </label>
         </div>
-        <label class="qe-field-label" style="margin-top:.75rem">Durée estimée (min)</label>
-        <input type="number" name="duration" min="1" max="999" class="wf-orce-name-input" style="width:5rem"
-          value="<%= quiz.duration != null ? quiz.duration : '' %>" placeholder="—" />
         <label class="qe-field-label" style="margin-top:.75rem">Catégorie</label>
-        <div class="quiz-cat-picker quiz-cat-picker--col">
-          <% [['fondements','violet'],['fantasmes','rose'],['pornographie','orange'],['ultra','or']].forEach(function(c){ %>
-            <label class="quiz-cat-opt quiz-cat-opt--<%= c[0] %>">
-              <input type="radio" name="category" value="<%= c[0] %>"
-                <%= (quiz.category || 'fondements') === c[0] ? 'checked' : '' %> style="display:none"/>
-              <span><%= c[0].charAt(0).toUpperCase() + c[0].slice(1) %></span>
-            </label>
+        <select name="category" class="qe-cat-select">
+          <% [['fondements','Fondements'],['fantasmes','Fantasmes'],['pornographie','Pornographie'],['ultra','Ultra']].forEach(function(c){ %>
+            <option value="<%= c[0] %>" <%= (quiz.category || 'fondements') === c[0] ? 'selected' : '' %>><%= c[1] %></option>
           <% }) %>
-        </div>
+        </select>
       </div>
       <div class="qe-sidebar-footer">
         <button type="submit" class="qe-sidebar-save-btn">Enregistrer</button>
-        <a href="/quizz/<%= quiz.id %>/export" class="qe-sidebar-csv-btn" title="Exporter CSV">↙ CSV</a>
-        <form method="POST" action="/quizz/<%= quiz.id %>/delete" style="margin:0">
+        <a href="/quizz/<%= quiz.id %>/export-questions" class="qe-sidebar-csv-btn" title="Exporter questions CSV">↙ CSV</a>
+        <form method="POST" action="/quizz/<%= quiz.id %>/delete" style="margin:0;display:contents">
           <button type="submit" class="qe-sidebar-del-btn"
             onclick="return confirm('Supprimer ce quizz définitivement ?')">Supprimer</button>
         </form>
@@ -84,17 +77,20 @@
             data-tendency="<%= q.tendency || '' %>"
             data-subtype="<%= q.subtype || '' %>"
             data-wiki-link-id="<%= q.wiki_link_id || '' %>"
+            data-wiki-link-title="<%= q.wiki_link_title || '' %>"
             data-opts="<%= JSON.stringify(q.options || []) %>">
-            <span class="qe-q-handle">&#11835;</span>
-            <div class="qe-q-body">
-              <p class="qe-q-text"><%= q.text %></p>
+            <div class="qe-q-header">
+              <span class="qe-q-handle" title="Déplacer">&#11835;</span>
+              <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
+            </div>
+            <p class="qe-q-text"><%= q.text %></p>
+            <div class="qe-q-badge-row">
               <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= tl %></span>
               <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
               <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive">&#9650;</span><% } %>
               <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative">&#9660;</span><% } %>
-              <% if (q.wiki_link_id) { %><span class="qe-wiki-badge">&#63;</span><% } %>
+              <% if (q.wiki_link_id) { %><span class="qe-codex-name-badge">&#63; Codex : <strong><%= q.wiki_link_title || '(lié)' %></strong></span><% } %>
             </div>
-            <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
           </div>
         <% }) %>
       </div>
@@ -125,17 +121,20 @@
                   data-tendency="<%= q.tendency || '' %>"
                   data-subtype="<%= q.subtype || '' %>"
                   data-wiki-link-id="<%= q.wiki_link_id || '' %>"
+                  data-wiki-link-title="<%= q.wiki_link_title || '' %>"
                   data-opts="<%= JSON.stringify(q.options || []) %>">
-                  <span class="qe-q-handle">&#11835;</span>
-                  <div class="qe-q-body">
-                    <p class="qe-q-text"><%= q.text %></p>
+                  <div class="qe-q-header">
+                    <span class="qe-q-handle" title="Déplacer">&#11835;</span>
+                    <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
+                  </div>
+                  <p class="qe-q-text"><%= q.text %></p>
+                  <div class="qe-q-badge-row">
                     <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= tl %></span>
                     <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
                     <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive">&#9650;</span><% } %>
                     <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative">&#9660;</span><% } %>
-                    <% if (q.wiki_link_id) { %><span class="qe-wiki-badge">&#63;</span><% } %>
+                    <% if (q.wiki_link_id) { %><span class="qe-codex-name-badge">&#63; Codex : <strong><%= q.wiki_link_title || '(lié)' %></strong></span><% } %>
                   </div>
-                  <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
                 </div>
               <% }) %>
             </div>
@@ -186,9 +185,7 @@
         sel.style.borderColor = 'hsl(' + h + ',55%,38%)';
         sel.style.color       = 'hsl(' + h + ',70%,78%)';
       } else {
-        sel.style.background = '';
-        sel.style.borderColor = '';
-        sel.style.color = '';
+        sel.style.background = ''; sel.style.borderColor = ''; sel.style.color = '';
       }
     }
     function setSubtypeSelColor(sel) {
@@ -209,76 +206,37 @@
 
     // ── Fabriques de contrôles ────────────────────────────────────────────
     function makeTypeSelect(value) {
-      var sel = document.createElement('select');
-      sel.className = 'qe-type-sel';
+      var sel = document.createElement('select'); sel.className = 'qe-type-sel';
       [['gradient','Gradient'],['single','Choix unique'],['multiple','Choix multiple'],['ranking','Mise en ordre'],['visual','Visuel'],['points','Points']].forEach(function(t) {
-        var o = document.createElement('option');
-        o.value = t[0]; o.textContent = t[1];
-        if (t[0] === value) o.selected = true;
-        sel.appendChild(o);
+        var o = document.createElement('option'); o.value = t[0]; o.textContent = t[1];
+        if (t[0] === value) o.selected = true; sel.appendChild(o);
       });
       setTypeSelColor(sel);
       sel.addEventListener('change', function() { setTypeSelColor(sel); });
       return sel;
     }
     function makeSubtypeSelect(value) {
-      var sel = document.createElement('select');
-      sel.className = 'qe-subtype-sel';
+      var sel = document.createElement('select'); sel.className = 'qe-subtype-sel';
       [['','Générique'],['gout','Goût'],['pratique','Pratique'],['excitation','Excitation']].forEach(function(s) {
-        var o = document.createElement('option');
-        o.value = s[0]; o.textContent = s[1];
-        if (s[0] === value) o.selected = true;
-        sel.appendChild(o);
+        var o = document.createElement('option'); o.value = s[0]; o.textContent = s[1];
+        if (s[0] === value) o.selected = true; sel.appendChild(o);
       });
       setSubtypeSelColor(sel);
       sel.addEventListener('change', function() { setSubtypeSelColor(sel); });
       return sel;
     }
     function makeTendencySelect(value) {
-      var sel = document.createElement('select');
-      sel.className = 'qe-tendency-sel';
+      var sel = document.createElement('select'); sel.className = 'qe-tendency-sel';
       [['','— Tendance'],['positive','▲ Positive'],['negative','▼ Négative']].forEach(function(t) {
-        var o = document.createElement('option');
-        o.value = t[0]; o.textContent = t[1];
-        if (t[0] === (value || '')) o.selected = true;
-        sel.appendChild(o);
+        var o = document.createElement('option'); o.value = t[0]; o.textContent = t[1];
+        if (t[0] === (value || '')) o.selected = true; sel.appendChild(o);
       });
       setTendencySelColor(sel);
       sel.addEventListener('change', function() { setTendencySelColor(sel); });
       return sel;
     }
-    function makeOptionsWidget(opts) {
-      var wrap = document.createElement('div');
-      wrap.className = 'qea-options-wrap';
-      var list = document.createElement('div');
-      list.className = 'qea-options-list';
-      (opts || []).forEach(function(o) { addOptRow(list, o); });
-      var addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.className = 'qea-add-opt wf-stats-pill';
-      addBtn.style.cssText = 'font-size:.76rem;margin-top:.3rem';
-      addBtn.textContent = '+ Option';
-      addBtn.addEventListener('click', function() { addOptRow(list, ''); });
-      wrap.appendChild(list); wrap.appendChild(addBtn);
-      return wrap;
-    }
-    function addOptRow(list, value) {
-      var row = document.createElement('div');
-      row.className = 'quiz-option-row';
-      var inp = document.createElement('input');
-      inp.type = 'text'; inp.className = 'wf-orce-name-input';
-      inp.placeholder = 'Option…'; inp.style.cssText = 'flex:1;font-size:.82rem';
-      inp.value = value || '';
-      var del = document.createElement('button');
-      del.type = 'button'; del.className = 'quiz-qitem-del'; del.style.flexShrink = '0';
-      del.textContent = '×';
-      del.addEventListener('click', function() { row.remove(); });
-      row.appendChild(inp); row.appendChild(del);
-      list.appendChild(row);
-    }
     function makeSidesBtn(active) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
+      var btn = document.createElement('button'); btn.type = 'button';
       btn.className = 'qe-sides-btn' + (active ? ' qe-sides-btn--on' : '');
       btn.dataset.active = active ? '1' : '0';
       btn.innerHTML = '&#8645; Donner/Subir';
@@ -289,94 +247,161 @@
       });
       return btn;
     }
+    function addOptRow(list, value) {
+      var row = document.createElement('div'); row.className = 'quiz-option-row';
+      var inp = document.createElement('input'); inp.type = 'text'; inp.className = 'wf-orce-name-input';
+      inp.placeholder = 'Option…'; inp.style.cssText = 'flex:1;font-size:.82rem';
+      inp.value = value || '';
+      var del = document.createElement('button'); del.type = 'button'; del.className = 'quiz-qitem-del'; del.style.flexShrink = '0'; del.textContent = '×';
+      del.addEventListener('click', function() { row.remove(); });
+      row.appendChild(inp); row.appendChild(del);
+      list.appendChild(row);
+    }
 
-    // ── Inline edit form ──────────────────────────────────────────────────
-    function makeInlineEditForm(el) {
+    // ── initQuestion : tout dans la carte, pas de form séparé ────────────
+    function initQuestion(el) {
       var qid = Number(el.dataset.qid);
-      var div = document.createElement('div');
-      div.className = 'qe-q-edit-inline';
-      div.hidden = true;
 
-      var ta = document.createElement('textarea');
-      ta.className = 'wf-stats-note-input qe-q-edit-ta';
-      ta.rows = 2; ta.style.resize = 'vertical';
+      // 1. Texte directement éditable
+      var textEl = el.querySelector('.qe-q-text');
+      textEl.contentEditable = 'true';
+      textEl.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); textEl.blur(); }
+        if (e.key === 'Escape') { textEl.textContent = el.dataset.savedText || textEl.textContent; textEl.blur(); }
+      });
+      textEl.addEventListener('focus', function() { el.dataset.savedText = textEl.textContent.trim(); });
 
-      var row1 = document.createElement('div');
-      row1.className = 'qe-inline-form-row1';
-      var typeSel = makeTypeSelect('gradient');
-      var subtypeSel = makeSubtypeSelect('');
-      var ptRow = document.createElement('div');
-      ptRow.className = 'qea-points-total-row'; ptRow.style.display = 'none';
-      var ptInp = document.createElement('input');
-      ptInp.type = 'number'; ptInp.min = '2'; ptInp.max = '200'; ptInp.value = '10';
+      // 2. Rangée de contrôles (remplace .qe-q-badge-row)
+      var typeSel = makeTypeSelect(el.dataset.type || 'gradient');
+      var subtypeSel = makeSubtypeSelect(el.dataset.subtype || '');
+      subtypeSel.style.display = (el.dataset.type === 'gradient') ? '' : 'none';
+      var tendencySel = makeTendencySelect(el.dataset.tendency || '');
+      var sidesBtn = makeSidesBtn(el.dataset.hasSides === '1');
+
+      var codexBtn = document.createElement('button'); codexBtn.type = 'button';
+      codexBtn.className = 'qe-codex-btn' + (el.dataset.wikiLinkId ? ' qe-codex-btn--on' : '');
+      codexBtn.dataset.active = el.dataset.wikiLinkId ? '1' : '0';
+      codexBtn.textContent = '? Codex';
+
+      var controls = document.createElement('div'); controls.className = 'qe-q-controls';
+      controls.appendChild(typeSel); controls.appendChild(subtypeSel);
+      controls.appendChild(tendencySel); controls.appendChild(sidesBtn);
+      controls.appendChild(codexBtn);
+
+      // Ligne total points
+      var ptRow = document.createElement('div'); ptRow.className = 'qea-points-total-row';
+      ptRow.style.display = (el.dataset.type === 'points') ? '' : 'none';
+      var ptInp = document.createElement('input'); ptInp.type = 'number'; ptInp.min = '2'; ptInp.max = '200';
+      ptInp.value = (el.dataset.type === 'points' && el.dataset.subtype) ? (parseInt(el.dataset.subtype, 10) || 10) : 10;
       ptInp.className = 'qea-points-total-input';
       ptInp.style.cssText = 'width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem';
-      var ptLbl = document.createElement('label');
-      ptLbl.style.cssText = 'font-size:.8rem;color:rgba(255,255,255,.7)';
+      var ptLbl = document.createElement('label'); ptLbl.style.cssText = 'font-size:.8rem;color:rgba(255,255,255,.7)';
       ptLbl.textContent = 'Total : '; ptLbl.appendChild(ptInp);
       ptRow.appendChild(ptLbl);
-      row1.appendChild(typeSel); row1.appendChild(subtypeSel); row1.appendChild(ptRow);
+      controls.appendChild(ptRow);
 
-      var optsWidget = makeOptionsWidget([]);
-      optsWidget.hidden = true;
+      // 3. Options
+      var optsList = document.createElement('div'); optsList.className = 'qea-options-list';
+      var addOptBtn = document.createElement('button'); addOptBtn.type = 'button';
+      addOptBtn.className = 'qea-add-opt wf-stats-pill';
+      addOptBtn.style.cssText = 'font-size:.76rem;margin-top:.3rem';
+      addOptBtn.textContent = '+ Option';
+      addOptBtn.addEventListener('click', function() { addOptRow(optsList, ''); });
+      var optsWrap = document.createElement('div'); optsWrap.className = 'qe-q-opts';
+      optsWrap.appendChild(optsList); optsWrap.appendChild(addOptBtn);
+      optsWrap.hidden = (el.dataset.type === 'gradient');
+      if (el.dataset.type !== 'gradient') {
+        try { JSON.parse(el.dataset.opts || '[]').forEach(function(o) { addOptRow(optsList, o); }); } catch (err) {}
+      }
 
+      // 4. Champ Codex
+      var wlTitle = el.dataset.wikiLinkTitle || '';
+      var codexField = document.createElement('div'); codexField.className = 'qe-q-codex-field';
+      codexField.hidden = !el.dataset.wikiLinkId;
+      var codexSearch = document.createElement('input'); codexSearch.type = 'text';
+      codexSearch.className = 'qe-codex-search wf-orce-name-input';
+      codexSearch.placeholder = 'Rechercher une page Codex…'; codexSearch.autocomplete = 'off';
+      codexSearch.style.cssText = 'width:100%;box-sizing:border-box;font-size:.82rem';
+      var codexResults = document.createElement('div'); codexResults.className = 'qe-codex-results'; codexResults.hidden = true;
+      var codexName = document.createElement('p'); codexName.className = 'qe-codex-selected';
+      codexName.style.cssText = 'font-size:.78rem;color:hsl(175,58%,52%);margin:.25rem 0 0;font-weight:600';
+      codexName.textContent = el.dataset.wikiLinkId ? (wlTitle || '(page #' + el.dataset.wikiLinkId + ')') : '';
+      var codexId = document.createElement('input'); codexId.type = 'hidden'; codexId.className = 'qe-codex-id';
+      codexId.value = el.dataset.wikiLinkId || '';
+      codexField.appendChild(codexSearch); codexField.appendChild(codexResults);
+      codexField.appendChild(codexName); codexField.appendChild(codexId);
+
+      // 5. Collecte d'état + save
+      function getState() {
+        var t = typeSel.value;
+        var options = t !== 'gradient'
+          ? Array.from(optsList.querySelectorAll('input')).map(function(i) { return i.value.trim(); }).filter(Boolean)
+          : [];
+        var subtype = t === 'points' ? (ptInp.value || '10')
+          : (t === 'gradient' ? (subtypeSel.value || null) : null);
+        return {
+          text: textEl.textContent.trim(),
+          type: t, options: options,
+          has_sides: sidesBtn.dataset.active === '1' ? 1 : 0,
+          tendency: tendencySel.value || null,
+          subtype: subtype,
+          wiki_link_id: codexBtn.dataset.active === '1' ? (parseInt(codexId.value, 10) || null) : null
+        };
+      }
+      function doSave(cb) {
+        var state = getState();
+        if (!state.text) return;
+        fetch('/quizz/' + quizId + '/questions/' + qid + '/update', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(state)
+        }).then(function(r) { return r.json(); }).then(function(d) {
+          if (!d.ok) return;
+          el.dataset.type = d.question.type;
+          el.dataset.hasSides = d.question.has_sides ? '1' : '0';
+          el.dataset.tendency = d.question.tendency || '';
+          el.dataset.subtype = d.question.subtype || '';
+          el.dataset.wikiLinkId = d.question.wiki_link_id ? String(d.question.wiki_link_id) : '';
+          el.dataset.opts = JSON.stringify(d.question.options || []);
+          el.dataset.savedText = d.question.text;
+          if (cb) cb(d.question);
+        });
+      }
+
+      // 6. Listeners auto-save
       typeSel.addEventListener('change', function() {
         var t = typeSel.value;
         subtypeSel.style.display = (t === 'gradient') ? '' : 'none';
         ptRow.style.display = (t === 'points') ? '' : 'none';
-        optsWidget.hidden = (t === 'gradient');
+        optsWrap.hidden = (t === 'gradient');
+        if (!optsWrap.hidden && !optsList.children.length) {
+          try { JSON.parse(el.dataset.opts || '[]').forEach(function(o) { addOptRow(optsList, o); }); } catch (err) {}
+        }
+        doSave(null);
       });
+      tendencySel.addEventListener('change', function() { doSave(null); });
+      subtypeSel.addEventListener('change', function() { doSave(null); });
+      sidesBtn.addEventListener('click', function() { doSave(null); });
 
-      // Meta row : sides + tendency + codex
-      var metaRow = document.createElement('div');
-      metaRow.className = 'qe-q-edit-meta-row';
-      var sidesBtn = makeSidesBtn(false);
-      var tendencySel = makeTendencySelect('');
-      var codexBtn = document.createElement('button');
-      codexBtn.type = 'button';
-      codexBtn.className = 'qe-codex-btn';
-      codexBtn.dataset.active = '0';
-      codexBtn.textContent = '? Codex';
-      metaRow.appendChild(sidesBtn);
-      metaRow.appendChild(tendencySel);
-      metaRow.appendChild(codexBtn);
-
-      // Codex search field
-      var codexWrap = document.createElement('div');
-      codexWrap.className = 'qe-codex-field'; codexWrap.hidden = true;
-      var codexSearch = document.createElement('input');
-      codexSearch.type = 'text'; codexSearch.className = 'qe-codex-search wf-orce-name-input';
-      codexSearch.placeholder = 'Rechercher une page Codex…'; codexSearch.autocomplete = 'off';
-      codexSearch.style.cssText = 'width:100%;box-sizing:border-box;font-size:.82rem';
-      var codexResults = document.createElement('div');
-      codexResults.className = 'qe-codex-results';
-      codexResults.hidden = true;
-      var codexSelected = document.createElement('p');
-      codexSelected.className = 'qe-codex-selected';
-      codexSelected.style.cssText = 'font-size:.78rem;color:hsl(175,58%,52%);margin:.25rem 0 0';
-      var codexId = document.createElement('input');
-      codexId.type = 'hidden'; codexId.className = 'qe-codex-id';
-      codexWrap.appendChild(codexSearch); codexWrap.appendChild(codexResults);
-      codexWrap.appendChild(codexSelected); codexWrap.appendChild(codexId);
-
+      // Codex search
       var codexTimer = null;
       codexSearch.addEventListener('input', function() {
         clearTimeout(codexTimer);
         var q = codexSearch.value.trim();
         if (q.length < 2) { codexResults.hidden = true; return; }
         codexTimer = setTimeout(function() {
-          fetch('/quizz/wiki-search?q=' + encodeURIComponent(q)).then(function(r){ return r.json(); }).then(function(rows) {
+          fetch('/quizz/wiki-search?q=' + encodeURIComponent(q)).then(function(r) { return r.json(); }).then(function(rows) {
             codexResults.innerHTML = '';
             if (!rows.length) { codexResults.hidden = true; return; }
             rows.forEach(function(row) {
-              var b = document.createElement('button');
-              b.type = 'button';
+              var b = document.createElement('button'); b.type = 'button';
               b.style.cssText = 'display:block;width:100%;text-align:left;padding:.35rem .6rem;background:none;border:none;color:inherit;cursor:pointer;font-size:.8rem;border-bottom:1px solid rgba(255,255,255,.07)';
               b.textContent = row.title + ' (' + row.category + ')';
               b.addEventListener('click', function() {
                 codexId.value = row.id;
-                codexSelected.textContent = row.title;
+                codexName.textContent = row.title;
+                el.dataset.wikiLinkTitle = row.title;
                 codexSearch.value = ''; codexResults.hidden = true;
+                doSave(null);
               });
               codexResults.appendChild(b);
             });
@@ -388,122 +413,43 @@
         var on = codexBtn.dataset.active === '1';
         codexBtn.dataset.active = on ? '0' : '1';
         codexBtn.classList.toggle('qe-codex-btn--on', !on);
-        codexWrap.hidden = on;
-        if (on) { codexId.value = ''; codexSelected.textContent = ''; }
+        codexField.hidden = on;
+        if (on) { codexId.value = ''; codexName.textContent = ''; doSave(null); }
+        else { setTimeout(function() { codexSearch.focus(); }, 50); }
       });
 
-      // Actions
-      var actions = document.createElement('div');
-      actions.className = 'qea-actions';
-      var saveBtn = document.createElement('button');
-      saveBtn.type = 'button'; saveBtn.className = 'wf-save-btn';
-      saveBtn.style.cssText = 'position:static;font-size:.82rem';
-      saveBtn.textContent = '✓ Enregistrer';
-      var cancelBtn = document.createElement('button');
-      cancelBtn.type = 'button'; cancelBtn.className = 'wf-cancel-link';
-      cancelBtn.textContent = 'Annuler';
-      actions.appendChild(saveBtn); actions.appendChild(cancelBtn);
-
-      // Sync form fields from el.dataset (called on open)
-      function syncFromEl() {
-        ta.value = el.querySelector('.qe-q-text').textContent;
-        typeSel.value = el.dataset.type || 'gradient';
-        setTypeSelColor(typeSel);
-        var t = typeSel.value;
-        subtypeSel.value = (t === 'gradient') ? (el.dataset.subtype || '') : '';
-        setSubtypeSelColor(subtypeSel);
-        subtypeSel.style.display = (t === 'gradient') ? '' : 'none';
-        ptRow.style.display = (t === 'points') ? '' : 'none';
-        ptInp.value = (t === 'points' && el.dataset.subtype) ? (parseInt(el.dataset.subtype,10) || 10) : 10;
-        optsWidget.hidden = (t === 'gradient');
-        var optList = optsWidget.querySelector('.qea-options-list');
-        optList.innerHTML = '';
-        if (t !== 'gradient') {
-          try { JSON.parse(el.dataset.opts || '[]').forEach(function(o) { addOptRow(optList, o); }); } catch {}
-        }
-        var hasSides = el.dataset.hasSides === '1';
-        sidesBtn.dataset.active = hasSides ? '1' : '0';
-        sidesBtn.classList.toggle('qe-sides-btn--on', hasSides);
-        tendencySel.value = el.dataset.tendency || '';
-        setTendencySelColor(tendencySel);
-        var wid = el.dataset.wikiLinkId || '';
-        codexBtn.dataset.active = wid ? '1' : '0';
-        codexBtn.classList.toggle('qe-codex-btn--on', !!wid);
-        codexWrap.hidden = !wid;
-        codexId.value = wid;
-        codexSelected.textContent = wid ? '(page liée)' : '';
-        codexSearch.value = ''; codexResults.hidden = true;
-      }
-
+      // Bouton sauvegarder (texte + options)
+      var footer = document.createElement('div'); footer.className = 'qe-q-footer';
+      var saveBtn = document.createElement('button'); saveBtn.type = 'button';
+      saveBtn.className = 'wf-save-btn qe-q-save-btn';
+      saveBtn.style.cssText = 'position:static;font-size:.8rem;padding:.3rem .9rem';
+      saveBtn.textContent = '✓ Sauvegarder';
+      footer.appendChild(saveBtn);
       saveBtn.addEventListener('click', function() {
-        var text = ta.value.trim();
-        if (!text) return;
-        var t = typeSel.value;
-        var options = t !== 'gradient'
-          ? Array.from(optsWidget.querySelectorAll('.qea-options-list input')).map(function(i){ return i.value.trim(); }).filter(Boolean)
-          : [];
-        var subtype = t === 'points' ? (String(ptInp.value) || '10')
-          : (t === 'gradient' ? (subtypeSel.value || null) : null);
-        var wikiId = codexBtn.dataset.active === '1' ? (parseInt(codexId.value,10) || null) : null;
-        fetch('/quizz/' + quizId + '/questions/' + qid + '/update', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text:text, type:t, options:options, has_sides:sidesBtn.dataset.active==='1'?1:0, tendency:tendencySel.value||null, subtype:subtype, wiki_link_id:wikiId })
-        }).then(function(r){ return r.json(); }).then(function(d){
-          if (!d.ok) return;
-          updateCardSummary(el, d.question);
-          el.dataset.type = d.question.type;
-          el.dataset.hasSides = d.question.has_sides ? '1' : '0';
-          el.dataset.tendency = d.question.tendency || '';
-          el.dataset.subtype = d.question.subtype || '';
-          el.dataset.wikiLinkId = d.question.wiki_link_id ? String(d.question.wiki_link_id) : '';
-          el.dataset.opts = JSON.stringify(d.question.options || []);
-          div.hidden = true;
+        doSave(function() {
+          saveBtn.textContent = '✓ Sauvegardé';
+          setTimeout(function() { saveBtn.textContent = '✓ Sauvegarder'; }, 1500);
         });
       });
-      cancelBtn.addEventListener('click', function() { div.hidden = true; });
 
-      div._syncFromEl = syncFromEl;
-      div.appendChild(ta); div.appendChild(row1); div.appendChild(optsWidget);
-      div.appendChild(metaRow); div.appendChild(codexWrap); div.appendChild(actions);
-      return div;
-    }
+      // 7. Remplace badge-row, insère les blocs
+      var badgeRow = el.querySelector('.qe-q-badge-row');
+      if (badgeRow) badgeRow.replaceWith(controls);
+      else el.appendChild(controls);
+      controls.insertAdjacentElement('afterend', optsWrap);
+      optsWrap.insertAdjacentElement('afterend', codexField);
+      codexField.insertAdjacentElement('afterend', footer);
 
-    function updateCardSummary(el, q) {
-      var body = el.querySelector('.qe-q-body');
-      body.querySelector('.qe-q-text').textContent = q.text;
-      var badge = body.querySelector('.quiz-qitem-type');
-      badge.className = 'quiz-qitem-type quiz-qtype--' + q.type;
-      badge.textContent = typeLabels[q.type] || q.type;
-      var sb = body.querySelector('.qe-sides-badge'); if (sb) sb.remove();
-      if (q.has_sides) { var s2 = document.createElement('span'); s2.className='qe-sides-badge'; s2.textContent='⇅ Donner/Subir'; badge.insertAdjacentElement('afterend',s2); }
-      var tb = body.querySelector('.qe-tendency-badge'); if (tb) tb.remove();
-      if (q.tendency) { var t2 = document.createElement('span'); t2.className='qe-tendency-badge qe-tendency-badge--'+q.tendency; t2.textContent=q.tendency==='positive'?'▲':'▼'; badge.insertAdjacentElement('afterend',t2); }
-      var wb = body.querySelector('.qe-wiki-badge'); if (wb) wb.remove();
-      if (q.wiki_link_id) { var w2 = document.createElement('span'); w2.className='qe-wiki-badge'; w2.title='Codex'; w2.textContent='?'; body.appendChild(w2); }
-    }
-
-    // ── initQuestion ──────────────────────────────────────────────────────
-    function initQuestion(el) {
-      var editForm = makeInlineEditForm(el);
-      el.appendChild(editForm);
-
-      el.querySelector('.qe-q-body').addEventListener('click', function() {
-        var isOpen = !editForm.hidden;
-        // Close others
-        document.querySelectorAll('.qe-q-edit-inline').forEach(function(f) { if (f !== editForm) f.hidden = true; });
-        if (isOpen) { editForm.hidden = true; return; }
-        editForm._syncFromEl();
-        editForm.hidden = false;
-        editForm.querySelector('textarea').focus();
-      });
-
+      // 8. Suppression
       el.querySelector('.qe-q-del').addEventListener('click', function(e) {
         e.stopPropagation();
-        deleteQuestion(Number(el.dataset.qid));
+        deleteQuestion(qid);
       });
 
+      // 9. Drag (uniquement depuis la poignée)
       el.addEventListener('dragstart', function(e) {
-        if (editForm && !editForm.hidden) return; // don't drag while editing
+        var ae = document.activeElement;
+        if (ae && el.contains(ae)) { e.preventDefault(); return; }
         draggingEl = el; el.classList.add('qe-q-dragging');
         e.dataTransfer.effectAllowed = 'move';
       });
@@ -537,47 +483,52 @@
     function afterElement(zone, y) {
       return Array.from(zone.querySelectorAll('.qe-question:not(.qe-q-dragging)')).reduce(function(closest, el) {
         var box = el.getBoundingClientRect(), offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) return { offset:offset, el:el };
+        if (offset < 0 && offset > closest.offset) return { offset: offset, el: el };
         return closest;
-      }, { offset:-Infinity, el:null }).el;
+      }, { offset: -Infinity, el: null }).el;
     }
     function saveOrder() {
       var sections = [];
       document.querySelectorAll('.qe-drop-zone').forEach(function(zone) {
-        sections.push({ part_id: zone.dataset.partId ? Number(zone.dataset.partId) : null, ids: Array.from(zone.querySelectorAll('.qe-question')).map(function(el){ return Number(el.dataset.qid); }) });
+        sections.push({ part_id: zone.dataset.partId ? Number(zone.dataset.partId) : null, ids: Array.from(zone.querySelectorAll('.qe-question')).map(function(el) { return Number(el.dataset.qid); }) });
       });
-      fetch('/quizz/' + quizId + '/questions/reorder-all', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ sections:sections }) });
+      fetch('/quizz/' + quizId + '/questions/reorder-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sections: sections }) });
     }
 
-    // ── makeQuestion factory ──────────────────────────────────────────────
+    // ── makeQuestion (factory pour nouvelles questions) ───────────────────
     function makeQuestion(q) {
       var div = document.createElement('div');
       div.className = 'qe-question'; div.draggable = true;
       div.dataset.qid = q.id; div.dataset.type = q.type;
       div.dataset.hasSides = q.has_sides ? '1' : '0';
-      div.dataset.tendency = q.tendency || ''; div.dataset.subtype = q.subtype || '';
+      div.dataset.tendency = q.tendency || '';
+      div.dataset.subtype = q.subtype || '';
       div.dataset.wikiLinkId = q.wiki_link_id ? String(q.wiki_link_id) : '';
+      div.dataset.wikiLinkTitle = q.wiki_link_title || '';
       div.dataset.opts = JSON.stringify(q.options || []);
 
-      var handle = document.createElement('span'); handle.className = 'qe-q-handle'; handle.textContent = '⠿';
-      var body = document.createElement('div'); body.className = 'qe-q-body';
+      var header = document.createElement('div'); header.className = 'qe-q-header';
+      var handle = document.createElement('span'); handle.className = 'qe-q-handle'; handle.title = 'Déplacer'; handle.textContent = '⠿';
+      var del = document.createElement('button'); del.type = 'button'; del.className = 'qe-q-del'; del.title = 'Supprimer'; del.textContent = '×';
+      header.appendChild(handle); header.appendChild(del);
+
       var txt = document.createElement('p'); txt.className = 'qe-q-text'; txt.textContent = q.text;
-      var badge = document.createElement('span'); badge.className = 'quiz-qitem-type quiz-qtype--'+q.type; badge.textContent = typeLabels[q.type] || q.type;
-      body.appendChild(txt); body.appendChild(badge);
-      if (q.has_sides) { var sb=document.createElement('span'); sb.className='qe-sides-badge'; sb.textContent='⇅ Donner/Subir'; body.appendChild(sb); }
-      if (q.tendency) { var tb=document.createElement('span'); tb.className='qe-tendency-badge qe-tendency-badge--'+q.tendency; tb.textContent=q.tendency==='positive'?'▲':'▼'; body.appendChild(tb); }
-      if (q.wiki_link_id) { var wb=document.createElement('span'); wb.className='qe-wiki-badge'; wb.title='Codex'; wb.textContent='?'; body.appendChild(wb); }
-      var del = document.createElement('button'); del.type='button'; del.className='qe-q-del'; del.title='Supprimer'; del.textContent='×';
-      div.appendChild(handle); div.appendChild(body); div.appendChild(del);
+
+      // Badge-row placeholder (remplacé par initQuestion)
+      var badgeRow = document.createElement('div'); badgeRow.className = 'qe-q-badge-row';
+      var badge = document.createElement('span'); badge.className = 'quiz-qitem-type quiz-qtype--' + q.type; badge.textContent = typeLabels[q.type] || q.type;
+      badgeRow.appendChild(badge);
+
+      div.appendChild(header); div.appendChild(txt); div.appendChild(badgeRow);
       return div;
     }
     function deleteQuestion(id) {
       if (!confirm('Supprimer cette question ?')) return;
-      fetch('/quizz/' + quizId + '/questions/' + id + '/delete', { method:'POST', headers:{'Content-Type':'application/json'} })
-        .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) return; var el = document.querySelector('.qe-question[data-qid="'+id+'"]'); if (el) el.remove(); });
+      fetch('/quizz/' + quizId + '/questions/' + id + '/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(function(r) { return r.json(); }).then(function(d) { if (!d.ok) return; var el = document.querySelector('.qe-question[data-qid="' + id + '"]'); if (el) el.remove(); });
     }
 
-    // ── Inline add-question form ──────────────────────────────────────────
+    // ── Formulaire d'ajout de question ───────────────────────────────────
     function makeInlineForm(partId) {
       var div = document.createElement('div');
       div.className = 'qe-inline-form'; div.dataset.partId = String(partId); div.hidden = true;
@@ -590,10 +541,15 @@
       var typeSel = makeTypeSelect('gradient');
       var subtypeSel = makeSubtypeSelect('');
       var ptRow = document.createElement('div'); ptRow.className = 'qea-points-total-row'; ptRow.style.display = 'none';
-      ptRow.innerHTML = '<label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total : <input type="number" class="qea-points-total-input" min="2" max="200" value="10" style="width:4rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.25rem"></label>';
+      ptRow.innerHTML = '<label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total\u202f: <input type="number" class="qea-points-total-input" min="2" max="200" value="10" style="width:4rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.25rem"></label>';
       row1.appendChild(typeSel); row1.appendChild(subtypeSel); row1.appendChild(ptRow);
 
-      var optsWrap = makeOptionsWidget([]); optsWrap.hidden = true;
+      var optsWrap = document.createElement('div'); optsWrap.className = 'qea-options-wrap';
+      var optsList2 = document.createElement('div'); optsList2.className = 'qea-options-list';
+      var addOpt2 = document.createElement('button'); addOpt2.type='button'; addOpt2.className='qea-add-opt wf-stats-pill'; addOpt2.style.cssText='font-size:.76rem;margin-top:.3rem'; addOpt2.textContent='+ Option';
+      addOpt2.addEventListener('click', function() { addOptRow(optsList2, ''); });
+      optsWrap.appendChild(optsList2); optsWrap.appendChild(addOpt2);
+      optsWrap.hidden = true;
 
       typeSel.addEventListener('change', function() {
         var t = typeSel.value;
@@ -620,34 +576,34 @@
         typeSel.value = 'gradient'; setTypeSelColor(typeSel);
         subtypeSel.value = ''; setSubtypeSelColor(subtypeSel);
         subtypeSel.style.display = ''; ptRow.style.display = 'none';
-        optsWrap.hidden = true; optsWrap.querySelector('.qea-options-list').innerHTML = '';
+        optsWrap.hidden = true; optsList2.innerHTML = '';
         sidesBtn.dataset.active = '0'; sidesBtn.classList.remove('qe-sides-btn--on');
         tendencySel.value = ''; setTendencySelColor(tendencySel);
       }
       function doSubmit(keepOpen) {
         var text = (ta.value || '').trim(); if (!text) return;
         var t = typeSel.value;
-        var options = t !== 'gradient' ? Array.from(optsWrap.querySelectorAll('.qea-options-list input')).map(function(i){ return i.value.trim(); }).filter(Boolean) : [];
-        var ptInp = ptRow.querySelector('input');
-        var subtype = t==='points' ? (ptInp ? ptInp.value||'10' : '10') : (t==='gradient' ? subtypeSel.value||null : null);
+        var options = t !== 'gradient' ? Array.from(optsList2.querySelectorAll('input')).map(function(i) { return i.value.trim(); }).filter(Boolean) : [];
+        var ptInpEl = ptRow.querySelector('input');
+        var subtype = t === 'points' ? (ptInpEl ? ptInpEl.value || '10' : '10') : (t === 'gradient' ? subtypeSel.value || null : null);
         fetch('/quizz/' + quizId + '/questions', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ text:text, type:t, options:options, part_id:partId||null, has_sides:sidesBtn.dataset.active==='1'?1:0, tendency:tendencySel.value||null, subtype:subtype })
-        }).then(function(r){ return r.json(); }).then(function(d){
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, type: t, options: options, part_id: partId || null, has_sides: sidesBtn.dataset.active === '1' ? 1 : 0, tendency: tendencySel.value || null, subtype: subtype })
+        }).then(function(r) { return r.json(); }).then(function(d) {
           if (!d.ok) return;
-          var zone = document.querySelector('.qe-drop-zone[data-part-id="'+(partId||'')+'"]');
+          var zone = document.querySelector('.qe-drop-zone[data-part-id="' + (partId || '') + '"]');
           if (zone) { var newEl = makeQuestion(d.question); zone.appendChild(newEl); initQuestion(newEl); }
           resetForm();
           if (keepOpen) ta.focus(); else div.hidden = true;
         });
       }
-      submit.addEventListener('click', function(){ doSubmit(false); });
-      ta.addEventListener('keydown', function(e){ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); doSubmit(true); } });
-      cancel.addEventListener('click', function(){ resetForm(); div.hidden = true; });
+      submit.addEventListener('click', function() { doSubmit(false); });
+      ta.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSubmit(true); } });
+      cancel.addEventListener('click', function() { resetForm(); div.hidden = true; });
       return div;
     }
 
-    // ── "+ Question" buttons ──────────────────────────────────────────────
+    // ── Boutons "+ Question" ──────────────────────────────────────────────
     function initAddQBtn(btn) {
       var pid = btn.dataset.partId || '';
       var form = makeInlineForm(pid);
@@ -658,66 +614,66 @@
       });
     }
 
-    // ── Part management ───────────────────────────────────────────────────
+    // ── Parties ───────────────────────────────────────────────────────────
     function initPartTitle(span) {
-      span.addEventListener('click', function(e){ e.stopPropagation(); });
-      span.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); span.blur(); } if (e.key==='Escape'){ span.textContent=span.dataset.orig||''; span.blur(); } });
-      span.addEventListener('focus', function(){ span.dataset.orig=span.textContent; });
-      span.addEventListener('blur', function(){
-        var title=span.textContent.trim(); if (!title){ span.textContent=span.dataset.orig||'Partie'; return; } if (title===span.dataset.orig) return;
-        fetch('/quizz/'+quizId+'/parts/'+span.dataset.partId+'/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:title }) });
+      span.addEventListener('click', function(e) { e.stopPropagation(); });
+      span.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); span.blur(); } if (e.key === 'Escape') { span.textContent = span.dataset.orig || ''; span.blur(); } });
+      span.addEventListener('focus', function() { span.dataset.orig = span.textContent; });
+      span.addEventListener('blur', function() {
+        var title = span.textContent.trim(); if (!title) { span.textContent = span.dataset.orig || 'Partie'; return; } if (title === span.dataset.orig) return;
+        fetch('/quizz/' + quizId + '/parts/' + span.dataset.partId + '/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: title }) });
       });
     }
     function initPartDelBtn(btn) {
-      btn.addEventListener('click', function(e){
-        e.stopPropagation(); var pid=btn.dataset.partId;
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation(); var pid = btn.dataset.partId;
         if (!confirm('Supprimer cette partie ?\nLes questions resteront sans partie.')) return;
-        fetch('/quizz/'+quizId+'/parts/'+pid+'/delete', { method:'POST', headers:{'Content-Type':'application/json'} })
-          .then(function(r){ return r.json(); }).then(function(d){
+        fetch('/quizz/' + quizId + '/parts/' + pid + '/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+          .then(function(r) { return r.json(); }).then(function(d) {
             if (!d.ok) return;
-            var panel=document.querySelector('.qe-panel--part[data-part-id="'+pid+'"]');
-            var rootZone=document.getElementById('qe-zone-root');
-            if (panel && rootZone){ var pz=panel.querySelector('.qe-drop-zone'); if (pz) Array.from(pz.querySelectorAll('.qe-question')).forEach(function(el){ rootZone.appendChild(el); }); panel.remove(); }
+            var panel = document.querySelector('.qe-panel--part[data-part-id="' + pid + '"]');
+            var rootZone = document.getElementById('qe-zone-root');
+            if (panel && rootZone) { var pz = panel.querySelector('.qe-drop-zone'); if (pz) Array.from(pz.querySelectorAll('.qe-question')).forEach(function(el) { rootZone.appendChild(el); }); panel.remove(); }
             saveOrder();
           });
       });
     }
 
-    var addPartBtn=document.getElementById('qe-add-part-btn'), addPartForm=document.getElementById('qe-add-part-form');
-    var partInput=document.getElementById('qe-part-input'), partConfirm=document.getElementById('qe-part-confirm'), partCancel=document.getElementById('qe-part-cancel');
-    var partsContainer=document.getElementById('qe-parts-container');
-    addPartBtn.addEventListener('click', function(){ addPartForm.hidden=false; partInput.focus(); });
-    partCancel.addEventListener('click', function(){ addPartForm.hidden=true; partInput.value=''; });
-    partInput.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); partConfirm.click(); } if (e.key==='Escape'){ partCancel.click(); } });
-    partConfirm.addEventListener('click', function(){
-      var title=partInput.value.trim(); if (!title) return;
-      fetch('/quizz/'+quizId+'/parts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:title }) })
-        .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) return; partInput.value=''; addPartForm.hidden=true; partsContainer.appendChild(makePartPanel(d.partId, title)); });
+    var addPartBtn = document.getElementById('qe-add-part-btn'), addPartForm = document.getElementById('qe-add-part-form');
+    var partInput = document.getElementById('qe-part-input'), partConfirm = document.getElementById('qe-part-confirm'), partCancel = document.getElementById('qe-part-cancel');
+    var partsContainer = document.getElementById('qe-parts-container');
+    addPartBtn.addEventListener('click', function() { addPartForm.hidden = false; partInput.focus(); });
+    partCancel.addEventListener('click', function() { addPartForm.hidden = true; partInput.value = ''; });
+    partInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); partConfirm.click(); } if (e.key === 'Escape') { partCancel.click(); } });
+    partConfirm.addEventListener('click', function() {
+      var title = partInput.value.trim(); if (!title) return;
+      fetch('/quizz/' + quizId + '/parts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: title }) })
+        .then(function(r) { return r.json(); }).then(function(d) { if (!d.ok) return; partInput.value = ''; addPartForm.hidden = true; partsContainer.appendChild(makePartPanel(d.partId, title)); });
     });
 
     function makePartPanel(partId, title) {
-      var details=document.createElement('details'); details.className='qe-panel qe-panel--part'; details.dataset.partId=partId; details.open=true;
-      var summary=document.createElement('summary'); summary.className='qe-panel-summary qe-part-summary';
-      var ts=document.createElement('span'); ts.className='qe-part-title'; ts.contentEditable='true'; ts.dataset.partId=partId; ts.textContent=title; initPartTitle(ts);
-      var db2=document.createElement('button'); db2.type='button'; db2.className='qe-part-del'; db2.dataset.partId=partId; db2.title='Supprimer la partie'; db2.textContent='×'; initPartDelBtn(db2);
+      var details = document.createElement('details'); details.className = 'qe-panel qe-panel--part'; details.dataset.partId = partId; details.open = true;
+      var summary = document.createElement('summary'); summary.className = 'qe-panel-summary qe-part-summary';
+      var ts = document.createElement('span'); ts.className = 'qe-part-title'; ts.contentEditable = 'true'; ts.dataset.partId = partId; ts.textContent = title; initPartTitle(ts);
+      var db2 = document.createElement('button'); db2.type = 'button'; db2.className = 'qe-part-del'; db2.dataset.partId = partId; db2.title = 'Supprimer la partie'; db2.textContent = '×'; initPartDelBtn(db2);
       summary.appendChild(ts); summary.appendChild(db2);
-      var body=document.createElement('div'); body.className='qe-panel-body';
-      var zone=document.createElement('div'); zone.className='qe-drop-zone'; zone.dataset.partId=String(partId); initDropZone(zone);
-      var addBtn=document.createElement('button'); addBtn.type='button'; addBtn.className='qe-add-q-btn'; addBtn.dataset.partId=String(partId); addBtn.textContent='+ Question';
-      var form=makeInlineForm(String(partId));
-      addBtn.addEventListener('click', function(){ form.hidden=!form.hidden; if (!form.hidden) form.querySelector('textarea').focus(); });
+      var body = document.createElement('div'); body.className = 'qe-panel-body';
+      var zone = document.createElement('div'); zone.className = 'qe-drop-zone'; zone.dataset.partId = String(partId); initDropZone(zone);
+      var addBtn = document.createElement('button'); addBtn.type = 'button'; addBtn.className = 'qe-add-q-btn'; addBtn.dataset.partId = String(partId); addBtn.textContent = '+ Question';
+      var form = makeInlineForm(String(partId));
+      addBtn.addEventListener('click', function() { form.hidden = !form.hidden; if (!form.hidden) form.querySelector('textarea').focus(); });
       body.appendChild(zone); body.appendChild(addBtn); body.appendChild(form);
       details.appendChild(summary); details.appendChild(body);
       return details;
     }
 
     // ── Status toggle label ───────────────────────────────────────────────
-    var statusChk=document.querySelector('input[name="status"]');
-    var statusText=document.querySelector('.qe-status-text');
-    var statusTrack=document.querySelector('.qe-status-track');
+    var statusChk = document.querySelector('input[name="status"]');
+    var statusText = document.querySelector('.qe-status-text');
+    var statusTrack = document.querySelector('.qe-status-track');
     if (statusChk && statusText) {
-      statusChk.addEventListener('change', function(){ statusText.textContent=statusChk.checked?'Public':'Brouillon'; if (statusTrack) statusTrack.style.background=statusChk.checked?'hsl(140,50%,38%)':''; });
-      if (statusTrack) statusTrack.style.background=statusChk.checked?'hsl(140,50%,38%)':'';
+      statusChk.addEventListener('change', function() { statusText.textContent = statusChk.checked ? 'Public' : 'Brouillon'; if (statusTrack) statusTrack.style.background = statusChk.checked ? 'hsl(140,50%,38%)' : ''; });
+      if (statusTrack) statusTrack.style.background = statusChk.checked ? 'hsl(140,50%,38%)' : '';
     }
 
     // ── Init ──────────────────────────────────────────────────────────────

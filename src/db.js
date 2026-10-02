@@ -2603,7 +2603,12 @@ function deleteCustomQuiz(id) {
   db.prepare(`DELETE FROM custom_quizzes WHERE id=?`).run(id);
 }
 function getCustomQuizQuestions(quizId) {
-  return db.prepare(`SELECT * FROM custom_quiz_questions WHERE quiz_id=? ORDER BY position`).all(quizId);
+  return db.prepare(`
+    SELECT q.*, wp.title AS wiki_link_title
+    FROM custom_quiz_questions q
+    LEFT JOIN wiki_pages wp ON wp.id = q.wiki_link_id
+    WHERE q.quiz_id = ? ORDER BY q.position
+  `).all(quizId);
 }
 function addCustomQuizQuestion(quizId, text, type, options, position, partId, hasSides, tendency, subtype, wikiLinkId) {
   db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position, part_id, has_sides, tendency, subtype, wiki_link_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
