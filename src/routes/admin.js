@@ -531,9 +531,16 @@ function buildAdminRouter(config) {
     if (Array.isArray(req.body.items)) {
       for (const item of req.body.items) {
         const itemType = String(item.type || '');
-        const itemId = parseInt(item.id, 10);
-        if (!['charm', 'image', 'theme'].includes(itemType) || isNaN(itemId)) continue;
-        grantGiftLootbox(targetUserId, { type: itemType, ...(itemType === 'charm' ? { charmId: itemId } : itemType === 'theme' ? { themeKey: item.id } : { imageId: itemId }) });
+        if (!['charm', 'image', 'theme'].includes(itemType)) continue;
+        if (itemType === 'theme') {
+          const themeKey = String(item.id || '');
+          if (!themeKey) continue;
+          grantGiftLootbox(targetUserId, { type: 'theme', themeKey });
+        } else {
+          const itemId = parseInt(item.id, 10);
+          if (isNaN(itemId)) continue;
+          grantGiftLootbox(targetUserId, { type: itemType, ...(itemType === 'charm' ? { charmId: itemId } : { imageId: itemId }) });
+        }
       }
       return res.json({ ok: true, username: targetUser.username || targetUser.display_name || String(targetUserId) });
     }

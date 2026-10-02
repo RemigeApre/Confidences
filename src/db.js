@@ -3181,6 +3181,19 @@ function openLootbox(userId) {
       }
       return { rewards: [{ imageId: img.id, title: img.title || '', rarity: imageRarity, thumb: imagePaths[0] || null, isDuplicate: false }], isGift: true };
     }
+    if (giftData.type === 'theme') {
+      const key = giftData.themeKey;
+      const def = THEME_DEFINITIONS.find(t => t.key === key);
+      if (!def) return null;
+      const ins = db.prepare("INSERT OR IGNORE INTO user_themes (user_id, theme_key, obtained_at) VALUES (?, ?, ?)").run(userId, key, now);
+      if (ins.changes === 0) {
+        const rarity = def.rarity || 'rare';
+        const coins = Math.ceil((getLootboxConfig().buyPrices[rarity] || RARITY_BUY_PRICE[rarity]) / 2);
+        db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+        return { rewards: [{ isCoins: true, coins, rarity }], isGift: true };
+      }
+      return { rewards: [{ isTheme: true, themeKey: key, label: def.label, rarity: def.rarity || 'rare', isDuplicate: false }], isGift: true };
+    }
     return null;
   }
 

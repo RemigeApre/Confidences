@@ -418,6 +418,15 @@
     if (themeApplyBtn) { themeApplyBtn.removeAttribute('hidden'); themeApplyBtn.disabled = false; themeApplyBtn.dataset.themeKey = reward.themeKey || ''; }
     if (themeApplyDone) themeApplyDone.setAttribute('hidden', '');
     themeReveal.setAttribute('data-rarity', reward.rarity || 'rare');
+    // Gift banner
+    var _tg = themeReveal.querySelector('.lootbox-gift-banner');
+    if (_tg) _tg.remove();
+    if (reward._isGift) {
+      var _tgb = document.createElement('div');
+      _tgb.className = 'lootbox-gift-banner';
+      _tgb.textContent = '\uD83C\uDF81 Cadeau sp\u00e9cial';
+      themeReveal.insertBefore(_tgb, themeReveal.firstChild);
+    }
     themeReveal.removeAttribute('hidden');
     if (closeBtn) closeBtn.removeAttribute('hidden');
     if (nextBtn)  { if (hasNext) nextBtn.removeAttribute('hidden'); else nextBtn.setAttribute('hidden', ''); }

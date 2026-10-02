@@ -18188,12 +18188,36 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 /* ── Lootbox — bannière cadeau ── */
 .lootbox-gift-banner {
   position: absolute; top: 0; left: 0; right: 0;
-  background: linear-gradient(135deg, rgba(251,191,36,.25), rgba(251,191,36,.1));
-  border-bottom: 1px solid rgba(251,191,36,.4);
-  color: #fbbf24; font-size: .8rem; font-weight: 700;
+  background: linear-gradient(135deg, rgba(248,113,113,.25), rgba(248,113,113,.1));
+  border-bottom: 1px solid rgba(248,113,113,.5);
+  color: #fca5a5; font-size: .8rem; font-weight: 700;
   text-align: center; padding: .35rem .5rem;
   letter-spacing: .04em; text-transform: uppercase;
   z-index: 1;
+}
+
+/* Halo rouge sur l'image débloquée via cadeau */
+.lootbox-reveal-card:has(.lootbox-gift-banner) .lootbox-reveal-img-wrap {
+  box-shadow: 0 0 0 2px rgba(248,113,113,.7), 0 0 40px 10px rgba(248,113,113,.35);
+  animation: gift-pulse 2s ease-in-out infinite;
+}
+@keyframes gift-pulse {
+  0%,100% { box-shadow: 0 0 0 2px rgba(248,113,113,.7), 0 0 40px 10px rgba(248,113,113,.35); }
+  50%     { box-shadow: 0 0 0 3px rgba(248,113,113,.9), 0 0 60px 18px rgba(248,113,113,.5); }
+}
+/* Halo rouge sur le swatch thème cadeau */
+.lootbox-theme-reveal:has(.lootbox-gift-banner) .lootbox-theme-swatch {
+  box-shadow: 0 0 0 3px rgba(248,113,113,.7), 0 0 32px 8px rgba(248,113,113,.4);
+  animation: gift-pulse 2s ease-in-out infinite;
+}
+/* Halo rouge sur le symbole charme cadeau */
+.lootbox-charm-reveal:has(.lootbox-gift-banner) .lootbox-charm-reveal-symbol {
+  text-shadow: 0 0 20px rgba(248,113,113,.8), 0 0 40px rgba(248,113,113,.4);
+  animation: gift-text-pulse 2s ease-in-out infinite;
+}
+@keyframes gift-text-pulse {
+  0%,100% { text-shadow: 0 0 20px rgba(248,113,113,.8), 0 0 40px rgba(248,113,113,.4); }
+  50%     { text-shadow: 0 0 30px rgba(248,113,113,1), 0 0 60px rgba(248,113,113,.6); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
