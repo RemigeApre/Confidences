@@ -99,47 +99,9 @@
     <%# ── VUE IMAGES COMPLÈTE ── %>
     <%# ════════════════════════════════════════════════════════════════ %>
 
+    <div class="coffre-view-wrap">
+    <div class="coffre-view-main">
     <section class="coffre-section">
-      <div class="coffre-section-header">
-        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
-          <% if (currentUser.profileImageId) { %>
-            <button class="coffre-btn coffre-btn--ghost js-set-avatar js-header-remove-avatar"
-                    id="coffre-header-remove-btn"
-                    data-ref-id="<%= currentUser.profileImageId %>"
-                    title="Retirer la photo de profil">
-              Image par d&eacute;faut
-            </button>
-          <% } %>
-          <% if (unlocks.length) { %>
-            <button class="coffre-btn coffre-btn--sell-multi js-sell-multi-open" id="coffre-sell-multi-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px"><polyline points="20 12 20 22 4 22 4 12"/><polyline points="22 7 12 2 2 7"/><line x1="12" y1="22" x2="12" y2="2"/></svg>
-              Vendre
-            </button>
-          <% } %>
-        </div>
-      </div>
-
-      <%# ── Filtres : rareté / possession / favoris ── %>
-      <div class="coffre-filters-group">
-        <div class="coffre-filter-bar" id="coffre-f-rarity">
-          <button class="coffre-filter-btn active" data-rarity="all">Tout</button>
-          <button class="coffre-filter-btn" data-rarity="common">Commun</button>
-          <button class="coffre-filter-btn" data-rarity="rare">Rare</button>
-          <button class="coffre-filter-btn" data-rarity="epic">&Eacute;pique</button>
-          <button class="coffre-filter-btn" data-rarity="legendary">L&eacute;g.</button>
-          <button class="coffre-filter-btn" data-rarity="mythic">Mythique</button>
-        </div>
-        <div class="coffre-filter-bar coffre-filter-bar--sm" id="coffre-f-possession">
-          <button class="coffre-filter-btn active" data-possession="all">Tout</button>
-          <button class="coffre-filter-btn" data-possession="owned">Obtenues</button>
-          <button class="coffre-filter-btn" data-possession="shop">&Agrave; d&eacute;bloquer</button>
-        </div>
-        <div class="coffre-filter-bar coffre-filter-bar--sm" id="coffre-f-fav">
-          <button class="coffre-filter-btn active" data-favf="all">Tout</button>
-          <button class="coffre-filter-btn" data-favf="yes">&#9829; Favoris</button>
-        </div>
-      </div>
-
       <div class="coffre-grid" id="coffre-img-grid">
         <% unlocks.forEach(function(u) { %>
           <div class="coffre-item coffre-item--owned<%= currentUser.profileImageId === u.refId ? ' coffre-item--active' : '' %>"
@@ -214,6 +176,44 @@
         <% }) %>
       </div>
     </section>
+    </div><%# /coffre-view-main %>
+    <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
+      <div id="coffre-gutter-actions">
+        <% if (currentUser.profileImageId) { %>
+          <button class="coffre-btn coffre-btn--ghost js-set-avatar js-header-remove-avatar coffre-gutter-btn"
+                  id="coffre-header-remove-btn"
+                  data-ref-id="<%= currentUser.profileImageId %>"
+                  title="Retirer la photo de profil">Image par d&eacute;faut</button>
+        <% } %>
+        <% if (unlocks.length) { %>
+          <button class="coffre-btn coffre-btn--sell-multi js-sell-multi-open coffre-gutter-btn" id="coffre-sell-multi-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:13px;height:13px"><polyline points="20 12 20 22 4 22 4 12"/><polyline points="22 7 12 2 2 7"/><line x1="12" y1="22" x2="12" y2="2"/></svg>
+            Vendre
+          </button>
+        <% } %>
+      </div>
+      <% if (currentUser.profileImageId || unlocks.length) { %><div class="coffre-gutter-divider"></div><% } %>
+      <div class="coffre-filter-bar coffre-filter-bar--vert" id="coffre-f-rarity">
+        <button class="coffre-filter-btn active" data-rarity="all">Tout</button>
+        <button class="coffre-filter-btn" data-rarity="common">Commun</button>
+        <button class="coffre-filter-btn" data-rarity="rare">Rare</button>
+        <button class="coffre-filter-btn" data-rarity="epic">&Eacute;pique</button>
+        <button class="coffre-filter-btn" data-rarity="legendary">L&eacute;g.</button>
+        <button class="coffre-filter-btn" data-rarity="mythic">Mythique</button>
+      </div>
+      <div class="coffre-gutter-divider"></div>
+      <div class="coffre-filter-bar coffre-filter-bar--vert coffre-filter-bar--sm" id="coffre-f-possession">
+        <button class="coffre-filter-btn active" data-possession="all">Tout</button>
+        <button class="coffre-filter-btn" data-possession="owned">Obtenues</button>
+        <button class="coffre-filter-btn" data-possession="shop">&Agrave; d&eacute;bloquer</button>
+      </div>
+      <div class="coffre-gutter-divider"></div>
+      <div class="coffre-filter-bar coffre-filter-bar--vert coffre-filter-bar--sm" id="coffre-f-fav">
+        <button class="coffre-filter-btn active" data-favf="all">Tout</button>
+        <button class="coffre-filter-btn" data-favf="yes">&#9829; Favoris</button>
+      </div>
+    </div></div><%# /coffre-gutter-slot %>
+    </div><%# /coffre-view-wrap %>
 
     <% } else if (view === 'charms') { %>
     <%# ════════════════════════════════════════════════════════════════ %>
@@ -225,6 +225,8 @@
       var _lockedCharms = charms.filter(function(c){ return !c.owned; });
     %>
 
+    <div class="coffre-view-wrap">
+    <div class="coffre-view-main">
     <% if (_ownedCharms.length) { %>
     <section class="coffre-section">
       <div class="coffre-charms-grid">
@@ -236,6 +238,8 @@
           %>
           <div class="coffre-charm-card coffre-charm-card--owned<%= isActive ? ' coffre-charm-card--active' : '' %>"
                data-rarity="<%= c.rarity %>"
+               data-owned="1"
+               data-fav="<%= c.isFavorite ? '1' : '0' %>"
                style="--charm-color:<%= rarityColor %>">
             <div class="coffre-charm-card-symbols">
               <span class="coffre-charm-card-sym coffre-charm-card-sym--filled"><%= c.symbol %></span>
@@ -273,6 +277,7 @@
           %>
           <div class="coffre-charm-card coffre-charm-card--locked"
                data-rarity="<%= c.rarity %>"
+               data-owned="0"
                style="--charm-color:<%= rarityColor %>">
             <div class="coffre-charm-card-symbols">
               <span class="coffre-charm-card-sym coffre-charm-card-sym--filled"><%= c.symbol %></span>
@@ -290,6 +295,29 @@
       </div>
     </section>
     <% } %>
+    </div><%# /coffre-view-main %>
+    <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
+      <div class="coffre-filter-bar coffre-filter-bar--vert" id="coffre-cf-rarity">
+        <button class="coffre-filter-btn active" data-rarity="all">Tout</button>
+        <button class="coffre-filter-btn" data-rarity="common">Commun</button>
+        <button class="coffre-filter-btn" data-rarity="rare">Rare</button>
+        <button class="coffre-filter-btn" data-rarity="epic">&Eacute;pique</button>
+        <button class="coffre-filter-btn" data-rarity="legendary">L&eacute;g.</button>
+        <button class="coffre-filter-btn" data-rarity="mythic">Mythique</button>
+      </div>
+      <div class="coffre-gutter-divider"></div>
+      <div class="coffre-filter-bar coffre-filter-bar--vert coffre-filter-bar--sm" id="coffre-cf-owned">
+        <button class="coffre-filter-btn active" data-owned="all">Tout</button>
+        <button class="coffre-filter-btn" data-owned="owned">Obtenu</button>
+        <button class="coffre-filter-btn" data-owned="locked">&Agrave; d&eacute;bloquer</button>
+      </div>
+      <div class="coffre-gutter-divider"></div>
+      <div class="coffre-filter-bar coffre-filter-bar--vert coffre-filter-bar--sm" id="coffre-cf-fav">
+        <button class="coffre-filter-btn active" data-favf="all">Tout</button>
+        <button class="coffre-filter-btn" data-favf="yes">&#9829; Favoris</button>
+      </div>
+    </div></div><%# /coffre-gutter-slot %>
+    </div><%# /coffre-view-wrap %>
 
     <% } else if (view === 'themes') { %>
     <%# ════════════════════════════════════════════════════════════════ %>
@@ -301,6 +329,8 @@
       var _themeColors  = { rouge:'hsl(355,55%,32%)', vert:'hsl(148,42%,28%)', violet:'hsl(270,58%,32%)', bleu:'hsl(212,65%,32%)', rose:'hsl(330,58%,32%)', blanc:'hsl(0,0%,90%)', default:'hsl(240,6%,20%)' };
     %>
 
+    <div class="coffre-view-wrap">
+    <div class="coffre-view-main">
     <section class="coffre-section">
       <div class="coffre-themes-full">
         <% _ownedThemes.forEach(function(t) { %>
@@ -312,6 +342,8 @@
           <button type="button"
                   class="coffre-theme-card coffre-theme-card--full<%= t.active ? ' coffre-theme-card--active' : '' %>"
                   data-theme-key="<%= t.key %>"
+                  data-rarity="<%= t.rarity || '' %>"
+                  data-owned="1"
                   title="<%= t.label %>">
             <span class="coffre-theme-swatch coffre-theme-swatch--lg" style="background:<%= swatchColor %>"></span>
             <div class="coffre-theme-info">
@@ -335,7 +367,9 @@
             var rarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[t.rarity] || '—';
             var themePrice = THEME_BUY_PRICE[t.rarity] || 100;
           %>
-          <div class="coffre-theme-card coffre-theme-card--full coffre-theme-card--locked">
+          <div class="coffre-theme-card coffre-theme-card--full coffre-theme-card--locked"
+               data-rarity="<%= t.rarity || '' %>"
+               data-owned="0">
             <span class="coffre-theme-swatch coffre-theme-swatch--lg" style="background:<%= swatchColor %>"></span>
             <div class="coffre-theme-info">
               <span class="coffre-theme-name"><%= t.label %></span>
@@ -352,6 +386,24 @@
       </div>
     </section>
     <% } %>
+    </div><%# /coffre-view-main %>
+    <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
+      <div class="coffre-filter-bar coffre-filter-bar--vert" id="coffre-tf-rarity">
+        <button class="coffre-filter-btn active" data-rarity="all">Tout</button>
+        <button class="coffre-filter-btn" data-rarity="common">Commun</button>
+        <button class="coffre-filter-btn" data-rarity="rare">Rare</button>
+        <button class="coffre-filter-btn" data-rarity="epic">&Eacute;pique</button>
+        <button class="coffre-filter-btn" data-rarity="legendary">L&eacute;g.</button>
+        <button class="coffre-filter-btn" data-rarity="mythic">Mythique</button>
+      </div>
+      <div class="coffre-gutter-divider"></div>
+      <div class="coffre-filter-bar coffre-filter-bar--vert coffre-filter-bar--sm" id="coffre-tf-owned">
+        <button class="coffre-filter-btn active" data-owned="all">Tout</button>
+        <button class="coffre-filter-btn" data-owned="owned">Obtenu</button>
+        <button class="coffre-filter-btn" data-owned="locked">&Agrave; d&eacute;bloquer</button>
+      </div>
+    </div></div><%# /coffre-gutter-slot %>
+    </div><%# /coffre-view-wrap %>
     <% } %>
 
   </div>
@@ -510,11 +562,11 @@
           }
           // Show header remove btn
           if (!headerBtn) {
-            var hdr = document.querySelector('.coffre-section-header > div');
+            var hdr = document.getElementById('coffre-gutter-actions');
             if (hdr) {
               var nb = document.createElement('button');
               nb.id = 'coffre-header-remove-btn';
-              nb.className = 'coffre-btn coffre-btn--ghost js-set-avatar js-header-remove-avatar';
+              nb.className = 'coffre-btn coffre-btn--ghost js-set-avatar js-header-remove-avatar coffre-gutter-btn';
               nb.dataset.refId = String(refId);
               nb.title = 'Retirer la photo de profil';
               nb.textContent = 'Image par défaut';
@@ -717,17 +769,29 @@
     });
   });
 
-  // ── Filtre rareté charmes ─────────────────────────────────────────────
-  var charmFilter = document.getElementById('coffre-charm-filter');
-  charmFilter && charmFilter.addEventListener('click', function(e) {
-    var btn = e.target.closest('.coffre-filter-btn'); if (!btn) return;
-    charmFilter.querySelectorAll('.coffre-filter-btn').forEach(function(b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    var f = btn.dataset.filter;
+  // ── Filtres charmes (rareté × obtenu/à débloquer × favoris) ─────────
+  var _cfRarity = 'all', _cfOwned = 'all', _cfFav = 'all';
+  function applyCharmFilters() {
     document.querySelectorAll('.coffre-charm-card').forEach(function(card) {
-      card.hidden = f !== 'all' && card.dataset.rarity !== f;
+      var ok = (_cfRarity === 'all' || card.dataset.rarity === _cfRarity) &&
+               (_cfOwned === 'all' || (_cfOwned === 'owned' && card.dataset.owned === '1') || (_cfOwned === 'locked' && card.dataset.owned === '0')) &&
+               (_cfFav === 'all' || card.dataset.fav === '1');
+      card.hidden = !ok;
     });
-  });
+  }
+  function bindCharmFilterBar(barId, prop, setter) {
+    var bar = document.getElementById(barId); if (!bar) return;
+    bar.addEventListener('click', function(e) {
+      var btn = e.target.closest('.coffre-filter-btn'); if (!btn) return;
+      bar.querySelectorAll('.coffre-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      setter(btn.dataset[prop]);
+      applyCharmFilters();
+    });
+  }
+  bindCharmFilterBar('coffre-cf-rarity', 'rarity',    function(v) { _cfRarity = v; });
+  bindCharmFilterBar('coffre-cf-owned',  'owned',     function(v) { _cfOwned  = v; });
+  bindCharmFilterBar('coffre-cf-fav',    'favf',      function(v) { _cfFav    = v; });
 
   // ── Favori charmes ────────────────────────────────────────────────────
   document.querySelectorAll('.js-charm-fav').forEach(function(btn) {
@@ -741,6 +805,8 @@
         btn.classList.toggle('coffre-fav-btn--active', !!d.isFavorite);
         btn.textContent = d.isFavorite ? '♥' : '♡';
         btn.title = d.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris';
+        var card = btn.closest('.coffre-charm-card');
+        if (card) { card.dataset.fav = d.isFavorite ? '1' : '0'; applyCharmFilters(); }
       });
     });
   });
@@ -820,6 +886,28 @@
         });
     });
   });
+
+  // ── Filtres thèmes (rareté × obtenu/à débloquer) ──────────────────
+  var _tfRarity = 'all', _tfOwned = 'all';
+  function applyThemeFilters() {
+    document.querySelectorAll('.coffre-theme-card--full').forEach(function(card) {
+      var ok = (_tfRarity === 'all' || card.dataset.rarity === _tfRarity) &&
+               (_tfOwned === 'all' || (_tfOwned === 'owned' && card.dataset.owned === '1') || (_tfOwned === 'locked' && card.dataset.owned === '0'));
+      card.hidden = !ok;
+    });
+  }
+  function bindThemeFilterBar(barId, prop, setter) {
+    var bar = document.getElementById(barId); if (!bar) return;
+    bar.addEventListener('click', function(e) {
+      var btn = e.target.closest('.coffre-filter-btn'); if (!btn) return;
+      bar.querySelectorAll('.coffre-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      setter(btn.dataset[prop]);
+      applyThemeFilters();
+    });
+  }
+  bindThemeFilterBar('coffre-tf-rarity', 'rarity', function(v) { _tfRarity = v; });
+  bindThemeFilterBar('coffre-tf-owned',  'owned',  function(v) { _tfOwned  = v; });
 })();
 </script>
 <% } %>
