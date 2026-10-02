@@ -2802,9 +2802,8 @@ function grantCoinsToUser(userId, amount) {
 }
 
 function _pickRarity() {
-  // Minimum rare — common n'est jamais accordé via lootbox
   const cfg = getLootboxConfig().weights;
-  const weights = { rare: cfg.rare, epic: cfg.epic, legendary: cfg.legendary, mythic: cfg.mythic };
+  const weights = { common: cfg.common, rare: cfg.rare, epic: cfg.epic, legendary: cfg.legendary, mythic: cfg.mythic };
   const total = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
   let r = Math.random() * total;
   for (const [key, weight] of Object.entries(weights)) {
