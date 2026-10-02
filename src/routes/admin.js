@@ -48,6 +48,8 @@ const {
   setLootboxConfigKey,
   setImageRarity,
   setImageTitle,
+  grantJokerToUser,
+  grantCoinsToUser,
   setCharmRarity,
   grantGiftLootbox,
   listCharms,
@@ -560,6 +562,26 @@ function buildAdminRouter(config) {
     }
     grantGiftLootbox(targetUserId, { type: itemType, ...(itemType === 'charm' ? { charmId: itemId } : { imageId: itemId }) });
     res.json({ ok: true, username: targetUser.username || targetUser.display_name || String(targetUserId) });
+  });
+
+  router.post("/recompenses/gift-joker", requireAdmin, express.json(), (req, res) => {
+    const targetUserId = parseInt(req.body.targetUserId, 10);
+    const jokerType = req.body.jokerType === 'charm' ? 'charm' : 'image';
+    if (!targetUserId) return res.json({ ok: false, error: 'params_invalides' });
+    const user = getUserById(targetUserId);
+    if (!user) return res.json({ ok: false, error: 'utilisateur_introuvable' });
+    grantJokerToUser(targetUserId, jokerType);
+    res.json({ ok: true, username: user.username || user.display_name || String(targetUserId) });
+  });
+
+  router.post("/recompenses/gift-coins", requireAdmin, express.json(), (req, res) => {
+    const targetUserId = parseInt(req.body.targetUserId, 10);
+    const amount = parseInt(req.body.amount, 10) || 0;
+    if (!targetUserId || amount <= 0) return res.json({ ok: false, error: 'params_invalides' });
+    const user = getUserById(targetUserId);
+    if (!user) return res.json({ ok: false, error: 'utilisateur_introuvable' });
+    grantCoinsToUser(targetUserId, amount);
+    res.json({ ok: true, username: user.username || user.display_name || String(targetUserId) });
   });
 
   // ── Suppression en masse images ────────────────────────────────────────────

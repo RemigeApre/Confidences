@@ -150,6 +150,10 @@
       <span class="obj-nav-count"><%= (themeDefs || []).length %></span>
     </button>
 
+    <button class="obj-nav-link" data-section="speciaux">
+      <span style="font-size:1.1rem">&#9824;</span> Sp&eacute;ciaux
+    </button>
+
   </nav>
 
   <%/* ── Main content ── */%>
@@ -398,6 +402,49 @@
       </div>
     </div>
 
+    <%/* ── Spéciaux (Jokers & Pièces) ── */%>
+    <div class="obj-section" data-section="speciaux">
+      <h3 style="font-size:.82rem;font-weight:700;color:#94a3b8;margin:0 0 1rem;text-transform:uppercase;letter-spacing:.07em">Offrir un joker</h3>
+      <div class="obj-home-card" style="max-width:420px">
+        <div style="display:flex;flex-direction:column;gap:.65rem">
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input type="text" id="joker-user-search" placeholder="Rechercher un utilisateur&hellip;"
+              style="flex:1;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .6rem;font-size:.85rem;outline:none">
+            <select id="joker-type-select" style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .5rem;font-size:.82rem">
+              <option value="image">Joker Image</option>
+              <option value="charm">Joker Charme</option>
+            </select>
+          </div>
+          <div id="joker-user-results" style="display:none;flex-direction:column;gap:.25rem;max-height:180px;overflow-y:auto;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.3rem"></div>
+          <div id="joker-selected-user" style="display:none;font-size:.82rem;color:#94a3b8;padding:.2rem 0"></div>
+          <button id="joker-gift-btn" disabled
+            style="background:#fbbf24;border:none;color:#0f172a;border-radius:6px;padding:.4rem .9rem;font-size:.82rem;font-weight:700;cursor:pointer;opacity:.5">
+            &#9824; Offrir le joker
+          </button>
+          <p id="joker-gift-status" style="font-size:.75rem;height:.9em;color:#4ade80">&nbsp;</p>
+        </div>
+      </div>
+
+      <h3 style="font-size:.82rem;font-weight:700;color:#94a3b8;margin:1.5rem 0 1rem;text-transform:uppercase;letter-spacing:.07em">Offrir des pi&egrave;ces</h3>
+      <div class="obj-home-card" style="max-width:420px">
+        <div style="display:flex;flex-direction:column;gap:.65rem">
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input type="text" id="coins-user-search" placeholder="Rechercher un utilisateur&hellip;"
+              style="flex:1;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .6rem;font-size:.85rem;outline:none">
+            <input type="number" id="coins-amount-input" placeholder="Montant" min="1" value="100"
+              style="width:90px;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .5rem;font-size:.82rem;text-align:center">
+          </div>
+          <div id="coins-user-results" style="display:none;flex-direction:column;gap:.25rem;max-height:180px;overflow-y:auto;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.3rem"></div>
+          <div id="coins-selected-user" style="display:none;font-size:.82rem;color:#94a3b8;padding:.2rem 0"></div>
+          <button id="coins-gift-btn" disabled
+            style="background:#fbbf24;border:none;color:#0f172a;border-radius:6px;padding:.4rem .9rem;font-size:.82rem;font-weight:700;cursor:pointer;opacity:.5">
+            &#127873; Offrir les pi&egrave;ces
+          </button>
+          <p id="coins-gift-status" style="font-size:.75rem;height:.9em;color:#4ade80">&nbsp;</p>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -457,7 +504,7 @@
 (function() {
   var links = document.querySelectorAll('.obj-nav-link[data-section]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
-  var VALID = ['accueil','images','charms','themes'];
+  var VALID = ['accueil','images','charms','themes','speciaux'];
 
   function activate(key) {
     links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });
@@ -1019,6 +1066,119 @@
   });
 
   window._adminOpenGiftModal = openModal;
+})();
+</script>
+
+<!-- ── Spéciaux JS (Jokers & Pièces) ── -->
+<script>
+(function() {
+  function makeUserSearchWidget(searchInputId, resultsId, selectedId, btnId, onSelect) {
+    var searchInput = document.getElementById(searchInputId);
+    var resultsDiv  = document.getElementById(resultsId);
+    var selectedDiv = document.getElementById(selectedId);
+    var btn         = document.getElementById(btnId);
+    var selectedUserId = null;
+    var _debounce = null;
+
+    function showResults(users) {
+      resultsDiv.innerHTML = '';
+      if (!users.length) { resultsDiv.style.display = 'none'; return; }
+      resultsDiv.style.display = 'flex';
+      users.forEach(function(u) {
+        var row = document.createElement('div');
+        row.textContent = u.displayName + ' (' + u.username + ')';
+        row.style.cssText = 'padding:.3rem .5rem;cursor:pointer;border-radius:4px;font-size:.82rem;color:#e2e8f0';
+        row.addEventListener('mouseenter', function() { row.style.background='rgba(255,255,255,.07)'; });
+        row.addEventListener('mouseleave', function() { row.style.background=''; });
+        row.addEventListener('click', function() {
+          selectedUserId = u.id;
+          searchInput.value = u.displayName + ' (' + u.username + ')';
+          resultsDiv.style.display = 'none';
+          selectedDiv.textContent = 'S\u00e9lectionn\u00e9 : ' + u.displayName;
+          selectedDiv.style.display = 'block';
+          btn.disabled = false; btn.style.opacity = '1';
+          if (onSelect) onSelect(u);
+        });
+        resultsDiv.appendChild(row);
+      });
+    }
+
+    searchInput && searchInput.addEventListener('input', function() {
+      clearTimeout(_debounce);
+      var q = searchInput.value.trim();
+      if (q.length < 2) { resultsDiv.style.display = 'none'; return; }
+      _debounce = setTimeout(function() {
+        fetch('/admin/users-for-gift?q=' + encodeURIComponent(q))
+          .then(function(r) { return r.json(); })
+          .then(function(d) { showResults(d.users || []); })
+          .catch(function() {});
+      }, 300);
+    });
+
+    return { getSelectedUserId: function() { return selectedUserId; }, reset: function() { selectedUserId = null; btn.disabled = true; btn.style.opacity = '.5'; selectedDiv.style.display = 'none'; searchInput.value = ''; } };
+  }
+
+  // Joker
+  var jokerWidget = makeUserSearchWidget('joker-user-search', 'joker-user-results', 'joker-selected-user', 'joker-gift-btn');
+  var jokerBtn    = document.getElementById('joker-gift-btn');
+  var jokerStatus = document.getElementById('joker-gift-status');
+  jokerBtn && jokerBtn.addEventListener('click', async function() {
+    var userId = jokerWidget.getSelectedUserId();
+    var type   = document.getElementById('joker-type-select').value;
+    if (!userId) return;
+    jokerBtn.disabled = true;
+    try {
+      var r = await fetch('/admin/recompenses/gift-joker', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: userId, jokerType: type }),
+      });
+      var d = await r.json();
+      if (d.ok) {
+        jokerStatus.textContent = '\u2713 Joker envoy\u00e9 \u00e0 ' + d.username;
+        jokerStatus.style.color = '#4ade80';
+        jokerWidget.reset();
+      } else {
+        jokerStatus.textContent = '\u2717 ' + (d.error || 'Erreur');
+        jokerStatus.style.color = '#f87171';
+        jokerBtn.disabled = false;
+      }
+    } catch(e) {
+      jokerStatus.textContent = '\u2717 Erreur r\u00e9seau';
+      jokerStatus.style.color = '#f87171';
+      jokerBtn.disabled = false;
+    }
+  });
+
+  // Pièces
+  var coinsWidget = makeUserSearchWidget('coins-user-search', 'coins-user-results', 'coins-selected-user', 'coins-gift-btn');
+  var coinsBtn    = document.getElementById('coins-gift-btn');
+  var coinsStatus = document.getElementById('coins-gift-status');
+  coinsBtn && coinsBtn.addEventListener('click', async function() {
+    var userId = coinsWidget.getSelectedUserId();
+    var amount = parseInt(document.getElementById('coins-amount-input').value, 10) || 0;
+    if (!userId || amount <= 0) return;
+    coinsBtn.disabled = true;
+    try {
+      var r = await fetch('/admin/recompenses/gift-coins', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: userId, amount: amount }),
+      });
+      var d = await r.json();
+      if (d.ok) {
+        coinsStatus.textContent = '\u2713 ' + amount + '\u202fP envoy\u00e9(es) \u00e0 ' + d.username;
+        coinsStatus.style.color = '#4ade80';
+        coinsWidget.reset();
+      } else {
+        coinsStatus.textContent = '\u2717 ' + (d.error || 'Erreur');
+        coinsStatus.style.color = '#f87171';
+        coinsBtn.disabled = false;
+      }
+    } catch(e) {
+      coinsStatus.textContent = '\u2717 Erreur r\u00e9seau';
+      coinsStatus.style.color = '#f87171';
+      coinsBtn.disabled = false;
+    }
+  });
 })();
 </script>
 

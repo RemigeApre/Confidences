@@ -264,8 +264,7 @@
     if (hintEl) hintEl.setAttribute('hidden', '');
     if (ucardCoins) {
       var col = RARITY_COLORS_MAP[reward.rarity] || '#94a3b8';
-      ucardCoins.innerHTML = '<img src="/pieces.png" class="lootbox-coins-img" alt="pi\u00e8ces" aria-hidden="true">'
-        + '<span class="lootbox-coins-amount" style="color:' + col + '">' + coinAmt + '</span>';
+      ucardCoins.innerHTML = '<img src="/pieces.png" class="lootbox-coins-img" alt="pi\u00e8ces" aria-hidden="true">';
       ucardCoins.removeAttribute('hidden');
     }
     revealCard(hasNext);
@@ -580,8 +579,8 @@
               .then(function (r) { return r.json(); })
               .then(function (res) {
                 if (res.ok) {
-                  if (jokerImageStatus) jokerImageStatus.textContent = '✓ Image déverrouillée !';
-                  setTimeout(function () { closeJokerPickers(); closeOverlay(); }, 1200);
+                  if (jokerImageStatus) jokerImageStatus.textContent = '\u2713 Image d\u00e9verrouill\u00e9e !';
+                  setTimeout(function () { closeJokerPickers(); closeOverlay(); if (window._onJokerUsed) window._onJokerUsed('image'); }, 1200);
                 } else {
                   card.classList.remove("loading");
                   if (jokerImageStatus) jokerImageStatus.textContent = res.error === 'already_owned' ? 'Déjà possédé.' : 'Erreur.';
@@ -635,8 +634,8 @@
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
                   if (res.ok) {
-                    if (jokerCharmStatus) jokerCharmStatus.textContent = '✓ Charme ' + charm.label + ' débloqué !';
-                    setTimeout(function () { closeJokerPickers(); closeOverlay(); }, 1200);
+                    if (jokerCharmStatus) jokerCharmStatus.textContent = '\u2713 Charme ' + charm.label + ' d\u00e9bloqu\u00e9 !';
+                    setTimeout(function () { closeJokerPickers(); closeOverlay(); if (window._onJokerUsed) window._onJokerUsed('charm'); }, 1200);
                   } else {
                     if (jokerCharmStatus) jokerCharmStatus.textContent = res.error === 'already_owned' ? 'Déjà possédé.' : 'Erreur.';
                   }
@@ -658,6 +657,10 @@
     if (jokerCharmPicker) jokerCharmPicker.setAttribute("hidden", "");
     _pendingJokerType = null;
   }
+
+  // Expose globally for coffre page
+  window._openJokerImagePicker = openJokerImagePicker;
+  window._openJokerCharmPicker = openJokerCharmPicker;
 
   // ── Tilt 3D sur la carte récompense ─────────────────────────────────────────
   if (card) {
@@ -755,11 +758,6 @@
         coinImg.setAttribute('aria-hidden', 'true');
         coinWrap.appendChild(coinImg);
 
-        var amtEl = document.createElement('span');
-        amtEl.className = 'lootbox-coins-amount';
-        amtEl.style.color = col;
-        amtEl.textContent = String(reward.coins || 0);
-        coinWrap.appendChild(amtEl);
         visual.appendChild(coinWrap);
 
       } else if (reward.isCharm) {

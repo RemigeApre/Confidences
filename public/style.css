@@ -18288,6 +18288,87 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   .coffre-gutter-actions { flex-direction: row; }
 }
 
+/* ── Coffre — bouton toggle Vendre ── */
+.coffre-sell-mode-btn {
+  width: 100%; text-align: center;
+  padding: .32rem .55rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em;
+  background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.35); border-radius: 6px;
+  color: #f87171; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.coffre-sell-mode-btn:hover { background: rgba(248,113,113,.16); border-color: rgba(248,113,113,.65); }
+.coffre-sell-mode-btn.active { background: rgba(248,113,113,.22); border-color: #f87171; }
+
+/* ── Coffre — mode sélection vente ── */
+.coffre-sell-mode .coffre-item--owned,
+.coffre-sell-mode .coffre-charm-card--owned,
+.coffre-sell-mode .coffre-theme-card--full[data-owned="1"][data-always="0"] {
+  cursor: pointer;
+}
+.coffre-item--sell-sel {
+  outline: 2.5px solid #f87171;
+  outline-offset: -2px;
+  background: rgba(248,113,113,.1) !important;
+}
+.coffre-charm-card--sell-sel {
+  outline: 2.5px solid #f87171 !important;
+  background: rgba(248,113,113,.1) !important;
+}
+.coffre-theme-card--sell-sel {
+  outline: 2.5px solid #f87171 !important;
+}
+.coffre-sell-mode .coffre-item--owned .coffre-item-img-wrap::after,
+.coffre-sell-mode .coffre-charm-card--owned::before,
+.coffre-sell-mode .coffre-theme-card--full[data-owned="1"][data-always="0"] .coffre-theme-apply-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* Hover highlight in sell mode */
+.coffre-sell-mode .coffre-item--owned:hover:not(.coffre-item--sell-sel) { outline: 2px dashed rgba(248,113,113,.5); outline-offset: -2px; }
+.coffre-sell-mode .coffre-charm-card--owned:hover:not(.coffre-charm-card--sell-sel) { border-color: rgba(248,113,113,.5) !important; }
+.coffre-sell-mode .coffre-theme-card--full[data-owned="1"][data-always="0"]:hover:not(.coffre-theme-card--sell-sel) { outline: 2px dashed rgba(248,113,113,.5); outline-offset: -2px; }
+
+/* ── Coffre — barre de vente fixe ── */
+.coffre-sell-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 400;
+  background: hsl(240,14%,11%);
+  border-top: 1.5px solid rgba(248,113,113,.35);
+  padding: .65rem 1.5rem;
+  display: flex; align-items: center; gap: .75rem;
+}
+.coffre-sell-bar[hidden] { display: none; }
+.coffre-sell-bar-info { font-size: .85rem; color: #94a3b8; flex: 1; }
+.coffre-sell-bar-info strong { color: #f1f5f9; }
+.coffre-sell-bar-cancel {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15);
+  color: #94a3b8; border-radius: 6px; padding: .35rem .85rem; font-size: .82rem; cursor: pointer;
+}
+.coffre-sell-bar-confirm {
+  background: #f87171; border: none; color: #0f172a;
+  border-radius: 6px; padding: .35rem .85rem; font-size: .82rem; font-weight: 700; cursor: pointer;
+}
+.coffre-sell-bar-confirm:disabled { opacity: .4; cursor: default; }
+
+/* ── Coffre — section jokers ── */
+.coffre-jokers-section { padding: .6rem 0 .4rem; }
+.coffre-jokers-label {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: hsl(48,90%,65%); margin: 0 0 .5rem;
+}
+.coffre-jokers-strip { display: flex; flex-wrap: wrap; gap: .5rem; }
+.coffre-joker-card {
+  display: flex; align-items: center; gap: .45rem;
+  background: hsl(48,60%,15%); border: 1.5px solid hsl(48,80%,40%);
+  border-radius: 8px; padding: .4rem .75rem;
+  cursor: pointer; color: hsl(48,90%,65%);
+  font-size: .82rem; font-weight: 700;
+  transition: background .15s, transform .12s;
+}
+.coffre-joker-card:hover { background: hsl(48,60%,20%); transform: scale(1.03); }
+.coffre-joker-card-icon { font-size: 1rem; }
+
 /* ── Coffre — filtres ── */
 .coffre-filters-group {
   display: flex; flex-direction: column; gap: .3rem; margin-bottom: .85rem;
@@ -18521,12 +18602,10 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 /* Coins fill */
 .lootbox-ucard-coins-fill {
   position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: .35rem;
+  display: flex; align-items: center; justify-content: center;
 }
 .lootbox-ucard-coins-fill[hidden] { display: none; }
-.lootbox-ucard-coins-fill .lootbox-coins-img { width: 72px; height: 72px; object-fit: contain; }
-.lootbox-ucard-coins-fill .lootbox-coins-amount { font-size: 1.8rem; font-weight: 800; }
+.lootbox-ucard-coins-fill .lootbox-coins-img { width: 78%; height: 78%; object-fit: contain; }
 
 /* Joker fill */
 .lootbox-ucard-joker-fill {
@@ -18649,8 +18728,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-batch-card-theme-label { background: rgba(0,0,0,.5); color:#fff; font-size:.72rem; font-weight:700; padding:.15rem .45rem; border-radius:12px; }
 .lootbox-batch-card-joker { font-size: 3.5rem; color: hsl(48,90%,65%); }
 .lootbox-batch-card-coins-wrap { display:flex; flex-direction:column; align-items:center; gap:.3rem; }
-.lootbox-batch-card-coins-wrap .lootbox-coins-img { width: 56px; height: 56px; object-fit: contain; }
-.lootbox-batch-card-coins-wrap .lootbox-coins-amount { font-size: 1.8rem; font-weight: 800; }
+.lootbox-batch-card-coins-wrap .lootbox-coins-img { width: 72px; height: 72px; object-fit: contain; }
 
 .lootbox-batch-card-title {
   font-size: .75rem; font-weight: 700;

@@ -2774,6 +2774,20 @@ function setImageTitle(id, title) {
   db.prepare("UPDATE gallery_images SET title = ? WHERE id = ?").run(String(title || '').trim(), id);
 }
 
+function grantJokerToUser(userId, jokerType) {
+  const type = jokerType === 'charm' ? 'joker_charm' : 'joker_image';
+  const now = new Date().toISOString();
+  // Use INSERT (not IGNORE) so multiple jokers can stack
+  db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, 'legendary', ?)").run(userId, type, now);
+  return { ok: true };
+}
+
+function grantCoinsToUser(userId, amount) {
+  const n = Math.max(1, parseInt(amount, 10) || 1);
+  db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(n, userId);
+  return { ok: true };
+}
+
 function _pickRarity() {
   // Minimum rare — common n'est jamais accordé via lootbox
   const cfg = getLootboxConfig().weights;
@@ -3272,17 +3286,23 @@ function pickChoiceReward(userId, sessionId, optionIdxs) {
 }
 
 function listUnownedImages(userId, limit) {
-  const lim = Math.min(Math.max(1, parseInt(limit, 10) || 60), 200);
-  const ownedIds = new Set(
-    db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").all(userId).map(r => r.ref_id)
-  );
-  return db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images ORDER BY RANDOM() LIMIT ?").all(lim * 2)
-    .filter(r => !ownedIds.has(r.id))
-    .slice(0, lim)
-    .map(r => {
-      let paths = []; try { paths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
-      return { id: r.id, title: r.title || '', rarity: r.rarity || 'common', thumb: paths[0] || null };
-    });
+  const lim = Math.min(Math.max(1, parseInt(limit, 10) || 100), 300);
+  return db.prepare(`
+    SELECT gi.id, gi.image_paths, gi.title, gi.rarity,
+      CASE WHEN f.item_id IS NOT NULL THEN 1 ELSE 0 END AS is_fav,
+      COALESCE(cr.rating, 0) AS user_rating
+    FROM gallery_images gi
+    LEFT JOIN content_reactions cr ON cr.user_id = ? AND cr.item_type = 'gallery' AND cr.item_id = gi.id
+    LEFT JOIN favorites f ON f.user_id = ? AND f.item_type = 'gallery' AND f.item_id = gi.id
+    WHERE gi.id NOT IN (
+      SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'
+    )
+    ORDER BY is_fav DESC, user_rating DESC, gi.id DESC
+    LIMIT ?
+  `).all(userId, userId, userId, lim).map(r => {
+    let paths = []; try { paths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
+    return { id: r.id, title: r.title || '', rarity: r.rarity || 'common', thumb: paths[0] || null };
+  });
 }
 
 function getUserUnlocks(userId) {
@@ -3853,6 +3873,8 @@ module.exports = {
   setLootboxConfigKey,
   setImageRarity,
   setImageTitle,
+  grantJokerToUser,
+  grantCoinsToUser,
   setCharmRarity,
   toggleUnlockFavorite,
   grantGiftLootbox,
