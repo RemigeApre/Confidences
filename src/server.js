@@ -735,6 +735,12 @@ app.delete("/api/filter-profils/:id", function (req, res) {
   res.json({ ok: true });
 });
 
+// Page menu mobile (accessible uniquement via la tabbar, mais pas de restriction
+// technique : fonctionne aussi sur desktop pour ne pas bloquer un lien partagé)
+app.get("/mobile-menu", (req, res) => {
+  res.render("mobile-menu", { config, currentUser: req.user || null });
+});
+
 const buildCustomQuizRouter = require("./routes/custom-quiz");
 const buildParodiesRouter = require("./routes/parodies");
 const buildLootboxRouter = require("./routes/lootbox");

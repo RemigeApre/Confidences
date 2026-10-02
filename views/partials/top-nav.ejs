@@ -106,30 +106,54 @@
 </div>
 
 <%# ─── Barre de navigation mobile (bas d'écran, façon TikTok/Instagram) ──
-    Toujours visible, pas de menu qui s'ouvre : chaque icône mène
-    directement à sa section. Masquée sur desktop (la pc-nav ci-dessus
-    prend le relais). ─────────────────────────────────────────────────── %>
+    5 icônes : Codex | Images | Profil (centre) | Quizz | Menu burger
+    Masquée sur desktop (la pc-nav ci-dessus prend le relais). ────────── %>
+<%
+  var _onMenu = _path === "/mobile-menu";
+%>
 <nav class="mobile-tabbar" aria-label="Navigation principale">
+
+  <%# 1. Codex %>
   <a href="/wiki" class="mobile-tabbar-link<%= _onWiki ? ' active' : '' %>" aria-label="Codex" title="Codex">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9a2 2 0 0 1 2 2v16l-6.5-4.2L4 21V5a2 2 0 0 1 2-2Z"/></svg>
   </a>
+
+  <%# 2. Images %>
   <% if (currentUser) { %>
     <a href="/galerie" class="mobile-tabbar-link<%= _onGalerieOnly ? ' active' : '' %>" aria-label="Images" title="Images">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
     </a>
+  <% } else { %>
+    <span class="mobile-tabbar-link mobile-tabbar-link--disabled" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+    </span>
   <% } %>
-  <a href="/" class="mobile-tabbar-home<%= _path === '/' ? ' active' : '' %>" aria-label="Accueil" title="Accueil">C</a>
+
+  <%# 3. Centre : Profil %>
   <% if (currentUser) { %>
-    <a href="/jeu" class="mobile-tabbar-link mobile-tabbar-link--jeu<%= _onJeu ? ' active' : '' %>" aria-label="Jeu" title="Jeu" style="position:relative">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="13" rx="3"/><path d="M9 11v4M7 13h4"/><circle cx="16" cy="13" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="11" r="1" fill="currentColor" stroke="none"/></svg>
-      <span class="lootbox-nav-badge" id="nav-jeu-badge-mobile" hidden></span>
-    </a>
-    <a href="/favoris" class="mobile-tabbar-link<%= _onProfil ? ' active' : '' %>" aria-label="Profil" title="Profil">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    <a href="/favoris" class="mobile-tabbar-home mobile-tabbar-home--profile<%= _onProfil ? ' active' : '' %>" aria-label="Mon profil" title="Mon profil">
+      <%- include('profile-avatar') %>
     </a>
   <% } else { %>
-    <a href="/admin/login?next=<%= encodeURIComponent(locals.currentPath || '/') %>" class="mobile-tabbar-link" aria-label="Connexion" title="Connexion">
+    <a href="/admin/login?next=<%= encodeURIComponent(locals.currentPath || '/') %>" class="mobile-tabbar-home" aria-label="Connexion" title="Connexion">
       <%- include('key-icon') %>
     </a>
   <% } %>
+
+  <%# 4. Quizz %>
+  <% if (currentUser) { %>
+    <a href="/quizz" class="mobile-tabbar-link<%= _onQuizz ? ' active' : '' %>" aria-label="Quizz" title="Quizz">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/></svg>
+    </a>
+  <% } else { %>
+    <span class="mobile-tabbar-link mobile-tabbar-link--disabled" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor" stroke="none"/></svg>
+    </span>
+  <% } %>
+
+  <%# 5. Burger menu %>
+  <a href="/mobile-menu" class="mobile-tabbar-link<%= _onMenu ? ' active' : '' %>" aria-label="Menu" title="Menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </a>
+
 </nav>
