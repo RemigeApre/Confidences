@@ -460,10 +460,10 @@ function buildAdminRouter(config) {
     const lootboxConfig = getLootboxConfig();
     const charms = listCharms();
     const section = ['images', 'charms', 'themes', 'config'].includes(req.query.section) ? req.query.section : 'images';
-    const images = section === 'images' ? listGalleryImages().map(img => {
+    const images = listGalleryImages().map(img => {
       const imagePaths = img.imagePaths || [];
       return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null };
-    }) : [];
+    });
     res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS });
   });
 

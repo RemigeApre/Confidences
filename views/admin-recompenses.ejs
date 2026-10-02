@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: 'Admin : Récompenses', extraCss: ['admin.css'] }) %>
+<%- include('partials/head', { title: 'Admin : Objets', extraCss: ['admin.css'] }) %>
 
 <style>
 /* ── Images grid ── */
@@ -46,7 +46,7 @@
 .ari-filter-btn { border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.05); color:#94a3b8; border-radius:5px; padding:.3rem .65rem; font-size:.75rem; font-weight:600; cursor:pointer; text-transform:uppercase; transition:background .12s; }
 .ari-filter-btn.active, .ari-filter-btn:hover { background:rgba(255,255,255,.15); color:#f1f5f9; }
 
-/* ── Charm rarity select ── */
+/* ── Charm / theme rarity select ── */
 .charm-rarity-select {
   background:#1e293b; border:1px solid rgba(255,255,255,.2);
   color:#f1f5f9; border-radius:6px; padding:.3rem .5rem; font-size:.75rem;
@@ -56,56 +56,67 @@
 }
 .charm-rarity-select option { background:#1e293b; color:#f1f5f9; }
 .charm-rarity-select:focus { outline:none; border-color:rgba(255,255,255,.4); }
+.charm-rarity-select.no-arrow {
+  appearance:none; -webkit-appearance:none;
+  text-align:center; text-align-last:center;
+  padding-left:.5rem;
+}
+
+/* ── Section switching ── */
+.obj-section { display:none; }
+.obj-section.active { display:block; }
+
+/* ── Sidebar nav links ── */
+.obj-nav-link {
+  display:flex; align-items:center; gap:.6rem;
+  padding:.5rem .75rem; border-radius:7px; text-decoration:none;
+  font-size:.875rem; font-weight:600; transition:background .15s;
+  color:#94a3b8; cursor:pointer; border:none; background:none; width:100%;
+  text-align:left;
+}
+.obj-nav-link:hover { background:rgba(255,255,255,.07); }
+.obj-nav-link.active { background:rgba(248,113,113,.18); color:#fca5a5; }
+.obj-nav-count { margin-left:auto; font-size:.7rem; font-weight:500; opacity:.6; }
 </style>
 
 <div class="admin-topbar">
   <a href="/admin" class="admin-topbar-back">&#8592; Retour</a>
-  <span class="admin-topbar-title"><%= config.title %> &mdash; R&eacute;compenses</span>
+  <span class="admin-topbar-title"><%= config.title %> &mdash; Objets</span>
 </div>
-
-<% var section = locals.section || 'images'; %>
 
 <div style="display:flex;min-height:calc(100vh - 52px)">
 
   <%/* ── Sidebar ── */%>
   <nav style="width:200px;min-width:180px;background:rgba(255,255,255,.035);border-right:1px solid rgba(255,255,255,.08);padding:1.5rem .75rem;display:flex;flex-direction:column;gap:.25rem;flex-shrink:0">
-    <p style="font-size:.7rem;font-weight:700;color:#64748b;letter-spacing:.09em;text-transform:uppercase;margin:0 0 .6rem .5rem">Récompenses</p>
 
-    <a href="/admin/recompenses?section=images" style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:7px;text-decoration:none;font-size:.875rem;font-weight:600;transition:background .15s;<%= section==='images' ? 'background:rgba(248,113,113,.18);color:#fca5a5' : 'color:#94a3b8' %>"
-      onmouseover="if('<%= section %>'!=='images')this.style.background='rgba(255,255,255,.07)'"
-      onmouseout="if('<%= section %>'!=='images')this.style.background=''">
-      <span style="font-size:1.1rem">&#128247;</span> Images de profil
-    </a>
+    <button class="obj-nav-link" data-section="images">
+      <span style="font-size:1.1rem">&#128247;</span> Image
+      <span class="obj-nav-count"><%= images.length %></span>
+    </button>
 
-    <a href="/admin/recompenses?section=charms" style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:7px;text-decoration:none;font-size:.875rem;font-weight:600;transition:background .15s;<%= section==='charms' ? 'background:rgba(248,113,113,.18);color:#fca5a5' : 'color:#94a3b8' %>"
-      onmouseover="if('<%= section %>'!=='charms')this.style.background='rgba(255,255,255,.07)'"
-      onmouseout="if('<%= section %>'!=='charms')this.style.background=''">
+    <button class="obj-nav-link" data-section="charms">
       <span style="font-size:1.1rem">&#10022;</span> Charmes
-    </a>
+      <span class="obj-nav-count"><%= charms.length %></span>
+    </button>
 
-    <a href="/admin/recompenses?section=themes" style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:7px;text-decoration:none;font-size:.875rem;font-weight:600;transition:background .15s;<%= section==='themes' ? 'background:rgba(248,113,113,.18);color:#fca5a5' : 'color:#94a3b8' %>"
-      onmouseover="if('<%= section %>'!=='themes')this.style.background='rgba(255,255,255,.07)'"
-      onmouseout="if('<%= section %>'!=='themes')this.style.background=''">
+    <button class="obj-nav-link" data-section="themes">
       <span style="font-size:1.1rem">&#127912;</span> Th&egrave;mes
-    </a>
+      <span class="obj-nav-count"><%= (themeDefs || []).filter(function(t){ return !t.always; }).length %></span>
+    </button>
 
     <div style="height:1px;background:rgba(255,255,255,.07);margin:.75rem .25rem"></div>
     <p style="font-size:.7rem;font-weight:700;color:#64748b;letter-spacing:.09em;text-transform:uppercase;margin:0 0 .6rem .5rem">Configuration</p>
 
-    <a href="/admin/recompenses?section=config" style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:7px;text-decoration:none;font-size:.875rem;font-weight:600;transition:background .15s;<%= section==='config' ? 'background:rgba(248,113,113,.18);color:#fca5a5' : 'color:#94a3b8' %>"
-      onmouseover="if('<%= section %>'!=='config')this.style.background='rgba(255,255,255,.07)'"
-      onmouseout="if('<%= section %>'!=='config')this.style.background=''">
+    <button class="obj-nav-link" data-section="config">
       <span style="font-size:1.1rem">&#9881;</span> Raretés
-    </a>
+    </button>
   </nav>
 
   <%/* ── Main content ── */%>
   <main style="flex:1;padding:2rem;overflow:auto">
 
-    <% if (section === 'images') { %>
     <%/* ── Images de profil ── */%>
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:.5rem">
-      <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0;text-transform:uppercase;letter-spacing:.06em">Images de profil <span style="font-weight:400;color:#64748b;font-size:.85rem"><%= images.length %></span></h2>
+    <div class="obj-section" data-section="images">
       <div class="ari-filter-bar" id="ari-filter-bar">
         <button class="ari-filter-btn active" data-filter="all">Tout</button>
         <button class="ari-filter-btn" data-filter="common">Commun</button>
@@ -114,151 +125,141 @@
         <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
         <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
       </div>
-    </div>
-    <p style="color:#64748b;font-size:.8rem;margin:0 0 .75rem">Cliquez sur une image pour modifier sa rareté.</p>
 
-    <div class="ari-grid" id="ari-grid">
-      <% images.forEach(function(img, idx) { %>
-      <div class="ari-card" data-id="<%= img.id %>" data-rarity="<%= img.rarity %>" data-idx="<%= idx %>" tabindex="0" role="button" aria-label="<%= img.title || 'Image ' + img.id %>">
-        <% if (img.thumb) { %>
-          <img src="<%= img.thumb %>" alt="<%= img.title || '' %>" loading="lazy">
-        <% } else { %>
-          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#475569;font-size:1.8rem">&#128247;</div>
-        <% } %>
-        <div class="ari-card-rarity"><%= img.rarity %></div>
-      </div>
-      <% }) %>
-    </div>
-    <% } %>
-
-    <% if (section === 'charms') { %>
-    <%/* ── Charmes ── */%>
-    <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 .5rem;text-transform:uppercase;letter-spacing:.06em">Charmes</h2>
-    <p style="color:#64748b;font-size:.8rem;margin:0 0 1.25rem">Icônes obtenues en lootbox charme. Modifiez la rareté directement.</p>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.65rem">
-      <% charms.forEach(function(charm) { %>
-      <%
-        var rarityColor = charm.rarity === 'mythic' ? '#f87171' : charm.rarity === 'legendary' ? '#fbbf24' : charm.rarity === 'epic' ? '#a78bfa' : charm.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
-        var rarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[charm.rarity] || charm.rarity;
-      %>
-      <div class="ari-charm-card" data-charm-id="<%= charm.id %>" style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.3rem">
-        <div style="font-size:1.6rem;line-height:1;filter:drop-shadow(0 0 5px <%= rarityColor %>66)">
-          <%= charm.symbol %><% if (charm.symbol_empty) { %><span style="opacity:.35;font-size:1.1rem"> <%= charm.symbol_empty %></span><% } %>
+      <div class="ari-grid" id="ari-grid">
+        <% images.forEach(function(img, idx) { %>
+        <div class="ari-card" data-id="<%= img.id %>" data-rarity="<%= img.rarity %>" data-idx="<%= idx %>" tabindex="0" role="button" aria-label="<%= img.title || 'Image ' + img.id %>">
+          <% if (img.thumb) { %>
+            <img src="<%= img.thumb %>" alt="<%= img.title || '' %>" loading="lazy">
+          <% } else { %>
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#475569;font-size:1.8rem">&#128247;</div>
+          <% } %>
+          <div class="ari-card-rarity"><%= img.rarity %></div>
         </div>
-        <strong style="font-size:.85rem;color:#f1f5f9"><%= charm.label %></strong>
-        <code style="font-size:.65rem;color:#475569"><%= charm.key %></code>
-        <select class="charm-rarity-select js-charm-rarity" data-charm-id="<%= charm.id %>"
-                style="border-color:<%= rarityColor %>; color:<%= rarityColor %>">
-          <% ['common','rare','epic','legendary','mythic'].forEach(function(r) { %>
-            <option value="<%= r %>"<%= charm.rarity === r ? ' selected' : '' %>>
-              <%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[r] %>
-            </option>
-          <% }) %>
-        </select>
-        <span class="ari-charm-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
-        <button class="js-admin-gift-charm" data-charm-id="<%= charm.id %>" data-charm-label="<%= charm.label %>"
-          style="width:100%;background:rgba(251,191,36,.08);border:1.5px solid rgba(251,191,36,.4);color:#fbbf24;border-radius:5px;padding:.28rem .5rem;font-size:.72rem;font-weight:700;cursor:pointer;transition:background .12s"
-          onmouseover="this.style.background='rgba(251,191,36,.18)'" onmouseout="this.style.background='rgba(251,191,36,.08)'">
-          &#127873; Offrir
-        </button>
+        <% }) %>
       </div>
-      <% }) %>
     </div>
-    <% } %>
 
-    <% if (section === 'themes') { %>
-    <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 .5rem;text-transform:uppercase;letter-spacing:.06em">Thèmes</h2>
-    <p style="color:#64748b;font-size:.8rem;margin:0 0 1.25rem">Thèmes de couleur obtentables en lootbox. Modifiez la rareté directement.</p>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.65rem">
-      <% (themeDefs || []).filter(function(t) { return !t.always; }).forEach(function(t) { %>
-      <%
-        var themeColors = { rouge:'hsl(355,55%,32%)', vert:'hsl(148,42%,28%)', violet:'hsl(270,58%,32%)', bleu:'hsl(212,65%,32%)', rose:'hsl(330,58%,32%)' };
-        var swatchColor = themeColors[t.key] || '#333';
-        var rarityColor = t.rarity === 'mythic' ? '#f87171' : t.rarity === 'legendary' ? '#fbbf24' : t.rarity === 'epic' ? '#a78bfa' : t.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
-        var rarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[t.rarity] || t.rarity;
-      %>
-      <div style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.35rem">
-        <div style="width:3rem;height:3rem;border-radius:50%;background:<%= swatchColor %>;border:2px solid rgba(255,255,255,.2);margin:0 auto"></div>
-        <div style="font-size:.85rem;font-weight:700;color:#f1f5f9"><%= t.label %></div>
-        <div style="font-size:.7rem;font-weight:700;color:<%= rarityColor %>;text-transform:uppercase;letter-spacing:.05em"><%= rarityLabel %></div>
-        <select class="charm-rarity-select js-theme-rarity" data-theme-key="<%= t.key %>"
-                style="border-color:<%= rarityColor %>; color:<%= rarityColor %>">
-          <option value="common"    <%= t.rarity === 'common'    ? 'selected' : '' %>>Commun</option>
-          <option value="rare"      <%= t.rarity === 'rare'      ? 'selected' : '' %>>Rare</option>
-          <option value="epic"      <%= t.rarity === 'epic'      ? 'selected' : '' %>>Épique</option>
-          <option value="legendary" <%= t.rarity === 'legendary' ? 'selected' : '' %>>Légendaire</option>
-          <option value="mythic"    <%= t.rarity === 'mythic'    ? 'selected' : '' %>>Mythique</option>
-        </select>
-        <span class="js-theme-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
-      </div>
-      <% }); %>
-    </div>
-    <% } %>
-
-    <% if (section === 'config') { %>
-    <%/* ── Configuration raretés ── */%>
-    <form method="POST" action="/admin/recompenses/config">
-      <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 1rem;text-transform:uppercase;letter-spacing:.06em">Configuration des raretés</h2>
-
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.88rem">
-          <thead>
-            <tr style="color:#94a3b8;text-align:left">
-              <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08)">Rareté</th>
-              <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">% drop</th>
-              <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix achat &#127481;</th>
-              <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix revente &#127481;</th>
-            </tr>
-          </thead>
-          <tbody>
-            <%
-              var tiers = [
-                { key: 'common',    label: 'Commun',     color: '#94a3b8' },
-                { key: 'rare',      label: 'Rare',        color: '#60a5fa' },
-                { key: 'epic',      label: 'Épique',      color: '#a78bfa' },
-                { key: 'legendary', label: 'Légendaire',  color: '#fbbf24' },
-                { key: 'mythic',    label: 'Mythique',    color: '#f87171' },
-              ];
-            %>
-            <% tiers.forEach(function(tier) { %>
-            <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
-              <td style="padding:.6rem .75rem">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<%= tier.color %>;margin-right:.5rem"></span>
-                <strong style="color:<%= tier.color %>"><%= tier.label %></strong>
-              </td>
-              <td style="padding:.6rem .75rem;text-align:center">
-                <input type="number" name="weight_<%= tier.key %>" value="<%= lootboxConfig.weights[tier.key] %>" min="0" max="100" step="1"
-                  style="width:60px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
-              </td>
-              <td style="padding:.6rem .75rem;text-align:center">
-                <input type="number" name="buy_<%= tier.key %>" value="<%= lootboxConfig.buyPrices[tier.key] %>" min="0" step="1"
-                  style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
-              </td>
-              <td style="padding:.6rem .75rem;text-align:center">
-                <input type="number" name="sell_<%= tier.key %>" value="<%= lootboxConfig.sellPrices[tier.key] %>" min="0" step="1"
-                  style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
-              </td>
-            </tr>
+    <%/* ── Charmes ── */%>
+    <div class="obj-section" data-section="charms">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.65rem">
+        <% charms.forEach(function(charm) { %>
+        <%
+          var rarityColor = charm.rarity === 'mythic' ? '#f87171' : charm.rarity === 'legendary' ? '#fbbf24' : charm.rarity === 'epic' ? '#a78bfa' : charm.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
+        %>
+        <div class="ari-charm-card" data-charm-id="<%= charm.id %>" style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.3rem">
+          <div style="font-size:1.6rem;line-height:1;filter:drop-shadow(0 0 5px <%= rarityColor %>66)">
+            <%= charm.symbol %><% if (charm.symbol_empty) { %><span style="opacity:.35;font-size:1.1rem"> <%= charm.symbol_empty %></span><% } %>
+          </div>
+          <strong style="font-size:.85rem;color:#f1f5f9"><%= charm.label %></strong>
+          <code style="font-size:.65rem;color:#475569"><%= charm.key %></code>
+          <select class="charm-rarity-select js-charm-rarity" data-charm-id="<%= charm.id %>"
+                  style="border-color:<%= rarityColor %>; color:<%= rarityColor %>">
+            <% ['common','rare','epic','legendary','mythic'].forEach(function(r) { %>
+              <option value="<%= r %>"<%= charm.rarity === r ? ' selected' : '' %>>
+                <%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[r] %>
+              </option>
             <% }) %>
-          </tbody>
-        </table>
+          </select>
+          <span class="ari-charm-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
+          <button class="js-admin-gift-charm" data-charm-id="<%= charm.id %>" data-charm-label="<%= charm.label %>"
+            style="width:100%;background:rgba(251,191,36,.08);border:1.5px solid rgba(251,191,36,.4);color:#fbbf24;border-radius:5px;padding:.28rem .5rem;font-size:.72rem;font-weight:700;cursor:pointer;transition:background .12s"
+            onmouseover="this.style.background='rgba(251,191,36,.18)'" onmouseout="this.style.background='rgba(251,191,36,.08)'">
+            &#127873; Offrir
+          </button>
+        </div>
+        <% }) %>
       </div>
+    </div>
 
-      <p style="font-size:.78rem;color:#64748b;margin:.75rem 0 1rem">Les % de drop n'ont pas besoin de totaliser 100 — ils sont utilisés comme poids relatifs.</p>
+    <%/* ── Thèmes ── */%>
+    <div class="obj-section" data-section="themes">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.65rem">
+        <% (themeDefs || []).filter(function(t) { return !t.always; }).forEach(function(t) { %>
+        <%
+          var themeColors = { rouge:'hsl(355,55%,32%)', vert:'hsl(148,42%,28%)', violet:'hsl(270,58%,32%)', bleu:'hsl(212,65%,32%)', rose:'hsl(330,58%,32%)' };
+          var swatchColor = themeColors[t.key] || '#333';
+          var rarityColor = t.rarity === 'mythic' ? '#f87171' : t.rarity === 'legendary' ? '#fbbf24' : t.rarity === 'epic' ? '#a78bfa' : t.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
+        %>
+        <div style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.35rem">
+          <div style="width:3rem;height:3rem;border-radius:50%;background:<%= swatchColor %>;border:2px solid rgba(255,255,255,.2);margin:0 auto"></div>
+          <div style="font-size:.85rem;font-weight:700;color:#f1f5f9"><%= t.label %></div>
+          <select class="charm-rarity-select no-arrow js-theme-rarity" data-theme-key="<%= t.key %>"
+                  style="border-color:<%= rarityColor %>; color:<%= rarityColor %>">
+            <option value="common"    <%= t.rarity === 'common'    ? 'selected' : '' %>>Commun</option>
+            <option value="rare"      <%= t.rarity === 'rare'      ? 'selected' : '' %>>Rare</option>
+            <option value="epic"      <%= t.rarity === 'epic'      ? 'selected' : '' %>>Épique</option>
+            <option value="legendary" <%= t.rarity === 'legendary' ? 'selected' : '' %>>Légendaire</option>
+            <option value="mythic"    <%= t.rarity === 'mythic'    ? 'selected' : '' %>>Mythique</option>
+          </select>
+          <span class="js-theme-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
+        </div>
+        <% }); %>
+      </div>
+    </div>
 
-      <button type="submit" style="background:#f87171;border:none;color:#fff;padding:.55rem 1.4rem;border-radius:7px;font-weight:600;font-size:.9rem;cursor:pointer;transition:background .15s"
-        onmouseover="this.style.background='#ef4444'"
-        onmouseout="this.style.background='#f87171'">
-        Enregistrer
-      </button>
-    </form>
-    <% } %>
+    <%/* ── Configuration raretés ── */%>
+    <div class="obj-section" data-section="config">
+      <form method="POST" action="/admin/recompenses/config">
+        <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 1rem;text-transform:uppercase;letter-spacing:.06em">Configuration des raretés</h2>
+
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+            <thead>
+              <tr style="color:#94a3b8;text-align:left">
+                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08)">Rareté</th>
+                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">% drop</th>
+                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix achat &#127481;</th>
+                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix revente &#127481;</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%
+                var tiers = [
+                  { key: 'common',    label: 'Commun',     color: '#94a3b8' },
+                  { key: 'rare',      label: 'Rare',        color: '#60a5fa' },
+                  { key: 'epic',      label: 'Épique',      color: '#a78bfa' },
+                  { key: 'legendary', label: 'Légendaire',  color: '#fbbf24' },
+                  { key: 'mythic',    label: 'Mythique',    color: '#f87171' },
+                ];
+              %>
+              <% tiers.forEach(function(tier) { %>
+              <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                <td style="padding:.6rem .75rem">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<%= tier.color %>;margin-right:.5rem"></span>
+                  <strong style="color:<%= tier.color %>"><%= tier.label %></strong>
+                </td>
+                <td style="padding:.6rem .75rem;text-align:center">
+                  <input type="number" name="weight_<%= tier.key %>" value="<%= lootboxConfig.weights[tier.key] %>" min="0" max="100" step="1"
+                    style="width:60px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+                </td>
+                <td style="padding:.6rem .75rem;text-align:center">
+                  <input type="number" name="buy_<%= tier.key %>" value="<%= lootboxConfig.buyPrices[tier.key] %>" min="0" step="1"
+                    style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+                </td>
+                <td style="padding:.6rem .75rem;text-align:center">
+                  <input type="number" name="sell_<%= tier.key %>" value="<%= lootboxConfig.sellPrices[tier.key] %>" min="0" step="1"
+                    style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <p style="font-size:.78rem;color:#64748b;margin:.75rem 0 1rem">Les % de drop n'ont pas besoin de totaliser 100 — ils sont utilisés comme poids relatifs.</p>
+
+        <button type="submit" style="background:#f87171;border:none;color:#fff;padding:.55rem 1.4rem;border-radius:7px;font-weight:600;font-size:.9rem;cursor:pointer;transition:background .15s"
+          onmouseover="this.style.background='#ef4444'"
+          onmouseout="this.style.background='#f87171'">
+          Enregistrer
+        </button>
+      </form>
+    </div>
 
   </main>
 </div>
 
-<% if (section === 'images') { %>
 <!-- Zoom overlay images -->
 <div class="ari-zoom-overlay" id="ariZoom" hidden>
   <div class="ari-zoom-box">
@@ -301,6 +302,29 @@
   </div>
 </div>
 
+<!-- ── Section switching ── -->
+<script>
+(function() {
+  var links = document.querySelectorAll('.obj-nav-link[data-section]');
+  var sections = document.querySelectorAll('.obj-section[data-section]');
+  var VALID = ['images','charms','themes','config'];
+
+  function activate(key) {
+    links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });
+    sections.forEach(function(s) { s.classList.toggle('active', s.dataset.section === key); });
+    history.replaceState(null, '', location.pathname + '#' + key);
+  }
+
+  links.forEach(function(l) {
+    l.addEventListener('click', function() { activate(l.dataset.section); });
+  });
+
+  var hash = location.hash.replace('#', '');
+  activate(VALID.includes(hash) ? hash : 'images');
+})();
+</script>
+
+<!-- ── Images JS ── -->
 <script>
 (function() {
   const cards = Array.from(document.querySelectorAll('.ari-card'));
@@ -393,9 +417,8 @@
   });
 })();
 </script>
-<% } %>
 
-<% if (section === 'charms') { %>
+<!-- ── Charmes JS ── -->
 <script>
 (function() {
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
@@ -425,12 +448,10 @@
       } catch (e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
     });
   });
-
 })();
 </script>
-<% } %>
 
-<% if (section === 'themes') { %>
+<!-- ── Thèmes JS ── -->
 <script>
 (function() {
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
@@ -461,7 +482,6 @@
   });
 })();
 </script>
-<% } %>
 
 <!-- ── Modal offrir ── -->
 <div id="adminGiftModal" style="position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center">
