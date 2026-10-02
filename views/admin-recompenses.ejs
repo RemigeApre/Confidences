@@ -62,6 +62,9 @@
   padding-left:.5rem;
 }
 
+/* General admin select rule */
+.obj-section select { background:#1e293b; color:#f1f5f9; }
+
 /* ── Section switching ── */
 .obj-section { display:none; }
 .obj-section.active { display:block; }
@@ -76,7 +79,46 @@
 }
 .obj-nav-link:hover { background:rgba(255,255,255,.07); }
 .obj-nav-link.active { background:rgba(248,113,113,.18); color:#fca5a5; }
-.obj-nav-count { margin-left:auto; font-size:.7rem; font-weight:500; opacity:.6; }
+.obj-nav-count { margin-left:auto; font-size:.7rem; font-weight:700; opacity:.9; }
+
+/* ── Accueil cards ── */
+.obj-home-card { background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.08); border-radius:12px; padding:1.1rem 1.25rem; margin-bottom:.85rem; }
+.obj-home-card-header { display:flex; align-items:center; gap:.6rem; margin-bottom:.65rem; }
+.obj-home-card-icon { font-size:1.2rem; }
+.obj-home-card-title { font-size:.95rem; font-weight:700; color:#e2e8f0; flex:1; }
+.obj-home-card-total { font-size:.8rem; color:#64748b; }
+.obj-home-goto { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:#94a3b8; border-radius:6px; padding:.25rem .6rem; font-size:.78rem; cursor:pointer; }
+.obj-home-goto:hover { background:rgba(255,255,255,.14); color:#f1f5f9; }
+.obj-home-rarities { display:flex; flex-wrap:wrap; gap:.5rem; }
+.obj-rarity-chip { display:inline-flex; align-items:center; gap:.35rem; font-size:.78rem; padding:.2rem .5rem; border-radius:20px; background:rgba(255,255,255,.05); }
+.obj-rarity-chip-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.obj-rarity-chip[data-rarity="common"] .obj-rarity-chip-dot { background:#94a3b8; }
+.obj-rarity-chip[data-rarity="rare"] .obj-rarity-chip-dot { background:#60a5fa; }
+.obj-rarity-chip[data-rarity="epic"] .obj-rarity-chip-dot { background:#a78bfa; }
+.obj-rarity-chip[data-rarity="legendary"] .obj-rarity-chip-dot { background:#fbbf24; }
+.obj-rarity-chip[data-rarity="mythic"] .obj-rarity-chip-dot { background:#f87171; }
+.obj-rarity-chip strong { color:#f1f5f9; }
+.obj-always-badge { font-size:.7rem; color:#64748b; background:rgba(255,255,255,.05); border-radius:4px; padding:.15rem .45rem; text-transform:uppercase; letter-spacing:.05em; margin-top:.35rem; display:inline-block; }
+
+/* ── Selection mode ── */
+.obj-section.obj-sel-mode .ari-filter-bar { display:none; }
+.obj-section.obj-sel-mode .ari-card { cursor:pointer; position:relative; }
+.obj-section.obj-sel-mode .ari-card.obj-selected { outline:3px solid #60a5fa; outline-offset:2px; }
+.obj-section.obj-sel-mode .ari-charm-card { cursor:pointer; }
+.obj-section.obj-sel-mode .ari-charm-card.obj-selected { border-color:#60a5fa !important; background:rgba(96,165,250,.1) !important; }
+.obj-section.obj-sel-mode .obj-theme-selcard { cursor:pointer; }
+.obj-section.obj-sel-mode .obj-theme-selcard.obj-selected { outline:3px solid #60a5fa; outline-offset:2px; }
+.obj-sel-bar { position:fixed; bottom:0; left:0; right:0; background:#1e293b; border-top:1.5px solid rgba(255,255,255,.12); padding:.65rem 1.5rem; display:flex; align-items:center; gap:.75rem; z-index:400; }
+.obj-sel-bar[hidden] { display:none; }
+.obj-sel-count { font-size:.85rem; color:#94a3b8; flex:1; }
+.obj-sel-cancel { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#94a3b8; border-radius:6px; padding:.35rem .85rem; font-size:.82rem; cursor:pointer; }
+.obj-sel-confirm-btn { background:#60a5fa; border:none; color:#0f172a; border-radius:6px; padding:.35rem .85rem; font-size:.82rem; font-weight:700; cursor:pointer; }
+.obj-sel-confirm-btn[data-action="delete"] { background:#f87171; }
+.obj-tool-btn { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.95rem; transition:background .12s; }
+.obj-tool-btn:hover { background:rgba(255,255,255,.15); }
+.obj-tools { display:flex; gap:.4rem; margin-left:auto; }
+.obj-section-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; margin-bottom:.75rem; }
+.obj-section-toolbar .ari-filter-bar { margin-bottom:0; flex:1; flex-wrap:wrap; }
 </style>
 
 <div class="admin-topbar">
@@ -89,8 +131,12 @@
   <%/* ── Sidebar ── */%>
   <nav style="width:200px;min-width:180px;background:rgba(255,255,255,.035);border-right:1px solid rgba(255,255,255,.08);padding:1.5rem .75rem;display:flex;flex-direction:column;gap:.25rem;flex-shrink:0">
 
+    <button class="obj-nav-link" data-section="accueil">
+      <span style="font-size:1.1rem">&#127968;</span> Accueil
+    </button>
+
     <button class="obj-nav-link" data-section="images">
-      <span style="font-size:1.1rem">&#128247;</span> Image
+      <span style="font-size:1.1rem">&#128247;</span> Images
       <span class="obj-nav-count"><%= images.length %></span>
     </button>
 
@@ -101,7 +147,7 @@
 
     <button class="obj-nav-link" data-section="themes">
       <span style="font-size:1.1rem">&#127912;</span> Th&egrave;mes
-      <span class="obj-nav-count"><%= (themeDefs || []).filter(function(t){ return !t.always; }).length %></span>
+      <span class="obj-nav-count"><%= (themeDefs || []).length %></span>
     </button>
 
     <div style="height:1px;background:rgba(255,255,255,.07);margin:.75rem .25rem"></div>
@@ -115,15 +161,95 @@
   <%/* ── Main content ── */%>
   <main style="flex:1;padding:2rem;overflow:auto">
 
+    <%/* ── Accueil ── */%>
+    <div class="obj-section" data-section="accueil">
+      <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 1.25rem;text-transform:uppercase;letter-spacing:.06em">Aperçu des objets</h2>
+
+      <%
+        var rarityList = ['common','rare','epic','legendary','mythic'];
+        var rarityLabels = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
+      %>
+
+      <%/* Images card */%>
+      <div class="obj-home-card">
+        <div class="obj-home-card-header">
+          <span class="obj-home-card-icon">&#128247;</span>
+          <span class="obj-home-card-title">Images de profil</span>
+          <span class="obj-home-card-total"><%= images.length %> au total</span>
+          <button class="obj-home-goto js-goto-section" data-section="images">&#8594; Gérer</button>
+        </div>
+        <div class="obj-home-rarities">
+          <% rarityList.forEach(function(r) { %>
+          <span class="obj-rarity-chip" data-rarity="<%= r %>">
+            <span class="obj-rarity-chip-dot"></span>
+            <strong><%= imageStats[r] || 0 %></strong>
+            <span style="color:#94a3b8"><%= rarityLabels[r] %></span>
+          </span>
+          <% }) %>
+        </div>
+      </div>
+
+      <%/* Charmes card */%>
+      <div class="obj-home-card">
+        <div class="obj-home-card-header">
+          <span class="obj-home-card-icon">&#10022;</span>
+          <span class="obj-home-card-title">Charmes</span>
+          <span class="obj-home-card-total"><%= charms.length %> au total</span>
+          <button class="obj-home-goto js-goto-section" data-section="charms">&#8594; Gérer</button>
+        </div>
+        <div class="obj-home-rarities">
+          <% rarityList.forEach(function(r) { %>
+          <span class="obj-rarity-chip" data-rarity="<%= r %>">
+            <span class="obj-rarity-chip-dot"></span>
+            <strong><%= charmStats[r] || 0 %></strong>
+            <span style="color:#94a3b8"><%= rarityLabels[r] %></span>
+          </span>
+          <% }) %>
+        </div>
+      </div>
+
+      <%/* Thèmes card */%>
+      <div class="obj-home-card">
+        <div class="obj-home-card-header">
+          <span class="obj-home-card-icon">&#127912;</span>
+          <span class="obj-home-card-title">Thèmes</span>
+          <span class="obj-home-card-total"><%= (themeDefs || []).length %> au total</span>
+          <button class="obj-home-goto js-goto-section" data-section="themes">&#8594; Gérer</button>
+        </div>
+        <div class="obj-home-rarities">
+          <% rarityList.forEach(function(r) { %>
+          <span class="obj-rarity-chip" data-rarity="<%= r %>">
+            <span class="obj-rarity-chip-dot"></span>
+            <strong><%= themeStats[r] || 0 %></strong>
+            <span style="color:#94a3b8"><%= rarityLabels[r] %></span>
+          </span>
+          <% }) %>
+          <% if (themeAlways > 0) { %>
+          <span class="obj-rarity-chip" data-rarity="">
+            <span class="obj-rarity-chip-dot" style="background:#475569"></span>
+            <strong><%= themeAlways %></strong>
+            <span style="color:#94a3b8">Toujours dispo</span>
+          </span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
     <%/* ── Images de profil ── */%>
     <div class="obj-section" data-section="images">
-      <div class="ari-filter-bar" id="ari-filter-bar">
-        <button class="ari-filter-btn active" data-filter="all">Tout</button>
-        <button class="ari-filter-btn" data-filter="common">Commun</button>
-        <button class="ari-filter-btn" data-filter="rare">Rare</button>
-        <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
-        <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
-        <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
+      <div class="obj-section-toolbar">
+        <div class="ari-filter-bar" id="ari-filter-bar">
+          <button class="ari-filter-btn active" data-filter="all">Tout</button>
+          <button class="ari-filter-btn" data-filter="common">Commun</button>
+          <button class="ari-filter-btn" data-filter="rare">Rare</button>
+          <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
+          <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
+          <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
+        </div>
+        <div class="obj-tools">
+          <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="images">&#127873;</button>
+          <button class="obj-tool-btn js-sel-mode" data-action="delete" title="Supprimer en lot" data-section="images">&#128465;</button>
+        </div>
       </div>
 
       <div class="ari-grid" id="ari-grid">
@@ -142,13 +268,27 @@
 
     <%/* ── Charmes ── */%>
     <div class="obj-section" data-section="charms">
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.65rem">
+      <div class="obj-section-toolbar">
+        <div class="ari-filter-bar" id="charm-filter-bar">
+          <button class="ari-filter-btn active" data-filter="all">Tout</button>
+          <button class="ari-filter-btn" data-filter="common">Commun</button>
+          <button class="ari-filter-btn" data-filter="rare">Rare</button>
+          <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
+          <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
+          <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
+        </div>
+        <div class="obj-tools">
+          <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="charms">&#127873;</button>
+          <button class="obj-tool-btn js-sel-mode" data-action="delete" title="Supprimer en lot" data-section="charms">&#128465;</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.65rem" id="charm-grid">
         <% charms.forEach(function(charm) { %>
         <%
           var rarityColor = charm.rarity === 'mythic' ? '#f87171' : charm.rarity === 'legendary' ? '#fbbf24' : charm.rarity === 'epic' ? '#a78bfa' : charm.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
         %>
-        <div class="ari-charm-card" data-charm-id="<%= charm.id %>" style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.3rem">
-          <div style="font-size:1.6rem;line-height:1;filter:drop-shadow(0 0 5px <%= rarityColor %>66)">
+        <div class="ari-charm-card" data-charm-id="<%= charm.id %>" data-rarity="<%= charm.rarity %>" style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.3rem">
+          <div style="font-size:1.6rem;line-height:1">
             <%= charm.symbol %><% if (charm.symbol_empty) { %><span style="opacity:.35;font-size:1.1rem"> <%= charm.symbol_empty %></span><% } %>
           </div>
           <strong style="font-size:.85rem;color:#f1f5f9"><%= charm.label %></strong>
@@ -174,25 +314,42 @@
 
     <%/* ── Thèmes ── */%>
     <div class="obj-section" data-section="themes">
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.65rem">
-        <% (themeDefs || []).filter(function(t) { return !t.always; }).forEach(function(t) { %>
+      <div class="obj-section-toolbar">
+        <div class="ari-filter-bar" id="theme-filter-bar">
+          <button class="ari-filter-btn active" data-filter="all">Tout</button>
+          <button class="ari-filter-btn" data-filter="common">Commun</button>
+          <button class="ari-filter-btn" data-filter="rare">Rare</button>
+          <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
+          <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
+          <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
+        </div>
+        <div class="obj-tools">
+          <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="themes">&#127873;</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.65rem" id="theme-grid">
+        <% (themeDefs || []).forEach(function(t) { %>
         <%
           var themeColors = { rouge:'hsl(355,55%,32%)', vert:'hsl(148,42%,28%)', violet:'hsl(270,58%,32%)', bleu:'hsl(212,65%,32%)', rose:'hsl(330,58%,32%)' };
           var swatchColor = themeColors[t.key] || '#333';
           var rarityColor = t.rarity === 'mythic' ? '#f87171' : t.rarity === 'legendary' ? '#fbbf24' : t.rarity === 'epic' ? '#a78bfa' : t.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
         %>
-        <div style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.35rem">
+        <div class="obj-theme-selcard" data-theme-key="<%= t.key %>" data-rarity="<%= t.rarity || '' %>" data-always="<%= t.always ? '1' : '0' %>" style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.35rem">
           <div style="width:3rem;height:3rem;border-radius:50%;background:<%= swatchColor %>;border:2px solid rgba(255,255,255,.2);margin:0 auto"></div>
           <div style="font-size:.85rem;font-weight:700;color:#f1f5f9"><%= t.label %></div>
-          <select class="charm-rarity-select no-arrow js-theme-rarity" data-theme-key="<%= t.key %>"
-                  style="border-color:<%= rarityColor %>; color:<%= rarityColor %>">
-            <option value="common"    <%= t.rarity === 'common'    ? 'selected' : '' %>>Commun</option>
-            <option value="rare"      <%= t.rarity === 'rare'      ? 'selected' : '' %>>Rare</option>
-            <option value="epic"      <%= t.rarity === 'epic'      ? 'selected' : '' %>>Épique</option>
-            <option value="legendary" <%= t.rarity === 'legendary' ? 'selected' : '' %>>Légendaire</option>
-            <option value="mythic"    <%= t.rarity === 'mythic'    ? 'selected' : '' %>>Mythique</option>
-          </select>
-          <span class="js-theme-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
+          <% if (t.always) { %>
+            <span class="obj-always-badge">Toujours disponible</span>
+          <% } else { %>
+            <select class="charm-rarity-select no-arrow js-theme-rarity" data-theme-key="<%= t.key %>"
+                    style="border-color:<%= rarityColor %>; color:<%= rarityColor %>">
+              <option value="common"    <%= t.rarity === 'common'    ? 'selected' : '' %>>Commun</option>
+              <option value="rare"      <%= t.rarity === 'rare'      ? 'selected' : '' %>>Rare</option>
+              <option value="epic"      <%= t.rarity === 'epic'      ? 'selected' : '' %>>Épique</option>
+              <option value="legendary" <%= t.rarity === 'legendary' ? 'selected' : '' %>>Légendaire</option>
+              <option value="mythic"    <%= t.rarity === 'mythic'    ? 'selected' : '' %>>Mythique</option>
+            </select>
+            <span class="js-theme-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
+          <% } %>
         </div>
         <% }); %>
       </div>
@@ -260,6 +417,13 @@
   </main>
 </div>
 
+<!-- Selection bar (single, always in DOM) -->
+<div class="obj-sel-bar" id="objSelBar" hidden>
+  <span class="obj-sel-count" id="objSelCount">0 sélectionné(s)</span>
+  <button class="obj-sel-cancel" id="objSelCancel">Annuler</button>
+  <button class="obj-sel-confirm-btn" id="objSelConfirm">Offrir à…</button>
+</div>
+
 <!-- Zoom overlay images -->
 <div class="ari-zoom-overlay" id="ariZoom" hidden>
   <div class="ari-zoom-box">
@@ -307,7 +471,7 @@
 (function() {
   var links = document.querySelectorAll('.obj-nav-link[data-section]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
-  var VALID = ['images','charms','themes','config'];
+  var VALID = ['accueil','images','charms','themes','config'];
 
   function activate(key) {
     links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });
@@ -319,8 +483,13 @@
     l.addEventListener('click', function() { activate(l.dataset.section); });
   });
 
+  // Accueil "goto" buttons
+  document.querySelectorAll('.js-goto-section').forEach(function(btn) {
+    btn.addEventListener('click', function() { activate(btn.dataset.section); });
+  });
+
   var hash = location.hash.replace('#', '');
-  activate(VALID.includes(hash) ? hash : 'images');
+  activate(VALID.includes(hash) ? hash : 'accueil');
 })();
 </script>
 
@@ -368,8 +537,16 @@
   function closeZoom() { overlay.hidden = true; document.body.style.overflow = ''; }
   function navigate(delta) { const n = zoomIdx + delta; if (n >= 0 && n < visibleIdxs.length) { zoomIdx = n; renderZoom(); } }
 
+  const imageSection = document.querySelector('.obj-section[data-section="images"]');
   cards.forEach((c, i) => {
-    c.addEventListener('click', () => { const vi = visibleIdxs.indexOf(i); if (vi !== -1) openZoom(vi); });
+    c.addEventListener('click', () => {
+      if (imageSection && imageSection.classList.contains('obj-sel-mode')) {
+        c.classList.toggle('obj-selected');
+        updateSelBar();
+        return;
+      }
+      const vi = visibleIdxs.indexOf(i); if (vi !== -1) openZoom(vi);
+    });
     c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const vi = visibleIdxs.indexOf(i); if (vi !== -1) openZoom(vi); } });
   });
 
@@ -415,6 +592,16 @@
       } catch (err) { saveStatus.textContent = '✗ Erreur réseau'; saveStatus.style.color = '#f87171'; }
     });
   });
+
+  // Selection bar helpers for images
+  function updateSelBar() {
+    const selected = document.querySelectorAll('.obj-section[data-section="images"] .obj-selected');
+    const bar = document.getElementById('objSelBar');
+    const countEl = document.getElementById('objSelCount');
+    if (countEl) countEl.textContent = selected.length + ' sélectionné(s)';
+    if (bar) bar.hidden = selected.length === 0;
+  }
+  window._imagesUpdateSelBar = updateSelBar;
 })();
 </script>
 
@@ -422,6 +609,18 @@
 <script>
 (function() {
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
+
+  // Charm filter bar
+  const charmFilterBar = document.getElementById('charm-filter-bar');
+  const charmCards = Array.from(document.querySelectorAll('.ari-charm-card'));
+  charmFilterBar && charmFilterBar.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
+    charmFilterBar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.filter;
+    charmCards.forEach(c => { c.hidden = !(f === 'all' || c.dataset.rarity === f); });
+  });
+
   document.querySelectorAll('.js-admin-gift-charm').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (window._adminOpenGiftModal) {
@@ -435,6 +634,8 @@
       const charmId = sel.dataset.charmId;
       const rarity  = sel.value;
       const statusEl = sel.closest('.ari-charm-card').querySelector('.ari-charm-save-status');
+      // Update data-rarity for filter
+      sel.closest('.ari-charm-card').dataset.rarity = rarity;
       if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
       sel.style.color = RARITY_COLORS[rarity] || '#94a3b8';
       sel.style.borderColor = RARITY_COLORS[rarity] || 'rgba(255,255,255,.2)';
@@ -448,6 +649,26 @@
       } catch (e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
     });
   });
+
+  // Selection for charm cards
+  const charmSection = document.querySelector('.obj-section[data-section="charms"]');
+  charmCards.forEach(function(card) {
+    card.addEventListener('click', function(e) {
+      if (!charmSection || !charmSection.classList.contains('obj-sel-mode')) return;
+      if (e.target.closest('select') || e.target.closest('button')) return;
+      card.classList.toggle('obj-selected');
+      window._charmsUpdateSelBar && window._charmsUpdateSelBar();
+    });
+  });
+
+  function updateSelBar() {
+    const selected = document.querySelectorAll('.obj-section[data-section="charms"] .obj-selected');
+    const bar = document.getElementById('objSelBar');
+    const countEl = document.getElementById('objSelCount');
+    if (countEl) countEl.textContent = selected.length + ' sélectionné(s)';
+    if (bar) bar.hidden = selected.length === 0;
+  }
+  window._charmsUpdateSelBar = updateSelBar;
 })();
 </script>
 
@@ -455,10 +676,29 @@
 <script>
 (function() {
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
+
+  // Theme filter bar
+  const themeFilterBar = document.getElementById('theme-filter-bar');
+  const themeCards = Array.from(document.querySelectorAll('.obj-theme-selcard'));
+  themeFilterBar && themeFilterBar.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
+    themeFilterBar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.filter;
+    themeCards.forEach(c => {
+      const rarity = c.dataset.rarity;
+      const always = c.dataset.always === '1';
+      const show = f === 'all' || (!always && rarity === f);
+      c.hidden = !show;
+    });
+  });
+
   document.querySelectorAll('.js-theme-rarity').forEach(function(sel) {
     sel.addEventListener('change', async function() {
       var key = sel.dataset.themeKey;
       var rarity = sel.value;
+      var card = sel.closest('.obj-theme-selcard');
+      if (card) card.dataset.rarity = rarity;
       var statusEl = sel.parentElement.querySelector('.js-theme-save-status');
       sel.style.color = RARITY_COLORS[rarity] || '#94a3b8';
       sel.style.borderColor = RARITY_COLORS[rarity] || 'rgba(255,255,255,.2)';
@@ -479,6 +719,148 @@
         if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; }
       }
     });
+  });
+
+  // Selection for theme cards
+  const themeSection = document.querySelector('.obj-section[data-section="themes"]');
+  themeCards.forEach(function(card) {
+    card.addEventListener('click', function(e) {
+      if (!themeSection || !themeSection.classList.contains('obj-sel-mode')) return;
+      if (e.target.closest('select') || e.target.closest('button')) return;
+      card.classList.toggle('obj-selected');
+      window._themesUpdateSelBar && window._themesUpdateSelBar();
+    });
+  });
+
+  function updateSelBar() {
+    const selected = document.querySelectorAll('.obj-section[data-section="themes"] .obj-selected');
+    const bar = document.getElementById('objSelBar');
+    const countEl = document.getElementById('objSelCount');
+    if (countEl) countEl.textContent = selected.length + ' sélectionné(s)';
+    if (bar) bar.hidden = selected.length === 0;
+  }
+  window._themesUpdateSelBar = updateSelBar;
+})();
+</script>
+
+<!-- ── Selection mode JS ── -->
+<script>
+(function() {
+  var _currentSection = null;
+  var _currentAction = null;
+  var bar = document.getElementById('objSelBar');
+  var confirmBtn = document.getElementById('objSelConfirm');
+  var cancelBtn = document.getElementById('objSelCancel');
+  var countEl = document.getElementById('objSelCount');
+
+  document.querySelectorAll('.js-sel-mode').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var action = btn.dataset.action;
+      var sectionKey = btn.dataset.section;
+      var section = document.querySelector('.obj-section[data-section="' + sectionKey + '"]');
+      if (!section) return;
+
+      // Exit previous sel mode if any
+      exitSelMode();
+
+      _currentSection = sectionKey;
+      _currentAction = action;
+      section.classList.add('obj-sel-mode');
+      section.dataset.selAction = action;
+
+      // Configure bar confirm button
+      if (confirmBtn) {
+        confirmBtn.dataset.action = action;
+        confirmBtn.textContent = action === 'delete' ? 'Supprimer' : 'Offrir à\u2026';
+      }
+      if (bar) bar.hidden = true; // hidden until items selected
+    });
+  });
+
+  function getSelectedItems() {
+    if (!_currentSection) return [];
+    var items = [];
+    if (_currentSection === 'images') {
+      document.querySelectorAll('.obj-section[data-section="images"] .ari-card.obj-selected').forEach(function(c) {
+        items.push({ type: 'image', id: Number(c.dataset.id), label: c.getAttribute('aria-label') || ('Image #' + c.dataset.id) });
+      });
+    } else if (_currentSection === 'charms') {
+      document.querySelectorAll('.obj-section[data-section="charms"] .ari-charm-card.obj-selected').forEach(function(c) {
+        var label = c.querySelector('strong') ? c.querySelector('strong').textContent : ('Charme #' + c.dataset.charmId);
+        items.push({ type: 'charm', id: Number(c.dataset.charmId), label: label });
+      });
+    } else if (_currentSection === 'themes') {
+      document.querySelectorAll('.obj-section[data-section="themes"] .obj-theme-selcard.obj-selected').forEach(function(c) {
+        var label = c.querySelector('div[style*="font-size:.85rem"]') ? c.querySelector('div[style*="font-size:.85rem"]').textContent.trim() : c.dataset.themeKey;
+        items.push({ type: 'theme', id: c.dataset.themeKey, label: label });
+      });
+    }
+    return items;
+  }
+
+  function updateBarCount() {
+    var items = getSelectedItems();
+    if (countEl) countEl.textContent = items.length + ' sélectionné(s)';
+    if (bar) bar.hidden = items.length === 0;
+  }
+  window._selModeUpdateCount = updateBarCount;
+
+  // Patch the individual section updaters to also update bar count properly
+  window._imagesUpdateSelBar = updateBarCount;
+  window._charmsUpdateSelBar = updateBarCount;
+  window._themesUpdateSelBar = updateBarCount;
+
+  function exitSelMode() {
+    if (_currentSection) {
+      var s = document.querySelector('.obj-section[data-section="' + _currentSection + '"]');
+      if (s) {
+        s.classList.remove('obj-sel-mode');
+        delete s.dataset.selAction;
+        s.querySelectorAll('.obj-selected').forEach(function(el) { el.classList.remove('obj-selected'); });
+      }
+    }
+    _currentSection = null;
+    _currentAction = null;
+    if (bar) bar.hidden = true;
+  }
+
+  cancelBtn && cancelBtn.addEventListener('click', exitSelMode);
+
+  confirmBtn && confirmBtn.addEventListener('click', async function() {
+    var items = getSelectedItems();
+    if (!items.length) return;
+    if (_currentAction === 'delete') {
+      if (!confirm('Supprimer ' + items.length + ' élément(s) ? Cette action est irréversible.')) return;
+      var ids = items.map(function(i) { return i.id; });
+      var endpoint = _currentSection === 'images'
+        ? '/admin/recompenses/images-profil/bulk-delete'
+        : '/admin/recompenses/charms/bulk-delete';
+      try {
+        var r = await fetch(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: ids }),
+        });
+        var json = await r.json();
+        if (json.ok) {
+          // Remove deleted cards from DOM
+          if (_currentSection === 'images') {
+            document.querySelectorAll('.obj-section[data-section="images"] .ari-card.obj-selected').forEach(function(c) { c.remove(); });
+          } else if (_currentSection === 'charms') {
+            document.querySelectorAll('.obj-section[data-section="charms"] .ari-charm-card.obj-selected').forEach(function(c) { c.remove(); });
+          }
+          exitSelMode();
+        } else {
+          alert('Erreur lors de la suppression.');
+        }
+      } catch (e) {
+        alert('Erreur réseau.');
+      }
+    } else {
+      // Gift action
+      if (window._adminOpenGiftModal) {
+        window._adminOpenGiftModal({ items: items });
+      }
+    }
   });
 })();
 </script>
@@ -525,7 +907,11 @@
   function openModal(target) {
     _giftTarget = target;
     _selectedUserId = null;
-    if (itemLabel) itemLabel.textContent = '\uD83C\uDF81 ' + (target.type === 'image' ? 'Image' : 'Charme') + ' : ' + target.label;
+    if (target.items) {
+      if (itemLabel) itemLabel.textContent = '\uD83C\uDF81 ' + target.items.length + ' objet(s) à offrir';
+    } else {
+      if (itemLabel) itemLabel.textContent = '\uD83C\uDF81 ' + (target.type === 'image' ? 'Image' : target.type === 'charm' ? 'Charme' : 'Thème') + ' : ' + target.label;
+    }
     if (searchInput) searchInput.value = '';
     if (userList) userList.innerHTML = '<p style="color:#64748b;font-size:.82rem;text-align:center;margin:.75rem 0">Tapez pour rechercher un utilisateur\u2026</p>';
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '.45'; }
@@ -592,9 +978,15 @@
   confirmBtn && confirmBtn.addEventListener('click', function() {
     if (!_selectedUserId || !_giftTarget) return;
     confirmBtn.disabled = true;
-    var body = { targetUserId: _selectedUserId, type: _giftTarget.type };
-    if (_giftTarget.type === 'image') body.imageId = _giftTarget.id;
-    else body.charmId = _giftTarget.id;
+    var body = { targetUserId: _selectedUserId };
+    if (_giftTarget.items) {
+      // Bulk gift
+      body.items = _giftTarget.items.map(function(i) { return { type: i.type, id: i.id }; });
+    } else {
+      body.type = _giftTarget.type;
+      if (_giftTarget.type === 'image') body.imageId = _giftTarget.id;
+      else body.charmId = _giftTarget.id;
+    }
     fetch('/admin/recompenses/gift', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

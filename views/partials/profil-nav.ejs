@@ -10,12 +10,35 @@
   <div class="wiki-sidebar-body">
 
     <%# ── 1. Coffre ── %>
-    <nav class="profil-nav-links">
-      <a href="/favoris/coffre" class="profil-nav-link profil-nav-link--coffre<%= currentPath === '/favoris/coffre' ? ' active' : '' %>">
+    <%
+      var _cofreOpen = currentPath === '/favoris/coffre' || currentPath.indexOf('/favoris/coffre') === 0;
+      var _cofreView = locals.view || null;
+    %>
+    <details class="profil-nav-accordion<%= _cofreOpen ? ' open' : '' %>">
+      <summary class="profil-nav-accordion-title">
         <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="12" width="20" height="10" rx="2"/><path d="M2 12 Q2 6 12 6 Q22 6 22 12"/><rect x="9" y="9" width="6" height="5" rx="1.5"/><circle cx="12" cy="17" r="1.5"/></svg>
-        <span>Coffre</span>
-      </a>
-    </nav>
+        Coffre
+        <% if (locals.coffreTotal !== undefined) { %><span class="profil-nav-count"><%= locals.coffreTotal %></span><% } %>
+        <svg class="profil-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </summary>
+      <nav class="profil-nav-links profil-nav-links--sub">
+        <a href="/favoris/coffre?view=images" class="profil-nav-link<%= _cofreOpen && _cofreView === 'images' ? ' active' : '' %>">
+          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <span>Images</span>
+          <% if (locals.coffreUnlocks !== undefined) { %><span class="profil-nav-count"><%= locals.coffreUnlocks %></span><% } %>
+        </a>
+        <a href="/favoris/coffre?view=charms" class="profil-nav-link<%= _cofreOpen && _cofreView === 'charms' ? ' active' : '' %>">
+          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <span>Charmes</span>
+          <% if (locals.coffreCharms !== undefined) { %><span class="profil-nav-count"><%= locals.coffreCharms %></span><% } %>
+        </a>
+        <a href="/favoris/coffre?view=themes" class="profil-nav-link<%= _cofreOpen && _cofreView === 'themes' ? ' active' : '' %>">
+          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+          <span>Th&egrave;mes</span>
+          <% if (locals.coffreThemes !== undefined) { %><span class="profil-nav-count"><%= locals.coffreThemes %></span><% } %>
+        </a>
+      </nav>
+    </details>
 
     <%# ── 2. Activités ── %>
     <%

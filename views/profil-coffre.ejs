@@ -99,44 +99,6 @@
       </div>
     </section>
 
-    <%# ── Section Arcade ── %>
-    <% if (currentUser.arcadeMemoryBestLevel > 0 || currentUser.wordleBestStreak > 0) { %>
-    <section class="coffre-section">
-      <div class="coffre-section-header">
-        <h2 class="coffre-section-title">&#127918; Arcade</h2>
-        <a href="/jeu" class="coffre-voir-plus">Jouer &rarr;</a>
-      </div>
-      <% if (currentUser.arcadeMemoryBestLevel > 0) { %>
-      <div class="coffre-arcade-stats">
-        <div class="coffre-arcade-stat">
-          <span class="coffre-arcade-stat-value"><%= currentUser.arcadeMemoryBestLevel %></span>
-          <span class="coffre-arcade-stat-label">Niveau max Memory</span>
-        </div>
-        <div class="coffre-arcade-stat">
-          <span class="coffre-arcade-stat-value"><%= currentUser.arcadeMemoryBestScore.toLocaleString('fr-FR') %></span>
-          <span class="coffre-arcade-stat-label">Meilleur score</span>
-        </div>
-      </div>
-      <% } %>
-      <% if (currentUser.wordleBestStreak > 0) { %>
-      <div class="coffre-arcade-stats" style="margin-top:<%= currentUser.arcadeMemoryBestLevel > 0 ? '.75rem' : '0' %>">
-        <div class="coffre-arcade-stat">
-          <span class="coffre-arcade-stat-value">
-            <%= currentUser.wordleCurrentStreak %><% if (currentUser.wordleCurrentStreak >= 3) { %>&nbsp;&#128293;<% } %>
-          </span>
-          <span class="coffre-arcade-stat-label">S&eacute;rie actuelle</span>
-        </div>
-        <div class="coffre-arcade-stat">
-          <span class="coffre-arcade-stat-value"><%= currentUser.wordleBestStreak %></span>
-          <span class="coffre-arcade-stat-label">Meilleure s&eacute;rie</span>
-        </div>
-      </div>
-      <%# Stats invisibles pour usage futur %>
-      <!-- wordle_total_played:<%= currentUser.wordleTotalPlayed %> wordle_total_wins:<%= currentUser.wordleTotalWins %> -->
-      <% } %>
-    </section>
-    <% } %>
-
     <% } else if (view === 'images') { %>
     <%# ════════════════════════════════════════════════════════════════ %>
     <%# ── VUE IMAGES COMPLÈTE ── %>
@@ -315,6 +277,43 @@
             <% } %>
           </div>
         <% }) %>
+      </div>
+    </section>
+
+    <% } else if (view === 'themes') { %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+    <%# ── VUE THÈMES ── %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+    <section class="coffre-section">
+      <% var ownedThemeCount = (userThemes || []).filter(function(t){ return t.owned; }).length; %>
+      <div class="coffre-section-header">
+        <h2 class="coffre-section-title">Th&egrave;mes <span class="coffre-section-count">(<%= ownedThemeCount %> poss&eacute;d&eacute;<%= ownedThemeCount > 1 ? 's' : '' %>)</span></h2>
+      </div>
+      <div class="coffre-themes-full">
+        <% (userThemes || []).forEach(function(t) { %>
+          <%
+            var themeColors = { rouge:'hsl(355,55%,32%)', vert:'hsl(148,42%,28%)', violet:'hsl(270,58%,32%)', bleu:'hsl(212,65%,32%)', rose:'hsl(330,58%,32%)', blanc:'hsl(0,0%,90%)', default:'hsl(240,6%,20%)' };
+            var swatchColor = themeColors[t.key] || '#333';
+            var rarityColor = !t.always && t.rarity ? (t.rarity === 'mythic' ? '#f87171' : t.rarity === 'legendary' ? '#fbbf24' : t.rarity === 'epic' ? '#a78bfa' : t.rarity === 'rare' ? '#60a5fa' : '#94a3b8') : '#475569';
+            var rarityLabel = t.always ? 'Toujours disponible' : ({ common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[t.rarity] || '—');
+          %>
+          <button type="button"
+                  class="coffre-theme-card coffre-theme-card--full<%= t.active ? ' coffre-theme-card--active' : '' %><%= !t.owned ? ' coffre-theme-card--locked' : '' %>"
+                  data-theme-key="<%= t.key %>"
+                  <%= !t.owned ? 'disabled' : '' %>
+                  title="<%= t.label %>">
+            <span class="coffre-theme-swatch coffre-theme-swatch--lg" style="background:<%= swatchColor %>"></span>
+            <div class="coffre-theme-info">
+              <span class="coffre-theme-name"><%= t.label %></span>
+              <span class="coffre-theme-rarity-label" style="color:<%= rarityColor %>"><%= rarityLabel %></span>
+            </div>
+            <% if (t.active) { %>
+              <span class="coffre-theme-active-dot" title="Actif"></span>
+            <% } else if (!t.owned && !t.always) { %>
+              <span class="coffre-theme-lock">&#128274;</span>
+            <% } %>
+          </button>
+        <% }); %>
       </div>
     </section>
     <% } %>
@@ -686,7 +685,18 @@
     });
   });
 
-  // Thèmes
+})();
+</script>
+
+<% } else { %>
+</main>
+<%- include('partials/foot') %>
+<% } %>
+
+<%# ── Thèmes : handler universel (overview + vue thèmes) ── %>
+<% if (!view || view === 'themes') { %>
+<script>
+(function() {
   document.querySelectorAll('.coffre-theme-card:not([disabled])').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var key = btn.dataset.themeKey;
@@ -707,8 +717,4 @@
   });
 })();
 </script>
-
-<% } else { %>
-</main>
-<%- include('partials/foot') %>
 <% } %>

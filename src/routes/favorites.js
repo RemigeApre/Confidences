@@ -217,11 +217,15 @@ function buildFavoritesRouter(config) {
 
   // ── Coffre ────────────────────────────────────────────────────────────────
   router.get("/coffre", requireUser, (req, res) => {
-    const view = ['images', 'charms'].includes(req.query.view) ? req.query.view : null;
+    const view = ['images', 'charms', 'themes'].includes(req.query.view) ? req.query.view : null;
     const unlocks   = getUserUnlocks(req.user.id);
     const charms    = getUserUnlockedCharms(req.user.id);
+    const userThemes = getUserThemes(req.user.id);
     const shopItems = view === 'images' ? getShopItems(req.user.id) : [];
     const cfgBuy    = getLootboxConfig().buyPrices;
+    const coffreUnlocks = unlocks.length;
+    const coffreCharms  = charms.filter(c => c.owned).length;
+    const coffreThemes  = userThemes.filter(t => t.owned).length;
     res.render("profil-coffre", {
       config,
       roleHue: roleHue(req.user),
@@ -233,7 +237,11 @@ function buildFavoritesRouter(config) {
       RARITY_BUY_PRICE,
       RARITY_SELL_PRICE,
       CHARM_BUY_PRICE: cfgBuy,
-      userThemes: getUserThemes(req.user.id),
+      userThemes,
+      coffreUnlocks,
+      coffreCharms,
+      coffreThemes,
+      coffreTotal: coffreUnlocks + coffreCharms + coffreThemes,
     });
   });
 

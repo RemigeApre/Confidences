@@ -2932,6 +2932,10 @@ function getCharmByKey(key) {
   return db.prepare("SELECT id, key, label, symbol, symbol_empty, rarity FROM charms WHERE key = ?").get(key) || null;
 }
 
+function deleteCharmById(id) {
+  db.prepare("DELETE FROM charms WHERE id = ?").run(id);
+}
+
 function adjustCoins(userId, delta) {
   db.prepare("UPDATE users SET coins = MAX(0, coins + ?) WHERE id = ?").run(delta, userId);
 }
@@ -3776,6 +3780,8 @@ module.exports = {
   grantGiftLootbox,
   getLootboxCountByType,
   listCharms,
+  getCharmByKey,
+  deleteCharmById,
   listUnownedImages,
   getUserUnlockedCharms,
   setUserCharm,

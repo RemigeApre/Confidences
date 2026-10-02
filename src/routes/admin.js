@@ -55,6 +55,8 @@ const {
   listAllSiteTags,
   listProtagonistes,
   listAllParodies,
+  deleteGalleryImage,
+  deleteCharmById,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -459,12 +461,17 @@ function buildAdminRouter(config) {
   router.get("/recompenses", requireAdmin, (req, res) => {
     const lootboxConfig = getLootboxConfig();
     const charms = listCharms();
-    const section = ['images', 'charms', 'themes', 'config'].includes(req.query.section) ? req.query.section : 'images';
+    const section = ['accueil', 'images', 'charms', 'themes', 'config'].includes(req.query.section) ? req.query.section : 'accueil';
     const images = listGalleryImages().map(img => {
       const imagePaths = img.imagePaths || [];
       return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null };
     });
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS });
+    const rarities = ['common','rare','epic','legendary','mythic'];
+    const imageStats = Object.fromEntries(rarities.map(r => [r, images.filter(i => i.rarity === r).length]));
+    const charmStats = Object.fromEntries(rarities.map(r => [r, charms.filter(c => c.rarity === r).length]));
+    const themeStats = Object.fromEntries(rarities.map(r => [r, (THEME_DEFINITIONS||[]).filter(t => t.rarity === r).length]));
+    const themeAlways = (THEME_DEFINITIONS||[]).filter(t => t.always).length;
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -517,15 +524,43 @@ function buildAdminRouter(config) {
   // ── Offrir un item (image ou charme) à un utilisateur ─────────────────────
   router.post("/recompenses/gift", requireAdmin, express.json(), (req, res) => {
     const targetUserId = parseInt(req.body.targetUserId, 10);
-    const itemType = String(req.body.type || '');
-    const itemId   = parseInt(itemType === 'image' ? req.body.imageId : req.body.charmId, 10);
-    if (!targetUserId || !['charm', 'image'].includes(itemType) || isNaN(itemId)) {
-      return res.json({ ok: false, error: 'params_invalides' });
-    }
+    if (!targetUserId) return res.json({ ok: false, error: 'params_invalides' });
     const targetUser = getUserById(targetUserId);
     if (!targetUser) return res.json({ ok: false, error: 'utilisateur_introuvable' });
+    // Bulk gift: array of items
+    if (Array.isArray(req.body.items)) {
+      for (const item of req.body.items) {
+        const itemType = String(item.type || '');
+        const itemId = parseInt(item.id, 10);
+        if (!['charm', 'image', 'theme'].includes(itemType) || isNaN(itemId)) continue;
+        grantGiftLootbox(targetUserId, { type: itemType, ...(itemType === 'charm' ? { charmId: itemId } : itemType === 'theme' ? { themeKey: item.id } : { imageId: itemId }) });
+      }
+      return res.json({ ok: true, username: targetUser.username || targetUser.display_name || String(targetUserId) });
+    }
+    // Single gift
+    const itemType = String(req.body.type || '');
+    const itemId   = parseInt(itemType === 'image' ? req.body.imageId : req.body.charmId, 10);
+    if (!['charm', 'image'].includes(itemType) || isNaN(itemId)) {
+      return res.json({ ok: false, error: 'params_invalides' });
+    }
     grantGiftLootbox(targetUserId, { type: itemType, ...(itemType === 'charm' ? { charmId: itemId } : { imageId: itemId }) });
     res.json({ ok: true, username: targetUser.username || targetUser.display_name || String(targetUserId) });
+  });
+
+  // ── Suppression en masse images ────────────────────────────────────────────
+  router.post("/recompenses/images-profil/bulk-delete", requireAdmin, express.json(), (req, res) => {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids.map(Number).filter(Boolean) : [];
+    if (!ids.length) return res.json({ ok: false, error: 'aucun_id' });
+    for (const id of ids) { try { deleteGalleryImage(id); } catch (_) {} }
+    res.json({ ok: true, deleted: ids });
+  });
+
+  // ── Suppression en masse charmes ───────────────────────────────────────────
+  router.post("/recompenses/charms/bulk-delete", requireAdmin, express.json(), (req, res) => {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids.map(Number).filter(Boolean) : [];
+    if (!ids.length) return res.json({ ok: false, error: 'aucun_id' });
+    for (const id of ids) { try { deleteCharmById(id); } catch (_) {} }
+    res.json({ ok: true, deleted: ids });
   });
 
   // ── Gestion des jeux ─────────────────────────────────────────────────────
