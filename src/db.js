@@ -3220,7 +3220,12 @@ function openLootbox(userId) {
     }
     if (giftData.type === 'joker') {
       const jokerItemType = giftData.jokerType === 'charm' ? 'joker_charm' : 'joker_image';
-      db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, 'legendary', ?)").run(userId, jokerItemType, now);
+      const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, 'legendary', ?)").run(userId, jokerItemType, now);
+      if (ins.changes === 0) {
+        const coins = RARITY_SELL_PRICE['legendary'] || 10;
+        db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+        return { rewards: [{ isCoins: true, coins, rarity: 'legendary' }], isGift: true };
+      }
       return { rewards: [{ isJoker: true, jokerType: giftData.jokerType === 'charm' ? 'charm' : 'image', rarity: 'legendary' }], isGift: true };
     }
     if (giftData.type === 'coins') {

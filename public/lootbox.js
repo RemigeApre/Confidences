@@ -318,6 +318,12 @@
         }
         setTimeout(function () {
           if (chest) { chest.classList.add("lootbox-chest--done"); chest.setAttribute("hidden", ""); }
+          // Si l'overlay a été fermé accidentellement pendant l'animation (clic backdrop, ESC),
+          // on le ré-ouvre pour afficher la récompense — l'objet est déjà accordé.
+          if (overlay.hasAttribute("hidden")) {
+            overlay.removeAttribute("hidden");
+            _opening = true;
+          }
           cb(data);
         }, 900);
       })
@@ -907,6 +913,8 @@
 
   closeBtn && closeBtn.addEventListener("click", closeOverlay);
   overlay.addEventListener("click", function (e) {
+    // Pendant l'animation du coffre, ignorer les clics sur le backdrop
+    if (chest && !chest.hasAttribute("hidden")) return;
     if (e.target === overlay || e.target.classList.contains("lootbox-overlay-backdrop")) closeOverlay();
   });
 
@@ -993,7 +1001,11 @@
       if (e.key === "ArrowRight") { zoomNavigate(1);  return; }
       if (e.key === "Enter" && zoomAvatarBtn && !zoomAvatarBtn.disabled) { zoomAvatarBtn.click(); return; }
     }
-    if (!overlay.hasAttribute("hidden") && e.key === "Escape") closeOverlay();
+    if (!overlay.hasAttribute("hidden") && e.key === "Escape") {
+      // Pendant l'animation du coffre, ignorer Escape
+      if (chest && !chest.hasAttribute("hidden")) return;
+      closeOverlay();
+    }
   });
 
   // ── Init ─────────────────────────────────────────────────────────────────────
