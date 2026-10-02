@@ -18368,13 +18368,17 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .coffre-joker-card {
   display: flex; align-items: center; gap: .45rem;
   background: hsl(48,60%,15%); border: 1.5px solid hsl(48,80%,40%);
-  border-radius: 8px; padding: .4rem .75rem;
+  border-radius: 8px; padding: .35rem .65rem;
   cursor: pointer; color: hsl(48,90%,65%);
   font-size: .82rem; font-weight: 700;
   transition: background .15s, transform .12s;
 }
 .coffre-joker-card:hover { background: hsl(48,60%,20%); transform: scale(1.03); }
-.coffre-joker-card-icon { font-size: 1rem; }
+.coffre-joker-card-img {
+  width: 28px; height: 28px;
+  object-fit: contain; object-position: center;
+  flex-shrink: 0;
+}
 
 /* ── Coffre — filtres ── */
 .coffre-filters-group {
@@ -18618,10 +18622,15 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-ucard-joker-fill {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: .3rem; padding: .6rem;
+  gap: .3rem; padding: .5rem;
 }
 .lootbox-ucard-joker-fill[hidden] { display: none; }
-.lootbox-joker-reveal-title { font-size: .75rem; font-weight: 700; color: hsl(48,90%,65%); text-align: center; margin: .15rem 0 0; }
+.lootbox-joker-img {
+  width: 80%; height: 80%;
+  object-fit: contain; object-position: center;
+  flex-shrink: 0;
+}
+.lootbox-joker-reveal-title { font-size: .75rem; font-weight: 700; color: hsl(48,90%,65%); text-align: center; margin: .1rem 0 0; }
 .lootbox-joker-reveal-desc { font-size: .62rem; color: rgba(255,255,255,.5); text-align: center; margin: 0; }
 
 /* Title area between visual and stars */
