@@ -42,6 +42,7 @@ const {
   RARITY_BUY_PRICE,
   RARITY_SELL_PRICE,
   getLootboxConfig,
+  getLootboxCount,
   checkAndGrantActionLootbox,
   countUserFavoritesAll,
 } = require("../db");
@@ -155,6 +156,8 @@ function buildFavoritesRouter(config) {
     const fantasyPages = wikiPages.filter((p) =>
       p.category === "fantasmes" || (p.extraCategories || []).includes("fantasmes")
     );
+    const unlocks = getUserUnlocks(req.user.id);
+    const lootboxCount = getLootboxCount(req.user.id);
     res.render("favoris", {
       config,
       wikiPages,
@@ -164,6 +167,8 @@ function buildFavoritesRouter(config) {
       categories: WIKI_CATEGORIES,
       roleHue: roleHue(req.user),
       notesCounts: notesCounts(req.user),
+      unlocks,
+      lootboxCount,
     });
   }
 

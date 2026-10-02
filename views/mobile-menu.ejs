@@ -87,6 +87,34 @@
 
       </nav>
 
+      <%# ── Paramètres Ultra / Irréaliste ── %>
+      <div class="mm-settings-block">
+        <div class="mm-settings-heading">Ultra</div>
+        <div class="mm-setting-options" id="mm-ultra-options">
+          <label class="mm-setting-radio" data-val="hidden">
+            <input type="radio" name="mm-ultra" value="hidden" /> Masqu&eacute;
+          </label>
+          <label class="mm-setting-radio" data-val="visible">
+            <input type="radio" name="mm-ultra" value="visible" /> Visible
+          </label>
+          <label class="mm-setting-radio" data-val="off">
+            <input type="radio" name="mm-ultra" value="off" /> D&eacute;sactiv&eacute;
+          </label>
+        </div>
+        <div class="mm-settings-heading">Irr&eacute;aliste</div>
+        <div class="mm-setting-options" id="mm-irrealiste-options">
+          <label class="mm-setting-radio" data-val="hidden">
+            <input type="radio" name="mm-irrealiste" value="hidden" /> Masqu&eacute;
+          </label>
+          <label class="mm-setting-radio" data-val="visible">
+            <input type="radio" name="mm-irrealiste" value="visible" /> Visible
+          </label>
+          <label class="mm-setting-radio" data-val="off">
+            <input type="radio" name="mm-irrealiste" value="off" /> D&eacute;sactiv&eacute;
+          </label>
+        </div>
+      </div>
+
       <%# ── Déconnexion ── %>
       <form method="POST" action="/admin/logout" class="mm-logout-form">
         <button type="submit" class="mm-item mm-item--logout">
@@ -110,4 +138,43 @@
   </div>
 
 </main>
+<% if (currentUser) { %>
+<script>
+(function () {
+  function savePref(field, value) {
+    var body = {};
+    body[field] = value;
+    fetch("/favoris/parametres", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(function () {});
+  }
+
+  function wireServerRadio(containerId, field, initial) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var labels = Array.prototype.slice.call(container.querySelectorAll(".mm-setting-radio"));
+    var current = initial;
+    function sync() {
+      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
+    }
+    sync();
+    labels.forEach(function (lbl) {
+      var radio = lbl.querySelector("input");
+      if (radio.value === current) radio.checked = true;
+      radio.addEventListener("change", function () {
+        if (!radio.checked) return;
+        current = radio.value;
+        sync();
+        savePref(field, current);
+      });
+    });
+  }
+
+  wireServerRadio("mm-ultra-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
+  wireServerRadio("mm-irrealiste-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
+})();
+</script>
+<% } %>
 <%- include('partials/foot') %>

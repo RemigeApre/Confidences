@@ -4,6 +4,83 @@
 
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
+  <%# ── Dashboard mobile (masqué sur desktop) ── %>
+  <div class="profil-mobile-dash">
+
+    <%# Lootbox %>
+    <div class="pmd-lootbox">
+      <% if (lootboxCount > 0) { %>
+        <button type="button" class="pmd-lootbox-btn" id="pmd-lootbox-btn" aria-label="Ouvrir une lootbox">
+          <svg class="pmd-lootbox-icon" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="5" y="38" width="90" height="37" rx="6" fill="hsl(36,80%,30%)" stroke="hsl(36,70%,50%)" stroke-width="2"/>
+            <rect x="5" y="38" width="90" height="12" rx="3" fill="hsl(36,80%,40%)" stroke="hsl(36,70%,50%)" stroke-width="2"/>
+            <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="hsl(36,80%,35%)" stroke="hsl(36,70%,50%)" stroke-width="1.5"/>
+            <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="hsl(36,80%,35%)" stroke="hsl(36,70%,50%)" stroke-width="1.5"/>
+            <rect x="44" y="38" width="12" height="12" rx="2" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,40%)" stroke-width="1.5"/>
+          </svg>
+          <span class="pmd-lootbox-count"><%= lootboxCount %></span>
+          <span class="pmd-lootbox-label"><%= lootboxCount === 1 ? '1 lootbox' : lootboxCount + ' lootboxes' %></span>
+        </button>
+      <% } else { %>
+        <div class="pmd-lootbox-empty" aria-label="Aucune lootbox disponible">
+          <svg class="pmd-lootbox-icon pmd-lootbox-icon--empty" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="5" y="38" width="90" height="37" rx="6" fill="hsl(240,8%,18%)" stroke="hsl(240,8%,30%)" stroke-width="2"/>
+            <rect x="5" y="38" width="90" height="12" rx="3" fill="hsl(240,8%,22%)" stroke="hsl(240,8%,30%)" stroke-width="2"/>
+            <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="hsl(240,8%,20%)" stroke="hsl(240,8%,30%)" stroke-width="1.5"/>
+            <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="hsl(240,8%,20%)" stroke="hsl(240,8%,30%)" stroke-width="1.5"/>
+            <rect x="44" y="38" width="12" height="12" rx="2" fill="hsl(240,8%,26%)" stroke="hsl(240,8%,32%)" stroke-width="1.5"/>
+          </svg>
+          <span class="pmd-lootbox-label pmd-lootbox-label--empty">Aucune lootbox</span>
+        </div>
+      <% } %>
+    </div>
+
+    <%# Coffre %>
+    <% var coffrePrev = (unlocks || []).slice(0, 4); %>
+    <div class="pmd-row pmd-row--coffre">
+      <div class="pmd-row-preview">
+        <% if (coffrePrev.length) { %>
+          <% coffrePrev.forEach(function(u) { %>
+            <div class="pmd-preview-thumb">
+              <% if (u.thumb) { %>
+                <img src="<%= u.thumb %>" alt="" loading="lazy" />
+              <% } else { %>
+                <span class="pmd-preview-thumb-placeholder">&#127873;</span>
+              <% } %>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <span class="pmd-row-empty-hint">Votre coffre est vide</span>
+        <% } %>
+      </div>
+      <a href="/favoris/coffre" class="pmd-row-btn">Voir mon coffre</a>
+    </div>
+
+    <%# Activités %>
+    <div class="pmd-row pmd-row--activite">
+      <div class="pmd-row-preview">
+        <% var totalNotes = (notesCounts.wiki || 0) + (notesCounts.gallery || 0) + (notesCounts.bd || 0); %>
+        <% if (notesCounts.wiki > 0) { %>
+          <span class="pmd-act-chip pmd-act-chip--wiki"><%= notesCounts.wiki %> codex</span>
+        <% } %>
+        <% if (notesCounts.gallery > 0) { %>
+          <span class="pmd-act-chip pmd-act-chip--gallery"><%= notesCounts.gallery %> images</span>
+        <% } %>
+        <% if (notesCounts.bd > 0) { %>
+          <span class="pmd-act-chip pmd-act-chip--bd"><%= notesCounts.bd %> BD</span>
+        <% } %>
+        <% if (totalNotes === 0) { %>
+          <span class="pmd-row-empty-hint">Aucune activité</span>
+        <% } %>
+      </div>
+      <a href="/favoris/historique" class="pmd-row-btn">Voir mon activité</a>
+    </div>
+
+    <%# Gestion %>
+    <a href="/favoris/parametres" class="pmd-gestion-btn">Gestion</a>
+
+  </div>
+
   <div class="profil-export-gouts-block">
     <p class="profil-export-gouts-text">T&eacute;l&eacute;chargez une synth&egrave;se de vos go&ucirc;ts (codex), class&eacute;e par degr&eacute; d&rsquo;appr&eacute;ciation &mdash; pratique &agrave; garder pour vous ou &agrave; partager.</p>
     <button type="button" id="wiki-export-gouts-btn" class="profil-export-gouts-btn">Extraire mes go&ucirc;ts</button>
@@ -80,6 +157,14 @@
 
 <script>
 (function () {
+  // ── Dashboard mobile : bouton lootbox ────────────────────────────────────
+  var pmdBtn = document.getElementById("pmd-lootbox-btn");
+  if (pmdBtn) {
+    pmdBtn.addEventListener("click", function () {
+      if (typeof window._lbTrigger === "function") window._lbTrigger();
+    });
+  }
+
   // ── Favoris : retirer ────────────────────────────────────────────────────
   document.querySelectorAll("[data-fav-item] .wiki-pl-remove").forEach(function (btn) {
     btn.addEventListener("click", function (e) {
