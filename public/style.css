@@ -7580,18 +7580,8 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
   .mobile-tabbar-link--galerie.active { color: hsl(28,  82%, 64%); }
   .mobile-tabbar-link--quizz.active   { color: hsl(175, 58%, 55%); }
   .mobile-tabbar-link--burger.active  { color: hsl(210, 70%, 70%); }
-  /* Point actif sous l'icône */
-  .mobile-tabbar-link.active::after {
-    content: '';
-    display: block;
-    width: .35rem;
-    height: .35rem;
-    border-radius: 50%;
-    background: currentColor;
-    position: absolute;
-    bottom: .45rem;
-  }
-  .mobile-tabbar-link.active svg { transform: scale(1.12); }
+  /* Icône légèrement agrandie quand active — pas de point */
+  .mobile-tabbar-link.active svg { transform: scale(1.18); }
 
   /* Bouton central profil — dépasse de la barre */
   .mobile-tabbar-home {
@@ -18699,7 +18689,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   padding: 0 .5rem;
 }
 
-/* Bloc identité */
+/* Bloc identité — toute la carte est un lien */
 .mm-identity {
   display: flex;
   align-items: center;
@@ -18708,7 +18698,11 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1rem 1.1rem;
+  text-decoration: none;
+  transition: background .13s;
 }
+.mm-identity:hover,
+.mm-identity:active { background: var(--card-hover, #27272a); }
 .mm-identity-avatar .profile-avatar {
   width: 3rem;
   height: 3rem;
@@ -18722,10 +18716,10 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .mm-identity-avatar .profile-avatar--img { width: 3rem; height: 3rem; }
 .mm-identity-avatar .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; }
 .mm-identity-avatar .profile-avatar--shape svg { width: 2rem; height: 2rem; }
-.mm-identity-info { display: flex; flex-direction: column; gap: .15rem; }
+.mm-identity-info { display: flex; flex-direction: column; gap: .15rem; flex: 1; }
 .mm-identity-name { font-weight: 700; font-size: 1rem; color: #f1f5f9; }
-.mm-identity-link { font-size: .82rem; color: var(--accent); text-decoration: none; }
-.mm-identity--guest { justify-content: flex-start; flex-direction: column; align-items: flex-start; gap: .75rem; }
+.mm-identity-arrow { width: 1rem; height: 1rem; color: rgba(255,255,255,.22); flex-shrink: 0; }
+.mm-identity--guest { justify-content: flex-start; flex-direction: column; align-items: flex-start; gap: .75rem; text-decoration: none; }
 .mm-guest-text { color: #94a3b8; font-size: .95rem; margin: 0; }
 
 /* Nav principale */
