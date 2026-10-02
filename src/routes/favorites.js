@@ -226,7 +226,8 @@ function buildFavoritesRouter(config) {
     const charms    = getUserUnlockedCharms(req.user.id);
     const userThemes = getUserThemes(req.user.id);
     const shopItems = view === 'images' ? getShopItems(req.user.id) : [];
-    const cfgBuy    = getLootboxConfig().buyPrices;
+    const cfg       = getLootboxConfig();
+    const cfgBuy    = cfg.buyPrices;
     const coffreUnlocks = unlocks.length;
     const coffreCharms  = charms.filter(c => c.owned).length;
     const coffreThemes  = userThemes.filter(t => t.owned).length;
@@ -240,7 +241,7 @@ function buildFavoritesRouter(config) {
       shopItems,
       view,
       RARITY_BUY_PRICE,
-      RARITY_SELL_PRICE,
+      RARITY_SELL_PRICE: cfg.sellPrices,
       CHARM_BUY_PRICE: cfgBuy,
       THEME_BUY_PRICE: cfgBuy,
       userThemes,

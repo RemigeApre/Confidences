@@ -3330,7 +3330,7 @@ function getUserUnlocks(userId) {
 function sellUnlock(userId, unlockId) {
   const row = db.prepare("SELECT id, ref_id, rarity FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, userId);
   if (!row) return { ok: false, error: 'not_found' };
-  const coins = RARITY_SELL_PRICE[row.rarity] || 1;
+  const coins = getLootboxConfig().sellPrices[row.rarity] || 1;
   db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(row.id);
   // Si c'était la photo de profil active, la réinitialiser
   db.prepare("UPDATE users SET coins = coins + ?, profile_image_id = CASE WHEN profile_image_id = ? THEN NULL ELSE profile_image_id END WHERE id = ?").run(coins, row.ref_id, userId);
@@ -3343,7 +3343,7 @@ function sellCharmUnlock(userId, unlockId) {
   if (!row) return { ok: false, error: 'not_found' };
   const charm = db.prepare("SELECT key FROM charms WHERE id = ?").get(row.ref_id);
   if (charm && charm.key === 'star') return { ok: false, error: 'not_sellable' };
-  const coins = RARITY_SELL_PRICE[row.rarity] || 1;
+  const coins = getLootboxConfig().sellPrices[row.rarity] || 1;
   db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(row.id);
   if (charm) {
     db.prepare("UPDATE users SET coins = coins + ?, rating_charm = CASE WHEN rating_charm = ? THEN 'star' ELSE rating_charm END WHERE id = ?").run(coins, charm.key, userId);
@@ -3359,7 +3359,7 @@ function sellTheme(userId, themeKey) {
   if (!def || def.always) return { ok: false, error: 'not_sellable' };
   const row = db.prepare("SELECT id FROM user_themes WHERE user_id = ? AND theme_key = ?").get(userId, themeKey);
   if (!row) return { ok: false, error: 'not_found' };
-  const coins = RARITY_SELL_PRICE[def.rarity] || 1;
+  const coins = getLootboxConfig().sellPrices[def.rarity] || 1;
   db.prepare("DELETE FROM user_themes WHERE user_id = ? AND theme_key = ?").run(userId, themeKey);
   db.prepare("UPDATE users SET coins = coins + ?, active_theme = CASE WHEN active_theme = ? THEN 'default' ELSE active_theme END WHERE id = ?").run(coins, themeKey, userId);
   return { ok: true, coins };
