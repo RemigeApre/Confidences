@@ -557,15 +557,8 @@
     var isImage = reward.jokerType === 'image';
     setCardMeta('Joker', reward.rarity || 'legendary', reward._isGift);
     if (ucardTitle) ucardTitle.textContent = isImage ? 'Joker Image' : 'Joker Charme';
-    if (jokerTitleEl) jokerTitleEl.textContent = isImage ? 'Joker Image' : 'Joker Charme';
-    if (jokerDescEl) {
-      jokerDescEl.textContent = isImage
-        ? "D\u00e9bloque n'importe quelle image de profil non poss\u00e9d\u00e9e."
-        : "D\u00e9bloque n'importe quel charme non poss\u00e9d\u00e9.";
-      if (reward.isDuplicate) jokerDescEl.textContent += ' (Doublon \u2014 converti en pi\u00e8ces.)';
-    }
     if (ucardJoker) ucardJoker.removeAttribute('hidden');
-    if (jokerUseBtn) { jokerUseBtn.dataset.jokerType = reward.jokerType; jokerUseBtn.removeAttribute('hidden'); jokerUseBtn.disabled = !!reward.isDuplicate; }
+    // Pas de bouton "Utiliser" ici — le joker s'utilise depuis le coffre
     if (hintEl) hintEl.setAttribute('hidden', '');
     revealCard(hasNext);
   }
