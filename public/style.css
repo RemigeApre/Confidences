@@ -14655,6 +14655,46 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   max-height: 11rem; overflow-y: auto;
 }
 
+/* ── Quiz Editor : import CSV ───────────────────────────────────────────── */
+.qe-import-sep {
+  display: flex; align-items: center; gap: .75rem;
+  margin: 1.5rem 0 1rem; color: var(--muted); font-size: .8rem;
+}
+.qe-import-sep::before,
+.qe-import-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.qe-import-form { display: flex; flex-direction: column; gap: .6rem; }
+.qe-import-row {
+  display: flex; gap: .6rem; align-items: center; flex-wrap: wrap;
+}
+.qe-import-file-label {
+  display: flex; align-items: center; gap: .5rem; flex: 1; min-width: 0;
+  cursor: pointer;
+}
+.qe-import-file-input { display: none; }
+.qe-import-file-btn {
+  flex-shrink: 0; padding: .35rem .75rem;
+  background: hsl(220,14%,18%); border: 1px solid rgba(255,255,255,.18);
+  border-radius: 6px; font-size: .8rem; color: rgba(255,255,255,.75);
+  white-space: nowrap; transition: background .15s;
+}
+.qe-import-file-label:hover .qe-import-file-btn { background: hsl(220,14%,24%); color: #fff; }
+.qe-import-file-name {
+  flex: 1; min-width: 0; font-size: .78rem; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.qe-import-submit {
+  flex-shrink: 0; padding: .4rem 1rem;
+  background: hsl(140,45%,26%); color: #fff;
+  border: none; border-radius: 8px; font-size: .82rem; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+}
+.qe-import-submit:hover { background: hsl(140,50%,32%); }
+.qe-import-error {
+  font-size: .8rem; color: hsl(0,65%,68%); margin: 0;
+  padding: .35rem .6rem; background: hsl(0,30%,14%);
+  border: 1px solid hsl(0,35%,28%); border-radius: 6px;
+}
+
 /* ── Quiz : type ranking ─────────────────────────────────────────────────── */
 .quiz-qtype--ranking { background: hsl(30,40%,22%); color: hsl(30,70%,72%); }
 .quiz-rank-list { margin: .6rem 0; }

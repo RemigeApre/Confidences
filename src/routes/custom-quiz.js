@@ -1,6 +1,8 @@
 const express = require("express");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
+const multer = require("multer");
+const csvUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 function buildCustomQuizRouter(config) {
   const router = express.Router();
@@ -43,7 +45,8 @@ function buildCustomQuizRouter(config) {
       title: String(req.query.title || "").slice(0, 200),
       description: String(req.query.desc || "").slice(0, 2000)
     };
-    res.render("quiz-form", { config, quiz: null, questions: [], parts: [], prefill });
+    const importError = req.query.import_error || null;
+    res.render("quiz-form", { config, quiz: null, questions: [], parts: [], prefill, importError });
   });
   router.post("/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const title = String(req.body.title || "").slice(0, 200).trim();
@@ -335,29 +338,121 @@ function buildCustomQuizRouter(config) {
     res.redirect(`/quizz/${quiz.id}?step=${nextStep}`);
   });
 
-  // Export questions (admin) — structure uniquement, sans réponses utilisateurs
+  // Export backup complet (admin) — round-trip fidèle : quiz + parties + questions + tous paramètres
   router.get("/:id/export-questions", requireAdmin, (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.status(404).send("Quiz introuvable");
+    const parts = db.getQuizParts(quiz.id);
     const questions = db.getCustomQuizQuestions(quiz.id);
-    const typeLabels = { gradient:'Gradient', single:'Choix unique', multiple:'Choix multiple', ranking:'Mise en ordre', visual:'Visuel', points:'Points' };
-    const subtypeLabels = { '':'Générique', gout:'Goût', pratique:'Pratique', excitation:'Excitation' };
-    const tendanceLabels = { '':'Aucune', positive:'Positive', negative:'Négative' };
-    const rows = [['Question','Mode','Sous-mode','Tendance','Donner/Subir','Lien Codex']];
-    questions.forEach(q => {
-      rows.push([
-        q.text,
-        typeLabels[q.type] || q.type,
-        subtypeLabels[q.subtype || ''] || '',
-        tendanceLabels[q.tendency || ''] || '',
-        q.has_sides ? 'Oui' : 'Non',
-        q.wiki_link_title || (q.wiki_link_id ? `#${q.wiki_link_id}` : ''),
-      ]);
+
+    const header = ['TYPE','ID','PARENT','POSITION','TITRE','DESCRIPTION','CATEGORIE','STATUT','EN_AVANT','DUREE','MODE','SOUS_MODE','TENDANCE','DONNER_SUBIR','OPTIONS','CODEX_ID'];
+    const rows = [header];
+
+    // Ligne QUIZ
+    rows.push(['QUIZ', quiz.id, '', '', quiz.title, quiz.description || '', quiz.category || 'fondements',
+      quiz.status || 'draft', quiz.featured ? '1' : '0', quiz.duration != null ? String(quiz.duration) : '',
+      '', '', '', '', '', '']);
+
+    // Lignes PART
+    parts.forEach((p, i) => {
+      rows.push(['PART', p.id, quiz.id, p.position != null ? p.position : i, p.title,
+        '', '', '', '', '', '', '', '', '', '', '']);
     });
-    const csv = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+
+    // Lignes QUESTION
+    questions.forEach((q, i) => {
+      let opts = '';
+      try { opts = typeof q.options === 'string' ? q.options : JSON.stringify(q.options || []); } catch { opts = '[]'; }
+      rows.push(['QUESTION', q.id, q.part_id || '', q.position != null ? q.position : i,
+        q.text, '', '', '', '', '', q.type || 'gradient', q.subtype || '', q.tendency || '',
+        q.has_sides ? '1' : '0', opts, q.wiki_link_id || '']);
+    });
+
+    const csvRow = r => r.map(cell => '"' + String(cell == null ? '' : cell).replace(/"/g, '""') + '"').join(',');
+    const csv = rows.map(csvRow).join('\r\n');
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="quiz-${quiz.id}-questions.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="quiz-${quiz.id}-backup.csv"`);
     res.send('\uFEFF' + csv);
+  });
+
+  // Import backup CSV (admin) — recrée un nouveau quizz à partir d'un fichier exporté
+  router.post("/import", requireAdmin, csvUpload.single('csvfile'), (req, res) => {
+    if (!req.file) return res.redirect('/quizz/new?import_error=nofile');
+
+    let text = req.file.buffer.toString('utf-8').replace(/^\uFEFF/, ''); // strip BOM
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+
+    function parseRow(line) {
+      const result = [];
+      let inQuote = false, cur = '';
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') {
+          if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
+          else { inQuote = !inQuote; }
+        } else if (c === ',' && !inQuote) {
+          result.push(cur); cur = '';
+        } else {
+          cur += c;
+        }
+      }
+      result.push(cur);
+      return result;
+    }
+
+    // Colonnes: 0=TYPE,1=ID,2=PARENT,3=POSITION,4=TITRE,5=DESCRIPTION,6=CATEGORIE,
+    //           7=STATUT,8=EN_AVANT,9=DUREE,10=MODE,11=SOUS_MODE,12=TENDANCE,
+    //           13=DONNER_SUBIR,14=OPTIONS,15=CODEX_ID
+    let quizRow = null;
+    const partRows = [], questionRows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const r = parseRow(lines[i]);
+      if (!r.length) continue;
+      if (r[0] === 'QUIZ') quizRow = r;
+      else if (r[0] === 'PART') partRows.push(r);
+      else if (r[0] === 'QUESTION') questionRows.push(r);
+    }
+
+    if (!quizRow) return res.redirect('/quizz/new?import_error=noquiz');
+
+    const title    = quizRow[4] || 'Quiz importé';
+    const desc     = quizRow[5] || '';
+    const category = quizRow[6] || 'fondements';
+    const status   = quizRow[7] === 'public' ? 'public' : 'draft';
+    const featured = quizRow[8] === '1' ? 1 : 0;
+    const duration = quizRow[9] ? parseInt(quizRow[9], 10) || null : null;
+
+    const newQuizId = db.createCustomQuiz(title, desc, category);
+    db.updateCustomQuiz(newQuizId, title, desc, featured, duration, category, status);
+
+    // Parties : vieuxId → nouvelId
+    const partIdMap = {};
+    partRows.sort((a, b) => Number(a[3] || 0) - Number(b[3] || 0));
+    partRows.forEach((r, i) => {
+      const oldId   = r[1];
+      const partTitle = r[4] || `Partie ${i + 1}`;
+      const newPartId = db.createQuizPart(newQuizId, partTitle, i);
+      if (oldId) partIdMap[oldId] = newPartId;
+    });
+
+    // Questions
+    questionRows.sort((a, b) => Number(a[3] || 0) - Number(b[3] || 0));
+    questionRows.forEach((r, i) => {
+      const qtext = r[4] || '';
+      if (!qtext) return;
+      const oldPartId = r[2];
+      const partId = oldPartId && partIdMap[oldPartId] ? partIdMap[oldPartId] : null;
+      const type = ['gradient','single','multiple','ranking','visual','points'].includes(r[10]) ? r[10] : 'gradient';
+      const subtype = r[11] || null;
+      const tendency = ['positive','negative'].includes(r[12]) ? r[12] : null;
+      const hasSides = r[13] === '1' ? 1 : 0;
+      let options = [];
+      try { options = JSON.parse(r[14] || '[]'); if (!Array.isArray(options)) options = []; } catch { options = []; }
+      const wikiLinkId = r[15] ? parseInt(r[15], 10) || null : null;
+      db.addCustomQuizQuestion(newQuizId, qtext, type, options, i, partId, hasSides, tendency, subtype, wikiLinkId);
+    });
+
+    res.redirect(`/quizz/${newQuizId}/edit`);
   });
 
   // Export données utilisateurs (admin)

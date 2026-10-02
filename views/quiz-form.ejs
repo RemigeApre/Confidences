@@ -58,6 +58,31 @@
       <p class="qe-new-hint">Renseignez un titre et sauvegardez pour commencer à ajouter des questions.</p>
       <button type="submit" class="qe-save-fab" style="position:static;margin-top:1rem">Créer le quizz</button>
     </form>
+
+    <div class="qe-import-sep"><span>ou restaurer depuis un backup CSV</span></div>
+
+    <form method="POST" action="/quizz/import" enctype="multipart/form-data" class="qe-import-form">
+      <% if (importError === 'nofile') { %>
+        <p class="qe-import-error">Aucun fichier sélectionné.</p>
+      <% } else if (importError === 'noquiz') { %>
+        <p class="qe-import-error">Fichier invalide — ligne QUIZ introuvable.</p>
+      <% } %>
+      <div class="qe-import-row">
+        <label class="qe-import-file-label">
+          <input type="file" name="csvfile" accept=".csv" required class="qe-import-file-input" />
+          <span class="qe-import-file-btn">Choisir un fichier .csv</span>
+          <span class="qe-import-file-name">Aucun fichier</span>
+        </label>
+        <button type="submit" class="qe-import-submit">Importer</button>
+      </div>
+    </form>
+    <script>
+    (function(){
+      var inp = document.querySelector('.qe-import-file-input');
+      var lbl = document.querySelector('.qe-import-file-name');
+      if (inp && lbl) inp.addEventListener('change', function(){ lbl.textContent = inp.files[0] ? inp.files[0].name : 'Aucun fichier'; });
+    })();
+    </script>
     <% } %>
 
     <% if (quiz) { %>
