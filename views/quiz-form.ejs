@@ -2,61 +2,72 @@
 <main class="container qe-layout">
   <%- include('partials/top-nav', { config: config, navTitle: quiz ? quiz.title : 'Nouveau quizz', navBack: '/quizz' }) %>
 
-  <div class="qe-content">
-
-    <%# ── Titre ───────────────────────────────────────────────────────────── %>
-    <form id="qe-meta-form" method="POST"
-      action="<%= quiz ? '/quizz/' + quiz.id + '/update' : '/quizz/new' %>">
-
-      <input type="text" name="title" class="qe-title-input" required maxlength="200"
-        value="<%= quiz ? quiz.title : (prefill ? prefill.title : '') %>" placeholder="Titre du quizz…" />
-
-      <% if (!quiz) { %>
-        <p class="qe-new-hint">Renseignez un titre et sauvegardez pour commencer à ajouter des questions.</p>
-      <% } %>
-    </form>
-
-    <% if (quiz) { %>
-
-    <%# ── Paramètres ──────────────────────────────────────────────────────── %>
-    <details class="qe-panel" id="qe-params">
-      <summary class="qe-panel-summary">
-        <span class="qe-panel-summary-text">Paramètres</span>
-      </summary>
-      <div class="qe-panel-body">
+  <% if (quiz) { %>
+  <%# ── Volet gauche : titre + paramètres ────────────────────────────────── %>
+  <aside class="qe-sidebar">
+    <form id="qe-meta-form" method="POST" action="/quizz/<%= quiz.id %>/update">
+      <div class="qe-sidebar-head">
+        <input type="text" name="title" class="qe-sidebar-title" required maxlength="200"
+          value="<%= quiz.title %>" placeholder="Titre du quizz…" />
+      </div>
+      <div class="qe-sidebar-body">
         <label class="qe-field-label">Description</label>
-        <textarea name="description" form="qe-meta-form" class="wf-stats-note-input qe-desc-input"
-          rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz ? quiz.description : (prefill ? prefill.description : '') %></textarea>
-        <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.65rem;align-items:center">
+        <textarea name="description" class="wf-stats-note-input qe-desc-input"
+          rows="4" placeholder="Description courte…" style="resize:vertical"><%= quiz.description || '' %></textarea>
+        <div class="qe-sidebar-toggles">
           <label class="wiki-display-opt-label" style="margin:0">
-            <input type="checkbox" name="featured" value="1" form="qe-meta-form"
+            <input type="checkbox" name="featured" value="1"
               <%= quiz.featured ? 'checked' : '' %> hidden />
             <span class="wiki-display-opt-track"></span>
             <span class="wiki-display-opt-text">Mettre en avant</span>
           </label>
           <label class="wiki-display-opt-label qe-status-toggle" style="margin:0">
-            <input type="checkbox" name="status" value="public" form="qe-meta-form"
+            <input type="checkbox" name="status" value="public"
               <%= (quiz.status || 'draft') === 'public' ? 'checked' : '' %> hidden />
             <span class="wiki-display-opt-track qe-status-track"></span>
             <span class="wiki-display-opt-text qe-status-text"><%= (quiz.status || 'draft') === 'public' ? 'Public' : 'Brouillon' %></span>
           </label>
         </div>
-        <label class="qe-field-label" style="margin-top:.75rem">Durée estimée (minutes)</label>
-        <input type="number" name="duration" form="qe-meta-form" min="1" max="999"
-          class="wf-orce-name-input" style="width:6rem"
+        <label class="qe-field-label" style="margin-top:.75rem">Durée estimée (min)</label>
+        <input type="number" name="duration" min="1" max="999" class="wf-orce-name-input" style="width:5rem"
           value="<%= quiz.duration != null ? quiz.duration : '' %>" placeholder="—" />
         <label class="qe-field-label" style="margin-top:.75rem">Catégorie</label>
-        <div class="quiz-cat-picker">
+        <div class="quiz-cat-picker quiz-cat-picker--col">
           <% [['fondements','violet'],['fantasmes','rose'],['pornographie','orange'],['ultra','or']].forEach(function(c){ %>
             <label class="quiz-cat-opt quiz-cat-opt--<%= c[0] %>">
-              <input type="radio" name="category" value="<%= c[0] %>" form="qe-meta-form"
+              <input type="radio" name="category" value="<%= c[0] %>"
                 <%= (quiz.category || 'fondements') === c[0] ? 'checked' : '' %> style="display:none"/>
               <span><%= c[0].charAt(0).toUpperCase() + c[0].slice(1) %></span>
             </label>
           <% }) %>
         </div>
       </div>
-    </details>
+      <div class="qe-sidebar-footer">
+        <button type="submit" class="qe-sidebar-save-btn">Enregistrer</button>
+        <a href="/quizz/<%= quiz.id %>/export" class="qe-sidebar-csv-btn" title="Exporter CSV">↙ CSV</a>
+        <form method="POST" action="/quizz/<%= quiz.id %>/delete" style="margin:0">
+          <button type="submit" class="qe-sidebar-del-btn"
+            onclick="return confirm('Supprimer ce quizz définitivement ?')">Supprimer</button>
+        </form>
+      </div>
+    </form>
+  </aside>
+  <% } %>
+
+  <%# ── Contenu principal ─────────────────────────────────────────────────── %>
+  <div class="qe-content">
+
+    <% if (!quiz) { %>
+    <%# ── Nouveau quizz ──────────────────────────────────────────────────── %>
+    <form id="qe-meta-form" method="POST" action="/quizz/new">
+      <input type="text" name="title" class="qe-title-input" required maxlength="200"
+        value="<%= prefill ? prefill.title : '' %>" placeholder="Titre du quizz…" />
+      <p class="qe-new-hint">Renseignez un titre et sauvegardez pour commencer à ajouter des questions.</p>
+      <button type="submit" class="qe-save-fab" style="position:static;margin-top:1rem">Créer le quizz</button>
+    </form>
+    <% } %>
+
+    <% if (quiz) { %>
 
     <%# ── Section sans partie ─────────────────────────────────────────────── %>
     <div class="qe-section" id="qe-root-section">
@@ -64,75 +75,33 @@
         <%
           var rootQs = questions.filter(function(q){ return !q.part_id; });
           rootQs.forEach(function(q) {
+            var tl = q.type==='gradient'?'Gradient':q.type==='single'?'Choix unique':q.type==='multiple'?'Choix multiple':q.type==='visual'?'Visuel':q.type==='points'?'Points':'Mise en ordre';
         %>
-          <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>" data-subtype="<%= q.subtype || '' %>" data-wiki-link-id="<%= q.wiki_link_id || '' %>">
+          <div class="qe-question" draggable="true"
+            data-qid="<%= q.id %>"
+            data-type="<%= q.type %>"
+            data-has-sides="<%= q.has_sides ? '1' : '0' %>"
+            data-tendency="<%= q.tendency || '' %>"
+            data-subtype="<%= q.subtype || '' %>"
+            data-wiki-link-id="<%= q.wiki_link_id || '' %>"
+            data-opts="<%= JSON.stringify(q.options || []) %>">
             <span class="qe-q-handle">&#11835;</span>
             <div class="qe-q-body">
               <p class="qe-q-text"><%= q.text %></p>
-              <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
-                <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : q.type === 'visual' ? 'Visuel' : q.type === 'points' ? 'Points' : 'Mise en ordre' %>
-              </span>
+              <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= tl %></span>
               <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
-              <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive" title="Tendance positive">&#9650;</span><% } %>
-              <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative" title="Tendance négative">&#9660;</span><% } %>
-              <% if (q.wiki_link_id) { %><span class="qe-wiki-badge" title="Lien Codex">&#63;</span><% } %>
-              <% if (q.options && q.options.length) { %>
-                <div class="quiz-qitem-opts">
-                  <% q.options.forEach(function(o){ %>
-                    <span class="quiz-qitem-opt"><%= o %></span>
-                  <% }) %>
-                </div>
-              <% } %>
+              <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive">&#9650;</span><% } %>
+              <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative">&#9660;</span><% } %>
+              <% if (q.wiki_link_id) { %><span class="qe-wiki-badge">&#63;</span><% } %>
             </div>
-            <button type="button" class="qe-q-edit" title="Modifier">&#9998;</button>
             <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
           </div>
         <% }) %>
       </div>
       <button type="button" class="qe-add-q-btn" data-part-id="">+ Question</button>
-      <div class="qe-inline-form" data-part-id="" hidden>
-        <textarea class="wf-stats-note-input qea-text" rows="2" placeholder="Texte de la question…" style="resize:vertical"></textarea>
-        <div class="quiz-qadd-type-row">
-          <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient"><input type="radio" name="qa-type" value="gradient" checked style="display:none"/><span>Gradient</span></label>
-          <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qa-type" value="single" style="display:none"/><span>Choix unique</span></label>
-          <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qa-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
-          <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qa-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
-          <label class="chip-option quiz-type-chip" data-type="visual"><input type="radio" name="qa-type" value="visual" style="display:none"/><span>Visuel</span></label>
-          <label class="chip-option quiz-type-chip" data-type="points"><input type="radio" name="qa-type" value="points" style="display:none"/><span>Points</span></label>
-        </div>
-        <div class="qea-gradient-subtype">
-          <button type="button" class="qea-subtype-chip qea-subtype-chip--active" data-subtype="">Générique</button>
-          <button type="button" class="qea-subtype-chip" data-subtype="gout">Goût</button>
-          <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
-          <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
-        </div>
-        <div class="qea-points-total-row" style="display:none">
-          <label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total à répartir :
-            <input type="number" class="qea-points-total-input" min="2" max="200" value="10"
-              style="width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem">
-          </label>
-        </div>
-        <div class="qea-options-wrap" hidden>
-          <div class="qea-options-list"></div>
-          <button type="button" class="qea-add-opt wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
-        </div>
-        <label class="qea-sides-toggle">
-          <input type="checkbox" class="qea-sides-chk" />
-          <span class="qea-sides-label">Donner / Subir</span>
-        </label>
-        <div class="qea-tendency-row">
-          <label class="qe-tendency-chip qe-tendency-chip--active" data-tendency="">Aucune</label>
-          <label class="qe-tendency-chip qe-tendency-chip--positive" data-tendency="positive">&#9650; Positive</label>
-          <label class="qe-tendency-chip qe-tendency-chip--negative" data-tendency="negative">&#9660; Négative</label>
-        </div>
-        <div class="qea-actions">
-          <button type="button" class="qea-submit wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
-          <button type="button" class="qea-cancel wf-cancel-link">Annuler</button>
-        </div>
-      </div>
     </div>
 
-    <%# ── Parties ─────────────────────────────────────────────────────────── %>
+    <%# ── Parties ────────────────────────────────────────────────────────── %>
     <div id="qe-parts-container">
       <% parts.forEach(function(part) {
         var partQs = questions.filter(function(q){ return q.part_id === part.id; });
@@ -146,77 +115,37 @@
           </summary>
           <div class="qe-panel-body">
             <div class="qe-drop-zone" data-part-id="<%= part.id %>">
-              <% partQs.forEach(function(q) { %>
-                <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>" data-subtype="<%= q.subtype || '' %>" data-wiki-link-id="<%= q.wiki_link_id || '' %>">
+              <% partQs.forEach(function(q) {
+                var tl = q.type==='gradient'?'Gradient':q.type==='single'?'Choix unique':q.type==='multiple'?'Choix multiple':q.type==='visual'?'Visuel':q.type==='points'?'Points':'Mise en ordre';
+              %>
+                <div class="qe-question" draggable="true"
+                  data-qid="<%= q.id %>"
+                  data-type="<%= q.type %>"
+                  data-has-sides="<%= q.has_sides ? '1' : '0' %>"
+                  data-tendency="<%= q.tendency || '' %>"
+                  data-subtype="<%= q.subtype || '' %>"
+                  data-wiki-link-id="<%= q.wiki_link_id || '' %>"
+                  data-opts="<%= JSON.stringify(q.options || []) %>">
                   <span class="qe-q-handle">&#11835;</span>
                   <div class="qe-q-body">
                     <p class="qe-q-text"><%= q.text %></p>
-                    <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
-                      <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : q.type === 'visual' ? 'Visuel' : q.type === 'points' ? 'Points' : 'Mise en ordre' %>
-                    </span>
+                    <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= tl %></span>
                     <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
-                    <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive" title="Tendance positive">&#9650;</span><% } %>
-                    <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative" title="Tendance négative">&#9660;</span><% } %>
-                    <% if (q.options && q.options.length) { %>
-                      <div class="quiz-qitem-opts">
-                        <% q.options.forEach(function(o){ %>
-                          <span class="quiz-qitem-opt"><%= o %></span>
-                        <% }) %>
-                      </div>
-                    <% } %>
+                    <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive">&#9650;</span><% } %>
+                    <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative">&#9660;</span><% } %>
+                    <% if (q.wiki_link_id) { %><span class="qe-wiki-badge">&#63;</span><% } %>
                   </div>
-                  <button type="button" class="qe-q-edit" title="Modifier">&#9998;</button>
                   <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
                 </div>
               <% }) %>
             </div>
             <button type="button" class="qe-add-q-btn" data-part-id="<%= part.id %>">+ Question</button>
-            <div class="qe-inline-form" data-part-id="<%= part.id %>" hidden>
-              <textarea class="wf-stats-note-input qea-text" rows="2" placeholder="Texte de la question…" style="resize:vertical"></textarea>
-              <div class="quiz-qadd-type-row">
-                <label class="chip-option quiz-type-chip quiz-type-chip--active" data-type="gradient"><input type="radio" name="qa-type" value="gradient" checked style="display:none"/><span>Gradient</span></label>
-                <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qa-type" value="single" style="display:none"/><span>Choix unique</span></label>
-                <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qa-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
-                <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qa-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
-                <label class="chip-option quiz-type-chip" data-type="visual"><input type="radio" name="qa-type" value="visual" style="display:none"/><span>Visuel</span></label>
-                <label class="chip-option quiz-type-chip" data-type="points"><input type="radio" name="qa-type" value="points" style="display:none"/><span>Points</span></label>
-              </div>
-              <div class="qea-gradient-subtype">
-                <button type="button" class="qea-subtype-chip qea-subtype-chip--active" data-subtype="">Générique</button>
-                <button type="button" class="qea-subtype-chip" data-subtype="gout">Goût</button>
-                <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
-                <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
-              </div>
-              <div class="qea-points-total-row" style="display:none">
-                <label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total à répartir :
-                  <input type="number" class="qea-points-total-input" min="2" max="200" value="10"
-                    style="width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem">
-                </label>
-              </div>
-              <div class="qea-options-wrap" hidden>
-                <div class="qea-options-list"></div>
-                <button type="button" class="qea-add-opt wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
-              </div>
-              <label class="qea-sides-toggle">
-                <input type="checkbox" class="qea-sides-chk" />
-                <span class="qea-sides-label">Donner / Subir</span>
-              </label>
-              <div class="qea-tendency-row">
-                <label class="qe-tendency-chip qe-tendency-chip--active" data-tendency="">Aucune</label>
-                <label class="qe-tendency-chip qe-tendency-chip--positive" data-tendency="positive">&#9650; Positive</label>
-                <label class="qe-tendency-chip qe-tendency-chip--negative" data-tendency="negative">&#9660; Négative</label>
-              </div>
-              <div class="qea-actions">
-                <button type="button" class="qea-submit wf-save-btn" style="position:static;font-size:.82rem">Ajouter</button>
-                <button type="button" class="qea-cancel wf-cancel-link">Annuler</button>
-              </div>
-            </div>
           </div>
         </details>
       <% }) %>
     </div>
 
-    <%# ── Ajouter une partie ───────────────────────────────────────────────── %>
+    <%# ── Ajouter une partie ─────────────────────────────────────────────── %>
     <div class="qe-add-part-row">
       <button type="button" class="qe-add-part-btn" id="qe-add-part-btn">+ Nouvelle partie</button>
       <div class="qe-add-part-form" id="qe-add-part-form" hidden>
@@ -230,77 +159,6 @@
 
     <% } %>
   </div><%# /qe-content %>
-
-  <%# ── Modale édition question ──────────────────────────────────────────────── %>
-  <% if (quiz) { %>
-  <div class="qe-modal-overlay" id="qe-edit-overlay" hidden>
-    <div class="qe-modal" role="dialog" aria-modal="true" aria-label="Modifier la question">
-      <h3 class="qe-modal-title">Modifier la question</h3>
-      <textarea id="qe-edit-text" class="wf-stats-note-input" rows="3" style="resize:vertical;width:100%;box-sizing:border-box"></textarea>
-      <div class="quiz-qadd-type-row" id="qe-edit-type-row">
-        <label class="chip-option quiz-type-chip" data-type="gradient"><input type="radio" name="qe-edit-type" value="gradient" style="display:none"/><span>Gradient</span></label>
-        <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qe-edit-type" value="single" style="display:none"/><span>Choix unique</span></label>
-        <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qe-edit-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
-        <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qe-edit-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
-        <label class="chip-option quiz-type-chip" data-type="visual"><input type="radio" name="qe-edit-type" value="visual" style="display:none"/><span>Visuel</span></label>
-        <label class="chip-option quiz-type-chip" data-type="points"><input type="radio" name="qe-edit-type" value="points" style="display:none"/><span>Points</span></label>
-      </div>
-      <div id="qe-edit-subtype-row" class="qea-gradient-subtype" style="display:none">
-        <button type="button" class="qea-subtype-chip qea-subtype-chip--active" data-subtype="">Générique</button>
-        <button type="button" class="qea-subtype-chip" data-subtype="gout">Goût</button>
-        <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
-        <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
-      </div>
-      <div id="qe-edit-points-total-row" style="display:none">
-        <label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total à répartir :
-          <input id="qe-edit-points-total" type="number" min="2" max="200" value="10"
-            style="width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem">
-        </label>
-      </div>
-      <div id="qe-edit-opts-wrap">
-        <div id="qe-edit-opts-list"></div>
-        <button type="button" id="qe-edit-add-opt" class="wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
-      </div>
-      <label class="qea-sides-toggle" style="margin-top:.6rem">
-        <input type="checkbox" id="qe-edit-sides" />
-        <span class="qea-sides-label">Donner / Subir</span>
-      </label>
-      <div class="qea-tendency-row" id="qe-edit-tendency-row">
-        <label class="qe-tendency-chip qe-tendency-chip--active" data-tendency="">Aucune</label>
-        <label class="qe-tendency-chip qe-tendency-chip--positive" data-tendency="positive">&#9650; Positive</label>
-        <label class="qe-tendency-chip qe-tendency-chip--negative" data-tendency="negative">&#9660; Négative</label>
-      </div>
-      <div class="qea-wiki-link-row" style="margin-top:.6rem">
-        <label class="qea-sides-label" style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
-          <input type="checkbox" id="qe-edit-wiki-chk" />
-          <span>Lien Codex</span>
-        </label>
-        <div id="qe-edit-wiki-field" style="display:none">
-          <input type="text" id="qe-edit-wiki-search" class="wf-orce-name-input" placeholder="Rechercher une page…" autocomplete="off" style="width:100%;box-sizing:border-box;font-size:.82rem" />
-          <div id="qe-edit-wiki-results" style="display:none;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);border-radius:6px;margin-top:.2rem;max-height:160px;overflow-y:auto"></div>
-          <p id="qe-edit-wiki-selected" style="font-size:.78rem;color:hsl(175,58%,52%);margin:.3rem 0 0"></p>
-        </div>
-      </div>
-      <input type="hidden" id="qe-edit-wiki-id" value="" />
-      <div class="qea-actions" style="margin-top:.75rem">
-        <button type="button" id="qe-edit-save" class="wf-save-btn" style="position:static">Enregistrer</button>
-        <button type="button" id="qe-edit-cancel" class="wf-cancel-link">Annuler</button>
-      </div>
-    </div>
-  </div>
-  <% } %>
-
-  <%# ── Boutons fixes ───────────────────────────────────────────────────────── %>
-  <button type="submit" form="qe-meta-form" class="qe-save-fab">Enregistrer</button>
-  <% if (quiz) { %>
-    <a href="/quizz/<%= quiz.id %>/export" class="qe-export-fab" title="Exporter les données CSV">&#8615; CSV</a>
-  <% } %>
-  <% if (quiz) { %>
-    <form method="POST" action="/quizz/<%= quiz.id %>/delete" class="qe-delete-form">
-      <button type="submit" class="qe-delete-fab"
-        onclick="return confirm('Supprimer ce quizz définitivement ?')">&#128465;</button>
-    </form>
-  <% } %>
 
   <% if (quiz) { %>
   <script>
@@ -317,122 +175,94 @@
       return dropIndicator;
     }
 
-    // ── Modale édition ────────────────────────────────────────────────────
-    var editOverlay   = document.getElementById('qe-edit-overlay');
-    var editText      = document.getElementById('qe-edit-text');
-    var editTypeRow   = document.getElementById('qe-edit-type-row');
-    var editOptsWrap  = document.getElementById('qe-edit-opts-wrap');
-    var editOptsList  = document.getElementById('qe-edit-opts-list');
-    var editAddOpt    = document.getElementById('qe-edit-add-opt');
-    var editSaveBtn   = document.getElementById('qe-edit-save');
-    var editCancelBtn = document.getElementById('qe-edit-cancel');
-    var editTendencyRow = document.getElementById('qe-edit-tendency-row');
-    var currentEditTendency = '';
-    var editingQid    = null;
-    var editingEl     = null;
-    var editWikiChk      = document.getElementById('qe-edit-wiki-chk');
-    var editWikiField    = document.getElementById('qe-edit-wiki-field');
-    var editWikiSearch   = document.getElementById('qe-edit-wiki-search');
-    var editWikiResults  = document.getElementById('qe-edit-wiki-results');
-    var editWikiSelected = document.getElementById('qe-edit-wiki-selected');
-    var editWikiId       = document.getElementById('qe-edit-wiki-id');
-    var wikiSearchTimer  = null;
-    editWikiChk.addEventListener('change', function() {
-      editWikiField.style.display = this.checked ? '' : 'none';
-      if (!this.checked) { editWikiId.value = ''; editWikiSelected.textContent = ''; editWikiSearch.value = ''; }
-    });
-    editWikiSearch.addEventListener('input', function() {
-      clearTimeout(wikiSearchTimer);
-      var q = this.value.trim();
-      if (q.length < 2) { editWikiResults.style.display = 'none'; return; }
-      wikiSearchTimer = setTimeout(function() {
-        fetch('/quizz/wiki-search?q=' + encodeURIComponent(q))
-          .then(function(r) { return r.json(); })
-          .then(function(rows) {
-            editWikiResults.innerHTML = '';
-            if (!rows.length) { editWikiResults.style.display = 'none'; return; }
-            rows.forEach(function(row) {
-              var btn = document.createElement('button');
-              btn.type = 'button';
-              btn.style.cssText = 'display:block;width:100%;text-align:left;padding:.4rem .6rem;background:none;border:none;color:inherit;cursor:pointer;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.07)';
-              btn.textContent = row.title + ' (' + row.category + ')';
-              btn.addEventListener('click', function() {
-                editWikiId.value = row.id;
-                editWikiSelected.textContent = row.title;
-                editWikiSearch.value = '';
-                editWikiResults.style.display = 'none';
-              });
-              editWikiResults.appendChild(btn);
-            });
-            editWikiResults.style.display = '';
-          });
-      }, 300);
-    });
+    // ── Couleurs par type/sous-type/tendance ──────────────────────────────
+    var typeLabels = { gradient:'Gradient', single:'Choix unique', multiple:'Choix multiple', ranking:'Mise en ordre', visual:'Visuel', points:'Points' };
+    var typeHue = { gradient:270, single:175, multiple:200, ranking:30, visual:330, points:50 };
 
-    function openEditModal(qid, el) {
-      editingQid = qid;
-      editingEl  = el;
-      var body   = el.querySelector('.qe-q-body');
-      var currentText = body.querySelector('.qe-q-text').textContent;
-      var currentType = (body.querySelector('.quiz-qitem-type').className.match(/quiz-qtype--(\w+)/) || [])[1] || 'gradient';
-      var currentOpts = Array.from(body.querySelectorAll('.quiz-qitem-opt')).map(function(s) { return s.textContent; });
-
-      editText.value = currentText;
-
-      // Type chips
-      Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(chip) {
-        chip.classList.toggle('quiz-type-chip--active', chip.dataset.type === currentType);
-        var inp = chip.querySelector('input');
-        inp.checked = chip.dataset.type === currentType;
-      });
-      currentEditType = currentType;
-      editOptsWrap.style.display = (currentType === 'gradient') ? 'none' : '';
-
-      // Subtype
-      var currentSubtype = el.dataset.subtype || '';
-      currentEditSubtype = currentSubtype;
-      if (editSubtypeRow) {
-        editSubtypeRow.style.display = (currentType === 'gradient') ? '' : 'none';
-        editSubtypeRow.querySelectorAll('.qea-subtype-chip').forEach(function(chip) {
-          chip.classList.toggle('qea-subtype-chip--active', chip.dataset.subtype === currentSubtype);
-        });
+    function setTypeSelColor(sel) {
+      var h = typeHue[sel.value];
+      if (h != null) {
+        sel.style.background = 'hsl(' + h + ',50%,17%)';
+        sel.style.borderColor = 'hsl(' + h + ',55%,38%)';
+        sel.style.color       = 'hsl(' + h + ',70%,78%)';
+      } else {
+        sel.style.background = '';
+        sel.style.borderColor = '';
+        sel.style.color = '';
       }
-      if (editPointsTotalRow) {
-        editPointsTotalRow.style.display = (currentType === 'points') ? '' : 'none';
-        if (editPointsTotalInput && currentType === 'points') {
-          editPointsTotalInput.value = parseInt(currentSubtype, 10) || 10;
-        }
+    }
+    function setSubtypeSelColor(sel) {
+      var map = { '': [220,14], gout:[140,35], pratique:[0,35], excitation:[50,35] };
+      var c = map[sel.value] || map[''];
+      sel.style.background = 'hsl(' + c[0] + ',' + c[1] + '%,18%)';
+      sel.style.borderColor = 'hsl(' + c[0] + ',' + c[1] + '%,32%)';
+    }
+    function setTendencySelColor(sel) {
+      if (sel.value === 'positive') {
+        sel.style.background = 'hsl(140,40%,17%)'; sel.style.borderColor = 'hsl(140,45%,30%)'; sel.style.color = 'hsl(140,65%,68%)';
+      } else if (sel.value === 'negative') {
+        sel.style.background = 'hsl(0,40%,19%)'; sel.style.borderColor = 'hsl(0,45%,32%)'; sel.style.color = 'hsl(0,65%,72%)';
+      } else {
+        sel.style.background = ''; sel.style.borderColor = ''; sel.style.color = '';
       }
-
-      // Options
-      editOptsList.innerHTML = '';
-      currentOpts.forEach(function(o) { addEditOptRow(o); });
-
-      // Donner/Subir
-      var editSidesChk = document.getElementById('qe-edit-sides');
-      editSidesChk.checked = el.dataset.hasSides === '1';
-
-      // Tendance
-      currentEditTendency = el.dataset.tendency || '';
-      Array.from(editTendencyRow.querySelectorAll('.qe-tendency-chip')).forEach(function(chip) {
-        chip.classList.toggle('qe-tendency-chip--active', chip.dataset.tendency === currentEditTendency);
-      });
-
-      // Lien Codex
-      var currentWikiId = el.dataset.wikiLinkId || '';
-      editWikiId.value = currentWikiId;
-      editWikiChk.checked = !!currentWikiId;
-      editWikiField.style.display = currentWikiId ? '' : 'none';
-      editWikiSearch.value = '';
-      editWikiResults.style.display = 'none';
-      editWikiResults.innerHTML = '';
-      editWikiSelected.textContent = currentWikiId ? '(page liée)' : '';
-
-      editOverlay.hidden = false;
-      editText.focus();
     }
 
-    function addEditOptRow(value) {
+    // ── Fabriques de contrôles ────────────────────────────────────────────
+    function makeTypeSelect(value) {
+      var sel = document.createElement('select');
+      sel.className = 'qe-type-sel';
+      [['gradient','Gradient'],['single','Choix unique'],['multiple','Choix multiple'],['ranking','Mise en ordre'],['visual','Visuel'],['points','Points']].forEach(function(t) {
+        var o = document.createElement('option');
+        o.value = t[0]; o.textContent = t[1];
+        if (t[0] === value) o.selected = true;
+        sel.appendChild(o);
+      });
+      setTypeSelColor(sel);
+      sel.addEventListener('change', function() { setTypeSelColor(sel); });
+      return sel;
+    }
+    function makeSubtypeSelect(value) {
+      var sel = document.createElement('select');
+      sel.className = 'qe-subtype-sel';
+      [['','Générique'],['gout','Goût'],['pratique','Pratique'],['excitation','Excitation']].forEach(function(s) {
+        var o = document.createElement('option');
+        o.value = s[0]; o.textContent = s[1];
+        if (s[0] === value) o.selected = true;
+        sel.appendChild(o);
+      });
+      setSubtypeSelColor(sel);
+      sel.addEventListener('change', function() { setSubtypeSelColor(sel); });
+      return sel;
+    }
+    function makeTendencySelect(value) {
+      var sel = document.createElement('select');
+      sel.className = 'qe-tendency-sel';
+      [['','— Tendance'],['positive','▲ Positive'],['negative','▼ Négative']].forEach(function(t) {
+        var o = document.createElement('option');
+        o.value = t[0]; o.textContent = t[1];
+        if (t[0] === (value || '')) o.selected = true;
+        sel.appendChild(o);
+      });
+      setTendencySelColor(sel);
+      sel.addEventListener('change', function() { setTendencySelColor(sel); });
+      return sel;
+    }
+    function makeOptionsWidget(opts) {
+      var wrap = document.createElement('div');
+      wrap.className = 'qea-options-wrap';
+      var list = document.createElement('div');
+      list.className = 'qea-options-list';
+      (opts || []).forEach(function(o) { addOptRow(list, o); });
+      var addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'qea-add-opt wf-stats-pill';
+      addBtn.style.cssText = 'font-size:.76rem;margin-top:.3rem';
+      addBtn.textContent = '+ Option';
+      addBtn.addEventListener('click', function() { addOptRow(list, ''); });
+      wrap.appendChild(list); wrap.appendChild(addBtn);
+      return wrap;
+    }
+    function addOptRow(list, value) {
       var row = document.createElement('div');
       row.className = 'quiz-option-row';
       var inp = document.createElement('input');
@@ -444,109 +274,237 @@
       del.textContent = '×';
       del.addEventListener('click', function() { row.remove(); });
       row.appendChild(inp); row.appendChild(del);
-      editOptsList.appendChild(row);
+      list.appendChild(row);
+    }
+    function makeSidesBtn(active) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'qe-sides-btn' + (active ? ' qe-sides-btn--on' : '');
+      btn.dataset.active = active ? '1' : '0';
+      btn.innerHTML = '&#8645; Donner/Subir';
+      btn.addEventListener('click', function() {
+        var on = btn.dataset.active === '1';
+        btn.dataset.active = on ? '0' : '1';
+        btn.classList.toggle('qe-sides-btn--on', !on);
+      });
+      return btn;
     }
 
-    var currentEditType = 'gradient';
-    var currentEditSubtype = '';
-    var editSubtypeRow = document.getElementById('qe-edit-subtype-row');
-    var editPointsTotalRow = document.getElementById('qe-edit-points-total-row');
-    var editPointsTotalInput = document.getElementById('qe-edit-points-total');
-    Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(chip) {
-      chip.addEventListener('click', function() {
-        Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
-        chip.classList.add('quiz-type-chip--active');
-        currentEditType = chip.dataset.type;
-        editOptsWrap.style.display = (currentEditType === 'gradient') ? 'none' : '';
-        if (editSubtypeRow) editSubtypeRow.style.display = (currentEditType === 'gradient') ? '' : 'none';
-        if (editPointsTotalRow) editPointsTotalRow.style.display = (currentEditType === 'points') ? '' : 'none';
+    // ── Inline edit form ──────────────────────────────────────────────────
+    function makeInlineEditForm(el) {
+      var qid = Number(el.dataset.qid);
+      var div = document.createElement('div');
+      div.className = 'qe-q-edit-inline';
+      div.hidden = true;
+
+      var ta = document.createElement('textarea');
+      ta.className = 'wf-stats-note-input qe-q-edit-ta';
+      ta.rows = 2; ta.style.resize = 'vertical';
+
+      var row1 = document.createElement('div');
+      row1.className = 'qe-inline-form-row1';
+      var typeSel = makeTypeSelect('gradient');
+      var subtypeSel = makeSubtypeSelect('');
+      var ptRow = document.createElement('div');
+      ptRow.className = 'qea-points-total-row'; ptRow.style.display = 'none';
+      var ptInp = document.createElement('input');
+      ptInp.type = 'number'; ptInp.min = '2'; ptInp.max = '200'; ptInp.value = '10';
+      ptInp.className = 'qea-points-total-input';
+      ptInp.style.cssText = 'width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem';
+      var ptLbl = document.createElement('label');
+      ptLbl.style.cssText = 'font-size:.8rem;color:rgba(255,255,255,.7)';
+      ptLbl.textContent = 'Total : '; ptLbl.appendChild(ptInp);
+      ptRow.appendChild(ptLbl);
+      row1.appendChild(typeSel); row1.appendChild(subtypeSel); row1.appendChild(ptRow);
+
+      var optsWidget = makeOptionsWidget([]);
+      optsWidget.hidden = true;
+
+      typeSel.addEventListener('change', function() {
+        var t = typeSel.value;
+        subtypeSel.style.display = (t === 'gradient') ? '' : 'none';
+        ptRow.style.display = (t === 'points') ? '' : 'none';
+        optsWidget.hidden = (t === 'gradient');
       });
-    });
-    if (editSubtypeRow) {
-      editSubtypeRow.querySelectorAll('.qea-subtype-chip').forEach(function(chip) {
-        chip.addEventListener('click', function() {
-          editSubtypeRow.querySelectorAll('.qea-subtype-chip').forEach(function(c) { c.classList.remove('qea-subtype-chip--active'); });
-          chip.classList.add('qea-subtype-chip--active');
-          currentEditSubtype = chip.dataset.subtype;
+
+      // Meta row : sides + tendency + codex
+      var metaRow = document.createElement('div');
+      metaRow.className = 'qe-q-edit-meta-row';
+      var sidesBtn = makeSidesBtn(false);
+      var tendencySel = makeTendencySelect('');
+      var codexBtn = document.createElement('button');
+      codexBtn.type = 'button';
+      codexBtn.className = 'qe-codex-btn';
+      codexBtn.dataset.active = '0';
+      codexBtn.textContent = '? Codex';
+      metaRow.appendChild(sidesBtn);
+      metaRow.appendChild(tendencySel);
+      metaRow.appendChild(codexBtn);
+
+      // Codex search field
+      var codexWrap = document.createElement('div');
+      codexWrap.className = 'qe-codex-field'; codexWrap.hidden = true;
+      var codexSearch = document.createElement('input');
+      codexSearch.type = 'text'; codexSearch.className = 'qe-codex-search wf-orce-name-input';
+      codexSearch.placeholder = 'Rechercher une page Codex…'; codexSearch.autocomplete = 'off';
+      codexSearch.style.cssText = 'width:100%;box-sizing:border-box;font-size:.82rem';
+      var codexResults = document.createElement('div');
+      codexResults.className = 'qe-codex-results';
+      codexResults.hidden = true;
+      var codexSelected = document.createElement('p');
+      codexSelected.className = 'qe-codex-selected';
+      codexSelected.style.cssText = 'font-size:.78rem;color:hsl(175,58%,52%);margin:.25rem 0 0';
+      var codexId = document.createElement('input');
+      codexId.type = 'hidden'; codexId.className = 'qe-codex-id';
+      codexWrap.appendChild(codexSearch); codexWrap.appendChild(codexResults);
+      codexWrap.appendChild(codexSelected); codexWrap.appendChild(codexId);
+
+      var codexTimer = null;
+      codexSearch.addEventListener('input', function() {
+        clearTimeout(codexTimer);
+        var q = codexSearch.value.trim();
+        if (q.length < 2) { codexResults.hidden = true; return; }
+        codexTimer = setTimeout(function() {
+          fetch('/quizz/wiki-search?q=' + encodeURIComponent(q)).then(function(r){ return r.json(); }).then(function(rows) {
+            codexResults.innerHTML = '';
+            if (!rows.length) { codexResults.hidden = true; return; }
+            rows.forEach(function(row) {
+              var b = document.createElement('button');
+              b.type = 'button';
+              b.style.cssText = 'display:block;width:100%;text-align:left;padding:.35rem .6rem;background:none;border:none;color:inherit;cursor:pointer;font-size:.8rem;border-bottom:1px solid rgba(255,255,255,.07)';
+              b.textContent = row.title + ' (' + row.category + ')';
+              b.addEventListener('click', function() {
+                codexId.value = row.id;
+                codexSelected.textContent = row.title;
+                codexSearch.value = ''; codexResults.hidden = true;
+              });
+              codexResults.appendChild(b);
+            });
+            codexResults.hidden = false;
+          });
+        }, 300);
+      });
+      codexBtn.addEventListener('click', function() {
+        var on = codexBtn.dataset.active === '1';
+        codexBtn.dataset.active = on ? '0' : '1';
+        codexBtn.classList.toggle('qe-codex-btn--on', !on);
+        codexWrap.hidden = on;
+        if (on) { codexId.value = ''; codexSelected.textContent = ''; }
+      });
+
+      // Actions
+      var actions = document.createElement('div');
+      actions.className = 'qea-actions';
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button'; saveBtn.className = 'wf-save-btn';
+      saveBtn.style.cssText = 'position:static;font-size:.82rem';
+      saveBtn.textContent = '✓ Enregistrer';
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button'; cancelBtn.className = 'wf-cancel-link';
+      cancelBtn.textContent = 'Annuler';
+      actions.appendChild(saveBtn); actions.appendChild(cancelBtn);
+
+      // Sync form fields from el.dataset (called on open)
+      function syncFromEl() {
+        ta.value = el.querySelector('.qe-q-text').textContent;
+        typeSel.value = el.dataset.type || 'gradient';
+        setTypeSelColor(typeSel);
+        var t = typeSel.value;
+        subtypeSel.value = (t === 'gradient') ? (el.dataset.subtype || '') : '';
+        setSubtypeSelColor(subtypeSel);
+        subtypeSel.style.display = (t === 'gradient') ? '' : 'none';
+        ptRow.style.display = (t === 'points') ? '' : 'none';
+        ptInp.value = (t === 'points' && el.dataset.subtype) ? (parseInt(el.dataset.subtype,10) || 10) : 10;
+        optsWidget.hidden = (t === 'gradient');
+        var optList = optsWidget.querySelector('.qea-options-list');
+        optList.innerHTML = '';
+        if (t !== 'gradient') {
+          try { JSON.parse(el.dataset.opts || '[]').forEach(function(o) { addOptRow(optList, o); }); } catch {}
+        }
+        var hasSides = el.dataset.hasSides === '1';
+        sidesBtn.dataset.active = hasSides ? '1' : '0';
+        sidesBtn.classList.toggle('qe-sides-btn--on', hasSides);
+        tendencySel.value = el.dataset.tendency || '';
+        setTendencySelColor(tendencySel);
+        var wid = el.dataset.wikiLinkId || '';
+        codexBtn.dataset.active = wid ? '1' : '0';
+        codexBtn.classList.toggle('qe-codex-btn--on', !!wid);
+        codexWrap.hidden = !wid;
+        codexId.value = wid;
+        codexSelected.textContent = wid ? '(page liée)' : '';
+        codexSearch.value = ''; codexResults.hidden = true;
+      }
+
+      saveBtn.addEventListener('click', function() {
+        var text = ta.value.trim();
+        if (!text) return;
+        var t = typeSel.value;
+        var options = t !== 'gradient'
+          ? Array.from(optsWidget.querySelectorAll('.qea-options-list input')).map(function(i){ return i.value.trim(); }).filter(Boolean)
+          : [];
+        var subtype = t === 'points' ? (String(ptInp.value) || '10')
+          : (t === 'gradient' ? (subtypeSel.value || null) : null);
+        var wikiId = codexBtn.dataset.active === '1' ? (parseInt(codexId.value,10) || null) : null;
+        fetch('/quizz/' + quizId + '/questions/' + qid + '/update', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text:text, type:t, options:options, has_sides:sidesBtn.dataset.active==='1'?1:0, tendency:tendencySel.value||null, subtype:subtype, wiki_link_id:wikiId })
+        }).then(function(r){ return r.json(); }).then(function(d){
+          if (!d.ok) return;
+          updateCardSummary(el, d.question);
+          el.dataset.type = d.question.type;
+          el.dataset.hasSides = d.question.has_sides ? '1' : '0';
+          el.dataset.tendency = d.question.tendency || '';
+          el.dataset.subtype = d.question.subtype || '';
+          el.dataset.wikiLinkId = d.question.wiki_link_id ? String(d.question.wiki_link_id) : '';
+          el.dataset.opts = JSON.stringify(d.question.options || []);
+          div.hidden = true;
         });
       });
+      cancelBtn.addEventListener('click', function() { div.hidden = true; });
+
+      div._syncFromEl = syncFromEl;
+      div.appendChild(ta); div.appendChild(row1); div.appendChild(optsWidget);
+      div.appendChild(metaRow); div.appendChild(codexWrap); div.appendChild(actions);
+      return div;
     }
-    editAddOpt.addEventListener('click', function() { addEditOptRow(''); });
-    Array.from(editTendencyRow.querySelectorAll('.qe-tendency-chip')).forEach(function(chip) {
-      chip.addEventListener('click', function() {
-        Array.from(editTendencyRow.querySelectorAll('.qe-tendency-chip')).forEach(function(c) { c.classList.remove('qe-tendency-chip--active'); });
-        chip.classList.add('qe-tendency-chip--active');
-        currentEditTendency = chip.dataset.tendency;
-      });
-    });
-    editCancelBtn.addEventListener('click', function() { editOverlay.hidden = true; });
 
-    editSaveBtn.addEventListener('click', function() {
-      var text = editText.value.trim();
-      if (!text) return;
-      var options = [];
-      if (currentEditType !== 'gradient') {
-        options = Array.from(editOptsList.querySelectorAll('input')).map(function(i) { return i.value.trim(); }).filter(Boolean);
-      }
-      var hasSidesVal = document.getElementById('qe-edit-sides').checked ? 1 : 0;
-      var wikiLinkIdVal = editWikiChk.checked ? (parseInt(editWikiId.value, 10) || null) : null;
-      fetch('/quizz/' + quizId + '/questions/' + editingQid + '/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal, tendency: currentEditTendency || null, subtype: currentEditType === 'points' ? (editPointsTotalInput ? (editPointsTotalInput.value || '10') : '10') : (currentEditSubtype || null), wiki_link_id: wikiLinkIdVal })
-      }).then(function(r) { return r.json(); }).then(function(d) {
-        if (!d.ok) return;
-        // Mettre à jour le DOM de la question
-        editingEl.dataset.hasSides = d.question.has_sides ? '1' : '0';
-        editingEl.dataset.tendency = d.question.tendency || '';
-        editingEl.dataset.subtype = d.question.subtype || '';
-        editingEl.dataset.wikiLinkId = d.question.wiki_link_id ? String(d.question.wiki_link_id) : '';
-        var body = editingEl.querySelector('.qe-q-body');
-        body.querySelector('.qe-q-text').textContent = d.question.text;
-        var badge = body.querySelector('.quiz-qitem-type');
-        badge.className = 'quiz-qitem-type quiz-qtype--' + d.question.type;
-        badge.textContent = typeLabels[d.question.type] || d.question.type;
-        var existingBadge = body.querySelector('.qe-sides-badge');
-        if (existingBadge) existingBadge.remove();
-        if (d.question.has_sides) {
-          var sb = document.createElement('span'); sb.className = 'qe-sides-badge'; sb.textContent = '⇅ Donner/Subir';
-          badge.insertAdjacentElement('afterend', sb);
-        }
-        var existingTendency = body.querySelector('.qe-tendency-badge');
-        if (existingTendency) existingTendency.remove();
-        if (d.question.tendency === 'positive' || d.question.tendency === 'negative') {
-          var tb = document.createElement('span');
-          tb.className = 'qe-tendency-badge qe-tendency-badge--' + d.question.tendency;
-          tb.title = d.question.tendency === 'positive' ? 'Tendance positive' : 'Tendance négative';
-          tb.textContent = d.question.tendency === 'positive' ? '▲' : '▼';
-          badge.insertAdjacentElement('afterend', tb);
-        }
-        var existing = body.querySelector('.quiz-qitem-opts');
-        if (existing) existing.remove();
-        if (d.question.options && d.question.options.length) {
-          var opts = document.createElement('div');
-          opts.className = 'quiz-qitem-opts';
-          d.question.options.forEach(function(o) {
-            var s = document.createElement('span'); s.className = 'quiz-qitem-opt'; s.textContent = o;
-            opts.appendChild(s);
-          });
-          body.appendChild(opts);
-        }
-        var existingWikiBadge = body.querySelector('.qe-wiki-badge');
-        if (existingWikiBadge) existingWikiBadge.remove();
-        if (d.question.wiki_link_id) {
-          var wb2 = document.createElement('span'); wb2.className = 'qe-wiki-badge'; wb2.title = 'Lien Codex'; wb2.textContent = '?';
-          body.appendChild(wb2);
-        }
-        editOverlay.hidden = true;
-      });
-    });
+    function updateCardSummary(el, q) {
+      var body = el.querySelector('.qe-q-body');
+      body.querySelector('.qe-q-text').textContent = q.text;
+      var badge = body.querySelector('.quiz-qitem-type');
+      badge.className = 'quiz-qitem-type quiz-qtype--' + q.type;
+      badge.textContent = typeLabels[q.type] || q.type;
+      var sb = body.querySelector('.qe-sides-badge'); if (sb) sb.remove();
+      if (q.has_sides) { var s2 = document.createElement('span'); s2.className='qe-sides-badge'; s2.textContent='⇅ Donner/Subir'; badge.insertAdjacentElement('afterend',s2); }
+      var tb = body.querySelector('.qe-tendency-badge'); if (tb) tb.remove();
+      if (q.tendency) { var t2 = document.createElement('span'); t2.className='qe-tendency-badge qe-tendency-badge--'+q.tendency; t2.textContent=q.tendency==='positive'?'▲':'▼'; badge.insertAdjacentElement('afterend',t2); }
+      var wb = body.querySelector('.qe-wiki-badge'); if (wb) wb.remove();
+      if (q.wiki_link_id) { var w2 = document.createElement('span'); w2.className='qe-wiki-badge'; w2.title='Codex'; w2.textContent='?'; body.appendChild(w2); }
+    }
 
-    // ── Drag & drop ───────────────────────────────────────────────────────
+    // ── initQuestion ──────────────────────────────────────────────────────
     function initQuestion(el) {
+      var editForm = makeInlineEditForm(el);
+      el.appendChild(editForm);
+
+      el.querySelector('.qe-q-body').addEventListener('click', function() {
+        var isOpen = !editForm.hidden;
+        // Close others
+        document.querySelectorAll('.qe-q-edit-inline').forEach(function(f) { if (f !== editForm) f.hidden = true; });
+        if (isOpen) { editForm.hidden = true; return; }
+        editForm._syncFromEl();
+        editForm.hidden = false;
+        editForm.querySelector('textarea').focus();
+      });
+
+      el.querySelector('.qe-q-del').addEventListener('click', function(e) {
+        e.stopPropagation();
+        deleteQuestion(Number(el.dataset.qid));
+      });
+
       el.addEventListener('dragstart', function(e) {
-        draggingEl = el;
-        el.classList.add('qe-q-dragging');
+        if (editForm && !editForm.hidden) return; // don't drag while editing
+        draggingEl = el; el.classList.add('qe-q-dragging');
         e.dataTransfer.effectAllowed = 'move';
       });
       el.addEventListener('dragend', function() {
@@ -554,545 +512,217 @@
         if (dropIndicator && dropIndicator.parentNode) dropIndicator.remove();
         draggingEl = null;
       });
-      var editBtn = el.querySelector('.qe-q-edit');
-      if (editBtn) editBtn.addEventListener('click', function() {
-        openEditModal(Number(el.dataset.qid), el);
-      });
-      var delBtn = el.querySelector('.qe-q-del');
-      if (delBtn) delBtn.addEventListener('click', function() {
-        deleteQuestion(Number(el.dataset.qid));
-      });
     }
 
+    // ── Drop zones ────────────────────────────────────────────────────────
     function initDropZone(zone) {
       zone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
+        e.preventDefault(); e.dataTransfer.dropEffect = 'move';
         var after = afterElement(zone, e.clientY);
         var ind = indicator();
-        if (!after) zone.appendChild(ind);
-        else zone.insertBefore(ind, after);
+        if (!after) zone.appendChild(ind); else zone.insertBefore(ind, after);
       });
       zone.addEventListener('dragleave', function(e) {
-        if (!zone.contains(e.relatedTarget)) {
-          if (dropIndicator && dropIndicator.parentNode === zone) dropIndicator.remove();
-        }
+        if (!zone.contains(e.relatedTarget) && dropIndicator && dropIndicator.parentNode === zone) dropIndicator.remove();
       });
       zone.addEventListener('drop', function(e) {
         e.preventDefault();
         if (dropIndicator && dropIndicator.parentNode) dropIndicator.remove();
         if (!draggingEl) return;
         var after = afterElement(zone, e.clientY);
-        if (!after) zone.appendChild(draggingEl);
-        else zone.insertBefore(draggingEl, after);
+        if (!after) zone.appendChild(draggingEl); else zone.insertBefore(draggingEl, after);
         saveOrder();
       });
     }
-
     function afterElement(zone, y) {
-      var items = Array.from(zone.querySelectorAll('.qe-question:not(.qe-q-dragging)'));
-      return items.reduce(function(closest, el) {
-        var box = el.getBoundingClientRect();
-        var offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) return { offset: offset, el: el };
+      return Array.from(zone.querySelectorAll('.qe-question:not(.qe-q-dragging)')).reduce(function(closest, el) {
+        var box = el.getBoundingClientRect(), offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) return { offset:offset, el:el };
         return closest;
-      }, { offset: -Infinity, el: null }).el;
+      }, { offset:-Infinity, el:null }).el;
     }
-
     function saveOrder() {
       var sections = [];
       document.querySelectorAll('.qe-drop-zone').forEach(function(zone) {
-        var partId = zone.dataset.partId ? Number(zone.dataset.partId) : null;
-        var ids = Array.from(zone.querySelectorAll('.qe-question')).map(function(el) {
-          return Number(el.dataset.qid);
-        });
-        sections.push({ part_id: partId, ids: ids });
+        sections.push({ part_id: zone.dataset.partId ? Number(zone.dataset.partId) : null, ids: Array.from(zone.querySelectorAll('.qe-question')).map(function(el){ return Number(el.dataset.qid); }) });
       });
-      fetch('/quizz/' + quizId + '/questions/reorder-all', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sections: sections })
-      });
+      fetch('/quizz/' + quizId + '/questions/reorder-all', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ sections:sections }) });
     }
 
-    // ── Question element factory ──────────────────────────────────────────
-    var typeLabels = { gradient: 'Gradient', single: 'Choix unique', multiple: 'Choix multiple', ranking: 'Mise en ordre', visual: 'Visuel', points: 'Points' };
-
+    // ── makeQuestion factory ──────────────────────────────────────────────
     function makeQuestion(q) {
       var div = document.createElement('div');
-      div.className = 'qe-question';
-      div.draggable = true;
-      div.dataset.qid = q.id;
+      div.className = 'qe-question'; div.draggable = true;
+      div.dataset.qid = q.id; div.dataset.type = q.type;
       div.dataset.hasSides = q.has_sides ? '1' : '0';
-      div.dataset.tendency = q.tendency || '';
-      div.dataset.subtype = q.subtype || '';
+      div.dataset.tendency = q.tendency || ''; div.dataset.subtype = q.subtype || '';
       div.dataset.wikiLinkId = q.wiki_link_id ? String(q.wiki_link_id) : '';
+      div.dataset.opts = JSON.stringify(q.options || []);
 
-      var handle = document.createElement('span');
-      handle.className = 'qe-q-handle';
-      handle.textContent = '⠿';
-
-      var body = document.createElement('div');
-      body.className = 'qe-q-body';
-
-      var txt = document.createElement('p');
-      txt.className = 'qe-q-text';
-      txt.textContent = q.text;
-
-      var badge = document.createElement('span');
-      badge.className = 'quiz-qitem-type quiz-qtype--' + q.type;
-      badge.textContent = typeLabels[q.type] || q.type;
-
-      body.appendChild(txt);
-      body.appendChild(badge);
-
-      if (q.has_sides) {
-        var sb = document.createElement('span');
-        sb.className = 'qe-sides-badge';
-        sb.textContent = '⇅ Donner/Subir';
-        body.appendChild(sb);
-      }
-      if (q.tendency === 'positive' || q.tendency === 'negative') {
-        var tb = document.createElement('span');
-        tb.className = 'qe-tendency-badge qe-tendency-badge--' + q.tendency;
-        tb.title = q.tendency === 'positive' ? 'Tendance positive' : 'Tendance négative';
-        tb.textContent = q.tendency === 'positive' ? '▲' : '▼';
-        body.appendChild(tb);
-      }
-      if (q.wiki_link_id) {
-        var wb = document.createElement('span');
-        wb.className = 'qe-wiki-badge';
-        wb.title = 'Lien Codex';
-        wb.textContent = '?';
-        body.appendChild(wb);
-      }
-
-      if (q.options && q.options.length) {
-        var opts = document.createElement('div');
-        opts.className = 'quiz-qitem-opts';
-        q.options.forEach(function(o) {
-          var s = document.createElement('span');
-          s.className = 'quiz-qitem-opt';
-          s.textContent = o;
-          opts.appendChild(s);
-        });
-        body.appendChild(opts);
-      }
-
-      var edit = document.createElement('button');
-      edit.type = 'button';
-      edit.className = 'qe-q-edit';
-      edit.title = 'Modifier';
-      edit.textContent = '✎';
-
-      var del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'qe-q-del';
-      del.title = 'Supprimer';
-      del.textContent = '×';
-
-      div.appendChild(handle);
-      div.appendChild(body);
-      div.appendChild(edit);
-      div.appendChild(del);
+      var handle = document.createElement('span'); handle.className = 'qe-q-handle'; handle.textContent = '⠿';
+      var body = document.createElement('div'); body.className = 'qe-q-body';
+      var txt = document.createElement('p'); txt.className = 'qe-q-text'; txt.textContent = q.text;
+      var badge = document.createElement('span'); badge.className = 'quiz-qitem-type quiz-qtype--'+q.type; badge.textContent = typeLabels[q.type] || q.type;
+      body.appendChild(txt); body.appendChild(badge);
+      if (q.has_sides) { var sb=document.createElement('span'); sb.className='qe-sides-badge'; sb.textContent='⇅ Donner/Subir'; body.appendChild(sb); }
+      if (q.tendency) { var tb=document.createElement('span'); tb.className='qe-tendency-badge qe-tendency-badge--'+q.tendency; tb.textContent=q.tendency==='positive'?'▲':'▼'; body.appendChild(tb); }
+      if (q.wiki_link_id) { var wb=document.createElement('span'); wb.className='qe-wiki-badge'; wb.title='Codex'; wb.textContent='?'; body.appendChild(wb); }
+      var del = document.createElement('button'); del.type='button'; del.className='qe-q-del'; del.title='Supprimer'; del.textContent='×';
+      div.appendChild(handle); div.appendChild(body); div.appendChild(del);
       return div;
     }
-
     function deleteQuestion(id) {
       if (!confirm('Supprimer cette question ?')) return;
-      fetch('/quizz/' + quizId + '/questions/' + id + '/delete', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-      }).then(function(r) { return r.json(); }).then(function(d) {
-        if (!d.ok) return;
-        var el = document.querySelector('.qe-question[data-qid="' + id + '"]');
-        if (el) el.remove();
-      });
+      fetch('/quizz/' + quizId + '/questions/' + id + '/delete', { method:'POST', headers:{'Content-Type':'application/json'} })
+        .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) return; var el = document.querySelector('.qe-question[data-qid="'+id+'"]'); if (el) el.remove(); });
     }
 
     // ── Inline add-question form ──────────────────────────────────────────
-    function initInlineForm(formEl) {
-      var partId = formEl.dataset.partId || null;
-      var textarea   = formEl.querySelector('.qea-text');
-      var chips      = formEl.querySelectorAll('.quiz-type-chip');
-      var optsWrap   = formEl.querySelector('.qea-options-wrap');
-      var optsList   = formEl.querySelector('.qea-options-list');
-      var addOptBtn  = formEl.querySelector('.qea-add-opt');
-      var submitBtn  = formEl.querySelector('.qea-submit');
-      var cancelBtn  = formEl.querySelector('.qea-cancel');
-      var tendencyChips = formEl.querySelectorAll('.qe-tendency-chip');
-      var subtypeRowEl = formEl.querySelector('.qea-gradient-subtype');
-      var subtypeChips = subtypeRowEl ? subtypeRowEl.querySelectorAll('.qea-subtype-chip') : [];
-      var pointsTotalRowEl = formEl.querySelector('.qea-points-total-row');
-      var pointsTotalInput = formEl.querySelector('.qea-points-total-input');
-      var currentType = 'gradient';
-      var currentTendency = '';
-      var currentSubtype = '';
+    function makeInlineForm(partId) {
+      var div = document.createElement('div');
+      div.className = 'qe-inline-form'; div.dataset.partId = String(partId); div.hidden = true;
 
-      chips.forEach(function(chip) {
-        chip.addEventListener('click', function() {
-          chips.forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
-          chip.classList.add('quiz-type-chip--active');
-          currentType = chip.dataset.type;
-          optsWrap.hidden = (currentType === 'gradient');
-          if (subtypeRowEl) subtypeRowEl.style.display = (currentType === 'gradient') ? '' : 'none';
-          if (pointsTotalRowEl) pointsTotalRowEl.style.display = (currentType === 'points') ? '' : 'none';
-        });
+      var ta = document.createElement('textarea');
+      ta.className = 'wf-stats-note-input qea-text'; ta.rows = 2;
+      ta.placeholder = 'Texte de la question…'; ta.style.resize = 'vertical';
+
+      var row1 = document.createElement('div'); row1.className = 'qe-inline-form-row1';
+      var typeSel = makeTypeSelect('gradient');
+      var subtypeSel = makeSubtypeSelect('');
+      var ptRow = document.createElement('div'); ptRow.className = 'qea-points-total-row'; ptRow.style.display = 'none';
+      ptRow.innerHTML = '<label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total : <input type="number" class="qea-points-total-input" min="2" max="200" value="10" style="width:4rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.25rem"></label>';
+      row1.appendChild(typeSel); row1.appendChild(subtypeSel); row1.appendChild(ptRow);
+
+      var optsWrap = makeOptionsWidget([]); optsWrap.hidden = true;
+
+      typeSel.addEventListener('change', function() {
+        var t = typeSel.value;
+        subtypeSel.style.display = (t === 'gradient') ? '' : 'none';
+        ptRow.style.display = (t === 'points') ? '' : 'none';
+        optsWrap.hidden = (t === 'gradient');
       });
 
-      subtypeChips.forEach(function(chip) {
-        chip.addEventListener('click', function() {
-          subtypeChips.forEach(function(c) { c.classList.remove('qea-subtype-chip--active'); });
-          chip.classList.add('qea-subtype-chip--active');
-          currentSubtype = chip.dataset.subtype;
-        });
-      });
+      var metaRow = document.createElement('div'); metaRow.className = 'qe-q-edit-meta-row';
+      var sidesBtn = makeSidesBtn(false);
+      var tendencySel = makeTendencySelect('');
+      metaRow.appendChild(sidesBtn); metaRow.appendChild(tendencySel);
 
-      tendencyChips.forEach(function(chip) {
-        chip.addEventListener('click', function() {
-          tendencyChips.forEach(function(c) { c.classList.remove('qe-tendency-chip--active'); });
-          chip.classList.add('qe-tendency-chip--active');
-          currentTendency = chip.dataset.tendency;
-        });
-      });
+      var actions = document.createElement('div'); actions.className = 'qea-actions';
+      var submit = document.createElement('button'); submit.type='button'; submit.className='qea-submit wf-save-btn'; submit.style.cssText='position:static;font-size:.82rem'; submit.textContent='Ajouter';
+      var cancel = document.createElement('button'); cancel.type='button'; cancel.className='qea-cancel wf-cancel-link'; cancel.textContent='Annuler';
+      actions.appendChild(submit); actions.appendChild(cancel);
 
-      addOptBtn.addEventListener('click', function() {
-        var row = document.createElement('div');
-        row.className = 'quiz-option-row';
-        var inp = document.createElement('input');
-        inp.type = 'text';
-        inp.className = 'wf-orce-name-input';
-        inp.placeholder = 'Option…';
-        inp.style.cssText = 'flex:1;font-size:.82rem';
-        var del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'quiz-qitem-del';
-        del.style.flexShrink = '0';
-        del.textContent = '×';
-        del.addEventListener('click', function() { row.remove(); });
-        row.appendChild(inp);
-        row.appendChild(del);
-        optsList.appendChild(row);
-      });
+      div.appendChild(ta); div.appendChild(row1); div.appendChild(optsWrap);
+      div.appendChild(metaRow); div.appendChild(actions);
 
-      cancelBtn.addEventListener('click', function() {
-        formEl.hidden = true;
-        textarea.value = '';
-        optsList.innerHTML = '';
-        currentSubtype = '';
-        if (subtypeRowEl) {
-          subtypeChips.forEach(function(c) { c.classList.toggle('qea-subtype-chip--active', c.dataset.subtype === ''); });
-          subtypeRowEl.style.display = '';
-        }
-        if (pointsTotalRowEl) { pointsTotalRowEl.style.display = 'none'; if (pointsTotalInput) pointsTotalInput.value = '10'; }
-        resetTendencyChips();
-      });
-
-      function resetTendencyChips() {
-        currentTendency = '';
-        tendencyChips.forEach(function(c) { c.classList.toggle('qe-tendency-chip--active', c.dataset.tendency === ''); });
+      function resetForm() {
+        ta.value = '';
+        typeSel.value = 'gradient'; setTypeSelColor(typeSel);
+        subtypeSel.value = ''; setSubtypeSelColor(subtypeSel);
+        subtypeSel.style.display = ''; ptRow.style.display = 'none';
+        optsWrap.hidden = true; optsWrap.querySelector('.qea-options-list').innerHTML = '';
+        sidesBtn.dataset.active = '0'; sidesBtn.classList.remove('qe-sides-btn--on');
+        tendencySel.value = ''; setTendencySelColor(tendencySel);
       }
-
       function doSubmit(keepOpen) {
-        var text = (textarea.value || '').trim();
-        if (!text) return;
-        var options = [];
-        if (currentType !== 'gradient') {
-          options = Array.from(optsList.querySelectorAll('input')).map(function(i) {
-            return i.value.trim();
-          }).filter(Boolean);
-        }
+        var text = (ta.value || '').trim(); if (!text) return;
+        var t = typeSel.value;
+        var options = t !== 'gradient' ? Array.from(optsWrap.querySelectorAll('.qea-options-list input')).map(function(i){ return i.value.trim(); }).filter(Boolean) : [];
+        var ptInp = ptRow.querySelector('input');
+        var subtype = t==='points' ? (ptInp ? ptInp.value||'10' : '10') : (t==='gradient' ? subtypeSel.value||null : null);
         fetch('/quizz/' + quizId + '/questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId, has_sides: formEl.querySelector('.qea-sides-chk').checked ? 1 : 0, tendency: currentTendency || null, subtype: currentType === 'points' ? (pointsTotalInput ? (pointsTotalInput.value || '10') : '10') : (currentSubtype || null) })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ text:text, type:t, options:options, part_id:partId||null, has_sides:sidesBtn.dataset.active==='1'?1:0, tendency:tendencySel.value||null, subtype:subtype })
+        }).then(function(r){ return r.json(); }).then(function(d){
           if (!d.ok) return;
-          var zone = document.querySelector('.qe-drop-zone[data-part-id="' + (partId || '') + '"]');
-          if (zone) {
-            var el = makeQuestion(d.question);
-            zone.appendChild(el);
-            initQuestion(el);
-          }
-          textarea.value = '';
-          optsList.innerHTML = '';
-          chips.forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
-          chips[0].classList.add('quiz-type-chip--active');
-          currentType = 'gradient';
-          optsWrap.hidden = true;
-          if (subtypeRowEl) subtypeRowEl.style.display = '';
-          subtypeChips.forEach(function(c) { c.classList.toggle('qea-subtype-chip--active', c.dataset.subtype === ''); });
-          currentSubtype = '';
-          if (pointsTotalRowEl) { pointsTotalRowEl.style.display = 'none'; if (pointsTotalInput) pointsTotalInput.value = '10'; }
-          formEl.querySelector('.qea-sides-chk').checked = false;
-          resetTendencyChips();
-          if (keepOpen) {
-            textarea.focus();
-          } else {
-            formEl.hidden = true;
-          }
+          var zone = document.querySelector('.qe-drop-zone[data-part-id="'+(partId||'')+'"]');
+          if (zone) { var newEl = makeQuestion(d.question); zone.appendChild(newEl); initQuestion(newEl); }
+          resetForm();
+          if (keepOpen) ta.focus(); else div.hidden = true;
         });
       }
-
-      submitBtn.addEventListener('click', function() { doSubmit(false); });
-
-      textarea.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          doSubmit(true);
-        }
-      });
+      submit.addEventListener('click', function(){ doSubmit(false); });
+      ta.addEventListener('keydown', function(e){ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); doSubmit(true); } });
+      cancel.addEventListener('click', function(){ resetForm(); div.hidden = true; });
+      return div;
     }
 
     // ── "+ Question" buttons ──────────────────────────────────────────────
     function initAddQBtn(btn) {
+      var pid = btn.dataset.partId || '';
+      var form = makeInlineForm(pid);
+      btn.insertAdjacentElement('afterend', form);
       btn.addEventListener('click', function() {
-        var pid = btn.dataset.partId || '';
-        var form = document.querySelector('.qe-inline-form[data-part-id="' + pid + '"]');
-        if (!form) return;
         form.hidden = !form.hidden;
         if (!form.hidden) form.querySelector('textarea').focus();
       });
     }
 
-    // ── Part : renommer (contenteditable) ─────────────────────────────────
+    // ── Part management ───────────────────────────────────────────────────
     function initPartTitle(span) {
-      span.addEventListener('click', function(e) {
-        e.stopPropagation(); // empêche le <details> de se replier
-      });
-      span.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); span.blur(); }
-        if (e.key === 'Escape') { span.textContent = span.dataset.orig || ''; span.blur(); }
-      });
-      span.addEventListener('focus', function() {
-        span.dataset.orig = span.textContent;
-      });
-      span.addEventListener('blur', function() {
-        var title = span.textContent.trim();
-        if (!title) { span.textContent = span.dataset.orig || 'Partie'; return; }
-        if (title === span.dataset.orig) return;
-        fetch('/quizz/' + quizId + '/parts/' + span.dataset.partId + '/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: title })
-        });
+      span.addEventListener('click', function(e){ e.stopPropagation(); });
+      span.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); span.blur(); } if (e.key==='Escape'){ span.textContent=span.dataset.orig||''; span.blur(); } });
+      span.addEventListener('focus', function(){ span.dataset.orig=span.textContent; });
+      span.addEventListener('blur', function(){
+        var title=span.textContent.trim(); if (!title){ span.textContent=span.dataset.orig||'Partie'; return; } if (title===span.dataset.orig) return;
+        fetch('/quizz/'+quizId+'/parts/'+span.dataset.partId+'/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:title }) });
       });
     }
-
-    // ── Part : supprimer ─────────────────────────────────────────────────
     function initPartDelBtn(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var pid = btn.dataset.partId;
+      btn.addEventListener('click', function(e){
+        e.stopPropagation(); var pid=btn.dataset.partId;
         if (!confirm('Supprimer cette partie ?\nLes questions resteront sans partie.')) return;
-        fetch('/quizz/' + quizId + '/parts/' + pid + '/delete', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }
-        }).then(function(r) { return r.json(); }).then(function(d) {
-          if (!d.ok) return;
-          var panel = document.querySelector('.qe-panel--part[data-part-id="' + pid + '"]');
-          var rootZone = document.getElementById('qe-zone-root');
-          if (panel && rootZone) {
-            var pz = panel.querySelector('.qe-drop-zone');
-            if (pz) Array.from(pz.querySelectorAll('.qe-question')).forEach(function(el) {
-              rootZone.appendChild(el);
-            });
-            panel.remove();
-          }
-          saveOrder();
-        });
+        fetch('/quizz/'+quizId+'/parts/'+pid+'/delete', { method:'POST', headers:{'Content-Type':'application/json'} })
+          .then(function(r){ return r.json(); }).then(function(d){
+            if (!d.ok) return;
+            var panel=document.querySelector('.qe-panel--part[data-part-id="'+pid+'"]');
+            var rootZone=document.getElementById('qe-zone-root');
+            if (panel && rootZone){ var pz=panel.querySelector('.qe-drop-zone'); if (pz) Array.from(pz.querySelectorAll('.qe-question')).forEach(function(el){ rootZone.appendChild(el); }); panel.remove(); }
+            saveOrder();
+          });
       });
     }
 
-    // ── Add part ──────────────────────────────────────────────────────────
-    var addPartBtn  = document.getElementById('qe-add-part-btn');
-    var addPartForm = document.getElementById('qe-add-part-form');
-    var partInput   = document.getElementById('qe-part-input');
-    var partConfirm = document.getElementById('qe-part-confirm');
-    var partCancel  = document.getElementById('qe-part-cancel');
-    var partsContainer = document.getElementById('qe-parts-container');
-
-    addPartBtn.addEventListener('click', function() {
-      addPartForm.hidden = false;
-      partInput.focus();
-    });
-    partCancel.addEventListener('click', function() {
-      addPartForm.hidden = true;
-      partInput.value = '';
-    });
-    partInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); partConfirm.click(); }
-      if (e.key === 'Escape') { partCancel.click(); }
-    });
-    partConfirm.addEventListener('click', function() {
-      var title = partInput.value.trim();
-      if (!title) return;
-      fetch('/quizz/' + quizId + '/parts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title })
-      }).then(function(r) { return r.json(); }).then(function(d) {
-        if (!d.ok) return;
-        partInput.value = '';
-        addPartForm.hidden = true;
-        var panel = makePartPanel(d.partId, title);
-        partsContainer.appendChild(panel);
-      });
+    var addPartBtn=document.getElementById('qe-add-part-btn'), addPartForm=document.getElementById('qe-add-part-form');
+    var partInput=document.getElementById('qe-part-input'), partConfirm=document.getElementById('qe-part-confirm'), partCancel=document.getElementById('qe-part-cancel');
+    var partsContainer=document.getElementById('qe-parts-container');
+    addPartBtn.addEventListener('click', function(){ addPartForm.hidden=false; partInput.focus(); });
+    partCancel.addEventListener('click', function(){ addPartForm.hidden=true; partInput.value=''; });
+    partInput.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); partConfirm.click(); } if (e.key==='Escape'){ partCancel.click(); } });
+    partConfirm.addEventListener('click', function(){
+      var title=partInput.value.trim(); if (!title) return;
+      fetch('/quizz/'+quizId+'/parts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:title }) })
+        .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) return; partInput.value=''; addPartForm.hidden=true; partsContainer.appendChild(makePartPanel(d.partId, title)); });
     });
 
     function makePartPanel(partId, title) {
-      var details = document.createElement('details');
-      details.className = 'qe-panel qe-panel--part';
-      details.dataset.partId = partId;
-      details.open = true;
-
-      var summary = document.createElement('summary');
-      summary.className = 'qe-panel-summary qe-part-summary';
-
-      var titleSpan = document.createElement('span');
-      titleSpan.className = 'qe-part-title';
-      titleSpan.contentEditable = 'true';
-      titleSpan.dataset.partId = partId;
-      titleSpan.textContent = title;
-      initPartTitle(titleSpan);
-
-      var delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'qe-part-del';
-      delBtn.dataset.partId = partId;
-      delBtn.title = 'Supprimer la partie';
-      delBtn.textContent = '×';
-      initPartDelBtn(delBtn);
-
-      summary.appendChild(titleSpan);
-      summary.appendChild(delBtn);
-
-      var body = document.createElement('div');
-      body.className = 'qe-panel-body';
-
-      var zone = document.createElement('div');
-      zone.className = 'qe-drop-zone';
-      zone.dataset.partId = String(partId);
-      initDropZone(zone);
-
-      var addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.className = 'qe-add-q-btn';
-      addBtn.dataset.partId = String(partId);
-      addBtn.textContent = '+ Question';
-
-      var inlineForm = makeInlineForm(String(partId));
-      initInlineForm(inlineForm);
-
-      addBtn.addEventListener('click', function() {
-        inlineForm.hidden = !inlineForm.hidden;
-        if (!inlineForm.hidden) inlineForm.querySelector('textarea').focus();
-      });
-
-      body.appendChild(zone);
-      body.appendChild(addBtn);
-      body.appendChild(inlineForm);
-      details.appendChild(summary);
-      details.appendChild(body);
+      var details=document.createElement('details'); details.className='qe-panel qe-panel--part'; details.dataset.partId=partId; details.open=true;
+      var summary=document.createElement('summary'); summary.className='qe-panel-summary qe-part-summary';
+      var ts=document.createElement('span'); ts.className='qe-part-title'; ts.contentEditable='true'; ts.dataset.partId=partId; ts.textContent=title; initPartTitle(ts);
+      var db2=document.createElement('button'); db2.type='button'; db2.className='qe-part-del'; db2.dataset.partId=partId; db2.title='Supprimer la partie'; db2.textContent='×'; initPartDelBtn(db2);
+      summary.appendChild(ts); summary.appendChild(db2);
+      var body=document.createElement('div'); body.className='qe-panel-body';
+      var zone=document.createElement('div'); zone.className='qe-drop-zone'; zone.dataset.partId=String(partId); initDropZone(zone);
+      var addBtn=document.createElement('button'); addBtn.type='button'; addBtn.className='qe-add-q-btn'; addBtn.dataset.partId=String(partId); addBtn.textContent='+ Question';
+      var form=makeInlineForm(String(partId));
+      addBtn.addEventListener('click', function(){ form.hidden=!form.hidden; if (!form.hidden) form.querySelector('textarea').focus(); });
+      body.appendChild(zone); body.appendChild(addBtn); body.appendChild(form);
+      details.appendChild(summary); details.appendChild(body);
       return details;
     }
 
-    function makeInlineForm(partId) {
-      var div = document.createElement('div');
-      div.className = 'qe-inline-form';
-      div.dataset.partId = partId;
-      div.hidden = true;
-
-      var ta = document.createElement('textarea');
-      ta.className = 'wf-stats-note-input qea-text';
-      ta.rows = 2;
-      ta.placeholder = 'Texte de la question…';
-      ta.style.resize = 'vertical';
-
-      var typeRow = document.createElement('div');
-      typeRow.className = 'quiz-qadd-type-row';
-      [['gradient','Gradient'],['single','Choix unique'],['multiple','Choix multiple'],['ranking','Mise en ordre'],['visual','Visuel'],['points','Points']].forEach(function(t, i) {
-        var lbl = document.createElement('label');
-        lbl.className = 'chip-option quiz-type-chip' + (i === 0 ? ' quiz-type-chip--active' : '');
-        lbl.dataset.type = t[0];
-        var inp = document.createElement('input');
-        inp.type = 'radio'; inp.name = 'qa-type'; inp.value = t[0];
-        inp.style.display = 'none';
-        if (i === 0) inp.checked = true;
-        var s = document.createElement('span');
-        s.textContent = t[1];
-        lbl.appendChild(inp); lbl.appendChild(s);
-        typeRow.appendChild(lbl);
-      });
-
-      var subtypeRow = document.createElement('div');
-      subtypeRow.className = 'qea-gradient-subtype';
-      [['','Générique'],['gout','Goût'],['pratique','Pratique'],['excitation','Excitation']].forEach(function(s, i) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'qea-subtype-chip' + (i === 0 ? ' qea-subtype-chip--active' : '');
-        btn.dataset.subtype = s[0];
-        btn.textContent = s[1];
-        subtypeRow.appendChild(btn);
-      });
-
-      var ptRow = document.createElement('div');
-      ptRow.className = 'qea-points-total-row';
-      ptRow.style.display = 'none';
-      ptRow.innerHTML = '<label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total à répartir : <input type="number" class="qea-points-total-input" min="2" max="200" value="10" style="width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem"></label>';
-
-      var optsWrap = document.createElement('div');
-      optsWrap.className = 'qea-options-wrap';
-      optsWrap.hidden = true;
-      var optsList = document.createElement('div');
-      optsList.className = 'qea-options-list';
-      var addOpt = document.createElement('button');
-      addOpt.type = 'button';
-      addOpt.className = 'qea-add-opt wf-stats-pill';
-      addOpt.style.cssText = 'font-size:.76rem;margin-top:.3rem';
-      addOpt.textContent = '+ Option';
-      optsWrap.appendChild(optsList);
-      optsWrap.appendChild(addOpt);
-
-      var actions = document.createElement('div');
-      actions.className = 'qea-actions';
-      var submit = document.createElement('button');
-      submit.type = 'button';
-      submit.className = 'qea-submit wf-save-btn';
-      submit.style.cssText = 'position:static;font-size:.82rem';
-      submit.textContent = 'Ajouter';
-      var cancel = document.createElement('button');
-      cancel.type = 'button';
-      cancel.className = 'qea-cancel wf-cancel-link';
-      cancel.textContent = 'Annuler';
-      actions.appendChild(submit);
-      actions.appendChild(cancel);
-
-      div.appendChild(ta);
-      div.appendChild(typeRow);
-      div.appendChild(subtypeRow);
-      div.appendChild(ptRow);
-      div.appendChild(optsWrap);
-      div.appendChild(actions);
-      return div;
-    }
-
-    // ── Toggle label brouillon/public ────────────────────────────────────
-    var statusChk = document.querySelector('input[name="status"]');
-    var statusText = document.querySelector('.qe-status-text');
-    var statusTrack = document.querySelector('.qe-status-track');
+    // ── Status toggle label ───────────────────────────────────────────────
+    var statusChk=document.querySelector('input[name="status"]');
+    var statusText=document.querySelector('.qe-status-text');
+    var statusTrack=document.querySelector('.qe-status-track');
     if (statusChk && statusText) {
-      statusChk.addEventListener('change', function() {
-        statusText.textContent = statusChk.checked ? 'Public' : 'Brouillon';
-        if (statusTrack) statusTrack.style.background = statusChk.checked ? 'hsl(140,50%,38%)' : '';
-      });
-      if (statusTrack) statusTrack.style.background = statusChk.checked ? 'hsl(140,50%,38%)' : '';
+      statusChk.addEventListener('change', function(){ statusText.textContent=statusChk.checked?'Public':'Brouillon'; if (statusTrack) statusTrack.style.background=statusChk.checked?'hsl(140,50%,38%)':''; });
+      if (statusTrack) statusTrack.style.background=statusChk.checked?'hsl(140,50%,38%)':'';
     }
 
-    // ── Init all existing elements ────────────────────────────────────────
+    // ── Init ──────────────────────────────────────────────────────────────
     document.querySelectorAll('.qe-question').forEach(initQuestion);
     document.querySelectorAll('.qe-drop-zone').forEach(initDropZone);
-    document.querySelectorAll('.qe-inline-form').forEach(initInlineForm);
     document.querySelectorAll('.qe-add-q-btn').forEach(initAddQBtn);
     document.querySelectorAll('.qe-part-title').forEach(initPartTitle);
     document.querySelectorAll('.qe-part-del').forEach(initPartDelBtn);

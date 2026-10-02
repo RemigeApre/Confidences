@@ -14381,7 +14381,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   padding: .6rem .5rem; border-radius: 8px;
   background: hsl(220,14%,14%); border: 1px solid var(--border);
   margin-bottom: .35rem; cursor: default;
-  transition: opacity .15s, box-shadow .15s;
+  transition: opacity .15s, box-shadow .15s, border-color .15s;
+  flex-wrap: wrap;
 }
 .qe-question:hover { border-color: hsl(220,20%,30%); }
 .qe-question.qe-q-dragging { opacity: .4; }
@@ -14390,7 +14391,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   padding-top: .15rem; flex-shrink: 0; user-select: none;
 }
 .qe-q-handle:active { cursor: grabbing; }
-.qe-q-body { flex: 1; min-width: 0; }
+.qe-q-body { flex: 1; min-width: 0; cursor: pointer; }
+.qe-q-body:hover .qe-q-text { color: hsl(220,80%,78%); }
 .qe-q-text { margin: 0 0 .3rem; font-size: .85rem; font-weight: 600; }
 .qe-q-del {
   background: none; border: none; cursor: pointer;
@@ -14456,6 +14458,153 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   transition: background .15s, color .15s;
 }
 .qe-delete-fab:hover { background: hsl(0,40%,22%); color: hsl(0,70%,75%); }
+
+/* ── Quiz Editor : volet gauche (sidebar) ────────────────────────────────── */
+/* Mobile / écran étroit : bloc normal empilé au-dessus du contenu */
+.qe-sidebar {
+  background: linear-gradient(160deg, hsl(230,42%,18%) 0%, hsl(230,34%,13%) 100%);
+  border-bottom: 1px solid rgba(255,255,255,.09);
+  margin-bottom: 1rem;
+}
+.qe-sidebar-head {
+  padding: .8rem 1rem .55rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.qe-sidebar-body {
+  padding: .75rem 1rem;
+  display: flex; flex-direction: column; gap: .55rem;
+}
+.qe-sidebar-footer {
+  padding: .65rem 1rem .9rem;
+  display: flex; flex-direction: column; gap: .45rem;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.qe-sidebar-title {
+  width: 100%; box-sizing: border-box;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 8px; padding: .45rem .65rem;
+  font-size: 1rem; font-weight: 700; color: #fff;
+  transition: border-color .15s, background .15s;
+}
+.qe-sidebar-title:focus {
+  outline: none; border-color: rgba(255,255,255,.38); background: rgba(255,255,255,.12);
+}
+.qe-sidebar-toggles {
+  display: flex; flex-direction: column; gap: .4rem; margin-top: .2rem;
+}
+.qe-sidebar-save-btn {
+  width: 100%; padding: .55rem .75rem;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px;
+  font-size: .85rem; font-weight: 700; cursor: pointer;
+  transition: background .15s;
+}
+.qe-sidebar-save-btn:hover { background: color-mix(in srgb, var(--accent) 80%, #fff); }
+.qe-sidebar-csv-btn {
+  display: block; text-align: center; padding: .42rem .75rem;
+  background: rgba(255,255,255,.06); color: rgba(255,255,255,.65);
+  border: 1px solid rgba(255,255,255,.13); border-radius: 8px;
+  font-size: .8rem; text-decoration: none;
+  transition: background .15s, color .15s;
+}
+.qe-sidebar-csv-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+.qe-sidebar-del-btn {
+  width: 100%; padding: .38rem .75rem;
+  background: transparent; color: hsl(0,55%,60%);
+  border: 1px solid hsl(0,30%,26%); border-radius: 8px;
+  font-size: .78rem; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.qe-sidebar-del-btn:hover { background: hsl(0,35%,18%); color: hsl(0,70%,72%); border-color: hsl(0,45%,40%); }
+
+/* Desktop : panneau fixe pleine hauteur à gauche (même motif que .wiki-cat-sidebar).
+   Seuil 1340 px : à ce point (100vw − 900) / 2 = 220 px exactement. */
+@media (min-width: 1340px) {
+  .qe-sidebar {
+    position: fixed; left: 0; top: var(--topnav-height); bottom: 0;
+    width: calc((100vw - 900px) / 2); min-width: 220px; max-width: 300px;
+    display: flex; flex-direction: column;
+    border-bottom: none; border-right: 1px solid rgba(255,255,255,.08);
+    overflow: hidden; z-index: 5; margin-bottom: 0;
+  }
+  .qe-sidebar-body {
+    flex: 1; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent;
+  }
+}
+
+/* ── Category picker : variante colonne (dans la sidebar) ───────────────── */
+.quiz-cat-picker--col { flex-direction: column; gap: .3rem; }
+.quiz-cat-picker--col .quiz-cat-opt { text-align: center; }
+
+/* ── Inline edit form ────────────────────────────────────────────────────── */
+/* flex: 0 0 100% + flex-wrap:wrap sur .qe-question → s'étale sur sa propre
+   ligne complète sous la rangée handle + body + del */
+.qe-q-edit-inline {
+  flex: 0 0 100%;
+  padding: .7rem .5rem .5rem;
+  border-top: 1px solid rgba(255,255,255,.07);
+  display: flex; flex-direction: column; gap: .5rem;
+}
+.qe-q-edit-ta { width: 100%; box-sizing: border-box; }
+.qe-inline-form-row1 {
+  display: flex; gap: .45rem; flex-wrap: wrap; align-items: center;
+}
+.qe-q-edit-meta-row {
+  display: flex; gap: .45rem; flex-wrap: wrap; align-items: center;
+}
+
+/* ── Selects type / sous-type / tendance ──────────────────────────────────── */
+.qe-type-sel,
+.qe-subtype-sel,
+.qe-tendency-sel {
+  appearance: none; -webkit-appearance: none;
+  padding: .28rem 1.3rem .28rem .5rem;
+  border-radius: 6px; border: 1px solid rgba(255,255,255,.18);
+  background: hsl(220,14%,16%) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.4)'/%3E%3C/svg%3E") no-repeat right .45rem center;
+  color: rgba(255,255,255,.85);
+  font-size: .8rem; cursor: pointer;
+  transition: border-color .15s, background-color .15s;
+}
+.qe-type-sel:focus,
+.qe-subtype-sel:focus,
+.qe-tendency-sel:focus { outline: none; border-color: var(--accent); }
+
+/* ── Bouton toggle pill : Donner/Subir ───────────────────────────────────── */
+.qe-sides-btn {
+  padding: .27rem .7rem; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.2); background: transparent;
+  color: rgba(255,255,255,.5); font-size: .78rem; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.qe-sides-btn:hover { border-color: rgba(255,255,255,.38); color: rgba(255,255,255,.85); }
+.qe-sides-btn--on {
+  background: hsl(270,35%,22%); border-color: hsl(270,55%,44%); color: hsl(270,75%,78%);
+}
+.qe-sides-btn--on:hover { background: hsl(270,40%,27%); color: hsl(270,80%,85%); }
+
+/* ── Bouton toggle pill : Codex ──────────────────────────────────────────── */
+.qe-codex-btn {
+  padding: .27rem .7rem; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.2); background: transparent;
+  color: rgba(255,255,255,.5); font-size: .78rem; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.qe-codex-btn:hover { border-color: rgba(255,255,255,.38); color: rgba(255,255,255,.85); }
+.qe-codex-btn--on {
+  background: hsl(200,38%,18%); border-color: hsl(200,52%,36%); color: hsl(200,72%,66%);
+}
+.qe-codex-btn--on:hover { background: hsl(200,44%,22%); color: hsl(200,78%,74%); }
+
+/* ── Champ de recherche Codex ────────────────────────────────────────────── */
+.qe-codex-field { position: relative; }
+.qe-codex-results {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+  background: hsl(220,18%,14%); border: 1px solid rgba(255,255,255,.22);
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,.45);
+  max-height: 11rem; overflow-y: auto;
+}
 
 /* ── Quiz : type ranking ─────────────────────────────────────────────────── */
 .quiz-qtype--ranking { background: hsl(30,40%,22%); color: hsl(30,70%,72%); }
