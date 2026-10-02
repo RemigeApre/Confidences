@@ -13,6 +13,13 @@ function buildLootboxRouter(config) {
     res.json({ count: counts.total, byType: counts });
   });
 
+  // ── Statut combiné (lootboxes + pièces) — pour polling léger ───────────────
+  router.get("/status", (req, res) => {
+    const counts = db.getLootboxCountByType(req.user.id);
+    const user = db.getUserById(req.user.id);
+    res.json({ lootboxCount: counts.total, coins: user ? (user.coins || 0) : 0 });
+  });
+
   // ── Ouverture ──────────────────────────────────────────────────────────────
   router.post("/open", express.json(), (req, res) => {
     const result = db.openLootbox(req.user.id);

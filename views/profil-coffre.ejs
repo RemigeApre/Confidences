@@ -485,7 +485,11 @@
 (function () {
   var coinsEl = document.getElementById('coffre-coins-value');
   function cloneTpl(id) { var tpl = document.getElementById(id); return tpl ? tpl.content.cloneNode(true) : null; }
-  function updateCoins(n) { if (coinsEl) coinsEl.textContent = n; }
+  function updateCoins(n) {
+    if (coinsEl) coinsEl.textContent = n;
+    var navCoins = document.querySelector('.pc-nav-coins-count');
+    if (navCoins) navCoins.textContent = n;
+  }
 
   // ── Achat ─────────────────────────────────────────────────────────────
   document.querySelectorAll('.js-buy').forEach(function (btn) {

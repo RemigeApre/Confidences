@@ -3218,6 +3218,16 @@ function openLootbox(userId) {
       }
       return { rewards: [{ isTheme: true, themeKey: key, label: def.label, rarity: def.rarity || 'rare', isDuplicate: false }], isGift: true };
     }
+    if (giftData.type === 'joker') {
+      const jokerItemType = giftData.jokerType === 'charm' ? 'joker_charm' : 'joker_image';
+      db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, 'legendary', ?)").run(userId, jokerItemType, now);
+      return { rewards: [{ isJoker: true, jokerType: giftData.jokerType === 'charm' ? 'charm' : 'image', rarity: 'legendary' }], isGift: true };
+    }
+    if (giftData.type === 'coins') {
+      const amount = Math.max(1, parseInt(giftData.amount, 10) || 1);
+      db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(amount, userId);
+      return { rewards: [{ isCoins: true, coins: amount, rarity: 'rare' }], isGift: true };
+    }
     return null;
   }
 

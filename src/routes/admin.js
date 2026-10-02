@@ -48,8 +48,6 @@ const {
   setLootboxConfigKey,
   setImageRarity,
   setImageTitle,
-  grantJokerToUser,
-  grantCoinsToUser,
   setCharmRarity,
   grantGiftLootbox,
   listCharms,
@@ -570,7 +568,7 @@ function buildAdminRouter(config) {
     if (!targetUserId) return res.json({ ok: false, error: 'params_invalides' });
     const user = getUserById(targetUserId);
     if (!user) return res.json({ ok: false, error: 'utilisateur_introuvable' });
-    grantJokerToUser(targetUserId, jokerType);
+    grantGiftLootbox(targetUserId, { type: 'joker', jokerType });
     res.json({ ok: true, username: user.username || user.display_name || String(targetUserId) });
   });
 
@@ -580,7 +578,7 @@ function buildAdminRouter(config) {
     if (!targetUserId || amount <= 0) return res.json({ ok: false, error: 'params_invalides' });
     const user = getUserById(targetUserId);
     if (!user) return res.json({ ok: false, error: 'utilisateur_introuvable' });
-    grantCoinsToUser(targetUserId, amount);
+    grantGiftLootbox(targetUserId, { type: 'coins', amount });
     res.json({ ok: true, username: user.username || user.display_name || String(targetUserId) });
   });
 

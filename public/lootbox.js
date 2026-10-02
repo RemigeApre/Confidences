@@ -98,14 +98,42 @@
   var _avatarSetId    = null;
   var _pendingJokerType = null; // 'image' | 'charm'
 
-  // ── Compteur ─────────────────────────────────────────────────────────────────
-  function refreshCount() {
-    fetch("/lootbox/count")
+  // ── Statut (lootboxes + pièces) ──────────────────────────────────────────────
+  var _coinsEl = document.querySelector('.pc-nav-coins-count');
+
+  function setCoins(n) {
+    if (_coinsEl) _coinsEl.textContent = n;
+  }
+
+  function refreshStatus() {
+    fetch("/lootbox/status")
       .then(function (r) { return r.json(); })
-      .then(function (d) { setCount(d.count || 0); })
+      .then(function (d) {
+        setCount(d.lootboxCount || 0);
+        setCoins(d.coins || 0);
+      })
       .catch(function () {});
   }
+  // Compatibilité avec les appels existants
+  function refreshCount() { refreshStatus(); }
   window._lbRefreshCount = refreshCount;
+
+  // Polling toutes les 30s — s'arrête si page masquée (visibilitychange)
+  var _pollInterval = null;
+  function startPolling() {
+    if (_pollInterval) return;
+    _pollInterval = setInterval(function() {
+      if (!document.hidden) refreshStatus();
+    }, 30000);
+  }
+  function stopPolling() {
+    if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
+  }
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) stopPolling();
+    else { startPolling(); refreshStatus(); }
+  });
+  startPolling();
 
   function setCount(n) {
     _count = n;
