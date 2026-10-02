@@ -77,6 +77,13 @@
         <input type="number" id="grant-count-<%= detail.user.id %>" name="count" value="1" min="1" max="20" class="admin-input admin-input--sm" />
         <button type="submit" class="admin-btn-primary">Accorder</button>
       </form>
+      <form method="POST" action="/admin/profils/<%= detail.user.id %>/reset-progress"
+        style="margin-top:.75rem"
+        onsubmit="return confirm('Remettre à zéro les pièces, le coffre et les compteurs de <%= detail.user.displayName %> ?\n→ 5 coffres neufs seront accordés.')">
+        <button type="submit" class="admin-btn-danger" style="font-size:.82rem">
+          &#9881; Remettre à zéro (pièces + coffre)
+        </button>
+      </form>
     </div>
 
   </main>
