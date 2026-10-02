@@ -14501,6 +14501,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .quiz-q-flags {
   display: flex; gap: .5rem; flex-wrap: wrap;
   margin-top: .9rem;
+  justify-content: center;
 }
 .quiz-flag-btn {
   display: inline-flex; align-items: center; gap: .35rem;
@@ -14532,6 +14533,89 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-color: hsl(48,80%,44%);
   color: hsl(48,100%,76%);
 }
+
+/* ── Je ne sais pas ─────────────────────────────────────────────────────── */
+.quiz-dont-know-btn {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .3rem .9rem;
+  border-radius: 20px;
+  border: 1.5px dashed rgba(255,255,255,.25);
+  background: none;
+  color: rgba(255,255,255,.4);
+  font-size: .78rem; font-family: inherit; font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  margin-top: .55rem;
+  width: 100%;
+  justify-content: center;
+}
+.quiz-dont-know-btn:hover { border-color: rgba(255,255,255,.4); color: rgba(255,255,255,.65); }
+.quiz-dont-know-btn--active {
+  border-color: rgba(255,255,255,.45); border-style: solid;
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.7);
+}
+
+/* ── Visual choice ──────────────────────────────────────────────────────── */
+.quiz-visual-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: .65rem; margin: .5rem 0;
+}
+.quiz-visual-opt {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .4rem; padding: .85rem .5rem;
+  border: 2px solid rgba(255,255,255,.14); border-radius: 12px;
+  background: hsl(240,10%,13%); cursor: pointer;
+  font-size: .82rem; color: rgba(255,255,255,.75); font-weight: 600;
+  text-align: center; line-height: 1.3;
+  transition: border-color .15s, background .15s, color .15s;
+  position: relative;
+}
+.quiz-visual-opt input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.quiz-visual-opt:hover { border-color: rgba(255,255,255,.35); background: hsl(240,10%,17%); color: #fff; }
+.quiz-visual-opt--checked { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, hsl(240,10%,12%)); color: #fff; }
+
+/* ── Points distribution ────────────────────────────────────────────────── */
+.quiz-points-total {
+  font-size: .78rem; color: rgba(255,255,255,.5); text-align: center;
+  margin-bottom: .6rem;
+}
+.quiz-points-remaining { font-weight: 800; color: hsl(44,90%,62%); }
+.quiz-points-list { display: flex; flex-direction: column; gap: .45rem; }
+.quiz-points-row {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .4rem .65rem;
+  border: 1px solid rgba(255,255,255,.1); border-radius: 10px;
+  background: hsl(240,10%,13%);
+}
+.quiz-points-label { flex: 1; font-size: .82rem; color: rgba(255,255,255,.8); }
+.quiz-points-controls { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+.quiz-points-btn {
+  width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.7); font-size: 1rem; line-height: 1;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  transition: background .12s, border-color .12s;
+}
+.quiz-points-btn:hover:not(:disabled) { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.4); color: #fff; }
+.quiz-points-btn:disabled { opacity: .3; cursor: default; }
+.quiz-points-val {
+  min-width: 1.8rem; text-align: center; font-size: .9rem; font-weight: 700;
+  color: hsl(44,90%,62%);
+}
+
+/* ── Gradient subtype selector ──────────────────────────────────────────── */
+.qea-gradient-subtype {
+  display: flex; gap: .35rem; flex-wrap: wrap; margin-top: .4rem;
+}
+.qea-subtype-chip {
+  padding: .22rem .65rem; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,.2); background: none;
+  color: rgba(255,255,255,.55); font-size: .72rem; font-weight: 600;
+  cursor: pointer; transition: border-color .12s, color .12s, background .12s;
+}
+.qea-subtype-chip:hover { border-color: rgba(255,255,255,.4); color: rgba(255,255,255,.8); }
+.qea-subtype-chip--active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); color: #fff; }
 
 /* ── Actions navigation ──────────────────────────────────────────────────── */
 .quiz-step-actions {
@@ -14678,8 +14762,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .quiz-side-row--hidden { display: none; }
 .quiz-side-label {
-  display: block; text-align: center; font-size: .7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; color: hsl(270,45%,60%); margin-bottom: .35rem;
+  display: block; text-align: center; font-size: 1rem; font-weight: 800;
+  letter-spacing: .04em; color: rgba(255,255,255,.85); margin-bottom: .6rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -17359,9 +17443,10 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   width: 90vw;
   transition: max-width .25s ease;
 }
-/* Quand le panneau batch est visible, élargir le conteneur */
+/* Quand le panneau batch est visible, carrousel pleine largeur */
 .lootbox-reveal:has(#lootbox-batch-results:not([hidden])) {
-  max-width: min(95vw, 920px);
+  max-width: min(96vw, 1100px);
+  width: 96vw;
 }
 
 /* Coffre animé */
@@ -18440,9 +18525,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   gap: .35rem;
 }
 .lootbox-ucard-coins-fill[hidden] { display: none; }
-.lootbox-ucard-coins-fill .lootbox-coins-svg { width: 52px; height: 52px; }
+.lootbox-ucard-coins-fill .lootbox-coins-img { width: 72px; height: 72px; object-fit: contain; }
 .lootbox-ucard-coins-fill .lootbox-coins-amount { font-size: 1.8rem; font-weight: 800; }
-.lootbox-ucard-coins-fill .lootbox-coins-label { font-size: .72rem; color: rgba(255,255,255,.55); }
 
 /* Joker fill */
 .lootbox-ucard-joker-fill {
@@ -18454,9 +18538,19 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-joker-reveal-title { font-size: .75rem; font-weight: 700; color: hsl(48,90%,65%); text-align: center; margin: .15rem 0 0; }
 .lootbox-joker-reveal-desc { font-size: .62rem; color: rgba(255,255,255,.5); text-align: center; margin: 0; }
 
+/* Title area between visual and stars */
+.lootbox-ucard-title {
+  font-size: .8rem; font-weight: 700;
+  color: rgba(255,255,255,.75);
+  text-align: center;
+  margin: .1rem 0 0;
+  min-height: 1.1em;
+  letter-spacing: .01em;
+}
+
 /* Stars row */
 .lootbox-ucard-stars {
-  display: flex; gap: .28rem; align-items: center;
+  display: flex; gap: .28rem; align-items: center; justify-content: center;
 }
 .lootbox-ucard-star { display: inline-flex; }
 
@@ -18481,22 +18575,27 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 /* Animation */
 .lootbox-ucard.lootbox-card--in { animation: card-in .38s cubic-bezier(.15,1.2,.4,1) both; }
 
-/* ── Batch cards — même design que la carte unitaire ── */
+/* ── Batch cards — carrousel horizontal ── */
 .lootbox-batch-grid {
-  display: flex; flex-wrap: wrap; justify-content: center;
+  display: flex; flex-wrap: nowrap;
   gap: 1.1rem;
   width: 100%;
-  max-height: 65vh; overflow-y: auto; padding: .4rem .2rem;
+  overflow-x: auto; overflow-y: visible;
+  padding: .5rem 1.2rem 1.1rem;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.15) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 .lootbox-batch-card {
   display: flex; flex-direction: column; align-items: center; gap: .5rem;
-  width: 260px;
+  width: 260px; flex-shrink: 0;
   padding: 0 .75rem .95rem;
   background: hsl(240,14%,9%);
   border-radius: 14px;
   border: 2px solid rgba(255,255,255,.12);
   overflow: hidden;
-  transition: transform .18s cubic-bezier(.15,1.2,.4,1), box-shadow .18s;
+  scroll-snap-align: center;
   cursor: default;
 }
 .lootbox-batch-card[data-rarity="common"]    { border-color: rgba(148,163,184,.5); }
@@ -18504,7 +18603,6 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-batch-card[data-rarity="epic"]      { border-color: rgba(167,139,250,.65); box-shadow: 0 0 30px 6px rgba(167,139,250,.25); }
 .lootbox-batch-card[data-rarity="legendary"] { border-color: rgba(251,191,36,.7);  box-shadow: 0 0 38px 8px rgba(251,191,36,.3); }
 .lootbox-batch-card[data-rarity="mythic"]    { border-color: rgba(248,113,113,.75); box-shadow: 0 0 46px 10px rgba(248,113,113,.35); animation: mythic-pulse 2s ease-in-out infinite; }
-.lootbox-batch-card:hover { transform: scale(1.04) translateY(-3px); }
 
 /* Batch card type banner — same as ucard */
 .lootbox-batch-card-type {
@@ -18551,10 +18649,17 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-batch-card-theme-label { background: rgba(0,0,0,.5); color:#fff; font-size:.72rem; font-weight:700; padding:.15rem .45rem; border-radius:12px; }
 .lootbox-batch-card-joker { font-size: 3.5rem; color: hsl(48,90%,65%); }
 .lootbox-batch-card-coins-wrap { display:flex; flex-direction:column; align-items:center; gap:.3rem; }
-.lootbox-batch-card-coins-wrap .lootbox-coins-svg { width: 52px; height: 52px; }
+.lootbox-batch-card-coins-wrap .lootbox-coins-img { width: 56px; height: 56px; object-fit: contain; }
 .lootbox-batch-card-coins-wrap .lootbox-coins-amount { font-size: 1.8rem; font-weight: 800; }
 
-.lootbox-batch-card-stars { display:flex; gap:.28rem; }
+.lootbox-batch-card-title {
+  font-size: .75rem; font-weight: 700;
+  color: rgba(255,255,255,.7);
+  text-align: center;
+  margin: 0;
+  min-height: 1em;
+}
+.lootbox-batch-card-stars { display:flex; gap:.28rem; justify-content: center; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ARCADE

@@ -32,13 +32,37 @@
         return r;
       }
 
-      var GRAD_LEVELS = [
-        { k: '1', l: 'Pas du tout',  col: 'hsl(0,72%,55%)'   },
-        { k: '2', l: 'Un peu',       col: 'hsl(25,80%,55%)'  },
-        { k: '3', l: 'Neutre',       col: 'hsl(50,78%,52%)'  },
-        { k: '4', l: 'Beaucoup',     col: 'hsl(90,60%,48%)'  },
-        { k: '5', l: 'Énormément',   col: 'hsl(140,55%,46%)' }
-      ];
+      var GRAD_LEVELS_MAP = {
+        'default': [
+          { k: '1', l: 'Pas du tout',  col: 'hsl(0,72%,55%)'   },
+          { k: '2', l: 'Un peu',       col: 'hsl(25,80%,55%)'  },
+          { k: '3', l: 'Neutre',       col: 'hsl(50,78%,52%)'  },
+          { k: '4', l: 'Beaucoup',     col: 'hsl(90,60%,48%)'  },
+          { k: '5', l: 'Énormément',   col: 'hsl(140,55%,46%)' }
+        ],
+        'gout': [
+          { k: '1', l: 'Déteste',   col: 'hsl(0,72%,55%)'   },
+          { k: '2', l: 'Aime pas',  col: 'hsl(25,80%,55%)'  },
+          { k: '3', l: 'Neutre',    col: 'hsl(50,78%,52%)'  },
+          { k: '4', l: 'Aime',      col: 'hsl(90,60%,48%)'  },
+          { k: '5', l: 'Adore',     col: 'hsl(140,55%,46%)' }
+        ],
+        'pratique': [
+          { k: '1', l: 'Jamais',       col: 'hsl(0,72%,55%)'   },
+          { k: '2', l: 'Une fois',     col: 'hsl(25,80%,55%)'  },
+          { k: '3', l: 'Rarement',     col: 'hsl(50,78%,52%)'  },
+          { k: '4', l: 'Occasionnel',  col: 'hsl(90,60%,48%)'  },
+          { k: '5', l: 'Souvent',      col: 'hsl(140,55%,46%)' }
+        ],
+        'excitation': [
+          { k: '1', l: 'Jamais pensé', col: 'hsl(0,72%,55%)'   },
+          { k: '2', l: 'Non',          col: 'hsl(25,80%,55%)'  },
+          { k: '3', l: 'À réfléchir',  col: 'hsl(50,78%,52%)'  },
+          { k: '4', l: 'Excitant',     col: 'hsl(90,60%,48%)'  },
+          { k: '5', l: 'Très excitant',col: 'hsl(140,55%,46%)' }
+        ]
+      };
+      var GRAD_LEVELS = GRAD_LEVELS_MAP['default']; // fallback, overridden per question
       var isLastStep = stepIdx >= steps.length - 1;
     %>
 
@@ -135,13 +159,14 @@
             : (savedAns !== undefined && savedAns !== null && savedAns !== '' && !(Array.isArray(savedAns) && savedAns.length === 0));
 
           /* ── Render gradient bar ────────────────────────────────────── */
-          function renderGradBar(name, savedVal) {
+          function renderGradBar(name, savedVal, levels) {
+            levels = levels || GRAD_LEVELS_MAP['default'];
             var initVal = parseInt(savedVal, 10) || 0;
             var initPct = initVal > 0 ? ((initVal - 1) / 4 * 100) : -1;
             var html = '<div class="quiz-grad-bar" data-name="' + name + '">';
             html += '<div class="quiz-grad-track"><div class="quiz-grad-fill" style="width:' + (initPct >= 0 ? (100 - initPct) : 100) + '%"></div></div>';
             html += '<div class="quiz-grad-jalons">';
-            GRAD_LEVELS.forEach(function(lvl) {
+            levels.forEach(function(lvl) {
               var active = initVal >= parseInt(lvl.k);
               html += '<label class="quiz-grad-jal' + (active ? ' quiz-grad-jal--active' : '') + '" style="--jcol:' + lvl.col + '">'
                 + '<input type="radio" name="' + name + '" value="' + lvl.k + '"' + (savedVal == lvl.k ? ' checked' : '') + ' />'
@@ -154,11 +179,38 @@
           }
 
           /* ── Render inputs (tous types, avec suffixe pour has_sides) ── */
+          var qLevels = GRAD_LEVELS_MAP[q.subtype] || GRAD_LEVELS_MAP['default'];
           function renderInputs(suffix, savedVal) {
             var name = suffix ? 'q_' + q.id + '_' + suffix : 'q_' + q.id;
             var html = '';
             if (q.type === 'gradient') {
-              html = renderGradBar(name, savedVal);
+              html = renderGradBar(name, savedVal, qLevels);
+            } else if (q.type === 'visual') {
+              html += '<div class="quiz-visual-list">';
+              q.options.forEach(function(opt, oi) {
+                html += '<label class="quiz-visual-opt' + (String(savedVal) == String(oi) ? ' quiz-visual-opt--checked' : '') + '">'
+                  + '<input type="radio" name="' + name + '" value="' + oi + '"' + (String(savedVal) == String(oi) ? ' checked' : '') + ' />'
+                  + '<span>' + opt + '</span></label>';
+              });
+              html += '</div>';
+            } else if (q.type === 'points') {
+              var total = parseInt(q.subtype, 10) || 10;
+              var savedObj = (savedVal && typeof savedVal === 'object') ? savedVal : {};
+              var suffix2 = suffix ? '-' + suffix : '';
+              html += '<p class="quiz-points-total">Répartir <span class="quiz-points-remaining" id="qpoints-remaining-' + q.id + suffix2 + '">' + total + '</span> / ' + total + ' points</p>';
+              html += '<div class="quiz-points-list">';
+              q.options.forEach(function(opt, oi) {
+                var v = parseInt(savedObj[String(oi)], 10) || 0;
+                html += '<div class="quiz-points-row">'
+                  + '<span class="quiz-points-label">' + opt + '</span>'
+                  + '<div class="quiz-points-controls">'
+                  + '<button type="button" class="quiz-points-btn quiz-points-dec" data-qid="' + q.id + '" data-oi="' + oi + '" data-total="' + total + '" data-suffix="' + (suffix || '') + '">&#8722;</button>'
+                  + '<span class="quiz-points-val" id="qpval-' + q.id + '-' + oi + suffix2 + '">' + v + '</span>'
+                  + '<button type="button" class="quiz-points-btn quiz-points-inc" data-qid="' + q.id + '" data-oi="' + oi + '" data-total="' + total + '" data-suffix="' + (suffix || '') + '">+</button>'
+                  + '<input type="hidden" name="' + name + '_' + oi + '" id="qpinp-' + q.id + '-' + oi + suffix2 + '" value="' + v + '" />'
+                  + '</div></div>';
+              });
+              html += '</div>';
             } else if (q.type === 'single') {
               html += '<div class="quiz-choice-list">';
               q.options.forEach(function(opt, oi) {
@@ -191,7 +243,7 @@
           }
         %>
 
-          <div class="quiz-q-block" id="qblock-<%= q.id %>" data-qid="<%= q.id %>">
+          <div class="quiz-q-block" id="qblock-<%= q.id %>" data-qid="<%= q.id %>" data-qtype="<%= q.type %>">
             <div class="quiz-q-header">
               <span class="quiz-q-num"><%= qNum %></span>
               <p class="quiz-q-text"><%= q.text %></p>
@@ -223,6 +275,16 @@
                 <span class="quiz-side-label">Recevoir</span>
                 <%- renderInputs('receive', savedReceive) %>
               </div>
+            <% } %>
+
+            <%# ── Je ne sais pas ────────────────────────────────────────── %>
+            <button type="button"
+              class="quiz-dont-know-btn<%= savedAns === '?' ? ' quiz-dont-know-btn--active' : '' %>"
+              id="qdontknow-<%= q.id %>" data-qid="<%= q.id %>">
+              ? Je ne sais pas
+            </button>
+            <% if (savedAns === '?') { %>
+            <input type="hidden" name="q_<%= q.id %>" id="qdontknow-input-<%= q.id %>" value="?" />
             <% } %>
 
             <%# ── Boutons Pratiqué / Intéressé ─────────────────────────── %>
@@ -301,7 +363,18 @@
       quizAnswerForm.addEventListener('change', function(e) {
         if (!e.target.matches('input[type="radio"], input[type="checkbox"]')) return;
         var block = e.target.closest('.quiz-q-block');
-        if (block) { revealClearBtn(block.dataset.qid); autosaveQuestion(block.dataset.qid); }
+        if (block) {
+          var qid = block.dataset.qid;
+          // Clear "je ne sais pas" if active
+          var dkBtn = document.getElementById('qdontknow-' + qid);
+          if (dkBtn && dkBtn.classList.contains('quiz-dont-know-btn--active')) {
+            dkBtn.classList.remove('quiz-dont-know-btn--active');
+            var dkInput = document.getElementById('qdontknow-input-' + qid);
+            if (dkInput) dkInput.remove();
+          }
+          revealClearBtn(qid);
+          autosaveQuestion(qid);
+        }
       });
     }
 
@@ -444,6 +517,20 @@
       if (document.getElementById('qsidespicker-' + qid)) resetSide(qid);
       var clearBtn = document.getElementById('qclear-' + qid);
       if (clearBtn) clearBtn.classList.add('quiz-sides-reset--hidden');
+      // Clear "je ne sais pas"
+      var dkBtn = document.getElementById('qdontknow-' + qid);
+      if (dkBtn) dkBtn.classList.remove('quiz-dont-know-btn--active');
+      var dkInput = document.getElementById('qdontknow-input-' + qid);
+      if (dkInput) dkInput.remove();
+      // Reset points distribution
+      block.querySelectorAll('.quiz-points-val').forEach(function(el) { el.textContent = '0'; });
+      block.querySelectorAll('input[id^="qpinp-"]').forEach(function(el) { el.value = '0'; });
+      block.querySelectorAll('.quiz-points-remaining').forEach(function(el) {
+        var total = parseInt(el.closest('.quiz-points-total') && el.closest('[data-qtype]') ? 0 : 0, 10);
+        // Just reset display; autosave will handle actual values
+      });
+      // Reset visual choice checked state
+      block.querySelectorAll('.quiz-visual-opt').forEach(function(opt) { opt.classList.remove('quiz-visual-opt--checked'); });
     }
     document.querySelectorAll('.quiz-sides-reset').forEach(function(btn) {
       btn.addEventListener('click', function() {
@@ -452,6 +539,90 @@
         fetch('/quizz/<%= quiz.id %>/questions/' + qid + '/clear-answer', { method: 'POST' })
           .then(function() { resetQuestionBlock(qid); })
           .catch(function() {});
+      });
+    });
+
+    /* ── Visual choice: toggle checked class ─────────────────────────────── */
+    document.querySelectorAll('.quiz-visual-opt input[type="radio"]').forEach(function(inp) {
+      inp.addEventListener('change', function() {
+        var list = inp.closest('.quiz-visual-list');
+        if (list) {
+          list.querySelectorAll('.quiz-visual-opt').forEach(function(opt) {
+            opt.classList.toggle('quiz-visual-opt--checked', opt.querySelector('input') === inp);
+          });
+        }
+      });
+    });
+
+    /* ── Points distribution: +/- buttons ───────────────────────────────── */
+    document.querySelectorAll('.quiz-points-list').forEach(function(list) {
+      var block = list.closest('.quiz-q-block');
+      var qid = block ? block.dataset.qid : null;
+      function getTotal(btn) { return parseInt(btn.dataset.total, 10) || 10; }
+      function getSuffix(btn) { return btn.dataset.suffix ? '-' + btn.dataset.suffix : ''; }
+      function calcUsed(qidVal, sfx) {
+        var used = 0;
+        list.querySelectorAll('.quiz-points-val').forEach(function(el) { used += parseInt(el.textContent, 10) || 0; });
+        return used;
+      }
+      function updateRemaining(qidVal, sfx, total) {
+        var remainEl = document.getElementById('qpoints-remaining-' + qidVal + sfx);
+        if (remainEl) remainEl.textContent = total - calcUsed(qidVal, sfx);
+      }
+      list.querySelectorAll('.quiz-points-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var total = getTotal(btn);
+          var sfx = getSuffix(btn);
+          var oi = btn.dataset.oi;
+          var valEl = document.getElementById('qpval-' + btn.dataset.qid + '-' + oi + sfx);
+          var inpEl = document.getElementById('qpinp-' + btn.dataset.qid + '-' + oi + sfx);
+          if (!valEl || !inpEl) return;
+          var cur = parseInt(valEl.textContent, 10) || 0;
+          var used = calcUsed(btn.dataset.qid, sfx);
+          var newVal;
+          if (btn.classList.contains('quiz-points-inc')) {
+            if (used >= total) return;
+            newVal = cur + 1;
+          } else {
+            if (cur <= 0) return;
+            newVal = cur - 1;
+          }
+          valEl.textContent = newVal;
+          inpEl.value = newVal;
+          updateRemaining(btn.dataset.qid, sfx, total);
+          if (qid) { revealClearBtn(qid); autosaveQuestion(qid); }
+        });
+      });
+    });
+
+    /* ── Je ne sais pas ─────────────────────────────────────────────────── */
+    document.querySelectorAll('.quiz-dont-know-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var qid = btn.dataset.qid;
+        var block = document.getElementById('qblock-' + qid);
+        var isActive = btn.classList.contains('quiz-dont-know-btn--active');
+        if (isActive) {
+          btn.classList.remove('quiz-dont-know-btn--active');
+          var dkInput = document.getElementById('qdontknow-input-' + qid);
+          if (dkInput) dkInput.remove();
+          autosaveQuestion(qid);
+        } else {
+          btn.classList.add('quiz-dont-know-btn--active');
+          block.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(function(inp) {
+            inp.checked = false;
+          });
+          var existing = document.getElementById('qdontknow-input-' + qid);
+          if (!existing) {
+            existing = document.createElement('input');
+            existing.type = 'hidden';
+            existing.name = 'q_' + qid;
+            existing.id = 'qdontknow-input-' + qid;
+            block.appendChild(existing);
+          }
+          existing.value = '?';
+          revealClearBtn(qid);
+          autosaveQuestion(qid);
+        }
       });
     });
   })();

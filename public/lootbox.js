@@ -51,6 +51,7 @@
   var ucardCharm   = document.getElementById("lootbox-ucard-charm");
   var ucardCoins   = document.getElementById("lootbox-ucard-coins");
   var ucardJoker   = document.getElementById("lootbox-ucard-joker");
+  var ucardTitle   = document.getElementById("lootbox-ucard-title");
 
   // Zoom
   var zoomOverlay  = document.getElementById("lootbox-zoom-overlay");
@@ -211,10 +212,10 @@
     var n = RARITY_STAR_COUNT[rarity] || 1;
     var col = RARITY_COLORS_MAP[rarity] || '#94a3b8';
     ucardStars.innerHTML = '';
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < n; i++) {
       var s = document.createElement('span');
       s.className = 'lootbox-ucard-star';
-      s.style.color = i < n ? col : 'rgba(255,255,255,.18)';
+      s.style.color = col;
       s.innerHTML = '<svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M10 0l3 7h7l-5.5 4 2 6.8L10 14 3.5 17.8l2-6.8L0 7h7z"/></svg>';
       ucardStars.appendChild(s);
     }
@@ -257,16 +258,14 @@
     hideAll();
     if (!card) { closeOverlay(); return; }
     hideCardFills();
-    setCardMeta('Pi\u00e8ces', reward.rarity || 'common', reward._isGift);
+    setCardMeta('Pi\u00e8ce', reward.rarity || 'common', reward._isGift);
+    var coinAmt = reward.coins || 0;
+    if (ucardTitle) ucardTitle.textContent = coinAmt + '\u00a0' + (coinAmt > 1 ? 'pi\u00e8ces' : 'pi\u00e8ce');
     if (hintEl) hintEl.setAttribute('hidden', '');
     if (ucardCoins) {
       var col = RARITY_COLORS_MAP[reward.rarity] || '#94a3b8';
-      ucardCoins.innerHTML = '<svg viewBox="0 0 60 60" class="lootbox-coins-svg" aria-hidden="true">'
-        + '<circle cx="30" cy="30" r="28" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="2.5"/>'
-        + '<text x="30" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="hsl(44,35%,20%)">P</text>'
-        + '</svg>'
-        + '<span class="lootbox-coins-amount" style="color:' + col + '">' + (reward.coins || 0) + '</span>'
-        + '<span class="lootbox-coins-label">pi\u00e8ces</span>';
+      ucardCoins.innerHTML = '<img src="/pieces.png" class="lootbox-coins-img" alt="pi\u00e8ces" aria-hidden="true">'
+        + '<span class="lootbox-coins-amount" style="color:' + col + '">' + coinAmt + '</span>';
       ucardCoins.removeAttribute('hidden');
     }
     revealCard(hasNext);
@@ -394,6 +393,7 @@
     if (!card) { closeOverlay(); return; }
     hideCardFills();
     setCardMeta('Image', reward.rarity, reward._isGift);
+    if (ucardTitle) ucardTitle.textContent = reward.title || '';
     if (hintEl) { if (reward.isDuplicate) hintEl.removeAttribute('hidden'); else hintEl.setAttribute('hidden', ''); }
     if (reward.thumb) {
       if (imgEl) { imgEl.src = reward.thumb; imgEl.alt = ''; imgEl.removeAttribute('hidden'); }
@@ -431,6 +431,7 @@
     if (!card) { closeOverlay(); return; }
     hideCardFills();
     setCardMeta('Th\u00e8me', reward.rarity || 'rare', reward._isGift);
+    if (ucardTitle) ucardTitle.textContent = reward.label || '';
     if (hintEl) { if (reward.isDuplicate) hintEl.removeAttribute('hidden'); else hintEl.setAttribute('hidden', ''); }
     var color = THEME_COLORS[reward.themeKey] || '#333';
     if (ucardTheme) {
@@ -473,6 +474,7 @@
     if (!card) { closeOverlay(); return; }
     hideCardFills();
     setCardMeta('Charme', reward.rarity || 'legendary', reward._isGift);
+    if (ucardTitle) ucardTitle.textContent = reward.label || '';
     if (hintEl) { if (reward.isDuplicate) hintEl.removeAttribute('hidden'); else hintEl.setAttribute('hidden', ''); }
     var sym = reward.charmKey ? (window._CHARM_SYM_MAP && window._CHARM_SYM_MAP[reward.charmKey]) || reward.symbol || '\u2605' : '\u2605';
     if (charmSymbolEl) charmSymbolEl.textContent = sym;
@@ -521,6 +523,7 @@
     hideCardFills();
     var isImage = reward.jokerType === 'image';
     setCardMeta('Joker', reward.rarity || 'legendary', reward._isGift);
+    if (ucardTitle) ucardTitle.textContent = isImage ? 'Joker Image' : 'Joker Charme';
     if (jokerTitleEl) jokerTitleEl.textContent = isImage ? 'Joker Image' : 'Joker Charme';
     if (jokerDescEl) {
       jokerDescEl.textContent = isImage
@@ -730,7 +733,7 @@
       var typeEl = document.createElement('div');
       typeEl.className = 'lootbox-batch-card-type';
       var typeLabel = 'Image';
-      if (reward.isCoins) typeLabel = 'Pi\u00e8ces';
+      if (reward.isCoins) typeLabel = 'Pi\u00e8ce';
       else if (reward.isCharm) typeLabel = 'Charme';
       else if (reward.isTheme) typeLabel = 'Th\u00e8me';
       else if (reward.isJoker) typeLabel = 'Joker';
@@ -745,21 +748,12 @@
         var coinWrap = document.createElement('div');
         coinWrap.className = 'lootbox-batch-card-coins-wrap';
 
-        var coinSvgNs = 'http://www.w3.org/2000/svg';
-        var coinSvg = document.createElementNS(coinSvgNs, 'svg');
-        coinSvg.setAttribute('viewBox', '0 0 60 60');
-        coinSvg.setAttribute('class', 'lootbox-coins-svg');
-        coinSvg.setAttribute('aria-hidden', 'true');
-        var circle = document.createElementNS(coinSvgNs, 'circle');
-        circle.setAttribute('cx', '30'); circle.setAttribute('cy', '30'); circle.setAttribute('r', '28');
-        circle.setAttribute('fill', 'hsl(44,95%,55%)'); circle.setAttribute('stroke', 'hsl(44,70%,35%)'); circle.setAttribute('stroke-width', '2.5');
-        var coinText = document.createElementNS(coinSvgNs, 'text');
-        coinText.setAttribute('x', '30'); coinText.setAttribute('y', '38');
-        coinText.setAttribute('text-anchor', 'middle'); coinText.setAttribute('font-size', '22');
-        coinText.setAttribute('font-weight', 'bold'); coinText.setAttribute('fill', 'hsl(44,35%,20%)');
-        coinText.textContent = 'P';
-        coinSvg.appendChild(circle); coinSvg.appendChild(coinText);
-        coinWrap.appendChild(coinSvg);
+        var coinImg = document.createElement('img');
+        coinImg.src = '/pieces.png';
+        coinImg.className = 'lootbox-coins-img';
+        coinImg.alt = 'pi\u00e8ces';
+        coinImg.setAttribute('aria-hidden', 'true');
+        coinWrap.appendChild(coinImg);
 
         var amtEl = document.createElement('span');
         amtEl.className = 'lootbox-coins-amount';
@@ -811,14 +805,24 @@
 
       item.appendChild(visual);
 
+      // title row
+      var batchTitleLabel = reward.isCoins
+        ? (reward.coins || 0) + '\u00a0' + ((reward.coins || 0) > 1 ? 'pi\u00e8ces' : 'pi\u00e8ce')
+        : reward.isJoker ? (reward.jokerType === 'image' ? 'Joker Image' : 'Joker Charme')
+        : (reward.title || reward.label || '');
+      var titleRow = document.createElement('p');
+      titleRow.className = 'lootbox-batch-card-title';
+      titleRow.textContent = batchTitleLabel;
+      item.appendChild(titleRow);
+
       // stars row
       var starsRow = document.createElement('div');
       starsRow.className = 'lootbox-batch-card-stars';
       var n = RARITY_STAR_COUNT[rarity] || 1;
-      for (var s = 0; s < 5; s++) {
+      for (var s = 0; s < n; s++) {
         var star = document.createElement('span');
         star.className = 'lootbox-ucard-star';
-        star.style.color = s < n ? col : 'rgba(255,255,255,.18)';
+        star.style.color = col;
         var svgNs = 'http://www.w3.org/2000/svg';
         var starSvg = document.createElementNS(svgNs, 'svg');
         starSvg.setAttribute('viewBox', '0 0 20 20');
@@ -832,6 +836,22 @@
         starsRow.appendChild(star);
       }
       item.appendChild(starsRow);
+
+      // ── Tilt 3D identique à la carte unitaire ──────────────────────────────
+      (function(el) {
+        el.addEventListener("mousemove", function(e) {
+          var rect = el.getBoundingClientRect();
+          var dx = (e.clientX - rect.left - rect.width  / 2) / (rect.width  / 2);
+          var dy = (e.clientY - rect.top  - rect.height / 2) / (rect.height / 2);
+          el.style.transition = "none";
+          el.style.transform = "perspective(700px) rotateY(" + (dx * 14) + "deg) rotateX(" + (-dy * 10) + "deg) scale(1.02)";
+        });
+        el.addEventListener("mouseleave", function() {
+          el.style.transition = "transform .4s cubic-bezier(.22,1,.36,1)";
+          el.style.transform = "perspective(700px) rotateY(0deg) rotateX(0deg) scale(1)";
+          setTimeout(function() { el.style.transition = ""; }, 420);
+        });
+      }(item));
 
       batchGrid.appendChild(item);
     });

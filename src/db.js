@@ -2514,6 +2514,9 @@ if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_answers') WHERE na
 if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_answers') WHERE name='interested'").get()) {
   db.exec("ALTER TABLE custom_quiz_answers ADD COLUMN interested TEXT DEFAULT '{}'");
 }
+if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE name='subtype'").get()) {
+  db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN subtype TEXT DEFAULT NULL");
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS ai_profiles (
@@ -2596,9 +2599,9 @@ function deleteCustomQuiz(id) {
 function getCustomQuizQuestions(quizId) {
   return db.prepare(`SELECT * FROM custom_quiz_questions WHERE quiz_id=? ORDER BY position`).all(quizId);
 }
-function addCustomQuizQuestion(quizId, text, type, options, position, partId, hasSides, tendency) {
-  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position, part_id, has_sides, tendency) VALUES (?,?,?,?,?,?,?,?)`)
-    .run(quizId, text, type, JSON.stringify(options || []), position || 0, partId || null, hasSides ? 1 : 0, tendency || null);
+function addCustomQuizQuestion(quizId, text, type, options, position, partId, hasSides, tendency, subtype) {
+  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position, part_id, has_sides, tendency, subtype) VALUES (?,?,?,?,?,?,?,?,?)`)
+    .run(quizId, text, type, JSON.stringify(options || []), position || 0, partId || null, hasSides ? 1 : 0, tendency || null, subtype || null);
 }
 function getQuizParts(quizId) {
   return db.prepare(`SELECT * FROM custom_quiz_parts WHERE quiz_id=? ORDER BY position`).all(quizId);
@@ -2624,9 +2627,9 @@ function reorderAllQuizQuestions(quizId, sections) {
     });
   })();
 }
-function updateCustomQuizQuestion(id, text, type, options, hasSides, tendency) {
-  db.prepare(`UPDATE custom_quiz_questions SET text=?, type=?, options=?, has_sides=?, tendency=? WHERE id=?`)
-    .run(text, type, JSON.stringify(options || []), hasSides ? 1 : 0, tendency || null, id);
+function updateCustomQuizQuestion(id, text, type, options, hasSides, tendency, subtype) {
+  db.prepare(`UPDATE custom_quiz_questions SET text=?, type=?, options=?, has_sides=?, tendency=?, subtype=? WHERE id=?`)
+    .run(text, type, JSON.stringify(options || []), hasSides ? 1 : 0, tendency || null, subtype || null, id);
 }
 function deleteCustomQuizQuestion(id) {
   db.prepare(`DELETE FROM custom_quiz_questions WHERE id=?`).run(id);
@@ -2765,6 +2768,10 @@ function setImageRarity(id, rarity) {
   const VALID = ['common', 'rare', 'epic', 'legendary', 'mythic'];
   if (!VALID.includes(rarity)) return;
   db.prepare("UPDATE gallery_images SET rarity = ? WHERE id = ?").run(rarity, id);
+}
+
+function setImageTitle(id, title) {
+  db.prepare("UPDATE gallery_images SET title = ? WHERE id = ?").run(String(title || '').trim(), id);
 }
 
 function _pickRarity() {
@@ -3845,6 +3852,7 @@ module.exports = {
   getLootboxConfig,
   setLootboxConfigKey,
   setImageRarity,
+  setImageTitle,
   setCharmRarity,
   toggleUnlockFavorite,
   grantGiftLootbox,

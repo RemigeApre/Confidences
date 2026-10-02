@@ -47,6 +47,7 @@ const {
   getLootboxConfig,
   setLootboxConfigKey,
   setImageRarity,
+  setImageTitle,
   setCharmRarity,
   grantGiftLootbox,
   listCharms,
@@ -502,6 +503,13 @@ function buildAdminRouter(config) {
   router.post("/recompenses/themes/:key/rarity", requireAdmin, express.json(), (req, res) => {
     const ok = setThemeRarity(req.params.key, String(req.body.rarity || ''));
     res.json({ ok });
+  });
+
+  router.post("/recompenses/images-profil/:id/title", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    setImageTitle(id, req.body.title || '');
+    res.json({ ok: true });
   });
 
   router.post("/recompenses/images-profil/:id/rarity", requireAdmin, express.json(), (req, res) => {

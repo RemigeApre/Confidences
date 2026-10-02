@@ -57,12 +57,12 @@
           var rootQs = questions.filter(function(q){ return !q.part_id; });
           rootQs.forEach(function(q) {
         %>
-          <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>">
+          <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>" data-subtype="<%= q.subtype || '' %>">
             <span class="qe-q-handle">&#11835;</span>
             <div class="qe-q-body">
               <p class="qe-q-text"><%= q.text %></p>
               <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
-                <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : 'Mise en ordre' %>
+                <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : q.type === 'visual' ? 'Visuel' : q.type === 'points' ? 'Points' : 'Mise en ordre' %>
               </span>
               <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
               <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive" title="Tendance positive">&#9650;</span><% } %>
@@ -88,6 +88,14 @@
           <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qa-type" value="single" style="display:none"/><span>Choix unique</span></label>
           <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qa-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
           <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qa-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
+          <label class="chip-option quiz-type-chip" data-type="visual"><input type="radio" name="qa-type" value="visual" style="display:none"/><span>Visuel</span></label>
+          <label class="chip-option quiz-type-chip" data-type="points"><input type="radio" name="qa-type" value="points" style="display:none"/><span>Points</span></label>
+        </div>
+        <div class="qea-gradient-subtype">
+          <button type="button" class="qea-subtype-chip qea-subtype-chip--active" data-subtype="">Générique</button>
+          <button type="button" class="qea-subtype-chip" data-subtype="gout">Goût</button>
+          <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
+          <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
         </div>
         <div class="qea-options-wrap" hidden>
           <div class="qea-options-list"></div>
@@ -124,12 +132,12 @@
           <div class="qe-panel-body">
             <div class="qe-drop-zone" data-part-id="<%= part.id %>">
               <% partQs.forEach(function(q) { %>
-                <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>">
+                <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>" data-subtype="<%= q.subtype || '' %>">
                   <span class="qe-q-handle">&#11835;</span>
                   <div class="qe-q-body">
                     <p class="qe-q-text"><%= q.text %></p>
                     <span class="quiz-qitem-type quiz-qtype--<%= q.type %>">
-                      <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : 'Mise en ordre' %>
+                      <%= q.type === 'gradient' ? 'Gradient' : q.type === 'single' ? 'Choix unique' : q.type === 'multiple' ? 'Choix multiple' : q.type === 'visual' ? 'Visuel' : q.type === 'points' ? 'Points' : 'Mise en ordre' %>
                     </span>
                     <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
                     <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive" title="Tendance positive">&#9650;</span><% } %>
@@ -155,6 +163,14 @@
                 <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qa-type" value="single" style="display:none"/><span>Choix unique</span></label>
                 <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qa-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
                 <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qa-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
+                <label class="chip-option quiz-type-chip" data-type="visual"><input type="radio" name="qa-type" value="visual" style="display:none"/><span>Visuel</span></label>
+                <label class="chip-option quiz-type-chip" data-type="points"><input type="radio" name="qa-type" value="points" style="display:none"/><span>Points</span></label>
+              </div>
+              <div class="qea-gradient-subtype">
+                <button type="button" class="qea-subtype-chip qea-subtype-chip--active" data-subtype="">Générique</button>
+                <button type="button" class="qea-subtype-chip" data-subtype="gout">Goût</button>
+                <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
+                <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
               </div>
               <div class="qea-options-wrap" hidden>
                 <div class="qea-options-list"></div>
@@ -205,6 +221,14 @@
         <label class="chip-option quiz-type-chip" data-type="single"><input type="radio" name="qe-edit-type" value="single" style="display:none"/><span>Choix unique</span></label>
         <label class="chip-option quiz-type-chip" data-type="multiple"><input type="radio" name="qe-edit-type" value="multiple" style="display:none"/><span>Choix multiple</span></label>
         <label class="chip-option quiz-type-chip" data-type="ranking"><input type="radio" name="qe-edit-type" value="ranking" style="display:none"/><span>Mise en ordre</span></label>
+        <label class="chip-option quiz-type-chip" data-type="visual"><input type="radio" name="qe-edit-type" value="visual" style="display:none"/><span>Visuel</span></label>
+        <label class="chip-option quiz-type-chip" data-type="points"><input type="radio" name="qe-edit-type" value="points" style="display:none"/><span>Points</span></label>
+      </div>
+      <div id="qe-edit-subtype-row" class="qea-gradient-subtype" style="display:none">
+        <button type="button" class="qea-subtype-chip qea-subtype-chip--active" data-subtype="">Générique</button>
+        <button type="button" class="qea-subtype-chip" data-subtype="gout">Goût</button>
+        <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
+        <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
       </div>
       <div id="qe-edit-opts-wrap">
         <div id="qe-edit-opts-list"></div>
@@ -287,6 +311,16 @@
       currentEditType = currentType;
       editOptsWrap.style.display = (currentType === 'gradient') ? 'none' : '';
 
+      // Subtype
+      var currentSubtype = el.dataset.subtype || '';
+      currentEditSubtype = currentSubtype;
+      if (editSubtypeRow) {
+        editSubtypeRow.style.display = (currentType === 'gradient') ? '' : 'none';
+        editSubtypeRow.querySelectorAll('.qea-subtype-chip').forEach(function(chip) {
+          chip.classList.toggle('qea-subtype-chip--active', chip.dataset.subtype === currentSubtype);
+        });
+      }
+
       // Options
       editOptsList.innerHTML = '';
       currentOpts.forEach(function(o) { addEditOptRow(o); });
@@ -321,14 +355,26 @@
     }
 
     var currentEditType = 'gradient';
+    var currentEditSubtype = '';
+    var editSubtypeRow = document.getElementById('qe-edit-subtype-row');
     Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(chip) {
       chip.addEventListener('click', function() {
         Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
         chip.classList.add('quiz-type-chip--active');
         currentEditType = chip.dataset.type;
         editOptsWrap.style.display = (currentEditType === 'gradient') ? 'none' : '';
+        if (editSubtypeRow) editSubtypeRow.style.display = (currentEditType === 'gradient') ? '' : 'none';
       });
     });
+    if (editSubtypeRow) {
+      editSubtypeRow.querySelectorAll('.qea-subtype-chip').forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          editSubtypeRow.querySelectorAll('.qea-subtype-chip').forEach(function(c) { c.classList.remove('qea-subtype-chip--active'); });
+          chip.classList.add('qea-subtype-chip--active');
+          currentEditSubtype = chip.dataset.subtype;
+        });
+      });
+    }
     editAddOpt.addEventListener('click', function() { addEditOptRow(''); });
     Array.from(editTendencyRow.querySelectorAll('.qe-tendency-chip')).forEach(function(chip) {
       chip.addEventListener('click', function() {
@@ -338,7 +384,6 @@
       });
     });
     editCancelBtn.addEventListener('click', function() { editOverlay.hidden = true; });
-    editOverlay.addEventListener('click', function(e) { if (e.target === editOverlay) editOverlay.hidden = true; });
 
     editSaveBtn.addEventListener('click', function() {
       var text = editText.value.trim();
@@ -351,12 +396,13 @@
       fetch('/quizz/' + quizId + '/questions/' + editingQid + '/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal, tendency: currentEditTendency || null })
+        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal, tendency: currentEditTendency || null, subtype: currentEditSubtype || null })
       }).then(function(r) { return r.json(); }).then(function(d) {
         if (!d.ok) return;
         // Mettre à jour le DOM de la question
         editingEl.dataset.hasSides = d.question.has_sides ? '1' : '0';
         editingEl.dataset.tendency = d.question.tendency || '';
+        editingEl.dataset.subtype = d.question.subtype || '';
         var body = editingEl.querySelector('.qe-q-body');
         body.querySelector('.qe-q-text').textContent = d.question.text;
         var badge = body.querySelector('.quiz-qitem-type');
@@ -466,7 +512,7 @@
     }
 
     // ── Question element factory ──────────────────────────────────────────
-    var typeLabels = { gradient: 'Gradient', single: 'Choix unique', multiple: 'Choix multiple', ranking: 'Mise en ordre' };
+    var typeLabels = { gradient: 'Gradient', single: 'Choix unique', multiple: 'Choix multiple', ranking: 'Mise en ordre', visual: 'Visuel', points: 'Points' };
 
     function makeQuestion(q) {
       var div = document.createElement('div');
@@ -475,6 +521,7 @@
       div.dataset.qid = q.id;
       div.dataset.hasSides = q.has_sides ? '1' : '0';
       div.dataset.tendency = q.tendency || '';
+      div.dataset.subtype = q.subtype || '';
 
       var handle = document.createElement('span');
       handle.className = 'qe-q-handle';
@@ -561,15 +608,27 @@
       var submitBtn  = formEl.querySelector('.qea-submit');
       var cancelBtn  = formEl.querySelector('.qea-cancel');
       var tendencyChips = formEl.querySelectorAll('.qe-tendency-chip');
+      var subtypeRowEl = formEl.querySelector('.qea-gradient-subtype');
+      var subtypeChips = subtypeRowEl ? subtypeRowEl.querySelectorAll('.qea-subtype-chip') : [];
       var currentType = 'gradient';
       var currentTendency = '';
+      var currentSubtype = '';
 
       chips.forEach(function(chip) {
         chip.addEventListener('click', function() {
           chips.forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
           chip.classList.add('quiz-type-chip--active');
           currentType = chip.dataset.type;
-          optsWrap.hidden = currentType === 'gradient';
+          optsWrap.hidden = (currentType === 'gradient');
+          if (subtypeRowEl) subtypeRowEl.style.display = (currentType === 'gradient') ? '' : 'none';
+        });
+      });
+
+      subtypeChips.forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          subtypeChips.forEach(function(c) { c.classList.remove('qea-subtype-chip--active'); });
+          chip.classList.add('qea-subtype-chip--active');
+          currentSubtype = chip.dataset.subtype;
         });
       });
 
@@ -604,6 +663,11 @@
         formEl.hidden = true;
         textarea.value = '';
         optsList.innerHTML = '';
+        currentSubtype = '';
+        if (subtypeRowEl) {
+          subtypeChips.forEach(function(c) { c.classList.toggle('qea-subtype-chip--active', c.dataset.subtype === ''); });
+          subtypeRowEl.style.display = '';
+        }
         resetTendencyChips();
       });
 
@@ -624,7 +688,7 @@
         fetch('/quizz/' + quizId + '/questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId, has_sides: formEl.querySelector('.qea-sides-chk').checked ? 1 : 0, tendency: currentTendency || null })
+          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId, has_sides: formEl.querySelector('.qea-sides-chk').checked ? 1 : 0, tendency: currentTendency || null, subtype: currentSubtype || null })
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
@@ -641,6 +705,9 @@
           chips[0].classList.add('quiz-type-chip--active');
           currentType = 'gradient';
           optsWrap.hidden = true;
+          if (subtypeRowEl) subtypeRowEl.style.display = '';
+          subtypeChips.forEach(function(c) { c.classList.toggle('qea-subtype-chip--active', c.dataset.subtype === ''); });
+          currentSubtype = '';
           formEl.querySelector('.qea-sides-chk').checked = false;
           resetTendencyChips();
           if (keepOpen) {
@@ -827,7 +894,7 @@
 
       var typeRow = document.createElement('div');
       typeRow.className = 'quiz-qadd-type-row';
-      [['gradient','Gradient'],['single','Choix unique'],['multiple','Choix multiple'],['ranking','Mise en ordre']].forEach(function(t, i) {
+      [['gradient','Gradient'],['single','Choix unique'],['multiple','Choix multiple'],['ranking','Mise en ordre'],['visual','Visuel'],['points','Points']].forEach(function(t, i) {
         var lbl = document.createElement('label');
         lbl.className = 'chip-option quiz-type-chip' + (i === 0 ? ' quiz-type-chip--active' : '');
         lbl.dataset.type = t[0];
@@ -839,6 +906,17 @@
         s.textContent = t[1];
         lbl.appendChild(inp); lbl.appendChild(s);
         typeRow.appendChild(lbl);
+      });
+
+      var subtypeRow = document.createElement('div');
+      subtypeRow.className = 'qea-gradient-subtype';
+      [['','Générique'],['gout','Goût'],['pratique','Pratique'],['excitation','Excitation']].forEach(function(s, i) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'qea-subtype-chip' + (i === 0 ? ' qea-subtype-chip--active' : '');
+        btn.dataset.subtype = s[0];
+        btn.textContent = s[1];
+        subtypeRow.appendChild(btn);
       });
 
       var optsWrap = document.createElement('div');
@@ -870,6 +948,7 @@
 
       div.appendChild(ta);
       div.appendChild(typeRow);
+      div.appendChild(subtypeRow);
       div.appendChild(optsWrap);
       div.appendChild(actions);
       return div;

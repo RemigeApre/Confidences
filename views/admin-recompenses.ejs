@@ -302,7 +302,7 @@
 
       <div class="ari-grid" id="ari-grid">
         <% images.forEach(function(img, idx) { %>
-        <div class="ari-card" data-id="<%= img.id %>" data-rarity="<%= img.rarity %>" data-idx="<%= idx %>" tabindex="0" role="button" aria-label="<%= img.title || 'Image ' + img.id %>">
+        <div class="ari-card" data-id="<%= img.id %>" data-rarity="<%= img.rarity %>" data-idx="<%= idx %>" data-title="<%= img.title || '' %>" tabindex="0" role="button" aria-label="<%= img.title || 'Image ' + img.id %>">
           <% if (img.thumb) { %>
             <img src="<%= img.thumb %>" alt="<%= img.title || '' %>" loading="lazy">
           <% } else { %>
@@ -417,8 +417,10 @@
     <div class="ari-zoom-img-wrap"><img id="ariZoomImg" src="" alt=""></div>
     <div class="ari-zoom-side">
       <div>
-        <p class="ari-zoom-title" id="ariZoomTitle">—</p>
         <p class="ari-zoom-subtitle" id="ariZoomSubtitle">id: —</p>
+        <input id="ariZoomTitleInput" type="text" placeholder="Titre (optionnel)"
+          style="width:100%;background:#0f172a;border:1px solid rgba(255,255,255,.2);color:#f1f5f9;border-radius:6px;padding:.35rem .6rem;font-size:.88rem;font-weight:700;margin-top:.3rem;outline:none">
+        <p class="ari-save-status" id="ariTitleStatus" style="color:#4ade80;margin:.25rem 0 0;font-size:.72rem;height:1em">&nbsp;</p>
       </div>
       <div>
         <p style="font-size:.78rem;color:#94a3b8;margin:0 0 .4rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Aperçu icône profil</p>
@@ -483,7 +485,7 @@
   const cards = Array.from(document.querySelectorAll('.ari-card'));
   const data = cards.map(c => ({
     id: Number(c.dataset.id), rarity: c.dataset.rarity || 'common',
-    title: c.getAttribute('aria-label') || '',
+    title: c.dataset.title || '',
     thumb: c.querySelector('img') ? c.querySelector('img').src : '',
   }));
   let visibleIdxs = data.map((_, i) => i);
@@ -502,8 +504,9 @@
   const overlay = document.getElementById('ariZoom');
   const zoomImg = document.getElementById('ariZoomImg');
   const profilePreview = document.getElementById('ariProfilePreview');
-  const zoomTitle = document.getElementById('ariZoomTitle');
   const zoomSubtitle = document.getElementById('ariZoomSubtitle');
+  const titleInput = document.getElementById('ariZoomTitleInput');
+  const titleStatus = document.getElementById('ariTitleStatus');
   const rarityBtns = document.querySelectorAll('#ariRarityBtns .ari-rarity-btn');
   const saveStatus = document.getElementById('ariSaveStatus');
   const navCount = document.getElementById('ariNavCount');
@@ -512,7 +515,8 @@
   function renderZoom() {
     const d = data[visibleIdxs[zoomIdx]]; if (!d) return;
     zoomImg.src = d.thumb || ''; profilePreview.src = d.thumb || '';
-    zoomTitle.textContent = d.title || ('Image #' + d.id);
+    if (titleInput) { titleInput.value = d.title || ''; }
+    if (titleStatus) titleStatus.textContent = '\u00a0';
     zoomSubtitle.textContent = 'id: ' + d.id;
     navCount.textContent = (zoomIdx + 1) + ' / ' + visibleIdxs.length;
     saveStatus.textContent = '\u00a0';
@@ -575,6 +579,30 @@
         } else { saveStatus.textContent = '✗ Erreur'; saveStatus.style.color = '#f87171'; }
       } catch (err) { saveStatus.textContent = '✗ Erreur réseau'; saveStatus.style.color = '#f87171'; }
     });
+  });
+
+  // Title save
+  let _titleSaveTimer = null;
+  titleInput && titleInput.addEventListener('input', function() {
+    clearTimeout(_titleSaveTimer);
+    if (titleStatus) { titleStatus.textContent = '…'; titleStatus.style.color = '#94a3b8'; }
+    _titleSaveTimer = setTimeout(async function() {
+      const dataIdx = visibleIdxs[zoomIdx]; if (dataIdx === undefined) return;
+      const d = data[dataIdx];
+      const newTitle = titleInput.value.trim();
+      try {
+        const r = await fetch('/admin/recompenses/images-profil/' + d.id + '/title', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: newTitle }),
+        });
+        const json = await r.json();
+        if (json.ok) {
+          d.title = newTitle;
+          const card = cards[dataIdx];
+          if (card) { card.dataset.title = newTitle; card.setAttribute('aria-label', newTitle || ('Image #' + d.id)); }
+          if (titleStatus) { titleStatus.textContent = '\u2713 Enregistr\u00e9'; titleStatus.style.color = '#4ade80'; }
+        } else { if (titleStatus) { titleStatus.textContent = '\u2717 Erreur'; titleStatus.style.color = '#f87171'; } }
+      } catch(e) { if (titleStatus) { titleStatus.textContent = '\u2717 Erreur r\u00e9seau'; titleStatus.style.color = '#f87171'; } }
+    }, 700);
   });
 
   // Selection bar helpers for images

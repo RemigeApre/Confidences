@@ -135,13 +135,14 @@ function buildCustomQuizRouter(config) {
     if (!quiz) return res.status(404).json({ ok: false });
     const text = String(req.body.text || "").slice(0, 500).trim();
     if (!text) return res.status(400).json({ ok: false });
-    const type = ["gradient","single","multiple","ranking"].includes(req.body.type) ? req.body.type : "gradient";
+    const type = ["gradient","single","multiple","ranking","visual","points"].includes(req.body.type) ? req.body.type : "gradient";
     const options = Array.isArray(req.body.options) ? req.body.options.map(o => String(o).slice(0, 200)) : [];
     const partId = req.body.part_id ? Number(req.body.part_id) : null;
     const hasSides = req.body.has_sides ? 1 : 0;
     const tendency = ["positive", "negative"].includes(req.body.tendency) ? req.body.tendency : null;
+    const subtype = req.body.subtype ? String(req.body.subtype).slice(0, 50) : null;
     const existing = db.getCustomQuizQuestions(quiz.id);
-    db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length, partId, hasSides, tendency);
+    db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length, partId, hasSides, tendency, subtype);
     const newQs = db.getCustomQuizQuestions(quiz.id);
     newQs.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
     const added = newQs[newQs.length - 1];
@@ -150,11 +151,12 @@ function buildCustomQuizRouter(config) {
   router.post("/:id/questions/:qid/update", requireAdmin, express.json(), (req, res) => {
     const text = String(req.body.text || "").slice(0, 500).trim();
     if (!text) return res.status(400).json({ ok: false });
-    const type = ["gradient","single","multiple","ranking"].includes(req.body.type) ? req.body.type : "gradient";
+    const type = ["gradient","single","multiple","ranking","visual","points"].includes(req.body.type) ? req.body.type : "gradient";
     const options = Array.isArray(req.body.options) ? req.body.options.map(o => String(o).slice(0, 200)) : [];
     const hasSides = req.body.has_sides ? 1 : 0;
     const tendency = ["positive", "negative"].includes(req.body.tendency) ? req.body.tendency : null;
-    db.updateCustomQuizQuestion(req.params.qid, text, type, options, hasSides, tendency);
+    const subtype = req.body.subtype ? String(req.body.subtype).slice(0, 50) : null;
+    db.updateCustomQuizQuestion(req.params.qid, text, type, options, hasSides, tendency, subtype);
     const q = db.db.prepare("SELECT * FROM custom_quiz_questions WHERE id=?").get(req.params.qid);
     try { q.options = JSON.parse(q.options); } catch { q.options = []; }
     res.json({ ok: true, question: q });
@@ -179,6 +181,8 @@ function buildCustomQuizRouter(config) {
   // sauvegarde de l'étape entière et l'autosave par question ci-dessous, pour
   // ne jamais avoir deux logiques d'extraction qui divergent.
   function extractAnswerForQuestion(q, body) {
+    // Je ne sais pas
+    if (body[`q_${q.id}`] === '?') return '?';
     if (q.has_sides) {
       const side = body[`q_${q.id}_side`] || 'both';
       const obj = { side };
@@ -202,6 +206,13 @@ function buildCustomQuizRouter(config) {
     } else if (q.type === "ranking") {
       const v = body[`q_${q.id}_rank`];
       return v ? String(v).split(',').filter(Boolean).map(Number) : [];
+    } else if (q.type === "points") {
+      const pts = {};
+      (q.options || []).forEach((_, oi) => {
+        const v = parseInt(body[`q_${q.id}_${oi}`], 10);
+        pts[oi] = isNaN(v) ? 0 : Math.max(0, v);
+      });
+      return pts;
     } else {
       return body[`q_${q.id}`];
     }
