@@ -180,16 +180,13 @@
     <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
       <div id="coffre-gutter-actions">
         <% if (currentUser.profileImageId) { %>
-          <button class="coffre-btn coffre-btn--ghost js-set-avatar js-header-remove-avatar coffre-gutter-btn"
+          <button class="coffre-btn coffre-btn--default coffre-gutter-btn js-set-avatar js-header-remove-avatar"
                   id="coffre-header-remove-btn"
                   data-ref-id="<%= currentUser.profileImageId %>"
-                  title="Retirer la photo de profil">Image par d&eacute;faut</button>
+                  title="Retirer la photo de profil">Par d&eacute;faut</button>
         <% } %>
         <% if (unlocks.length) { %>
-          <button class="coffre-btn coffre-btn--sell-multi js-sell-multi-open coffre-gutter-btn" id="coffre-sell-multi-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:13px;height:13px"><polyline points="20 12 20 22 4 22 4 12"/><polyline points="22 7 12 2 2 7"/><line x1="12" y1="22" x2="12" y2="2"/></svg>
-            Vendre
-          </button>
+          <button class="coffre-btn coffre-btn--sell-multi coffre-gutter-btn js-sell-multi-open" id="coffre-sell-multi-btn">Vendre</button>
         <% } %>
       </div>
       <% if (currentUser.profileImageId || unlocks.length) { %><div class="coffre-gutter-divider"></div><% } %>
@@ -240,6 +237,8 @@
                data-rarity="<%= c.rarity %>"
                data-owned="1"
                data-fav="<%= c.isFavorite ? '1' : '0' %>"
+               data-unlock-id="<%= c.unlockId %>"
+               data-sell-price="<%= RARITY_SELL_PRICE[c.rarity] || 1 %>"
                style="--charm-color:<%= rarityColor %>">
             <div class="coffre-charm-card-symbols">
               <span class="coffre-charm-card-sym coffre-charm-card-sym--filled"><%= c.symbol %></span>
@@ -297,6 +296,13 @@
     <% } %>
     </div><%# /coffre-view-main %>
     <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
+      <div class="coffre-gutter-actions" id="coffre-cf-actions">
+        <button class="coffre-btn coffre-btn--default coffre-gutter-btn" id="coffre-cf-default-btn">Par d&eacute;faut</button>
+        <% if (_ownedCharms.length) { %>
+          <button class="coffre-btn coffre-btn--sell-multi coffre-gutter-btn" id="coffre-cf-sell-btn">Vendre</button>
+        <% } %>
+      </div>
+      <div class="coffre-gutter-divider"></div>
       <div class="coffre-filter-bar coffre-filter-bar--vert" id="coffre-cf-rarity">
         <button class="coffre-filter-btn active" data-rarity="all">Tout</button>
         <button class="coffre-filter-btn" data-rarity="common">Commun</button>
@@ -344,6 +350,8 @@
                   data-theme-key="<%= t.key %>"
                   data-rarity="<%= t.rarity || '' %>"
                   data-owned="1"
+                  data-always="<%= t.always ? '1' : '0' %>"
+                  data-sell-price="<%= t.always ? 0 : (RARITY_SELL_PRICE[t.rarity] || 1) %>"
                   title="<%= t.label %>">
             <span class="coffre-theme-swatch coffre-theme-swatch--lg" style="background:<%= swatchColor %>"></span>
             <div class="coffre-theme-info">
@@ -388,6 +396,13 @@
     <% } %>
     </div><%# /coffre-view-main %>
     <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
+      <div class="coffre-gutter-actions" id="coffre-tf-actions">
+        <button class="coffre-btn coffre-btn--default coffre-gutter-btn" id="coffre-tf-default-btn">Par d&eacute;faut</button>
+        <% if (_ownedThemes.filter(function(t){ return !t.always; }).length) { %>
+          <button class="coffre-btn coffre-btn--sell-multi coffre-gutter-btn" id="coffre-tf-sell-btn">Vendre</button>
+        <% } %>
+      </div>
+      <div class="coffre-gutter-divider"></div>
       <div class="coffre-filter-bar coffre-filter-bar--vert" id="coffre-tf-rarity">
         <button class="coffre-filter-btn active" data-rarity="all">Tout</button>
         <button class="coffre-filter-btn" data-rarity="common">Commun</button>
@@ -566,10 +581,10 @@
             if (hdr) {
               var nb = document.createElement('button');
               nb.id = 'coffre-header-remove-btn';
-              nb.className = 'coffre-btn coffre-btn--ghost js-set-avatar js-header-remove-avatar coffre-gutter-btn';
+              nb.className = 'coffre-btn coffre-btn--default coffre-gutter-btn js-set-avatar js-header-remove-avatar';
               nb.dataset.refId = String(refId);
               nb.title = 'Retirer la photo de profil';
-              nb.textContent = 'Image par défaut';
+              nb.textContent = 'Par défaut';
               bindSetAvatar(nb);
               hdr.insertBefore(nb, hdr.firstChild);
             }
@@ -749,6 +764,34 @@
 <% } else if (view === 'charms') { %>
 </main>
 
+<template id="tpl-sell-tick">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+</template>
+
+<%# ── Modal de vente charmes ── %>
+<div class="coffre-sell-backdrop" id="coffre-charm-sell-modal" role="dialog" aria-modal="true" style="display:none">
+  <div class="coffre-sell-dialog">
+    <div class="coffre-sell-dialog-header">
+      <h2 class="coffre-sell-dialog-title">Vendre des charmes</h2>
+      <button class="coffre-sell-close js-charm-sell-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p class="coffre-sell-hint">Cliquez sur les charmes à vendre, puis confirmez.</p>
+    <div class="coffre-sell-grid" id="coffre-charm-sell-grid"></div>
+    <div class="coffre-sell-footer">
+      <div class="coffre-sell-summary">
+        <span class="coffre-sell-count" id="coffre-charm-sell-count">0 charme</span>
+        <span class="coffre-sell-total">&rarr; <strong id="coffre-charm-sell-total-value">0</strong>&thinsp;P</span>
+      </div>
+      <div class="coffre-sell-actions">
+        <button class="coffre-btn coffre-btn--ghost js-charm-sell-close">Annuler</button>
+        <button class="coffre-btn coffre-btn--sell-confirm js-charm-sell-confirm" disabled id="coffre-charm-sell-confirm-btn">Vendre la sélection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <%- include('partials/foot') %>
 
 <script>
@@ -808,6 +851,93 @@
         var card = btn.closest('.coffre-charm-card');
         if (card) { card.dataset.fav = d.isFavorite ? '1' : '0'; applyCharmFilters(); }
       });
+    });
+  });
+
+  // ── Charme par défaut ────────────────────────────────────────────────
+  var cfDefaultBtn = document.getElementById('coffre-cf-default-btn');
+  cfDefaultBtn && cfDefaultBtn.addEventListener('click', function() {
+    fetch('/lootbox/set-charm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ charmKey: 'star' }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) window.location.reload();
+    });
+  });
+
+  // ── Vente de charmes ──────────────────────────────────────────────────
+  var cfSellModal = document.getElementById('coffre-charm-sell-modal');
+  var cfSellGrid  = document.getElementById('coffre-charm-sell-grid');
+  var cfCountEl   = document.getElementById('coffre-charm-sell-count');
+  var cfTotalEl   = document.getElementById('coffre-charm-sell-total-value');
+  var cfConfirmBtn= document.getElementById('coffre-charm-sell-confirm-btn');
+  var cfSelected  = {};
+
+  function cfUpdateSummary() {
+    var ids = Object.keys(cfSelected);
+    var total = ids.reduce(function(s, id) { return s + cfSelected[id]; }, 0);
+    cfCountEl.textContent = ids.length + ' charme' + (ids.length > 1 ? 's' : '');
+    cfTotalEl.textContent = total;
+    cfConfirmBtn.disabled = ids.length === 0;
+    cfSellGrid.querySelectorAll('.coffre-sell-card').forEach(function(card) {
+      card.classList.toggle('coffre-sell-card--selected', !!cfSelected[card.dataset.unlockId]);
+    });
+  }
+
+  function cfBuildSellGrid() {
+    cfSelected = {}; cfSellGrid.innerHTML = '';
+    document.querySelectorAll('.coffre-charm-card[data-owned="1"]').forEach(function(item) {
+      var unlockId = item.dataset.unlockId; if (!unlockId) return;
+      var rarity   = item.dataset.rarity;
+      var price    = parseInt(item.dataset.sellPrice, 10) || 1;
+      var symEl    = item.querySelector('.coffre-charm-card-sym--filled');
+      var label    = (item.querySelector('.coffre-charm-card-label') || {}).textContent || '';
+      var isActive = item.classList.contains('coffre-charm-card--active');
+
+      var card = document.createElement('div');
+      card.className = 'coffre-sell-card'; card.dataset.unlockId = unlockId;
+      var imgWrap = document.createElement('div'); imgWrap.className = 'coffre-sell-card-img';
+      imgWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:2rem';
+      imgWrap.textContent = symEl ? symEl.textContent : '✦';
+      var badge = document.createElement('span'); badge.className = 'coffre-item-rarity coffre-item-rarity--' + rarity;
+      badge.textContent = ({common:'Commun',rare:'Rare',epic:'Épique',legendary:'Légendaire',mythic:'Mythique'})[rarity] || rarity;
+      imgWrap.appendChild(badge);
+      var tick = document.createElement('span'); tick.className = 'coffre-sell-card-tick';
+      var tickTpl = document.getElementById('tpl-sell-tick'); if (tickTpl) tick.appendChild(tickTpl.content.cloneNode(true));
+      imgWrap.appendChild(tick);
+      var info = document.createElement('div'); info.className = 'coffre-sell-card-info';
+      var titleEl = document.createElement('span'); titleEl.className = 'coffre-sell-card-title'; titleEl.textContent = label.trim(); info.appendChild(titleEl);
+      var priceEl = document.createElement('span'); priceEl.className = 'coffre-sell-card-price'; priceEl.textContent = price + '\u202fP'; info.appendChild(priceEl);
+      if (isActive) { var warn = document.createElement('span'); warn.className = 'coffre-sell-card-warn'; warn.textContent = 'Charme équipé'; info.appendChild(warn); }
+      card.appendChild(imgWrap); card.appendChild(info);
+      card.addEventListener('click', function() {
+        if (cfSelected[unlockId]) delete cfSelected[unlockId]; else cfSelected[unlockId] = price;
+        cfUpdateSummary();
+      });
+      cfSellGrid.appendChild(card);
+    });
+    cfUpdateSummary();
+  }
+
+  var cfSellOpenBtn = document.getElementById('coffre-cf-sell-btn');
+  cfSellOpenBtn && cfSellOpenBtn.addEventListener('click', function() {
+    cfBuildSellGrid(); cfSellModal.style.display = 'flex'; document.body.style.overflow = 'hidden';
+  });
+  function cfCloseModal() { cfSellModal.style.display = 'none'; document.body.style.overflow = ''; cfSelected = {}; }
+  document.querySelectorAll('.js-charm-sell-close').forEach(function(btn) { btn.addEventListener('click', cfCloseModal); });
+  cfSellModal && cfSellModal.addEventListener('click', function(e) { if (e.target === cfSellModal) cfCloseModal(); });
+
+  cfConfirmBtn && cfConfirmBtn.addEventListener('click', function() {
+    var ids = Object.keys(cfSelected).map(Number);
+    if (!ids.length) return;
+    cfConfirmBtn.disabled = true; cfConfirmBtn.textContent = 'Vente en cours…';
+    fetch('/favoris/coffre/sell-charm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ unlockIds: ids }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (!d.ok) { alert(d.error || 'Erreur'); cfConfirmBtn.disabled = false; cfConfirmBtn.textContent = 'Vendre la sélection'; return; }
+      if (coinsEl) coinsEl.textContent = d.newBalance;
+      cfCloseModal(); window.location.reload();
     });
   });
 
@@ -908,6 +1038,123 @@
   }
   bindThemeFilterBar('coffre-tf-rarity', 'rarity', function(v) { _tfRarity = v; });
   bindThemeFilterBar('coffre-tf-owned',  'owned',  function(v) { _tfOwned  = v; });
+
+  // ── Thème par défaut ──────────────────────────────────────────────────
+  var tfDefaultBtn = document.getElementById('coffre-tf-default-btn');
+  tfDefaultBtn && tfDefaultBtn.addEventListener('click', function() {
+    fetch('/favoris/coffre/set-theme', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ themeKey: 'default' }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) window.location.reload();
+    });
+  });
+
+  // ── Vente de thèmes ───────────────────────────────────────────────────
+  var tfSellModal  = document.getElementById('coffre-theme-sell-modal');
+  var tfSellGrid   = document.getElementById('coffre-theme-sell-grid');
+  var tfCountEl    = document.getElementById('coffre-theme-sell-count');
+  var tfTotalEl    = document.getElementById('coffre-theme-sell-total-value');
+  var tfConfirmBtn = document.getElementById('coffre-theme-sell-confirm-btn');
+  var tfSelected   = {};
+
+  function tfUpdateSummary() {
+    var keys = Object.keys(tfSelected);
+    var total = keys.reduce(function(s, k) { return s + tfSelected[k]; }, 0);
+    tfCountEl.textContent = keys.length + ' thème' + (keys.length > 1 ? 's' : '');
+    tfTotalEl.textContent = total;
+    tfConfirmBtn.disabled = keys.length === 0;
+    tfSellGrid.querySelectorAll('.coffre-sell-card').forEach(function(card) {
+      card.classList.toggle('coffre-sell-card--selected', !!tfSelected[card.dataset.themeKey]);
+    });
+  }
+
+  function tfBuildSellGrid() {
+    tfSelected = {}; tfSellGrid.innerHTML = '';
+    document.querySelectorAll('.coffre-theme-card--full[data-owned="1"][data-always="0"]').forEach(function(item) {
+      var themeKey = item.dataset.themeKey; if (!themeKey) return;
+      var rarity   = item.dataset.rarity;
+      var price    = parseInt(item.dataset.sellPrice, 10) || 1;
+      var swatchEl = item.querySelector('.coffre-theme-swatch');
+      var label    = (item.querySelector('.coffre-theme-name') || {}).textContent || themeKey;
+      var isActive = item.classList.contains('coffre-theme-card--active');
+
+      var card = document.createElement('div');
+      card.className = 'coffre-sell-card'; card.dataset.themeKey = themeKey;
+      var imgWrap = document.createElement('div'); imgWrap.className = 'coffre-sell-card-img';
+      if (swatchEl) {
+        var swatch = document.createElement('span');
+        swatch.style.cssText = 'display:block;width:100%;height:100%;background:' + (swatchEl.style.background || '#333');
+        imgWrap.appendChild(swatch);
+      }
+      var badge = document.createElement('span'); badge.className = 'coffre-item-rarity coffre-item-rarity--' + rarity;
+      badge.textContent = ({common:'Commun',rare:'Rare',epic:'Épique',legendary:'Légendaire',mythic:'Mythique'})[rarity] || rarity;
+      imgWrap.appendChild(badge);
+      var tick = document.createElement('span'); tick.className = 'coffre-sell-card-tick';
+      var tickTpl = document.getElementById('tpl-sell-tick'); if (tickTpl) tick.appendChild(tickTpl.content.cloneNode(true));
+      imgWrap.appendChild(tick);
+      var info = document.createElement('div'); info.className = 'coffre-sell-card-info';
+      var titleEl = document.createElement('span'); titleEl.className = 'coffre-sell-card-title'; titleEl.textContent = label.trim(); info.appendChild(titleEl);
+      var priceEl = document.createElement('span'); priceEl.className = 'coffre-sell-card-price'; priceEl.textContent = price + '\u202fP'; info.appendChild(priceEl);
+      if (isActive) { var warn = document.createElement('span'); warn.className = 'coffre-sell-card-warn'; warn.textContent = 'Thème actif'; info.appendChild(warn); }
+      card.appendChild(imgWrap); card.appendChild(info);
+      card.addEventListener('click', function() {
+        if (tfSelected[themeKey]) delete tfSelected[themeKey]; else tfSelected[themeKey] = price;
+        tfUpdateSummary();
+      });
+      tfSellGrid.appendChild(card);
+    });
+    tfUpdateSummary();
+  }
+
+  var tfSellOpenBtn = document.getElementById('coffre-tf-sell-btn');
+  tfSellOpenBtn && tfSellOpenBtn.addEventListener('click', function() {
+    tfBuildSellGrid(); tfSellModal.style.display = 'flex'; document.body.style.overflow = 'hidden';
+  });
+  function tfCloseModal() { tfSellModal.style.display = 'none'; document.body.style.overflow = ''; tfSelected = {}; }
+  document.querySelectorAll('.js-theme-sell-close').forEach(function(btn) { btn.addEventListener('click', tfCloseModal); });
+  tfSellModal && tfSellModal.addEventListener('click', function(e) { if (e.target === tfSellModal) tfCloseModal(); });
+
+  tfConfirmBtn && tfConfirmBtn.addEventListener('click', function() {
+    var keys = Object.keys(tfSelected);
+    if (!keys.length) return;
+    tfConfirmBtn.disabled = true; tfConfirmBtn.textContent = 'Vente en cours…';
+    fetch('/favoris/coffre/sell-theme', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ themeKeys: keys }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (!d.ok) { alert(d.error || 'Erreur'); tfConfirmBtn.disabled = false; tfConfirmBtn.textContent = 'Vendre la sélection'; return; }
+      var coinsEl = document.getElementById('coffre-coins-value');
+      if (coinsEl) coinsEl.textContent = d.newBalance;
+      tfCloseModal(); window.location.reload();
+    });
+  });
 })();
 </script>
+
+<%# ── Modal de vente thèmes ── %>
+<% if (view === 'themes') { %>
+<div class="coffre-sell-backdrop" id="coffre-theme-sell-modal" role="dialog" aria-modal="true" style="display:none">
+  <div class="coffre-sell-dialog">
+    <div class="coffre-sell-dialog-header">
+      <h2 class="coffre-sell-dialog-title">Vendre des thèmes</h2>
+      <button class="coffre-sell-close js-theme-sell-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p class="coffre-sell-hint">Cliquez sur les thèmes à vendre, puis confirmez.</p>
+    <div class="coffre-sell-grid" id="coffre-theme-sell-grid"></div>
+    <div class="coffre-sell-footer">
+      <div class="coffre-sell-summary">
+        <span class="coffre-sell-count" id="coffre-theme-sell-count">0 thème</span>
+        <span class="coffre-sell-total">&rarr; <strong id="coffre-theme-sell-total-value">0</strong>&thinsp;P</span>
+      </div>
+      <div class="coffre-sell-actions">
+        <button class="coffre-btn coffre-btn--ghost js-theme-sell-close">Annuler</button>
+        <button class="coffre-btn coffre-btn--sell-confirm" disabled id="coffre-theme-sell-confirm-btn">Vendre la sélection</button>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
 <% } %>

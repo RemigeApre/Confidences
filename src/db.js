@@ -3299,6 +3299,33 @@ function sellUnlock(userId, unlockId) {
   return { ok: true, coins };
 }
 
+// Revend un charme débloqué → supprime de user_unlocks, réinitialise rating_charm si actif
+function sellCharmUnlock(userId, unlockId) {
+  const row = db.prepare("SELECT id, ref_id, rarity FROM user_unlocks WHERE id = ? AND user_id = ? AND item_type = 'charm'").get(unlockId, userId);
+  if (!row) return { ok: false, error: 'not_found' };
+  const coins = RARITY_SELL_PRICE[row.rarity] || 1;
+  db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(row.id);
+  const charm = db.prepare("SELECT key FROM charms WHERE id = ?").get(row.ref_id);
+  if (charm) {
+    db.prepare("UPDATE users SET coins = coins + ?, rating_charm = CASE WHEN rating_charm = ? THEN 'star' ELSE rating_charm END WHERE id = ?").run(coins, charm.key, userId);
+  } else {
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+  }
+  return { ok: true, coins };
+}
+
+// Revend un thème débloqué → supprime de user_themes, réinitialise active_theme si actif
+function sellTheme(userId, themeKey) {
+  const def = THEME_DEFINITIONS.find(t => t.key === themeKey);
+  if (!def || def.always) return { ok: false, error: 'not_sellable' };
+  const row = db.prepare("SELECT id FROM user_themes WHERE user_id = ? AND theme_key = ?").get(userId, themeKey);
+  if (!row) return { ok: false, error: 'not_found' };
+  const coins = RARITY_SELL_PRICE[def.rarity] || 1;
+  db.prepare("DELETE FROM user_themes WHERE user_id = ? AND theme_key = ?").run(userId, themeKey);
+  db.prepare("UPDATE users SET coins = coins + ?, active_theme = CASE WHEN active_theme = ? THEN 'default' ELSE active_theme END WHERE id = ?").run(coins, themeKey, userId);
+  return { ok: true, coins };
+}
+
 // Achète un item depuis la boutique → débite les pièces, ajoute à user_unlocks
 function buyItem(userId, itemType, refId) {
   if (itemType === 'charm') {
@@ -3834,6 +3861,8 @@ module.exports = {
   pickChoiceReward,
   getUserUnlocks,
   sellUnlock,
+  sellCharmUnlock,
+  sellTheme,
   buyItem,
   getShopItems,
   RARITY_BUY_PRICE,

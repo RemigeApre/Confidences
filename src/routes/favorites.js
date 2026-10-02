@@ -35,6 +35,8 @@ const {
   getUserUnlockedCharms,
   getShopItems,
   sellUnlock,
+  sellCharmUnlock,
+  sellTheme,
   buyItem,
   toggleUnlockFavorite,
   setProfileImageId,
@@ -262,6 +264,36 @@ function buildFavoritesRouter(config) {
     }
     const user = getUserById(req.user.id);
     res.json({ ok: true, soldIds: ids, coinsEarned: totalCoins, newBalance: user.coins });
+  });
+
+  // Revente d'un ou plusieurs charmes
+  router.post("/coffre/sell-charm", requireUserJson, express.json(), (req, res) => {
+    const ids = Array.isArray(req.body.unlockIds)
+      ? req.body.unlockIds.map(n => parseInt(n, 10)).filter(n => !isNaN(n))
+      : [parseInt(req.body.unlockId, 10)].filter(n => !isNaN(n));
+    if (!ids.length) return res.json({ ok: false, error: 'invalid' });
+    let totalCoins = 0;
+    for (const unlockId of ids) {
+      const result = sellCharmUnlock(req.user.id, unlockId);
+      if (result.ok) totalCoins += result.coins;
+    }
+    const user = require("../db").getUserById(req.user.id);
+    res.json({ ok: true, soldIds: ids, coinsEarned: totalCoins, newBalance: user.coins });
+  });
+
+  // Revente d'un ou plusieurs thèmes
+  router.post("/coffre/sell-theme", requireUserJson, express.json(), (req, res) => {
+    const keys = Array.isArray(req.body.themeKeys)
+      ? req.body.themeKeys.map(k => String(k)).filter(Boolean)
+      : [String(req.body.themeKey || '')].filter(Boolean);
+    if (!keys.length) return res.json({ ok: false, error: 'invalid' });
+    let totalCoins = 0;
+    for (const key of keys) {
+      const result = sellTheme(req.user.id, key);
+      if (result.ok) totalCoins += result.coins;
+    }
+    const user = require("../db").getUserById(req.user.id);
+    res.json({ ok: true, soldKeys: keys, coinsEarned: totalCoins, newBalance: user.coins });
   });
 
   // Achat d'un item depuis la boutique

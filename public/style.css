@@ -16421,11 +16421,11 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .coffre-section-header .coffre-section-title { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
 .coffre-btn--sell-multi {
   flex: none; padding: .3rem .7rem;
-  border-color: rgba(255,80,80,.3); color: hsl(0,70%,65%);
+  border-color: hsl(0,70%,42%); color: #fff; background: hsl(0,70%,42%);
   display: inline-flex; align-items: center; gap: .35rem;
   font-size: .72rem;
 }
-.coffre-btn--sell-multi:hover { background: rgba(255,80,80,.1); }
+.coffre-btn--sell-multi:hover { background: hsl(0,70%,35%); border-color: hsl(0,70%,35%); }
 
 /* ── Modal de vente multi-sélection ── */
 .coffre-sell-backdrop {
@@ -18177,12 +18177,17 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .coffre-gutter-btn {
   width: 100%;
-  text-align: left;
-  justify-content: flex-start;
+  text-align: center;
+  justify-content: center;
   font-size: .74rem !important;
   padding: .3rem .6rem !important;
   margin: 0;
 }
+.coffre-btn--default {
+  border-color: hsl(270,50%,55%) !important;
+  color: hsl(270,60%,75%) !important;
+}
+.coffre-btn--default:hover { background: rgba(139,92,246,.15) !important; }
 .coffre-gutter-actions {
   display: flex;
   flex-direction: column;
@@ -18196,7 +18201,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .coffre-filter-bar--vert .coffre-filter-btn {
   width: 100%;
-  text-align: left;
+  text-align: center;
   padding: .28rem .55rem;
 }
 
@@ -18248,6 +18253,48 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .coffre-filter-btn.active {
   background: rgba(255,255,255,.13); color: #f1f5f9;
   border-color: rgba(255,255,255,.35);
+}
+
+/* ── Rarity-colored filter buttons ── */
+.coffre-filter-btn[data-rarity="common"]    { --fbc: #94a3b8; }
+.coffre-filter-btn[data-rarity="rare"]      { --fbc: #60a5fa; }
+.coffre-filter-btn[data-rarity="epic"]      { --fbc: #a78bfa; }
+.coffre-filter-btn[data-rarity="legendary"] { --fbc: #fbbf24; }
+.coffre-filter-btn[data-rarity="mythic"]    { --fbc: #f87171; }
+.coffre-filter-btn[data-rarity]:not([data-rarity="all"]) {
+  border-color: var(--fbc);
+  color: var(--fbc);
+  background: transparent;
+}
+.coffre-filter-btn[data-rarity]:not([data-rarity="all"]):hover {
+  background: color-mix(in srgb, var(--fbc) 15%, transparent);
+}
+.coffre-filter-btn[data-rarity]:not([data-rarity="all"]).active {
+  background: var(--fbc);
+  border-color: var(--fbc);
+  color: #0f172a;
+}
+
+/* Possession: green owned, orange locked */
+.coffre-filter-btn[data-owned="owned"],
+.coffre-filter-btn[data-possession="owned"] { --fbc: #4ade80; }
+.coffre-filter-btn[data-owned="locked"],
+.coffre-filter-btn[data-possession="shop"]  { --fbc: #fb923c; }
+.coffre-filter-btn[data-owned]:not([data-owned="all"]),
+.coffre-filter-btn[data-possession]:not([data-possession="all"]) {
+  border-color: var(--fbc);
+  color: var(--fbc);
+  background: transparent;
+}
+.coffre-filter-btn[data-owned]:not([data-owned="all"]):hover,
+.coffre-filter-btn[data-possession]:not([data-possession="all"]):hover {
+  background: color-mix(in srgb, var(--fbc) 15%, transparent);
+}
+.coffre-filter-btn[data-owned]:not([data-owned="all"]).active,
+.coffre-filter-btn[data-possession]:not([data-possession="all"]).active {
+  background: var(--fbc);
+  border-color: var(--fbc);
+  color: #0f172a;
 }
 
 /* ── Coffre — bouton favori ── */
