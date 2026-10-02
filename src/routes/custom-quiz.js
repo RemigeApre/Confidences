@@ -32,7 +32,8 @@ function buildCustomQuizRouter(config) {
     const newest   = all.filter(q => q.created_at >= weekAgo).slice(0, 10);
     const updated  = all.filter(q => q.updated_at > q.created_at && q.updated_at >= weekAgo).slice(0, 10);
     const notDone  = all.filter(q => !completedIds.has(q.id)).slice(0, 10);
-    res.render("quiz-home", { config, featured, newest, updated, notDone, all, completedIds, progressMap });
+    const done     = all.filter(q => completedIds.has(q.id));
+    res.render("quiz-home", { config, featured, newest, updated, notDone, done, all, completedIds, progressMap });
   });
 
   // Créer (admin)
