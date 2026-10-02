@@ -4,13 +4,13 @@
 
   <% if (locals.completed && !stepData) { %>
     <%# ── Écran de fin ───────────────────────────────────────────────── %>
-    <div class="quiz-detail-wrap">
-      <div class="quiz-done-screen">
-        <div class="quiz-done-check">&#10003;</div>
-        <h1 class="quiz-detail-title"><%= quiz.title %></h1>
-        <p class="quiz-done-msg">Quizz complété&nbsp;!</p>
-        <a href="/quizz" class="wf-save-btn" style="position:static;display:inline-block;margin-top:1rem">Retour aux quizz</a>
-      </div>
+    <div class="quiz-done-wrap">
+      <p class="quiz-done-thanks">Merci d&rsquo;avoir terminé <strong><%= quiz.title %></strong>&nbsp;!</p>
+      <p class="quiz-done-hint">Pensez à faire les autres quizz disponibles.</p>
+      <% if (locals.firstCompletion) { %>
+        <p class="quiz-done-lootbox">&#127381; C&rsquo;est votre premi&egrave;re compl&eacute;tion&nbsp;&mdash; un coffre vous attend dans votre profil&nbsp;!</p>
+      <% } %>
+      <a href="/quizz" class="quiz-done-back">Voir les quizz</a>
     </div>
 
   <% } else if (!steps.length || !stepData) { %>
@@ -261,6 +261,7 @@
                 <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="give">Donner</button>
                 <button type="button" class="quiz-sides-btn quiz-sides-btn--both" data-qid="<%= q.id %>" data-side="both">Les deux</button>
                 <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="receive">Recevoir</button>
+                <button type="button" class="quiz-sides-btn quiz-sides-btn--observe" data-qid="<%= q.id %>" data-side="observe">Observer</button>
               </div>
               <input type="hidden" name="q_<%= q.id %>_side" id="qside-input-<%= q.id %>" value="<%= savedSide || '' %>" />
             <% } %>
@@ -268,11 +269,11 @@
             <% if (!q.has_sides) { %>
               <%- renderInputs(null, savedAns) %>
             <% } else { %>
-              <div class="quiz-side-row quiz-side-row--give<%= (!savedSide || savedSide === 'receive') ? ' quiz-side-row--hidden' : '' %>" id="qside-give-<%= q.id %>">
+              <div class="quiz-side-row quiz-side-row--give<%= (!savedSide || savedSide === 'receive' || savedSide === 'observe') ? ' quiz-side-row--hidden' : '' %>" id="qside-give-<%= q.id %>">
                 <span class="quiz-side-label">Donner</span>
                 <%- renderInputs('give', savedGive) %>
               </div>
-              <div class="quiz-side-row quiz-side-row--receive<%= (!savedSide || savedSide === 'give') ? ' quiz-side-row--hidden' : '' %>" id="qside-receive-<%= q.id %>">
+              <div class="quiz-side-row quiz-side-row--receive<%= (!savedSide || savedSide === 'give' || savedSide === 'observe') ? ' quiz-side-row--hidden' : '' %>" id="qside-receive-<%= q.id %>">
                 <span class="quiz-side-label">Recevoir</span>
                 <%- renderInputs('receive', savedReceive) %>
               </div>
@@ -434,8 +435,8 @@
       var receiveRow = document.getElementById('qside-receive-' + qid);
       var picker     = document.getElementById('qsidespicker-' + qid);
       if (hiddenSide) hiddenSide.value = side;
-      if (giveRow)    giveRow.classList.toggle('quiz-side-row--hidden',    side === 'receive');
-      if (receiveRow) receiveRow.classList.toggle('quiz-side-row--hidden', side === 'give');
+      if (giveRow)    giveRow.classList.toggle('quiz-side-row--hidden',    side === 'receive' || side === 'observe');
+      if (receiveRow) receiveRow.classList.toggle('quiz-side-row--hidden', side === 'give'    || side === 'observe');
       if (picker)     picker.classList.add('quiz-sides-picker--hidden');
       revealClearBtn(qid);
     }

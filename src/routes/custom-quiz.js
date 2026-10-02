@@ -205,8 +205,8 @@ function buildCustomQuizRouter(config) {
           return body[`q_${q.id}_${prefix}`];
         }
       };
-      if (side !== 'receive') obj.give = extractSide('give');
-      if (side !== 'give')    obj.receive = extractSide('receive');
+      if (side !== 'receive' && side !== 'observe') obj.give = extractSide('give');
+      if (side !== 'give'    && side !== 'observe') obj.receive = extractSide('receive');
       return obj;
     } else if (q.type === "multiple") {
       return Object.keys(body)
@@ -295,7 +295,7 @@ function buildCustomQuizRouter(config) {
       return res.render("quiz-detail", { config, quiz, steps: [], stepIdx: 0, stepData: null, answers, completed, flags });
     }
     if (req.query.step === "done") {
-      return res.render("quiz-detail", { config, quiz, steps, stepIdx: steps.length - 1, stepData: null, answers, completed: 1, flags });
+      return res.render("quiz-detail", { config, quiz, steps, stepIdx: steps.length - 1, stepData: null, answers, completed: 1, flags, firstCompletion: req.query.first === '1' });
     }
     let stepIdx = parseInt(req.query.step, 10);
     if (isNaN(stepIdx) || stepIdx < 0) stepIdx = 0;
@@ -333,7 +333,7 @@ function buildCustomQuizRouter(config) {
       db.grantLootbox(req.user.id, 1);
     }
 
-    if (req.body.complete === "1" && isLast) return res.redirect(`/quizz/${quiz.id}?step=done`);
+    if (req.body.complete === "1" && isLast) return res.redirect(`/quizz/${quiz.id}?step=done${!wasCompleted ? '&first=1' : ''}`);
     const nextStep = isLast ? stepIdx : stepIdx + 1;
     res.redirect(`/quizz/${quiz.id}?step=${nextStep}`);
   });
