@@ -150,12 +150,6 @@
       <span class="obj-nav-count"><%= (themeDefs || []).length %></span>
     </button>
 
-    <div style="height:1px;background:rgba(255,255,255,.07);margin:.75rem .25rem"></div>
-    <p style="font-size:.7rem;font-weight:700;color:#64748b;letter-spacing:.09em;text-transform:uppercase;margin:0 0 .6rem .5rem">Configuration</p>
-
-    <button class="obj-nav-link" data-section="config">
-      <span style="font-size:1.1rem">&#9881;</span> Raretés
-    </button>
   </nav>
 
   <%/* ── Main content ── */%>
@@ -233,6 +227,60 @@
           <% } %>
         </div>
       </div>
+
+      <%/* Config raretés inline */%>
+      <h3 style="font-size:.82rem;font-weight:700;color:#94a3b8;margin:1.5rem 0 .75rem;text-transform:uppercase;letter-spacing:.07em">Configuration des raretés</h3>
+      <form method="POST" action="/admin/recompenses/config">
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+            <thead>
+              <tr style="color:#94a3b8;text-align:left">
+                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08)">Rareté</th>
+                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">% drop</th>
+                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix achat &#127481;</th>
+                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix revente &#127481;</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%
+                var tiers = [
+                  { key: 'common',    label: 'Commun',     color: '#94a3b8' },
+                  { key: 'rare',      label: 'Rare',        color: '#60a5fa' },
+                  { key: 'epic',      label: 'Épique',      color: '#a78bfa' },
+                  { key: 'legendary', label: 'Légendaire',  color: '#fbbf24' },
+                  { key: 'mythic',    label: 'Mythique',    color: '#f87171' },
+                ];
+              %>
+              <% tiers.forEach(function(tier) { %>
+              <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                <td style="padding:.6rem .75rem">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<%= tier.color %>;margin-right:.5rem"></span>
+                  <strong style="color:<%= tier.color %>"><%= tier.label %></strong>
+                </td>
+                <td style="padding:.6rem .75rem;text-align:center">
+                  <input type="number" name="weight_<%= tier.key %>" value="<%= lootboxConfig.weights[tier.key] %>" min="0" max="100" step="1"
+                    style="width:60px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+                </td>
+                <td style="padding:.6rem .75rem;text-align:center">
+                  <input type="number" name="buy_<%= tier.key %>" value="<%= lootboxConfig.buyPrices[tier.key] %>" min="0" step="1"
+                    style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+                </td>
+                <td style="padding:.6rem .75rem;text-align:center">
+                  <input type="number" name="sell_<%= tier.key %>" value="<%= lootboxConfig.sellPrices[tier.key] %>" min="0" step="1"
+                    style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:.78rem;color:#64748b;margin:.75rem 0 1rem">Les % de drop n'ont pas besoin de totaliser 100 — ils sont utilisés comme poids relatifs.</p>
+        <button type="submit" style="background:#f87171;border:none;color:#fff;padding:.55rem 1.4rem;border-radius:7px;font-weight:600;font-size:.9rem;cursor:pointer;transition:background .15s"
+          onmouseover="this.style.background='#ef4444'"
+          onmouseout="this.style.background='#f87171'">
+          Enregistrer
+        </button>
+      </form>
     </div>
 
     <%/* ── Images de profil ── */%>
@@ -302,11 +350,6 @@
             <% }) %>
           </select>
           <span class="ari-charm-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
-          <button class="js-admin-gift-charm" data-charm-id="<%= charm.id %>" data-charm-label="<%= charm.label %>"
-            style="width:100%;background:rgba(251,191,36,.08);border:1.5px solid rgba(251,191,36,.4);color:#fbbf24;border-radius:5px;padding:.28rem .5rem;font-size:.72rem;font-weight:700;cursor:pointer;transition:background .12s"
-            onmouseover="this.style.background='rgba(251,191,36,.18)'" onmouseout="this.style.background='rgba(251,191,36,.08)'">
-            &#127873; Offrir
-          </button>
         </div>
         <% }) %>
       </div>
@@ -353,65 +396,6 @@
         </div>
         <% }); %>
       </div>
-    </div>
-
-    <%/* ── Configuration raretés ── */%>
-    <div class="obj-section" data-section="config">
-      <form method="POST" action="/admin/recompenses/config">
-        <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 1rem;text-transform:uppercase;letter-spacing:.06em">Configuration des raretés</h2>
-
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:.88rem">
-            <thead>
-              <tr style="color:#94a3b8;text-align:left">
-                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08)">Rareté</th>
-                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">% drop</th>
-                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix achat &#127481;</th>
-                <th style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.08);text-align:center">Prix revente &#127481;</th>
-              </tr>
-            </thead>
-            <tbody>
-              <%
-                var tiers = [
-                  { key: 'common',    label: 'Commun',     color: '#94a3b8' },
-                  { key: 'rare',      label: 'Rare',        color: '#60a5fa' },
-                  { key: 'epic',      label: 'Épique',      color: '#a78bfa' },
-                  { key: 'legendary', label: 'Légendaire',  color: '#fbbf24' },
-                  { key: 'mythic',    label: 'Mythique',    color: '#f87171' },
-                ];
-              %>
-              <% tiers.forEach(function(tier) { %>
-              <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
-                <td style="padding:.6rem .75rem">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<%= tier.color %>;margin-right:.5rem"></span>
-                  <strong style="color:<%= tier.color %>"><%= tier.label %></strong>
-                </td>
-                <td style="padding:.6rem .75rem;text-align:center">
-                  <input type="number" name="weight_<%= tier.key %>" value="<%= lootboxConfig.weights[tier.key] %>" min="0" max="100" step="1"
-                    style="width:60px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
-                </td>
-                <td style="padding:.6rem .75rem;text-align:center">
-                  <input type="number" name="buy_<%= tier.key %>" value="<%= lootboxConfig.buyPrices[tier.key] %>" min="0" step="1"
-                    style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
-                </td>
-                <td style="padding:.6rem .75rem;text-align:center">
-                  <input type="number" name="sell_<%= tier.key %>" value="<%= lootboxConfig.sellPrices[tier.key] %>" min="0" step="1"
-                    style="width:70px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:5px;color:#f1f5f9;padding:.3rem .5rem;text-align:center;font-size:.88rem">
-                </td>
-              </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-
-        <p style="font-size:.78rem;color:#64748b;margin:.75rem 0 1rem">Les % de drop n'ont pas besoin de totaliser 100 — ils sont utilisés comme poids relatifs.</p>
-
-        <button type="submit" style="background:#f87171;border:none;color:#fff;padding:.55rem 1.4rem;border-radius:7px;font-weight:600;font-size:.9rem;cursor:pointer;transition:background .15s"
-          onmouseover="this.style.background='#ef4444'"
-          onmouseout="this.style.background='#f87171'">
-          Enregistrer
-        </button>
-      </form>
     </div>
 
   </main>
@@ -471,7 +455,7 @@
 (function() {
   var links = document.querySelectorAll('.obj-nav-link[data-section]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
-  var VALID = ['accueil','images','charms','themes','config'];
+  var VALID = ['accueil','images','charms','themes'];
 
   function activate(key) {
     links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });

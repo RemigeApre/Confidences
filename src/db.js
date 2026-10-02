@@ -2790,6 +2790,16 @@ const THEME_DEFINITIONS = [
   { key: 'bleu',    label: 'Bleu',           hue: 212,  sat: 65,   rarity: 'rare'      },
   { key: 'rose',    label: 'Rose',           hue: 330,  sat: 58,   rarity: 'epic'      },
 ];
+// Restore rarities saved by admin (overrides hardcoded defaults)
+(function() {
+  try {
+    THEME_DEFINITIONS.forEach(t => {
+      if (t.always) return;
+      const row = db.prepare("SELECT value FROM app_meta WHERE key = ?").get('theme_rarity_' + t.key);
+      if (row) t.rarity = row.value;
+    });
+  } catch(_) {}
+})();
 
 function getUserThemes(userId) {
   const owned = new Set(db.prepare("SELECT theme_key FROM user_themes WHERE user_id = ?").all(userId).map(r => r.theme_key));
@@ -2828,6 +2838,7 @@ function setThemeRarity(key, rarity) {
   const def = THEME_DEFINITIONS.find(t => t.key === key);
   if (!def || def.always) return false;
   def.rarity = rarity;
+  db.prepare("INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)").run('theme_rarity_' + key, rarity);
   return true;
 }
 
