@@ -2732,6 +2732,8 @@ const RARITY_WEIGHTS = { common: 50, rare: 28, epic: 15, legendary: 5, mythic: 2
 // Prix d'achat et de revente par rareté (ratio fixe 10%)
 const RARITY_BUY_PRICE  = { common: 10, rare: 20, epic: 50, legendary: 100, mythic: 200 };
 const RARITY_SELL_PRICE = { common:  1, rare:  2, epic:  5, legendary:  10, mythic:  20 };
+// Valeur de la carte pièces par rareté (carte infinie, toujours disponible dans le tirage)
+const COINS_BY_RARITY   = { common: 10, rare: 30, epic: 75, legendary: 250, mythic: 600 };
 
 // ── Config lootbox (drop rates, prix) ─────────────────────────────────────
 try {
@@ -3088,26 +3090,47 @@ function _buildImagePool(userId) {
   return pool;
 }
 
-function _grantImageReward(userId, boxId, imageFromPool) {
+function _grantImageReward(userId, boxId) {
   const rarity = _pickRarity();
-  const rarityPool = imageFromPool.filter(img => (img.rarity || 'common') === rarity);
-  const image = rarityPool.length ? rarityPool[Math.floor(Math.random() * rarityPool.length)]
-                                  : imageFromPool[Math.floor(Math.random() * imageFromPool.length)];
-  // Toujours utiliser la rareté propre de l'image (configurée dans l'admin)
-  const imageRarity = image.rarity || 'common';
   const now = new Date().toISOString();
-  const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, image.id, imageRarity, now);
-  const isDuplicate = ins.changes === 0;
-  if (isDuplicate) {
-    const cfg = getLootboxConfig();
-    const coins = Math.ceil((cfg.buyPrices[imageRarity] || RARITY_BUY_PRICE[imageRarity] || RARITY_BUY_PRICE.common) / 2);
+
+  // Filtres de tag de l'utilisateur
+  const user = db.prepare("SELECT lootbox_allow_ultra, lootbox_allow_irrealiste FROM users WHERE id = ?").get(userId);
+  const allowUltra      = user ? !!user.lootbox_allow_ultra      : false;
+  const allowIrrealiste = user ? !!user.lootbox_allow_irrealiste : true;
+  const ultraTags      = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'ultra'").all().map(r => r.tag));
+  const irrealisteTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'irrealiste'").all().map(r => r.tag));
+
+  // Images de cette rareté non encore possédées par l'utilisateur
+  const candidates = db.prepare(`
+    SELECT id, image_paths, title, rarity, tags FROM gallery_images
+    WHERE rarity = ?
+    AND id NOT IN (SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image')
+  `).all(rarity, userId).filter(img => {
+    let tags = []; try { tags = JSON.parse(img.tags || '[]'); } catch (_) {}
+    if (!allowUltra      && tags.some(t => ultraTags.has(t)))      return false;
+    if (!allowIrrealiste && tags.some(t => irrealisteTags.has(t))) return false;
+    return true;
+  });
+
+  // La carte pièces est toujours disponible (infinie) — pool = cartes non possédées + 1 pièces
+  const totalOptions = candidates.length + 1;
+  const pick = Math.floor(Math.random() * totalOptions);
+
+  if (pick === candidates.length) {
+    // Carte pièces tirée
+    const coins = COINS_BY_RARITY[rarity] || 30;
     db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
-    if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity=?, opened_at=? WHERE id=?").run(imageRarity, now, boxId);
-    return { isCoins: true, coins, rarity: imageRarity };
+    if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity=?, opened_at=? WHERE id=?").run(rarity, now, boxId);
+    return { isCoins: true, coins, rarity };
   }
+
+  const image = candidates[pick];
+  const imageRarity = image.rarity || rarity;
+  db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, 'profile_image', ?, ?, ?)").run(userId, image.id, imageRarity, now);
   if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_ref_id=?, reward_rarity=?, opened_at=? WHERE id=?").run(image.id, imageRarity, now, boxId);
   let imagePaths = []; try { imagePaths = JSON.parse(image.image_paths || '[]'); } catch (_) {}
-  return { imageId: image.id, title: image.title || '', rarity: imageRarity, thumb: imagePaths[0] || null, isDuplicate: false };
+  return { imageId: image.id, title: image.title || '', rarity: imageRarity, thumb: imagePaths[0] || null };
 }
 
 function _grantJoker(userId, boxId, jokerType, rarity) {
@@ -3245,9 +3268,7 @@ function openLootbox(userId) {
     return { rewards: [{ isTheme: true, themeKey: theme.key, label: theme.label, rarity: theme.rarity || 'rare', isDuplicate: false }] };
   }
 
-  // ── Lootbox standard / image : 3 récompenses (images + chance joker)
-  const pool = _buildImagePool(userId);
-  if (!pool.length) return null;
+  // ── Lootbox standard / image : récompense (image non possédée ou pièces + chance joker)
   db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
   const rewards = [];
   for (let i = 0; i < 1; i++) {
@@ -3257,7 +3278,7 @@ function openLootbox(userId) {
     } else if (rarity === 'legendary' && Math.random() < 0.08 && type !== 'image') {
       rewards.push(_grantJoker(userId, null, 'joker_image', 'legendary'));
     } else {
-      rewards.push(_grantImageReward(userId, null, pool));
+      rewards.push(_grantImageReward(userId, null));
     }
   }
   return { rewards };
