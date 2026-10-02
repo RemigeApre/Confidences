@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserBdRatings } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -171,9 +171,9 @@ function buildBdRouter(config) {
       flame: req.body.flame,
       hidden: req.body.hidden,
     });
-    // Lootbox : toutes les 2 pages BD notées
+    // Lootbox : toutes les 5 notes (wiki + galerie + bd confondus)
     if (req.body.rating !== undefined) {
-      checkAndGrantActionLootbox(req.user.id, "bd_notes", countUserBdRatings(req.user.id), 2);
+      checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsTotal(req.user.id), 5);
     }
     res.json({ ok: true, page, rating: result.rating, flame: result.flame, hidden: result.hidden });
   });

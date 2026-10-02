@@ -2958,6 +2958,17 @@ function countUserBdRatings(userId) {
   return row ? row.n : 0;
 }
 
+/** Compte toutes les notes d'un utilisateur (wiki + galerie + bd). */
+function countUserRatingsTotal(userId) {
+  const a = db.prepare(
+    `SELECT COUNT(*) AS n FROM content_reactions WHERE user_id = ? AND item_type IN ('wiki','gallery') AND rating > 0`
+  ).get(userId);
+  const b = db.prepare(
+    "SELECT COUNT(*) AS n FROM bd_page_reactions WHERE user_id = ? AND rating > 0"
+  ).get(userId);
+  return (a ? a.n : 0) + (b ? b.n : 0);
+}
+
 /**
  * Vérifie si de nouvelles lootboxes doivent être attribuées pour une action
  * donnée et les accorde si nécessaire. Idempotent : peut être appelé à chaque
@@ -3902,6 +3913,7 @@ module.exports = {
   grantCharmDirect,
   checkAndGrantActionLootbox,
   countUserRatingsAll,
+  countUserRatingsTotal,
   countUserFavoritesAll,
   countUserBdRatings,
   getLootboxConfig,

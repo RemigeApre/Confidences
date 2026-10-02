@@ -549,8 +549,6 @@ function buildFavoritesRouter(config) {
       removeFavorite(req.user.id, itemType, itemId);
     } else {
       addFavorite(req.user.id, itemType, itemId);
-      // Lootbox : toutes les 2 favoris ajoutés
-      checkAndGrantActionLootbox(req.user.id, "love_fav", countUserFavoritesAll(req.user.id), 2);
     }
     res.json({ ok: true, active: !already });
   });

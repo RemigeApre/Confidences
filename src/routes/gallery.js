@@ -42,7 +42,7 @@ const {
   getNouvelleById,
   listNouvelles,
   checkAndGrantActionLootbox,
-  countUserRatingsAll,
+  countUserRatingsTotal,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -578,9 +578,9 @@ function buildGalleryRouter(config) {
     if (req.body.rating !== undefined) payload.rating = Math.max(0, Math.min(5, Number(req.body.rating) || 0));
     if (req.body.hidden !== undefined) payload.hidden = !!req.body.hidden;
     reactGalleryImage(id, req.user.id, payload);
-    // Lootbox : toutes les 10 notes
+    // Lootbox : toutes les 5 notes (wiki + galerie + bd confondus)
     if (payload.rating !== undefined) {
-      checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsAll(req.user.id), 10);
+      checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsTotal(req.user.id), 5);
     }
     res.json({ ok: true, hidden: !!req.body.hidden });
   });
