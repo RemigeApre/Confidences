@@ -2823,6 +2823,24 @@ function setActiveTheme(userId, key) {
   return true;
 }
 
+function buyTheme(userId, key) {
+  const def = THEME_DEFINITIONS.find(t => t.key === key);
+  if (!def || def.always) return { ok: false, error: 'invalid_key' };
+  const already = db.prepare("SELECT id FROM user_themes WHERE user_id = ? AND theme_key = ?").get(userId, key);
+  if (already) return { ok: false, error: 'already_owned' };
+  const rarity = def.rarity || 'rare';
+  const cfgBuy = getLootboxConfig().buyPrices;
+  const price = cfgBuy[rarity] || RARITY_BUY_PRICE[rarity] || RARITY_BUY_PRICE.rare;
+  const user = db.prepare("SELECT coins FROM users WHERE id = ?").get(userId);
+  if (!user) return { ok: false, error: 'user_not_found' };
+  if (user.coins < price) return { ok: false, error: 'not_enough_coins', need: price, have: user.coins };
+  const now = new Date().toISOString();
+  db.prepare("INSERT OR IGNORE INTO user_themes (user_id, theme_key, obtained_at) VALUES (?, ?, ?)").run(userId, key, now);
+  db.prepare("UPDATE users SET coins = coins - ? WHERE id = ?").run(price, userId);
+  const newCoins = db.prepare("SELECT coins FROM users WHERE id = ?").get(userId).coins;
+  return { ok: true, rarity, coinsSpent: price, newBalance: newCoins };
+}
+
 function grantTheme(userId, key) {
   const def = THEME_DEFINITIONS.find(t => t.key === key);
   if (!def || def.always) return { ok: false, error: 'invalid_key' };
@@ -3823,6 +3841,7 @@ module.exports = {
   getUserThemes,
   setActiveTheme,
   grantTheme,
+  buyTheme,
   setThemeRarity,
   THEME_DEFINITIONS,
 };

@@ -47,6 +47,7 @@ const {
   countUserFavoritesAll,
   getUserThemes,
   setActiveTheme,
+  buyTheme,
   THEME_DEFINITIONS,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
@@ -237,6 +238,7 @@ function buildFavoritesRouter(config) {
       RARITY_BUY_PRICE,
       RARITY_SELL_PRICE,
       CHARM_BUY_PRICE: cfgBuy,
+      THEME_BUY_PRICE: cfgBuy,
       userThemes,
       coffreUnlocks,
       coffreCharms,
@@ -285,6 +287,13 @@ function buildFavoritesRouter(config) {
     const { getUserById } = require("../db");
     const user = getUserById(req.user.id);
     res.json({ ok: true, rarity: result.rarity, coinsSpent: result.coinsSpent, newBalance: user.coins });
+  });
+
+  // Acheter un thème directement
+  router.post("/coffre/buy-theme", requireUserJson, express.json(), (req, res) => {
+    const key = String(req.body.themeKey || '');
+    const result = buyTheme(req.user.id, key);
+    res.json(result);
   });
 
   // Choisir une image débloquée comme photo de profil
