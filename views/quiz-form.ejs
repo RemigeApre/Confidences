@@ -27,12 +27,20 @@
         <label class="qe-field-label">Description</label>
         <textarea name="description" form="qe-meta-form" class="wf-stats-note-input qe-desc-input"
           rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz ? quiz.description : (prefill ? prefill.description : '') %></textarea>
-        <label class="wiki-display-opt-label" style="margin-top:.65rem">
-          <input type="checkbox" name="featured" value="1" form="qe-meta-form"
-            <%= quiz.featured ? 'checked' : '' %> hidden />
-          <span class="wiki-display-opt-track"></span>
-          <span class="wiki-display-opt-text">Mettre en avant</span>
-        </label>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.65rem;align-items:center">
+          <label class="wiki-display-opt-label" style="margin:0">
+            <input type="checkbox" name="featured" value="1" form="qe-meta-form"
+              <%= quiz.featured ? 'checked' : '' %> hidden />
+            <span class="wiki-display-opt-track"></span>
+            <span class="wiki-display-opt-text">Mettre en avant</span>
+          </label>
+          <label class="wiki-display-opt-label qe-status-toggle" style="margin:0">
+            <input type="checkbox" name="status" value="public" form="qe-meta-form"
+              <%= (quiz.status || 'draft') === 'public' ? 'checked' : '' %> hidden />
+            <span class="wiki-display-opt-track qe-status-track"></span>
+            <span class="wiki-display-opt-text qe-status-text"><%= (quiz.status || 'draft') === 'public' ? 'Public' : 'Brouillon' %></span>
+          </label>
+        </div>
         <label class="qe-field-label" style="margin-top:.75rem">Durée estimée (minutes)</label>
         <input type="number" name="duration" form="qe-meta-form" min="1" max="999"
           class="wf-orce-name-input" style="width:6rem"
@@ -990,6 +998,18 @@
       div.appendChild(optsWrap);
       div.appendChild(actions);
       return div;
+    }
+
+    // ── Toggle label brouillon/public ────────────────────────────────────
+    var statusChk = document.querySelector('input[name="status"]');
+    var statusText = document.querySelector('.qe-status-text');
+    var statusTrack = document.querySelector('.qe-status-track');
+    if (statusChk && statusText) {
+      statusChk.addEventListener('change', function() {
+        statusText.textContent = statusChk.checked ? 'Public' : 'Brouillon';
+        if (statusTrack) statusTrack.style.background = statusChk.checked ? 'hsl(140,50%,38%)' : '';
+      });
+      if (statusTrack) statusTrack.style.background = statusChk.checked ? 'hsl(140,50%,38%)' : '';
     }
 
     // ── Init all existing elements ────────────────────────────────────────

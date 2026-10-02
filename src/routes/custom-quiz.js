@@ -7,7 +7,7 @@ function buildCustomQuizRouter(config) {
 
   // Hub
   router.get("/", requireUser, (req, res) => {
-    const all = db.listCustomQuizzes();
+    const all = db.listCustomQuizzes({ adminView: !!req.user.isAdmin });
     const userId = req.user.id;
     // All answers for this user
     const userAnswers = db.db.prepare(
@@ -55,7 +55,7 @@ function buildCustomQuizRouter(config) {
 
   // Page "tous les quizz"
   router.get("/tous", requireUser, (req, res) => {
-    const all = db.listCustomQuizzes();
+    const all = db.listCustomQuizzes({ adminView: !!req.user.isAdmin });
     const userId = req.user.id;
     const userAnswers = db.db.prepare(
       `SELECT quiz_id, answers, completed, updated_at FROM custom_quiz_answers WHERE user_id=?`
@@ -93,7 +93,8 @@ function buildCustomQuizRouter(config) {
     const featured = req.body.featured === "1" ? 1 : 0;
     const duration = req.body.duration ? parseInt(req.body.duration, 10) : null;
     const category = String(req.body.category || quiz.category || 'fondements');
-    db.updateCustomQuiz(quiz.id, title || quiz.title, desc, featured, duration, category);
+    const status   = req.body.status === 'public' ? 'public' : 'draft';
+    db.updateCustomQuiz(quiz.id, title || quiz.title, desc, featured, duration, category, status);
     res.redirect(`/quizz/${quiz.id}`);
   });
   router.post("/:id/delete", requireAdmin, (req, res) => {
@@ -262,6 +263,7 @@ function buildCustomQuizRouter(config) {
   router.get("/:id", requireUser, (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.redirect("/quizz");
+    if (quiz.status !== 'public' && !req.user.isAdmin) return res.redirect("/quizz");
     const parts = db.getQuizParts(quiz.id);
     const questions = db.getCustomQuizQuestions(quiz.id);
     questions.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });

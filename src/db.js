@@ -2567,17 +2567,19 @@ db.exec(`
 `);
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN serie_id INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN serie_order INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE custom_quizzes ADD COLUMN status TEXT NOT NULL DEFAULT 'draft'"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN stage TEXT NOT NULL DEFAULT 'stade_1'"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN protagoniste_ids TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE nouvelles ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
-function listCustomQuizzes() {
+function listCustomQuizzes({ adminView = false } = {}) {
+  const where = adminView ? '' : "WHERE q.status = 'public'";
   return db.prepare(`SELECT q.*,
     (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count,
     (SELECT COUNT(*) FROM custom_quiz_parts WHERE quiz_id = q.id) as parts_count
-    FROM custom_quizzes q ORDER BY q.updated_at DESC`).all();
+    FROM custom_quizzes q ${where} ORDER BY q.updated_at DESC`).all();
 }
 function getCustomQuiz(id) {
   return db.prepare(`SELECT * FROM custom_quizzes WHERE id = ?`).get(id);
@@ -2588,10 +2590,11 @@ function createCustomQuiz(title, description, category) {
   const r = db.prepare(`INSERT INTO custom_quizzes (title, description, category) VALUES (?, ?, ?)`).run(title, description, cat);
   return r.lastInsertRowid;
 }
-function updateCustomQuiz(id, title, description, featured, duration, category) {
+function updateCustomQuiz(id, title, description, featured, duration, category, status) {
   const cat = VALID_QUIZ_CATEGORIES.has(category) ? category : 'fondements';
-  db.prepare(`UPDATE custom_quizzes SET title=?, description=?, featured=?, duration=?, category=?, updated_at=unixepoch() WHERE id=?`)
-    .run(title, description, featured ? 1 : 0, duration != null ? Number(duration) : null, cat, id);
+  const st  = status === 'public' ? 'public' : 'draft';
+  db.prepare(`UPDATE custom_quizzes SET title=?, description=?, featured=?, duration=?, category=?, status=?, updated_at=unixepoch() WHERE id=?`)
+    .run(title, description, featured ? 1 : 0, duration != null ? Number(duration) : null, cat, st, id);
 }
 function deleteCustomQuiz(id) {
   db.prepare(`DELETE FROM custom_quizzes WHERE id=?`).run(id);

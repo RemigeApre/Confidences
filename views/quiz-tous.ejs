@@ -45,6 +45,7 @@
                 </svg>
                 <% if (done) { %><span class="qhc-done-badge">&#10003;</span><% } else if (pct > 0) { %><div class="qhc-progress-ring" style="--pct:<%= pct %>" title="<%= pct %>% complété"></div><% } %>
                 <span class="qhc-cat-badge qhc-cat-badge--<%= cat %>"><%= cat.charAt(0).toUpperCase() + cat.slice(1) %></span>
+                <% if (q.status === 'draft') { %><span class="qhc-draft-badge">Brouillon</span><% } %>
               </div>
               <div class="qhc-body">
                 <p class="qhc-title"><%= q.title %></p>
