@@ -3014,30 +3014,42 @@ function adjustCoins(userId, delta) {
   db.prepare("UPDATE users SET coins = MAX(0, coins + ?) WHERE id = ?").run(delta, userId);
 }
 
-// Remet le coffre à zéro (admin) : coins → 0, items hors étoile supprimés,
-// coffres en attente supprimés, 5 nouveaux coffres accordés.
+// Remet le profil à zéro (admin) : coins, coffre, quizz, jeux.
+// Conserve : réactions/notes sur le contenu, favoris, historique de vues.
 function resetUserLootboxProgress(userId) {
   const starRow = db.prepare("SELECT id FROM charms WHERE key = 'star'").get();
   const starId  = starRow ? starRow.id : 0;
 
   db.transaction(() => {
-    // Pièces à zéro
+    // ── Pièces ───────────────────────────────────────────────────────────
     db.prepare("UPDATE users SET coins = 0 WHERE id = ?").run(userId);
 
-    // Supprimer tous les items sauf le charme étoile
+    // ── Coffre : items hors étoile, thèmes, coffres, compteurs d'actions ─
     db.prepare("DELETE FROM user_unlocks WHERE user_id = ? AND NOT (item_type = 'charm' AND ref_id = ?)").run(userId, starId);
-    // Supprimer les thèmes obtenus (les always sont toujours dispo via THEME_DEFINITIONS)
     db.prepare("DELETE FROM user_themes WHERE user_id = ?").run(userId);
-
-    // Supprimer TOUS les coffres (ouverts et en attente)
     db.prepare("DELETE FROM user_lootboxes WHERE user_id = ?").run(userId);
-    // Remettre à zéro les compteurs d'actions lootbox
     db.prepare("DELETE FROM user_action_lootboxes WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM lootbox_choice_sessions WHERE user_id = ?").run(userId);
 
-    // Remettre les champs visuels aux valeurs par défaut
-    db.prepare("UPDATE users SET rating_charm = 'star', profile_image_id = NULL, active_theme = 'default' WHERE id = ?").run(userId);
+    // ── Champs visuels aux valeurs par défaut ─────────────────────────────
+    db.prepare(`UPDATE users SET
+      rating_charm = 'star', profile_image_id = NULL, active_theme = 'default',
+      arcade_memory_best_level = 0, arcade_memory_best_score = 0,
+      wordle_current_streak = 0, wordle_best_streak = 0,
+      wordle_total_played = 0, wordle_total_wins = 0
+    WHERE id = ?`).run(userId);
 
-    // Accorder 5 nouveaux coffres standard
+    // ── Quizz principal ───────────────────────────────────────────────────
+    db.prepare("DELETE FROM submissions WHERE user_id = ?").run(userId);
+    // attempts est indexé par token (pas user_id) → on laisse expirer naturellement
+
+    // ── Quizz personnalisés ───────────────────────────────────────────────
+    db.prepare("DELETE FROM custom_quiz_answers WHERE user_id = ?").run(userId);
+
+    // ── Jeux : Wordle ─────────────────────────────────────────────────────
+    db.prepare("DELETE FROM wordle_user_game WHERE user_id = ?").run(userId);
+
+    // ── 5 nouveaux coffres standard ───────────────────────────────────────
     const stmt = db.prepare("INSERT INTO user_lootboxes (user_id, opened, loot_type, created_at) VALUES (?, 0, 'standard', ?)");
     const now = new Date().toISOString();
     for (let i = 0; i < 5; i++) stmt.run(userId, now);
