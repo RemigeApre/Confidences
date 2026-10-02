@@ -2823,7 +2823,7 @@ function grantTheme(userId, key) {
 }
 
 function setThemeRarity(key, rarity) {
-  const VALID = ['rare', 'epic', 'legendary', 'mythic'];
+  const VALID = ['common', 'rare', 'epic', 'legendary', 'mythic'];
   if (!VALID.includes(rarity)) return false;
   const def = THEME_DEFINITIONS.find(t => t.key === key);
   if (!def || def.always) return false;

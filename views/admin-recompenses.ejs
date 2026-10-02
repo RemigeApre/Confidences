@@ -48,12 +48,13 @@
 
 /* ── Charm rarity select ── */
 .charm-rarity-select {
-  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2);
+  background:#1e293b; border:1px solid rgba(255,255,255,.2);
   color:#f1f5f9; border-radius:6px; padding:.3rem .5rem; font-size:.75rem;
   font-weight:700; cursor:pointer; width:100%; margin-top:.35rem;
   text-transform:uppercase; letter-spacing:.04em;
   transition:border-color .15s;
 }
+.charm-rarity-select option { background:#1e293b; color:#f1f5f9; }
 .charm-rarity-select:focus { outline:none; border-color:rgba(255,255,255,.4); }
 </style>
 
@@ -181,12 +182,15 @@
         <div style="width:3rem;height:3rem;border-radius:50%;background:<%= swatchColor %>;border:2px solid rgba(255,255,255,.2);margin:0 auto"></div>
         <div style="font-size:.85rem;font-weight:700;color:#f1f5f9"><%= t.label %></div>
         <div style="font-size:.7rem;font-weight:700;color:<%= rarityColor %>;text-transform:uppercase;letter-spacing:.05em"><%= rarityLabel %></div>
-        <select class="charm-rarity-select" data-theme-key="<%= t.key %>">
+        <select class="charm-rarity-select js-theme-rarity" data-theme-key="<%= t.key %>"
+                style="border-color:<%= rarityColor %>; color:<%= rarityColor %>">
+          <option value="common"    <%= t.rarity === 'common'    ? 'selected' : '' %>>Commun</option>
           <option value="rare"      <%= t.rarity === 'rare'      ? 'selected' : '' %>>Rare</option>
           <option value="epic"      <%= t.rarity === 'epic'      ? 'selected' : '' %>>Épique</option>
           <option value="legendary" <%= t.rarity === 'legendary' ? 'selected' : '' %>>Légendaire</option>
           <option value="mythic"    <%= t.rarity === 'mythic'    ? 'selected' : '' %>>Mythique</option>
         </select>
+        <span class="js-theme-save-status" style="font-size:.7rem;height:.9em;color:#4ade80;display:block">&nbsp;</span>
       </div>
       <% }); %>
     </div>
@@ -422,15 +426,37 @@
     });
   });
 
-  // Gérer les selects de rareté de thème
-  document.querySelectorAll('.charm-rarity-select[data-theme-key]').forEach(function(sel) {
-    sel.addEventListener('change', function() {
+})();
+</script>
+<% } %>
+
+<% if (section === 'themes') { %>
+<script>
+(function() {
+  const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
+  document.querySelectorAll('.js-theme-rarity').forEach(function(sel) {
+    sel.addEventListener('change', async function() {
       var key = sel.dataset.themeKey;
-      fetch('/admin/recompenses/themes/' + key + '/rarity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rarity: sel.value }),
-      });
+      var rarity = sel.value;
+      var statusEl = sel.parentElement.querySelector('.js-theme-save-status');
+      sel.style.color = RARITY_COLORS[rarity] || '#94a3b8';
+      sel.style.borderColor = RARITY_COLORS[rarity] || 'rgba(255,255,255,.2)';
+      if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
+      try {
+        var r = await fetch('/admin/recompenses/themes/' + key + '/rarity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rarity: rarity }),
+        });
+        var json = await r.json();
+        if (statusEl) {
+          statusEl.textContent = json.ok ? '✓ Enregistré' : '✗ Erreur';
+          statusEl.style.color = json.ok ? '#4ade80' : '#f87171';
+          setTimeout(function() { statusEl.textContent = '\u00a0'; }, 1500);
+        }
+      } catch (e) {
+        if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; }
+      }
     });
   });
 })();
