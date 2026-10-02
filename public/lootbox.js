@@ -35,18 +35,22 @@
   var pickChoiceConfirm = document.getElementById("lootbox-pick-choice-confirm");
 
   // Récompense charme
-  var charmReveal     = document.getElementById("lootbox-charm-reveal");
   var charmSymbolEl   = document.getElementById("lootbox-charm-symbol");
-  var charmLabelEl    = document.getElementById("lootbox-charm-label");
-  var charmHintEl     = document.getElementById("lootbox-charm-hint");
   var charmEquipBtn   = document.getElementById("lootbox-charm-equip-btn");
   var charmEquipDone  = document.getElementById("lootbox-charm-equip-done");
 
   // Récompense joker
-  var jokerReveal     = document.getElementById("lootbox-joker-reveal");
   var jokerTitleEl    = document.getElementById("lootbox-joker-title");
   var jokerDescEl     = document.getElementById("lootbox-joker-desc");
   var jokerUseBtn     = document.getElementById("lootbox-joker-use-btn");
+
+  // Carte unifiée — éléments spécifiques
+  var ucardTypeEl  = document.getElementById("lootbox-ucard-type");
+  var ucardStars   = document.getElementById("lootbox-ucard-stars");
+  var ucardTheme   = document.getElementById("lootbox-ucard-theme");
+  var ucardCharm   = document.getElementById("lootbox-ucard-charm");
+  var ucardCoins   = document.getElementById("lootbox-ucard-coins");
+  var ucardJoker   = document.getElementById("lootbox-ucard-joker");
 
   // Zoom
   var zoomOverlay  = document.getElementById("lootbox-zoom-overlay");
@@ -74,11 +78,7 @@
   var jeuLabel = document.getElementById("jeu-lootbox-label");
 
   // Récompense thème
-  var themeReveal    = document.getElementById("lootbox-theme-reveal");
-  var themeSwatch    = document.getElementById("lootbox-theme-swatch");
   var themeLabelEl   = document.getElementById("lootbox-theme-label");
-  var themeRarityEl  = document.getElementById("lootbox-theme-rarity");
-  var themeHintEl    = document.getElementById("lootbox-theme-hint");
   var themeApplyBtn  = document.getElementById("lootbox-theme-apply-btn");
   var themeApplyDone = document.getElementById("lootbox-theme-apply-done");
 
@@ -199,37 +199,74 @@
     showRewardCard(r, hasMore);
   }
 
-  // ── Récompense pièces (doublon ou rareté épuisée) ─────────────────────────
-  function showCoinsCard(reward, hasNext) {
-    hideAll();
-    if (!card) { closeOverlay(); return; }
-    var rarity = reward.rarity || 'common';
-    var RARITY_COLORS = { common: '#94a3b8', rare: '#60a5fa', epic: '#a78bfa', legendary: '#fbbf24', mythic: '#f87171' };
-    var color = RARITY_COLORS[rarity] || '#94a3b8';
-    // Réutilise le card slot mais avec contenu pièces
-    if (imgWrap) {
-      imgWrap.setAttribute('data-rarity', rarity);
-      imgWrap.innerHTML = '';
-      var coinDiv = document.createElement('div');
-      coinDiv.className = 'lootbox-coins-reward';
-      coinDiv.style.setProperty('--coin-color', color);
-      coinDiv.innerHTML = '<svg viewBox="0 0 60 60" class="lootbox-coins-svg" aria-hidden="true">'
-        + '<circle cx="30" cy="30" r="28" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="2.5"/>'
-        + '<text x="30" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="hsl(44,35%,20%)">P</text>'
-        + '</svg>'
-        + '<span class="lootbox-coins-amount" style="color:' + color + '">' + (reward.coins || 0) + '</span>'
-        + '<span class="lootbox-coins-label">pi\u00e8ces</span>';
-      imgWrap.appendChild(coinDiv);
+  // ── Carte unifiée — helpers ───────────────────────────────────────────────────
+  var RARITY_STAR_COUNT = { common:1, rare:2, epic:3, legendary:4, mythic:5 };
+  var RARITY_COLORS_MAP = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
+
+  function renderCardStars(rarity) {
+    if (!ucardStars) return;
+    var n = RARITY_STAR_COUNT[rarity] || 1;
+    var col = RARITY_COLORS_MAP[rarity] || '#94a3b8';
+    ucardStars.innerHTML = '';
+    for (var i = 0; i < 5; i++) {
+      var s = document.createElement('span');
+      s.className = 'lootbox-ucard-star';
+      s.style.color = i < n ? col : 'rgba(255,255,255,.18)';
+      s.innerHTML = '<svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M10 0l3 7h7l-5.5 4 2 6.8L10 14 3.5 17.8l2-6.8L0 7h7z"/></svg>';
+      ucardStars.appendChild(s);
     }
-    if (hintEl) hintEl.setAttribute('hidden', '');
+  }
+
+  function hideCardFills() {
+    [imgEl, placeholder, ucardTheme, ucardCharm, ucardCoins, ucardJoker].forEach(function(el) {
+      if (el) el.setAttribute('hidden', '');
+    });
+    [themeApplyBtn, themeApplyDone, charmEquipBtn, charmEquipDone, jokerUseBtn].forEach(function(el) {
+      if (el) el.setAttribute('hidden', '');
+    });
+  }
+
+  function setCardMeta(typeLabel, rarity, isGift) {
+    if (ucardTypeEl) ucardTypeEl.textContent = typeLabel;
+    if (card) card.setAttribute('data-rarity', rarity || 'common');
+    renderCardStars(rarity || 'common');
+    var gb = card && card.querySelector('.lootbox-gift-banner');
+    if (gb) gb.remove();
+    if (isGift && card) {
+      var gbb = document.createElement('div');
+      gbb.className = 'lootbox-gift-banner';
+      gbb.textContent = '\uD83C\uDF81 Cadeau sp\u00e9cial';
+      card.insertBefore(gbb, card.firstChild);
+    }
+  }
+
+  function revealCard(hasNext) {
+    if (!card) return;
     card.removeAttribute('hidden');
     card.classList.remove('lootbox-card--in');
     requestAnimationFrame(function() { requestAnimationFrame(function() { card.classList.add('lootbox-card--in'); }); });
     if (closeBtn) closeBtn.removeAttribute('hidden');
-    if (nextBtn) {
-      if (hasNext) nextBtn.removeAttribute('hidden');
-      else         nextBtn.setAttribute('hidden', '');
+    if (nextBtn) { if (hasNext) nextBtn.removeAttribute('hidden'); else nextBtn.setAttribute('hidden', ''); }
+  }
+
+  // ── Récompense pièces (doublon ou rareté épuisée) ─────────────────────────
+  function showCoinsCard(reward, hasNext) {
+    hideAll();
+    if (!card) { closeOverlay(); return; }
+    hideCardFills();
+    setCardMeta('Pi\u00e8ces', reward.rarity || 'common', reward._isGift);
+    if (hintEl) hintEl.setAttribute('hidden', '');
+    if (ucardCoins) {
+      var col = RARITY_COLORS_MAP[reward.rarity] || '#94a3b8';
+      ucardCoins.innerHTML = '<svg viewBox="0 0 60 60" class="lootbox-coins-svg" aria-hidden="true">'
+        + '<circle cx="30" cy="30" r="28" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="2.5"/>'
+        + '<text x="30" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="hsl(44,35%,20%)">P</text>'
+        + '</svg>'
+        + '<span class="lootbox-coins-amount" style="color:' + col + '">' + (reward.coins || 0) + '</span>'
+        + '<span class="lootbox-coins-label">pi\u00e8ces</span>';
+      ucardCoins.removeAttribute('hidden');
     }
+    revealCard(hasNext);
   }
 
   function showChestAnimation(cb) {
@@ -350,40 +387,19 @@
 
   // ── Récompense image ─────────────────────────────────────────────────────────
   function showRewardCard(reward, hasNext) {
-    var rarity = reward.rarity || "common";
-    if (imgWrap) imgWrap.setAttribute("data-rarity", rarity);
+    hideAll();
+    if (!card) { closeOverlay(); return; }
+    hideCardFills();
+    setCardMeta('Image', reward.rarity, reward._isGift);
+    if (hintEl) { if (reward.isDuplicate) hintEl.removeAttribute('hidden'); else hintEl.setAttribute('hidden', ''); }
     if (reward.thumb) {
-      if (imgEl)       { imgEl.src = reward.thumb; imgEl.alt = ""; imgEl.removeAttribute("hidden"); }
-      if (placeholder) placeholder.setAttribute("hidden", "");
+      if (imgEl) { imgEl.src = reward.thumb; imgEl.alt = ''; imgEl.removeAttribute('hidden'); }
+      if (placeholder) placeholder.setAttribute('hidden', '');
     } else {
-      if (imgEl)       imgEl.setAttribute("hidden", "");
-      if (placeholder) placeholder.removeAttribute("hidden");
+      if (imgEl) imgEl.setAttribute('hidden', '');
+      if (placeholder) placeholder.removeAttribute('hidden');
     }
-    if (hintEl) {
-      if (reward.isDuplicate) hintEl.removeAttribute("hidden");
-      else                    hintEl.setAttribute("hidden", "");
-    }
-    if (card) {
-      // Gift banner
-      var _gb = card.querySelector('.lootbox-gift-banner');
-      if (_gb) _gb.remove();
-      if (reward._isGift) {
-        var _gb = document.createElement('div');
-        _gb.className = 'lootbox-gift-banner';
-        _gb.textContent = '\uD83C\uDF81 Cadeau sp\u00e9cial';
-        card.insertBefore(_gb, card.firstChild);
-      }
-      card.removeAttribute("hidden");
-      card.classList.remove("lootbox-card--in");
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () { card.classList.add("lootbox-card--in"); });
-      });
-    }
-    if (closeBtn) closeBtn.removeAttribute("hidden");
-    if (nextBtn) {
-      if (hasNext) nextBtn.removeAttribute("hidden");
-      else         nextBtn.setAttribute("hidden", "");
-    }
+    revealCard(hasNext);
   }
 
   nextBtn && nextBtn.addEventListener("click", function () {
@@ -409,27 +425,19 @@
 
   function showThemeReveal(reward, hasNext) {
     hideAll();
-    if (!themeReveal) { closeOverlay(); return; }
+    if (!card) { closeOverlay(); return; }
+    hideCardFills();
+    setCardMeta('Th\u00e8me', reward.rarity || 'rare', reward._isGift);
+    if (hintEl) { if (reward.isDuplicate) hintEl.removeAttribute('hidden'); else hintEl.setAttribute('hidden', ''); }
     var color = THEME_COLORS[reward.themeKey] || '#333';
-    if (themeSwatch)   { themeSwatch.style.background = color; themeSwatch.setAttribute('data-rarity', reward.rarity || 'rare'); }
-    if (themeLabelEl)  themeLabelEl.textContent = reward.label || '';
-    if (themeRarityEl) themeRarityEl.textContent = THEME_RARITY_LABEL[reward.rarity] || reward.rarity || '';
-    if (themeHintEl)   { if (reward.isDuplicate) themeHintEl.removeAttribute('hidden'); else themeHintEl.setAttribute('hidden', ''); }
+    if (ucardTheme) {
+      ucardTheme.style.background = color;
+      ucardTheme.removeAttribute('hidden');
+    }
+    if (themeLabelEl) themeLabelEl.textContent = reward.label || '';
     if (themeApplyBtn) { themeApplyBtn.removeAttribute('hidden'); themeApplyBtn.disabled = false; themeApplyBtn.dataset.themeKey = reward.themeKey || ''; }
     if (themeApplyDone) themeApplyDone.setAttribute('hidden', '');
-    themeReveal.setAttribute('data-rarity', reward.rarity || 'rare');
-    // Gift banner
-    var _tg = themeReveal.querySelector('.lootbox-gift-banner');
-    if (_tg) _tg.remove();
-    if (reward._isGift) {
-      var _tgb = document.createElement('div');
-      _tgb.className = 'lootbox-gift-banner';
-      _tgb.textContent = '\uD83C\uDF81 Cadeau sp\u00e9cial';
-      themeReveal.insertBefore(_tgb, themeReveal.firstChild);
-    }
-    themeReveal.removeAttribute('hidden');
-    if (closeBtn) closeBtn.removeAttribute('hidden');
-    if (nextBtn)  { if (hasNext) nextBtn.removeAttribute('hidden'); else nextBtn.setAttribute('hidden', ''); }
+    revealCard(hasNext);
   }
 
   themeApplyBtn && themeApplyBtn.addEventListener('click', function () {
@@ -459,29 +467,19 @@
   // ── Récompense charme ────────────────────────────────────────────────────────
   function showCharmReveal(reward, hasNext) {
     hideAll();
-    if (!charmReveal) { closeOverlay(); return; }
-
-    var sym = reward.charmKey ? (window._CHARM_SYM_MAP && window._CHARM_SYM_MAP[reward.charmKey]) || reward.symbol || '★' : '★';
-    if (charmSymbolEl)  charmSymbolEl.textContent = sym;
-    if (charmLabelEl)   charmLabelEl.textContent  = reward.label || '';
-    if (charmHintEl)    { if (reward.isDuplicate) charmHintEl.removeAttribute("hidden"); else charmHintEl.setAttribute("hidden", ""); }
-    if (charmEquipBtn)  { charmEquipBtn.removeAttribute("hidden"); charmEquipBtn.disabled = false; charmEquipBtn.dataset.charmKey = reward.charmKey || ''; }
-    if (charmEquipDone) charmEquipDone.setAttribute("hidden", "");
-
-    charmReveal.setAttribute("data-rarity", reward.rarity || "legendary");
-    // Gift banner
-    var _cg = charmReveal.querySelector('.lootbox-gift-banner');
-    if (_cg) _cg.remove();
-    if (reward._isGift) {
-      var _cgb = document.createElement('div');
-      _cgb.className = 'lootbox-gift-banner';
-      _cgb.textContent = '\uD83C\uDF81 Cadeau sp\u00e9cial';
-      charmReveal.insertBefore(_cgb, charmReveal.firstChild);
+    if (!card) { closeOverlay(); return; }
+    hideCardFills();
+    setCardMeta('Charme', reward.rarity || 'legendary', reward._isGift);
+    if (hintEl) { if (reward.isDuplicate) hintEl.removeAttribute('hidden'); else hintEl.setAttribute('hidden', ''); }
+    var sym = reward.charmKey ? (window._CHARM_SYM_MAP && window._CHARM_SYM_MAP[reward.charmKey]) || reward.symbol || '\u2605' : '\u2605';
+    if (charmSymbolEl) charmSymbolEl.textContent = sym;
+    if (ucardCharm) {
+      ucardCharm.style.setProperty('--charm-rarity-color', RARITY_COLORS_MAP[reward.rarity] || '#94a3b8');
+      ucardCharm.removeAttribute('hidden');
     }
-    charmReveal.removeAttribute("hidden");
-
-    if (closeBtn) closeBtn.removeAttribute("hidden");
-    if (nextBtn)  { if (hasNext) nextBtn.removeAttribute("hidden"); else nextBtn.setAttribute("hidden", ""); }
+    if (charmEquipBtn) { charmEquipBtn.removeAttribute('hidden'); charmEquipBtn.disabled = false; charmEquipBtn.dataset.charmKey = reward.charmKey || ''; }
+    if (charmEquipDone) charmEquipDone.setAttribute('hidden', '');
+    revealCard(hasNext);
   }
 
   charmEquipBtn && charmEquipBtn.addEventListener("click", function () {
@@ -516,24 +514,21 @@
   // ── Récompense joker ─────────────────────────────────────────────────────────
   function showJokerReveal(reward, hasNext) {
     hideAll();
-    if (!jokerReveal) { closeOverlay(); return; }
-
+    if (!card) { closeOverlay(); return; }
+    hideCardFills();
     var isImage = reward.jokerType === 'image';
+    setCardMeta('Joker', reward.rarity || 'legendary', reward._isGift);
     if (jokerTitleEl) jokerTitleEl.textContent = isImage ? 'Joker Image' : 'Joker Charme';
-    if (jokerDescEl)  jokerDescEl.textContent  = isImage
-      ? 'Débloque n\'importe quelle image de profil non possédée.'
-      : 'Débloque n\'importe quel charme non possédé.';
-    if (jokerUseBtn)  {
-      jokerUseBtn.dataset.jokerType = reward.jokerType;
-      jokerUseBtn.removeAttribute("hidden");
-      jokerUseBtn.disabled = !!reward.isDuplicate;
+    if (jokerDescEl) {
+      jokerDescEl.textContent = isImage
+        ? "D\u00e9bloque n'importe quelle image de profil non poss\u00e9d\u00e9e."
+        : "D\u00e9bloque n'importe quel charme non poss\u00e9d\u00e9.";
+      if (reward.isDuplicate) jokerDescEl.textContent += ' (Doublon \u2014 converti en pi\u00e8ces.)';
     }
-    jokerReveal.setAttribute("data-rarity", reward.rarity || "legendary");
-    if (reward.isDuplicate && jokerDescEl) jokerDescEl.textContent += ' (Doublon — converti en pièces.)';
-    jokerReveal.removeAttribute("hidden");
-
-    if (closeBtn) closeBtn.removeAttribute("hidden");
-    if (nextBtn)  { if (hasNext) nextBtn.removeAttribute("hidden"); else nextBtn.setAttribute("hidden", ""); }
+    if (ucardJoker) ucardJoker.removeAttribute('hidden');
+    if (jokerUseBtn) { jokerUseBtn.dataset.jokerType = reward.jokerType; jokerUseBtn.removeAttribute('hidden'); jokerUseBtn.disabled = !!reward.isDuplicate; }
+    if (hintEl) hintEl.setAttribute('hidden', '');
+    revealCard(hasNext);
   }
 
   jokerUseBtn && jokerUseBtn.addEventListener("click", function () {
@@ -717,42 +712,124 @@
 
   function renderBatchResults(rewards) {
     while (batchGrid.firstChild) batchGrid.removeChild(batchGrid.firstChild);
-    var RARITY_COLORS = { common: '#94a3b8', rare: '#60a5fa', epic: '#a78bfa', legendary: '#fbbf24', mythic: '#f87171' };
     var imageRewards = rewards.filter(function(r) { return r && r.imageId; });
+
     rewards.forEach(function (reward, i) {
-      var rarity = reward.rarity || "common";
-      var item = document.createElement("div");
-      item.className = "lootbox-batch-card lootbox-batch-card--" + rarity;
-      var imgDiv = document.createElement("div");
-      imgDiv.className = "lootbox-batch-card-img";
-      imgDiv.setAttribute("data-rarity", rarity);
+      var rarity = reward.rarity || 'common';
+      var col = RARITY_COLORS_MAP[rarity] || '#94a3b8';
+
+      // ── outer card ──────────────────────────────────────────────────────────
+      var item = document.createElement('div');
+      item.className = 'lootbox-batch-card';
+      item.setAttribute('data-rarity', rarity);
+
+      // type label
+      var typeEl = document.createElement('div');
+      typeEl.className = 'lootbox-batch-card-type';
+      var typeLabel = 'Image';
+      if (reward.isCoins) typeLabel = 'Pi\u00e8ces';
+      else if (reward.isCharm) typeLabel = 'Charme';
+      else if (reward.isTheme) typeLabel = 'Th\u00e8me';
+      else if (reward.isJoker) typeLabel = 'Joker';
+      typeEl.textContent = typeLabel;
+      item.appendChild(typeEl);
+
+      // visual area
+      var visual = document.createElement('div');
+      visual.className = 'lootbox-batch-card-img';
 
       if (reward.isCoins) {
-        // Carte pièces
-        item.classList.add("lootbox-batch-card--coins");
-        var coinWrap = document.createElement("div");
-        coinWrap.className = "lootbox-coins-reward lootbox-coins-reward--small";
-        coinWrap.style.setProperty('--coin-color', RARITY_COLORS[rarity] || '#94a3b8');
-        coinWrap.innerHTML = '<svg viewBox="0 0 60 60" class="lootbox-coins-svg" aria-hidden="true">'
-          + '<circle cx="30" cy="30" r="28" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="2.5"/>'
-          + '<text x="30" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="hsl(44,35%,20%)">P</text>'
-          + '</svg>'
-          + '<span class="lootbox-coins-amount" style="color:' + (RARITY_COLORS[rarity]||'#94a3b8') + '">' + (reward.coins || 0) + '</span>';
-        imgDiv.appendChild(coinWrap);
+        var coinWrap = document.createElement('div');
+        coinWrap.className = 'lootbox-batch-card-coins-wrap';
+
+        var coinSvgNs = 'http://www.w3.org/2000/svg';
+        var coinSvg = document.createElementNS(coinSvgNs, 'svg');
+        coinSvg.setAttribute('viewBox', '0 0 60 60');
+        coinSvg.setAttribute('class', 'lootbox-coins-svg');
+        coinSvg.setAttribute('aria-hidden', 'true');
+        var circle = document.createElementNS(coinSvgNs, 'circle');
+        circle.setAttribute('cx', '30'); circle.setAttribute('cy', '30'); circle.setAttribute('r', '28');
+        circle.setAttribute('fill', 'hsl(44,95%,55%)'); circle.setAttribute('stroke', 'hsl(44,70%,35%)'); circle.setAttribute('stroke-width', '2.5');
+        var coinText = document.createElementNS(coinSvgNs, 'text');
+        coinText.setAttribute('x', '30'); coinText.setAttribute('y', '38');
+        coinText.setAttribute('text-anchor', 'middle'); coinText.setAttribute('font-size', '22');
+        coinText.setAttribute('font-weight', 'bold'); coinText.setAttribute('fill', 'hsl(44,35%,20%)');
+        coinText.textContent = 'P';
+        coinSvg.appendChild(circle); coinSvg.appendChild(coinText);
+        coinWrap.appendChild(coinSvg);
+
+        var amtEl = document.createElement('span');
+        amtEl.className = 'lootbox-coins-amount';
+        amtEl.style.color = col;
+        amtEl.textContent = String(reward.coins || 0);
+        coinWrap.appendChild(amtEl);
+        visual.appendChild(coinWrap);
+
+      } else if (reward.isCharm) {
+        var charmSpan = document.createElement('span');
+        charmSpan.className = 'lootbox-batch-card-charm';
+        charmSpan.style.setProperty('--charm-color', col);
+        var sym = reward.charmKey ? (window._CHARM_SYM_MAP && window._CHARM_SYM_MAP[reward.charmKey]) || reward.symbol || '\u2605' : '\u2605';
+        charmSpan.textContent = sym;
+        visual.appendChild(charmSpan);
+
+      } else if (reward.isTheme) {
+        var themeColor = THEME_COLORS[reward.themeKey] || '#333';
+        visual.style.background = themeColor;
+        var themeOverlay = document.createElement('div');
+        themeOverlay.className = 'lootbox-batch-card-theme';
+        var themeLbl = document.createElement('span');
+        themeLbl.className = 'lootbox-batch-card-theme-label';
+        themeLbl.textContent = reward.label || '';
+        themeOverlay.appendChild(themeLbl);
+        visual.appendChild(themeOverlay);
+
+      } else if (reward.isJoker) {
+        var jokerSpan = document.createElement('span');
+        jokerSpan.className = 'lootbox-batch-card-joker';
+        jokerSpan.setAttribute('aria-hidden', 'true');
+        jokerSpan.textContent = '\u2660';
+        visual.appendChild(jokerSpan);
+
+      } else if (reward.imageId && reward.thumb) {
+        var img = document.createElement('img');
+        img.src = reward.thumb; img.alt = ''; img.loading = 'lazy';
+        visual.appendChild(img);
+        visual.style.cursor = 'zoom-in';
+        (function(r) {
+          var idx = imageRewards.indexOf(r);
+          visual.addEventListener('click', function () { if (idx >= 0) openZoom(imageRewards, idx); });
+        }(reward));
+
       } else if (reward.imageId) {
-        if (reward.thumb) {
-          var img = document.createElement("img");
-          img.src = reward.thumb; img.alt = ""; img.loading = "lazy";
-          imgDiv.appendChild(img);
-          imgDiv.style.cursor = "zoom-in";
-          (function (imgIdx) {
-            var idx = imageRewards.indexOf(reward);
-            imgDiv.addEventListener("click", function () { if (idx >= 0) openZoom(imageRewards, idx); });
-          }(i));
-        }
+        // thumb missing — placeholder
+        visual.setAttribute('aria-label', 'Image sans aperçu');
       }
 
-      item.appendChild(imgDiv);
+      item.appendChild(visual);
+
+      // stars row
+      var starsRow = document.createElement('div');
+      starsRow.className = 'lootbox-batch-card-stars';
+      var n = RARITY_STAR_COUNT[rarity] || 1;
+      for (var s = 0; s < 5; s++) {
+        var star = document.createElement('span');
+        star.className = 'lootbox-ucard-star';
+        star.style.color = s < n ? col : 'rgba(255,255,255,.18)';
+        var svgNs = 'http://www.w3.org/2000/svg';
+        var starSvg = document.createElementNS(svgNs, 'svg');
+        starSvg.setAttribute('viewBox', '0 0 20 20');
+        starSvg.setAttribute('width', '10');
+        starSvg.setAttribute('height', '10');
+        starSvg.setAttribute('fill', 'currentColor');
+        var starPath = document.createElementNS(svgNs, 'path');
+        starPath.setAttribute('d', 'M10 0l3 7h7l-5.5 4 2 6.8L10 14 3.5 17.8l2-6.8L0 7h7z');
+        starSvg.appendChild(starPath);
+        star.appendChild(starSvg);
+        starsRow.appendChild(star);
+      }
+      item.appendChild(starsRow);
+
       batchGrid.appendChild(item);
     });
   }
@@ -768,7 +845,7 @@
   }
 
   function hideAll() {
-    [choicePanel, chest, card, batchPanel, pickChoicePanel, charmReveal, jokerReveal, themeReveal].forEach(function (el) {
+    [choicePanel, chest, card, batchPanel, pickChoicePanel].forEach(function (el) {
       if (el) el.setAttribute("hidden", "");
     });
     if (closeBtn) closeBtn.setAttribute("hidden", "");

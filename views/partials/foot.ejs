@@ -101,15 +101,41 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
 </svg>
     </div>
 
-    <%# Carte récompense — image seule + halo rareté + hint doublon %>
-    <div class="lootbox-reveal-card" id="lootbox-reveal-card" hidden>
-      <div class="lootbox-reveal-img-wrap" id="lootbox-reveal-img-wrap" title="Cliquer pour agrandir">
-        <img id="lootbox-reveal-img" src="" alt="" class="lootbox-reveal-img" />
-        <div class="lootbox-reveal-img-placeholder" id="lootbox-reveal-placeholder">
+    <%# Carte de récompense unifiée %>
+    <div class="lootbox-ucard" id="lootbox-reveal-card" hidden>
+      <div class="lootbox-ucard-type" id="lootbox-ucard-type">Image</div>
+      <div class="lootbox-ucard-visual" id="lootbox-reveal-img-wrap" title="Cliquer pour agrandir">
+        <img id="lootbox-reveal-img" src="" alt="" class="lootbox-ucard-img" />
+        <div class="lootbox-ucard-placeholder" id="lootbox-reveal-placeholder" hidden>
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="4"/><circle cx="17" cy="17" r="5"/><path d="M4 34l12-12 8 8 6-6 14 14"/></svg>
         </div>
+        <div class="lootbox-ucard-theme-fill" id="lootbox-ucard-theme" hidden>
+          <span id="lootbox-theme-label"></span>
+        </div>
+        <div class="lootbox-ucard-charm-fill" id="lootbox-ucard-charm" hidden>
+          <span class="lootbox-charm-reveal-symbol" id="lootbox-charm-symbol"></span>
+        </div>
+        <div class="lootbox-ucard-coins-fill" id="lootbox-ucard-coins" hidden></div>
+        <div class="lootbox-ucard-joker-fill" id="lootbox-ucard-joker" hidden>
+          <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
+            <rect x="8" y="8" width="64" height="64" rx="10" fill="hsl(48,90%,28%)" stroke="hsl(48,95%,55%)" stroke-width="3"/>
+            <text x="40" y="52" text-anchor="middle" font-size="36" font-family="serif" fill="hsl(48,95%,65%)">&#9824;</text>
+            <text x="14" y="24" text-anchor="middle" font-size="13" font-family="sans-serif" font-weight="700" fill="hsl(48,95%,65%)">J</text>
+            <text x="66" y="70" text-anchor="middle" font-size="13" font-family="sans-serif" font-weight="700" fill="hsl(48,95%,65%)">J</text>
+          </svg>
+          <p class="lootbox-joker-reveal-title" id="lootbox-joker-title"></p>
+          <p class="lootbox-joker-reveal-desc" id="lootbox-joker-desc"></p>
+        </div>
       </div>
+      <div class="lootbox-ucard-stars" id="lootbox-ucard-stars"></div>
       <p class="lootbox-reveal-hint" id="lootbox-reveal-hint" hidden>Doublon &mdash; converti en pi&egrave;ces.</p>
+      <div class="lootbox-ucard-btns">
+        <button class="lootbox-theme-apply-btn" id="lootbox-theme-apply-btn" hidden>&#127912; Appliquer ce th&egrave;me</button>
+        <button class="lootbox-theme-apply-btn lootbox-theme-apply-btn--done" id="lootbox-theme-apply-done" hidden>Th&egrave;me appliqu&eacute; &#10003;</button>
+        <button class="lootbox-charm-equip-btn" id="lootbox-charm-equip-btn" hidden>&#10024; &Eacute;quiper ce charme</button>
+        <button class="lootbox-charm-equip-btn lootbox-charm-equip-btn--done" id="lootbox-charm-equip-done" hidden>Charme &eacute;quip&eacute; &#10003;</button>
+        <button class="lootbox-joker-use-btn" id="lootbox-joker-use-btn" hidden>Utiliser le joker</button>
+      </div>
     </div>
 
     <%# Résultats "tout ouvrir" — grille large sans titre %>
@@ -127,39 +153,6 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
       </div>
     </div>
 
-    <%# Récompense thème %>
-    <div class="lootbox-theme-reveal" id="lootbox-theme-reveal" hidden>
-      <div class="lootbox-theme-swatch" id="lootbox-theme-swatch"></div>
-      <p class="lootbox-theme-label" id="lootbox-theme-label"></p>
-      <p class="lootbox-theme-rarity" id="lootbox-theme-rarity"></p>
-      <p class="lootbox-theme-hint" id="lootbox-theme-hint" hidden>D&eacute;j&agrave; poss&eacute;d&eacute; &mdash; converti en pi&egrave;ces.</p>
-      <button class="lootbox-theme-apply-btn" id="lootbox-theme-apply-btn">&#127912; Appliquer ce th&egrave;me</button>
-      <button class="lootbox-theme-apply-btn lootbox-theme-apply-btn--done" id="lootbox-theme-apply-done" hidden>Th&egrave;me appliqu&eacute; &#10003;</button>
-    </div>
-
-    <%# Récompense charme %>
-    <div class="lootbox-charm-reveal" id="lootbox-charm-reveal" hidden>
-      <div class="lootbox-charm-reveal-symbol" id="lootbox-charm-symbol"></div>
-      <p class="lootbox-charm-reveal-label" id="lootbox-charm-label"></p>
-      <p class="lootbox-charm-reveal-hint" id="lootbox-charm-hint" hidden>Doublon &mdash; converti en pi&egrave;ces.</p>
-      <button class="lootbox-charm-equip-btn" id="lootbox-charm-equip-btn">&#10024; &Eacute;quiper ce charme</button>
-      <button class="lootbox-charm-equip-btn lootbox-charm-equip-btn--done" id="lootbox-charm-equip-done" hidden>Charm &eacute;quip&eacute; &#10003;</button>
-    </div>
-
-    <%# Récompense joker %>
-    <div class="lootbox-joker-reveal" id="lootbox-joker-reveal" hidden>
-      <div class="lootbox-joker-reveal-icon" aria-hidden="true">
-        <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" width="90" height="90">
-          <rect x="8" y="8" width="64" height="64" rx="10" fill="hsl(48,90%,28%)" stroke="hsl(48,95%,55%)" stroke-width="3"/>
-          <text x="40" y="52" text-anchor="middle" font-size="36" font-family="serif" fill="hsl(48,95%,65%)">&#9824;</text>
-          <text x="14" y="24" text-anchor="middle" font-size="13" font-family="sans-serif" font-weight="700" fill="hsl(48,95%,65%)">J</text>
-          <text x="66" y="70" text-anchor="middle" font-size="13" font-family="sans-serif" font-weight="700" fill="hsl(48,95%,65%)">J</text>
-        </svg>
-      </div>
-      <p class="lootbox-joker-reveal-title" id="lootbox-joker-title"></p>
-      <p class="lootbox-joker-reveal-desc" id="lootbox-joker-desc"></p>
-      <button class="lootbox-joker-use-btn" id="lootbox-joker-use-btn">Utiliser le joker</button>
-    </div>
 
     <%# Boutons d'action %>
     <div class="lootbox-reveal-actions" id="lootbox-reveal-actions">
