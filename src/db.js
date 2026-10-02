@@ -2493,6 +2493,9 @@ if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE 
 if (!db.prepare("SELECT * FROM pragma_table_info('custom_quizzes') WHERE name='duration'").get()) {
   db.exec("ALTER TABLE custom_quizzes ADD COLUMN duration INTEGER DEFAULT NULL");
 }
+if (!db.prepare("SELECT * FROM pragma_table_info('custom_quizzes') WHERE name='category'").get()) {
+  db.exec("ALTER TABLE custom_quizzes ADD COLUMN category TEXT NOT NULL DEFAULT 'fondements'");
+}
 if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE name='has_sides'").get()) {
   db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN has_sides INTEGER DEFAULT 0");
 }
@@ -2573,13 +2576,16 @@ function listCustomQuizzes() {
 function getCustomQuiz(id) {
   return db.prepare(`SELECT * FROM custom_quizzes WHERE id = ?`).get(id);
 }
-function createCustomQuiz(title, description) {
-  const r = db.prepare(`INSERT INTO custom_quizzes (title, description) VALUES (?, ?)`).run(title, description);
+const VALID_QUIZ_CATEGORIES = new Set(['fondements','fantasmes','pornographie','ultra']);
+function createCustomQuiz(title, description, category) {
+  const cat = VALID_QUIZ_CATEGORIES.has(category) ? category : 'fondements';
+  const r = db.prepare(`INSERT INTO custom_quizzes (title, description, category) VALUES (?, ?, ?)`).run(title, description, cat);
   return r.lastInsertRowid;
 }
-function updateCustomQuiz(id, title, description, featured, duration) {
-  db.prepare(`UPDATE custom_quizzes SET title=?, description=?, featured=?, duration=?, updated_at=unixepoch() WHERE id=?`)
-    .run(title, description, featured ? 1 : 0, duration != null ? Number(duration) : null, id);
+function updateCustomQuiz(id, title, description, featured, duration, category) {
+  const cat = VALID_QUIZ_CATEGORIES.has(category) ? category : 'fondements';
+  db.prepare(`UPDATE custom_quizzes SET title=?, description=?, featured=?, duration=?, category=?, updated_at=unixepoch() WHERE id=?`)
+    .run(title, description, featured ? 1 : 0, duration != null ? Number(duration) : null, cat, id);
 }
 function deleteCustomQuiz(id) {
   db.prepare(`DELETE FROM custom_quizzes WHERE id=?`).run(id);

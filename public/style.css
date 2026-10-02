@@ -13842,14 +13842,13 @@ html.lq-discreet-mode img {
 .quiz-hub-title { font-size: 1.6rem; font-weight: 800; margin: 0 0 1.5rem; }
 .quiz-hub-strip { margin-bottom: 2.5rem; }
 .quiz-hub-strip-title {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--muted);
-  margin: 0 0 0.75rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.4rem;
+  letter-spacing: .08em;
+  color: #f1f5f9;
+  margin: 0.65rem 0 0;
+  text-align: center;
 }
 /* ── Quiz hub cards ─────────────────────────────────── */
 .quiz-hub-cards {
@@ -13875,11 +13874,11 @@ html.lq-discreet-mode img {
   transition: border-color .2s, transform .2s, box-shadow .2s;
   box-shadow: 0 1px 6px rgba(0,0,0,.07);
 }
-.qhc:hover {
-  border-color: hsl(270,55%,50%);
-  transform: translateY(-4px);
-  box-shadow: 0 10px 28px rgba(90,40,160,.22), 0 2px 8px rgba(0,0,0,.06);
-}
+.qhc:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,.25), 0 2px 8px rgba(0,0,0,.06); }
+.qhc--cat-fondements:hover   { border-color: hsl(270,55%,50%); box-shadow: 0 10px 28px rgba(90,40,160,.22), 0 2px 8px rgba(0,0,0,.06); }
+.qhc--cat-fantasmes:hover    { border-color: hsl(340,55%,50%); box-shadow: 0 10px 28px rgba(160,40,80,.22), 0 2px 8px rgba(0,0,0,.06); }
+.qhc--cat-pornographie:hover { border-color: hsl(25,65%,48%);  box-shadow: 0 10px 28px rgba(160,80,20,.22), 0 2px 8px rgba(0,0,0,.06); }
+.qhc--cat-ultra:hover        { border-color: hsl(48,80%,48%);  box-shadow: 0 10px 28px rgba(160,130,0,.22), 0 2px 8px rgba(0,0,0,.06); }
 .qhc--done { border-color: hsl(140,40%,32%); }
 .qhc-img {
   height: 100px;
@@ -13913,11 +13912,60 @@ html.lq-discreet-mode img {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .qhc-meta { font-size: .65rem; color: var(--muted); margin: 0; }
-.qhc-accent {
-  height: 4px;
-  background: linear-gradient(90deg, hsl(260,55%,45%), hsl(290,55%,45%));
-  flex-shrink: 0;
+.qhc-cat-badge {
+  position: absolute; bottom: 6px; left: 6px;
+  font-size: .55rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  padding: .15rem .35rem; border-radius: 4px; line-height: 1;
 }
+.qhc-cat-badge--fondements   { background: hsl(255,45%,28%); color: hsl(270,80%,82%); }
+.qhc-cat-badge--fantasmes    { background: hsl(325,45%,24%); color: hsl(340,80%,80%); }
+.qhc-cat-badge--pornographie { background: hsl(18,55%,24%);  color: hsl(28,85%,75%); }
+.qhc-cat-badge--ultra        { background: hsl(42,65%,22%);  color: hsl(48,90%,72%); }
+
+/* Carte "tout voir" dans le scroll horizontal */
+.qhc-see-all {
+  flex: 0 0 80px;
+  background: rgba(255,255,255,.04);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .75rem;
+  font-weight: 600;
+  gap: .3rem;
+  padding: .5rem;
+  transition: background .15s, color .15s;
+}
+.qhc-see-all span { font-size: 1.3rem; font-weight: 800; color: #f1f5f9; }
+.qhc-see-all:hover { background: rgba(255,255,255,.08); color: #f1f5f9; }
+
+/* Bouton "Tous les quizz" en bas de page */
+.quiz-hub-all-wrap { text-align: center; margin: 2rem 0 1rem; }
+.quiz-hub-all-btn {
+  display: inline-block;
+  padding: .75rem 2.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: #f1f5f9;
+  text-decoration: none;
+  font-size: .95rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  transition: background .15s, border-color .15s;
+}
+.quiz-hub-all-btn:hover { background: rgba(255,255,255,.07); border-color: hsl(270,40%,45%); }
+
+.qhc-accent { height: 4px; flex-shrink: 0; background: linear-gradient(90deg, hsl(260,55%,45%), hsl(290,55%,45%)); }
+.qhc--cat-fondements   .qhc-accent { background: linear-gradient(90deg, hsl(255,55%,45%), hsl(285,55%,45%)); }
+.qhc--cat-fantasmes    .qhc-accent { background: linear-gradient(90deg, hsl(325,60%,42%), hsl(355,60%,48%)); }
+.qhc--cat-pornographie .qhc-accent { background: linear-gradient(90deg, hsl(18,65%,40%),  hsl(38,65%,45%)); }
+.qhc--cat-ultra        .qhc-accent { background: linear-gradient(90deg, hsl(42,80%,42%),  hsl(52,80%,50%)); }
 
 /* ── Quiz hub popup ─────────────────────────────────── */
 .qhp-overlay {
@@ -13984,6 +14032,14 @@ html.lq-discreet-mode img {
 .qe-export-fab:hover { background: hsl(220,45%,25%); color: #fff; }
 
 .quiz-hub-empty { color: var(--muted); font-size: 0.88rem; text-align: center; margin-top: 2rem; }
+
+/* ── Sélecteur catégorie dans l'éditeur quizz ── */
+.quiz-cat-picker { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .35rem; }
+.quiz-cat-opt { cursor: pointer; padding: .35rem .85rem; border-radius: 999px; border: 1.5px solid var(--border); font-size: .82rem; font-weight: 600; transition: background .12s, border-color .12s; }
+.quiz-cat-opt--fondements   input:checked ~ span, .quiz-cat-opt--fondements:has(input:checked)   { background: hsl(255,45%,28%); border-color: hsl(270,60%,55%); color: hsl(270,80%,88%); }
+.quiz-cat-opt--fantasmes    input:checked ~ span, .quiz-cat-opt--fantasmes:has(input:checked)    { background: hsl(325,45%,24%); border-color: hsl(340,60%,55%); color: hsl(340,80%,85%); }
+.quiz-cat-opt--pornographie input:checked ~ span, .quiz-cat-opt--pornographie:has(input:checked) { background: hsl(18,55%,24%);  border-color: hsl(25,70%,52%);  color: hsl(28,85%,78%); }
+.quiz-cat-opt--ultra        input:checked ~ span, .quiz-cat-opt--ultra:has(input:checked)        { background: hsl(42,65%,22%);  border-color: hsl(48,85%,52%);  color: hsl(48,90%,75%); }
 
 /* ── Quiz detail ────────────────────────────────────── */
 /* Colonne de questions : le volet gauche est désormais le vrai composant

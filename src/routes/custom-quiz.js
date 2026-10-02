@@ -48,8 +48,32 @@ function buildCustomQuizRouter(config) {
     const title = String(req.body.title || "").slice(0, 200).trim();
     if (!title) return res.redirect("/quizz/new");
     const desc = String(req.body.description || "").slice(0, 2000).trim();
-    const id = db.createCustomQuiz(title, desc);
+    const category = String(req.body.category || 'fondements');
+    const id = db.createCustomQuiz(title, desc, category);
     res.redirect(`/quizz/${id}/edit`);
+  });
+
+  // Page "tous les quizz"
+  router.get("/tous", requireUser, (req, res) => {
+    const all = db.listCustomQuizzes();
+    const userId = req.user.id;
+    const userAnswers = db.db.prepare(
+      `SELECT quiz_id, answers, completed, updated_at FROM custom_quiz_answers WHERE user_id=?`
+    ).all(userId);
+    const completedIds = new Set();
+    const progressMap = {};
+    userAnswers.forEach(row => {
+      if (row.completed) completedIds.add(row.quiz_id);
+      let answered = 0;
+      try { answered = Object.keys(JSON.parse(row.answers || '{}')).length; } catch {}
+      const quiz = all.find(q => q.id === row.quiz_id);
+      const total = quiz ? quiz.question_count : 0;
+      progressMap[row.quiz_id] = {
+        pct: total > 0 ? Math.round(answered / total * 100) : 0,
+        completedAt: row.completed ? row.updated_at : null
+      };
+    });
+    res.render("quiz-tous", { config, all, completedIds, progressMap });
   });
 
   // Éditer (admin)
@@ -68,7 +92,8 @@ function buildCustomQuizRouter(config) {
     const desc  = String(req.body.description || "").slice(0, 2000).trim();
     const featured = req.body.featured === "1" ? 1 : 0;
     const duration = req.body.duration ? parseInt(req.body.duration, 10) : null;
-    db.updateCustomQuiz(quiz.id, title || quiz.title, desc, featured, duration);
+    const category = String(req.body.category || quiz.category || 'fondements');
+    db.updateCustomQuiz(quiz.id, title || quiz.title, desc, featured, duration, category);
     res.redirect(`/quizz/${quiz.id}`);
   });
   router.post("/:id/delete", requireAdmin, (req, res) => {

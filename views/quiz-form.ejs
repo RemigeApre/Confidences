@@ -37,6 +37,16 @@
         <input type="number" name="duration" form="qe-meta-form" min="1" max="999"
           class="wf-orce-name-input" style="width:6rem"
           value="<%= quiz.duration != null ? quiz.duration : '' %>" placeholder="—" />
+        <label class="qe-field-label" style="margin-top:.75rem">Catégorie</label>
+        <div class="quiz-cat-picker">
+          <% [['fondements','violet'],['fantasmes','rose'],['pornographie','orange'],['ultra','or']].forEach(function(c){ %>
+            <label class="quiz-cat-opt quiz-cat-opt--<%= c[0] %>">
+              <input type="radio" name="category" value="<%= c[0] %>" form="qe-meta-form"
+                <%= (quiz.category || 'fondements') === c[0] ? 'checked' : '' %> style="display:none"/>
+              <span><%= c[0].charAt(0).toUpperCase() + c[0].slice(1) %></span>
+            </label>
+          <% }) %>
+        </div>
       </div>
     </details>
 

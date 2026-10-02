@@ -24,71 +24,89 @@
   <div class="quiz-hub">
 
     <%
-      /* Helper EJS pour rendre une strip de cartes */
-      function quizStrip(title, list) {
+      var QUIZ_CAT_COLORS = {
+        fondements:    { h1: 260, h2: 290, stroke: 'hsl(270,58%,60%)', fill: 'hsl(265,52%,34%)', pt: 'hsl(270,70%,70%)' },
+        fantasmes:     { h1: 330, h2: 0,   stroke: 'hsl(340,58%,60%)', fill: 'hsl(335,52%,30%)', pt: 'hsl(340,70%,70%)' },
+        pornographie:  { h1: 18,  h2: 38,  stroke: 'hsl(25,70%,58%)',  fill: 'hsl(20,52%,28%)',  pt: 'hsl(28,80%,68%)' },
+        ultra:         { h1: 44,  h2: 55,  stroke: 'hsl(48,80%,58%)',  fill: 'hsl(44,60%,28%)',  pt: 'hsl(50,88%,68%)' },
+      };
+      function quizCard(q) {
+        var prog = progressMap[q.id];
+        var pct  = prog ? prog.pct : 0;
+        var done = completedIds.has(q.id);
+        var cat  = q.category || 'fondements';
+        var c    = QUIZ_CAT_COLORS[cat] || QUIZ_CAT_COLORS.fondements;
+        var out = '<button type="button" class="qhc qhc--cat-' + cat + (done ? ' qhc--done' : '') + '"'
+            + ' data-qid="' + q.id + '"'
+            + ' data-title="' + q.title.replace(/"/g, '&quot;') + '"'
+            + ' data-desc="' + (q.description || '').replace(/"/g, '&quot;') + '"'
+            + ' data-questions="' + q.question_count + '"'
+            + ' data-parts="' + q.parts_count + '"'
+            + ' data-duration="' + (q.duration || '') + '"'
+            + ' data-pct="' + pct + '"'
+            + ' data-done="' + (done ? '1' : '0') + '"'
+            + ' data-completed-at="' + (prog && prog.completedAt ? prog.completedAt : '') + '"'
+            + '>';
+        out += '<div class="qhc-img">';
+        out += '<svg viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid slice" class="qhc-svg">';
+        out += '<defs><radialGradient id="qg' + q.id + '" cx="50%" cy="50%" r="65%">';
+        out += '<stop offset="0%" stop-color="hsl(' + c.h1 + ',42%,26%)"/>';
+        out += '<stop offset="100%" stop-color="hsl(' + c.h1 + ',32%,11%)"/>';
+        out += '</radialGradient></defs>';
+        out += '<rect width="200" height="110" fill="url(#qg' + q.id + ')"/>';
+        out += '<circle cx="100" cy="55" r="34" fill="none" stroke="' + c.stroke + '" stroke-width="1.4" opacity="0.45"/>';
+        out += '<circle cx="100" cy="55" r="18" fill="' + c.fill + '" opacity="0.35"/>';
+        out += '<polygon points="100,30 122,68 78,68" fill="none" stroke="' + c.stroke + '" stroke-width="1.1" opacity="0.5"/>';
+        out += '<line x1="10" y1="55" x2="60" y2="55" stroke="' + c.stroke + '" stroke-width="0.8" opacity="0.4"/>';
+        out += '<line x1="140" y1="55" x2="190" y2="55" stroke="' + c.stroke + '" stroke-width="0.8" opacity="0.4"/>';
+        out += '<circle cx="100" cy="55" r="4" fill="' + c.pt + '" opacity="0.65"/>';
+        out += '</svg>';
+        if (done) {
+          out += '<span class="qhc-done-badge">&#10003;</span>';
+        } else if (pct > 0) {
+          out += '<div class="qhc-progress-ring" style="--pct:' + pct + '" title="' + pct + '% complété"></div>';
+        }
+        // Badge catégorie
+        out += '<span class="qhc-cat-badge qhc-cat-badge--' + cat + '">' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</span>';
+        out += '</div>';
+        out += '<div class="qhc-body">';
+        out += '<p class="qhc-title">' + q.title + '</p>';
+        out += '<p class="qhc-meta">' + q.question_count + ' question' + (q.question_count !== 1 ? 's' : '');
+        if (q.parts_count > 0) out += ' &middot; ' + q.parts_count + ' partie' + (q.parts_count !== 1 ? 's' : '');
+        if (q.duration) out += ' &middot; ~' + q.duration + ' min';
+        out += '</p>';
+        out += '</div>';
+        out += '<div class="qhc-accent"></div>';
+        out += '</button>';
+        return out;
+      }
+      function quizStrip(title, list, viewAllUrl) {
         if (!list.length) return '';
+        var visible = list.slice(0, 10);
+        var hasMore = list.length > 10;
         var out = '<section class="quiz-hub-strip">';
-        out += '<h2 class="quiz-hub-strip-title">' + title + '</h2>';
         out += '<div class="quiz-hub-cards">';
-        list.forEach(function(q) {
-          var prog = progressMap[q.id];
-          var pct  = prog ? prog.pct : 0;
-          var done = completedIds.has(q.id);
-          out += '<button type="button" class="qhc' + (done ? ' qhc--done' : '') + '"'
-              + ' data-qid="' + q.id + '"'
-              + ' data-title="' + q.title.replace(/"/g, '&quot;') + '"'
-              + ' data-desc="' + (q.description || '').replace(/"/g, '&quot;') + '"'
-              + ' data-questions="' + q.question_count + '"'
-              + ' data-parts="' + q.parts_count + '"'
-              + ' data-duration="' + (q.duration || '') + '"'
-              + ' data-pct="' + pct + '"'
-              + ' data-done="' + (done ? '1' : '0') + '"'
-              + ' data-completed-at="' + (prog && prog.completedAt ? prog.completedAt : '') + '"'
-              + '>';
-          // SVG placeholder header
-          out += '<div class="qhc-img">';
-          out += '<svg viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid slice" class="qhc-svg">';
-          out += '<defs><radialGradient id="qg' + q.id + '" cx="50%" cy="50%" r="65%">';
-          out += '<stop offset="0%" stop-color="hsl(260,42%,26%)"/>';
-          out += '<stop offset="100%" stop-color="hsl(260,32%,11%)"/>';
-          out += '</radialGradient></defs>';
-          out += '<rect width="200" height="110" fill="url(#qg' + q.id + ')"/>';
-          out += '<circle cx="100" cy="55" r="34" fill="none" stroke="hsl(270,58%,60%)" stroke-width="1.4" opacity="0.45"/>';
-          out += '<circle cx="100" cy="55" r="18" fill="hsl(265,52%,34%)" opacity="0.35"/>';
-          out += '<polygon points="100,30 122,68 78,68" fill="none" stroke="hsl(280,62%,66%)" stroke-width="1.1" opacity="0.5"/>';
-          out += '<line x1="10" y1="55" x2="60" y2="55" stroke="hsl(260,38%,55%)" stroke-width="0.8" opacity="0.4"/>';
-          out += '<line x1="140" y1="55" x2="190" y2="55" stroke="hsl(260,38%,55%)" stroke-width="0.8" opacity="0.4"/>';
-          out += '<circle cx="100" cy="55" r="4" fill="hsl(270,70%,70%)" opacity="0.65"/>';
-          out += '</svg>';
-          // Progress ring or done badge
-          if (done) {
-            out += '<span class="qhc-done-badge">&#10003;</span>';
-          } else if (pct > 0) {
-            out += '<div class="qhc-progress-ring" style="--pct:' + pct + '" title="' + pct + '% complété"></div>';
-          }
-          out += '</div>';
-          out += '<div class="qhc-body">';
-          out += '<p class="qhc-title">' + q.title + '</p>';
-          out += '<p class="qhc-meta">' + q.question_count + ' question' + (q.question_count !== 1 ? 's' : '');
-          if (q.parts_count > 0) out += ' · ' + q.parts_count + ' partie' + (q.parts_count !== 1 ? 's' : '');
-          if (q.duration) out += ' · ~' + q.duration + ' min';
-          out += '</p>';
-          out += '</div>';
-          out += '<div class="qhc-accent"></div>';
-          out += '</button>';
-        });
-        out += '</div></section>';
+        visible.forEach(function(q) { out += quizCard(q); });
+        if (hasMore && viewAllUrl) {
+          out += '<a href="' + viewAllUrl + '" class="qhc-see-all">Tout voir<br><span>' + list.length + '</span></a>';
+        }
+        out += '</div>';
+        out += '<h2 class="quiz-hub-strip-title">' + title + '</h2>';
+        out += '</section>';
         return out;
       }
     %>
     <%- quizStrip('Mis en avant', featured) %>
     <%- quizStrip('Nouveaux quizz', newest) %>
-    <%- quizStrip('Mis à jour', updated) %>
     <%- quizStrip('Non encore complétés', notDone) %>
     <%- quizStrip('Quizz terminés', done) %>
 
-    <% if (!featured.length && !newest.length && !updated.length && !notDone.length && !done.length) { %>
+    <% if (!featured.length && !newest.length && !notDone.length && !done.length) { %>
       <p class="quiz-hub-empty">Aucun quizz disponible pour le moment.</p>
+    <% } else if (all.length > 0) { %>
+      <div class="quiz-hub-all-wrap">
+        <a href="/quizz/tous" class="quiz-hub-all-btn">Tous les quizz</a>
+      </div>
     <% } %>
 
   </div>
