@@ -91,7 +91,7 @@
             <a href="/quizz/<%= quiz.id %>?step=<%= i %>"
               class="quiz-timeline-step<%= i === stepIdx ? ' quiz-timeline-step--active' : '' %><%= i < stepIdx ? ' quiz-timeline-step--done' : '' %>"
               title="<%= s.part ? s.part.title : quiz.title %>">
-              <span class="quiz-timeline-dot"><%= i < stepIdx ? '&#10003;' : _progLabel %></span>
+              <span class="quiz-timeline-dot"><%- i < stepIdx ? '&#10003;' : _progLabel %></span>
               <span class="quiz-timeline-label"><%= s.part ? s.part.title : quiz.title %></span>
             </a>
           <% }) %>
@@ -288,6 +288,7 @@
             <% } %>
 
             <%# ── Boutons Pratiqué / Intéressé ─────────────────────────── %>
+            <% if (q.type !== 'ranking' && q.type !== 'points') { %>
             <div class="quiz-q-flags">
               <button type="button"
                 class="quiz-flag-btn quiz-flag-btn--practiced<%= (flags && flags.practiced && flags.practiced[q.id]) ? ' quiz-flag-btn--on' : '' %>"
@@ -302,6 +303,7 @@
                 <span class="quiz-flag-icon">&#10024;</span> Intéressé
               </button>
             </div>
+            <% } %>
           </div>
 
         <% }) %>

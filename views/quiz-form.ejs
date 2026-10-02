@@ -97,6 +97,12 @@
           <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
           <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
         </div>
+        <div class="qea-points-total-row" style="display:none">
+          <label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total à répartir :
+            <input type="number" class="qea-points-total-input" min="2" max="200" value="10"
+              style="width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem">
+          </label>
+        </div>
         <div class="qea-options-wrap" hidden>
           <div class="qea-options-list"></div>
           <button type="button" class="qea-add-opt wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
@@ -172,6 +178,12 @@
                 <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
                 <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
               </div>
+              <div class="qea-points-total-row" style="display:none">
+                <label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total à répartir :
+                  <input type="number" class="qea-points-total-input" min="2" max="200" value="10"
+                    style="width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem">
+                </label>
+              </div>
               <div class="qea-options-wrap" hidden>
                 <div class="qea-options-list"></div>
                 <button type="button" class="qea-add-opt wf-stats-pill" style="font-size:.76rem;margin-top:.3rem">+ Option</button>
@@ -229,6 +241,12 @@
         <button type="button" class="qea-subtype-chip" data-subtype="gout">Goût</button>
         <button type="button" class="qea-subtype-chip" data-subtype="pratique">Pratique</button>
         <button type="button" class="qea-subtype-chip" data-subtype="excitation">Excitation</button>
+      </div>
+      <div id="qe-edit-points-total-row" style="display:none">
+        <label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total à répartir :
+          <input id="qe-edit-points-total" type="number" min="2" max="200" value="10"
+            style="width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem">
+        </label>
       </div>
       <div id="qe-edit-opts-wrap">
         <div id="qe-edit-opts-list"></div>
@@ -320,6 +338,12 @@
           chip.classList.toggle('qea-subtype-chip--active', chip.dataset.subtype === currentSubtype);
         });
       }
+      if (editPointsTotalRow) {
+        editPointsTotalRow.style.display = (currentType === 'points') ? '' : 'none';
+        if (editPointsTotalInput && currentType === 'points') {
+          editPointsTotalInput.value = parseInt(currentSubtype, 10) || 10;
+        }
+      }
 
       // Options
       editOptsList.innerHTML = '';
@@ -357,6 +381,8 @@
     var currentEditType = 'gradient';
     var currentEditSubtype = '';
     var editSubtypeRow = document.getElementById('qe-edit-subtype-row');
+    var editPointsTotalRow = document.getElementById('qe-edit-points-total-row');
+    var editPointsTotalInput = document.getElementById('qe-edit-points-total');
     Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(chip) {
       chip.addEventListener('click', function() {
         Array.from(editTypeRow.querySelectorAll('.quiz-type-chip')).forEach(function(c) { c.classList.remove('quiz-type-chip--active'); });
@@ -364,6 +390,7 @@
         currentEditType = chip.dataset.type;
         editOptsWrap.style.display = (currentEditType === 'gradient') ? 'none' : '';
         if (editSubtypeRow) editSubtypeRow.style.display = (currentEditType === 'gradient') ? '' : 'none';
+        if (editPointsTotalRow) editPointsTotalRow.style.display = (currentEditType === 'points') ? '' : 'none';
       });
     });
     if (editSubtypeRow) {
@@ -396,7 +423,7 @@
       fetch('/quizz/' + quizId + '/questions/' + editingQid + '/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal, tendency: currentEditTendency || null, subtype: currentEditSubtype || null })
+        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal, tendency: currentEditTendency || null, subtype: currentEditType === 'points' ? (editPointsTotalInput ? (editPointsTotalInput.value || '10') : '10') : (currentEditSubtype || null) })
       }).then(function(r) { return r.json(); }).then(function(d) {
         if (!d.ok) return;
         // Mettre à jour le DOM de la question
@@ -610,6 +637,8 @@
       var tendencyChips = formEl.querySelectorAll('.qe-tendency-chip');
       var subtypeRowEl = formEl.querySelector('.qea-gradient-subtype');
       var subtypeChips = subtypeRowEl ? subtypeRowEl.querySelectorAll('.qea-subtype-chip') : [];
+      var pointsTotalRowEl = formEl.querySelector('.qea-points-total-row');
+      var pointsTotalInput = formEl.querySelector('.qea-points-total-input');
       var currentType = 'gradient';
       var currentTendency = '';
       var currentSubtype = '';
@@ -621,6 +650,7 @@
           currentType = chip.dataset.type;
           optsWrap.hidden = (currentType === 'gradient');
           if (subtypeRowEl) subtypeRowEl.style.display = (currentType === 'gradient') ? '' : 'none';
+          if (pointsTotalRowEl) pointsTotalRowEl.style.display = (currentType === 'points') ? '' : 'none';
         });
       });
 
@@ -668,6 +698,7 @@
           subtypeChips.forEach(function(c) { c.classList.toggle('qea-subtype-chip--active', c.dataset.subtype === ''); });
           subtypeRowEl.style.display = '';
         }
+        if (pointsTotalRowEl) { pointsTotalRowEl.style.display = 'none'; if (pointsTotalInput) pointsTotalInput.value = '10'; }
         resetTendencyChips();
       });
 
@@ -688,7 +719,7 @@
         fetch('/quizz/' + quizId + '/questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId, has_sides: formEl.querySelector('.qea-sides-chk').checked ? 1 : 0, tendency: currentTendency || null, subtype: currentSubtype || null })
+          body: JSON.stringify({ text: text, type: currentType, options: options, part_id: partId, has_sides: formEl.querySelector('.qea-sides-chk').checked ? 1 : 0, tendency: currentTendency || null, subtype: currentType === 'points' ? (pointsTotalInput ? (pointsTotalInput.value || '10') : '10') : (currentSubtype || null) })
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
@@ -708,6 +739,7 @@
           if (subtypeRowEl) subtypeRowEl.style.display = '';
           subtypeChips.forEach(function(c) { c.classList.toggle('qea-subtype-chip--active', c.dataset.subtype === ''); });
           currentSubtype = '';
+          if (pointsTotalRowEl) { pointsTotalRowEl.style.display = 'none'; if (pointsTotalInput) pointsTotalInput.value = '10'; }
           formEl.querySelector('.qea-sides-chk').checked = false;
           resetTendencyChips();
           if (keepOpen) {
@@ -919,6 +951,11 @@
         subtypeRow.appendChild(btn);
       });
 
+      var ptRow = document.createElement('div');
+      ptRow.className = 'qea-points-total-row';
+      ptRow.style.display = 'none';
+      ptRow.innerHTML = '<label style="font-size:.8rem;color:rgba(255,255,255,.7)">Total à répartir : <input type="number" class="qea-points-total-input" min="2" max="200" value="10" style="width:4.5rem;font-size:.82rem;padding:.2rem .4rem;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:6px;margin-left:.3rem"></label>';
+
       var optsWrap = document.createElement('div');
       optsWrap.className = 'qea-options-wrap';
       optsWrap.hidden = true;
@@ -949,6 +986,7 @@
       div.appendChild(ta);
       div.appendChild(typeRow);
       div.appendChild(subtypeRow);
+      div.appendChild(ptRow);
       div.appendChild(optsWrap);
       div.appendChild(actions);
       return div;
