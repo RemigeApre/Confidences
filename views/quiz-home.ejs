@@ -16,7 +16,28 @@
     </div>
 
     <div class="wiki-sidebar-body">
-      <%# Filtres à venir %>
+
+      <details class="wiki-subpanel-details" open>
+        <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+        <div class="wiki-sidebar-filters">
+
+          <div class="wiki-filter-section">
+            <p class="wiki-filter-label">Catégorie</p>
+            <div class="quiz-cat-filter" id="quiz-cat-filter">
+              <button type="button" class="tag-chip quiz-cat-chip quiz-cat-chip--fondements" data-cat="fondements">Fondements</button>
+              <button type="button" class="tag-chip quiz-cat-chip quiz-cat-chip--fantasmes" data-cat="fantasmes">Fantasmes</button>
+              <button type="button" class="tag-chip quiz-cat-chip quiz-cat-chip--pornographie" data-cat="pornographie">Pornographie</button>
+              <button type="button" class="tag-chip quiz-cat-chip quiz-cat-chip--ultra" data-cat="ultra">Ultra</button>
+            </div>
+          </div>
+
+          <div class="wiki-filter-section wiki-filter-bottom-actions">
+            <button type="button" id="quiz-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">Réinitialiser les filtres</button>
+          </div>
+
+        </div>
+      </details>
+
     </div>
   </aside>
 
@@ -85,13 +106,14 @@
         var visible = list.slice(0, 10);
         var hasMore = list.length > 10;
         var out = '<section class="quiz-hub-strip">';
+        out += '<h2 class="quiz-hub-strip-title">' + title + '</h2>';
         out += '<div class="quiz-hub-cards">';
         visible.forEach(function(q) { out += quizCard(q); });
         if (hasMore && viewAllUrl) {
           out += '<a href="' + viewAllUrl + '" class="qhc-see-all">Tout voir<br><span>' + list.length + '</span></a>';
         }
         out += '</div>';
-        out += '<h2 class="quiz-hub-strip-title">' + title + '</h2>';
+        out += '<div class="quiz-hub-strip-sep"></div>';
         out += '</section>';
         return out;
       }
@@ -224,6 +246,51 @@
     closeBtn.addEventListener('click', closePopup);
     overlay.addEventListener('click', closePopup);
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !modal.hidden) closePopup(); });
+  })();
+  </script>
+
+  <script>
+  // ── Filtre catégories quizz ────────────────────────────────────────────────
+  (function() {
+    var activeCats = new Set();
+
+    document.querySelectorAll('.quiz-cat-chip').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var cat = btn.dataset.cat;
+        if (activeCats.has(cat)) {
+          activeCats.delete(cat);
+          btn.classList.remove('active');
+        } else {
+          activeCats.add(cat);
+          btn.classList.add('active');
+        }
+        applyFilter();
+      });
+    });
+
+    document.getElementById('quiz-reset-filters').addEventListener('click', function() {
+      activeCats.clear();
+      document.querySelectorAll('.quiz-cat-chip').forEach(function(b) { b.classList.remove('active'); });
+      applyFilter();
+    });
+
+    function applyFilter() {
+      // Aucun filtre actif = tout afficher
+      document.querySelectorAll('.qhc').forEach(function(card) {
+        if (!activeCats.size) {
+          card.hidden = false;
+        } else {
+          var cat = card.className.match(/qhc--cat-(\S+)/);
+          cat = cat ? cat[1] : 'fondements';
+          card.hidden = !activeCats.has(cat);
+        }
+      });
+      // Masquer les strips entièrement vides
+      document.querySelectorAll('.quiz-hub-strip').forEach(function(strip) {
+        var visible = Array.from(strip.querySelectorAll('.qhc')).some(function(c) { return !c.hidden; });
+        strip.hidden = !visible;
+      });
+    }
   })();
   </script>
 
