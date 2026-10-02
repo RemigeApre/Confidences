@@ -3303,9 +3303,10 @@ function sellUnlock(userId, unlockId) {
 function sellCharmUnlock(userId, unlockId) {
   const row = db.prepare("SELECT id, ref_id, rarity FROM user_unlocks WHERE id = ? AND user_id = ? AND item_type = 'charm'").get(unlockId, userId);
   if (!row) return { ok: false, error: 'not_found' };
+  const charm = db.prepare("SELECT key FROM charms WHERE id = ?").get(row.ref_id);
+  if (charm && charm.key === 'star') return { ok: false, error: 'not_sellable' };
   const coins = RARITY_SELL_PRICE[row.rarity] || 1;
   db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(row.id);
-  const charm = db.prepare("SELECT key FROM charms WHERE id = ?").get(row.ref_id);
   if (charm) {
     db.prepare("UPDATE users SET coins = coins + ?, rating_charm = CASE WHEN rating_charm = ? THEN 'star' ELSE rating_charm END WHERE id = ?").run(coins, charm.key, userId);
   } else {

@@ -16426,6 +16426,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   font-size: .72rem;
 }
 .coffre-btn--sell-multi:hover { background: hsl(0,70%,35%); border-color: hsl(0,70%,35%); }
+.coffre-btn--sell-inline {
+  flex: none; padding: .2rem .5rem; font-size: .7rem;
+  border-color: hsl(0,70%,42%); color: #fff; background: hsl(0,70%,42%);
+  margin-top: .3rem; width: 100%;
+}
+.coffre-btn--sell-inline:hover:not(:disabled) { background: hsl(0,70%,50%); border-color: hsl(0,70%,50%); }
+.coffre-btn--sell-inline:disabled { opacity: .5; cursor: default; }
 
 /* ── Modal de vente multi-sélection ── */
 .coffre-sell-backdrop {
@@ -19637,7 +19644,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   min-width: 80px;
   position: relative;
 }
-.coffre-theme-card:hover:not([disabled]) { border-color: hsl(240,8%,40%); background: hsl(240,8%,18%); }
+.coffre-theme-card:hover:not([disabled]):not(.coffre-theme-card--locked) { border-color: hsl(240,8%,40%); background: hsl(240,8%,18%); }
 .coffre-theme-card--active { border-color: var(--accent); background: hsl(240,8%,16%); }
 .coffre-theme-card--locked { opacity: .45; cursor: not-allowed; }
 .coffre-theme-swatch {
@@ -19673,10 +19680,28 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   gap: .75rem;
   margin-top: .5rem;
 }
-.coffre-theme-card--full {
-  flex-direction: row;
+/* Apply button inside restructured div theme cards */
+.coffre-theme-apply-btn {
+  display: flex;
   align-items: center;
+  flex: 1;
   gap: .75rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  min-width: 0;
+}
+.coffre-theme-card--full .coffre-btn--sell-inline {
+  margin-top: .5rem;
+  width: 100%;
+}
+.coffre-theme-card--full {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
   padding: .75rem 1rem;
   min-width: unset;
   text-align: left;
