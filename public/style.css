@@ -19123,16 +19123,63 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 
 /* ── Thèmes utilisateur ─────────────────────────────────────────────── */
-/* Variables de thème (--th-h = hue, --th-s = saturation) */
-[data-theme="rouge"]  { --th-h: 355; --th-s: 55%; }
-[data-theme="vert"]   { --th-h: 148; --th-s: 42%; }
-[data-theme="violet"] { --th-h: 270; --th-s: 58%; }
-[data-theme="bleu"]   { --th-h: 212; --th-s: 65%; }
-[data-theme="rose"]   { --th-h: 330; --th-s: 58%; }
+/* Chaque thème redéfinit toutes les variables de base afin que le fond,
+   le texte, les accents et les bordures s'adaptent partout sur la page. */
 
-/* Header teinté */
-[data-theme] .top-nav {
-  background-color: hsl(var(--th-h, 240) var(--th-s, 6%) 9%);
+[data-theme="rouge"] {
+  --th-h: 355; --th-s: 55%;
+  --bg:     hsl(355, 13%, 7%);
+  --fg:     hsl(355, 10%, 91%);
+  --accent: hsl(355, 60%, 58%);
+  --border: hsl(355, 22%, 19%);
+  --card:   hsl(355, 13%, 11%);
+  --muted:  hsl(355, 10%, 55%);
+}
+[data-theme="vert"] {
+  --th-h: 148; --th-s: 42%;
+  --bg:     hsl(148, 14%, 7%);
+  --fg:     hsl(148, 10%, 91%);
+  --accent: hsl(148, 48%, 50%);
+  --border: hsl(148, 20%, 19%);
+  --card:   hsl(148, 14%, 11%);
+  --muted:  hsl(148, 10%, 55%);
+}
+[data-theme="violet"] {
+  --th-h: 270; --th-s: 58%;
+  --bg:     hsl(270, 14%, 7%);
+  --fg:     hsl(270, 10%, 91%);
+  --accent: hsl(270, 62%, 65%);
+  --border: hsl(270, 24%, 21%);
+  --card:   hsl(270, 14%, 11%);
+  --muted:  hsl(270, 10%, 55%);
+}
+[data-theme="bleu"] {
+  --th-h: 212; --th-s: 65%;
+  --bg:     hsl(212, 18%, 7%);
+  --fg:     hsl(212, 10%, 91%);
+  --accent: hsl(212, 68%, 58%);
+  --border: hsl(212, 24%, 19%);
+  --card:   hsl(212, 18%, 11%);
+  --muted:  hsl(212, 10%, 55%);
+}
+[data-theme="rose"] {
+  --th-h: 330; --th-s: 58%;
+  --bg:     hsl(330, 13%, 7%);
+  --fg:     hsl(330, 10%, 91%);
+  --accent: hsl(330, 60%, 62%);
+  --border: hsl(330, 22%, 20%);
+  --card:   hsl(330, 13%, 11%);
+  --muted:  hsl(330, 10%, 55%);
+}
+[data-theme="blanc"] {
+  color-scheme: light;
+  --th-h: 240; --th-s: 5%;
+  --bg:     hsl(240, 8%, 95%);
+  --fg:     hsl(240, 8%, 12%);
+  --accent: hsl(240, 55%, 45%);
+  --border: hsl(240, 8%, 82%);
+  --card:   hsl(0, 0%, 100%);
+  --muted:  hsl(240, 5%, 45%);
 }
 
 /* Profile sidebar — surcharge le --ch-hue roleHue */
@@ -19148,18 +19195,12 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
     0 8px 24px rgba(0,0,0,0.6),
     0 2px 8px rgba(0,0,0,0.35);
 }
-
-/* Thème blanc — fond header clair */
-[data-theme="blanc"] .top-nav {
-  background-color: hsl(0 0% 94%);
-  border-bottom-color: hsl(0 0% 80%);
-}
 [data-theme="blanc"] .mobile-tabbar-home--profile {
   box-shadow:
-    0 0 0 2.5px #18181b,
-    0 0 0 4px hsl(0 0% 92%),
-    0 8px 24px rgba(0,0,0,0.6),
-    0 2px 8px rgba(0,0,0,0.35);
+    0 0 0 2.5px #e8e8ee,
+    0 0 0 4px hsl(240 8% 72%),
+    0 8px 24px rgba(0,0,0,0.15),
+    0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* ── Lootbox : révélation d'un thème ───────────────────────────────── */
