@@ -5,17 +5,12 @@
 
   <div class="profil-subpage coffre-page">
 
-    <%# ── En-tête : solde de pièces ── %>
-    <div class="coffre-header">
-      <div class="coffre-coins" id="coffre-coins">
-        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="coffre-coin-icon"><circle cx="10" cy="10" r="9" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,35%)" stroke-width="1.5"/><text x="10" y="14.5" text-anchor="middle" font-size="10" font-weight="bold" fill="hsl(44,40%,20%)">P</text></svg>
-        <span id="coffre-coins-value"><%= currentUser.coins %></span>
-        <span class="coffre-coins-label">pi&egrave;ces</span>
-      </div>
-      <% if (view) { %>
+    <span id="coffre-coins-value" hidden><%= currentUser.coins %></span>
+    <% if (view) { %>
+      <div class="coffre-header">
         <a href="/favoris/coffre" class="coffre-back-overview">&#8592; Vue d&rsquo;ensemble</a>
-      <% } %>
-    </div>
+      </div>
+    <% } %>
 
     <% if (!view) { %>
     <%# ════════════════════════════════════════════════════════════════ %>
@@ -429,7 +424,40 @@
         body: JSON.stringify({ imageId: isActive ? null : parseInt(refId) }),
       }).then(function (r) { return r.json(); }).then(function (d) {
         if (!d.ok) { alert('Erreur'); return; }
-        window.location.reload();
+        // Deactivate all cards without reloading (preserves active filter)
+        document.querySelectorAll('#coffre-unlocked-grid .coffre-item').forEach(function (c) {
+          c.classList.remove('coffre-item--active');
+          var badge = c.querySelector('.coffre-item-active-badge'); if (badge) badge.remove();
+          var cropDiv = c.querySelector('.coffre-btn--crop'); if (cropDiv) cropDiv.closest('.coffre-item-actions').remove();
+          var sb = c.querySelector('.js-set-avatar');
+          if (sb) { sb.textContent = '\u2605 Utiliser'; sb.title = 'Définir comme photo de profil'; }
+        });
+        if (!isActive) {
+          card.classList.add('coffre-item--active');
+          var imgWrap = card.querySelector('.coffre-item-img-wrap');
+          if (imgWrap) { var badge = document.createElement('div'); badge.className = 'coffre-item-active-badge'; badge.textContent = 'Photo active'; imgWrap.appendChild(badge); }
+          btn.textContent = '\u2715 Retirer'; btn.title = 'Retirer du profil';
+          var imgEl = card.querySelector('.coffre-item-img');
+          var thumbSrc = imgEl ? imgEl.src : '';
+          if (thumbSrc) {
+            var normalActions = card.querySelector('.js-item-normal-actions');
+            if (normalActions) {
+              var cropDiv = document.createElement('div'); cropDiv.className = 'coffre-item-actions';
+              var cropBtn = document.createElement('button');
+              cropBtn.className = 'coffre-btn coffre-btn--crop js-crop-edit';
+              cropBtn.dataset.refId = refId; cropBtn.dataset.thumb = thumbSrc;
+              cropBtn.title = 'Recadrer la zone affichée';
+              cropBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 1v8h8"/><path d="M1 4h8v8"/></svg> Recadrer';
+              cropDiv.appendChild(cropBtn);
+              normalActions.after(cropDiv);
+              cropBtn.addEventListener('click', function () {
+                var thumb = cropBtn.dataset.thumb; if (!thumb) return;
+                cropX = 50; cropY = 50; cropScale = 1; if (cropSlider) cropSlider.value = 100;
+                cropImg.src = thumb; applyCrop(); cropModal.style.display = 'flex'; document.body.style.overflow = 'hidden';
+              });
+            }
+          }
+        }
       });
     });
   });
