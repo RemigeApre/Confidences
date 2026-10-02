@@ -65,7 +65,7 @@
           var rootQs = questions.filter(function(q){ return !q.part_id; });
           rootQs.forEach(function(q) {
         %>
-          <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>" data-subtype="<%= q.subtype || '' %>">
+          <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>" data-subtype="<%= q.subtype || '' %>" data-wiki-link-id="<%= q.wiki_link_id || '' %>">
             <span class="qe-q-handle">&#11835;</span>
             <div class="qe-q-body">
               <p class="qe-q-text"><%= q.text %></p>
@@ -75,6 +75,7 @@
               <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
               <% if (q.tendency === 'positive') { %><span class="qe-tendency-badge qe-tendency-badge--positive" title="Tendance positive">&#9650;</span><% } %>
               <% if (q.tendency === 'negative') { %><span class="qe-tendency-badge qe-tendency-badge--negative" title="Tendance négative">&#9660;</span><% } %>
+              <% if (q.wiki_link_id) { %><span class="qe-wiki-badge" title="Lien Codex">&#63;</span><% } %>
               <% if (q.options && q.options.length) { %>
                 <div class="quiz-qitem-opts">
                   <% q.options.forEach(function(o){ %>
@@ -146,7 +147,7 @@
           <div class="qe-panel-body">
             <div class="qe-drop-zone" data-part-id="<%= part.id %>">
               <% partQs.forEach(function(q) { %>
-                <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>" data-subtype="<%= q.subtype || '' %>">
+                <div class="qe-question" draggable="true" data-qid="<%= q.id %>" data-has-sides="<%= q.has_sides ? '1' : '0' %>" data-tendency="<%= q.tendency || '' %>" data-subtype="<%= q.subtype || '' %>" data-wiki-link-id="<%= q.wiki_link_id || '' %>">
                   <span class="qe-q-handle">&#11835;</span>
                   <div class="qe-q-body">
                     <p class="qe-q-text"><%= q.text %></p>
@@ -269,6 +270,18 @@
         <label class="qe-tendency-chip qe-tendency-chip--positive" data-tendency="positive">&#9650; Positive</label>
         <label class="qe-tendency-chip qe-tendency-chip--negative" data-tendency="negative">&#9660; Négative</label>
       </div>
+      <div class="qea-wiki-link-row" style="margin-top:.6rem">
+        <label class="qea-sides-label" style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
+          <input type="checkbox" id="qe-edit-wiki-chk" />
+          <span>Lien Codex</span>
+        </label>
+        <div id="qe-edit-wiki-field" style="display:none">
+          <input type="text" id="qe-edit-wiki-search" class="wf-orce-name-input" placeholder="Rechercher une page…" autocomplete="off" style="width:100%;box-sizing:border-box;font-size:.82rem" />
+          <div id="qe-edit-wiki-results" style="display:none;background:hsl(220,14%,14%);border:1px solid rgba(255,255,255,.15);border-radius:6px;margin-top:.2rem;max-height:160px;overflow-y:auto"></div>
+          <p id="qe-edit-wiki-selected" style="font-size:.78rem;color:hsl(175,58%,52%);margin:.3rem 0 0"></p>
+        </div>
+      </div>
+      <input type="hidden" id="qe-edit-wiki-id" value="" />
       <div class="qea-actions" style="margin-top:.75rem">
         <button type="button" id="qe-edit-save" class="wf-save-btn" style="position:static">Enregistrer</button>
         <button type="button" id="qe-edit-cancel" class="wf-cancel-link">Annuler</button>
@@ -317,6 +330,44 @@
     var currentEditTendency = '';
     var editingQid    = null;
     var editingEl     = null;
+    var editWikiChk      = document.getElementById('qe-edit-wiki-chk');
+    var editWikiField    = document.getElementById('qe-edit-wiki-field');
+    var editWikiSearch   = document.getElementById('qe-edit-wiki-search');
+    var editWikiResults  = document.getElementById('qe-edit-wiki-results');
+    var editWikiSelected = document.getElementById('qe-edit-wiki-selected');
+    var editWikiId       = document.getElementById('qe-edit-wiki-id');
+    var wikiSearchTimer  = null;
+    editWikiChk.addEventListener('change', function() {
+      editWikiField.style.display = this.checked ? '' : 'none';
+      if (!this.checked) { editWikiId.value = ''; editWikiSelected.textContent = ''; editWikiSearch.value = ''; }
+    });
+    editWikiSearch.addEventListener('input', function() {
+      clearTimeout(wikiSearchTimer);
+      var q = this.value.trim();
+      if (q.length < 2) { editWikiResults.style.display = 'none'; return; }
+      wikiSearchTimer = setTimeout(function() {
+        fetch('/quizz/wiki-search?q=' + encodeURIComponent(q))
+          .then(function(r) { return r.json(); })
+          .then(function(rows) {
+            editWikiResults.innerHTML = '';
+            if (!rows.length) { editWikiResults.style.display = 'none'; return; }
+            rows.forEach(function(row) {
+              var btn = document.createElement('button');
+              btn.type = 'button';
+              btn.style.cssText = 'display:block;width:100%;text-align:left;padding:.4rem .6rem;background:none;border:none;color:inherit;cursor:pointer;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.07)';
+              btn.textContent = row.title + ' (' + row.category + ')';
+              btn.addEventListener('click', function() {
+                editWikiId.value = row.id;
+                editWikiSelected.textContent = row.title;
+                editWikiSearch.value = '';
+                editWikiResults.style.display = 'none';
+              });
+              editWikiResults.appendChild(btn);
+            });
+            editWikiResults.style.display = '';
+          });
+      }, 300);
+    });
 
     function openEditModal(qid, el) {
       editingQid = qid;
@@ -366,6 +417,16 @@
       Array.from(editTendencyRow.querySelectorAll('.qe-tendency-chip')).forEach(function(chip) {
         chip.classList.toggle('qe-tendency-chip--active', chip.dataset.tendency === currentEditTendency);
       });
+
+      // Lien Codex
+      var currentWikiId = el.dataset.wikiLinkId || '';
+      editWikiId.value = currentWikiId;
+      editWikiChk.checked = !!currentWikiId;
+      editWikiField.style.display = currentWikiId ? '' : 'none';
+      editWikiSearch.value = '';
+      editWikiResults.style.display = 'none';
+      editWikiResults.innerHTML = '';
+      editWikiSelected.textContent = currentWikiId ? '(page liée)' : '';
 
       editOverlay.hidden = false;
       editText.focus();
@@ -428,16 +489,18 @@
         options = Array.from(editOptsList.querySelectorAll('input')).map(function(i) { return i.value.trim(); }).filter(Boolean);
       }
       var hasSidesVal = document.getElementById('qe-edit-sides').checked ? 1 : 0;
+      var wikiLinkIdVal = editWikiChk.checked ? (parseInt(editWikiId.value, 10) || null) : null;
       fetch('/quizz/' + quizId + '/questions/' + editingQid + '/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal, tendency: currentEditTendency || null, subtype: currentEditType === 'points' ? (editPointsTotalInput ? (editPointsTotalInput.value || '10') : '10') : (currentEditSubtype || null) })
+        body: JSON.stringify({ text: text, type: currentEditType, options: options, has_sides: hasSidesVal, tendency: currentEditTendency || null, subtype: currentEditType === 'points' ? (editPointsTotalInput ? (editPointsTotalInput.value || '10') : '10') : (currentEditSubtype || null), wiki_link_id: wikiLinkIdVal })
       }).then(function(r) { return r.json(); }).then(function(d) {
         if (!d.ok) return;
         // Mettre à jour le DOM de la question
         editingEl.dataset.hasSides = d.question.has_sides ? '1' : '0';
         editingEl.dataset.tendency = d.question.tendency || '';
         editingEl.dataset.subtype = d.question.subtype || '';
+        editingEl.dataset.wikiLinkId = d.question.wiki_link_id ? String(d.question.wiki_link_id) : '';
         var body = editingEl.querySelector('.qe-q-body');
         body.querySelector('.qe-q-text').textContent = d.question.text;
         var badge = body.querySelector('.quiz-qitem-type');
@@ -468,6 +531,12 @@
             opts.appendChild(s);
           });
           body.appendChild(opts);
+        }
+        var existingWikiBadge = body.querySelector('.qe-wiki-badge');
+        if (existingWikiBadge) existingWikiBadge.remove();
+        if (d.question.wiki_link_id) {
+          var wb2 = document.createElement('span'); wb2.className = 'qe-wiki-badge'; wb2.title = 'Lien Codex'; wb2.textContent = '?';
+          body.appendChild(wb2);
         }
         editOverlay.hidden = true;
       });
@@ -557,6 +626,7 @@
       div.dataset.hasSides = q.has_sides ? '1' : '0';
       div.dataset.tendency = q.tendency || '';
       div.dataset.subtype = q.subtype || '';
+      div.dataset.wikiLinkId = q.wiki_link_id ? String(q.wiki_link_id) : '';
 
       var handle = document.createElement('span');
       handle.className = 'qe-q-handle';
@@ -588,6 +658,13 @@
         tb.title = q.tendency === 'positive' ? 'Tendance positive' : 'Tendance négative';
         tb.textContent = q.tendency === 'positive' ? '▲' : '▼';
         body.appendChild(tb);
+      }
+      if (q.wiki_link_id) {
+        var wb = document.createElement('span');
+        wb.className = 'qe-wiki-badge';
+        wb.title = 'Lien Codex';
+        wb.textContent = '?';
+        body.appendChild(wb);
       }
 
       if (q.options && q.options.length) {

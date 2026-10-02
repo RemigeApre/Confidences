@@ -57,6 +57,7 @@ const CATEGORIES = [
   { key: "objets",     label: "Objets",      desc: "Sex-toys, godes, liens et accessoires hors tenues.",                          hue:  28 },
   { key: "pratique",   label: "Pratiques",   desc: "Domination, BDSM, Bondage et pratiques sexuelles.",                            hue:   5 },
   { key: "fantasmes",  label: "Fantasmes",   desc: "Tout ce qui ne trouve pas de cat\u00e9gorie sp\u00e9cifique — le reste.",     hue: 330 },
+  { key: "biologie",   label: "Biologie",    desc: "Biologie reproductive humaine \u2014 anatomie, physiologie et cycles.",          hue: 350 },
 ];
 
 // "Fantaisie" est un tag libre. "autre" a été fusionné dans "fantasmes" (migration DB).

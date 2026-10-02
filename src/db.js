@@ -2517,6 +2517,9 @@ if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_answers') WHERE na
 if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE name='subtype'").get()) {
   db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN subtype TEXT DEFAULT NULL");
 }
+if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE name='wiki_link_id'").get()) {
+  db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN wiki_link_id INTEGER DEFAULT NULL");
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS ai_profiles (
@@ -2602,9 +2605,9 @@ function deleteCustomQuiz(id) {
 function getCustomQuizQuestions(quizId) {
   return db.prepare(`SELECT * FROM custom_quiz_questions WHERE quiz_id=? ORDER BY position`).all(quizId);
 }
-function addCustomQuizQuestion(quizId, text, type, options, position, partId, hasSides, tendency, subtype) {
-  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position, part_id, has_sides, tendency, subtype) VALUES (?,?,?,?,?,?,?,?,?)`)
-    .run(quizId, text, type, JSON.stringify(options || []), position || 0, partId || null, hasSides ? 1 : 0, tendency || null, subtype || null);
+function addCustomQuizQuestion(quizId, text, type, options, position, partId, hasSides, tendency, subtype, wikiLinkId) {
+  db.prepare(`INSERT INTO custom_quiz_questions (quiz_id, text, type, options, position, part_id, has_sides, tendency, subtype, wiki_link_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    .run(quizId, text, type, JSON.stringify(options || []), position || 0, partId || null, hasSides ? 1 : 0, tendency || null, subtype || null, wikiLinkId || null);
 }
 function getQuizParts(quizId) {
   return db.prepare(`SELECT * FROM custom_quiz_parts WHERE quiz_id=? ORDER BY position`).all(quizId);
@@ -2630,9 +2633,9 @@ function reorderAllQuizQuestions(quizId, sections) {
     });
   })();
 }
-function updateCustomQuizQuestion(id, text, type, options, hasSides, tendency, subtype) {
-  db.prepare(`UPDATE custom_quiz_questions SET text=?, type=?, options=?, has_sides=?, tendency=?, subtype=? WHERE id=?`)
-    .run(text, type, JSON.stringify(options || []), hasSides ? 1 : 0, tendency || null, subtype || null, id);
+function updateCustomQuizQuestion(id, text, type, options, hasSides, tendency, subtype, wikiLinkId) {
+  db.prepare(`UPDATE custom_quiz_questions SET text=?, type=?, options=?, has_sides=?, tendency=?, subtype=?, wiki_link_id=? WHERE id=?`)
+    .run(text, type, JSON.stringify(options || []), hasSides ? 1 : 0, tendency || null, subtype || null, wikiLinkId || null, id);
 }
 function deleteCustomQuizQuestion(id) {
   db.prepare(`DELETE FROM custom_quiz_questions WHERE id=?`).run(id);

@@ -249,6 +249,7 @@
               <p class="quiz-q-text"><%= q.text %></p>
               <% if (q.tendency === 'positive') { %><span class="quiz-q-tendency quiz-q-tendency--positive" title="Tendance positive (aimer)">&#9650;</span><% } %>
               <% if (q.tendency === 'negative') { %><span class="quiz-q-tendency quiz-q-tendency--negative" title="Tendance négative (ne pas aimer)">&#9660;</span><% } %>
+              <% if (q.wiki_link_id) { %><a href="/wiki/<%= q.wiki_link_id %>" target="_blank" rel="noopener" class="quiz-q-wiki-btn" title="Voir la page Codex">&#63;</a><% } %>
               <%# Croix unique pour effacer la réponse — sur la même ligne
                   que la question, juste derrière — jamais dupliquée avec un
                   bouton "changer de perspective". ── %>

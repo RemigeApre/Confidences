@@ -6,26 +6,27 @@ function buildCustomQuizRouter(config) {
   const router = express.Router();
 
   // Hub
-  router.get("/", requireUser, (req, res) => {
-    const all = db.listCustomQuizzes({ adminView: !!req.user.isAdmin });
-    const userId = req.user.id;
-    // All answers for this user
-    const userAnswers = db.db.prepare(
-      `SELECT quiz_id, answers, completed, updated_at FROM custom_quiz_answers WHERE user_id=?`
-    ).all(userId);
+  router.get("/", (req, res) => {
+    const all = db.listCustomQuizzes({ adminView: !!(req.user && req.user.isAdmin) });
+    const userId = req.user ? req.user.id : null;
     const completedIds = new Set();
     const progressMap = {};
-    userAnswers.forEach(row => {
-      if (row.completed) completedIds.add(row.quiz_id);
-      let answered = 0;
-      try { answered = Object.keys(JSON.parse(row.answers || '{}')).length; } catch {}
-      const quiz = all.find(q => q.id === row.quiz_id);
-      const total = quiz ? quiz.question_count : 0;
-      progressMap[row.quiz_id] = {
-        pct: total > 0 ? Math.round(answered / total * 100) : 0,
-        completedAt: row.completed ? row.updated_at : null
-      };
-    });
+    if (userId) {
+      const userAnswers = db.db.prepare(
+        `SELECT quiz_id, answers, completed, updated_at FROM custom_quiz_answers WHERE user_id=?`
+      ).all(userId);
+      userAnswers.forEach(row => {
+        if (row.completed) completedIds.add(row.quiz_id);
+        let answered = 0;
+        try { answered = Object.keys(JSON.parse(row.answers || '{}')).length; } catch {}
+        const quiz = all.find(q => q.id === row.quiz_id);
+        const total = quiz ? quiz.question_count : 0;
+        progressMap[row.quiz_id] = {
+          pct: total > 0 ? Math.round(answered / total * 100) : 0,
+          completedAt: row.completed ? row.updated_at : null
+        };
+      });
+    }
     const now = Math.floor(Date.now() / 1000);
     const weekAgo = now - 7 * 86400;
     const featured = all.filter(q => q.featured);
@@ -54,25 +55,27 @@ function buildCustomQuizRouter(config) {
   });
 
   // Page "tous les quizz"
-  router.get("/tous", requireUser, (req, res) => {
-    const all = db.listCustomQuizzes({ adminView: !!req.user.isAdmin });
-    const userId = req.user.id;
-    const userAnswers = db.db.prepare(
-      `SELECT quiz_id, answers, completed, updated_at FROM custom_quiz_answers WHERE user_id=?`
-    ).all(userId);
+  router.get("/tous", (req, res) => {
+    const all = db.listCustomQuizzes({ adminView: !!(req.user && req.user.isAdmin) });
+    const userId = req.user ? req.user.id : null;
     const completedIds = new Set();
     const progressMap = {};
-    userAnswers.forEach(row => {
-      if (row.completed) completedIds.add(row.quiz_id);
-      let answered = 0;
-      try { answered = Object.keys(JSON.parse(row.answers || '{}')).length; } catch {}
-      const quiz = all.find(q => q.id === row.quiz_id);
-      const total = quiz ? quiz.question_count : 0;
-      progressMap[row.quiz_id] = {
-        pct: total > 0 ? Math.round(answered / total * 100) : 0,
-        completedAt: row.completed ? row.updated_at : null
-      };
-    });
+    if (userId) {
+      const userAnswers = db.db.prepare(
+        `SELECT quiz_id, answers, completed, updated_at FROM custom_quiz_answers WHERE user_id=?`
+      ).all(userId);
+      userAnswers.forEach(row => {
+        if (row.completed) completedIds.add(row.quiz_id);
+        let answered = 0;
+        try { answered = Object.keys(JSON.parse(row.answers || '{}')).length; } catch {}
+        const quiz = all.find(q => q.id === row.quiz_id);
+        const total = quiz ? quiz.question_count : 0;
+        progressMap[row.quiz_id] = {
+          pct: total > 0 ? Math.round(answered / total * 100) : 0,
+          completedAt: row.completed ? row.updated_at : null
+        };
+      });
+    }
     res.render("quiz-tous", { config, all, completedIds, progressMap });
   });
 
@@ -142,8 +145,9 @@ function buildCustomQuizRouter(config) {
     const hasSides = req.body.has_sides ? 1 : 0;
     const tendency = ["positive", "negative"].includes(req.body.tendency) ? req.body.tendency : null;
     const subtype = req.body.subtype ? String(req.body.subtype).slice(0, 50) : null;
+    const wikiLinkId = req.body.wiki_link_id ? parseInt(req.body.wiki_link_id, 10) || null : null;
     const existing = db.getCustomQuizQuestions(quiz.id);
-    db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length, partId, hasSides, tendency, subtype);
+    db.addCustomQuizQuestion(quiz.id, text, type, options, existing.length, partId, hasSides, tendency, subtype, wikiLinkId);
     const newQs = db.getCustomQuizQuestions(quiz.id);
     newQs.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
     const added = newQs[newQs.length - 1];
@@ -157,7 +161,8 @@ function buildCustomQuizRouter(config) {
     const hasSides = req.body.has_sides ? 1 : 0;
     const tendency = ["positive", "negative"].includes(req.body.tendency) ? req.body.tendency : null;
     const subtype = req.body.subtype ? String(req.body.subtype).slice(0, 50) : null;
-    db.updateCustomQuizQuestion(req.params.qid, text, type, options, hasSides, tendency, subtype);
+    const wikiLinkId = req.body.wiki_link_id ? parseInt(req.body.wiki_link_id, 10) || null : null;
+    db.updateCustomQuizQuestion(req.params.qid, text, type, options, hasSides, tendency, subtype, wikiLinkId);
     const q = db.db.prepare("SELECT * FROM custom_quiz_questions WHERE id=?").get(req.params.qid);
     try { q.options = JSON.parse(q.options); } catch { q.options = []; }
     res.json({ ok: true, question: q });
@@ -259,17 +264,28 @@ function buildCustomQuizRouter(config) {
     return steps;
   }
 
+  // Recherche de pages Codex pour le lien question→codex (admin)
+  router.get("/wiki-search", requireAdmin, (req, res) => {
+    const q = String(req.query.q || "").trim().slice(0, 100);
+    if (!q) return res.json([]);
+    const rows = db.db.prepare(
+      `SELECT id, title, category FROM wiki_pages WHERE title LIKE ? ORDER BY title LIMIT 15`
+    ).all('%' + q + '%');
+    res.json(rows);
+  });
+
   // Prendre le quizz — étape courante via ?step=N
-  router.get("/:id", requireUser, (req, res) => {
+  router.get("/:id", (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.redirect("/quizz");
-    if (quiz.status !== 'public' && !req.user.isAdmin) return res.redirect("/quizz");
+    if (quiz.status !== 'public' && !(req.user && req.user.isAdmin)) return res.redirect("/quizz");
     const parts = db.getQuizParts(quiz.id);
     const questions = db.getCustomQuizQuestions(quiz.id);
     questions.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
-    const existing = db.getCustomQuizAnswer(quiz.id, req.user.id);
+    const userId = req.user ? req.user.id : null;
+    const existing = userId ? db.getCustomQuizAnswer(quiz.id, userId) : null;
     const answers = existing ? JSON.parse(existing.answers) : {};
-    const flags = db.getQuizFlags(quiz.id, req.user.id);
+    const flags = userId ? db.getQuizFlags(quiz.id, userId) : { practiced: {}, interested: {} };
     const steps = buildSteps(parts, questions);
     const completed = existing ? existing.completed : 0;
     if (!steps.length) {
