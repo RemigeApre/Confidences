@@ -7615,8 +7615,34 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
 
   /* Variante profil : avatar dans le bouton central */
   .mobile-tabbar-home--profile {
-    overflow: hidden;
+    overflow: visible; /* laisser l'anneau déborder */
     padding: 0;
+    /* Anneau blanc + légère ombre colorée accent sous le cercle */
+    box-shadow:
+      0 0 0 2.5px #18181b,         /* anneau sombre qui sépare de la barre */
+      0 0 0 4px rgba(255,255,255,0.85), /* anneau blanc visible */
+      0 8px 24px rgba(0,0,0,0.6),  /* ombre portée profonde */
+      0 2px 8px rgba(0,0,0,0.35);  /* ombre proche */
+  }
+  /* Contenu clipé en cercle sans couper l'anneau */
+  .mobile-tabbar-home--profile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.35); /* profondeur interne */
+    pointer-events: none;
+    z-index: 2;
+  }
+  /* Le clip est sur un pseudo-wrapper pour ne pas couper l'outline */
+  .mobile-tabbar-home--profile .profile-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .mobile-tabbar-home--profile .profile-avatar {
     width: 100%;
@@ -7625,26 +7651,10 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
     align-items: center;
     justify-content: center;
   }
-  .mobile-tabbar-home--profile .profile-avatar--img {
-    width: 100%;
-    height: 100%;
-  }
-  .mobile-tabbar-home--profile .profile-avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .mobile-tabbar-home--profile .profile-avatar--shape {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .mobile-tabbar-home--profile .profile-avatar--shape svg {
-    width: 1.9rem;
-    height: 1.9rem;
-  }
+  .mobile-tabbar-home--profile .profile-avatar--img { width: 100%; height: 100%; }
+  .mobile-tabbar-home--profile .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+  .mobile-tabbar-home--profile .profile-avatar--shape { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  .mobile-tabbar-home--profile .profile-avatar--shape svg { width: 1.9rem; height: 1.9rem; }
 
   /* Icônes désactivées (non connecté) */
   .mobile-tabbar-link--disabled {
