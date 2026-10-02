@@ -37,47 +37,57 @@
 
     <%# Coffre %>
     <% var coffrePrev = (unlocks || []).slice(0, 4); %>
-    <div class="pmd-row pmd-row--coffre">
-      <div class="pmd-row-preview">
+    <div class="pmd-card pmd-card--coffre">
+      <div class="pmd-card-content">
         <% if (coffrePrev.length) { %>
-          <% coffrePrev.forEach(function(u) { %>
-            <div class="pmd-preview-thumb">
-              <% if (u.thumb) { %>
-                <img src="<%= u.thumb %>" alt="" loading="lazy" />
-              <% } else { %>
-                <span class="pmd-preview-thumb-placeholder">&#127873;</span>
-              <% } %>
-            </div>
-          <% }); %>
+          <div class="pmd-thumbs">
+            <% coffrePrev.forEach(function(u) { %>
+              <div class="pmd-preview-thumb">
+                <% if (u.thumb) { %>
+                  <img src="<%= u.thumb %>" alt="" loading="lazy" />
+                <% } else { %>
+                  <span class="pmd-preview-thumb-placeholder">&#127873;</span>
+                <% } %>
+              </div>
+            <% }); %>
+          </div>
         <% } else { %>
-          <span class="pmd-row-empty-hint">Votre coffre est vide</span>
+          <span class="pmd-card-empty-hint">Votre coffre est vide</span>
         <% } %>
       </div>
-      <a href="/favoris/coffre" class="pmd-row-btn">Voir mon coffre</a>
+      <a href="/favoris/coffre" class="pmd-card-btn">Voir mon coffre</a>
     </div>
 
     <%# Activités %>
-    <div class="pmd-row pmd-row--activite">
-      <div class="pmd-row-preview">
-        <% var totalNotes = (notesCounts.wiki || 0) + (notesCounts.gallery || 0) + (notesCounts.bd || 0); %>
-        <% if (notesCounts.wiki > 0) { %>
-          <span class="pmd-act-chip pmd-act-chip--wiki"><%= notesCounts.wiki %> codex</span>
-        <% } %>
-        <% if (notesCounts.gallery > 0) { %>
-          <span class="pmd-act-chip pmd-act-chip--gallery"><%= notesCounts.gallery %> images</span>
-        <% } %>
-        <% if (notesCounts.bd > 0) { %>
-          <span class="pmd-act-chip pmd-act-chip--bd"><%= notesCounts.bd %> BD</span>
-        <% } %>
-        <% if (totalNotes === 0) { %>
-          <span class="pmd-row-empty-hint">Aucune activité</span>
-        <% } %>
+    <%
+      var actWiki    = notesCounts.wiki    || 0;
+      var actGallery = notesCounts.gallery || 0;
+      var actBd      = notesCounts.bd      || 0;
+    %>
+    <div class="pmd-card pmd-card--activite">
+      <div class="pmd-card-content">
+        <div class="pmd-stats">
+          <div class="pmd-stat pmd-stat--wiki">
+            <span class="pmd-stat-num"><%= actWiki %></span>
+            <span class="pmd-stat-lbl">Codex</span>
+          </div>
+          <div class="pmd-stat-sep"></div>
+          <div class="pmd-stat pmd-stat--gallery">
+            <span class="pmd-stat-num"><%= actGallery %></span>
+            <span class="pmd-stat-lbl">Images</span>
+          </div>
+          <div class="pmd-stat-sep"></div>
+          <div class="pmd-stat pmd-stat--bd">
+            <span class="pmd-stat-num"><%= actBd %></span>
+            <span class="pmd-stat-lbl">BD</span>
+          </div>
+        </div>
       </div>
-      <a href="/favoris/historique" class="pmd-row-btn">Voir mon activité</a>
+      <a href="/favoris/historique" class="pmd-card-btn">Voir mon activité</a>
     </div>
 
     <%# Gestion %>
-    <a href="/favoris/parametres" class="pmd-gestion-btn">Gestion</a>
+    <button type="button" class="pmd-gestion-btn" onclick="location.href='/favoris/parametres'">Gestion</button>
 
   </div>
 

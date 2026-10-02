@@ -18904,9 +18904,11 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
     display: flex;
     flex-direction: column;
     gap: .75rem;
-    padding: .75rem .5rem;
-    /* Hauteur calculée pour remplir l'écran sans scroller : viewport - tabbar - top-nav */
-    min-height: calc(100dvh - 4.5rem - 3.5rem);
+    padding: .75rem .75rem;
+    /* Remplit l'écran entre la top-nav et la tabbar */
+    height: calc(100dvh - 3.5rem - 4rem);
+    box-sizing: border-box;
+    overflow: hidden;
   }
   /* Sur la page profil principale, cacher les sections desktop */
   .profil-page.gallery-has-sidebar > .profil-export-gouts-block,
@@ -18914,45 +18916,46 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   .profil-page.gallery-has-sidebar > .profil-section-title,
   .profil-page.gallery-has-sidebar > .wiki-grid,
   .profil-page.gallery-has-sidebar > .profil-fav-grid { display: none; }
-  /* Garder la sidebar profil cachée sur mobile (elle est déjà sticky/positionnée) */
   .profil-page .profil-nav-sidebar { display: none; }
 
-  /* ── Lootbox dans le dashboard ── */
+  /* ── Lootbox — prend tout l'espace restant ── */
   .pmd-lootbox {
     display: flex;
     justify-content: center;
+    align-items: center;
     flex: 1;
-    max-height: 200px;
+    min-height: 0;
   }
   .pmd-lootbox-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .5rem;
+    justify-content: center;
+    gap: .6rem;
     background: hsl(36,60%,14%);
     border: 2px solid hsl(36,70%,40%);
     border-radius: 18px;
-    padding: 1rem 2.5rem;
+    padding: 1.2rem 2.5rem;
     cursor: pointer;
     transition: background .13s, transform .13s;
     width: 100%;
-    max-width: 300px;
+    height: 100%;
   }
   .pmd-lootbox-btn:active { transform: scale(.97); background: hsl(36,60%,18%); }
   .pmd-lootbox-icon {
-    width: 100px;
-    height: 80px;
+    width: 90px;
+    height: 72px;
     filter: drop-shadow(0 4px 12px rgba(0,0,0,.4));
   }
-  .pmd-lootbox-icon--empty { opacity: .4; }
+  .pmd-lootbox-icon--empty { opacity: .35; }
   .pmd-lootbox-count {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
     font-weight: 900;
     color: hsl(44,95%,65%);
     line-height: 1;
   }
   .pmd-lootbox-label {
-    font-size: .85rem;
+    font-size: .88rem;
     font-weight: 600;
     color: hsl(36,70%,70%);
   }
@@ -18961,30 +18964,34 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .5rem;
-    padding: 1rem 2.5rem;
+    justify-content: center;
+    gap: .6rem;
     width: 100%;
-    max-width: 300px;
-    opacity: .6;
+    height: 100%;
+    opacity: .5;
   }
 
-  /* ── Lignes coffre / activité ── */
-  .pmd-row {
+  /* ── Cartes coffre / activité ── */
+  .pmd-card {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: .75rem;
+    gap: .6rem;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: .7rem .85rem;
+    padding: .75rem .85rem;
   }
-  .pmd-row-preview {
+  .pmd-card-content {
+    width: 100%;
     display: flex;
-    align-items: center;
+    justify-content: center;
+  }
+  /* Vignettes coffre */
+  .pmd-thumbs {
+    display: flex;
     gap: .4rem;
-    flex: 1;
-    overflow: hidden;
-    min-width: 0;
+    justify-content: center;
   }
   .pmd-preview-thumb {
     width: 2.8rem;
@@ -18999,49 +19006,76 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   }
   .pmd-preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
   .pmd-preview-thumb-placeholder { font-size: 1.2rem; }
-  .pmd-row-empty-hint { font-size: .82rem; color: #475569; }
-  .pmd-row-btn {
-    flex-shrink: 0;
-    font-size: .8rem;
+  .pmd-card-empty-hint { font-size: .82rem; color: #475569; line-height: 2.8rem; }
+
+  /* Stats activité */
+  .pmd-stats {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+  }
+  .pmd-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .1rem;
+  }
+  .pmd-stat-num {
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .pmd-stat-lbl {
+    font-size: .7rem;
     font-weight: 600;
-    color: hsl(210,80%,70%);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #64748b;
+  }
+  .pmd-stat--wiki    .pmd-stat-num { color: hsl(252,80%,80%); }
+  .pmd-stat--gallery .pmd-stat-num { color: hsl(28,80%,72%);  }
+  .pmd-stat--bd      .pmd-stat-num { color: hsl(142,65%,62%); }
+  .pmd-stat-sep {
+    width: 1px;
+    height: 2rem;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  /* Bouton dans chaque carte */
+  .pmd-card-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: .85rem;
+    font-weight: 700;
+    color: #e2e8f0;
     text-decoration: none;
-    white-space: nowrap;
-    border: 1px solid hsl(210,60%,35%);
-    border-radius: 8px;
-    padding: .35rem .6rem;
-    background: hsl(210,40%,14%);
+    background: hsl(240,8%,18%);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: .45rem 1rem;
     transition: background .12s;
   }
-  .pmd-row-btn:active { background: hsl(210,40%,18%); }
-
-  /* Chips activité */
-  .pmd-act-chip {
-    font-size: .77rem;
-    font-weight: 600;
-    padding: .2rem .55rem;
-    border-radius: 999px;
-    white-space: nowrap;
-  }
-  .pmd-act-chip--wiki    { background: hsl(252,40%,22%); color: hsl(252,80%,82%); }
-  .pmd-act-chip--gallery { background: hsl(28,50%,20%);  color: hsl(28,80%,75%);  }
-  .pmd-act-chip--bd      { background: hsl(142,40%,18%); color: hsl(142,70%,72%); }
+  .pmd-card-btn:active { background: hsl(240,8%,24%); }
 
   /* Bouton gestion */
   .pmd-gestion-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: .8rem 1rem;
+    display: block;
+    width: 100%;
+    padding: .75rem 1rem;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 14px;
     font-size: .95rem;
     font-weight: 700;
     color: #e2e8f0;
-    text-decoration: none;
+    cursor: pointer;
     transition: background .13s;
-    letter-spacing: .03em;
+    letter-spacing: .04em;
+    text-align: center;
   }
-  .pmd-gestion-btn:active { background: var(--card-hover, #27272a); }
+  .pmd-gestion-btn:active { background: hsl(240,8%,20%); }
 }
