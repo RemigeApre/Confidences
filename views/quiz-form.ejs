@@ -279,8 +279,16 @@
       inp.value = value || '';
       var del = document.createElement('button'); del.type = 'button'; del.className = 'quiz-qitem-del'; del.style.flexShrink = '0'; del.textContent = '×';
       del.addEventListener('click', function() { row.remove(); });
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          var next = addOptRow(list, '');
+          next.querySelector('input').focus();
+        }
+      });
       row.appendChild(inp); row.appendChild(del);
       list.appendChild(row);
+      return row;
     }
 
     // ── initQuestion : tout dans la carte, pas de form séparé ────────────
