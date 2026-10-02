@@ -350,12 +350,12 @@
       }
       function doSave(cb) {
         var state = getState();
-        if (!state.text) return;
+        if (!state.text) { if (cb) cb(null); return; }
         fetch('/quizz/' + quizId + '/questions/' + qid + '/update', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(state)
         }).then(function(r) { return r.json(); }).then(function(d) {
-          if (!d.ok) return;
+          if (!d.ok) { if (cb) cb(null); return; }
           el.dataset.type = d.question.type;
           el.dataset.hasSides = d.question.has_sides ? '1' : '0';
           el.dataset.tendency = d.question.tendency || '';
@@ -366,6 +366,7 @@
           if (cb) cb(d.question);
         });
       }
+      el._doSave = doSave;
 
       // 6. Listeners auto-save
       typeSel.addEventListener('change', function() {
@@ -418,27 +419,12 @@
         else { setTimeout(function() { codexSearch.focus(); }, 50); }
       });
 
-      // Bouton sauvegarder (texte + options)
-      var footer = document.createElement('div'); footer.className = 'qe-q-footer';
-      var saveBtn = document.createElement('button'); saveBtn.type = 'button';
-      saveBtn.className = 'wf-save-btn qe-q-save-btn';
-      saveBtn.style.cssText = 'position:static;font-size:.8rem;padding:.3rem .9rem';
-      saveBtn.textContent = '✓ Sauvegarder';
-      footer.appendChild(saveBtn);
-      saveBtn.addEventListener('click', function() {
-        doSave(function() {
-          saveBtn.textContent = '✓ Sauvegardé';
-          setTimeout(function() { saveBtn.textContent = '✓ Sauvegarder'; }, 1500);
-        });
-      });
-
       // 7. Remplace badge-row, insère les blocs
       var badgeRow = el.querySelector('.qe-q-badge-row');
       if (badgeRow) badgeRow.replaceWith(controls);
       else el.appendChild(controls);
       controls.insertAdjacentElement('afterend', optsWrap);
       optsWrap.insertAdjacentElement('afterend', codexField);
-      codexField.insertAdjacentElement('afterend', footer);
 
       // 8. Suppression
       el.querySelector('.qe-q-del').addEventListener('click', function(e) {
@@ -674,6 +660,29 @@
     if (statusChk && statusText) {
       statusChk.addEventListener('change', function() { statusText.textContent = statusChk.checked ? 'Public' : 'Brouillon'; if (statusTrack) statusTrack.style.background = statusChk.checked ? 'hsl(140,50%,38%)' : ''; });
       if (statusTrack) statusTrack.style.background = statusChk.checked ? 'hsl(140,50%,38%)' : '';
+    }
+
+    // ── Enregistrer tout via le bouton du volet gauche ───────────────────
+    function saveAllQuestions(cb) {
+      var cards = Array.from(document.querySelectorAll('.qe-question'));
+      if (!cards.length) return cb();
+      var remaining = cards.length;
+      function done() { if (--remaining === 0) cb(); }
+      cards.forEach(function(card) {
+        if (card._doSave) card._doSave(done); else done();
+      });
+    }
+    var metaForm = document.getElementById('qe-meta-form');
+    if (metaForm) {
+      metaForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = metaForm.querySelector('.qe-sidebar-save-btn');
+        if (btn) { btn.disabled = true; btn.textContent = '…'; }
+        saveAllQuestions(function() {
+          if (btn) { btn.disabled = false; btn.textContent = 'Enregistrer'; }
+          metaForm.submit();
+        });
+      });
     }
 
     // ── Init ──────────────────────────────────────────────────────────────

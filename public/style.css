@@ -14142,6 +14142,12 @@ html.lq-discreet-mode img {
   transition: background .15s;
 }
 .quiz-q-wiki-btn:hover { background: hsl(200,50%,26%); }
+@media (max-width: 640px) {
+  .quiz-q-wiki-btn {
+    width: 2rem; height: 2rem; font-size: .9rem;
+    border-radius: 50%;
+  }
+}
 /* La croix "effacer ma réponse" (.quiz-sides-reset, définie plus bas) vit
    ici, sur la même ligne que la question, juste derrière le texte — pas
    alignée sur la baseline du texte comme le reste de l'en-tête. */
@@ -14419,12 +14425,6 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .qe-q-opts { margin: .25rem 0; }
 /* ── Champ Codex ── */
 .qe-q-codex-field { margin: .25rem 0; position: relative; }
-/* ── Pied de carte (bouton sauvegarder) ── */
-.qe-q-footer {
-  display: flex; justify-content: center;
-  margin-top: .35rem; padding-top: .35rem;
-  border-top: 1px solid rgba(255,255,255,.05);
-}
 /* ── Badge Codex (avant init JS) ── */
 .qe-codex-name-badge {
   display: inline-block; font-size: .72rem; padding: .1rem .45rem;
@@ -14615,7 +14615,9 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .qe-type-sel:focus,
 .qe-subtype-sel:focus,
-.qe-tendency-sel:focus { outline: none; border-color: var(--accent); }
+.qe-tendency-sel:focus { outline: none; border-color: rgba(255,255,255,.35); }
+.qe-sides-btn:focus,
+.qe-codex-btn:focus { outline: none; }
 
 /* ── Bouton toggle pill : Donner/Subir ───────────────────────────────────── */
 .qe-sides-btn {
