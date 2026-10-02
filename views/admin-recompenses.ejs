@@ -82,6 +82,12 @@
       <span style="font-size:1.1rem">&#10022;</span> Charmes
     </a>
 
+    <a href="/admin/recompenses?section=themes" style="display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:7px;text-decoration:none;font-size:.875rem;font-weight:600;transition:background .15s;<%= section==='themes' ? 'background:rgba(248,113,113,.18);color:#fca5a5' : 'color:#94a3b8' %>"
+      onmouseover="if('<%= section %>'!=='themes')this.style.background='rgba(255,255,255,.07)'"
+      onmouseout="if('<%= section %>'!=='themes')this.style.background=''">
+      <span style="font-size:1.1rem">&#127912;</span> Th&egrave;mes
+    </a>
+
     <div style="height:1px;background:rgba(255,255,255,.07);margin:.75rem .25rem"></div>
     <p style="font-size:.7rem;font-weight:700;color:#64748b;letter-spacing:.09em;text-transform:uppercase;margin:0 0 .6rem .5rem">Configuration</p>
 
@@ -157,6 +163,32 @@
         </button>
       </div>
       <% }) %>
+    </div>
+    <% } %>
+
+    <% if (section === 'themes') { %>
+    <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 .5rem;text-transform:uppercase;letter-spacing:.06em">Thèmes</h2>
+    <p style="color:#64748b;font-size:.8rem;margin:0 0 1.25rem">Thèmes de couleur obtentables en lootbox. Modifiez la rareté directement.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.65rem">
+      <% (themeDefs || []).filter(function(t) { return !t.always; }).forEach(function(t) { %>
+      <%
+        var themeColors = { rouge:'hsl(355,55%,32%)', vert:'hsl(148,42%,28%)', violet:'hsl(270,58%,32%)', bleu:'hsl(212,65%,32%)', rose:'hsl(330,58%,32%)' };
+        var swatchColor = themeColors[t.key] || '#333';
+        var rarityColor = t.rarity === 'mythic' ? '#f87171' : t.rarity === 'legendary' ? '#fbbf24' : t.rarity === 'epic' ? '#a78bfa' : t.rarity === 'rare' ? '#60a5fa' : '#94a3b8';
+        var rarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[t.rarity] || t.rarity;
+      %>
+      <div style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:.85rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.35rem">
+        <div style="width:3rem;height:3rem;border-radius:50%;background:<%= swatchColor %>;border:2px solid rgba(255,255,255,.2);margin:0 auto"></div>
+        <div style="font-size:.85rem;font-weight:700;color:#f1f5f9"><%= t.label %></div>
+        <div style="font-size:.7rem;font-weight:700;color:<%= rarityColor %>;text-transform:uppercase;letter-spacing:.05em"><%= rarityLabel %></div>
+        <select class="charm-rarity-select" data-theme-key="<%= t.key %>">
+          <option value="rare"      <%= t.rarity === 'rare'      ? 'selected' : '' %>>Rare</option>
+          <option value="epic"      <%= t.rarity === 'epic'      ? 'selected' : '' %>>Épique</option>
+          <option value="legendary" <%= t.rarity === 'legendary' ? 'selected' : '' %>>Légendaire</option>
+          <option value="mythic"    <%= t.rarity === 'mythic'    ? 'selected' : '' %>>Mythique</option>
+        </select>
+      </div>
+      <% }); %>
     </div>
     <% } %>
 
@@ -387,6 +419,18 @@
         if (statusEl) { statusEl.textContent = json.ok ? '✓' : '✗'; statusEl.style.color = json.ok ? '#4ade80' : '#f87171'; }
         setTimeout(function() { if (statusEl) statusEl.textContent = '\u00a0'; }, 1500);
       } catch (e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
+    });
+  });
+
+  // Gérer les selects de rareté de thème
+  document.querySelectorAll('.charm-rarity-select[data-theme-key]').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      var key = sel.dataset.themeKey;
+      fetch('/admin/recompenses/themes/' + key + '/rarity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rarity: sel.value }),
+      });
     });
   });
 })();

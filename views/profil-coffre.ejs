@@ -79,6 +79,31 @@
       <% } %>
     </section>
 
+    <%# ── Section thèmes ── %>
+    <section class="coffre-section">
+      <div class="coffre-section-header">
+        <h2 class="coffre-section-title">Th&egrave;mes</h2>
+      </div>
+      <div class="coffre-themes-grid">
+        <% (userThemes || []).forEach(function(t) { %>
+          <%
+            var themeColors = { rouge:'hsl(355,55%,32%)', vert:'hsl(148,42%,28%)', violet:'hsl(270,58%,32%)', bleu:'hsl(212,65%,32%)', rose:'hsl(330,58%,32%)', blanc:'hsl(0,0%,90%)', default:'hsl(240,6%,20%)' };
+            var swatchColor = themeColors[t.key] || '#333';
+          %>
+          <button type="button"
+                  class="coffre-theme-card<%= t.active ? ' coffre-theme-card--active' : '' %><%= !t.owned ? ' coffre-theme-card--locked' : '' %>"
+                  data-theme-key="<%= t.key %>"
+                  <%= !t.owned ? 'disabled' : '' %>
+                  title="<%= t.label %><%= t.active ? ' (actif)' : '' %><%= !t.owned ? ' (verrouillé)' : '' %>">
+            <span class="coffre-theme-swatch" style="background:<%= swatchColor %>"></span>
+            <span class="coffre-theme-name"><%= t.label %></span>
+            <% if (t.active) { %><span class="coffre-theme-active-dot"></span><% } %>
+            <% if (!t.owned && !t.always) { %><span class="coffre-theme-lock">&#128274;</span><% } %>
+          </button>
+        <% }); %>
+      </div>
+    </section>
+
     <%# ── Section Arcade ── %>
     <% if (currentUser.arcadeMemoryBestLevel > 0 || currentUser.wordleBestStreak > 0) { %>
     <section class="coffre-section">
@@ -630,6 +655,26 @@
         if (coinsEl) coinsEl.textContent = d.newBalance;
         window.location.reload();
       }).catch(function() { btn.disabled = false; });
+    });
+  });
+
+  // Thèmes
+  document.querySelectorAll('.coffre-theme-card:not([disabled])').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var key = btn.dataset.themeKey;
+      fetch('/favoris/coffre/set-theme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ themeKey: key }),
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (!d.ok) return;
+          document.querySelectorAll('.coffre-theme-card--active').forEach(function(c) { c.classList.remove('coffre-theme-card--active'); });
+          btn.classList.add('coffre-theme-card--active');
+          if (key === 'default') document.documentElement.removeAttribute('data-theme');
+          else document.documentElement.setAttribute('data-theme', key);
+        });
     });
   });
 })();

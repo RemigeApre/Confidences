@@ -50,6 +50,8 @@ const {
   setCharmRarity,
   grantGiftLootbox,
   listCharms,
+  THEME_DEFINITIONS,
+  setThemeRarity,
   listAllSiteTags,
   listProtagonistes,
   listAllParodies,
@@ -457,12 +459,12 @@ function buildAdminRouter(config) {
   router.get("/recompenses", requireAdmin, (req, res) => {
     const lootboxConfig = getLootboxConfig();
     const charms = listCharms();
-    const section = ['images', 'charms', 'config'].includes(req.query.section) ? req.query.section : 'images';
+    const section = ['images', 'charms', 'themes', 'config'].includes(req.query.section) ? req.query.section : 'images';
     const images = section === 'images' ? listGalleryImages().map(img => {
       const imagePaths = img.imagePaths || [];
       return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null };
     }) : [];
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images });
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -487,6 +489,11 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     const rarity = String(req.body.rarity || '');
     const ok = setCharmRarity(id, rarity);
+    res.json({ ok });
+  });
+
+  router.post("/recompenses/themes/:key/rarity", requireAdmin, express.json(), (req, res) => {
+    const ok = setThemeRarity(req.params.key, String(req.body.rarity || ''));
     res.json({ ok });
   });
 

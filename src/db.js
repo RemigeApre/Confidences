@@ -255,6 +255,8 @@ try { db.exec("ALTER TABLE users ADD COLUMN wordle_total_played INTEGER NOT NULL
 try { db.exec("ALTER TABLE users ADD COLUMN wordle_total_wins INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN memory_card_charm_id INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN memory_card_color TEXT NOT NULL DEFAULT 'default'"); } catch (_) {}
+try { db.prepare("CREATE TABLE IF NOT EXISTS user_themes (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, theme_key TEXT NOT NULL, obtained_at TEXT NOT NULL DEFAULT (datetime('now')), UNIQUE(user_id, theme_key))").run(); } catch (_) {}
+try { db.prepare("ALTER TABLE users ADD COLUMN active_theme TEXT NOT NULL DEFAULT 'default'").run(); } catch (_) {}
 db.exec(`CREATE TABLE IF NOT EXISTS user_memory_colors (
   user_id INTEGER NOT NULL,
   color_key TEXT NOT NULL,
@@ -682,6 +684,7 @@ function rowToUser(row) {
     wordleTotalWins: row.wordle_total_wins || 0,
     memoryCardCharmId: row.memory_card_charm_id || null,
     memoryCardColor: row.memory_card_color || 'default',
+    activeTheme: row.active_theme || 'default',
   };
 }
 
@@ -2777,6 +2780,57 @@ function _pickRarity() {
   return 'rare';
 }
 
+// ── Thèmes ────────────────────────────────────────────────────────────────────
+const THEME_DEFINITIONS = [
+  { key: 'default', label: 'Gris foncé',    hue: null, sat: null, always: true },
+  { key: 'blanc',   label: 'Blanc',          hue: null, sat: null, always: true },
+  { key: 'rouge',   label: 'Rouge élégant',  hue: 355,  sat: 55,   rarity: 'epic'      },
+  { key: 'vert',    label: 'Vert noble',     hue: 148,  sat: 42,   rarity: 'rare'      },
+  { key: 'violet',  label: 'Violet',         hue: 270,  sat: 58,   rarity: 'legendary' },
+  { key: 'bleu',    label: 'Bleu',           hue: 212,  sat: 65,   rarity: 'rare'      },
+  { key: 'rose',    label: 'Rose',           hue: 330,  sat: 58,   rarity: 'epic'      },
+];
+
+function getUserThemes(userId) {
+  const owned = new Set(db.prepare("SELECT theme_key FROM user_themes WHERE user_id = ?").all(userId).map(r => r.theme_key));
+  const user  = db.prepare("SELECT active_theme FROM users WHERE id = ?").get(userId);
+  const active = (user && user.active_theme) || 'default';
+  return THEME_DEFINITIONS.map(t => ({
+    ...t,
+    owned: !!t.always || owned.has(t.key),
+    active: active === t.key,
+  }));
+}
+
+function setActiveTheme(userId, key) {
+  const def = THEME_DEFINITIONS.find(t => t.key === key);
+  if (!def) return false;
+  if (!def.always) {
+    const owned = db.prepare("SELECT id FROM user_themes WHERE user_id = ? AND theme_key = ?").get(userId, key);
+    if (!owned) return false;
+  }
+  db.prepare("UPDATE users SET active_theme = ? WHERE id = ?").run(key, userId);
+  return true;
+}
+
+function grantTheme(userId, key) {
+  const def = THEME_DEFINITIONS.find(t => t.key === key);
+  if (!def || def.always) return { ok: false, error: 'invalid_key' };
+  const now = new Date().toISOString();
+  const ins = db.prepare("INSERT OR IGNORE INTO user_themes (user_id, theme_key, obtained_at) VALUES (?, ?, ?)").run(userId, key, now);
+  const isDuplicate = ins.changes === 0;
+  return { ok: true, isDuplicate, key, label: def.label, rarity: def.rarity || 'rare' };
+}
+
+function setThemeRarity(key, rarity) {
+  const VALID = ['rare', 'epic', 'legendary', 'mythic'];
+  if (!VALID.includes(rarity)) return false;
+  const def = THEME_DEFINITIONS.find(t => t.key === key);
+  if (!def || def.always) return false;
+  def.rarity = rarity;
+  return true;
+}
+
 function getLootboxCount(userId) {
   const row = db.prepare("SELECT COUNT(*) as cnt FROM user_lootboxes WHERE user_id = ? AND opened = 0").get(userId);
   return row ? row.cnt : 0;
@@ -3095,6 +3149,22 @@ function openLootbox(userId) {
       return { rewards: [{ imageId: img.id, title: img.title || '', rarity: imageRarity, thumb: imagePaths[0] || null, isDuplicate: false }], isGift: true };
     }
     return null;
+  }
+
+  // ── Lootbox thème : donne un thème aléatoire non possédé
+  if (type === 'theme') {
+    db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
+    const ownedThemes = new Set(db.prepare("SELECT theme_key FROM user_themes WHERE user_id = ?").all(userId).map(r => r.theme_key));
+    const available = THEME_DEFINITIONS.filter(t => !t.always && !ownedThemes.has(t.key));
+    if (!available.length) {
+      // Tous les thèmes possédés → coins de consolation
+      const coins = 50;
+      db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+      return { rewards: [{ isCoins: true, coins, rarity: 'rare' }] };
+    }
+    const theme = available[Math.floor(Math.random() * available.length)];
+    db.prepare("INSERT OR IGNORE INTO user_themes (user_id, theme_key, obtained_at) VALUES (?, ?, ?)").run(userId, theme.key, now);
+    return { rewards: [{ isTheme: true, themeKey: theme.key, label: theme.label, rarity: theme.rarity || 'rare', isDuplicate: false }] };
   }
 
   // ── Lootbox standard / image : 3 récompenses (images + chance joker)
@@ -3733,6 +3803,11 @@ module.exports = {
   updateWordleStreakAndStats,
   normalizeWordleWord,
   getFrenchDate,
+  getUserThemes,
+  setActiveTheme,
+  grantTheme,
+  setThemeRarity,
+  THEME_DEFINITIONS,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

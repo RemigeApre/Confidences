@@ -73,6 +73,15 @@
   var jeuCount = document.getElementById("jeu-lootbox-count");
   var jeuLabel = document.getElementById("jeu-lootbox-label");
 
+  // Récompense thème
+  var themeReveal    = document.getElementById("lootbox-theme-reveal");
+  var themeSwatch    = document.getElementById("lootbox-theme-swatch");
+  var themeLabelEl   = document.getElementById("lootbox-theme-label");
+  var themeRarityEl  = document.getElementById("lootbox-theme-rarity");
+  var themeHintEl    = document.getElementById("lootbox-theme-hint");
+  var themeApplyBtn  = document.getElementById("lootbox-theme-apply-btn");
+  var themeApplyDone = document.getElementById("lootbox-theme-apply-done");
+
   if (!overlay) return;
 
   // ── État ─────────────────────────────────────────────────────────────────────
@@ -186,6 +195,7 @@
     if (r.isJoker) { showJokerReveal(r, hasMore); return; }
     if (r.isCharm) { showCharmReveal(r, hasMore); return; }
     if (r.isCoins) { showCoinsCard(r, hasMore); return; }
+    if (r.isTheme) { showThemeReveal(r, hasMore); return; }
     showRewardCard(r, hasMore);
   }
 
@@ -391,6 +401,50 @@
     if (imgEl && !imgEl.hasAttribute("hidden") && imgEl.src) {
       openZoom(_sessionRewards.filter(function(r) { return !r.itemType; }), _sessionRewards.filter(function(r) { return !r.itemType; }).length - 1);
     }
+  });
+
+  // ── Récompense thème ─────────────────────────────────────────────────────────
+  var THEME_COLORS = { rouge: 'hsl(355,55%,32%)', vert: 'hsl(148,42%,28%)', violet: 'hsl(270,58%,32%)', bleu: 'hsl(212,65%,32%)', rose: 'hsl(330,58%,32%)', blanc: 'hsl(0,0%,90%)', default: 'hsl(240,6%,20%)' };
+  var THEME_RARITY_LABEL = { rare: 'Rare', epic: 'Épique', legendary: 'Légendaire', mythic: 'Mythique' };
+
+  function showThemeReveal(reward, hasNext) {
+    hideAll();
+    if (!themeReveal) { closeOverlay(); return; }
+    var color = THEME_COLORS[reward.themeKey] || '#333';
+    if (themeSwatch)   { themeSwatch.style.background = color; themeSwatch.setAttribute('data-rarity', reward.rarity || 'rare'); }
+    if (themeLabelEl)  themeLabelEl.textContent = reward.label || '';
+    if (themeRarityEl) themeRarityEl.textContent = THEME_RARITY_LABEL[reward.rarity] || reward.rarity || '';
+    if (themeHintEl)   { if (reward.isDuplicate) themeHintEl.removeAttribute('hidden'); else themeHintEl.setAttribute('hidden', ''); }
+    if (themeApplyBtn) { themeApplyBtn.removeAttribute('hidden'); themeApplyBtn.disabled = false; themeApplyBtn.dataset.themeKey = reward.themeKey || ''; }
+    if (themeApplyDone) themeApplyDone.setAttribute('hidden', '');
+    themeReveal.setAttribute('data-rarity', reward.rarity || 'rare');
+    themeReveal.removeAttribute('hidden');
+    if (closeBtn) closeBtn.removeAttribute('hidden');
+    if (nextBtn)  { if (hasNext) nextBtn.removeAttribute('hidden'); else nextBtn.setAttribute('hidden', ''); }
+  }
+
+  themeApplyBtn && themeApplyBtn.addEventListener('click', function () {
+    var key = themeApplyBtn.dataset.themeKey;
+    if (!key) return;
+    themeApplyBtn.disabled = true;
+    fetch('/favoris/coffre/set-theme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ themeKey: key }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          if (themeApplyBtn) themeApplyBtn.setAttribute('hidden', '');
+          if (themeApplyDone) themeApplyDone.removeAttribute('hidden');
+          // Applique le thème immédiatement sans reload
+          if (key === 'default') document.documentElement.removeAttribute('data-theme');
+          else document.documentElement.setAttribute('data-theme', key);
+        } else {
+          themeApplyBtn.disabled = false;
+        }
+      })
+      .catch(function () { themeApplyBtn.disabled = false; });
   });
 
   // ── Récompense charme ────────────────────────────────────────────────────────
@@ -705,7 +759,7 @@
   }
 
   function hideAll() {
-    [choicePanel, chest, card, batchPanel, pickChoicePanel, charmReveal, jokerReveal].forEach(function (el) {
+    [choicePanel, chest, card, batchPanel, pickChoicePanel, charmReveal, jokerReveal, themeReveal].forEach(function (el) {
       if (el) el.setAttribute("hidden", "");
     });
     if (closeBtn) closeBtn.setAttribute("hidden", "");

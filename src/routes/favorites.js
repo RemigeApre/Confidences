@@ -45,6 +45,9 @@ const {
   getLootboxCount,
   checkAndGrantActionLootbox,
   countUserFavoritesAll,
+  getUserThemes,
+  setActiveTheme,
+  THEME_DEFINITIONS,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -230,6 +233,7 @@ function buildFavoritesRouter(config) {
       RARITY_BUY_PRICE,
       RARITY_SELL_PRICE,
       CHARM_BUY_PRICE: cfgBuy,
+      userThemes: getUserThemes(req.user.id),
     });
   });
 
@@ -289,6 +293,12 @@ function buildFavoritesRouter(config) {
     if (!crop || typeof crop !== 'object') return res.json({ ok: false });
     setProfileImageCrop(req.user.id, crop);
     res.json({ ok: true });
+  });
+
+  // Applique un thème de couleur
+  router.post("/coffre/set-theme", requireUserJson, express.json(), (req, res) => {
+    const ok = setActiveTheme(req.user.id, String(req.body.themeKey || ''));
+    res.json({ ok });
   });
 
   router.get("/parametres", requireUser, (req, res) => {

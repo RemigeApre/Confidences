@@ -18913,18 +18913,13 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .profil-mobile-dash { display: none; }
 
 @media (max-width: 640px) {
-  /* Afficher le dashboard, masquer le contenu desktop du profil principal */
   .profil-mobile-dash {
     display: flex;
     flex-direction: column;
-    gap: .75rem;
-    padding: .75rem .75rem;
-    /* Remplit l'écran entre la top-nav et la tabbar */
-    height: calc(100dvh - 3.5rem - 4rem);
-    box-sizing: border-box;
-    overflow: hidden;
+    gap: .65rem;
+    padding: .5rem .75rem .75rem;
+    /* Pas de hauteur fixe : on laisse scroller si besoin */
   }
-  /* Sur la page profil principale, cacher les sections desktop */
   .profil-page.gallery-has-sidebar > .profil-export-gouts-block,
   .profil-page.gallery-has-sidebar > .profil-empty,
   .profil-page.gallery-has-sidebar > .profil-section-title,
@@ -18932,13 +18927,11 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   .profil-page.gallery-has-sidebar > .profil-fav-grid { display: none; }
   .profil-page .profil-nav-sidebar { display: none; }
 
-  /* ── Lootbox — prend tout l'espace restant ── */
+  /* Lootbox — légèrement plus grande */
   .pmd-lootbox {
     display: flex;
     justify-content: center;
     align-items: center;
-    flex: 1;
-    min-height: 0;
   }
   .pmd-lootbox-btn {
     display: flex;
@@ -18949,27 +18942,26 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
     background: hsl(36,60%,14%);
     border: 2px solid hsl(36,70%,40%);
     border-radius: 18px;
-    padding: 1.2rem 2.5rem;
+    padding: 1.1rem 2rem;
     cursor: pointer;
     transition: background .13s, transform .13s;
     width: 100%;
-    height: 100%;
   }
   .pmd-lootbox-btn:active { transform: scale(.97); background: hsl(36,60%,18%); }
   .pmd-lootbox-icon {
-    width: 90px;
-    height: 72px;
+    width: 110px;
+    height: 88px;
     filter: drop-shadow(0 4px 12px rgba(0,0,0,.4));
   }
   .pmd-lootbox-icon--empty { opacity: .35; }
   .pmd-lootbox-count {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 900;
     color: hsl(44,95%,65%);
     line-height: 1;
   }
   .pmd-lootbox-label {
-    font-size: .88rem;
+    font-size: .9rem;
     font-weight: 600;
     color: hsl(36,70%,70%);
   }
@@ -18981,46 +18973,49 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
     justify-content: center;
     gap: .6rem;
     width: 100%;
-    height: 100%;
+    padding: .75rem 0;
     opacity: .5;
   }
 
-  /* ── Cartes coffre / activité ── */
+  /* Cartes coffre / activité — colonnes : contenu en haut, bouton en bas */
   .pmd-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .6rem;
-    background: var(--card);
+    gap: .65rem;
+    background: hsl(240,8%,12%);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: .75rem .85rem;
+    padding: .85rem;
   }
-  .pmd-card-content {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-  /* Vignettes coffre */
+  .pmd-card-content { width: 100%; display: flex; justify-content: center; }
+
+  /* Vignettes coffre — vraiment grandes, défilables horizontalement */
   .pmd-thumbs {
     display: flex;
-    gap: .4rem;
-    justify-content: center;
+    gap: .5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    width: 100%;
+    padding-bottom: .1rem;
   }
+  .pmd-thumbs::-webkit-scrollbar { display: none; }
   .pmd-preview-thumb {
-    width: 2.8rem;
-    height: 2.8rem;
-    border-radius: 8px;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 10px;
     background: hsl(240,8%,18%);
     overflow: hidden;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid hsl(240,8%,26%);
   }
   .pmd-preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .pmd-preview-thumb-placeholder { font-size: 1.2rem; }
-  .pmd-card-empty-hint { font-size: .82rem; color: #475569; line-height: 2.8rem; }
+  .pmd-preview-thumb-placeholder { font-size: 1.6rem; }
+  .pmd-card-empty-hint { font-size: .82rem; color: #475569; padding: .5rem 0; }
 
   /* Stats activité */
   .pmd-stats {
@@ -19035,9 +19030,10 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
     flex-direction: column;
     align-items: center;
     gap: .1rem;
+    padding: .25rem 0;
   }
   .pmd-stat-num {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 900;
     line-height: 1;
   }
@@ -19058,38 +19054,192 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
     flex-shrink: 0;
   }
 
-  /* Bouton dans chaque carte */
+  /* Boutons dans cartes — colorés */
   .pmd-card-btn {
     display: block;
     width: 100%;
     text-align: center;
-    font-size: .85rem;
+    font-size: .88rem;
     font-weight: 700;
-    color: #e2e8f0;
     text-decoration: none;
-    background: hsl(240,8%,18%);
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    padding: .45rem 1rem;
-    transition: background .12s;
+    border-radius: 10px;
+    padding: .5rem 1rem;
+    transition: background .12s, filter .12s;
   }
-  .pmd-card-btn:active { background: hsl(240,8%,24%); }
+  .pmd-card--coffre .pmd-card-btn {
+    background: hsl(36,60%,20%);
+    border: 1px solid hsl(36,60%,40%);
+    color: hsl(36,90%,80%);
+  }
+  .pmd-card--coffre .pmd-card-btn:active { filter: brightness(1.2); }
+  .pmd-card--activite .pmd-card-btn {
+    background: hsl(212,55%,20%);
+    border: 1px solid hsl(212,55%,40%);
+    color: hsl(212,80%,80%);
+  }
+  .pmd-card--activite .pmd-card-btn:active { filter: brightness(1.2); }
 
-  /* Bouton gestion */
+  /* Bouton gestion — coloré */
   .pmd-gestion-btn {
     display: block;
     width: 100%;
-    padding: .75rem 1rem;
-    background: var(--card);
-    border: 1px solid var(--border);
+    box-sizing: border-box;
+    padding: .8rem 1rem;
+    background: hsl(270,40%,20%);
+    border: 1px solid hsl(270,50%,45%);
     border-radius: 14px;
     font-size: .95rem;
     font-weight: 700;
-    color: #e2e8f0;
+    color: hsl(270,80%,88%);
     cursor: pointer;
-    transition: background .13s;
+    transition: filter .13s;
     letter-spacing: .04em;
     text-align: center;
   }
-  .pmd-gestion-btn:active { background: hsl(240,8%,20%); }
+  .pmd-gestion-btn:active { filter: brightness(1.25); }
+}
+
+/* ── Thèmes utilisateur ─────────────────────────────────────────────── */
+/* Variables de thème (--th-h = hue, --th-s = saturation) */
+[data-theme="rouge"]  { --th-h: 355; --th-s: 55%; }
+[data-theme="vert"]   { --th-h: 148; --th-s: 42%; }
+[data-theme="violet"] { --th-h: 270; --th-s: 58%; }
+[data-theme="bleu"]   { --th-h: 212; --th-s: 65%; }
+[data-theme="rose"]   { --th-h: 330; --th-s: 58%; }
+
+/* Header teinté */
+[data-theme] .top-nav {
+  background-color: hsl(var(--th-h, 240) var(--th-s, 6%) 9%);
+}
+
+/* Profile sidebar — surcharge le --ch-hue roleHue */
+[data-theme] .profil-nav-sidebar {
+  --ch-hue: var(--th-h, 240);
+}
+
+/* Anneau avatar mobile — couleur de thème */
+[data-theme] .mobile-tabbar-home--profile {
+  box-shadow:
+    0 0 0 2.5px #18181b,
+    0 0 0 4px hsl(var(--th-h, 0) var(--th-s, 0%) 75%),
+    0 8px 24px rgba(0,0,0,0.6),
+    0 2px 8px rgba(0,0,0,0.35);
+}
+
+/* Thème blanc — fond header clair */
+[data-theme="blanc"] .top-nav {
+  background-color: hsl(0 0% 94%);
+  border-bottom-color: hsl(0 0% 80%);
+}
+[data-theme="blanc"] .mobile-tabbar-home--profile {
+  box-shadow:
+    0 0 0 2.5px #18181b,
+    0 0 0 4px hsl(0 0% 92%),
+    0 8px 24px rgba(0,0,0,0.6),
+    0 2px 8px rgba(0,0,0,0.35);
+}
+
+/* ── Lootbox : révélation d'un thème ───────────────────────────────── */
+.lootbox-theme-reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  padding: 1rem;
+  animation: lootbox-charm-pop .4s cubic-bezier(.175,.885,.32,1.275);
+}
+.lootbox-theme-reveal[hidden] { display: none; }
+.lootbox-theme-swatch {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.25);
+  box-shadow: 0 0 0 6px rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.5);
+  flex-shrink: 0;
+}
+.lootbox-theme-swatch[data-rarity="epic"]      { box-shadow: 0 0 0 6px rgba(167,139,250,.15), 0 8px 24px rgba(0,0,0,.5); border-color: hsl(270,60%,65%); }
+.lootbox-theme-swatch[data-rarity="legendary"] { box-shadow: 0 0 0 6px rgba(251,191,36,.15),  0 8px 24px rgba(0,0,0,.5); border-color: hsl(44,90%,60%);  }
+.lootbox-theme-swatch[data-rarity="mythic"]    { box-shadow: 0 0 0 6px rgba(248,113,113,.15), 0 8px 24px rgba(0,0,0,.5); border-color: hsl(0,70%,65%);   }
+.lootbox-theme-label {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  text-align: center;
+  margin: 0;
+}
+.lootbox-theme-rarity {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin: 0;
+}
+.lootbox-theme-reveal[data-rarity="rare"]      .lootbox-theme-rarity { color: #60a5fa; }
+.lootbox-theme-reveal[data-rarity="epic"]      .lootbox-theme-rarity { color: #a78bfa; }
+.lootbox-theme-reveal[data-rarity="legendary"] .lootbox-theme-rarity { color: #fbbf24; }
+.lootbox-theme-hint { font-size: .8rem; color: #94a3b8; margin: 0; }
+.lootbox-theme-apply-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: .55rem 1.4rem;
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.lootbox-theme-apply-btn:disabled { opacity: .5; }
+.lootbox-theme-apply-btn--done { background: hsl(142,60%,30%); }
+
+/* ── Coffre : grille de thèmes ──────────────────────────────────────── */
+.coffre-themes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin-top: .5rem;
+}
+.coffre-theme-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  padding: .65rem .9rem;
+  background: hsl(240,8%,14%);
+  border: 2px solid hsl(240,8%,26%);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  min-width: 80px;
+  position: relative;
+}
+.coffre-theme-card:hover:not([disabled]) { border-color: hsl(240,8%,40%); background: hsl(240,8%,18%); }
+.coffre-theme-card--active { border-color: var(--accent); background: hsl(240,8%,16%); }
+.coffre-theme-card--locked { opacity: .45; cursor: not-allowed; }
+.coffre-theme-swatch {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.2);
+  flex-shrink: 0;
+}
+.coffre-theme-name {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-align: center;
+  white-space: nowrap;
+}
+.coffre-theme-active-dot {
+  position: absolute;
+  top: .35rem;
+  right: .45rem;
+  width: .5rem;
+  height: .5rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.coffre-theme-lock {
+  font-size: .75rem;
+  opacity: .6;
 }
