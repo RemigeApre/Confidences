@@ -12237,13 +12237,14 @@ body.wiki-todo-open { overflow: hidden; }
   gap: 0.7rem;
   padding: 0.6rem 0.75rem;
   border-radius: 6px;
-  color: rgba(255,255,255,0.8);
+  border-left: 3px solid transparent;
+  color: rgba(255,255,255,0.92);
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 .profil-nav-icon {
   width: 1.2rem;
@@ -12260,13 +12261,15 @@ body.wiki-todo-open { overflow: hidden; }
   opacity: 0.6;
   font-variant-numeric: tabular-nums;
 }
-.profil-nav-link:hover,
-.profil-nav-link.active {
-  background: rgba(255,255,255,0.08);
+.profil-nav-link:hover {
+  background: rgba(255,255,255,0.07);
   color: #fff;
 }
 .profil-nav-link.active {
-  background: rgba(255,255,255,0.16);
+  background: hsl(var(--ch-hue, 240), 35%, 22%);
+  border-left-color: hsl(var(--ch-hue, 240), 65%, 60%);
+  color: #fff;
+  padding-left: calc(0.75rem - 3px);
 }
 .profil-nav-link:hover .profil-nav-count,
 .profil-nav-link.active .profil-nav-count {
@@ -16248,19 +16251,20 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   display: flex;
   align-items: center;
   gap: .5rem;
-  padding: .48rem .6rem;
+  padding: .52rem .6rem;
   border-radius: 8px;
   cursor: pointer;
-  font-size: .83rem;
-  font-weight: 600;
-  color: var(--muted, #888);
+  font-size: .97rem;
+  font-weight: 800;
+  letter-spacing: .01em;
+  color: rgba(255,255,255,.75);
   list-style: none;
   user-select: none;
   transition: color .15s, background .15s;
 }
 .profil-nav-accordion-title::-webkit-details-marker { display: none; }
-.profil-nav-accordion-title:hover { color: var(--text-1, #eee); background: rgba(255,255,255,.05); }
-.profil-nav-accordion[open] .profil-nav-accordion-title { color: var(--text-1, #eee); }
+.profil-nav-accordion-title:hover { color: #fff; background: rgba(255,255,255,.05); }
+.profil-nav-accordion[open] .profil-nav-accordion-title { color: #fff; }
 .profil-nav-chevron {
   width: 14px; height: 14px;
   margin-left: auto; flex-shrink: 0;
@@ -16271,6 +16275,17 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* Liens sub-volet indentés */
 .profil-nav-links--sub { padding-left: .6rem; margin-bottom: .25rem; }
+.profil-nav-links--sub .profil-nav-link {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: rgba(255,255,255,.9);
+}
+.profil-nav-links--sub .profil-nav-count {
+  font-size: .68rem;
+  font-weight: 500;
+  opacity: .45;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PAGE COFFRE
