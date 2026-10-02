@@ -18133,10 +18133,19 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .coffre-charm-btn:hover { background: rgba(255,255,255,.14); color: #f1f5f9; }
 .coffre-charm-btn--active { border-color: var(--charm-color, #fbbf24); color: var(--charm-color, #fbbf24); }
 
-/* ── Coffre — filtre par rareté ── */
-.coffre-filter-bar {
-  display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem;
+/* ── Coffre — filtres ── */
+.coffre-filters-group {
+  display: flex; flex-direction: column; gap: .3rem; margin-bottom: .85rem;
 }
+.coffre-filter-bar {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+}
+.coffre-filter-bar--sm .coffre-filter-btn {
+  font-size: .72rem; padding: .22rem .55rem;
+  border-color: rgba(255,255,255,.12); color: rgba(255,255,255,.55);
+}
+.coffre-filter-bar--sm .coffre-filter-btn.active { color: #f1f5f9; border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.1); }
+.coffre-item-shop-hint { font-size: .68rem; color: #475569; margin: .1rem 0 .2rem; text-align: center; }
 .coffre-filter-btn {
   border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05);
   color: rgba(255,255,255,.5); border-radius: 5px; padding: .3rem .65rem;

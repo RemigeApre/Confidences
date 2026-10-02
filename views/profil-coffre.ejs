@@ -6,11 +6,6 @@
   <div class="profil-subpage coffre-page">
 
     <span id="coffre-coins-value" hidden><%= currentUser.coins %></span>
-    <% if (view) { %>
-      <div class="coffre-header">
-        <a href="/favoris/coffre" class="coffre-back-overview">&#8592; Vue d&rsquo;ensemble</a>
-      </div>
-    <% } %>
 
     <% if (!view) { %>
     <%# ════════════════════════════════════════════════════════════════ %>
@@ -106,7 +101,7 @@
 
     <section class="coffre-section">
       <div class="coffre-section-header">
-        <h2 class="coffre-section-title">Images obtenues (<%= unlocks.length %>)</h2>
+        <h2 class="coffre-section-title">Images</h2>
         <% if (unlocks.length) { %>
           <button class="coffre-btn coffre-btn--sell-multi js-sell-multi-open" id="coffre-sell-multi-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px"><polyline points="20 12 20 22 4 22 4 12"/><polyline points="22 7 12 2 2 7"/><line x1="12" y1="22" x2="12" y2="2"/></svg>
@@ -115,103 +110,104 @@
         <% } %>
       </div>
 
-      <div class="coffre-filter-bar" id="coffre-img-filter">
-        <button class="coffre-filter-btn active" data-filter="all">Tout</button>
-        <button class="coffre-filter-btn" data-filter="common">Commun</button>
-        <button class="coffre-filter-btn" data-filter="rare">Rare</button>
-        <button class="coffre-filter-btn" data-filter="epic">&Eacute;pique</button>
-        <button class="coffre-filter-btn" data-filter="legendary">L&eacute;g.</button>
-        <button class="coffre-filter-btn" data-filter="mythic">Mythique</button>
-      </div>
-      <% if (!unlocks.length) { %>
-        <p class="coffre-empty">Ouvrez des lootboxes depuis la <a href="/jeu">page Jeu</a> pour débloquer des images.</p>
-      <% } else { %>
-        <div class="coffre-grid" id="coffre-unlocked-grid">
-          <% unlocks.forEach(function(u) { %>
-            <div class="coffre-item coffre-item--owned<%= currentUser.profileImageId === u.refId ? ' coffre-item--active' : '' %>"
-                 data-unlock-id="<%= u.id %>"
-                 data-ref-id="<%= u.refId %>"
-                 data-rarity="<%= u.rarity %>"
-                 data-sell-price="<%= RARITY_SELL_PRICE[u.rarity] || 1 %>">
-              <div class="coffre-item-img-wrap">
-                <% if (u.thumb) { %>
-                  <img src="<%= thumbUrl(u.thumb) %>" alt="<%= u.title %>" class="coffre-item-img" loading="lazy" />
-                <% } else { %>
-                  <div class="coffre-item-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                  </div>
-                <% } %>
-                <div class="coffre-item-rarity coffre-item-rarity--<%= u.rarity %>"><%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[u.rarity] || u.rarity %></div>
-                <% if (currentUser.profileImageId === u.refId) { %>
-                  <div class="coffre-item-active-badge">Photo active</div>
-                <% } %>
-                <button class="coffre-fav-btn js-fav-toggle<%= u.isFavorite ? ' coffre-fav-btn--active' : '' %>"
-                        data-unlock-id="<%= u.id %>"
-                        title="<%= u.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' %>"
-                        aria-label="<%= u.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' %>">
-                  <%= u.isFavorite ? '♥' : '♡' %>
-                </button>
-              </div>
-              <p class="coffre-item-title"><%= u.title || 'Sans titre' %></p>
-              <div class="coffre-item-actions js-item-normal-actions">
-                <button class="coffre-btn coffre-btn--avatar js-set-avatar"
-                        data-ref-id="<%= u.refId %>"
-                        title="<%= currentUser.profileImageId === u.refId ? 'Retirer du profil' : 'Définir comme photo de profil' %>">
-                  <%= currentUser.profileImageId === u.refId ? '✕ Retirer' : '★ Utiliser' %>
-                </button>
-              </div>
-              <% if (currentUser.profileImageId === u.refId) { %>
-              <div class="coffre-item-actions">
-                <button class="coffre-btn coffre-btn--crop js-crop-edit"
-                        data-ref-id="<%= u.refId %>"
-                        data-thumb="<%= u.thumb ? thumbUrl(u.thumb) : '' %>"
-                        title="Recadrer la zone affichée">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 1v8h8"/><path d="M1 4h8v8"/></svg>
-                  Recadrer
-                </button>
-              </div>
-              <% } %>
-            </div>
-          <% }) %>
+      <%# ── Filtres : rareté / possession / favoris ── %>
+      <div class="coffre-filters-group">
+        <div class="coffre-filter-bar" id="coffre-f-rarity">
+          <button class="coffre-filter-btn active" data-rarity="all">Tout</button>
+          <button class="coffre-filter-btn" data-rarity="common">Commun</button>
+          <button class="coffre-filter-btn" data-rarity="rare">Rare</button>
+          <button class="coffre-filter-btn" data-rarity="epic">&Eacute;pique</button>
+          <button class="coffre-filter-btn" data-rarity="legendary">L&eacute;g.</button>
+          <button class="coffre-filter-btn" data-rarity="mythic">Mythique</button>
         </div>
-      <% } %>
-    </section>
+        <div class="coffre-filter-bar coffre-filter-bar--sm" id="coffre-f-possession">
+          <button class="coffre-filter-btn active" data-possession="all">Tout</button>
+          <button class="coffre-filter-btn" data-possession="owned">Obtenues</button>
+          <button class="coffre-filter-btn" data-possession="shop">&Agrave; d&eacute;bloquer</button>
+        </div>
+        <div class="coffre-filter-bar coffre-filter-bar--sm" id="coffre-f-fav">
+          <button class="coffre-filter-btn active" data-favf="all">Tout</button>
+          <button class="coffre-filter-btn" data-favf="yes">&#9829; Favoris</button>
+        </div>
+      </div>
 
-    <%# ── Boutique ── %>
-    <section class="coffre-section">
-      <h2 class="coffre-section-title">
-        Ce qu&rsquo;il vous manque
-        <span class="coffre-shop-price-hint">(achat selon rareté &bull; revente&nbsp;<%= RARITY_SELL_PRICE.common %>&ndash;<%= RARITY_SELL_PRICE.mythic %>&thinsp;P)</span>
-      </h2>
-      <% if (!shopItems.length) { %>
-        <p class="coffre-empty">Vous possédez déjà toutes les images disponibles !</p>
-      <% } else { %>
-        <div class="coffre-grid coffre-grid--shop" id="coffre-shop-grid">
-          <% shopItems.forEach(function(item) { %>
-            <div class="coffre-item coffre-item--locked"
-                 data-ref-id="<%= item.id %>"
-                 data-buy-price="<%= item.buyPrice %>">
-              <div class="coffre-item-img-wrap">
-                <% if (item.thumb) { %>
-                  <img src="<%= thumbUrl(item.thumb) %>" alt="<%= item.title %>" class="coffre-item-img coffre-item-img--blurred" loading="lazy" />
-                <% } else { %>
-                  <div class="coffre-item-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
-                <% } %>
-                <div class="coffre-item-lock-overlay">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <div class="coffre-grid" id="coffre-img-grid">
+        <% unlocks.forEach(function(u) { %>
+          <div class="coffre-item coffre-item--owned<%= currentUser.profileImageId === u.refId ? ' coffre-item--active' : '' %>"
+               data-unlock-id="<%= u.id %>"
+               data-ref-id="<%= u.refId %>"
+               data-rarity="<%= u.rarity %>"
+               data-owned="1"
+               data-fav="<%= u.isFavorite ? '1' : '0' %>"
+               data-sell-price="<%= RARITY_SELL_PRICE[u.rarity] || 1 %>">
+            <div class="coffre-item-img-wrap">
+              <% if (u.thumb) { %>
+                <img src="<%= thumbUrl(u.thumb) %>" alt="<%= u.title %>" class="coffre-item-img" loading="lazy" />
+              <% } else { %>
+                <div class="coffre-item-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                 </div>
-                <div class="coffre-item-rarity coffre-item-rarity--<%= item.rarity %>"><%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[item.rarity] || item.rarity %></div>
-              </div>
-              <p class="coffre-item-title coffre-item-title--muted"><%= item.title || 'Sans titre' %></p>
-              <button class="coffre-btn coffre-btn--buy js-buy"
-                      data-ref-id="<%= item.id %>"
-                      data-price="<%= item.buyPrice %>">
-                Acheter &bull; <%= item.buyPrice %>&thinsp;P
+              <% } %>
+              <div class="coffre-item-rarity coffre-item-rarity--<%= u.rarity %>"><%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[u.rarity] || u.rarity %></div>
+              <% if (currentUser.profileImageId === u.refId) { %>
+                <div class="coffre-item-active-badge">Photo active</div>
+              <% } %>
+              <button class="coffre-fav-btn js-fav-toggle<%= u.isFavorite ? ' coffre-fav-btn--active' : '' %>"
+                      data-unlock-id="<%= u.id %>"
+                      title="<%= u.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' %>"
+                      aria-label="<%= u.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' %>">
+                <%= u.isFavorite ? '♥' : '♡' %>
               </button>
             </div>
-          <% }) %>
-        </div>
-      <% } %>
+            <p class="coffre-item-title"><%= u.title || 'Sans titre' %></p>
+            <div class="coffre-item-actions js-item-normal-actions">
+              <button class="coffre-btn coffre-btn--avatar js-set-avatar"
+                      data-ref-id="<%= u.refId %>"
+                      title="<%= currentUser.profileImageId === u.refId ? 'Retirer du profil' : 'Définir comme photo de profil' %>">
+                <%= currentUser.profileImageId === u.refId ? '✕ Retirer' : '★ Utiliser' %>
+              </button>
+            </div>
+            <% if (currentUser.profileImageId === u.refId) { %>
+            <div class="coffre-item-actions">
+              <button class="coffre-btn coffre-btn--crop js-crop-edit"
+                      data-ref-id="<%= u.refId %>"
+                      data-thumb="<%= u.thumb ? thumbUrl(u.thumb) : '' %>"
+                      title="Recadrer la zone affichée">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 1v8h8"/><path d="M1 4h8v8"/></svg>
+                Recadrer
+              </button>
+            </div>
+            <% } %>
+          </div>
+        <% }) %>
+        <% shopItems.forEach(function(item) { %>
+          <div class="coffre-item coffre-item--locked"
+               data-ref-id="<%= item.id %>"
+               data-rarity="<%= item.rarity %>"
+               data-owned="0"
+               data-fav="0"
+               data-buy-price="<%= item.buyPrice %>">
+            <div class="coffre-item-img-wrap">
+              <% if (item.thumb) { %>
+                <img src="<%= thumbUrl(item.thumb) %>" alt="<%= item.title %>" class="coffre-item-img coffre-item-img--blurred" loading="lazy" />
+              <% } else { %>
+                <div class="coffre-item-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+              <% } %>
+              <div class="coffre-item-lock-overlay">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              </div>
+              <div class="coffre-item-rarity coffre-item-rarity--<%= item.rarity %>"><%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[item.rarity] || item.rarity %></div>
+            </div>
+            <p class="coffre-item-title coffre-item-title--muted"><%= item.title || 'Sans titre' %></p>
+            <p class="coffre-item-shop-hint">revente&nbsp;<%= RARITY_SELL_PRICE.common %>&ndash;<%= RARITY_SELL_PRICE.mythic %>&thinsp;P</p>
+            <button class="coffre-btn coffre-btn--buy js-buy"
+                    data-ref-id="<%= item.id %>"
+                    data-price="<%= item.buyPrice %>">
+              Acheter &bull; <%= item.buyPrice %>&thinsp;P
+            </button>
+          </div>
+        <% }) %>
+      </div>
     </section>
 
     <% } else if (view === 'charms') { %>
@@ -424,7 +420,7 @@
       }).then(function (r) { return r.json(); }).then(function (d) {
         if (!d.ok) { alert('Erreur'); return; }
         // Deactivate all cards without reloading (preserves active filter)
-        document.querySelectorAll('#coffre-unlocked-grid .coffre-item').forEach(function (c) {
+        document.querySelectorAll('#coffre-img-grid .coffre-item').forEach(function (c) {
           c.classList.remove('coffre-item--active');
           var badge = c.querySelector('.coffre-item-active-badge'); if (badge) badge.remove();
           var cropDiv = c.querySelector('.coffre-btn--crop'); if (cropDiv) cropDiv.closest('.coffre-item-actions').remove();
@@ -482,7 +478,7 @@
 
   function buildSellGrid() {
     selected = {}; sellGrid.innerHTML = '';
-    document.querySelectorAll('#coffre-unlocked-grid .coffre-item').forEach(function(item) {
+    document.querySelectorAll('#coffre-img-grid .coffre-item[data-owned="1"]').forEach(function(item) {
       var unlockId = item.dataset.unlockId;
       var rarity   = item.dataset.rarity;
       var price    = parseInt(item.dataset.sellPrice, 10) || 1;
@@ -536,14 +532,9 @@
       if (!d.ok) { alert(d.error || 'Erreur'); confirmBtn.disabled = false; confirmBtn.textContent = 'Vendre la sélection'; return; }
       updateCoins(d.newBalance); closeModal();
       ids.forEach(function(unlockId) {
-        var card = document.querySelector('#coffre-unlocked-grid .coffre-item[data-unlock-id="' + unlockId + '"]');
+        var card = document.querySelector('#coffre-img-grid .coffre-item[data-unlock-id="' + unlockId + '"]');
         if (card) { card.style.transition = 'opacity .25s, transform .25s'; card.style.opacity = '0'; card.style.transform = 'scale(.9)'; setTimeout(function() { card.remove(); }, 270); }
       });
-      setTimeout(function() {
-        var remaining = document.querySelectorAll('#coffre-unlocked-grid .coffre-item').length;
-        var titleEl = document.querySelector('.coffre-section-title');
-        if (titleEl) titleEl.textContent = 'Images obtenues (' + remaining + ')';
-      }, 300);
     });
   });
 
@@ -582,17 +573,29 @@
     }).then(function(r) { return r.json(); }).then(function(d) { cropSaveBtn.disabled = false; if (d.ok) { closeCropModal(); window.location.reload(); } }).catch(function() { cropSaveBtn.disabled = false; });
   });
 
-  // ── Filtre par rareté — images ────────────────────────────────────────
-  var imgFilter = document.getElementById('coffre-img-filter');
-  imgFilter && imgFilter.addEventListener('click', function(e) {
-    var btn = e.target.closest('.coffre-filter-btn'); if (!btn) return;
-    imgFilter.querySelectorAll('.coffre-filter-btn').forEach(function(b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    var f = btn.dataset.filter;
-    document.querySelectorAll('#coffre-unlocked-grid .coffre-item').forEach(function(card) {
-      card.hidden = f !== 'all' && card.dataset.rarity !== f;
+  // ── Filtres images (rareté × possession × favoris) ───────────────────
+  var _fRarity = 'all', _fPossession = 'all', _fFav = 'all';
+  function applyImgFilters() {
+    document.querySelectorAll('#coffre-img-grid .coffre-item').forEach(function(card) {
+      var ok = (_fRarity === 'all' || card.dataset.rarity === _fRarity) &&
+               (_fPossession === 'all' || (_fPossession === 'owned' && card.dataset.owned === '1') || (_fPossession === 'shop' && card.dataset.owned === '0')) &&
+               (_fFav === 'all' || card.dataset.fav === '1');
+      card.hidden = !ok;
     });
-  });
+  }
+  function bindFilterBar(barId, prop, setter) {
+    var bar = document.getElementById(barId); if (!bar) return;
+    bar.addEventListener('click', function(e) {
+      var btn = e.target.closest('.coffre-filter-btn'); if (!btn) return;
+      bar.querySelectorAll('.coffre-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      setter(btn.dataset[prop]);
+      applyImgFilters();
+    });
+  }
+  bindFilterBar('coffre-f-rarity',    'rarity',     function(v) { _fRarity = v; });
+  bindFilterBar('coffre-f-possession','possession', function(v) { _fPossession = v; });
+  bindFilterBar('coffre-f-fav',       'favf',        function(v) { _fFav = v; });
 
   // ── Favori images ─────────────────────────────────────────────────────
   document.querySelectorAll('.js-fav-toggle').forEach(function(btn) {
@@ -606,6 +609,9 @@
         btn.classList.toggle('coffre-fav-btn--active', !!d.isFavorite);
         btn.textContent = d.isFavorite ? '♥' : '♡';
         btn.title = d.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris';
+        var card = btn.closest('.coffre-item');
+        if (card) card.dataset.fav = d.isFavorite ? '1' : '0';
+        applyImgFilters();
       });
     });
   });
