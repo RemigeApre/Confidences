@@ -82,6 +82,9 @@
   var themeApplyBtn  = document.getElementById("lootbox-theme-apply-btn");
   var themeApplyDone = document.getElementById("lootbox-theme-apply-done");
 
+  // Bannière cadeau externe
+  var giftSlot = document.getElementById("lootbox-gift-slot");
+
   if (!overlay) return;
 
   // ── État ─────────────────────────────────────────────────────────────────────
@@ -227,16 +230,16 @@
   }
 
   function setCardMeta(typeLabel, rarity, isGift) {
-    if (ucardTypeEl) ucardTypeEl.textContent = typeLabel;
+    var inner = ucardTypeEl && ucardTypeEl.querySelector('.lootbox-ucard-type-inner');
+    if (inner) inner.textContent = typeLabel;
+    else if (ucardTypeEl) ucardTypeEl.textContent = typeLabel;
+    if (ucardTypeEl) ucardTypeEl.setAttribute('data-type', typeLabel.toLowerCase());
     if (card) card.setAttribute('data-rarity', rarity || 'common');
     renderCardStars(rarity || 'common');
-    var gb = card && card.querySelector('.lootbox-gift-banner');
-    if (gb) gb.remove();
-    if (isGift && card) {
-      var gbb = document.createElement('div');
-      gbb.className = 'lootbox-gift-banner';
-      gbb.textContent = '\uD83C\uDF81 Cadeau sp\u00e9cial';
-      card.insertBefore(gbb, card.firstChild);
+    // Gift banner goes outside the card
+    if (giftSlot) {
+      if (isGift) giftSlot.removeAttribute('hidden');
+      else giftSlot.setAttribute('hidden', '');
     }
   }
 
@@ -845,7 +848,7 @@
   }
 
   function hideAll() {
-    [choicePanel, chest, card, batchPanel, pickChoicePanel].forEach(function (el) {
+    [choicePanel, chest, card, batchPanel, pickChoicePanel, giftSlot].forEach(function (el) {
       if (el) el.setAttribute("hidden", "");
     });
     if (closeBtn) closeBtn.setAttribute("hidden", "");

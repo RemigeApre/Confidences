@@ -17354,7 +17354,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 /* Quand le panneau batch est visible, élargir le conteneur */
 .lootbox-reveal:has(#lootbox-batch-results:not([hidden])) {
-  max-width: min(95vw, 700px);
+  max-width: min(95vw, 920px);
 }
 
 /* Coffre animé */
@@ -17615,45 +17615,12 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   animation: card-reveal .3s cubic-bezier(.22,1,.36,1) forwards;
 }
 .lootbox-batch-results[hidden] { display: none; }
-.lootbox-batch-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: .6rem;
-  width: 100%; max-height: 420px;
-  overflow-y: auto;
-  padding-right: .25rem;
-}
-/* Scrollbar discrète */
-.lootbox-batch-grid::-webkit-scrollbar { width: 4px; }
-.lootbox-batch-grid::-webkit-scrollbar-track { background: transparent; }
-.lootbox-batch-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
-
-.lootbox-batch-card {
-  border-radius: 10px; overflow: hidden;
-  background: var(--surface-2, #1a1a2e);
-  transition: transform .15s;
-}
-.lootbox-batch-card:hover { transform: scale(1.03); }
-.lootbox-batch-card--dupe { opacity: .55; }
-
-.lootbox-batch-card-img {
-  position: relative; width: 100%; aspect-ratio: 1;
-  background: var(--surface-3, #111); overflow: hidden;
-  border-radius: 10px;
-}
-.lootbox-batch-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-/* Halos rareté sur les cartes batch */
-.lootbox-batch-card-img[data-rarity="rare"]      { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--rarity-rare) 55%,transparent), 0 0 14px 3px color-mix(in srgb,var(--rarity-rare) 30%,transparent); }
-.lootbox-batch-card-img[data-rarity="epic"]      { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--rarity-epic) 55%,transparent), 0 0 18px 4px color-mix(in srgb,var(--rarity-epic) 30%,transparent); }
-.lootbox-batch-card-img[data-rarity="legendary"] { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--rarity-legendary) 65%,transparent), 0 0 24px 6px color-mix(in srgb,var(--rarity-legendary) 40%,transparent); }
-.lootbox-batch-card-img[data-rarity="mythic"]    { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--rarity-mythic) 75%,transparent), 0 0 30px 8px color-mix(in srgb,var(--rarity-mythic) 45%,transparent); animation: mythic-pulse 2s ease-in-out infinite; }
 
 .lootbox-batch-card-dupe-tag {
-  position: absolute; top: 3px; right: 3px;
-  font-size: .5rem; font-weight: 700; text-transform: uppercase;
+  position: absolute; top: 4px; right: 4px;
+  font-size: .55rem; font-weight: 700; text-transform: uppercase;
   background: rgba(0,0,0,.7); color: var(--muted, #888);
-  padding: .12rem .35rem; border-radius: 4px;
+  padding: .14rem .38rem; border-radius: 4px;
 }
 
 /* ── Zoom overlay ────────────────────────────────────────────────── */
@@ -18316,7 +18283,22 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .coffre-charm-btn--buy:hover { background: rgba(96,165,250,.18); color: #93c5fd; }
 
-/* ── Lootbox — bannière cadeau ── */
+/* ── Lootbox — bannière cadeau externe ── */
+.lootbox-ucard-gift-slot {
+  display: flex; align-items: center; justify-content: center;
+  gap: .4rem;
+  padding: .4rem 1.2rem;
+  background: linear-gradient(135deg, rgba(248,113,113,.22), rgba(248,113,113,.08));
+  border: 1px solid rgba(248,113,113,.45);
+  border-radius: 20px;
+  font-size: .8rem; font-weight: 700; letter-spacing: .05em;
+  color: #fca5a5;
+  margin-bottom: .2rem;
+  animation: gift-pulse 2s ease-in-out infinite;
+}
+.lootbox-ucard-gift-slot[hidden] { display: none; }
+
+/* ── Lootbox — bannière cadeau (legacy, kept for reference) ── */
 .lootbox-gift-banner {
   position: absolute; top: 0; left: 0; right: 0;
   background: linear-gradient(135deg, rgba(248,113,113,.25), rgba(248,113,113,.1));
@@ -18356,14 +18338,15 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .55rem;
-  width: 230px;
-  padding: .85rem .85rem 1rem;
+  gap: .5rem;
+  width: 260px;
+  padding: 0 .75rem .95rem;
   background: hsl(240,14%,9%);
   border-radius: 14px;
   border: 2px solid rgba(255,255,255,.12);
   position: relative;
   transition: border-color .3s, box-shadow .3s;
+  overflow: hidden; /* clip the type banner flush to card corners */
 }
 .lootbox-ucard[hidden] { display: none; }
 .lootbox-ucard[data-rarity="common"]    { border-color: rgba(148,163,184,.5); }
@@ -18372,17 +18355,42 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-ucard[data-rarity="legendary"] { border-color: rgba(251,191,36,.7);  box-shadow: 0 0 38px 8px rgba(251,191,36,.3); }
 .lootbox-ucard[data-rarity="mythic"]    { border-color: rgba(248,113,113,.75); box-shadow: 0 0 46px 10px rgba(248,113,113,.35); animation: mythic-pulse 2s ease-in-out infinite; }
 
+/* Type label — full-width header band, TCG style */
 .lootbox-ucard-type {
-  font-size: .65rem; font-weight: 800; text-transform: uppercase;
-  letter-spacing: .14em; color: rgba(255,255,255,.45); align-self: flex-start;
+  align-self: stretch;
+  margin: 0 -.75rem; /* bleed to card edges */
+  display: flex; align-items: center; justify-content: center;
+  padding: .7rem .6rem .6rem;
+  background: hsl(240,14%,13%);
+  position: relative;
 }
-.lootbox-ucard[data-rarity="rare"]      .lootbox-ucard-type { color: #60a5fa; }
-.lootbox-ucard[data-rarity="epic"]      .lootbox-ucard-type { color: #a78bfa; }
-.lootbox-ucard[data-rarity="legendary"] .lootbox-ucard-type { color: #fbbf24; }
-.lootbox-ucard[data-rarity="mythic"]    .lootbox-ucard-type { color: #f87171; }
+/* Slanted bottom edge — creates the "tab" break-out shape */
+.lootbox-ucard-type::after {
+  content: '';
+  position: absolute;
+  bottom: -6px; left: 0; right: 0;
+  height: 12px;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 0, 94% 100%, 6% 100%);
+}
+.lootbox-ucard-type-inner {
+  font-size: .75rem; font-weight: 900; text-transform: uppercase;
+  letter-spacing: .2em; color: rgba(255,255,255,.5);
+  position: relative; z-index: 1;
+}
+.lootbox-ucard[data-rarity="common"]    .lootbox-ucard-type { background: hsl(215,18%,14%); }
+.lootbox-ucard[data-rarity="rare"]      .lootbox-ucard-type { background: hsl(213,55%,14%); }
+.lootbox-ucard[data-rarity="epic"]      .lootbox-ucard-type { background: hsl(262,42%,14%); }
+.lootbox-ucard[data-rarity="legendary"] .lootbox-ucard-type { background: hsl(44,48%,12%);  }
+.lootbox-ucard[data-rarity="mythic"]    .lootbox-ucard-type { background: hsl(0,42%,13%);   }
+.lootbox-ucard[data-rarity="rare"]      .lootbox-ucard-type-inner { color: #60a5fa; }
+.lootbox-ucard[data-rarity="epic"]      .lootbox-ucard-type-inner { color: #a78bfa; }
+.lootbox-ucard[data-rarity="legendary"] .lootbox-ucard-type-inner { color: #fbbf24; }
+.lootbox-ucard[data-rarity="mythic"]    .lootbox-ucard-type-inner { color: #f87171; }
 
 .lootbox-ucard-visual {
   width: 100%; aspect-ratio: 1/1;
+  margin-top: .2rem;
   border-radius: 9px; overflow: hidden;
   background: hsl(240,10%,13%);
   position: relative;
@@ -18466,35 +18474,61 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 /* Animation */
 .lootbox-ucard.lootbox-card--in { animation: card-in .38s cubic-bezier(.15,1.2,.4,1) both; }
 
-/* ── Batch mini-cards (TCG style) ── */
+/* ── Batch cards — même design que la carte unitaire ── */
+.lootbox-batch-grid {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 1.1rem;
+  width: 100%;
+  max-height: 65vh; overflow-y: auto; padding: .4rem .2rem;
+}
 .lootbox-batch-card {
-  display: flex; flex-direction: column; align-items: center; gap: .3rem;
-  width: 100%; padding: .5rem .5rem .6rem;
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+  width: 260px;
+  padding: 0 .75rem .95rem;
   background: hsl(240,14%,9%);
-  border-radius: 10px;
-  border: 2px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  border: 2px solid rgba(255,255,255,.12);
+  overflow: hidden;
+  transition: transform .18s cubic-bezier(.15,1.2,.4,1), box-shadow .18s;
   cursor: default;
-  transition: transform .15s, box-shadow .15s;
 }
-.lootbox-batch-card[data-rarity="common"]    { border-color: rgba(148,163,184,.4); }
-.lootbox-batch-card[data-rarity="rare"]      { border-color: rgba(96,165,250,.55); box-shadow: 0 0 14px 2px rgba(96,165,250,.18); }
-.lootbox-batch-card[data-rarity="epic"]      { border-color: rgba(167,139,250,.6); box-shadow: 0 0 18px 3px rgba(167,139,250,.2); }
-.lootbox-batch-card[data-rarity="legendary"] { border-color: rgba(251,191,36,.65); box-shadow: 0 0 24px 5px rgba(251,191,36,.25); }
-.lootbox-batch-card[data-rarity="mythic"]    { border-color: rgba(248,113,113,.7); box-shadow: 0 0 30px 7px rgba(248,113,113,.3); animation: mythic-pulse 2s ease-in-out infinite; }
-.lootbox-batch-card:hover { transform: scale(1.04); }
+.lootbox-batch-card[data-rarity="common"]    { border-color: rgba(148,163,184,.5); }
+.lootbox-batch-card[data-rarity="rare"]      { border-color: rgba(96,165,250,.6);  box-shadow: 0 0 24px 4px rgba(96,165,250,.2); }
+.lootbox-batch-card[data-rarity="epic"]      { border-color: rgba(167,139,250,.65); box-shadow: 0 0 30px 6px rgba(167,139,250,.25); }
+.lootbox-batch-card[data-rarity="legendary"] { border-color: rgba(251,191,36,.7);  box-shadow: 0 0 38px 8px rgba(251,191,36,.3); }
+.lootbox-batch-card[data-rarity="mythic"]    { border-color: rgba(248,113,113,.75); box-shadow: 0 0 46px 10px rgba(248,113,113,.35); animation: mythic-pulse 2s ease-in-out infinite; }
+.lootbox-batch-card:hover { transform: scale(1.04) translateY(-3px); }
 
+/* Batch card type banner — same as ucard */
 .lootbox-batch-card-type {
-  font-size: .55rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
-  color: rgba(255,255,255,.35); align-self: flex-start;
+  align-self: stretch;
+  margin: 0 -.75rem;
+  display: flex; align-items: center; justify-content: center;
+  padding: .7rem .6rem .6rem;
+  background: hsl(240,14%,13%);
+  position: relative;
+  font-size: .75rem; font-weight: 900; text-transform: uppercase;
+  letter-spacing: .2em; color: rgba(255,255,255,.5);
 }
-.lootbox-batch-card[data-rarity="rare"]      .lootbox-batch-card-type { color: #60a5fa; }
-.lootbox-batch-card[data-rarity="epic"]      .lootbox-batch-card-type { color: #a78bfa; }
-.lootbox-batch-card[data-rarity="legendary"] .lootbox-batch-card-type { color: #fbbf24; }
-.lootbox-batch-card[data-rarity="mythic"]    .lootbox-batch-card-type { color: #f87171; }
+.lootbox-batch-card-type::after {
+  content: '';
+  position: absolute;
+  bottom: -6px; left: 0; right: 0;
+  height: 12px;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 0, 94% 100%, 6% 100%);
+}
+.lootbox-batch-card[data-rarity="common"]    .lootbox-batch-card-type { background: hsl(215,18%,14%); }
+.lootbox-batch-card[data-rarity="rare"]      .lootbox-batch-card-type { background: hsl(213,55%,14%); color: #60a5fa; }
+.lootbox-batch-card[data-rarity="epic"]      .lootbox-batch-card-type { background: hsl(262,42%,14%); color: #a78bfa; }
+.lootbox-batch-card[data-rarity="legendary"] .lootbox-batch-card-type { background: hsl(44,48%,12%);  color: #fbbf24; }
+.lootbox-batch-card[data-rarity="mythic"]    .lootbox-batch-card-type { background: hsl(0,42%,13%);   color: #f87171; }
 
+/* Batch visual area */
 .lootbox-batch-card-img {
   width: 100%; aspect-ratio: 1/1;
-  border-radius: 6px; overflow: hidden;
+  margin-top: .2rem;
+  border-radius: 8px; overflow: hidden;
   background: hsl(240,10%,13%);
   display: flex; align-items: center; justify-content: center;
   position: relative;
@@ -18502,18 +18536,18 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .lootbox-batch-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .lootbox-batch-card-charm {
-  font-size: 2.2rem; line-height: 1;
+  font-size: 4.5rem; line-height: 1;
   color: var(--charm-color, #94a3b8);
-  text-shadow: 0 0 20px currentColor;
+  text-shadow: 0 0 32px currentColor;
 }
-.lootbox-batch-card-theme { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: .4rem; }
-.lootbox-batch-card-theme-label { background: rgba(0,0,0,.5); color:#fff; font-size:.6rem; font-weight:700; padding:.1rem .35rem; border-radius:12px; }
-.lootbox-batch-card-joker { font-size: 1.8rem; color: hsl(48,90%,65%); }
-.lootbox-batch-card-coins-wrap { display:flex; flex-direction:column; align-items:center; gap:.2rem; }
-.lootbox-batch-card-coins-wrap .lootbox-coins-svg { width: 32px; height: 32px; }
-.lootbox-batch-card-coins-wrap .lootbox-coins-amount { font-size: 1rem; font-weight: 800; }
+.lootbox-batch-card-theme { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: .5rem; }
+.lootbox-batch-card-theme-label { background: rgba(0,0,0,.5); color:#fff; font-size:.72rem; font-weight:700; padding:.15rem .45rem; border-radius:12px; }
+.lootbox-batch-card-joker { font-size: 3.5rem; color: hsl(48,90%,65%); }
+.lootbox-batch-card-coins-wrap { display:flex; flex-direction:column; align-items:center; gap:.3rem; }
+.lootbox-batch-card-coins-wrap .lootbox-coins-svg { width: 52px; height: 52px; }
+.lootbox-batch-card-coins-wrap .lootbox-coins-amount { font-size: 1.8rem; font-weight: 800; }
 
-.lootbox-batch-card-stars { display:flex; gap:.18rem; }
+.lootbox-batch-card-stars { display:flex; gap:.28rem; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ARCADE

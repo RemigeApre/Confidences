@@ -37,6 +37,7 @@ function buildLootboxRouter(config) {
         if (r.isJoker) return { isJoker: true, jokerType: r.jokerType, rarity: r.rarity, isDuplicate: !!r.isDuplicate };
         if (r.isCharm) return { isCharm: true, charmKey: r.charmKey || null, label: r.label || null, symbol: r.symbol || null, rarity: r.rarity || 'legendary', isDuplicate: !!r.isDuplicate, coins: r.coins || 0 };
         if (r.isCoins) return { isCoins: true, coins: r.coins || 0, rarity: r.rarity || 'common' };
+        if (r.isTheme) return { isTheme: true, themeKey: r.themeKey || null, label: r.label || null, rarity: r.rarity || 'rare', isDuplicate: !!r.isDuplicate, coins: r.coins || 0 };
         return { imageId: r.imageId, title: r.title, rarity: r.rarity, thumb: r.thumb ? thumbUrl(r.thumb) : null, isDuplicate: false };
       }),
     });
