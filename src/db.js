@@ -3112,14 +3112,11 @@ function _grantImageReward(userId, boxId, imageFromPool) {
 
 function _grantJoker(userId, boxId, jokerType, rarity) {
   const now = new Date().toISOString();
-  const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, ?, ?)").run(userId, jokerType, rarity, now);
-  const isDuplicate = ins.changes === 0;
-  if (isDuplicate) {
-    const coins = (getLootboxConfig().sellPrices[rarity]) || RARITY_SELL_PRICE[rarity] || 1;
-    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
-  }
+  // Chaque joker est une carte individuelle — ref_id = sa propre ligne pour permettre l'empilement
+  const ins = db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, ?, ?)").run(userId, jokerType, rarity, now);
+  db.prepare("UPDATE user_unlocks SET ref_id = ? WHERE id = ?").run(ins.lastInsertRowid, ins.lastInsertRowid);
   if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity=?, opened_at=? WHERE id=?").run(rarity, now, boxId);
-  return { isJoker: true, jokerType: jokerType === 'joker_image' ? 'image' : 'charm', rarity, isDuplicate };
+  return { isJoker: true, jokerType: jokerType === 'joker_image' ? 'image' : 'charm', rarity, isDuplicate: false };
 }
 
 // ── Ouverture lootbox (dispatching par type) ──────────────────────────────
@@ -3220,12 +3217,8 @@ function openLootbox(userId) {
     }
     if (giftData.type === 'joker') {
       const jokerItemType = giftData.jokerType === 'charm' ? 'joker_charm' : 'joker_image';
-      const ins = db.prepare("INSERT OR IGNORE INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, 'legendary', ?)").run(userId, jokerItemType, now);
-      if (ins.changes === 0) {
-        const coins = RARITY_SELL_PRICE['legendary'] || 10;
-        db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
-        return { rewards: [{ isCoins: true, coins, rarity: 'legendary' }], isGift: true };
-      }
+      const ins = db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, 'legendary', ?)").run(userId, jokerItemType, now);
+      db.prepare("UPDATE user_unlocks SET ref_id = ? WHERE id = ?").run(ins.lastInsertRowid, ins.lastInsertRowid);
       return { rewards: [{ isJoker: true, jokerType: giftData.jokerType === 'charm' ? 'charm' : 'image', rarity: 'legendary' }], isGift: true };
     }
     if (giftData.type === 'coins') {
