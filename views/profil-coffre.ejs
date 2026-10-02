@@ -192,7 +192,12 @@
       </div>
     </section>
     </div><%# /coffre-view-main %>
-    <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
+    <div class="coffre-gutter-slot">
+    <button class="coffre-filter-burger" aria-label="Filtres" aria-expanded="false">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:16px;height:16px;flex-shrink:0"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+      Filtres
+    </button>
+    <div class="coffre-gutter-panel">
       <div id="coffre-gutter-actions">
         <% if (currentUser.profileImageId) { %>
           <button class="coffre-btn coffre-btn--default coffre-gutter-btn js-set-avatar js-header-remove-avatar"
@@ -309,7 +314,12 @@
     </section>
     <% } %>
     </div><%# /coffre-view-main %>
-    <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
+    <div class="coffre-gutter-slot">
+    <button class="coffre-filter-burger" aria-label="Filtres" aria-expanded="false">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:16px;height:16px;flex-shrink:0"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+      Filtres
+    </button>
+    <div class="coffre-gutter-panel">
       <div class="coffre-gutter-actions" id="coffre-cf-actions">
         <button class="coffre-btn coffre-btn--default coffre-gutter-btn" id="coffre-cf-default-btn">Par d&eacute;faut</button>
       </div>
@@ -410,7 +420,12 @@
     </section>
     <% } %>
     </div><%# /coffre-view-main %>
-    <div class="coffre-gutter-slot"><div class="coffre-gutter-panel">
+    <div class="coffre-gutter-slot">
+    <button class="coffre-filter-burger" aria-label="Filtres" aria-expanded="false">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:16px;height:16px;flex-shrink:0"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+      Filtres
+    </button>
+    <div class="coffre-gutter-panel">
       <div class="coffre-gutter-actions" id="coffre-tf-actions">
         <button class="coffre-btn coffre-btn--default coffre-gutter-btn" id="coffre-tf-default-btn">Par d&eacute;faut</button>
       </div>
@@ -1102,6 +1117,15 @@
       sel.forEach(function(c) { c.style.transition = 'opacity .25s, transform .25s'; c.style.opacity = '0'; c.style.transform = 'scale(.9)'; setTimeout(function() { c.remove(); }, 270); });
       exitThemeSellMode();
     }).catch(function() { tSellBarConfirm.disabled = false; });
+  });
+
+  // ── Burger filtre mobile ────────────────────────────────────────────────
+  document.querySelectorAll('.coffre-filter-burger').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var panel = btn.nextElementSibling;
+      var open = panel.classList.toggle('coffre-gutter-panel--open');
+      btn.setAttribute('aria-expanded', String(open));
+    });
   });
 })();
 </script>

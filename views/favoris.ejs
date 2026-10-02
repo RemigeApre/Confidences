@@ -9,30 +9,27 @@
 
     <%# Lootbox %>
     <div class="pmd-lootbox">
-      <% if (lootboxCount > 0) { %>
-        <button type="button" class="pmd-lootbox-btn" id="pmd-lootbox-btn" aria-label="Ouvrir une lootbox">
-          <svg class="pmd-lootbox-icon" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect x="5" y="38" width="90" height="37" rx="6" fill="hsl(36,80%,30%)" stroke="hsl(36,70%,50%)" stroke-width="2"/>
-            <rect x="5" y="38" width="90" height="12" rx="3" fill="hsl(36,80%,40%)" stroke="hsl(36,70%,50%)" stroke-width="2"/>
-            <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="hsl(36,80%,35%)" stroke="hsl(36,70%,50%)" stroke-width="1.5"/>
-            <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="hsl(36,80%,35%)" stroke="hsl(36,70%,50%)" stroke-width="1.5"/>
-            <rect x="44" y="38" width="12" height="12" rx="2" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,40%)" stroke-width="1.5"/>
-          </svg>
-          <span class="pmd-lootbox-count"><%= lootboxCount %></span>
-          <span class="pmd-lootbox-label"><%= lootboxCount === 1 ? '1 lootbox' : lootboxCount + ' lootboxes' %></span>
-        </button>
-      <% } else { %>
-        <div class="pmd-lootbox-empty" aria-label="Aucune lootbox disponible">
-          <svg class="pmd-lootbox-icon pmd-lootbox-icon--empty" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect x="5" y="38" width="90" height="37" rx="6" fill="hsl(240,8%,18%)" stroke="hsl(240,8%,30%)" stroke-width="2"/>
-            <rect x="5" y="38" width="90" height="12" rx="3" fill="hsl(240,8%,22%)" stroke="hsl(240,8%,30%)" stroke-width="2"/>
-            <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="hsl(240,8%,20%)" stroke="hsl(240,8%,30%)" stroke-width="1.5"/>
-            <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="hsl(240,8%,20%)" stroke="hsl(240,8%,30%)" stroke-width="1.5"/>
-            <rect x="44" y="38" width="12" height="12" rx="2" fill="hsl(240,8%,26%)" stroke="hsl(240,8%,32%)" stroke-width="1.5"/>
-          </svg>
-          <span class="pmd-lootbox-label pmd-lootbox-label--empty">Aucune lootbox</span>
-        </div>
-      <% } %>
+      <button type="button" class="pmd-lootbox-btn" id="pmd-lootbox-btn" aria-label="Ouvrir une lootbox" <% if (lootboxCount === 0) { %>hidden<% } %>>
+        <svg class="pmd-lootbox-icon" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="5" y="38" width="90" height="37" rx="6" fill="hsl(36,80%,30%)" stroke="hsl(36,70%,50%)" stroke-width="2"/>
+          <rect x="5" y="38" width="90" height="12" rx="3" fill="hsl(36,80%,40%)" stroke="hsl(36,70%,50%)" stroke-width="2"/>
+          <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="hsl(36,80%,35%)" stroke="hsl(36,70%,50%)" stroke-width="1.5"/>
+          <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="hsl(36,80%,35%)" stroke="hsl(36,70%,50%)" stroke-width="1.5"/>
+          <rect x="44" y="38" width="12" height="12" rx="2" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,40%)" stroke-width="1.5"/>
+        </svg>
+        <span class="pmd-lootbox-count" id="pmd-lootbox-count"><%= lootboxCount %></span>
+        <span class="pmd-lootbox-label" id="pmd-lootbox-label"><%= lootboxCount === 1 ? '1 lootbox' : lootboxCount + ' lootboxes' %></span>
+      </button>
+      <div class="pmd-lootbox-empty" id="pmd-lootbox-empty" aria-label="Aucune lootbox disponible" <% if (lootboxCount > 0) { %>hidden<% } %>>
+        <svg class="pmd-lootbox-icon pmd-lootbox-icon--empty" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="5" y="38" width="90" height="37" rx="6" fill="hsl(240,8%,18%)" stroke="hsl(240,8%,30%)" stroke-width="2"/>
+          <rect x="5" y="38" width="90" height="12" rx="3" fill="hsl(240,8%,22%)" stroke="hsl(240,8%,30%)" stroke-width="2"/>
+          <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="hsl(240,8%,20%)" stroke="hsl(240,8%,30%)" stroke-width="1.5"/>
+          <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="hsl(240,8%,20%)" stroke="hsl(240,8%,30%)" stroke-width="1.5"/>
+          <rect x="44" y="38" width="12" height="12" rx="2" fill="hsl(240,8%,26%)" stroke="hsl(240,8%,32%)" stroke-width="1.5"/>
+        </svg>
+        <span class="pmd-lootbox-label pmd-lootbox-label--empty">Aucune lootbox</span>
+      </div>
     </div>
 
     <%# Coffre %>

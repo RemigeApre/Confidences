@@ -17,8 +17,11 @@
 <main class="container wide wiki-locked tags-page-locked" style="--ch-hue: 270">
   <%- include('partials/top-nav', { config: config }) %>
 
+  <%- include('partials/mobile-filter-toggle') %>
+
   <%# ─── SIDEBAR ─────────────────────────────────────────────────────────── %>
-  <aside class="wiki-cat-sidebar tags-sidebar">
+  <aside class="wiki-cat-sidebar tags-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
     <div class="wiki-chapter-hero">
       <div class="wiki-chapter-hero-top">
         <a href="#" class="wiki-chapter-hero-back" id="tags-back-btn" title="Page précédente">&larr;</a>

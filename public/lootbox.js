@@ -7,6 +7,12 @@
   var navBadge       = document.getElementById("nav-jeu-badge");
   var navBadgeMobile = document.getElementById("nav-jeu-badge-mobile");
 
+  // Dashboard mobile (favoris.ejs)
+  var pmdBtn   = document.getElementById("pmd-lootbox-btn");
+  var pmdCount = document.getElementById("pmd-lootbox-count");
+  var pmdLabel = document.getElementById("pmd-lootbox-label");
+  var pmdEmpty = document.getElementById("pmd-lootbox-empty");
+
   // Écran de choix "1 ou tout"
   var choicePanel    = document.getElementById("lootbox-choice");
   var choiceCountLbl = document.getElementById("lootbox-choice-count-label");
@@ -155,6 +161,16 @@
         if (jeuCount) jeuCount.setAttribute("hidden", "");
         if (jeuLabel) jeuLabel.textContent = "Aucune lootbox";
       }
+    }
+    // Dashboard mobile (favoris.ejs)
+    if (n > 0) {
+      if (pmdBtn)   { pmdBtn.removeAttribute("hidden"); }
+      if (pmdCount) { pmdCount.textContent = label; }
+      if (pmdLabel) { pmdLabel.textContent = n === 1 ? "1 lootbox" : n + " lootboxes"; }
+      if (pmdEmpty) { pmdEmpty.setAttribute("hidden", ""); }
+    } else {
+      if (pmdBtn)   { pmdBtn.setAttribute("hidden", ""); }
+      if (pmdEmpty) { pmdEmpty.removeAttribute("hidden"); }
     }
   }
 

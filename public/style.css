@@ -17115,8 +17115,8 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 
 @media (max-width: 480px) {
-  .jeu-categories { gap: .9rem; padding: 1rem; }
-  .jeu-cat-btn { width: 130px; padding: 1.4rem .8rem 1.2rem; }
+  .jeu-categories { flex-direction: column; align-items: center; gap: .9rem; padding: 1rem; }
+  .jeu-cat-btn { width: min(72vw, 260px); padding: 1.2rem 1.2rem 1rem; }
   .jeu-cat-icon { width: 46px; height: 46px; }
   .jeu-cat-icon svg { width: 24px; height: 24px; }
   .jeu-cat-name { font-size: 1rem; }
@@ -18293,6 +18293,29 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   .coffre-gutter-divider { width: 1px; height: auto; margin: 0 .1rem; align-self: stretch; }
   .coffre-gutter-btn { width: auto; }
   .coffre-gutter-actions { flex-direction: row; }
+}
+
+/* Burger filtre mobile (caché sur desktop) */
+.coffre-filter-burger { display: none; }
+
+@media (max-width: 640px) {
+  .coffre-filter-burger {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    width: 100%;
+    padding: .5rem .75rem;
+    background: var(--card, hsl(240,13%,11%));
+    border: 1px solid var(--border, hsl(240,12%,18%));
+    border-radius: 8px;
+    color: var(--text, #e2e8f0);
+    font-size: .85rem;
+    cursor: pointer;
+    margin-bottom: .25rem;
+  }
+  .coffre-filter-burger[aria-expanded="true"] { border-color: var(--accent, hsl(175,58%,52%)); }
+  .coffre-gutter-slot .coffre-gutter-panel { display: none; }
+  .coffre-gutter-slot .coffre-gutter-panel.coffre-gutter-panel--open { display: flex; }
 }
 
 /* ── Coffre — bouton toggle Vendre ── */
