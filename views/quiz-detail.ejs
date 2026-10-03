@@ -137,6 +137,9 @@
       </details>
 
       <%# ── Questions de l'étape ──────────────────────────────────────── %>
+      <% if (!currentUser) { %>
+      <p class="quiz-anon-notice">Vos réponses sont sauvegardées sur cet appareil. <a href="/admin/login?next=/quizz/<%= quiz.id %>">Connectez-vous</a> pour les conserver dans votre profil.</p>
+      <% } %>
       <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
         <input type="hidden" name="_step" value="<%= stepIdx %>" />
 
@@ -338,6 +341,118 @@
       if (btn) btn.classList.remove('quiz-sides-reset--hidden');
     }
 
+    /* ── localStorage pour les visiteurs sans compte ───────────────────── */
+    var isLoggedIn = <%- currentUser ? 'true' : 'false' %>;
+    var LS_KEY = 'qz_<%= quiz.id %>';
+    function lsLoad() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { return {}; } }
+    function lsSave(d) { try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch(e) {} }
+
+    // Lit la valeur courante d'une question depuis le DOM (format identique à la BDD)
+    function collectInputVal(block, name, qtype) {
+      if (qtype === 'gradient' || qtype === 'single' || qtype === 'visual') {
+        var r = block.querySelector('input[name="' + name + '"]:checked');
+        return r ? r.value : undefined;
+      }
+      if (qtype === 'multiple') {
+        var vals = [];
+        block.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+          if (cb.name.indexOf(name + '_') === 0 && cb.checked) vals.push(cb.value);
+        });
+        return vals;
+      }
+      if (qtype === 'ranking') {
+        var hidden = document.getElementById('qrank-input-' + name.replace(/^q_/, ''));
+        return hidden ? hidden.value.split(',').filter(Boolean).map(Number) : [];
+      }
+      if (qtype === 'points') {
+        var pts = {};
+        block.querySelectorAll('input[id^="qpinp-"]').forEach(function(el) {
+          if (el.name && el.name.indexOf(name + '_') === 0) {
+            pts[el.name.slice(name.length + 1)] = parseInt(el.value, 10) || 0;
+          }
+        });
+        return pts;
+      }
+      return undefined;
+    }
+    function collectQAnswer(qid, qtype, hasSides) {
+      var block = document.getElementById('qblock-' + qid);
+      if (!block) return undefined;
+      var dkInput = document.getElementById('qdontknow-input-' + qid);
+      if (dkInput && dkInput.value === '?') return '?';
+      if (hasSides) {
+        var sideInput = document.getElementById('qside-input-' + qid);
+        var side = sideInput ? sideInput.value : '';
+        if (!side) return undefined;
+        var obj = { side: side };
+        if (side !== 'receive' && side !== 'observe') obj.give = collectInputVal(block, 'q_' + qid + '_give', qtype);
+        if (side !== 'give'    && side !== 'observe') obj.receive = collectInputVal(block, 'q_' + qid + '_receive', qtype);
+        return obj;
+      }
+      return collectInputVal(block, 'q_' + qid, qtype);
+    }
+
+    // Applique une valeur stockée aux inputs du DOM
+    function applyInputs(block, name, qtype, value) {
+      if (value === undefined || value === null) return;
+      if (qtype === 'gradient' || qtype === 'single' || qtype === 'visual') {
+        var inp = block.querySelector('input[name="' + name + '"][value="' + value + '"]');
+        if (inp) { inp.checked = true; inp.dispatchEvent(new Event('change', { bubbles: true })); }
+      } else if (qtype === 'multiple') {
+        if (!Array.isArray(value)) return;
+        value.forEach(function(v) {
+          var cb = block.querySelector('input[name="' + name + '_' + v + '"]');
+          if (cb) cb.checked = true;
+        });
+      } else if (qtype === 'ranking') {
+        var listKey = name.replace(/^q_/, '');
+        var list = document.getElementById('qrank-' + listKey);
+        var hidden = document.getElementById('qrank-input-' + listKey);
+        if (list && Array.isArray(value)) {
+          value.forEach(function(idx) {
+            var item = list.querySelector('[data-idx="' + idx + '"]');
+            if (item) list.appendChild(item);
+          });
+          if (hidden) hidden.value = value.join(',');
+        }
+      } else if (qtype === 'points' && value && typeof value === 'object') {
+        var qidPart = name.replace(/^q_/, '').replace(/_give$/, '').replace(/_receive$/, '');
+        var sfx = /_give$/.test(name) ? '-give' : /_receive$/.test(name) ? '-receive' : '';
+        Object.keys(value).forEach(function(oi) {
+          var inpEl = document.getElementById('qpinp-' + qidPart + '-' + oi + sfx);
+          var valEl = document.getElementById('qpval-' + qidPart + '-' + oi + sfx);
+          var v = parseInt(value[oi], 10) || 0;
+          if (inpEl) inpEl.value = v;
+          if (valEl) valEl.textContent = v;
+        });
+      }
+    }
+    function restoreAnonymousAnswers() {
+      var stored = lsLoad();
+      if (!Object.keys(stored).length) return;
+      document.querySelectorAll('.quiz-q-block').forEach(function(block) {
+        var qid = block.dataset.qid;
+        var qtype = block.dataset.qtype;
+        var hasSides = !!document.getElementById('qsidespicker-' + qid);
+        var value = stored[String(qid)];
+        if (value === undefined) return;
+        if (value === '?') {
+          var dkBtn = document.getElementById('qdontknow-' + qid);
+          if (dkBtn && !dkBtn.classList.contains('quiz-dont-know-btn--active')) dkBtn.click();
+          return;
+        }
+        if (hasSides && value && typeof value === 'object' && value.side) {
+          selectSide(qid, value.side);
+          if (value.give !== undefined)    applyInputs(block, 'q_' + qid + '_give',    qtype, value.give);
+          if (value.receive !== undefined) applyInputs(block, 'q_' + qid + '_receive', qtype, value.receive);
+          revealClearBtn(qid);
+          return;
+        }
+        applyInputs(block, 'q_' + qid, qtype, value);
+        revealClearBtn(qid);
+      });
+    }
+
     /* ── Sauvegarde auto, dès qu'une question a une réponse — sinon une
        réponse n'était écrite en base qu'en cliquant "Suivant"/"Terminer",
        et se perdait si la personne devait s'arrêter avant. ────────────── */
@@ -347,6 +462,11 @@
       autosaveTimers[qid] = setTimeout(function() {
         var block = document.getElementById('qblock-' + qid);
         if (!block) return;
+        if (!isLoggedIn) {
+          var val = collectQAnswer(qid, block.dataset.qtype, !!document.getElementById('qsidespicker-' + qid));
+          if (val !== undefined) { var s = lsLoad(); s[String(qid)] = val; lsSave(s); }
+          return;
+        }
         var re = new RegExp('^q_' + qid + '(_|$)');
         var params = new URLSearchParams();
         block.querySelectorAll('input[name]').forEach(function(el) {
@@ -540,6 +660,11 @@
       btn.addEventListener('click', function() {
         var qid = btn.dataset.qid;
         clearTimeout(autosaveTimers[qid]);
+        if (!isLoggedIn) {
+          var s = lsLoad(); delete s[String(qid)]; lsSave(s);
+          resetQuestionBlock(qid);
+          return;
+        }
         fetch('/quizz/<%= quiz.id %>/questions/' + qid + '/clear-answer', { method: 'POST' })
           .then(function() { resetQuestionBlock(qid); })
           .catch(function() {});
@@ -629,6 +754,33 @@
         }
       });
     });
+
+    /* ── Anonyme : restauration localStorage + intercepteur de navigation ─ */
+    if (!isLoggedIn) {
+      restoreAnonymousAnswers();
+      if (quizAnswerForm) {
+        quizAnswerForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          // Sauvegarder toutes les réponses visibles avant de naviguer
+          var stored = lsLoad();
+          document.querySelectorAll('.quiz-q-block').forEach(function(block) {
+            var qid = block.dataset.qid;
+            var val = collectQAnswer(qid, block.dataset.qtype, !!document.getElementById('qsidespicker-' + qid));
+            if (val !== undefined) stored[String(qid)] = val;
+          });
+          lsSave(stored);
+          var totalSteps = <%= steps.length %>;
+          var stepInput  = quizAnswerForm.querySelector('[name="_step"]');
+          var step       = stepInput ? parseInt(stepInput.value, 10) : 0;
+          var isComplete = e.submitter ? e.submitter.value === '1' : false;
+          if (isComplete || step >= totalSteps - 1) {
+            window.location.href = '/quizz/<%= quiz.id %>?step=done';
+          } else {
+            window.location.href = '/quizz/<%= quiz.id %>?step=' + (step + 1);
+          }
+        });
+      }
+    }
   })();
   </script>
 </main>
