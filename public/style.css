@@ -6677,6 +6677,46 @@ a.wiki-ql-label:hover .wiki-ql-text {
 }
 
 /* Variantes : accordéon */
+.wiki-thematic-intro {
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255,255,255,.08);
+  border-left: 3px solid hsl(280,45%,45%);
+  border-radius: 8px;
+  background: hsl(270,14%,11%);
+  overflow: hidden;
+}
+.wiki-thematic-intro-summary {
+  padding: .65rem 1rem;
+  cursor: pointer;
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: hsl(280,50%,72%);
+  list-style: none;
+  user-select: none;
+}
+.wiki-thematic-intro-summary::-webkit-details-marker { display: none; }
+.wiki-thematic-intro-summary::before {
+  content: '›';
+  display: inline-block;
+  margin-right: .5rem;
+  transition: transform .2s;
+}
+.wiki-thematic-intro[open] .wiki-thematic-intro-summary::before { transform: rotate(90deg); }
+.wiki-thematic-intro-body {
+  padding: .75rem 1rem 1rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.wiki-thematic-intro-body p {
+  font-size: .88rem;
+  color: rgba(255,255,255,.65);
+  line-height: 1.7;
+  margin: 0 0 .6rem;
+  font-style: italic;
+}
+.wiki-thematic-intro-body p:last-child { margin-bottom: 0; }
+
 .wiki-var-detail {
   border: 1px solid var(--border);
   border-radius: 8px;

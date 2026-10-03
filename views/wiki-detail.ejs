@@ -317,6 +317,17 @@
       <%# ─ COLONNE GAUCHE : contenu texte ─ %>
       <div class="wiki-detail-body">
 
+        <%# Introduction thématique : partenaires non-humains (monstres / animaux) ─ %>
+        <% if (page.category === 'partenaires' && (pm.sous_cat === 'monstre' || pm.sous_cat === 'animaux')) { %>
+        <details class="wiki-thematic-intro">
+          <summary class="wiki-thematic-intro-summary">Introduction</summary>
+          <div class="wiki-thematic-intro-body">
+            <p>La femme, sujet de convoitise, d&rsquo;admiration ou de v&eacute;n&eacute;ration, devient l&rsquo;objet d&rsquo;attention de ce qui n&rsquo;est pas humain. Si belle, si sensuelle, si d&eacute;sirable que ces qualit&eacute;s d&eacute;passent l&rsquo;esp&egrave;ce&nbsp;: elle devient nature et divine par cela.</p>
+            <p>Ces fantasmes placent la femme au centre d&rsquo;un regard absolu&nbsp;; un d&eacute;sir sans langage commun, sans conventions sociales, sans retenue culturelle. Ce qui ne peut pas parler ne peut pas mentir. Ce qui ne connaît pas les codes humains ne peut qu&rsquo;ob&eacute;ir &agrave; l&rsquo;instinct&nbsp;: celui d&rsquo;&ecirc;tre attir&eacute;, irr&eacute;sistiblement, par elle.</p>
+          </div>
+        </details>
+        <% } %>
+
         <%# Description markdown ─ %>
         <% if (page.content) { %>
           <div class="wiki-md"><span class="wiki-md-raw" hidden><%= page.content %></span></div>
