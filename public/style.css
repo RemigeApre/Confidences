@@ -507,6 +507,98 @@ body.nav-drawer-locked {
   }
 }
 
+/* ── Sections du site ───────────────────────────────────────────────────── */
+.home-sections {
+  margin: 0 auto 3.5rem;
+  max-width: 900px;
+  padding: 0 1rem;
+}
+.home-sections-title {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 1.5rem;
+}
+.home-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.home-section-card {
+  background: hsl(220,14%,11%);
+  border: 1px solid rgba(255,255,255,.08);
+  border-top: 2px solid var(--sc-color, rgba(255,255,255,.15));
+  border-radius: 10px;
+  padding: 1.25rem 1.25rem 1.1rem;
+}
+.home-section-card--wiki    { --sc-color: hsl(252,60%,62%); }
+.home-section-card--quizz   { --sc-color: hsl(175,58%,48%); }
+.home-section-card--galerie { --sc-color: hsl(28,75%,58%); }
+.home-section-card--coffre  { --sc-color: hsl(45,80%,58%); }
+.home-section-icon {
+  font-size: 1.4rem;
+  display: block;
+  margin-bottom: .5rem;
+}
+.home-section-card h3 {
+  font-size: .95rem;
+  font-weight: 700;
+  margin: 0 0 .5rem;
+  color: var(--sc-color, var(--text));
+}
+.home-section-card p {
+  font-size: .83rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .home-sections-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Charte ─────────────────────────────────────────────────────────────── */
+.home-charter {
+  margin: 0 auto 4rem;
+  max-width: 900px;
+  padding: 2rem 1.5rem;
+  background: hsl(220,14%,10%);
+  border-top: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+}
+.home-charter-title {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 1.75rem;
+}
+.home-charter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem 2rem;
+}
+.home-charter-block h3 {
+  font-size: .88rem;
+  font-weight: 700;
+  margin: 0 0 .5rem;
+  color: var(--text);
+}
+.home-charter-block p {
+  font-size: .82rem;
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .home-charter-grid { grid-template-columns: 1fr; }
+  .home-charter { border-radius: 0; margin-left: -1rem; margin-right: -1rem; padding: 1.75rem 1.25rem; }
+}
+
 .gate-page {
   position: relative;
   min-height: 80vh;

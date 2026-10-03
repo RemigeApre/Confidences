@@ -2815,8 +2815,8 @@ function _pickRarity() {
 
 // ── Thèmes ────────────────────────────────────────────────────────────────────
 const THEME_DEFINITIONS = [
-  { key: 'default', label: 'Gris foncé',    hue: null, sat: null, always: true },
-  { key: 'blanc',   label: 'Blanc',          hue: null, sat: null, always: true },
+  { key: 'default', label: 'Gris foncé',    hue: null, sat: null, always: true, rarity: 'common' },
+  { key: 'blanc',   label: 'Blanc',          hue: null, sat: null, always: true, rarity: 'common' },
   { key: 'rouge',   label: 'Rouge élégant',  hue: 355,  sat: 55,   rarity: 'epic'      },
   { key: 'vert',    label: 'Vert noble',     hue: 148,  sat: 42,   rarity: 'rare'      },
   { key: 'violet',  label: 'Violet',         hue: 270,  sat: 58,   rarity: 'legendary' },
