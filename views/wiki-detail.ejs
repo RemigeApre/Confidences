@@ -761,147 +761,67 @@
   } catch (_) {}
 })();
 </script>
-<%# ── Lightbox inline galerie (depuis les images secondaires du Codex) ──── %>
+<%# ── Lightbox galerie (identique à gallery.ejs) ──────────────────────── %>
 <% if (currentUser) { %>
-<div id="wiki-img-lb" class="wil-overlay" hidden aria-modal="true" role="dialog">
-  <div class="wil-box">
-    <button type="button" class="wil-close" id="wil-close" title="Fermer">&#215;</button>
-    <div class="wil-img-area">
-      <img class="wil-img" id="wil-img" alt="" />
+<%# Conteneur caché pour les fausses cartes galerie %>
+<div id="wiki-gallery-ghost" style="display:none" aria-hidden="true"></div>
+
+<div id="gallery-lightbox" class="gallery-lightbox" hidden>
+  <div class="gallery-lb-image-area">
+    <button type="button" class="gallery-lb-mobile-close" title="Fermer" aria-label="Fermer">&#215;</button>
+    <button type="button" class="gallery-lb-prev" title="Pr&eacute;c&eacute;dente">&#8249;</button>
+    <button type="button" class="gallery-lb-next" title="Suivante">&#8250;</button>
+    <img class="gallery-lb-img" alt="" decoding="async" />
+    <div class="gallery-lb-dots" id="gallery-lb-dots" hidden></div>
+    <div id="gallery-lb-series-nav" class="gallery-lb-series-nav" hidden>
+      <button type="button" class="gallery-lb-series-arrow" id="gallery-lb-series-prev">&#8249;</button>
+      <span class="gallery-lb-series-info" id="gallery-lb-series-info"></span>
+      <button type="button" class="gallery-lb-series-arrow" id="gallery-lb-series-next">&#8250;</button>
     </div>
-    <aside class="wil-panel">
-      <p class="wil-title" id="wil-title" hidden></p>
-      <div class="wil-tags" id="wil-tags" hidden></div>
-      <div class="wil-meta" id="wil-meta" hidden></div>
+    <button type="button" class="gallery-lb-down-hint" aria-label="Voir plus d'informations">&#8249;</button>
+  </div>
+  <aside class="gallery-lb-panel">
+    <button type="button" class="gallery-lb-panel-handle" aria-label="Remonter voir la photo"></button>
+    <button type="button" class="gallery-lb-close" title="Fermer">&#215;</button>
+    <div id="gallery-lb-explore-nav" class="gallery-lb-explore-nav" hidden></div>
+    <%- include('partials/lb-meta-block') %>
+    <div class="lb-spacer"></div>
+    <%- include('partials/lb-avis-block') %>
+  </aside>
+</div>
 
-      <div class="wil-spacer"></div>
-
-      <div class="wil-rating" id="wil-rating" hidden>
-        <% for (var _ws = 1; _ws <= 5; _ws++) { %>
-          <span class="wil-star" data-val="<%= _ws %>">&#9733;</span>
-        <% } %>
-      </div>
-      <div class="wil-actions" id="wil-actions" hidden>
-        <button type="button" class="wil-flame-btn" id="wil-flame">J&rsquo;adore</button>
-        <a class="wil-gallery-link" id="wil-gallery-link" href="" hidden>Voir dans la galerie &#8599;</a>
-      </div>
-    </aside>
+<div class="filter-profile-modal-overlay" id="collection-picker-modal" hidden>
+  <div class="filter-profile-modal collection-modal">
+    <p class="filter-profile-modal-title">Ajouter &agrave; une collection</p>
+    <div class="collection-picker-list" id="collection-picker-list"></div>
+    <button type="button" class="link-button" id="collection-picker-new-toggle">+ Nouvelle collection</button>
+    <div class="collection-picker-new-form" id="collection-picker-new-form" hidden>
+      <input type="text" class="filter-profile-modal-input" id="collection-picker-new-title" placeholder="Titre de la nouvelle collection&hellip;" maxlength="80" autocomplete="off" />
+      <textarea class="collection-modal-textarea" id="collection-picker-new-desc" placeholder="Description (optionnelle)&hellip;" rows="2"></textarea>
+      <input type="text" class="filter-profile-modal-input" id="collection-picker-new-tags" placeholder="Tags s&eacute;par&eacute;s par des virgules&hellip;" maxlength="200" autocomplete="off" />
+      <button type="button" class="filter-profile-modal-confirm" id="collection-picker-new-confirm">Cr&eacute;er et ajouter</button>
+    </div>
+    <div class="filter-profile-modal-actions">
+      <button type="button" class="filter-profile-modal-cancel" id="collection-picker-close">Fermer</button>
+    </div>
   </div>
 </div>
 
 <script>
+window.GALLERY_CAN_EDIT = false;
+window.GALLERY_PROTAGONISTS = {};
+window.GALLERY_PROT_META = {};
+window.GALLERY_PROT_EVOS = {};
+window.GALLERY_PROT_SPECIAL = {};
+window.TAG_BLACKLIST = [];
+window.ULTRA_MODE = 'visible';
+window.IRREALISTE_MODE = 'visible';
+</script>
+
+<script>
 (function () {
-  var overlay = document.getElementById('wiki-img-lb');
-  var closeBtn = document.getElementById('wil-close');
-  var img = document.getElementById('wil-img');
-  var titleEl = document.getElementById('wil-title');
-  var tagsEl = document.getElementById('wil-tags');
-  var metaEl = document.getElementById('wil-meta');
-  var ratingEl = document.getElementById('wil-rating');
-  var actionsEl = document.getElementById('wil-actions');
-  var flameBtn = document.getElementById('wil-flame');
-  var galleryLink = document.getElementById('wil-gallery-link');
-  var currentId = null;
-  var currentRating = 0;
-  var currentFlame = false;
-
-  function open(src) {
-    img.src = src;
-    overlay.hidden = false;
-    document.body.style.overflow = 'hidden';
-    // Reset UI
-    titleEl.hidden = true; tagsEl.hidden = true; metaEl.hidden = true;
-    ratingEl.hidden = true; actionsEl.hidden = true;
-    currentId = null;
-    fetch('/galerie/by-path?src=' + encodeURIComponent(src))
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (!d.ok) return;
-        currentId = d.id;
-        currentRating = d.rating || 0;
-        currentFlame = !!d.flame;
-
-        if (d.title && d.titleVisible) { titleEl.textContent = d.title; titleEl.hidden = false; }
-        // Tags — textContent uniquement, pas d'innerHTML
-        if (d.tags && d.tags.length) {
-          tagsEl.textContent = '';
-          d.tags.forEach(function (t) {
-            var sp = document.createElement('span');
-            sp.className = 'wil-tag';
-            sp.textContent = t;
-            tagsEl.appendChild(sp);
-          });
-          tagsEl.hidden = false;
-        }
-        // Meta (auteur, parodie) — construction DOM
-        metaEl.textContent = '';
-        function addMeta(label, value) {
-          var row = document.createElement('span');
-          var strong = document.createElement('strong');
-          strong.textContent = label;
-          row.appendChild(strong);
-          row.appendChild(document.createTextNode(' ' + value));
-          metaEl.appendChild(row);
-        }
-        if (d.author) addMeta('Auteur :', d.author);
-        if (d.parody) addMeta('Univers :', d.parody + (d.subParody ? ' / ' + d.subParody : ''));
-        if (metaEl.children.length) metaEl.hidden = false;
-
-        // Rating
-        setStars(currentRating);
-        ratingEl.hidden = false;
-        // Flame
-        flameBtn.classList.toggle('wil-flame--on', currentFlame);
-        flameBtn.textContent = currentFlame ? 'J\u2019adore \u2665' : 'J\u2019adore';
-        // Lien galerie
-        galleryLink.href = '/galerie/' + d.id;
-        galleryLink.hidden = false;
-        actionsEl.hidden = false;
-      });
-  }
-
-  function close() {
-    overlay.hidden = true;
-    document.body.style.overflow = '';
-    img.src = '';
-  }
-
-  function setStars(val) {
-    ratingEl.querySelectorAll('.wil-star').forEach(function (s) {
-      s.classList.toggle('wil-star--on', Number(s.dataset.val) <= val);
-    });
-  }
-
-  ratingEl.addEventListener('click', function (e) {
-    var star = e.target.closest('.wil-star');
-    if (!star || !currentId) return;
-    var val = Number(star.dataset.val);
-    // Toggle off si même valeur
-    var newVal = val === currentRating ? 0 : val;
-    currentRating = newVal;
-    setStars(newVal);
-    fetch('/galerie/' + currentId + '/react', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rating: newVal })
-    });
-  });
-
-  flameBtn.addEventListener('click', function () {
-    if (!currentId) return;
-    currentFlame = !currentFlame;
-    flameBtn.classList.toggle('wil-flame--on', currentFlame);
-    flameBtn.textContent = currentFlame ? 'J\u2019adore \u2665' : 'J\u2019adore';
-    fetch('/galerie/' + currentId + '/react', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ flame: currentFlame })
-    });
-  });
-
-  closeBtn.addEventListener('click', close);
-  overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !overlay.hidden) close(); });
-
-  // Clic sur une image secondaire du Codex
+  // Clic sur une image secondaire : fetch les données galerie, crée une fausse
+  // carte .gallery-card et ouvre le vrai lightbox galerie via _galleryOpenCard.
   document.addEventListener('click', function (e) {
     var wrap = e.target.closest('.wiki-secondary-img-wrap');
     if (!wrap) return;
@@ -909,10 +829,51 @@
     if (!imgEl) return;
     e.preventDefault();
     var src = imgEl.dataset.src || imgEl.src;
-    open(src);
+
+    fetch('/galerie/by-path?src=' + encodeURIComponent(src))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var ghost = document.getElementById('wiki-gallery-ghost');
+        if (!ghost) return;
+
+        var card = document.createElement('div');
+        card.className = 'gallery-card';
+        card.dataset.idx = '0';
+        card.dataset.images = d.ok ? (d.imagePaths || [src]).join('|') : src;
+        card.dataset.galleryId = d.ok ? String(d.id) : '';
+        card.dataset.displayTitle = d.ok ? (d.title || '') : '';
+        card.dataset.title = d.ok ? (d.title || '').toLowerCase() : '';
+        card.dataset.titleVisible = (d.ok && d.titleVisible) ? '1' : '0';
+        card.dataset.tags = d.ok ? (d.tags || []).join('|').toLowerCase() : '';
+        card.dataset.author = d.ok ? (d.author || '') : '';
+        card.dataset.parody = d.ok ? (d.parody || '') : '';
+        card.dataset.subParody = d.ok ? (d.subParody || '') : '';
+        card.dataset.rating = d.ok ? String(d.rating || 0) : '0';
+        card.dataset.fav = '0';
+        card.dataset.filtered = '1';
+        card.dataset.wikiId = d.ok && d.wikiPageId ? String(d.wikiPageId) : '';
+        card.dataset.protagonists = '';
+        card.dataset.processed = '0';
+        card.dataset.ai = '0';
+        card.dataset.series = '';
+
+        ghost.appendChild(card);
+
+        if (window._galleryOpenCard) {
+          window._galleryOpenCard(card);
+          var lb = document.getElementById('gallery-lightbox');
+          if (lb) {
+            lb.addEventListener('gallery:closed', function cleanup() {
+              lb.removeEventListener('gallery:closed', cleanup);
+              if (ghost.contains(card)) ghost.removeChild(card);
+            });
+          }
+        }
+      });
   });
 })();
 </script>
+<script src="/gallery.js?v=<%= assetVersion %>"></script>
 <% } %>
 
 <script src="/wiki.js?v=<%= assetVersion %>"></script>

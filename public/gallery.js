@@ -1407,6 +1407,7 @@
     if (lbImg) lbImg.src = "";
     exploreActive = false;
     if (exploreNav) exploreNav.hidden = true;
+    lightbox.dispatchEvent(new CustomEvent('gallery:closed'));
   }
 
   // Boucle infinie sur tout le contenu visible (déjà filtré, voir
@@ -2567,6 +2568,21 @@
 
     // Exposer exitEdit pour que renderLightbox puisse le fermer sur navigation
     window._lbInlineEditExit = exitEdit;
+
+  // Exposer une fonction pour ouvrir le lightbox sur une carte arbitraire
+  // (utilisé par le Codex pour ouvrir les images secondaires sans quitter la page)
+  window._galleryOpenCard = function (cardEl) {
+    var prev = lbVisible;
+    lbVisible = [cardEl];
+    lbCardIndex = 0;
+    openLightbox(0, 0);
+    // Restaure lbVisible après fermeture (écoute l'overlay)
+    function onClose() {
+      lbVisible = prev;
+      lightbox.removeEventListener('gallery:closed', onClose);
+    }
+    if (lightbox) lightbox.addEventListener('gallery:closed', onClose);
+  };
 
     toggleBtn.addEventListener("click", function () {
       if (editActive) exitEdit(); else enterEdit();
