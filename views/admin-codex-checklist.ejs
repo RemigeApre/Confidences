@@ -1,0 +1,161 @@
+<%- include('partials/head', { title: 'Checklist Codex', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/admin" class="admin-topbar-back">&#8592; Admin</a>
+  <span class="admin-topbar-title"><%= config.title %></span>
+</div>
+
+<div style="max-width:900px;margin:2rem auto;padding:0 1.25rem">
+
+  <div style="display:flex;align-items:baseline;gap:1.5rem;margin-bottom:1.75rem">
+    <h1 style="margin:0;font-size:1.25rem;font-weight:700">Checklist Codex</h1>
+    <span class="admin-muted" id="cc-counter"><%= done %> / <%= total %> terminées</span>
+    <span class="admin-muted" style="margin-left:auto;font-size:.8rem">Cliquez sur une fiche pour la cocher.</span>
+  </div>
+
+  <% categories.forEach(function(cat) { %>
+  <details class="cc-cat" open>
+    <summary class="cc-cat-summary">
+      <span class="cc-cat-name"><%= cat.charAt(0).toUpperCase() + cat.slice(1) %></span>
+      <span class="cc-cat-count admin-muted">
+        <%= byCategory[cat].filter(function(p){ return p.done; }).length %> / <%= byCategory[cat].length %>
+      </span>
+    </summary>
+    <div class="cc-grid">
+      <% byCategory[cat].forEach(function(page) { %>
+        <button type="button"
+          class="cc-item<%= page.done ? ' cc-item--done' : '' %>"
+          data-id="<%= page.id %>"
+          title="<%= page.done ? 'Marquer comme non terminée' : 'Marquer comme terminée' %>">
+          <span class="cc-check">&#10003;</span>
+          <span class="cc-title"><%= page.title %></span>
+          <a href="/wiki/<%= page.id %>/edit" class="cc-edit" title="Éditer" onclick="event.stopPropagation()">&#9998;</a>
+        </button>
+      <% }) %>
+    </div>
+  </details>
+  <% }) %>
+
+</div>
+
+<style>
+.cc-cat {
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.cc-cat-summary {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .7rem 1rem;
+  background: hsl(220,14%,13%);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.cc-cat-summary::-webkit-details-marker { display: none; }
+.cc-cat-name {
+  font-weight: 700;
+  font-size: .9rem;
+  text-transform: capitalize;
+}
+.cc-cat-count { font-size: .8rem; margin-left: auto; }
+.cc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .5rem;
+  padding: .75rem;
+  background: hsl(220,14%,10%);
+}
+.cc-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .45rem .65rem;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: hsl(220,14%,14%);
+  color: var(--fg, #e0e0e0);
+  font-size: .82rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background .1s, border-color .1s;
+  position: relative;
+}
+.cc-item:hover { background: hsl(220,14%,19%); border-color: rgba(255,255,255,.15); }
+.cc-check {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1.5px solid rgba(255,255,255,.2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .7rem;
+  color: transparent;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.cc-item--done .cc-check {
+  background: hsl(140,50%,32%);
+  border-color: hsl(140,50%,42%);
+  color: #fff;
+}
+.cc-item--done .cc-title {
+  color: var(--muted, rgba(255,255,255,.45));
+  text-decoration: line-through;
+  text-decoration-color: rgba(255,255,255,.2);
+}
+.cc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-edit {
+  flex-shrink: 0;
+  opacity: 0;
+  color: var(--muted, rgba(255,255,255,.4));
+  font-size: .8rem;
+  text-decoration: none;
+  padding: 0 .2rem;
+  transition: opacity .1s;
+}
+.cc-item:hover .cc-edit { opacity: 1; }
+</style>
+
+<script>
+(function () {
+  var total = <%= total %>;
+  var done  = <%= done %>;
+
+  document.querySelectorAll('.cc-item').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.dataset.id;
+      fetch('/admin/codex-checklist/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: Number(id) })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) return;
+        var wasDone = btn.classList.contains('cc-item--done');
+        btn.classList.toggle('cc-item--done', d.done);
+        btn.title = d.done ? 'Marquer comme non terminée' : 'Marquer comme terminée';
+
+        // Compteur global
+        if (d.done && !wasDone) done++;
+        else if (!d.done && wasDone) done--;
+        document.getElementById('cc-counter').textContent = done + ' / ' + total + ' terminées';
+
+        // Compteur de catégorie
+        var grid = btn.closest('.cc-grid');
+        var summary = btn.closest('.cc-cat').querySelector('.cc-cat-count');
+        if (grid && summary) {
+          var catDone = grid.querySelectorAll('.cc-item--done').length;
+          var catTotal = grid.querySelectorAll('.cc-item').length;
+          summary.textContent = catDone + ' / ' + catTotal;
+        }
+      });
+    });
+  });
+})();
+</script>
+
+<%- include('partials/foot') %>

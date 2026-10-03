@@ -570,6 +570,33 @@ function buildGalleryRouter(config) {
     res.redirect("/galerie");
   });
 
+  // Données d'une image par son chemin (pour le lightbox inline du Codex)
+  router.get("/by-path", (req, res) => {
+    const src = String(req.query.src || "").trim();
+    if (!src) return res.json({ ok: false });
+    const userId = req.user ? req.user.id : null;
+    // Cherche dans toutes les fiches galerie celle qui contient ce chemin
+    const img = listGalleryImages().find(i => (i.imagePaths || []).includes(src));
+    if (!img) return res.json({ ok: false, notFound: true });
+    const reaction = userId ? getUserReaction(userId, "gallery", img.id) : {};
+    return res.json({
+      ok: true,
+      id: img.id,
+      title: img.title || "",
+      titleVisible: !!img.titleVisible,
+      tags: img.tags || [],
+      imagePaths: img.imagePaths || [],
+      author: img.author || "",
+      parody: img.parody || "",
+      subParody: img.subParody || "",
+      rarity: img.rarity || "common",
+      wikiPageId: img.wikiPageId || null,
+      rating: reaction.rating || 0,
+      flame: !!reaction.flame,
+      hidden: !!reaction.hidden,
+    });
+  });
+
   router.post("/:id/react", express.json(), (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.json({ ok: false });

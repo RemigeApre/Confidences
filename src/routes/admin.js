@@ -1054,6 +1054,38 @@ function buildAdminRouter(config) {
     res.redirect("/admin#tab-ia");
   });
 
+  // ── Checklist Codex ──────────────────────────────────────────────────────
+  router.get("/codex-checklist", requireAdmin, (req, res) => {
+    const pages = listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
+    const doneSet = new Set(
+      db.db.prepare("SELECT key FROM app_meta WHERE key LIKE 'codex_done_%'").all().map(r => r.key)
+    );
+    const byCategory = {};
+    pages.forEach(p => {
+      const cat = p.category || "autre";
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push({ id: p.id, title: p.title, done: doneSet.has("codex_done_" + p.id) });
+    });
+    const categories = Object.keys(byCategory).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+    const total = pages.length;
+    const done = doneSet.size;
+    res.render("admin-codex-checklist", { config, byCategory, categories, total, done });
+  });
+
+  router.post("/codex-checklist/toggle", requireAdmin, express.json(), (req, res) => {
+    const id = parseInt(req.body.id, 10);
+    if (!id) return res.json({ ok: false });
+    const key = "codex_done_" + id;
+    const exists = db.db.prepare("SELECT 1 FROM app_meta WHERE key = ?").get(key);
+    if (exists) {
+      db.db.prepare("DELETE FROM app_meta WHERE key = ?").run(key);
+      res.json({ ok: true, done: false });
+    } else {
+      db.db.prepare("INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)").run(key, new Date().toISOString());
+      res.json({ ok: true, done: true });
+    }
+  });
+
   return router;
 }
 
