@@ -6,12 +6,10 @@
   <div class="profil-home">
 
     <%# ── 1. Coffre ── %>
-    <div class="ph-card">
-      <div class="ph-card-header">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="12" width="20" height="10" rx="2"/><path d="M2 12 Q2 6 12 6 Q22 6 22 12"/><rect x="9" y="9" width="6" height="5" rx="1.5"/><circle cx="12" cy="17" r="1.5"/></svg>
-        Coffre
-      </div>
-      <div class="ph-card-body ph-card-body--coffre">
+    <div class="ph-coffre-section">
+
+      <%# Lootbox flottante, hors encart %>
+      <div class="ph-lootbox-wrap">
         <button type="button" class="ph-lootbox-btn<%= lootboxCount === 0 ? ' ph-lootbox-btn--empty' : '' %>" id="ph-lootbox-btn" aria-label="Ouvrir une lootbox" <%= lootboxCount === 0 ? 'disabled' : '' %>>
           <svg class="ph-lootbox-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <rect x="5" y="38" width="90" height="37" rx="6" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,30%)' : 'hsl(240,8%,18%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="2"/>
@@ -25,25 +23,26 @@
             <% if (lootboxCount === 0) { %>aucun coffre<% } else if (lootboxCount === 1) { %>1 à ouvrir<% } else { %><%= lootboxCount %> à ouvrir<% } %>
           </span>
         </button>
-        <div class="ph-unlocks">
-          <% var unlockPrev = (unlocks || []).slice(0, 6); %>
-          <% if (unlockPrev.length) { %>
-            <div class="ph-unlock-thumbs">
-              <% unlockPrev.forEach(function(u) { %>
-                <div class="ph-unlock-thumb">
-                  <% if (u.thumb) { %><img src="<%= u.thumb %>" alt="" loading="lazy" /><% } else { %><span>&#127873;</span><% } %>
-                </div>
-              <% }) %>
-              <% if (unlocks.length > 6) { %>
-                <div class="ph-unlock-thumb ph-unlock-thumb--more">+<%= unlocks.length - 6 %></div>
-              <% } %>
+      </div>
+
+      <%# Items sans encart — grille pleine largeur %>
+      <% var unlockPrev = (unlocks || []).slice(0, 8); %>
+      <% if (unlockPrev.length) { %>
+        <div class="ph-items-grid">
+          <% unlockPrev.forEach(function(u) { %>
+            <div class="ph-item-thumb">
+              <% if (u.thumb) { %><img src="<%= u.thumb %>" alt="" loading="lazy" /><% } else { %><span>&#127873;</span><% } %>
             </div>
-          <% } else { %>
-            <span class="ph-empty-hint">Coffre vide</span>
+          <% }) %>
+          <% if (unlocks.length > 8) { %>
+            <div class="ph-item-thumb ph-item-thumb--more">+<%= unlocks.length - 8 %></div>
           <% } %>
         </div>
-        <a href="/favoris/coffre" class="ph-card-link">Mon coffre</a>
-      </div>
+      <% } else { %>
+        <p class="ph-empty-hint">Coffre vide</p>
+      <% } %>
+
+      <a href="/favoris/coffre" class="ph-coffre-link">Mon coffre</a>
     </div>
 
     <%# ── 2. Activité ── %>
@@ -132,34 +131,14 @@
     </div>
     <% } %>
 
-    <%# ── Favoris (fantasmes + images + bd, sans "pages favorites") ── %>
-    <% var hasAnything = fantasyPages.length || galleryImages.length || bdBooks.length; %>
-
-    <% if (hasAnything) { %>
+    <%# ── Favoris (fantasmes + bd uniquement) ── %>
+    <% if (fantasyPages.length || bdBooks.length) { %>
     <div class="ph-fav-section">
       <% if (fantasyPages.length) { %>
         <h3 class="profil-section-title" id="profil-fantasy-title">Mes fantasmes (<%= fantasyPages.length %>)</h3>
         <div class="wiki-grid" id="profil-fantasy-grid">
           <% fantasyPages.forEach(function(page) { %>
             <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
-          <% }) %>
-        </div>
-      <% } %>
-
-      <% if (galleryImages.length) { %>
-        <h3 class="profil-section-title" id="profil-images-title">Images favorites (<%= galleryImages.length %>)</h3>
-        <div class="profil-fav-grid profil-fav-grid--lg" id="profil-images-grid">
-          <% galleryImages.forEach(function(img) { %>
-            <a href="/galerie/<%= img.id %>/edit"
-               class="profil-fav-card profil-fav-card--lg"
-               data-ultra="<%= img.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
-              <% if (img.imagePaths && img.imagePaths[0]) { %>
-                <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
-              <% } else { %>
-                <div class="profil-fav-card-placeholder">&#128247;</div>
-              <% } %>
-              <span class="profil-fav-card-title"><%= img.title || 'Sans titre' %></span>
-            </a>
           <% }) %>
         </div>
       <% } %>

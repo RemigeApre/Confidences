@@ -20139,34 +20139,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .ph-card-sublink:hover { color: var(--text-1, #eee); }
 
-/* ── Coffre ── */
-.ph-card-body--coffre {
-  flex-wrap: nowrap;
-  gap: 1rem;
-  align-items: center;
-}
-.ph-lootbox-btn {
-  display: flex; flex-direction: column; align-items: center; gap: .25rem;
-  background: hsl(36,55%,12%);
-  border: 1px solid hsl(36,60%,32%);
-  border-radius: 12px;
-  padding: .6rem .9rem;
-  cursor: pointer;
-  transition: background .13s, transform .12s;
-  flex-shrink: 0;
-}
-.ph-lootbox-btn--empty {
-  background: hsl(240,8%,14%);
-  border-color: hsl(240,8%,24%);
-  cursor: default; opacity: .55;
-}
-.ph-lootbox-btn:not(.ph-lootbox-btn--empty):hover { background: hsl(36,55%,17%); }
-.ph-lootbox-btn:not(.ph-lootbox-btn--empty):active { transform: scale(.96); }
-.ph-lootbox-svg { width: 56px; height: 44px; filter: drop-shadow(0 2px 8px rgba(0,0,0,.5)); }
-.ph-lootbox-count { font-size: 1.35rem; font-weight: 900; line-height: 1; color: hsl(44,95%,65%); }
-.ph-lootbox-label { font-size: .6rem; font-weight: 600; color: hsl(36,60%,58%); text-align: center; white-space: nowrap; }
-.ph-lootbox-btn--empty .ph-lootbox-count,
-.ph-lootbox-btn--empty .ph-lootbox-label { color: hsl(240,8%,38%); }
+/* ── Coffre (anciens styles supprimés, voir ph-coffre-section plus bas) ── */
 
 .ph-unlocks { display: flex; flex-direction: column; gap: .4rem; flex: 1; min-width: 0; }
 .ph-unlock-thumbs {
@@ -20183,6 +20156,54 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .ph-unlock-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ph-unlock-thumb--more { font-size: .65rem; font-weight: 700; color: var(--muted); }
 .ph-empty-hint { font-size: .75rem; color: hsl(240,8%,38%); font-style: italic; }
+
+/* ── Coffre section (standalone, hors encart) ── */
+.ph-coffre-section {
+  display: flex; flex-direction: column; align-items: center; gap: 1.2rem;
+  padding: 1.5rem 1rem .5rem;
+}
+.ph-lootbox-wrap {
+  display: flex; justify-content: center;
+}
+.ph-lootbox-btn {
+  display: flex; flex-direction: column; align-items: center; gap: .35rem;
+  background: none; border: none; cursor: pointer;
+  padding: .75rem 1.25rem; border-radius: 16px;
+  transition: transform .15s;
+}
+.ph-lootbox-btn--empty { opacity: .45; cursor: default; }
+.ph-lootbox-btn:not(.ph-lootbox-btn--empty):hover { transform: scale(1.05); }
+.ph-lootbox-btn:not(.ph-lootbox-btn--empty):active { transform: scale(.97); }
+.ph-lootbox-svg { width: 76px; height: 60px; filter: drop-shadow(0 3px 10px rgba(0,0,0,.55)); }
+.ph-lootbox-count { font-size: 1.7rem; font-weight: 900; line-height: 1; color: hsl(44,95%,65%); }
+.ph-lootbox-label { font-size: .65rem; font-weight: 600; color: hsl(36,60%,55%); text-align: center; white-space: nowrap; letter-spacing: .05em; text-transform: uppercase; }
+.ph-lootbox-btn--empty .ph-lootbox-count,
+.ph-lootbox-btn--empty .ph-lootbox-label { color: hsl(240,8%,38%); }
+.ph-items-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .6rem;
+  width: 100%;
+  max-width: 340px;
+}
+.ph-item-thumb {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: hsl(240,8%,13%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+}
+.ph-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ph-item-thumb--more { font-size: .7rem; font-weight: 700; color: var(--muted); }
+.ph-coffre-link {
+  display: block; text-align: center;
+  color: var(--accent); font-weight: 700; font-size: .9rem;
+  text-decoration: none; padding: .4rem 1.2rem;
+  border: 1.5px solid var(--accent); border-radius: 20px;
+  transition: background .15s, color .15s;
+}
+.ph-coffre-link:hover { background: var(--accent); color: hsl(240,8%,5%); }
 
 /* ── Activité ── */
 .ph-card-body--activity {
