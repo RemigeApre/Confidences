@@ -2,7 +2,7 @@ const express = require("express");
 const path    = require("path");
 const fs      = require("fs");
 const { requireUser } = require("../auth");
-const { getUserById } = require("../db");
+const { getUserById, getLootboxConfig } = require("../db");
 
 const GAMES_JSON = path.join(__dirname, "..", "..", "games", "games.json");
 function readGames() {
@@ -15,7 +15,7 @@ function buildJeuRouter(config) {
 
   router.get("/", (req, res) => {
     const partner = req.user.partnerId ? getUserById(req.user.partnerId) : null;
-    res.render("jeu", { config, partner, games: readGames() });
+    res.render("jeu", { config, partner, games: readGames(), lootboxConfig: getLootboxConfig() });
   });
 
   return router;

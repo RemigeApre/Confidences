@@ -18082,7 +18082,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 }
 .lootbox-choice-btn--all:hover { background: rgba(245,210,100,.15); }
 
-/* ── Bouton info (coffre) + popover rareté sur /jeu ─────────────── */
+/* ── Bouton info (coffre) + popover multi-pages sur /jeu ─────────────── */
 .jeu-info-btn {
   background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.13);
   border-radius: 10px; cursor: pointer; color: var(--muted,#aaa);
@@ -18103,16 +18103,20 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   background: var(--surface-2,#1a1a2e);
   border: 1px solid rgba(255,255,255,.1);
   border-radius: 16px;
-  padding: 1.5rem 1.75rem;
-  max-width: 340px; width: 90vw;
-  display: flex; flex-direction: column; gap: 1.25rem;
+  max-width: 380px; width: 92vw;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  max-height: 88vh;
 }
 .jeu-info-header {
   display: flex; align-items: center; justify-content: space-between;
   gap: 1rem;
+  padding: 1rem 1.25rem .75rem;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  flex-shrink: 0;
 }
 .jeu-info-title {
-  font-size: 1rem; font-weight: 700; color: var(--text-1,#fff); margin: 0;
+  font-size: .95rem; font-weight: 700; color: var(--text-1,#fff); margin: 0;
 }
 .jeu-info-close {
   background: none; border: none;
@@ -18123,37 +18127,139 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   transition: opacity .15s, color .15s;
 }
 .jeu-info-close:hover { opacity: 1; color: hsl(0,80%,75%); }
-.jeu-info-close svg { width: 22px; height: 22px; display: block; }
+.jeu-info-close svg { width: 20px; height: 20px; display: block; }
+
+/* Onglets intercalaires */
+.jeu-info-tabs {
+  display: flex; gap: 0;
+  background: rgba(0,0,0,.25);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.jeu-info-tabs::-webkit-scrollbar { display: none; }
+.jeu-info-tab {
+  flex: 1; min-width: 0;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--muted,#888); font-size: .75rem; font-weight: 600;
+  padding: .55rem .3rem;
+  cursor: pointer; white-space: nowrap;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.jeu-info-tab:hover { color: var(--text-1,#eee); background: rgba(255,255,255,.04); }
+.jeu-info-tab--active {
+  color: var(--accent,#7c6af7);
+  border-bottom-color: var(--accent,#7c6af7);
+  background: rgba(255,255,255,.03);
+}
+
+/* Pages */
+.jeu-info-page {
+  display: none;
+  flex-direction: column; gap: 1rem;
+  padding: 1.1rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+.jeu-info-page--active { display: flex; }
+.jeu-info-intro {
+  font-size: .82rem; color: var(--muted,#888); margin: 0;
+}
+.jeu-info-note {
+  font-size: .75rem; color: var(--muted,#777); margin: 0;
+  font-style: italic;
+}
+
+/* Page Accueil : cartes de navigation */
+.jeu-info-cards {
+  display: flex; flex-direction: column; gap: .5rem;
+}
+.jeu-info-card {
+  display: flex; align-items: center; gap: .75rem;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 10px;
+  padding: .7rem .9rem;
+  cursor: pointer; text-align: left;
+  transition: background .15s, border-color .15s;
+  width: 100%;
+}
+.jeu-info-card:hover { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); }
+.jeu-info-card-icon {
+  font-size: 1.1rem; color: var(--accent,#7c6af7); flex-shrink: 0; width: 1.5rem; text-align: center;
+}
+.jeu-info-card-title {
+  font-size: .88rem; font-weight: 700; color: var(--text-1,#eee); display: block;
+}
+.jeu-info-card-desc {
+  font-size: .75rem; color: var(--muted,#888); display: block; margin-top: .1rem;
+}
+.jeu-info-settings-section { border-top: 1px solid rgba(255,255,255,.07); padding-top: .85rem; }
+.jeu-info-coffre-btn {
+  display: block; text-align: center;
+  background: rgba(124,106,247,.15);
+  border: 1px solid rgba(124,106,247,.35);
+  border-radius: 8px;
+  color: hsl(250,80%,75%);
+  font-size: .82rem; font-weight: 600;
+  padding: .55rem 1rem;
+  text-decoration: none;
+  transition: background .15s;
+}
+.jeu-info-coffre-btn:hover { background: rgba(124,106,247,.28); }
+
+/* Page Rareté */
 .jeu-info-section-title {
   font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
   color: var(--muted,#888); margin: 0 0 .6rem;
 }
 .jeu-info-rarity-list {
   list-style: none; margin: 0; padding: 0;
-  display: flex; flex-direction: column; gap: .35rem;
+  display: flex; flex-direction: column; gap: .55rem;
 }
 .jeu-info-rarity-item {
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: .85rem;
+  display: grid;
+  grid-template-columns: 110px 1fr 40px;
+  align-items: center; gap: .5rem;
+  font-size: .82rem;
 }
 .jeu-info-rarity-dot {
   display: inline-block;
-  width: 10px; height: 10px; border-radius: 50%;
-  margin-right: .5rem; flex-shrink: 0;
+  width: 9px; height: 9px; border-radius: 50%;
+  margin-right: .45rem; flex-shrink: 0;
 }
 .jeu-info-rarity-name { color: var(--text-1,#eee); display: flex; align-items: center; }
-.jeu-info-rarity-pct  { color: var(--muted,#888); font-size: .78rem; font-variant-numeric: tabular-nums; }
-.jeu-info-types {
-  display: flex; flex-wrap: wrap; gap: .4rem;
+.jeu-info-rarity-bar-wrap {
+  background: rgba(255,255,255,.08); border-radius: 99px; height: 6px; overflow: hidden;
 }
-.jeu-info-type-tag {
-  font-size: .75rem; font-weight: 600;
-  padding: .2rem .6rem;
-  border-radius: 6px;
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(255,255,255,.13);
-  color: var(--text-1,#eee);
+.jeu-info-rarity-bar {
+  height: 100%; border-radius: 99px; opacity: .85; transition: width .4s ease;
 }
+.jeu-info-rarity-pct  { color: var(--muted,#888); font-size: .75rem; font-variant-numeric: tabular-nums; text-align: right; }
+
+/* Page Types */
+.jeu-info-type-block {
+  display: flex; gap: .85rem; align-items: flex-start;
+}
+.jeu-info-type-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.jeu-info-type-icon svg { width: 18px; height: 18px; }
+.jeu-info-type-icon--image   { background: hsla(210,80%,60%,.15); color: hsl(210,80%,60%); }
+.jeu-info-type-icon--charm   { background: hsla(270,65%,65%,.15); color: hsl(270,65%,65%); }
+.jeu-info-type-icon--theme   { background: hsla(140,60%,55%,.15); color: hsl(140,60%,55%); }
+.jeu-info-type-name { font-size: .88rem; font-weight: 700; color: var(--text-1,#eee); margin: 0 0 .2rem; }
+.jeu-info-type-desc { font-size: .78rem; color: var(--muted,#888); margin: 0; line-height: 1.4; }
+
+/* Page Obtenir */
+.jeu-info-obtain-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+.jeu-info-obtain-item { display: flex; gap: .75rem; align-items: flex-start; }
+.jeu-info-obtain-icon { color: var(--accent,#7c6af7); font-size: .7rem; flex-shrink: 0; margin-top: .25rem; }
+.jeu-info-obtain-title { font-size: .85rem; font-weight: 700; color: var(--text-1,#eee); margin: 0 0 .15rem; }
+.jeu-info-obtain-desc  { font-size: .77rem; color: var(--muted,#888); margin: 0; line-height: 1.4; }
 
 /* ── Résultats "tout ouvrir" ─────────────────────────────────────── */
 .lootbox-batch-results {

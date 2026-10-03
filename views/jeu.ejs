@@ -447,58 +447,173 @@
 </div>
 
 
-<%# ── Popup info + paramètres lootbox ── %>
-<div class="jeu-info-popover" id="jeu-info-popover" hidden aria-modal="true" role="dialog" aria-labelledby="jeu-info-title">
+<%# ── Popup info (multi-pages) ── %>
+<div class="jeu-info-popover" id="jeu-info-popover" hidden aria-modal="true" role="dialog">
   <div class="jeu-info-inner">
+
+    <%# En-tête fixe %>
     <div class="jeu-info-header">
-      <p class="jeu-info-title" id="jeu-info-title">R&eacute;compenses des lootboxes</p>
+      <span class="jeu-info-title" id="jeu-info-tab-label">Guide des coffres</span>
       <button class="jeu-info-close" id="jeu-info-close" aria-label="Fermer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
 
-    <div>
-      <p class="jeu-info-section-title">Niveaux de raret&eacute;</p>
+    <%# Onglets (intercalaires) %>
+    <nav class="jeu-info-tabs" aria-label="Sections du guide">
+      <button class="jeu-info-tab jeu-info-tab--active" data-tab="accueil">Accueil</button>
+      <button class="jeu-info-tab" data-tab="rarete">Raret&eacute;</button>
+      <button class="jeu-info-tab" data-tab="types">Types</button>
+      <button class="jeu-info-tab" data-tab="obtenir">Obtenir</button>
+    </nav>
+
+    <%# ─── Page Accueil ─────────────────────────────────────── %>
+    <div class="jeu-info-page jeu-info-page--active" id="jeu-info-page-accueil">
+      <p class="jeu-info-intro">Tout ce que vous devez savoir sur les coffres et leurs r&eacute;compenses.</p>
+
+      <div class="jeu-info-cards">
+        <button class="jeu-info-card" data-goto="rarete">
+          <span class="jeu-info-card-icon">&#9670;</span>
+          <span class="jeu-info-card-title">Raret&eacute;</span>
+          <span class="jeu-info-card-desc">Les 5 niveaux et leurs chances de drop.</span>
+        </button>
+        <button class="jeu-info-card" data-goto="types">
+          <span class="jeu-info-card-icon">&#9679;</span>
+          <span class="jeu-info-card-title">Types d&rsquo;objets</span>
+          <span class="jeu-info-card-desc">Images, charmes et th&egrave;mes.</span>
+        </button>
+        <button class="jeu-info-card" data-goto="obtenir">
+          <span class="jeu-info-card-icon">&#9651;</span>
+          <span class="jeu-info-card-title">Obtenir des coffres</span>
+          <span class="jeu-info-card-desc">Comment en recevoir davantage.</span>
+        </button>
+      </div>
+
+      <div class="jeu-info-settings-section">
+        <p class="jeu-info-section-title">Contenu autoris&eacute;</p>
+        <label class="jeu-settings-toggle">
+          <span class="jeu-settings-toggle-label">Images <strong>Irr&eacute;aliste</strong></span>
+          <input type="checkbox" class="jeu-settings-checkbox" id="jeu-settings-irrealiste"
+                 <%- currentUser.lootboxAllowIrrealiste ? 'checked' : '' %>>
+          <span class="jeu-settings-toggle-track"><span class="jeu-settings-toggle-thumb"></span></span>
+        </label>
+        <label class="jeu-settings-toggle">
+          <span class="jeu-settings-toggle-label">Images <strong>Ultra</strong></span>
+          <input type="checkbox" class="jeu-settings-checkbox" id="jeu-settings-ultra"
+                 <%- currentUser.lootboxAllowUltra ? 'checked' : '' %>>
+          <span class="jeu-settings-toggle-track"><span class="jeu-settings-toggle-thumb"></span></span>
+        </label>
+      </div>
+
+      <a href="/profil/coffre" class="jeu-info-coffre-btn">Voir mon coffre &#8594;</a>
+    </div>
+
+    <%# ─── Page Rareté ──────────────────────────────────────── %>
+    <div class="jeu-info-page" id="jeu-info-page-rarete">
+      <p class="jeu-info-intro">Chaque ouverture de coffre tire un objet selon ces probabilit&eacute;s.</p>
+      <%
+        var weights = lootboxConfig.weights;
+        var total   = weights.common + weights.rare + weights.epic + weights.legendary + weights.mythic;
+        function pct(w) { return Math.round(w / total * 1000) / 10; }
+        var rarities = [
+          { key: 'common',    label: 'Commun',     color: 'hsl(0,0%,60%)',    w: weights.common    },
+          { key: 'rare',      label: 'Rare',        color: 'hsl(210,80%,60%)', w: weights.rare      },
+          { key: 'epic',      label: '\u00c9pique',  color: 'hsl(270,65%,65%)', w: weights.epic      },
+          { key: 'legendary', label: 'L\u00e9gendaire', color: 'hsl(44,95%,55%)', w: weights.legendary },
+          { key: 'mythic',    label: 'Mythique',    color: 'hsl(0,75%,55%)',   w: weights.mythic    },
+        ];
+      %>
       <ul class="jeu-info-rarity-list">
+        <% rarities.forEach(function(r) { %>
         <li class="jeu-info-rarity-item">
-          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(0,0%,60%)"></span>Commun</span>
-          <span class="jeu-info-rarity-pct">50 %</span>
+          <span class="jeu-info-rarity-name">
+            <span class="jeu-info-rarity-dot" style="background:<%- r.color %>"></span>
+            <%- r.label %>
+          </span>
+          <div class="jeu-info-rarity-bar-wrap">
+            <div class="jeu-info-rarity-bar" style="width:<%- pct(r.w) %>%;background:<%- r.color %>"></div>
+          </div>
+          <span class="jeu-info-rarity-pct"><%- pct(r.w) %>&thinsp;%</span>
         </li>
-        <li class="jeu-info-rarity-item">
-          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(210,80%,60%)"></span>Rare</span>
-          <span class="jeu-info-rarity-pct">28 %</span>
+        <% }) %>
+      </ul>
+      <p class="jeu-info-note">Les pourcentages sont mis &agrave; jour par l&rsquo;administrateur et refl&egrave;tent les r&eacute;glages actuels.</p>
+    </div>
+
+    <%# ─── Page Types d'objets ──────────────────────────────── %>
+    <div class="jeu-info-page" id="jeu-info-page-types">
+      <p class="jeu-info-intro">Trois cat&eacute;gories d&rsquo;objets peuvent sortir d&rsquo;un coffre.</p>
+
+      <div class="jeu-info-type-block">
+        <div class="jeu-info-type-icon jeu-info-type-icon--image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <div class="jeu-info-type-body">
+          <p class="jeu-info-type-name">Images</p>
+          <p class="jeu-info-type-desc">Illustrations exclusives class&eacute;es par raret&eacute;. Visibles dans votre coffre, revendables contre des pi&egrave;ces.</p>
+        </div>
+      </div>
+
+      <div class="jeu-info-type-block">
+        <div class="jeu-info-type-icon jeu-info-type-icon--charm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+        </div>
+        <div class="jeu-info-type-body">
+          <p class="jeu-info-type-name">Charmes</p>
+          <p class="jeu-info-type-desc">Effets visuels et d&eacute;corations appliqu&eacute;s &agrave; votre photo de profil. Chaque charme est unique.</p>
+        </div>
+      </div>
+
+      <div class="jeu-info-type-block">
+        <div class="jeu-info-type-icon jeu-info-type-icon--theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><path d="M3 12h18"/></svg>
+        </div>
+        <div class="jeu-info-type-body">
+          <p class="jeu-info-type-name">Th&egrave;mes</p>
+          <p class="jeu-info-type-desc">Palettes de couleurs pour personnaliser l&rsquo;interface. S&eacute;lectionnables depuis votre profil.</p>
+        </div>
+      </div>
+
+      <p class="jeu-info-note">Un coffre peut aussi contenir des pi&egrave;ces en bonus si vous poss&eacute;dez d&eacute;j&agrave; l&rsquo;objet tir&eacute;.</p>
+    </div>
+
+    <%# ─── Page Obtenir des coffres ─────────────────────────── %>
+    <div class="jeu-info-page" id="jeu-info-page-obtenir">
+      <p class="jeu-info-intro">Les coffres s&rsquo;obtiennent en participant &agrave; la vie du site.</p>
+
+      <ul class="jeu-info-obtain-list">
+        <li class="jeu-info-obtain-item">
+          <span class="jeu-info-obtain-icon">&#9654;</span>
+          <div>
+            <p class="jeu-info-obtain-title">Terminer un quizz</p>
+            <p class="jeu-info-obtain-desc">1 coffre offert &agrave; la premi&egrave;re compl&eacute;tion de chaque quizz.</p>
+          </div>
         </li>
-        <li class="jeu-info-rarity-item">
-          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(270,65%,65%)"></span>&Eacute;pique</span>
-          <span class="jeu-info-rarity-pct">15 %</span>
+        <li class="jeu-info-obtain-item">
+          <span class="jeu-info-obtain-icon">&#9654;</span>
+          <div>
+            <p class="jeu-info-obtain-title">Jeux Arcade</p>
+            <p class="jeu-info-obtain-desc">Victoires au Memory et r&eacute;ussites au Wordle r&eacute;compens&eacute;es en coffres.</p>
+          </div>
         </li>
-        <li class="jeu-info-rarity-item">
-          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(44,95%,55%)"></span>L&eacute;gendaire</span>
-          <span class="jeu-info-rarity-pct">5 %</span>
+        <li class="jeu-info-obtain-item">
+          <span class="jeu-info-obtain-icon">&#9654;</span>
+          <div>
+            <p class="jeu-info-obtain-title">Favoris et interactions</p>
+            <p class="jeu-info-obtain-desc">Ajouter des contenus en favori d&eacute;bloque parfois un coffre suppl&eacute;mentaire.</p>
+          </div>
         </li>
-        <li class="jeu-info-rarity-item">
-          <span class="jeu-info-rarity-name"><span class="jeu-info-rarity-dot" style="background:hsl(0,75%,55%)"></span>Mythique</span>
-          <span class="jeu-info-rarity-pct">2 %</span>
+        <li class="jeu-info-obtain-item">
+          <span class="jeu-info-obtain-icon">&#9654;</span>
+          <div>
+            <p class="jeu-info-obtain-title">Offerts par l&rsquo;administrateur</p>
+            <p class="jeu-info-obtain-desc">Des coffres peuvent &ecirc;tre offerts directement via votre profil.</p>
+          </div>
         </li>
       </ul>
     </div>
 
-    <div>
-      <p class="jeu-info-section-title">Contenu autoris&eacute;</p>
-      <label class="jeu-settings-toggle">
-        <span class="jeu-settings-toggle-label">Images <strong>Irr&eacute;aliste</strong></span>
-        <input type="checkbox" class="jeu-settings-checkbox" id="jeu-settings-irrealiste"
-               <%- currentUser.lootboxAllowIrrealiste ? 'checked' : '' %>>
-        <span class="jeu-settings-toggle-track"><span class="jeu-settings-toggle-thumb"></span></span>
-      </label>
-      <label class="jeu-settings-toggle">
-        <span class="jeu-settings-toggle-label">Images <strong>Ultra</strong></span>
-        <input type="checkbox" class="jeu-settings-checkbox" id="jeu-settings-ultra"
-               <%- currentUser.lootboxAllowUltra ? 'checked' : '' %>>
-        <span class="jeu-settings-toggle-track"><span class="jeu-settings-toggle-thumb"></span></span>
-      </label>
-    </div>
-  </div>
+  </div><%# /jeu-info-inner %>
 </div>
 
 <%- include('partials/foot') %>
@@ -534,6 +649,25 @@
   });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && infoPop && !infoPop.hidden) closeInfo();
+  });
+
+  // Navigation onglets
+  var TAB_LABELS = { accueil: 'Guide des coffres', rarete: 'Rareté', types: 'Types d\'objets', obtenir: 'Obtenir des coffres' };
+  function switchTab(name) {
+    document.querySelectorAll('.jeu-info-tab').forEach(function(t) {
+      t.classList.toggle('jeu-info-tab--active', t.dataset.tab === name);
+    });
+    document.querySelectorAll('.jeu-info-page').forEach(function(p) {
+      p.classList.toggle('jeu-info-page--active', p.id === 'jeu-info-page-' + name);
+    });
+    var label = document.getElementById('jeu-info-tab-label');
+    if (label) label.textContent = TAB_LABELS[name] || '';
+  }
+  document.querySelectorAll('.jeu-info-tab').forEach(function(t) {
+    t.addEventListener('click', function() { switchTab(t.dataset.tab); });
+  });
+  document.querySelectorAll('.jeu-info-card[data-goto]').forEach(function(card) {
+    card.addEventListener('click', function() { switchTab(card.dataset.goto); });
   });
 })();
 </script>
