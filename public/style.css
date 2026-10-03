@@ -20075,194 +20075,196 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   color: hsl(252,80%,88%);
 }
 
-/* ── Profil mobile dashboard ────────────────────────────────────────── */
-.profil-mobile-dash { display: none; }
+/* ── Profil home — layout 4 lignes ──────────────────────────────────── */
+.profil-home {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  padding: .25rem 0 1.5rem;
+}
 
+/* Ligne générique */
+.ph-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: hsl(240,8%,11%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: .9rem 1.1rem;
+}
+.ph-row-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  width: 62px;
+  flex-shrink: 0;
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  padding-top: .1rem;
+}
+.ph-row-label svg { width: 20px; height: 20px; }
+.ph-row-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Lootbox */
+.ph-lootbox-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+  background: hsl(36,60%,13%);
+  border: 1.5px solid hsl(36,65%,38%);
+  border-radius: 12px;
+  padding: .55rem .8rem;
+  cursor: pointer;
+  transition: background .12s, transform .12s;
+  min-width: 90px;
+}
+.ph-lootbox-btn--empty {
+  background: hsl(240,8%,15%);
+  border-color: hsl(240,8%,28%);
+  cursor: default;
+  opacity: .6;
+}
+.ph-lootbox-btn:not(.ph-lootbox-btn--empty):hover { background: hsl(36,60%,18%); }
+.ph-lootbox-btn:not(.ph-lootbox-btn--empty):active { transform: scale(.97); }
+.ph-lootbox-svg { width: 64px; height: 50px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
+.ph-lootbox-count {
+  font-size: 1.5rem; font-weight: 900; line-height: 1; color: hsl(44,95%,65%);
+}
+.ph-lootbox-label { font-size: .68rem; font-weight: 600; color: hsl(36,65%,65%); text-align: center; }
+.ph-lootbox-btn--empty .ph-lootbox-count { color: #475569; }
+.ph-lootbox-btn--empty .ph-lootbox-label { color: #475569; }
+
+/* Aperçu unlocks */
+.ph-unlocks {
+  display: flex; flex-direction: column; gap: .45rem; flex: 1; min-width: 0;
+}
+.ph-unlock-thumbs {
+  display: flex; gap: .35rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+}
+.ph-unlock-thumbs::-webkit-scrollbar { display: none; }
+.ph-unlock-thumb {
+  width: 42px; height: 42px; border-radius: 8px;
+  background: hsl(240,8%,18%); border: 1px solid hsl(240,8%,26%);
+  overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.ph-unlock-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ph-unlock-thumb--more {
+  font-size: .7rem; font-weight: 700; color: var(--muted);
+}
+.ph-row-empty { font-size: .78rem; color: #475569; }
+
+/* Lien générique */
+.ph-row-link {
+  font-size: .78rem; font-weight: 600; color: var(--accent);
+  text-decoration: none; white-space: nowrap;
+}
+.ph-row-link:hover { text-decoration: underline; }
+.ph-row-link--standalone { margin-top: .2rem; }
+
+/* Activité */
+.ph-row-body--activity {
+  gap: 0; display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto auto;
+}
+.ph-row-link--standalone { grid-column: 1 / -1; }
+.ph-act-cell {
+  display: flex; flex-direction: column; align-items: center; gap: .1rem;
+  text-decoration: none;
+  padding: .3rem .2rem;
+  border-right: 1px solid var(--border);
+  transition: background .12s;
+  border-radius: 6px;
+}
+.ph-act-cell:last-of-type { border-right: none; }
+.ph-act-cell:hover { background: rgba(255,255,255,.04); }
+.ph-act-num {
+  font-size: 1.4rem; font-weight: 900; line-height: 1; color: var(--text-1, #eee);
+}
+.ph-act-lbl {
+  font-size: .63rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--muted);
+}
+
+/* Gestion */
+.ph-row-body--gestion { gap: .5rem; }
+.ph-gest-btn {
+  display: flex; align-items: center; gap: .4rem;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 8px;
+  padding: .4rem .7rem;
+  font-size: .78rem; font-weight: 600; color: var(--text-1, #eee);
+  text-decoration: none; white-space: nowrap;
+  transition: background .12s, border-color .12s;
+}
+.ph-gest-btn:hover { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); }
+.ph-gest-btn svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted); }
+
+/* Partenaire */
+.ph-row--partner .ph-row-label svg { color: hsl(340,70%,65%); }
+.ph-row-body--partner { align-items: center; gap: .85rem; }
+.ph-partner-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  object-fit: cover; border: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+.ph-partner-avatar--placeholder {
+  background: hsl(240,8%,18%);
+  display: flex; align-items: center; justify-content: center;
+}
+.ph-partner-avatar--placeholder svg { width: 22px; height: 22px; color: var(--muted); }
+.ph-partner-name { font-size: .95rem; font-weight: 700; color: var(--text-1, #eee); flex: 1; }
+
+/* Favoris section */
+.ph-fav-section { margin-top: .5rem; }
+.ph-fav-title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted); margin: 0 0 .75rem;
+}
+
+/* Export bouton */
+.ph-export-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .5rem; text-align: center; margin-top: 1rem;
+}
+.ph-export-hint { font-size: .78rem; color: var(--muted); margin: 0; }
+.ph-export-btn {
+  padding: .5rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--fg);
+  font-size: .85rem;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.ph-export-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Mobile : sidebar cachée, layout pleine largeur */
 @media (max-width: 640px) {
-  .profil-mobile-dash {
-    display: flex;
-    flex-direction: column;
-    gap: .65rem;
-    padding: .5rem .75rem .75rem;
-    /* Pas de hauteur fixe : on laisse scroller si besoin */
-  }
-  .profil-page.gallery-has-sidebar > .profil-export-gouts-block,
-  .profil-page.gallery-has-sidebar > .profil-empty,
-  .profil-page.gallery-has-sidebar > .profil-section-title,
-  .profil-page.gallery-has-sidebar > .wiki-grid,
-  .profil-page.gallery-has-sidebar > .profil-fav-grid { display: none; }
   .profil-page .profil-nav-sidebar { display: none; }
-
-  /* Lootbox — légèrement plus grande */
-  .pmd-lootbox {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .pmd-lootbox-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: .6rem;
-    background: hsl(36,60%,14%);
-    border: 2px solid hsl(36,70%,40%);
-    border-radius: 18px;
-    padding: 1.1rem 2rem;
-    cursor: pointer;
-    transition: background .13s, transform .13s;
-    width: 100%;
-  }
-  .pmd-lootbox-btn:active { transform: scale(.97); background: hsl(36,60%,18%); }
-  .pmd-lootbox-icon {
-    width: 110px;
-    height: 88px;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,.4));
-  }
-  .pmd-lootbox-icon--empty { opacity: .35; }
-  .pmd-lootbox-count {
-    font-size: 2rem;
-    font-weight: 900;
-    color: hsl(44,95%,65%);
-    line-height: 1;
-  }
-  .pmd-lootbox-label {
-    font-size: .9rem;
-    font-weight: 600;
-    color: hsl(36,70%,70%);
-  }
-  .pmd-lootbox-label--empty { color: #475569; }
-  .pmd-lootbox-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: .6rem;
-    width: 100%;
-    padding: .75rem 0;
-    opacity: .5;
+  .profil-home { padding: .5rem .75rem 1rem; }
+  .ph-row-body--activity {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Cartes coffre / activité — colonnes : contenu en haut, bouton en bas */
-  .pmd-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .65rem;
-    background: hsl(240,8%,12%);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: .85rem;
-  }
-  .pmd-card-content { width: 100%; display: flex; justify-content: center; }
 
-  /* Vignettes coffre — vraiment grandes, défilables horizontalement */
-  .pmd-thumbs {
-    display: flex;
-    gap: .5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    width: 100%;
-    padding-bottom: .1rem;
-  }
-  .pmd-thumbs::-webkit-scrollbar { display: none; }
-  .pmd-preview-thumb {
-    width: 5rem;
-    height: 5rem;
-    border-radius: 10px;
-    background: hsl(240,8%,18%);
-    overflow: hidden;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid hsl(240,8%,26%);
-  }
-  .pmd-preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .pmd-preview-thumb-placeholder { font-size: 1.6rem; }
-  .pmd-card-empty-hint { font-size: .82rem; color: #475569; padding: .5rem 0; }
-
-  /* Stats activité */
-  .pmd-stats {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    width: 100%;
-  }
-  .pmd-stat {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .1rem;
-    padding: .25rem 0;
-  }
-  .pmd-stat-num {
-    font-size: 1.5rem;
-    font-weight: 900;
-    line-height: 1;
-  }
-  .pmd-stat-lbl {
-    font-size: .7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    color: #64748b;
-  }
-  .pmd-stat--wiki    .pmd-stat-num { color: hsl(252,80%,80%); }
-  .pmd-stat--gallery .pmd-stat-num { color: hsl(28,80%,72%);  }
-  .pmd-stat--bd      .pmd-stat-num { color: hsl(142,65%,62%); }
-  .pmd-stat-sep {
-    width: 1px;
-    height: 2rem;
-    background: var(--border);
-    flex-shrink: 0;
-  }
-
-  /* Boutons dans cartes — colorés */
-  .pmd-card-btn {
-    display: block;
-    width: 100%;
-    text-align: center;
-    font-size: .88rem;
-    font-weight: 700;
-    text-decoration: none;
-    border-radius: 10px;
-    padding: .5rem 1rem;
-    transition: background .12s, filter .12s;
-  }
-  .pmd-card--coffre .pmd-card-btn {
-    background: hsl(36,60%,20%);
-    border: 1px solid hsl(36,60%,40%);
-    color: hsl(36,90%,80%);
-  }
-  .pmd-card--coffre .pmd-card-btn:active { filter: brightness(1.2); }
-  .pmd-card--activite .pmd-card-btn {
-    background: hsl(212,55%,20%);
-    border: 1px solid hsl(212,55%,40%);
-    color: hsl(212,80%,80%);
-  }
-  .pmd-card--activite .pmd-card-btn:active { filter: brightness(1.2); }
-
-  /* Bouton gestion — coloré */
-  .pmd-gestion-btn {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-    padding: .8rem 1rem;
-    background: hsl(270,40%,20%);
-    border: 1px solid hsl(270,50%,45%);
-    border-radius: 14px;
-    font-size: .95rem;
-    font-weight: 700;
-    color: hsl(270,80%,88%);
-    cursor: pointer;
-    transition: filter .13s;
-    letter-spacing: .04em;
-    text-align: center;
-  }
-  .pmd-gestion-btn:active { filter: brightness(1.25); }
 }
 
 /* ── Thèmes utilisateur ─────────────────────────────────────────────── */

@@ -1,178 +1,229 @@
 <%- include('partials/head', { title: 'Profil' }) %>
 <main class="container wide profil-page gallery-has-sidebar">
   <%- include('partials/top-nav', { config: config }) %>
-
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
-  <%# ── Dashboard mobile (masqué sur desktop) ── %>
-  <div class="profil-mobile-dash">
+  <div class="profil-home">
 
-    <%# Lootbox %>
-    <div class="pmd-lootbox">
-      <button type="button" class="pmd-lootbox-btn" id="pmd-lootbox-btn" aria-label="Ouvrir une lootbox" <% if (lootboxCount === 0) { %>hidden<% } %>>
-        <svg class="pmd-lootbox-icon" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect x="5" y="38" width="90" height="37" rx="6" fill="hsl(36,80%,30%)" stroke="hsl(36,70%,50%)" stroke-width="2"/>
-          <rect x="5" y="38" width="90" height="12" rx="3" fill="hsl(36,80%,40%)" stroke="hsl(36,70%,50%)" stroke-width="2"/>
-          <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="hsl(36,80%,35%)" stroke="hsl(36,70%,50%)" stroke-width="1.5"/>
-          <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="hsl(36,80%,35%)" stroke="hsl(36,70%,50%)" stroke-width="1.5"/>
-          <rect x="44" y="38" width="12" height="12" rx="2" fill="hsl(44,95%,55%)" stroke="hsl(44,70%,40%)" stroke-width="1.5"/>
-        </svg>
-        <span class="pmd-lootbox-count" id="pmd-lootbox-count"><%= lootboxCount %></span>
-        <span class="pmd-lootbox-label" id="pmd-lootbox-label"><%= lootboxCount === 1 ? '1 lootbox' : lootboxCount + ' lootboxes' %></span>
-      </button>
-      <div class="pmd-lootbox-empty" id="pmd-lootbox-empty" aria-label="Aucune lootbox disponible" <% if (lootboxCount > 0) { %>hidden<% } %>>
-        <svg class="pmd-lootbox-icon pmd-lootbox-icon--empty" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect x="5" y="38" width="90" height="37" rx="6" fill="hsl(240,8%,18%)" stroke="hsl(240,8%,30%)" stroke-width="2"/>
-          <rect x="5" y="38" width="90" height="12" rx="3" fill="hsl(240,8%,22%)" stroke="hsl(240,8%,30%)" stroke-width="2"/>
-          <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="hsl(240,8%,20%)" stroke="hsl(240,8%,30%)" stroke-width="1.5"/>
-          <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="hsl(240,8%,20%)" stroke="hsl(240,8%,30%)" stroke-width="1.5"/>
-          <rect x="44" y="38" width="12" height="12" rx="2" fill="hsl(240,8%,26%)" stroke="hsl(240,8%,32%)" stroke-width="1.5"/>
-        </svg>
-        <span class="pmd-lootbox-label pmd-lootbox-label--empty">Aucune lootbox</span>
+    <%# ── 1. Ligne Coffre ── %>
+    <div class="ph-row">
+      <div class="ph-row-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="12" width="20" height="10" rx="2"/><path d="M2 12 Q2 6 12 6 Q22 6 22 12"/><rect x="9" y="9" width="6" height="5" rx="1.5"/><circle cx="12" cy="17" r="1.5"/></svg>
+        Coffre
+      </div>
+      <div class="ph-row-body">
+        <%# Lootbox %>
+        <div class="ph-lootbox">
+          <button type="button" class="ph-lootbox-btn<%= lootboxCount === 0 ? ' ph-lootbox-btn--empty' : '' %>" id="ph-lootbox-btn" aria-label="Ouvrir une lootbox" <%= lootboxCount === 0 ? 'disabled' : '' %>>
+            <svg class="ph-lootbox-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="5" y="38" width="90" height="37" rx="6" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,30%)' : 'hsl(240,8%,18%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="2"/>
+              <rect x="5" y="38" width="90" height="12" rx="3" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,40%)' : 'hsl(240,8%,22%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="2"/>
+              <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,35%)' : 'hsl(240,8%,20%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="1.5"/>
+              <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,35%)' : 'hsl(240,8%,20%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="1.5"/>
+              <rect x="44" y="38" width="12" height="12" rx="2" fill="<%= lootboxCount > 0 ? 'hsl(44,95%,55%)' : 'hsl(240,8%,26%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(44,70%,40%)' : 'hsl(240,8%,32%)' %>" stroke-width="1.5"/>
+            </svg>
+            <span class="ph-lootbox-count" id="ph-lootbox-count"><%= lootboxCount %></span>
+            <span class="ph-lootbox-label">
+              <% if (lootboxCount === 0) { %>Aucun coffre<% } else if (lootboxCount === 1) { %>1 coffre à ouvrir<% } else { %><%= lootboxCount %> coffres à ouvrir<% } %>
+            </span>
+          </button>
+        </div>
+        <%# Aperçu unlocks %>
+        <div class="ph-unlocks">
+          <% var unlockPrev = (unlocks || []).slice(0, 5); %>
+          <% if (unlockPrev.length) { %>
+            <div class="ph-unlock-thumbs">
+              <% unlockPrev.forEach(function(u) { %>
+                <div class="ph-unlock-thumb">
+                  <% if (u.thumb) { %><img src="<%= u.thumb %>" alt="" loading="lazy" /><% } else { %><span>&#127873;</span><% } %>
+                </div>
+              <% }) %>
+              <% if (unlocks.length > 5) { %>
+                <div class="ph-unlock-thumb ph-unlock-thumb--more">+<%= unlocks.length - 5 %></div>
+              <% } %>
+            </div>
+          <% } else { %>
+            <span class="ph-row-empty">Coffre vide</span>
+          <% } %>
+          <a href="/favoris/coffre" class="ph-row-link">Voir mon coffre &rarr;</a>
+        </div>
       </div>
     </div>
 
-    <%# Coffre %>
-    <% var coffrePrev = (unlocks || []).slice(0, 4); %>
-    <div class="pmd-card pmd-card--coffre">
-      <div class="pmd-card-content">
-        <% if (coffrePrev.length) { %>
-          <div class="pmd-thumbs">
-            <% coffrePrev.forEach(function(u) { %>
-              <div class="pmd-preview-thumb">
-                <% if (u.thumb) { %>
-                  <img src="<%= u.thumb %>" alt="" loading="lazy" />
-                <% } else { %>
-                  <span class="pmd-preview-thumb-placeholder">&#127873;</span>
-                <% } %>
-              </div>
-            <% }); %>
-          </div>
-        <% } else { %>
-          <span class="pmd-card-empty-hint">Votre coffre est vide</span>
-        <% } %>
-      </div>
-      <a href="/favoris/coffre" class="pmd-card-btn">Voir mon coffre</a>
-    </div>
-
-    <%# Activités %>
+    <%# ── 2. Ligne Activité ── %>
     <%
       var actWiki    = notesCounts.wiki    || 0;
       var actGallery = notesCounts.gallery || 0;
       var actBd      = notesCounts.bd      || 0;
+      var actFav     = (wikiPages.length || 0) + (galleryImages.length || 0) + (bdBooks.length || 0);
     %>
-    <div class="pmd-card pmd-card--activite">
-      <div class="pmd-card-content">
-        <div class="pmd-stats">
-          <div class="pmd-stat pmd-stat--wiki">
-            <span class="pmd-stat-num"><%= actWiki %></span>
-            <span class="pmd-stat-lbl">Codex</span>
-          </div>
-          <div class="pmd-stat-sep"></div>
-          <div class="pmd-stat pmd-stat--gallery">
-            <span class="pmd-stat-num"><%= actGallery %></span>
-            <span class="pmd-stat-lbl">Images</span>
-          </div>
-          <div class="pmd-stat-sep"></div>
-          <div class="pmd-stat pmd-stat--bd">
-            <span class="pmd-stat-num"><%= actBd %></span>
-            <span class="pmd-stat-lbl">BD</span>
-          </div>
-        </div>
+    <div class="ph-row">
+      <div class="ph-row-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Activit&eacute;
       </div>
-      <a href="/favoris/historique" class="pmd-card-btn">Voir mon activité</a>
-    </div>
-
-    <%# Gestion %>
-    <button type="button" class="pmd-gestion-btn" onclick="location.href='/favoris/parametres'">Gestion</button>
-
-  </div>
-
-  <div class="profil-export-gouts-block">
-    <p class="profil-export-gouts-text">T&eacute;l&eacute;chargez une synth&egrave;se de vos go&ucirc;ts (codex), class&eacute;e par degr&eacute; d&rsquo;appr&eacute;ciation &mdash; pratique &agrave; garder pour vous ou &agrave; partager.</p>
-    <button type="button" id="wiki-export-gouts-btn" class="profil-export-gouts-btn">Extraire mes go&ucirc;ts</button>
-  </div>
-  <%- include('partials/export-gouts-modal') %>
-
-  <%# ── Contenu principal : favoris ── %>
-
-  <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
-  <% var hasAnything = fantasyPages.length || nonFantasyPages.length || galleryImages.length || bdBooks.length; %>
-
-  <div id="profil-empty" class="profil-empty"<%= hasAnything ? ' hidden' : '' %>>
-    <div class="profil-empty-icon">&#10024;</div>
-    <p>Vous retrouverez ici ce que vous pr&eacute;f&eacute;rez.<br>Commencez &agrave; explorer le <a href="/wiki">codex</a>, la <a href="/galerie">galerie</a> ou les <a href="/bd">BD</a> pour ajouter des favoris.</p>
-  </div>
-
-  <% if (fantasyPages.length) { %>
-    <h2 class="profil-section-title" id="profil-fantasy-title">Mes fantasmes (<%= fantasyPages.length %>)</h2>
-    <div class="wiki-grid" id="profil-fantasy-grid">
-      <% fantasyPages.forEach(function (page) { %>
-        <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
-      <% }) %>
-    </div>
-  <% } %>
-
-  <% if (nonFantasyPages.length) { %>
-    <h2 class="profil-section-title profil-section-title--center" id="profil-pf-title"><%= nonFantasyPages.length > 1 ? 'Pages favorites' : 'Page favorite' %></h2>
-    <div class="wiki-grid" id="profil-pf-grid">
-      <% nonFantasyPages.forEach(function (page) { %>
-        <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
-      <% }) %>
-    </div>
-  <% } %>
-
-  <% if (galleryImages.length) { %>
-    <h2 class="profil-section-title" id="profil-images-title">Images favorites (<%= galleryImages.length %>)</h2>
-    <div class="profil-fav-grid profil-fav-grid--lg" id="profil-images-grid">
-      <% galleryImages.forEach(function (img) { %>
-        <a href="/galerie/<%= img.id %>/edit"
-           class="profil-fav-card profil-fav-card--lg"
-           data-ultra="<%= img.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
-          <% if (img.imagePaths && img.imagePaths[0]) { %>
-            <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
-          <% } else { %>
-            <div class="profil-fav-card-placeholder">&#128247;</div>
-          <% } %>
-          <span class="profil-fav-card-title"><%= img.title || 'Sans titre' %></span>
+      <div class="ph-row-body ph-row-body--activity">
+        <a href="/favoris/notes/wiki" class="ph-act-cell">
+          <span class="ph-act-num"><%= actWiki %></span>
+          <span class="ph-act-lbl">Notes Codex</span>
         </a>
-      <% }) %>
-    </div>
-  <% } %>
-
-  <% if (bdBooks.length) { %>
-    <h2 class="profil-section-title" id="profil-bd-title">BD favorites (<%= bdBooks.length %>)</h2>
-    <div class="profil-fav-grid" id="profil-bd-grid">
-      <% bdBooks.forEach(function (book) { %>
-        <a href="/bd/<%= book.id %>"
-           class="profil-fav-card"
-           data-fav-item data-item-type="bd" data-item-id="<%= book.id %>"
-           data-ultra="<%= book.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
-          <% if (book.imagePaths && book.imagePaths[0]) { %>
-            <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
-          <% } else { %>
-            <div class="profil-fav-card-placeholder">&#128218;</div>
-          <% } %>
-          <span class="profil-fav-card-title"><%= book.title %></span>
-          <button type="button" class="wiki-pl-remove" title="Retirer des favoris">&#215;</button>
+        <a href="/favoris/notes/images" class="ph-act-cell">
+          <span class="ph-act-num"><%= actGallery %></span>
+          <span class="ph-act-lbl">Notes Images</span>
         </a>
-      <% }) %>
+        <a href="/favoris/notes/bd" class="ph-act-cell">
+          <span class="ph-act-num"><%= actBd %></span>
+          <span class="ph-act-lbl">Notes BD</span>
+        </a>
+        <a href="/favoris" class="ph-act-cell">
+          <span class="ph-act-num"><%= actFav %></span>
+          <span class="ph-act-lbl">Favoris</span>
+        </a>
+        <a href="/favoris/historique" class="ph-row-link ph-row-link--standalone">Voir l&rsquo;historique &rarr;</a>
+      </div>
     </div>
-  <% } %>
+
+    <%# ── 3. Ligne Gestion ── %>
+    <div class="ph-row">
+      <div class="ph-row-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="8" cy="12" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2"/></svg>
+        Gestion
+      </div>
+      <div class="ph-row-body ph-row-body--gestion">
+        <a href="/favoris/parametres" class="ph-gest-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="8" cy="12" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2"/></svg>
+          Param&egrave;tres
+        </a>
+        <a href="/favoris/identite" class="ph-gest-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          Identit&eacute;
+        </a>
+        <a href="/favoris/masques" class="ph-gest-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Masqu&eacute;s
+        </a>
+        <a href="/favoris/mot-de-passe" class="ph-gest-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Mot de passe
+        </a>
+        <% if (currentUser.isAdmin) { %>
+        <a href="/favoris/journal" class="ph-gest-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Journal
+        </a>
+        <% } %>
+      </div>
+    </div>
+
+    <%# ── 4. Ligne Partenaire (si concerné) ── %>
+    <% if (locals.partner && partner) { %>
+    <div class="ph-row ph-row--partner">
+      <div class="ph-row-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Partenaire
+      </div>
+      <div class="ph-row-body ph-row-body--partner">
+        <% if (partner.profileImagePath) { %>
+          <img src="<%= partner.profileImagePath %>" alt="" class="ph-partner-avatar" />
+        <% } else { %>
+          <div class="ph-partner-avatar ph-partner-avatar--placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          </div>
+        <% } %>
+        <span class="ph-partner-name"><%= partner.displayName %></span>
+        <a href="/couple" class="ph-row-link">Voir le profil &rarr;</a>
+      </div>
+    </div>
+    <% } %>
+
+    <%# ── Favoris ── %>
+    <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
+    <% var hasAnything = fantasyPages.length || nonFantasyPages.length || galleryImages.length || bdBooks.length; %>
+
+    <% if (hasAnything) { %>
+    <div class="ph-fav-section">
+      <p class="ph-fav-title">Mes favoris</p>
+
+      <% if (fantasyPages.length) { %>
+        <h3 class="profil-section-title">Mes fantasmes (<%= fantasyPages.length %>)</h3>
+        <div class="wiki-grid" id="profil-fantasy-grid">
+          <% fantasyPages.forEach(function(page) { %>
+            <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <% if (nonFantasyPages.length) { %>
+        <h3 class="profil-section-title profil-section-title--center" id="profil-pf-title"><%= nonFantasyPages.length > 1 ? 'Pages favorites' : 'Page favorite' %></h3>
+        <div class="wiki-grid" id="profil-pf-grid">
+          <% nonFantasyPages.forEach(function(page) { %>
+            <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <% if (galleryImages.length) { %>
+        <h3 class="profil-section-title">Images favorites (<%= galleryImages.length %>)</h3>
+        <div class="profil-fav-grid profil-fav-grid--lg" id="profil-images-grid">
+          <% galleryImages.forEach(function(img) { %>
+            <a href="/galerie/<%= img.id %>/edit"
+               class="profil-fav-card profil-fav-card--lg"
+               data-ultra="<%= img.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
+              <% if (img.imagePaths && img.imagePaths[0]) { %>
+                <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || 'Sans titre' %>" class="profil-fav-card-img" loading="lazy" />
+              <% } else { %>
+                <div class="profil-fav-card-placeholder">&#128247;</div>
+              <% } %>
+              <span class="profil-fav-card-title"><%= img.title || 'Sans titre' %></span>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <% if (bdBooks.length) { %>
+        <h3 class="profil-section-title">BD favorites (<%= bdBooks.length %>)</h3>
+        <div class="profil-fav-grid" id="profil-bd-grid">
+          <% bdBooks.forEach(function(book) { %>
+            <a href="/bd/<%= book.id %>"
+               class="profil-fav-card"
+               data-fav-item data-item-type="bd" data-item-id="<%= book.id %>"
+               data-ultra="<%= book.tags.indexOf('ultra') !== -1 ? '1' : '0' %>">
+              <% if (book.imagePaths && book.imagePaths[0]) { %>
+                <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="<%= book.title %>" class="profil-fav-card-img" loading="lazy" />
+              <% } else { %>
+                <div class="profil-fav-card-placeholder">&#128218;</div>
+              <% } %>
+              <span class="profil-fav-card-title"><%= book.title %></span>
+              <button type="button" class="wiki-pl-remove" title="Retirer des favoris">&#215;</button>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+    <% } %>
+
+    <%# ── Bouton "Extraire mes goûts" ── %>
+    <div class="ph-export-wrap">
+      <p class="ph-export-hint">T&eacute;l&eacute;chargez une synth&egrave;se de vos go&ucirc;ts (codex), class&eacute;e par degr&eacute; d&rsquo;appr&eacute;ciation.</p>
+      <button type="button" id="wiki-export-gouts-btn" class="ph-export-btn">Extraire mes go&ucirc;ts</button>
+    </div>
+    <%- include('partials/export-gouts-modal') %>
+
+  </div><%# /profil-home %>
 
 </main>
 
 <script>
 (function () {
-  // ── Dashboard mobile : bouton lootbox ────────────────────────────────────
-  var pmdBtn = document.getElementById("pmd-lootbox-btn");
-  if (pmdBtn) {
-    pmdBtn.addEventListener("click", function () {
+  // Bouton lootbox
+  var phBtn = document.getElementById("ph-lootbox-btn");
+  if (phBtn) {
+    phBtn.addEventListener("click", function () {
       if (typeof window._lbTrigger === "function") window._lbTrigger();
     });
   }
 
-  // ── Favoris : retirer ────────────────────────────────────────────────────
+  // Retirer des favoris (BD)
   document.querySelectorAll("[data-fav-item] .wiki-pl-remove").forEach(function (btn) {
     btn.addEventListener("click", function (e) {
       e.preventDefault();
@@ -183,46 +234,33 @@
         body: JSON.stringify({ itemType: card.dataset.itemType, itemId: Number(card.dataset.itemId) }),
       })
         .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (d.ok && !d.active) card.remove();
-        });
+        .then(function (d) { if (d.ok && !d.active) card.remove(); });
     });
   });
 
-  // ── Masquer les contenus Ultra (bouton dans partials/profil-nav.ejs, géré
-  // pour son propre état par nav.js) : ici on ne réagit qu'au changement
-  // pour cacher/afficher les cartes de cette page. Une section entière
-  // disparaît si tout ce qu'elle contenait était de l'Ultra désormais masqué,
-  // et le message "rien à voir" apparaît si les 4 sections sont vides.
+  // Masquer Ultra
   var ultraCards = document.querySelectorAll('[data-ultra="1"]');
-  var emptyMsg = document.getElementById("profil-empty");
   var sections = [
     { title: document.getElementById("profil-fantasy-title"), grid: document.getElementById("profil-fantasy-grid"), sel: ".wiki-card" },
-    { title: document.getElementById("profil-pf-title"), grid: document.getElementById("profil-pf-grid"), sel: ".wiki-card", relabel: "Pages favorites", relabelSingle: "Page favorite" },
-    { title: document.getElementById("profil-images-title"), grid: document.getElementById("profil-images-grid"), sel: ".profil-fav-card" },
-    { title: document.getElementById("profil-bd-title"), grid: document.getElementById("profil-bd-grid"), sel: ".profil-fav-card" },
+    { title: document.getElementById("profil-pf-title"),      grid: document.getElementById("profil-pf-grid"),      sel: ".wiki-card", relabel: "Pages favorites", relabelSingle: "Page favorite" },
+    { title: document.getElementById("profil-images-title"),  grid: document.getElementById("profil-images-grid"),  sel: ".profil-fav-card" },
+    { title: document.getElementById("profil-bd-title"),      grid: document.getElementById("profil-bd-grid"),      sel: ".profil-fav-card" },
   ];
-
   function applyUltraHide() {
     var on = localStorage.getItem("profil-hide-ultra") === "1";
     ultraCards.forEach(function (el) { el.hidden = on; });
-
-    var totalVisible = 0;
     sections.forEach(function (s) {
       if (!s.title || !s.grid) return;
       var visible = s.grid.querySelectorAll(s.sel + ":not([hidden])").length;
       s.title.hidden = visible === 0;
       s.grid.hidden = visible === 0;
       if (s.relabel && visible > 0) s.title.textContent = visible > 1 ? s.relabel : s.relabelSingle;
-      totalVisible += visible;
     });
-    if (emptyMsg) emptyMsg.hidden = totalVisible > 0;
   }
   applyUltraHide();
   document.addEventListener("profil-ultra-toggle-change", applyUltraHide);
 
-  // ── "Extraire mes goûts" : popup de réglages puis téléchargement d'une
-  // synthèse .txt générée côté serveur (voir GET /wiki/export-gouts).
+  // "Extraire mes goûts"
   var exportBtn = document.getElementById("wiki-export-gouts-btn");
   var exportModal = document.getElementById("export-gouts-modal");
   if (exportBtn && exportModal) {
@@ -230,14 +268,11 @@
     var exportIrrealisteCheck = document.getElementById("export-gouts-irrealiste");
     var exportConfirmBtn = document.getElementById("export-gouts-confirm");
     var exportCancelBtn = document.getElementById("export-gouts-cancel");
-
     function openExportModal() { exportModal.hidden = false; }
     function closeExportModal() { exportModal.hidden = true; }
-
     exportBtn.addEventListener("click", openExportModal);
     if (exportCancelBtn) exportCancelBtn.addEventListener("click", closeExportModal);
     exportModal.addEventListener("click", function (e) { if (e.target === exportModal) closeExportModal(); });
-
     if (exportConfirmBtn) {
       exportConfirmBtn.addEventListener("click", function () {
         var min = "all";

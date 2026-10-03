@@ -165,6 +165,7 @@ function buildFavoritesRouter(config) {
     );
     const unlocks = getUserUnlocks(req.user.id);
     const lootboxCount = getLootboxCount(req.user.id);
+    const partner = req.user.partnerId ? getUserById(req.user.partnerId) : null;
     res.render("favoris", {
       config,
       wikiPages,
@@ -176,6 +177,7 @@ function buildFavoritesRouter(config) {
       notesCounts: notesCounts(req.user),
       unlocks,
       lootboxCount,
+      partner,
     });
   }
 
