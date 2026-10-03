@@ -5,32 +5,28 @@
 
   <div class="profil-home">
 
-    <%# ── 1. Ligne Coffre ── %>
-    <div class="ph-row">
-      <div class="ph-row-label">
+    <%# ── 1. Coffre ── %>
+    <div class="ph-card">
+      <div class="ph-card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="12" width="20" height="10" rx="2"/><path d="M2 12 Q2 6 12 6 Q22 6 22 12"/><rect x="9" y="9" width="6" height="5" rx="1.5"/><circle cx="12" cy="17" r="1.5"/></svg>
         Coffre
       </div>
-      <div class="ph-row-body">
-        <%# Lootbox %>
-        <div class="ph-lootbox">
-          <button type="button" class="ph-lootbox-btn<%= lootboxCount === 0 ? ' ph-lootbox-btn--empty' : '' %>" id="ph-lootbox-btn" aria-label="Ouvrir une lootbox" <%= lootboxCount === 0 ? 'disabled' : '' %>>
-            <svg class="ph-lootbox-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect x="5" y="38" width="90" height="37" rx="6" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,30%)' : 'hsl(240,8%,18%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="2"/>
-              <rect x="5" y="38" width="90" height="12" rx="3" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,40%)' : 'hsl(240,8%,22%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="2"/>
-              <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,35%)' : 'hsl(240,8%,20%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="1.5"/>
-              <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,35%)' : 'hsl(240,8%,20%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="1.5"/>
-              <rect x="44" y="38" width="12" height="12" rx="2" fill="<%= lootboxCount > 0 ? 'hsl(44,95%,55%)' : 'hsl(240,8%,26%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(44,70%,40%)' : 'hsl(240,8%,32%)' %>" stroke-width="1.5"/>
-            </svg>
-            <span class="ph-lootbox-count" id="ph-lootbox-count"><%= lootboxCount %></span>
-            <span class="ph-lootbox-label">
-              <% if (lootboxCount === 0) { %>Aucun coffre<% } else if (lootboxCount === 1) { %>1 coffre à ouvrir<% } else { %><%= lootboxCount %> coffres à ouvrir<% } %>
-            </span>
-          </button>
-        </div>
-        <%# Aperçu unlocks %>
+      <div class="ph-card-body ph-card-body--coffre">
+        <button type="button" class="ph-lootbox-btn<%= lootboxCount === 0 ? ' ph-lootbox-btn--empty' : '' %>" id="ph-lootbox-btn" aria-label="Ouvrir une lootbox" <%= lootboxCount === 0 ? 'disabled' : '' %>>
+          <svg class="ph-lootbox-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="5" y="38" width="90" height="37" rx="6" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,30%)' : 'hsl(240,8%,18%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="2"/>
+            <rect x="5" y="38" width="90" height="12" rx="3" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,40%)' : 'hsl(240,8%,22%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="2"/>
+            <path d="M50 38 Q50 20 35 20 Q20 20 20 34 Q20 44 50 38Z" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,35%)' : 'hsl(240,8%,20%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="1.5"/>
+            <path d="M50 38 Q50 20 65 20 Q80 20 80 34 Q80 44 50 38Z" fill="<%= lootboxCount > 0 ? 'hsl(36,80%,35%)' : 'hsl(240,8%,20%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(36,70%,50%)' : 'hsl(240,8%,30%)' %>" stroke-width="1.5"/>
+            <rect x="44" y="38" width="12" height="12" rx="2" fill="<%= lootboxCount > 0 ? 'hsl(44,95%,55%)' : 'hsl(240,8%,26%)' %>" stroke="<%= lootboxCount > 0 ? 'hsl(44,70%,40%)' : 'hsl(240,8%,32%)' %>" stroke-width="1.5"/>
+          </svg>
+          <span class="ph-lootbox-count" id="ph-lootbox-count"><%= lootboxCount %></span>
+          <span class="ph-lootbox-label">
+            <% if (lootboxCount === 0) { %>aucun coffre<% } else if (lootboxCount === 1) { %>1 à ouvrir<% } else { %><%= lootboxCount %> à ouvrir<% } %>
+          </span>
+        </button>
         <div class="ph-unlocks">
-          <% var unlockPrev = (unlocks || []).slice(0, 5); %>
+          <% var unlockPrev = (unlocks || []).slice(0, 6); %>
           <% if (unlockPrev.length) { %>
             <div class="ph-unlock-thumbs">
               <% unlockPrev.forEach(function(u) { %>
@@ -38,58 +34,58 @@
                   <% if (u.thumb) { %><img src="<%= u.thumb %>" alt="" loading="lazy" /><% } else { %><span>&#127873;</span><% } %>
                 </div>
               <% }) %>
-              <% if (unlocks.length > 5) { %>
-                <div class="ph-unlock-thumb ph-unlock-thumb--more">+<%= unlocks.length - 5 %></div>
+              <% if (unlocks.length > 6) { %>
+                <div class="ph-unlock-thumb ph-unlock-thumb--more">+<%= unlocks.length - 6 %></div>
               <% } %>
             </div>
           <% } else { %>
-            <span class="ph-row-empty">Coffre vide</span>
+            <span class="ph-empty-hint">Coffre vide</span>
           <% } %>
-          <a href="/favoris/coffre" class="ph-row-link">Voir mon coffre &rarr;</a>
         </div>
+        <a href="/favoris/coffre" class="ph-card-link">Mon coffre</a>
       </div>
     </div>
 
-    <%# ── 2. Ligne Activité ── %>
+    <%# ── 2. Activité ── %>
     <%
       var actWiki    = notesCounts.wiki    || 0;
       var actGallery = notesCounts.gallery || 0;
       var actBd      = notesCounts.bd      || 0;
       var actFav     = (wikiPages.length || 0) + (galleryImages.length || 0) + (bdBooks.length || 0);
     %>
-    <div class="ph-row">
-      <div class="ph-row-label">
+    <div class="ph-card">
+      <div class="ph-card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Activit&eacute;
       </div>
-      <div class="ph-row-body ph-row-body--activity">
+      <div class="ph-card-body ph-card-body--activity">
         <a href="/favoris/notes/wiki" class="ph-act-cell">
           <span class="ph-act-num"><%= actWiki %></span>
-          <span class="ph-act-lbl">Notes Codex</span>
+          <span class="ph-act-lbl">Codex</span>
         </a>
         <a href="/favoris/notes/images" class="ph-act-cell">
           <span class="ph-act-num"><%= actGallery %></span>
-          <span class="ph-act-lbl">Notes Images</span>
+          <span class="ph-act-lbl">Images</span>
         </a>
         <a href="/favoris/notes/bd" class="ph-act-cell">
           <span class="ph-act-num"><%= actBd %></span>
-          <span class="ph-act-lbl">Notes BD</span>
+          <span class="ph-act-lbl">BD</span>
         </a>
         <a href="/favoris" class="ph-act-cell">
           <span class="ph-act-num"><%= actFav %></span>
           <span class="ph-act-lbl">Favoris</span>
         </a>
-        <a href="/favoris/historique" class="ph-row-link ph-row-link--standalone">Voir l&rsquo;historique &rarr;</a>
       </div>
+      <a href="/favoris/historique" class="ph-card-sublink">Historique</a>
     </div>
 
-    <%# ── 3. Ligne Gestion ── %>
-    <div class="ph-row">
-      <div class="ph-row-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="8" cy="12" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2"/></svg>
+    <%# ── 3. Gestion ── %>
+    <div class="ph-card">
+      <div class="ph-card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
         Gestion
       </div>
-      <div class="ph-row-body ph-row-body--gestion">
+      <div class="ph-card-body ph-card-body--gestion">
         <a href="/favoris/parametres" class="ph-gest-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="8" cy="12" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2"/></svg>
           Param&egrave;tres
@@ -99,7 +95,7 @@
           Identit&eacute;
         </a>
         <a href="/favoris/masques" class="ph-gest-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           Masqu&eacute;s
         </a>
         <a href="/favoris/mot-de-passe" class="ph-gest-btn">
@@ -115,14 +111,14 @@
       </div>
     </div>
 
-    <%# ── 4. Ligne Partenaire (si concerné) ── %>
+    <%# ── 4. Partenaire (si concerné) ── %>
     <% if (locals.partner && partner) { %>
-    <div class="ph-row ph-row--partner">
-      <div class="ph-row-label">
+    <div class="ph-card ph-card--partner">
+      <div class="ph-card-header ph-card-header--partner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         Partenaire
       </div>
-      <div class="ph-row-body ph-row-body--partner">
+      <div class="ph-card-body ph-card-body--partner">
         <% if (partner.profileImagePath) { %>
           <img src="<%= partner.profileImagePath %>" alt="" class="ph-partner-avatar" />
         <% } else { %>
@@ -131,21 +127,18 @@
           </div>
         <% } %>
         <span class="ph-partner-name"><%= partner.displayName %></span>
-        <a href="/couple" class="ph-row-link">Voir le profil &rarr;</a>
+        <a href="/couple" class="ph-card-link ph-card-link--partner">Profil commun</a>
       </div>
     </div>
     <% } %>
 
-    <%# ── Favoris ── %>
-    <% var nonFantasyPages = wikiPages.filter(function(p) { return p.category !== 'fantasmes' && !(p.extraCategories || []).includes('fantasmes'); }); %>
-    <% var hasAnything = fantasyPages.length || nonFantasyPages.length || galleryImages.length || bdBooks.length; %>
+    <%# ── Favoris (fantasmes + images + bd, sans "pages favorites") ── %>
+    <% var hasAnything = fantasyPages.length || galleryImages.length || bdBooks.length; %>
 
     <% if (hasAnything) { %>
     <div class="ph-fav-section">
-      <p class="ph-fav-title">Mes favoris</p>
-
       <% if (fantasyPages.length) { %>
-        <h3 class="profil-section-title">Mes fantasmes (<%= fantasyPages.length %>)</h3>
+        <h3 class="profil-section-title" id="profil-fantasy-title">Mes fantasmes (<%= fantasyPages.length %>)</h3>
         <div class="wiki-grid" id="profil-fantasy-grid">
           <% fantasyPages.forEach(function(page) { %>
             <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
@@ -153,17 +146,8 @@
         </div>
       <% } %>
 
-      <% if (nonFantasyPages.length) { %>
-        <h3 class="profil-section-title profil-section-title--center" id="profil-pf-title"><%= nonFantasyPages.length > 1 ? 'Pages favorites' : 'Page favorite' %></h3>
-        <div class="wiki-grid" id="profil-pf-grid">
-          <% nonFantasyPages.forEach(function(page) { %>
-            <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
-          <% }) %>
-        </div>
-      <% } %>
-
       <% if (galleryImages.length) { %>
-        <h3 class="profil-section-title">Images favorites (<%= galleryImages.length %>)</h3>
+        <h3 class="profil-section-title" id="profil-images-title">Images favorites (<%= galleryImages.length %>)</h3>
         <div class="profil-fav-grid profil-fav-grid--lg" id="profil-images-grid">
           <% galleryImages.forEach(function(img) { %>
             <a href="/galerie/<%= img.id %>/edit"
@@ -181,7 +165,7 @@
       <% } %>
 
       <% if (bdBooks.length) { %>
-        <h3 class="profil-section-title">BD favorites (<%= bdBooks.length %>)</h3>
+        <h3 class="profil-section-title" id="profil-bd-title">BD favorites (<%= bdBooks.length %>)</h3>
         <div class="profil-fav-grid" id="profil-bd-grid">
           <% bdBooks.forEach(function(book) { %>
             <a href="/bd/<%= book.id %>"
