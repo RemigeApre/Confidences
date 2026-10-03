@@ -18108,30 +18108,10 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   overflow: hidden;
   max-height: 88vh;
 }
-.jeu-info-header {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem .75rem;
-  border-bottom: 1px solid rgba(255,255,255,.07);
-  flex-shrink: 0;
-}
-.jeu-info-title {
-  font-size: .95rem; font-weight: 700; color: var(--text-1,#fff); margin: 0;
-}
-.jeu-info-close {
-  background: none; border: none;
-  color: hsl(0,75%,62%);
-  cursor: pointer; padding: .2rem;
-  line-height: 0; flex-shrink: 0;
-  opacity: .85;
-  transition: opacity .15s, color .15s;
-}
-.jeu-info-close:hover { opacity: 1; color: hsl(0,80%,75%); }
-.jeu-info-close svg { width: 20px; height: 20px; display: block; }
 
-/* Onglets intercalaires */
+/* Onglets + fermer sur la même ligne */
 .jeu-info-tabs {
-  display: flex; gap: 0;
+  display: flex; align-items: stretch; gap: 0;
   background: rgba(0,0,0,.25);
   border-bottom: 1px solid rgba(255,255,255,.08);
   flex-shrink: 0;
@@ -18143,7 +18123,7 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   flex: 1; min-width: 0;
   background: none; border: none; border-bottom: 2px solid transparent;
   color: var(--muted,#888); font-size: .75rem; font-weight: 600;
-  padding: .55rem .3rem;
+  padding: .6rem .3rem;
   cursor: pointer; white-space: nowrap;
   transition: color .15s, border-color .15s, background .15s;
 }
@@ -18153,19 +18133,27 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border-bottom-color: var(--accent,#7c6af7);
   background: rgba(255,255,255,.03);
 }
+.jeu-info-close {
+  background: none; border: none; border-left: 1px solid rgba(255,255,255,.08);
+  color: hsl(0,75%,62%);
+  cursor: pointer; padding: .3rem .7rem;
+  line-height: 0; flex-shrink: 0;
+  opacity: .85;
+  transition: opacity .15s, background .15s;
+  align-self: stretch; display: flex; align-items: center;
+}
+.jeu-info-close:hover { opacity: 1; background: rgba(255,0,0,.08); }
+.jeu-info-close svg { width: 18px; height: 18px; display: block; }
 
 /* Pages */
 .jeu-info-page {
   display: none;
-  flex-direction: column; gap: 1rem;
-  padding: 1.1rem 1.25rem 1.25rem;
+  flex-direction: column; gap: .85rem;
+  padding: 1rem 1.1rem 1.1rem;
   overflow-y: auto;
   flex: 1;
 }
 .jeu-info-page--active { display: flex; }
-.jeu-info-intro {
-  font-size: .82rem; color: var(--muted,#888); margin: 0;
-}
 .jeu-info-note {
   font-size: .75rem; color: var(--muted,#777); margin: 0;
   font-style: italic;
@@ -18173,41 +18161,51 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 
 /* Page Accueil : cartes de navigation */
 .jeu-info-cards {
-  display: flex; flex-direction: column; gap: .5rem;
+  display: flex; flex-direction: column; gap: .4rem;
 }
 .jeu-info-card {
   display: flex; align-items: center; gap: .75rem;
   background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.09);
   border-radius: 10px;
-  padding: .7rem .9rem;
+  padding: .6rem .85rem;
   cursor: pointer; text-align: left;
   transition: background .15s, border-color .15s;
   width: 100%;
 }
 .jeu-info-card:hover { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); }
 .jeu-info-card-icon {
-  font-size: 1.1rem; color: var(--accent,#7c6af7); flex-shrink: 0; width: 1.5rem; text-align: center;
+  font-size: 1rem; color: var(--accent,#7c6af7); flex-shrink: 0; width: 1.4rem; text-align: center;
 }
+.jeu-info-card-texts { display: flex; flex-direction: column; }
 .jeu-info-card-title {
   font-size: .88rem; font-weight: 700; color: var(--text-1,#eee); display: block;
 }
 .jeu-info-card-desc {
-  font-size: .75rem; color: var(--muted,#888); display: block; margin-top: .1rem;
+  font-size: .73rem; color: var(--muted,#888); display: block; margin-top: .05rem;
 }
-.jeu-info-settings-section { border-top: 1px solid rgba(255,255,255,.07); padding-top: .85rem; }
+
+/* Section paramètres */
+.jeu-info-settings-section { border-top: 1px solid rgba(255,255,255,.07); padding-top: .75rem; }
+.jeu-info-section-title--center { text-align: center; }
+.jeu-info-toggles-row {
+  display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; margin-top: .5rem;
+}
+.jeu-info-toggles-row .jeu-settings-toggle { flex: 1; min-width: 130px; }
+
+/* Bouton coffre — couleur franche */
 .jeu-info-coffre-btn {
   display: block; text-align: center;
-  background: rgba(124,106,247,.15);
-  border: 1px solid rgba(124,106,247,.35);
+  background: var(--accent, hsl(250,70%,55%));
+  border: none;
   border-radius: 8px;
-  color: hsl(250,80%,75%);
-  font-size: .82rem; font-weight: 600;
-  padding: .55rem 1rem;
+  color: #fff;
+  font-size: .85rem; font-weight: 700;
+  padding: .6rem 1rem;
   text-decoration: none;
-  transition: background .15s;
+  transition: filter .15s;
 }
-.jeu-info-coffre-btn:hover { background: rgba(124,106,247,.28); }
+.jeu-info-coffre-btn:hover { filter: brightness(1.15); }
 
 /* Page Rareté */
 .jeu-info-section-title {

@@ -451,66 +451,67 @@
 <div class="jeu-info-popover" id="jeu-info-popover" hidden aria-modal="true" role="dialog">
   <div class="jeu-info-inner">
 
-    <%# En-tête fixe %>
-    <div class="jeu-info-header">
-      <span class="jeu-info-title" id="jeu-info-tab-label">Guide des coffres</span>
-      <button class="jeu-info-close" id="jeu-info-close" aria-label="Fermer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-
-    <%# Onglets (intercalaires) %>
+    <%# Onglets + fermer sur la même ligne %>
     <nav class="jeu-info-tabs" aria-label="Sections du guide">
       <button class="jeu-info-tab jeu-info-tab--active" data-tab="accueil">Accueil</button>
       <button class="jeu-info-tab" data-tab="rarete">Raret&eacute;</button>
       <button class="jeu-info-tab" data-tab="types">Types</button>
       <button class="jeu-info-tab" data-tab="obtenir">Obtenir</button>
+      <button class="jeu-info-close" id="jeu-info-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </nav>
 
     <%# ─── Page Accueil ─────────────────────────────────────── %>
     <div class="jeu-info-page jeu-info-page--active" id="jeu-info-page-accueil">
-      <p class="jeu-info-intro">Tout ce que vous devez savoir sur les coffres et leurs r&eacute;compenses.</p>
 
       <div class="jeu-info-cards">
         <button class="jeu-info-card" data-goto="rarete">
           <span class="jeu-info-card-icon">&#9670;</span>
-          <span class="jeu-info-card-title">Raret&eacute;</span>
-          <span class="jeu-info-card-desc">Les 5 niveaux et leurs chances de drop.</span>
+          <div class="jeu-info-card-texts">
+            <span class="jeu-info-card-title">Raret&eacute;</span>
+            <span class="jeu-info-card-desc">Les 5 niveaux et leurs chances de drop.</span>
+          </div>
         </button>
         <button class="jeu-info-card" data-goto="types">
           <span class="jeu-info-card-icon">&#9679;</span>
-          <span class="jeu-info-card-title">Types d&rsquo;objets</span>
-          <span class="jeu-info-card-desc">Images, charmes et th&egrave;mes.</span>
+          <div class="jeu-info-card-texts">
+            <span class="jeu-info-card-title">Objets</span>
+            <span class="jeu-info-card-desc">Images, charmes et th&egrave;mes.</span>
+          </div>
         </button>
         <button class="jeu-info-card" data-goto="obtenir">
           <span class="jeu-info-card-icon">&#9651;</span>
-          <span class="jeu-info-card-title">Obtenir des coffres</span>
-          <span class="jeu-info-card-desc">Comment en recevoir davantage.</span>
+          <div class="jeu-info-card-texts">
+            <span class="jeu-info-card-title">Coffres</span>
+            <span class="jeu-info-card-desc">Comment en recevoir davantage.</span>
+          </div>
         </button>
       </div>
 
       <div class="jeu-info-settings-section">
-        <p class="jeu-info-section-title">Contenu autoris&eacute;</p>
-        <label class="jeu-settings-toggle">
-          <span class="jeu-settings-toggle-label">Images <strong>Irr&eacute;aliste</strong></span>
-          <input type="checkbox" class="jeu-settings-checkbox" id="jeu-settings-irrealiste"
-                 <%- currentUser.lootboxAllowIrrealiste ? 'checked' : '' %>>
-          <span class="jeu-settings-toggle-track"><span class="jeu-settings-toggle-thumb"></span></span>
-        </label>
-        <label class="jeu-settings-toggle">
-          <span class="jeu-settings-toggle-label">Images <strong>Ultra</strong></span>
-          <input type="checkbox" class="jeu-settings-checkbox" id="jeu-settings-ultra"
-                 <%- currentUser.lootboxAllowUltra ? 'checked' : '' %>>
-          <span class="jeu-settings-toggle-track"><span class="jeu-settings-toggle-thumb"></span></span>
-        </label>
+        <p class="jeu-info-section-title jeu-info-section-title--center">Contenu autoris&eacute;</p>
+        <div class="jeu-info-toggles-row">
+          <label class="jeu-settings-toggle">
+            <span class="jeu-settings-toggle-label">Images <strong>Irr&eacute;aliste</strong></span>
+            <input type="checkbox" class="jeu-settings-checkbox" id="jeu-settings-irrealiste"
+                   <%- currentUser.lootboxAllowIrrealiste ? 'checked' : '' %>>
+            <span class="jeu-settings-toggle-track"><span class="jeu-settings-toggle-thumb"></span></span>
+          </label>
+          <label class="jeu-settings-toggle">
+            <span class="jeu-settings-toggle-label">Images <strong>Ultra</strong></span>
+            <input type="checkbox" class="jeu-settings-checkbox" id="jeu-settings-ultra"
+                   <%- currentUser.lootboxAllowUltra ? 'checked' : '' %>>
+            <span class="jeu-settings-toggle-track"><span class="jeu-settings-toggle-thumb"></span></span>
+          </label>
+        </div>
       </div>
 
-      <a href="/profil/coffre" class="jeu-info-coffre-btn">Voir mon coffre &#8594;</a>
+      <a href="/favoris/coffre" class="jeu-info-coffre-btn">Mon coffre</a>
     </div>
 
     <%# ─── Page Rareté ──────────────────────────────────────── %>
     <div class="jeu-info-page" id="jeu-info-page-rarete">
-      <p class="jeu-info-intro">Chaque ouverture de coffre tire un objet selon ces probabilit&eacute;s.</p>
       <%
         var weights = lootboxConfig.weights;
         var total   = weights.common + weights.rare + weights.epic + weights.legendary + weights.mythic;
@@ -542,7 +543,6 @@
 
     <%# ─── Page Types d'objets ──────────────────────────────── %>
     <div class="jeu-info-page" id="jeu-info-page-types">
-      <p class="jeu-info-intro">Trois cat&eacute;gories d&rsquo;objets peuvent sortir d&rsquo;un coffre.</p>
 
       <div class="jeu-info-type-block">
         <div class="jeu-info-type-icon jeu-info-type-icon--image">
