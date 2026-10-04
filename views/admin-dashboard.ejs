@@ -39,8 +39,40 @@
       <p class="admin-error-msg"><%= adminError %></p>
     <% } %>
 
+    <%# ── Volet filtres gauche ── %>
+    <aside class="adm-uf-panel" id="adm-uf-panel" aria-label="Filtres utilisateurs">
+
+      <div class="adm-uf-search-wrap">
+        <input type="search" class="adm-uf-search" id="adm-uf-search" placeholder="Rechercher&hellip;" autocomplete="off" />
+      </div>
+
+      <div class="adm-uf-group">
+        <label class="adm-uf-label" for="adm-uf-role">Type</label>
+        <select class="adm-uf-select" id="adm-uf-role">
+          <option value="">Tous</option>
+          <option value="normal">Utilisateurs</option>
+          <option value="admin">Admins</option>
+          <option value="test">Tests</option>
+        </select>
+      </div>
+
+      <div class="adm-uf-group">
+        <label class="adm-uf-label" for="adm-uf-sort">Trier par</label>
+        <select class="adm-uf-select" id="adm-uf-sort">
+          <option value="activity">Dernière activité</option>
+          <option value="created">Date de création</option>
+          <option value="alpha">Ordre alphabétique</option>
+        </select>
+      </div>
+
+      <div class="adm-uf-bottom">
+        <button type="button" class="adm-uf-reset" id="adm-uf-reset">Réinitialiser</button>
+      </div>
+
+    </aside>
+
     <%# ── Bibliothèque de cartes ── %>
-    <div class="admin-user-lib">
+    <div class="admin-user-lib" id="admin-user-lib">
 
       <%# Carte "+" — créer un utilisateur %>
       <button type="button" class="admin-utile admin-utile--create" id="admin-create-btn" aria-label="Cr&eacute;er un utilisateur">
@@ -64,7 +96,11 @@
             uLastLogin = 'jamais connect\u00e9';
           }
         %>
-        <div class="admin-utile admin-utile--<%= uVariant %>">
+        <div class="admin-utile admin-utile--<%= uVariant %>"
+          data-role="<%= uVariant %>"
+          data-name="<%= (state.user.displayName || '').toLowerCase() %>"
+          data-last-login="<%= state.user.lastLoginAt ? new Date(state.user.lastLoginAt).getTime() : 0 %>"
+          data-created="<%= state.user.createdAt ? new Date(state.user.createdAt).getTime() : 0 %>">
           <div class="admin-utile-top">
             <div class="admin-utile-avatar"><%= uInitial %></div>
             <details class="admin-utile-menu" onclick="event.stopPropagation()">
@@ -706,6 +742,60 @@
         });
     });
   });
+  // ── Bibliothèque utilisateurs : filtres ─────────────────────────────────
+  (function () {
+    var search   = document.getElementById('adm-uf-search');
+    var selRole  = document.getElementById('adm-uf-role');
+    var selSort  = document.getElementById('adm-uf-sort');
+    var resetBtn = document.getElementById('adm-uf-reset');
+    var lib      = document.getElementById('admin-user-lib');
+
+    function applyFilters() {
+      var q    = search.value.trim().toLowerCase();
+      var role = selRole.value;
+      var sort = selSort.value;
+
+      // Toutes les cartes utilisateurs (pas le bouton +)
+      var cards = Array.from(lib.querySelectorAll('.admin-utile[data-role]'));
+
+      cards.forEach(function (c) {
+        var nameMatch = !q || c.dataset.name.includes(q);
+        var roleMatch = !role || c.dataset.role === role;
+        c.hidden = !(nameMatch && roleMatch);
+      });
+
+      // Tri : on réinsère les cartes dans l'ordre voulu
+      var visible = cards.filter(function (c) { return !c.hidden; });
+      visible.sort(function (a, b) {
+        if (sort === 'alpha') return a.dataset.name.localeCompare(b.dataset.name, 'fr');
+        if (sort === 'created') return Number(b.dataset.created) - Number(a.dataset.created);
+        // activity (défaut) : lastLogin décroissant, 0 en fin
+        var la = Number(a.dataset.lastLogin), lb = Number(b.dataset.lastLogin);
+        if (lb === 0 && la === 0) return 0;
+        if (lb === 0) return -1;
+        if (la === 0) return 1;
+        return lb - la;
+      });
+
+      // Réinsérer après le bouton +
+      var createBtn = lib.querySelector('.admin-utile--create');
+      visible.forEach(function (c) { lib.appendChild(c); });
+      _ = createBtn; // keep reference live
+    }
+
+    search.addEventListener('input', applyFilters);
+    selRole.addEventListener('change', applyFilters);
+    selSort.addEventListener('change', applyFilters);
+    resetBtn.addEventListener('click', function () {
+      search.value = '';
+      selRole.value = '';
+      selSort.value = 'activity';
+      applyFilters();
+    });
+
+    applyFilters(); // tri initial par activité
+  })();
+
   // ── Bibliothèque utilisateurs : modals ──────────────────────────────────
   (function () {
     function openModal(id) { document.getElementById(id).hidden = false; }
