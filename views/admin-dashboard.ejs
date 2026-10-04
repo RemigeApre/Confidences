@@ -243,6 +243,9 @@
       <div class="admin-modal admin-quick-modal">
         <div class="aqm-band" id="aqm-band">
           <span class="aqm-band-name" id="aqm-name"></span>
+          <button type="button" class="aqm-cred-btn" id="aqm-cred-btn" title="Copier les identifiants de connexion">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="11" width="13" height="10" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v2"/></svg>
+          </button>
           <button type="button" class="aqm-close" id="admin-quick-modal-close" aria-label="Fermer">&#215;</button>
         </div>
         <div class="aqm-activity-line" id="aqm-activity-line"></div>
@@ -932,6 +935,13 @@
       band.style.borderBottom = '2px solid ' + bandColors.bd;
       document.getElementById('aqm-name').textContent = d.displayName;
 
+      // Réinitialiser le bouton identifiants
+      var credBtn = document.getElementById('aqm-cred-btn');
+      credBtn.dataset.uid = uid;
+      credBtn.dataset.uname = d.displayName;
+      credBtn.style.color = '';
+      credBtn.title = 'Copier les identifiants de connexion';
+
       // Activité — chargement
       document.getElementById('aqm-activity-line').innerHTML = '<span class="aqm-act-label">…</span>';
 
@@ -1006,6 +1016,44 @@
 
     closeBtn.addEventListener('click', closeQuick);
     overlay.addEventListener('click', function (e) { if (e.target === overlay) closeQuick(); });
+
+    // Bouton identifiants : génère MDP + copie site/login/mdp
+    document.getElementById('aqm-cred-btn').addEventListener('click', function () {
+      var btn = this;
+      var uid = btn.dataset.uid;
+      var uname = btn.dataset.uname;
+      var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      var pwd = '';
+      for (var i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+      btn.style.opacity = '0.4';
+      fetch('/admin/profils/' + uid + '/reset-pwd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd }),
+      }).then(function (r) {
+        btn.style.opacity = '';
+        if (!r.ok) { btn.style.color = '#f87171'; return; }
+        var text = 'Site : ' + window.location.origin + '\nIdentifiant : ' + uname + '\nMot de passe : ' + pwd;
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        try { document.execCommand('copy'); } catch (_) {}
+        document.body.removeChild(ta);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(function () {});
+        }
+        // Met à jour le bouton reset MDP si visible
+        var resetBtn = document.getElementById('aqm-reset-pwd-btn');
+        if (resetBtn) { resetBtn.dataset.pwd = pwd; resetBtn.textContent = pwd; }
+        btn.style.color = 'hsl(140, 65%, 55%)';
+        btn.title = 'Copié ! (' + pwd + ')';
+        setTimeout(function () { btn.style.color = ''; btn.title = 'Copier les identifiants de connexion'; }, 3000);
+      }).catch(function () {
+        btn.style.opacity = '';
+        btn.style.color = '#f87171';
+      });
+    });
 
     // Délégation actions popup
     document.getElementById('aqm-actions').addEventListener('click', function (e) {
