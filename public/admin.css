@@ -184,7 +184,7 @@
   align-items: center;
 }
 
-/* ── Famille système : Utilisateurs, IA, Log ── */
+/* ── Famille système : Utilisateurs, Récompenses, IA, Log ── */
 .admin-tab-btn {
   background: none;
   border: none;
@@ -194,11 +194,16 @@
   font-weight: 500;
   padding: 0.7rem 1rem;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.12s, border-color 0.12s, background 0.12s, box-shadow 0.12s, transform 0.08s;
   margin-bottom: -1px;
 }
 .admin-tab-btn.active { color: #fff; border-bottom-color: #f87171; }
-.admin-tab-btn:not(.active):hover { color: #fff; }
+.admin-tab-btn:not(.active):hover {
+  color: #fff;
+  background: rgba(0,0,0,0.25);
+  box-shadow: inset 0 3px 5px rgba(0,0,0,0.35);
+  transform: translateY(1px);
+}
 
 /* ── Famille contenu : Codex, Galerie, BD, Histoires, Labels, Jeux ── */
 .admin-tab--content {
@@ -206,25 +211,31 @@
   font-style: italic;
 }
 .admin-tab--content.active { color: #fff; border-bottom-color: hsl(20, 80%, 65%); }
-.admin-tab--content:not(.active):hover { color: hsl(20, 80%, 88%); }
+.admin-tab--content:not(.active):hover {
+  color: hsl(20, 40%, 90%);
+  background: rgba(0,0,0,0.25);
+  box-shadow: inset 0 3px 5px rgba(0,0,0,0.35);
+  transform: translateY(1px);
+}
 .admin-tab-btn--link { text-decoration: none; }
 
-/* ── Retour au site : bouton couleur franche, ancré à droite ── */
+/* ── Retour au site : sobre, ancré à droite ── */
 .admin-tab-home {
   flex-shrink: 0;
   margin-left: 0.5rem;
-  padding: 0.3rem 0.9rem;
-  background: hsl(213, 70%, 30%);
-  border: 1px solid hsl(213, 70%, 48%);
-  color: hsl(213, 90%, 82%);
+  padding: 0.28rem 0.85rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.6);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 500;
   border-radius: 6px;
   gap: 0.35rem;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .admin-tab-home:hover {
-  background: hsl(213, 70%, 38%);
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.32);
   color: #fff;
 }
 
