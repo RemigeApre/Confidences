@@ -130,23 +130,17 @@
           data-edit-partner="<%= state.user.partnerId || '' %>"
           data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>">
 
-          <%# Colonne gauche : avatar + visibilité %>
-          <div class="admin-utile-left">
-            <div class="admin-utile-avatar-wrap">
-              <% if (state.profileThumb) { %>
-                <img src="<%= state.profileThumb %>" alt="" class="admin-utile-avatar-img" loading="lazy" />
-              <% } else { %>
-                <div class="admin-utile-avatar--letter"
-                  style="--avatar-color: <%= state.user.profileColor || '#6b7280' %>"><%= uInitial %></div>
-              <% } %>
-            </div>
-            <div class="admin-utile-vis admin-utile-vis--<%= state.user.shareNotesWithAdmin ? 'visible' : 'invisible' %>">
-              <%= state.user.shareNotesWithAdmin ? 'visible' : 'invisible' %>
-            </div>
-          </div>
-
           <%# Corps de carte %>
           <div class="admin-utile-body">
+
+            <%# Avatar rond centré %>
+            <div class="admin-utile-avatar">
+              <% if (state.profileThumb) { %>
+                <img src="<%= state.profileThumb %>" alt="" loading="lazy" />
+              <% } else { %>
+                <span style="--avatar-color: <%= state.user.profileColor || '#6b7280' %>"><%= uInitial %></span>
+              <% } %>
+            </div>
 
             <%# Badge inactivité (affiché uniquement si inactif) %>
             <% if (!uLoginActive) { %>
