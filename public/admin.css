@@ -868,27 +868,57 @@
   font-variant-numeric: tabular-nums;
 }
 /* Statut de compte — dropdown directement sur la carte */
-.admin-utile-status-sel {
+.admin-utile-status-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
   width: 100%;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  padding: 0 0.5rem;
+  transition: border-color .15s, background .15s;
+}
+.admin-utile-status-wrap:hover {
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.07);
+}
+.admin-utile-status-wrap--restreint {
+  border-color: hsl(35, 55%, 30%);
+  background: hsl(35, 60%, 12%);
+}
+.admin-utile-status-wrap--restreint:hover { border-color: hsl(35, 70%, 40%); }
+.admin-utile-status-wrap--bloque {
+  border-color: hsl(0, 50%, 28%);
+  background: hsl(0, 55%, 11%);
+}
+.admin-utile-status-wrap--bloque:hover { border-color: hsl(0, 65%, 40%); }
+.admin-utile-status-sel {
+  flex: 1;
   background: none;
   border: none;
-  border-top: 1px solid rgba(255,255,255,0.07);
   outline: none;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  text-align: center;
   cursor: pointer;
   appearance: none;
-  padding: 0.3rem 0.2rem 0.15rem;
-  color: rgba(255,255,255,0.3);
+  padding: 0.32rem 0;
+  color: rgba(255,255,255,0.4);
 }
-.admin-utile-status-sel--actif   { color: rgba(255,255,255,0.25); }
-.admin-utile-status-sel--inactif { color: rgba(255,255,255,0.22); }
-.admin-utile-status-sel--restreint { color: hsl(35, 90%, 58%); }
-.admin-utile-status-sel--bloque  { color: hsl(0, 80%, 60%); }
+.admin-utile-status-wrap--actif   .admin-utile-status-sel { color: rgba(255,255,255,0.4); }
+.admin-utile-status-wrap--inactif .admin-utile-status-sel { color: rgba(255,255,255,0.28); }
+.admin-utile-status-wrap--restreint .admin-utile-status-sel { color: hsl(35, 90%, 60%); }
+.admin-utile-status-wrap--bloque  .admin-utile-status-sel { color: hsl(0, 80%, 62%); }
 .admin-utile-status-sel option { background: hsl(225, 16%, 14%); color: #fff; }
+.admin-utile-status-arrow {
+  pointer-events: none;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.25);
+}
+.admin-utile-status-wrap--restreint .admin-utile-status-arrow { color: hsl(35, 80%, 45%); }
+.admin-utile-status-wrap--bloque  .admin-utile-status-arrow { color: hsl(0, 65%, 45%); }
 
 .aqm-actions {
   display: flex;

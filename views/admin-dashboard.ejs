@@ -156,6 +156,26 @@
               <%= state.user.displayName %>
             </div>
 
+            <%# Dropdown statut de compte %>
+            <%
+              var uStatus = state.user.accountStatus || 'actif';
+              var uEffectiveStatus = uStatus;
+              if (uStatus === 'actif') {
+                var uDiff90 = uLoginMs ? (Date.now() - uLoginMs) : Infinity;
+                if (uDiff90 > 90 * 24 * 3600000) uEffectiveStatus = 'inactif';
+              }
+            %>
+            <div class="admin-utile-status-wrap admin-utile-status-wrap--<%= uEffectiveStatus %>">
+              <select class="admin-utile-status-sel"
+                data-uid="<%= state.user.id %>" data-prev="<%= uStatus %>">
+                <option value="actif"<%= uStatus === 'actif' ? ' selected' : '' %>>Actif</option>
+                <option value="inactif"<%= uEffectiveStatus === 'inactif' ? ' selected' : '' %>>Inactif</option>
+                <option value="restreint"<%= uStatus === 'restreint' ? ' selected' : '' %>>Restreint</option>
+                <option value="bloque"<%= uStatus === 'bloque' ? ' selected' : '' %>>Bloqu&eacute;</option>
+              </select>
+              <svg class="admin-utile-status-arrow" viewBox="0 0 10 6" width="8" height="8" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+
             <%# Grille 2×3 de stats %>
             <div class="admin-utile-stats">
               <div class="admin-utile-stat">
@@ -183,23 +203,6 @@
                 <span class="aust-val"><%= state.imagesNotees %></span>
               </div>
             </div>
-
-            <%# Dropdown statut de compte %>
-            <%
-              var uStatus = state.user.accountStatus || 'actif';
-              var uEffectiveStatus = uStatus;
-              if (uStatus === 'actif') {
-                var uDiff90 = uLoginMs ? (Date.now() - uLoginMs) : Infinity;
-                if (uDiff90 > 90 * 24 * 3600000) uEffectiveStatus = 'inactif';
-              }
-            %>
-            <select class="admin-utile-status-sel admin-utile-status-sel--<%= uEffectiveStatus %>"
-              data-uid="<%= state.user.id %>" data-prev="<%= uStatus %>">
-              <option value="actif"<%= uStatus === 'actif' ? ' selected' : '' %>>Actif</option>
-              <option value="inactif"<%= uEffectiveStatus === 'inactif' ? ' selected' : '' %>>Inactif</option>
-              <option value="restreint"<%= uStatus === 'restreint' ? ' selected' : '' %>>Restreint</option>
-              <option value="bloque"<%= uStatus === 'bloque' ? ' selected' : '' %>>Bloqu&eacute;</option>
-            </select>
 
             <%# Boutons fantômes pour les actions (ciblés par la popup) %>
             <button type="button" class="admin-utile-menu-item" style="display:none"
@@ -965,7 +968,8 @@
       }).then(function (r) {
         if (!r.ok) { sel.value = sel.dataset.prev || 'actif'; return; }
         sel.dataset.prev = newStatus;
-        sel.className = 'admin-utile-status-sel admin-utile-status-sel--' + newStatus;
+        var wrap = sel.closest('.admin-utile-status-wrap');
+        if (wrap) wrap.className = 'admin-utile-status-wrap admin-utile-status-wrap--' + newStatus;
         sel.closest('.admin-utile[data-role]').dataset.accountStatus = newStatus;
       }).catch(function () { sel.value = sel.dataset.prev || 'actif'; });
     });
@@ -973,10 +977,10 @@
     // Clic sur une carte (pas sur le dropdown de statut ni le menu)
     lib.addEventListener('click', function (e) {
       var menu = e.target.closest('.admin-utile-menu');
-      var statusSel = e.target.closest('.admin-utile-status-sel');
+      var statusWrap = e.target.closest('.admin-utile-status-wrap');
       var card = e.target.closest('.admin-utile[data-role]');
       if (!card) return;
-      if (menu || statusSel) return;
+      if (menu || statusWrap) return;
       openQuick(card);
     });
 
