@@ -655,11 +655,16 @@
 
 /* Avatar rond */
 .admin-utile-avatar {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+  box-sizing: border-box;
+}
+.admin-utile-avatar--online {
+  outline: 2.5px solid hsl(140, 65%, 45%);
+  outline-offset: 2px;
 }
 .admin-utile-avatar img {
   width: 100%;
@@ -706,7 +711,7 @@
 /* Pseudo */
 .admin-utile-name-btn {
   color: rgba(255,255,255,0.92);
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 700;
   text-align: center;
   width: 100%;
@@ -716,13 +721,14 @@
   line-height: 1.2;
 }
 
-/* Stats — label au dessus, rectangle autour, s'étendent pour remplir l'espace */
+/* Stats — deux lignes de 3, label au-dessus, rectangle */
 .admin-utile-stats {
   display: flex;
-  gap: 0.2rem;
+  gap: 0.18rem;
   width: 100%;
-  margin-top: auto;
 }
+.admin-utile-stats + .admin-utile-stats { margin-top: 0.18rem; }
+.admin-utile-stats:last-of-type { margin-top: auto; }
 .admin-utile-stat {
   flex: 1;
   display: flex;
@@ -731,20 +737,20 @@
   gap: 0.1rem;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 6px;
-  padding: 0.3rem 0.1rem;
+  border-radius: 5px;
+  padding: 0.22rem 0.1rem 0.18rem;
 }
 .aust-key {
-  font-size: 0.48rem;
-  color: rgba(255,255,255,0.28);
+  font-size: 0.46rem;
+  color: rgba(255,255,255,0.3);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   line-height: 1;
 }
 .aust-val {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255,255,255,0.88);
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
@@ -826,33 +832,34 @@
 .aqm-badge--active  { color: hsl(140, 65%, 48%); }
 .aqm-badge--inactive { color: hsl(0, 55%, 55%); }
 .aqm-stats {
-  display: flex;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   border: 1px solid rgba(255,255,255,0.07);
   border-radius: 10px;
   overflow: hidden;
 }
 .aqm-stat {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.6rem 0.25rem;
-  gap: 0.15rem;
+  padding: 0.5rem 0.25rem;
+  gap: 0.1rem;
   border-right: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
-.aqm-stat:last-child { border-right: none; }
+.aqm-stat:nth-child(3n) { border-right: none; }
+.aqm-stat:nth-child(4), .aqm-stat:nth-child(5), .aqm-stat:nth-child(6) { border-bottom: none; }
+.aqm-stat-key {
+  font-size: 0.5rem;
+  color: rgba(255,255,255,0.28);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
 .aqm-stat-val {
   font-size: 1rem;
   font-weight: 700;
   color: rgba(255,255,255,0.88);
   font-variant-numeric: tabular-nums;
-}
-.aqm-stat-key {
-  font-size: 0.55rem;
-  color: rgba(255,255,255,0.28);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 .aqm-actions {
   display: flex;

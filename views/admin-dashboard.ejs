@@ -117,8 +117,11 @@
           data-color="<%= state.user.profileColor || '#6b7280' %>"
           data-initial="<%= uInitial %>"
           data-quizz="<%= state.completedQuizzes %>"
-          data-notes="<%= state.reactionStats.ratingCount %>"
-          data-flames="<%= state.reactionStats.flameCount %>"
+          data-coffre="<%= state.coffreCount %>"
+          data-bd="<%= state.bdNotees %>"
+          data-histoires="<%= state.histoiresNotees %>"
+          data-codex="<%= state.codexNotes %>"
+          data-images="<%= state.imagesNotees %>"
           data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>"
           data-share="<%= state.user.shareNotesWithAdmin ? '1' : '0' %>"
           data-edit-nom="<%= state.user.displayName %>"
@@ -133,8 +136,8 @@
           <%# Corps de carte %>
           <div class="admin-utile-body">
 
-            <%# Avatar rond centré %>
-            <div class="admin-utile-avatar">
+            <%# Avatar rond centré, anneau vert si actif %>
+            <div class="admin-utile-avatar<%= uLoginActive ? ' admin-utile-avatar--online' : '' %>">
               <% if (state.profileThumb) { %>
                 <img src="<%= state.profileThumb %>" alt="" loading="lazy" />
               <% } else { %>
@@ -152,19 +155,34 @@
               <%= state.user.displayName %>
             </div>
 
-            <%# Stats — label au dessus, encadré %>
+            <%# Ligne 1 : Coffre / BD / Histoires %>
+            <div class="admin-utile-stats">
+              <div class="admin-utile-stat">
+                <span class="aust-key">Coffre</span>
+                <span class="aust-val"><%= state.coffreCount %></span>
+              </div>
+              <div class="admin-utile-stat">
+                <span class="aust-key">BD</span>
+                <span class="aust-val"><%= state.bdNotees %></span>
+              </div>
+              <div class="admin-utile-stat">
+                <span class="aust-key">Histoires</span>
+                <span class="aust-val"><%= state.histoiresNotees %></span>
+              </div>
+            </div>
+            <%# Ligne 2 : Quizz / Codex / Images %>
             <div class="admin-utile-stats">
               <div class="admin-utile-stat">
                 <span class="aust-key">Quizz</span>
                 <span class="aust-val"><%= state.completedQuizzes %></span>
               </div>
               <div class="admin-utile-stat">
-                <span class="aust-key">Notes</span>
-                <span class="aust-val"><%= state.reactionStats.ratingCount %></span>
+                <span class="aust-key">Codex</span>
+                <span class="aust-val"><%= state.codexNotes %></span>
               </div>
               <div class="admin-utile-stat">
-                <span class="aust-key">Adore</span>
-                <span class="aust-val"><%= state.reactionStats.flameCount %></span>
+                <span class="aust-key">Images</span>
+                <span class="aust-val"><%= state.imagesNotees %></span>
               </div>
             </div>
 
@@ -881,10 +899,12 @@
       badgeEl.className = 'aqm-badge aqm-badge--' + (active ? 'active' : 'inactive');
 
       // Stats
+      function aqmStat(key, val) {
+        return '<div class="aqm-stat"><span class="aqm-stat-key">' + key + '</span><span class="aqm-stat-val">' + val + '</span></div>';
+      }
       document.getElementById('aqm-stats').innerHTML =
-        '<div class="aqm-stat"><span class="aqm-stat-val">' + d.quizz + '</span><span class="aqm-stat-key">Quizz</span></div>' +
-        '<div class="aqm-stat"><span class="aqm-stat-val">' + d.notes + '</span><span class="aqm-stat-key">Notes</span></div>' +
-        '<div class="aqm-stat"><span class="aqm-stat-val">' + d.flames + '</span><span class="aqm-stat-key">J\'adore</span></div>';
+        aqmStat('Quizz', d.quizz) + aqmStat('Coffre', d.coffre) + aqmStat('BD', d.bd) +
+        aqmStat('Histoires', d.histoires) + aqmStat('Codex', d.codex) + aqmStat('Images', d.images);
 
       // Actions
       var isSelf = d.self === '1';

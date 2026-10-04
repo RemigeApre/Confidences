@@ -60,6 +60,8 @@ const {
   deleteGalleryImage,
   deleteCharmById,
   countCompletedQuizzes,
+  countUserNotes,
+  getLootboxCount,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -209,7 +211,12 @@ function buildAdminRouter(config) {
           } catch (_) {}
         }
       }
-      return { user: u, attempt, liveScores, livePercentage, favorites, reactionStats, completedQuizzes, profileThumb };
+      const coffreCount = getLootboxCount(u.id);
+      const codexNotes = countUserNotes(u.id, 'wiki');
+      const imagesNotees = countUserNotes(u.id, 'gallery');
+      const bdNotees = countUserNotes(u.id, 'bd');
+      const histoiresNotees = countUserNotes(u.id, 'nouvelle');
+      return { user: u, attempt, liveScores, livePercentage, favorites, reactionStats, completedQuizzes, profileThumb, coffreCount, codexNotes, imagesNotees, bdNotees, histoiresNotees };
     });
     const wikiPages = listWikiPages().sort((a, b) => b.views - a.views);
     const allWikiPagesSorted = listWikiPages().sort((a, b) =>
