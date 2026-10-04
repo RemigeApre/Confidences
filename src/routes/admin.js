@@ -61,7 +61,6 @@ const {
   deleteCharmById,
   countCompletedQuizzes,
   countUserNotes,
-  getLootboxCount,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
