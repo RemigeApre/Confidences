@@ -108,7 +108,27 @@
           data-role="<%= uVariant %>"
           data-name="<%= (state.user.displayName || '').toLowerCase() %>"
           data-last-login="<%= uLoginMs %>"
-          data-created="<%= state.user.createdAt ? new Date(state.user.createdAt).getTime() : 0 %>">
+          data-created="<%= state.user.createdAt ? new Date(state.user.createdAt).getTime() : 0 %>"
+          data-id="<%= state.user.id %>"
+          data-display-name="<%= state.user.displayName %>"
+          data-login-label="<%= uLoginLabel %>"
+          data-login-active="<%= uLoginActive ? '1' : '0' %>"
+          data-thumb="<%= state.profileThumb || '' %>"
+          data-color="<%= state.user.profileColor || '#6b7280' %>"
+          data-initial="<%= uInitial %>"
+          data-quizz="<%= state.completedQuizzes %>"
+          data-notes="<%= state.reactionStats.ratingCount %>"
+          data-flames="<%= state.reactionStats.flameCount %>"
+          data-email="<%= state.user.email || '' %>"
+          data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>"
+          data-edit-nom="<%= state.user.displayName %>"
+          data-edit-role="<%= uVariant %>"
+          data-edit-sexe="<%= state.user.sexe || '' %>"
+          data-edit-birth-year="<%= state.user.birthYear || '' %>"
+          data-edit-orientation="<%= state.user.orientation || '' %>"
+          data-edit-email="<%= state.user.email || '' %>"
+          data-edit-partner="<%= state.user.partnerId || '' %>"
+          data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>">
 
           <%# Avatar carré collé à gauche %>
           <div class="admin-utile-avatar-wrap">
@@ -186,6 +206,27 @@
           </div>
         </div>
       <% }) %>
+    </div>
+
+    <%# ── Modal : fiche rapide utilisateur ── %>
+    <div class="admin-modal-overlay" id="admin-quick-modal" hidden>
+      <div class="admin-modal admin-quick-modal">
+        <button type="button" class="admin-modal-close" id="admin-quick-modal-close" aria-label="Fermer">&#215;</button>
+
+        <div class="aqm-header">
+          <div class="aqm-avatar" id="aqm-avatar"></div>
+          <div class="aqm-header-info">
+            <div class="aqm-name" id="aqm-name"></div>
+            <div class="aqm-badge" id="aqm-badge"></div>
+          </div>
+        </div>
+
+        <div class="aqm-stats" id="aqm-stats"></div>
+
+        <div class="aqm-actions" id="aqm-actions"></div>
+
+        <a href="#" class="aqm-profile-link" id="aqm-profile-link">Voir le profil complet</a>
+      </div>
     </div>
 
     <%# ── Modal : créer un utilisateur ── %>
@@ -821,6 +862,104 @@
     });
 
     applyFilters(); // tri initial par activité
+  })();
+
+  // ── Fiche rapide utilisateur ─────────────────────────────────────────────
+  (function () {
+    var overlay  = document.getElementById('admin-quick-modal');
+    var closeBtn = document.getElementById('admin-quick-modal-close');
+    var lib      = document.getElementById('admin-user-lib');
+
+    function openQuick(card) {
+      var d = card.dataset;
+
+      // Avatar
+      var avatarEl = document.getElementById('aqm-avatar');
+      if (d.thumb) {
+        avatarEl.innerHTML = '<img src="' + d.thumb + '" alt="" />';
+        avatarEl.className = 'aqm-avatar aqm-avatar--img';
+      } else {
+        avatarEl.textContent = d.initial;
+        avatarEl.className = 'aqm-avatar aqm-avatar--letter';
+        avatarEl.style.setProperty('--avatar-color', d.color);
+      }
+
+      // Nom + badge
+      document.getElementById('aqm-name').textContent = d.displayName;
+      var badgeEl = document.getElementById('aqm-badge');
+      var active = d.loginActive === '1';
+      badgeEl.textContent = (active ? '● ' : '') + d.loginLabel;
+      badgeEl.className = 'aqm-badge aqm-badge--' + (active ? 'active' : 'inactive');
+
+      // Stats
+      document.getElementById('aqm-stats').innerHTML =
+        '<div class="aqm-stat"><span class="aqm-stat-val">' + d.quizz + '</span><span class="aqm-stat-key">Quizz</span></div>' +
+        '<div class="aqm-stat"><span class="aqm-stat-val">' + d.notes + '</span><span class="aqm-stat-key">Notes</span></div>' +
+        '<div class="aqm-stat"><span class="aqm-stat-val">' + d.flames + '</span><span class="aqm-stat-key">J\'adore</span></div>';
+
+      // Actions
+      var isSelf = d.self === '1';
+      var uid = d.id;
+      var name = d.displayName;
+      var actionsHtml =
+        '<button type="button" class="aqm-action-btn" data-edit-id="' + uid + '"' +
+          ' data-edit-nom="' + name + '"' +
+          ' data-edit-role="' + d.editRole + '"' +
+          ' data-edit-sexe="' + d.editSexe + '"' +
+          ' data-edit-birth-year="' + d.editBirthYear + '"' +
+          ' data-edit-orientation="' + d.editOrientation + '"' +
+          ' data-edit-email="' + d.editEmail + '"' +
+          ' data-edit-partner="' + d.editPartner + '"' +
+          ' data-edit-owned="' + d.editOwned + '"' +
+          ' data-self="' + d.self + '">Modifier</button>' +
+        '<button type="button" class="aqm-action-btn" data-pwd-id="' + uid + '" data-pwd-name="' + name + '">R&eacute;init. MDP</button>' +
+        '<button type="button" class="aqm-action-btn" data-grant-id="' + uid + '" data-grant-name="' + name + '">Offrir des lootboxes</button>';
+      if (!isSelf) {
+        actionsHtml += '<button type="button" class="aqm-action-btn aqm-action-btn--danger" data-del-id="' + uid + '" data-del-name="' + name + '">Supprimer</button>';
+      }
+      document.getElementById('aqm-actions').innerHTML = actionsHtml;
+
+      // Lien profil complet
+      document.getElementById('aqm-profile-link').href = '/admin/utilisateur/' + uid;
+
+      overlay.hidden = false;
+    }
+
+    function closeQuick() { overlay.hidden = true; }
+
+    // Clic sur une carte (pas sur le menu)
+    lib.addEventListener('click', function (e) {
+      var menu = e.target.closest('.admin-utile-menu');
+      var nameBtn = e.target.closest('.admin-utile-name-btn');
+      var card = e.target.closest('.admin-utile[data-role]');
+      if (!card) return;
+      if (menu) return; // le menu gère ses propres clics
+      openQuick(card);
+    });
+
+    closeBtn.addEventListener('click', closeQuick);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeQuick(); });
+
+    // Délégation des actions dans la popup vers les handlers existants
+    document.getElementById('aqm-actions').addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      closeQuick();
+      // Cloner les data-* et déclencher un faux clic sur les modals existants
+      if (btn.dataset.editId) {
+        var fakeBtn = document.querySelector('[data-edit-id="' + btn.dataset.editId + '"]');
+        if (fakeBtn) fakeBtn.click();
+      } else if (btn.dataset.pwdId) {
+        var fakeBtn = document.querySelector('[data-pwd-id="' + btn.dataset.pwdId + '"]');
+        if (fakeBtn) fakeBtn.click();
+      } else if (btn.dataset.grantId) {
+        var fakeBtn = document.querySelector('[data-grant-id="' + btn.dataset.grantId + '"]');
+        if (fakeBtn) fakeBtn.click();
+      } else if (btn.dataset.delId) {
+        var fakeBtn = document.querySelector('[data-del-id="' + btn.dataset.delId + '"]');
+        if (fakeBtn) fakeBtn.click();
+      }
+    });
   })();
 
   // ── Bibliothèque utilisateurs : modals ──────────────────────────────────
