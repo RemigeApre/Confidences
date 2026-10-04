@@ -517,8 +517,8 @@
   text-decoration: none;
   color: var(--text, #e0e0f0);
   cursor: pointer;
-  padding: 0.75rem 0.6rem 0.6rem;
-  gap: 0.35rem;
+  padding: 0.65rem 0.5rem 0.5rem;
+  gap: 0.3rem;
 }
 .admin-utile:hover {
   box-shadow: 0 4px 18px rgba(0,0,0,0.35);
@@ -721,36 +721,42 @@
   line-height: 1.2;
 }
 
-/* Stats — deux lignes de 3, label au-dessus, rectangle */
+/* Grille 2×3 de stats — un seul bloc soudé */
 .admin-utile-stats {
-  display: flex;
-  gap: 0.18rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   width: 100%;
+  margin-top: auto;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  overflow: hidden;
 }
-.admin-utile-stats + .admin-utile-stats { margin-top: 0.18rem; }
-.admin-utile-stats:last-of-type { margin-top: auto; }
 .admin-utile-stat {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 5px;
-  padding: 0.22rem 0.1rem 0.18rem;
+  justify-content: center;
+  gap: 0.08rem;
+  padding: 0.3rem 0.1rem;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
+.admin-utile-stat:nth-child(3n) { border-right: none; }
+.admin-utile-stat:nth-child(4),
+.admin-utile-stat:nth-child(5),
+.admin-utile-stat:nth-child(6) { border-bottom: none; }
 .aust-key {
   font-size: 0.46rem;
-  color: rgba(255,255,255,0.3);
+  font-weight: 700;
+  color: hsl(220, 60%, 65%);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   line-height: 1;
 }
 .aust-val {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.88);
+  color: rgba(255,255,255,0.9);
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
