@@ -119,8 +119,8 @@
           data-quizz="<%= state.completedQuizzes %>"
           data-notes="<%= state.reactionStats.ratingCount %>"
           data-flames="<%= state.reactionStats.flameCount %>"
-          data-email="<%= state.user.email || '' %>"
           data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>"
+          data-share="<%= state.user.shareNotesWithAdmin ? '1' : '0' %>"
           data-edit-nom="<%= state.user.displayName %>"
           data-edit-role="<%= uVariant %>"
           data-edit-sexe="<%= state.user.sexe || '' %>"
@@ -130,78 +130,73 @@
           data-edit-partner="<%= state.user.partnerId || '' %>"
           data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>">
 
-          <%# Avatar carré collé à gauche %>
-          <div class="admin-utile-avatar-wrap">
-            <% if (state.profileThumb) { %>
-              <img src="<%= state.profileThumb %>" alt="" class="admin-utile-avatar-img" loading="lazy" />
-            <% } else { %>
-              <div class="admin-utile-avatar admin-utile-avatar--letter"
-                style="--avatar-color: <%= state.user.profileColor || '#6b7280' %>"><%= uInitial %></div>
-            <% } %>
+          <%# Colonne gauche : avatar + visibilité %>
+          <div class="admin-utile-left">
+            <div class="admin-utile-avatar-wrap">
+              <% if (state.profileThumb) { %>
+                <img src="<%= state.profileThumb %>" alt="" class="admin-utile-avatar-img" loading="lazy" />
+              <% } else { %>
+                <div class="admin-utile-avatar--letter"
+                  style="--avatar-color: <%= state.user.profileColor || '#6b7280' %>"><%= uInitial %></div>
+              <% } %>
+            </div>
+            <div class="admin-utile-vis admin-utile-vis--<%= state.user.shareNotesWithAdmin ? 'visible' : 'invisible' %>">
+              <%= state.user.shareNotesWithAdmin ? 'visible' : 'invisible' %>
+            </div>
           </div>
 
           <%# Corps de carte %>
           <div class="admin-utile-body">
 
-            <%# Badge activité haut droite %>
-            <span class="admin-utile-badge admin-utile-badge--<%= uLoginActive ? 'active' : 'inactive' %>">
-              <% if (uLoginActive && uLoginMs) { %><span class="admin-utile-badge-dot"></span><% } %>
-              <%= uLoginLabel %>
-            </span>
+            <%# Badge inactivité (affiché uniquement si inactif) %>
+            <% if (!uLoginActive) { %>
+              <span class="admin-utile-badge admin-utile-badge--inactive"><%= uLoginLabel %></span>
+            <% } %>
 
-            <%# Pseudo centré %>
-            <button type="button" class="admin-utile-name-btn" data-profile-id="<%= state.user.id %>">
+            <%# Pseudo %>
+            <div class="admin-utile-name-btn">
               <%= state.user.displayName %>
-              <% if (state.user.shareNotesWithAdmin) { %>
-                <span class="admin-share-badge" title="Partage ses notes" aria-label="Partage ses notes">&#128065;</span>
-              <% } %>
-            </button>
+            </div>
 
-            <%# Stats %>
+            <%# Stats — label au dessus, encadré %>
             <div class="admin-utile-stats">
               <div class="admin-utile-stat">
-                <span class="admin-utile-stat-val"><%= state.completedQuizzes %></span>
-                <span class="admin-utile-stat-key">Quizz</span>
+                <span class="aust-key">Quizz</span>
+                <span class="aust-val"><%= state.completedQuizzes %></span>
               </div>
               <div class="admin-utile-stat">
-                <span class="admin-utile-stat-val"><%= state.reactionStats.ratingCount %></span>
-                <span class="admin-utile-stat-key">Notes</span>
+                <span class="aust-key">Notes</span>
+                <span class="aust-val"><%= state.reactionStats.ratingCount %></span>
               </div>
               <div class="admin-utile-stat">
-                <span class="admin-utile-stat-val"><%= state.reactionStats.flameCount %></span>
-                <span class="admin-utile-stat-key">J&rsquo;adore</span>
+                <span class="aust-key">Adore</span>
+                <span class="aust-val"><%= state.reactionStats.flameCount %></span>
               </div>
             </div>
 
-            <%# Menu actions (accessible) %>
-            <details class="admin-utile-menu" onclick="event.stopPropagation()">
-              <summary class="admin-utile-menu-btn" title="Actions">&#8943;</summary>
-              <div class="admin-utile-menu-body">
-                <a href="/admin/utilisateur/<%= state.user.id %>" class="admin-utile-menu-item">Voir le profil</a>
-                <button type="button" class="admin-utile-menu-item"
-                  data-edit-id="<%= state.user.id %>"
-                  data-edit-nom="<%= state.user.displayName %>"
-                  data-edit-role="<%= state.user.isAdmin ? 'admin' : (state.user.isTest ? 'test' : 'normal') %>"
-                  data-edit-sexe="<%= state.user.sexe || '' %>"
-                  data-edit-birth-year="<%= state.user.birthYear || '' %>"
-                  data-edit-orientation="<%= state.user.orientation || '' %>"
-                  data-edit-email="<%= state.user.email || '' %>"
-                  data-edit-partner="<%= state.user.partnerId || '' %>"
-                  data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>"
-                  data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>">Modifier</button>
-                <button type="button" class="admin-utile-menu-item"
-                  data-pwd-id="<%= state.user.id %>"
-                  data-pwd-name="<%= state.user.displayName %>">R&eacute;init. MDP</button>
-                <button type="button" class="admin-utile-menu-item"
-                  data-grant-id="<%= state.user.id %>"
-                  data-grant-name="<%= state.user.displayName %>">Offrir des lootboxes</button>
-                <% if (state.user.id !== currentUser.id) { %>
-                  <button type="button" class="admin-utile-menu-item admin-utile-menu-item--danger"
-                    data-del-id="<%= state.user.id %>"
-                    data-del-name="<%= state.user.displayName %>">Supprimer</button>
-                <% } %>
-              </div>
-            </details>
+            <%# Boutons fantômes pour les actions (ciblés par la popup) %>
+            <button type="button" class="admin-utile-menu-item" style="display:none"
+              data-edit-id="<%= state.user.id %>"
+              data-edit-nom="<%= state.user.displayName %>"
+              data-edit-role="<%= uVariant %>"
+              data-edit-sexe="<%= state.user.sexe || '' %>"
+              data-edit-birth-year="<%= state.user.birthYear || '' %>"
+              data-edit-orientation="<%= state.user.orientation || '' %>"
+              data-edit-email="<%= state.user.email || '' %>"
+              data-edit-partner="<%= state.user.partnerId || '' %>"
+              data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>"
+              data-self="<%= state.user.id === currentUser.id ? '1' : '0' %>">Modifier</button>
+            <button type="button" class="admin-utile-menu-item" style="display:none"
+              data-pwd-id="<%= state.user.id %>"
+              data-pwd-name="<%= state.user.displayName %>">R&eacute;init. MDP</button>
+            <button type="button" class="admin-utile-menu-item" style="display:none"
+              data-grant-id="<%= state.user.id %>"
+              data-grant-name="<%= state.user.displayName %>">Offrir des lootboxes</button>
+            <% if (state.user.id !== currentUser.id) { %>
+              <button type="button" class="admin-utile-menu-item admin-utile-menu-item--danger" style="display:none"
+                data-del-id="<%= state.user.id %>"
+                data-del-name="<%= state.user.displayName %>">Supprimer</button>
+            <% } %>
 
           </div>
         </div>
