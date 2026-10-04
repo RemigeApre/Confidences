@@ -531,6 +531,20 @@ db.exec(`
 `);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_connection_logs_user ON connection_logs (user_id)`);
 
+// Visites de pages par des visiteurs non connectés
+try { db.exec("ALTER TABLE anon_page_visits ADD COLUMN path TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+db.exec(`
+  CREATE TABLE IF NOT EXISTS anon_page_visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path TEXT NOT NULL,
+    ip TEXT NOT NULL DEFAULT '',
+    user_agent TEXT DEFAULT '',
+    created_at TEXT NOT NULL
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_anon_visits_path ON anon_page_visits (path)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_anon_visits_date ON anon_page_visits (created_at)`);
+
 // Pings de présence discrets (voir recordActivityPing) : contrairement à
 // connection_logs (uniquement à la saisie du mot de passe), permet de savoir
 // quand un profil est simplement en train de naviguer sur le site.
@@ -2389,6 +2403,43 @@ function listConnectionLogsForUser(userId, limit) {
   });
 }
 
+function recordAnonVisit(path, ip, userAgent) {
+  // Throttle : 1 enregistrement max par IP+path toutes les 10 minutes
+  db.prepare(
+    `INSERT INTO anon_page_visits (path, ip, user_agent, created_at)
+     SELECT ?, ?, ?, ?
+     WHERE NOT EXISTS (
+       SELECT 1 FROM anon_page_visits
+       WHERE path = ? AND ip = ? AND created_at > datetime('now', '-10 minutes')
+     )`
+  ).run(path, ip || '', userAgent || '', new Date().toISOString(), path, ip || '');
+}
+
+function getAnonStats(days, pathQ) {
+  const d = Math.max(1, Math.min(365, parseInt(days) || 7));
+  const filter = pathQ ? '%' + pathQ + '%' : null;
+  const rows = db.prepare(
+    `SELECT path,
+            COUNT(*) as views,
+            COUNT(DISTINCT ip) as unique_ips,
+            MAX(created_at) as last_seen
+     FROM anon_page_visits
+     WHERE created_at >= datetime('now', '-' || ? || ' days')
+       AND (? IS NULL OR path LIKE ?)
+     GROUP BY path
+     ORDER BY views DESC
+     LIMIT 200`
+  ).all(d, filter, filter);
+  const daily = db.prepare(
+    `SELECT DATE(created_at) as day, COUNT(*) as views, COUNT(DISTINCT ip) as unique_ips
+     FROM anon_page_visits
+     WHERE created_at >= datetime('now', '-' || ? || ' days')
+     GROUP BY day
+     ORDER BY day DESC`
+  ).all(d);
+  return { rows, daily };
+}
+
 // connection_logs ne trace que les connexions explicites (saisie du mot de
 // passe). Pour savoir aussi quand un profil est "juste sur le site", on
 // enregistre un ping discret à chaque requête dynamique (voir server.js),
@@ -4057,6 +4108,8 @@ module.exports = {
   buyTheme,
   setThemeRarity,
   THEME_DEFINITIONS,
+  recordAnonVisit,
+  getAnonStats,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

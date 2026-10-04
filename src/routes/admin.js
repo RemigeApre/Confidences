@@ -23,6 +23,7 @@ const {
   getUserFavoritesWithDetails,
   logConnection,
   listConnectionLogs,
+  getAnonStats,
   getWikiKPIs,
   getGalleryKPIs,
   getUserDetail,
@@ -243,11 +244,13 @@ function buildAdminRouter(config) {
     });
     const fantasyWikiPages = listWikiPages()
       .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
+    const anonStats = getAnonStats(7, '');
     res.render("admin-dashboard", {
       config, userStates, matrixSections, submissions,
       wikiPages, allWikiPagesSorted, galleryImages, connectionLogs,
       wikiKPIs, galleryKPIs,
       aiProfiles, fantasyWikiPages,
+      anonStats,
       adminError: adminError || null,
     });
   }
@@ -1128,6 +1131,12 @@ function buildAdminRouter(config) {
       db.db.prepare("INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)").run(key, new Date().toISOString());
       res.json({ ok: true, done: true });
     }
+  });
+
+  router.get("/log/anon", requireAdmin, (req, res) => {
+    const days = parseInt(req.query.days) || 7;
+    const pathQ = String(req.query.path || '').trim();
+    res.json(getAnonStats(days, pathQ));
   });
 
   return router;

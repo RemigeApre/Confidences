@@ -742,27 +742,225 @@
   ═══════════════════════════════════════════════ %>
   <section class="admin-tab-section" data-tab="log" hidden>
 
-    <h2 class="admin-section-title">Connexions r&eacute;centes (<%= connectionLogs.length %>)</h2>
-    <% if (!connectionLogs.length) { %>
-      <p class="admin-muted">Aucune connexion enregistr&eacute;e pour l&apos;instant.</p>
-    <% } else { %>
-    <div class="table-scroll">
-      <table class="admin-table">
-        <thead>
-          <tr><th>Utilisateur</th><th>IP</th><th>Date</th></tr>
-        </thead>
-        <tbody>
-          <% connectionLogs.forEach(function(log) { %>
-            <tr>
-              <td><%= log.userDisplayName || 'N/A' %></td>
-              <td><%= log.ip %></td>
-              <td style="font-variant-numeric:tabular-nums;white-space:nowrap"><%= new Date(log.createdAt).toLocaleString('fr-FR') %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+  <div class="log-layout">
+
+    <%# ── Navigation gauche ── %>
+    <nav class="log-nav">
+      <button class="log-nav-btn active" data-log="connexions">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Connexions
+        <span class="log-nav-count"><%= connectionLogs.length %></span>
+      </button>
+      <button class="log-nav-btn" data-log="anonymes">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><line x1="18" y1="8" x2="22" y2="8"/><line x1="20" y1="6" x2="20" y2="10"/></svg>
+        Visiteurs anonymes
+      </button>
+    </nav>
+
+    <%# ── Panneau connexions ── %>
+    <div class="log-panel" id="log-panel-connexions">
+
+      <% if (!connectionLogs.length) { %>
+        <p class="admin-muted">Aucune connexion enregistr&eacute;e.</p>
+      <% } else { %>
+      <%
+        function parseBrowser(ua) {
+          if (!ua) return '';
+          if (/Edg\//.test(ua)) return 'Edge';
+          if (/OPR\/|Opera/.test(ua)) return 'Opera';
+          if (/Chrome\//.test(ua)) return 'Chrome';
+          if (/Firefox\//.test(ua)) return 'Firefox';
+          if (/Safari\//.test(ua)) return 'Safari';
+          return '';
+        }
+        function parseOS(ua) {
+          if (!ua) return '';
+          if (/Windows/.test(ua)) return 'Win';
+          if (/Mac OS X/.test(ua)) return 'Mac';
+          if (/Android/.test(ua)) return 'Android';
+          if (/iPhone|iPad/.test(ua)) return 'iOS';
+          if (/Linux/.test(ua)) return 'Linux';
+          return '';
+        }
+        function formatIP(ip) {
+          if (!ip) return '—';
+          if (/^(::1$|::ffff:127\.|127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/i.test(ip)) return 'Réseau local';
+          return ip;
+        }
+        function formatConnTime(iso) {
+          var ms = new Date(iso).getTime();
+          var diff = Date.now() - ms;
+          var rel = '';
+          if (diff < 60000) rel = 'à l\'instant';
+          else if (diff < 3600000) rel = Math.floor(diff/60000) + 'min';
+          else if (diff < 86400000) rel = Math.floor(diff/3600000) + 'h';
+          else if (diff < 604800000) rel = Math.floor(diff/86400000) + 'j';
+          else rel = Math.floor(diff/604800000) + 'sem';
+          var dt = new Date(iso);
+          var abs = dt.toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+          return { rel: rel, abs: abs };
+        }
+        var now = Date.now();
+      %>
+      <div class="log-conn-list">
+        <% connectionLogs.forEach(function(log) {
+          var t = formatConnTime(log.createdAt);
+          var isRecent = (now - new Date(log.createdAt).getTime()) < 3600000;
+          var isToday  = (now - new Date(log.createdAt).getTime()) < 86400000;
+          var browser = parseBrowser(log.userAgent);
+          var os = parseOS(log.userAgent);
+          var ip = formatIP(log.ip);
+          var initial = (log.userDisplayName || '?').charAt(0).toUpperCase();
+        %>
+        <div class="log-conn-card<%= isRecent ? ' log-conn-card--recent' : (isToday ? ' log-conn-card--today' : '') %>">
+          <div class="log-conn-avatar"><%= initial %></div>
+          <div class="log-conn-info">
+            <span class="log-conn-name"><%= log.userDisplayName || 'Compte supprimé' %></span>
+            <span class="log-conn-time">
+              <span class="log-conn-rel"><%= t.rel %></span>
+              <span class="log-conn-abs"><%= t.abs %></span>
+            </span>
+            <span class="log-conn-meta">
+              <%= ip %><% if (browser) { %> &middot; <%= browser %><% } %><% if (os) { %> <%= os %><% } %>
+            </span>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+      <% } %>
+
     </div>
-    <% } %>
+
+    <%# ── Panneau visiteurs anonymes ── %>
+    <div class="log-panel" id="log-panel-anonymes" hidden>
+
+      <div class="log-anon-filters">
+        <div class="log-anon-period" id="log-anon-period">
+          <button class="log-anon-period-btn active" data-days="7">7 j</button>
+          <button class="log-anon-period-btn" data-days="30">30 j</button>
+          <button class="log-anon-period-btn" data-days="90">90 j</button>
+        </div>
+        <input type="search" class="log-anon-search" id="log-anon-search" placeholder="Filtrer par page&hellip;" autocomplete="off" />
+      </div>
+
+      <div class="log-anon-summary" id="log-anon-summary"></div>
+
+      <div class="log-anon-table-wrap" id="log-anon-table-wrap">
+        <table class="admin-table log-anon-table" id="log-anon-table">
+          <thead>
+            <tr>
+              <th>Page</th>
+              <th style="text-align:right">Vues</th>
+              <th style="text-align:right">Uniques</th>
+              <th style="white-space:nowrap">Dernière visite</th>
+            </tr>
+          </thead>
+          <tbody id="log-anon-tbody">
+            <% (anonStats.rows || []).forEach(function(r) { %>
+            <tr>
+              <td class="log-anon-path"><%= r.path %></td>
+              <td style="text-align:right;font-variant-numeric:tabular-nums"><%= r.views %></td>
+              <td style="text-align:right;font-variant-numeric:tabular-nums"><%= r.unique_ips %></td>
+              <td class="log-anon-lastseen" style="white-space:nowrap;color:var(--muted)"><%= r.last_seen ? new Date(r.last_seen).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—' %></td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="log-anon-daily" id="log-anon-daily">
+        <h3 class="log-anon-daily-title">Par jour</h3>
+        <div class="log-anon-daily-rows" id="log-anon-daily-rows">
+          <% (anonStats.daily || []).forEach(function(d) { %>
+          <div class="log-anon-day-row">
+            <span class="log-anon-day-label"><%= d.day %></span>
+            <span class="log-anon-day-val"><%= d.views %> vues</span>
+            <span class="log-anon-day-uniq"><%= d.unique_ips %> ip</span>
+          </div>
+          <% }); %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    // Nav log
+    var navBtns = document.querySelectorAll('.log-nav-btn');
+    var panels = document.querySelectorAll('.log-panel');
+    navBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        navBtns.forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var target = btn.dataset.log;
+        panels.forEach(function(p) { p.hidden = p.id !== 'log-panel-' + target; });
+      });
+    });
+
+    // Filtre anonymes
+    var periodBtns = document.querySelectorAll('.log-anon-period-btn');
+    var searchInp  = document.getElementById('log-anon-search');
+    var tbody      = document.getElementById('log-anon-tbody');
+    var dailyRows  = document.getElementById('log-anon-daily-rows');
+    var summary    = document.getElementById('log-anon-summary');
+    var currentDays = 7;
+    var searchTimer = null;
+
+    function formatAnonTime(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    }
+
+    function loadAnon() {
+      var q = searchInp ? searchInp.value.trim() : '';
+      fetch('/admin/log/anon?days=' + currentDays + '&path=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          // Table
+          var html = '';
+          (data.rows || []).forEach(function(r) {
+            html += '<tr><td class="log-anon-path">' + r.path + '</td>' +
+              '<td style="text-align:right;font-variant-numeric:tabular-nums">' + r.views + '</td>' +
+              '<td style="text-align:right;font-variant-numeric:tabular-nums">' + r.unique_ips + '</td>' +
+              '<td style="white-space:nowrap;color:var(--muted)">' + formatAnonTime(r.last_seen) + '</td></tr>';
+          });
+          tbody.innerHTML = html || '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucune donnée</td></tr>';
+          // Daily
+          var dhtml = '';
+          (data.daily || []).forEach(function(d) {
+            dhtml += '<div class="log-anon-day-row"><span class="log-anon-day-label">' + d.day + '</span>' +
+              '<span class="log-anon-day-val">' + d.views + ' vues</span>' +
+              '<span class="log-anon-day-uniq">' + d.unique_ips + ' ip</span></div>';
+          });
+          dailyRows.innerHTML = dhtml || '<div style="color:var(--muted);font-size:.8rem">Aucune donnée</div>';
+          // Summary
+          var totalViews = (data.rows || []).reduce(function(s, r) { return s + r.views; }, 0);
+          var maxUniq = (data.rows || []).reduce(function(s, r) { return Math.max(s, r.unique_ips); }, 0);
+          summary.innerHTML = '<span class="log-anon-kpi"><strong>' + totalViews + '</strong> vues</span>' +
+            '<span class="log-anon-kpi"><strong>' + (data.rows || []).length + '</strong> pages</span>' +
+            '<span class="log-anon-kpi"><strong>' + maxUniq + '</strong> IP max/page</span>';
+        });
+    }
+
+    periodBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        periodBtns.forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        currentDays = parseInt(btn.dataset.days);
+        loadAnon();
+      });
+    });
+
+    if (searchInp) {
+      searchInp.addEventListener('input', function() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(loadAnon, 350);
+      });
+    }
+  })();
+  </script>
+
   </section>
 
 </main>

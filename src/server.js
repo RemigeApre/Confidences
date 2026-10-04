@@ -21,7 +21,7 @@ const buildProtagonistesRouter = require("./routes/protagonistes");
 const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, getAllTagCategories, getAllTagParents, getAllTagSubcategories, setTagType, setTagCategory, setTagParent, setTagSubcategory, createStandaloneTag, renameTagEverywhere,
-  listWikiPages, listGalleryImages, getGalleryImage, listBdBooks, recordActivityPing,
+  listWikiPages, listGalleryImages, getGalleryImage, listBdBooks, recordActivityPing, recordAnonVisit,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
   getUserById,
@@ -184,6 +184,19 @@ app.use(attachUser);
 // permet de savoir quand un profil est simplement en train de naviguer.
 app.use((req, res, next) => {
   if (req.user) recordActivityPing(req.user.id, req.path);
+  next();
+});
+
+// Suivi des visites anonymes (non connectés) — throttlé à 1/IP/path/10min
+const ANON_SKIP = ['/uploads', '/css', '/js', '/favicon', '/api', '/admin', '/login', '/logout'];
+app.use((req, res, next) => {
+  if (!req.user && req.method === 'GET') {
+    const skip = ANON_SKIP.some(p => req.path.startsWith(p));
+    if (!skip && req.path !== '/') {
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+      recordAnonVisit(req.path, ip.split(',')[0].trim(), req.headers['user-agent'] || '');
+    }
+  }
   next();
 });
 
