@@ -2441,11 +2441,13 @@ function listActivitySessions(userId, limit) {
 }
 
 function getRecentActivity(userId) {
-  const sessions = listActivitySessions(userId, 8).slice(0, 4);
-  const user = db.prepare("SELECT last_active_at, last_path FROM users WHERE id = ?").get(userId);
+  const sessions = listActivitySessions(userId, 4); // déjà trié récent en premier
+  const user = db.prepare("SELECT last_active_at, last_path, last_login_at FROM users WHERE id = ?").get(userId);
+  const lastActiveAt = user ? (user.last_active_at || user.last_login_at || null) : null;
   return {
-    sessions: sessions.map(function(s) { return { start: s.start, end: s.end }; }),
-    lastActiveAt: user ? (user.last_active_at || null) : null,
+    // start/end convertis en ms pour le client (listActivitySessions retourne des ISO strings)
+    sessions: sessions.map(function(s) { return { start: new Date(s.start).getTime(), end: new Date(s.end).getTime() }; }),
+    lastActiveAt: lastActiveAt,
     lastPath: user ? (user.last_path || null) : null,
   };
 }
