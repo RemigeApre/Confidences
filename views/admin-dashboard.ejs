@@ -245,7 +245,6 @@
           <span class="aqm-band-name" id="aqm-name"></span>
           <button type="button" class="aqm-close" id="admin-quick-modal-close" aria-label="Fermer">&#215;</button>
         </div>
-        <div class="aqm-activities" id="aqm-activities"></div>
         <div class="aqm-activity-line" id="aqm-activity-line"></div>
         <div class="aqm-actions" id="aqm-actions"></div>
       </div>
@@ -892,7 +891,11 @@
     var closeBtn = document.getElementById('admin-quick-modal-close');
     var lib      = document.getElementById('admin-user-lib');
 
-    var ROLE_HUE = { admin: 268, test: 34, normal: 217 };
+    var ROLE_BAND = {
+      admin:  { bg: 'hsl(268,58%,28%)', bd: 'hsl(268,72%,50%)' },
+      test:   { bg: 'hsl(30,68%,30%)',  bd: 'hsl(30,82%,50%)' },
+      normal: { bg: 'hsl(217,48%,24%)', bd: 'hsl(217,62%,42%)' },
+    };
 
     function relTime(ms) {
       if (!ms) return 'jamais';
@@ -921,50 +924,35 @@
       var d = card.dataset;
       var uid = d.id;
       var role = d.role || 'normal';
-      var hue = ROLE_HUE[role] || 217;
+      var bandColors = ROLE_BAND[role] || ROLE_BAND.normal;
 
       // Bandeau couleur rôle
       var band = document.getElementById('aqm-band');
-      band.style.background = 'hsl(' + hue + ',55%,28%)';
-      band.style.borderBottom = '2px solid hsl(' + hue + ',65%,40%)';
+      band.style.background = bandColors.bg;
+      band.style.borderBottom = '2px solid ' + bandColors.bd;
       document.getElementById('aqm-name').textContent = d.displayName;
 
-      // Activités — loading
-      document.getElementById('aqm-activities').innerHTML = '<span class="aqm-loading">…</span>';
-      document.getElementById('aqm-activity-line').innerHTML = '';
+      // Activité — chargement
+      document.getElementById('aqm-activity-line').innerHTML = '<span class="aqm-act-label">…</span>';
 
       // Fetch activité
       fetch('/admin/profils/' + uid + '/recent-activity')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          // 4 dernières sessions
-          var acts = data.sessions || [];
-          var html = '<div class="aqm-act-row">';
-          if (acts.length === 0) {
-            html += '<span class="aqm-act-empty">Aucune activité enregistrée</span>';
-          } else {
-            for (var i = 0; i < acts.length; i++) {
-              html += '<span class="aqm-act-chip">' + relTime(acts[i].start) + '</span>';
-            }
-          }
-          html += '</div>';
-          document.getElementById('aqm-activities').innerHTML = html;
-
-          // Ligne activité
-          var lineHtml = '';
           var lastMs = data.lastActiveAt ? new Date(data.lastActiveAt).getTime() : 0;
           var isOnline = lastMs && (Date.now() - lastMs) < 15 * 60 * 1000;
+          var lineHtml = '';
           if (isOnline && data.lastPath) {
             lineHtml = '<span class="aqm-online-dot"></span><span class="aqm-act-page">' + cleanPath(data.lastPath) + '</span>';
           } else if (lastMs) {
-            lineHtml = '<span class="aqm-act-label">Dernière activité :</span> <span class="aqm-act-val">' + relTime(lastMs) + '</span>';
+            lineHtml = '<span class="aqm-act-label">Derni\u00e8re activit\u00e9</span><span class="aqm-act-val">' + relTime(lastMs) + '</span>';
           } else {
-            lineHtml = '<span class="aqm-act-label">Jamais connecté</span>';
+            lineHtml = '<span class="aqm-act-label">Jamais connect\u00e9</span>';
           }
           document.getElementById('aqm-activity-line').innerHTML = lineHtml;
         })
         .catch(function() {
-          document.getElementById('aqm-activities').innerHTML = '<span class="aqm-act-empty">Erreur</span>';
+          document.getElementById('aqm-activity-line').innerHTML = '<span class="aqm-act-label">Erreur</span>';
         });
 
       // Boutons
