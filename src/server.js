@@ -183,7 +183,7 @@ app.use(attachUser);
 // contrairement à connection_logs (uniquement à la saisie du mot de passe),
 // permet de savoir quand un profil est simplement en train de naviguer.
 app.use((req, res, next) => {
-  if (req.user) recordActivityPing(req.user.id);
+  if (req.user) recordActivityPing(req.user.id, req.path);
   next();
 });
 

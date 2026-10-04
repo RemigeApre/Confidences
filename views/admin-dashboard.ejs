@@ -241,21 +241,13 @@
     <%# ── Modal : fiche rapide utilisateur ── %>
     <div class="admin-modal-overlay" id="admin-quick-modal" hidden>
       <div class="admin-modal admin-quick-modal">
-        <button type="button" class="admin-modal-close" id="admin-quick-modal-close" aria-label="Fermer">&#215;</button>
-
-        <div class="aqm-header">
-          <div class="aqm-avatar" id="aqm-avatar"></div>
-          <div class="aqm-header-info">
-            <div class="aqm-name" id="aqm-name"></div>
-            <div class="aqm-badge" id="aqm-badge"></div>
-          </div>
+        <div class="aqm-band" id="aqm-band">
+          <span class="aqm-band-name" id="aqm-name"></span>
+          <button type="button" class="aqm-close" id="admin-quick-modal-close" aria-label="Fermer">&#215;</button>
         </div>
-
-        <div class="aqm-stats" id="aqm-stats"></div>
-
+        <div class="aqm-activities" id="aqm-activities"></div>
+        <div class="aqm-activity-line" id="aqm-activity-line"></div>
         <div class="aqm-actions" id="aqm-actions"></div>
-
-        <a href="#" class="aqm-profile-link" id="aqm-profile-link">Voir le profil complet</a>
       </div>
     </div>
 
@@ -900,59 +892,94 @@
     var closeBtn = document.getElementById('admin-quick-modal-close');
     var lib      = document.getElementById('admin-user-lib');
 
+    var ROLE_HUE = { admin: 268, test: 34, normal: 217 };
+
+    function relTime(ms) {
+      if (!ms) return 'jamais';
+      var diff = Date.now() - ms;
+      var s = Math.floor(diff / 1000);
+      if (s < 60) return s + 's';
+      var m = Math.floor(diff / 60000);
+      if (m < 60) return m + 'min';
+      var h = Math.floor(diff / 3600000);
+      if (h < 24) return h + 'h';
+      var d = Math.floor(diff / 86400000);
+      if (d < 7) return d + 'j';
+      return Math.floor(d / 7) + 'sem';
+    }
+
+    function cleanPath(p) {
+      if (!p) return '';
+      // Raccourcir les chemins longs
+      var parts = p.replace(/\?.*$/, '').split('/').filter(Boolean);
+      if (parts.length === 0) return 'Accueil';
+      if (parts.length === 1) return '/' + parts[0];
+      return '/' + parts[0] + '/…';
+    }
+
     function openQuick(card) {
       var d = card.dataset;
-
-      // Avatar
-      var avatarEl = document.getElementById('aqm-avatar');
-      if (d.thumb) {
-        avatarEl.innerHTML = '<img src="' + d.thumb + '" alt="" />';
-        avatarEl.className = 'aqm-avatar aqm-avatar--img';
-      } else {
-        avatarEl.textContent = d.initial;
-        avatarEl.className = 'aqm-avatar aqm-avatar--letter';
-        avatarEl.style.setProperty('--avatar-color', d.color);
-      }
-
-      // Nom + badge
-      document.getElementById('aqm-name').textContent = d.displayName;
-      var badgeEl = document.getElementById('aqm-badge');
-      var active = d.loginActive === '1';
-      badgeEl.textContent = (active ? '● ' : '') + d.loginLabel;
-      badgeEl.className = 'aqm-badge aqm-badge--' + (active ? 'active' : 'inactive');
-
-      // Stats
-      function aqmStat(key, val) {
-        return '<div class="aqm-stat"><span class="aqm-stat-key">' + key + '</span><span class="aqm-stat-val">' + val + '</span></div>';
-      }
-      document.getElementById('aqm-stats').innerHTML =
-        aqmStat('Quizz', d.quizz) + aqmStat('Coffre', d.coffre) + aqmStat('BD', d.bd) +
-        aqmStat('Histoires', d.histoires) + aqmStat('Codex', d.codex) + aqmStat('Images', d.images);
-
-      // Actions
-      var isSelf = d.self === '1';
       var uid = d.id;
-      var name = d.displayName;
-      var actionsHtml =
-        '<button type="button" class="aqm-action-btn" data-edit-id="' + uid + '"' +
-          ' data-edit-nom="' + name + '"' +
-          ' data-edit-role="' + d.editRole + '"' +
-          ' data-edit-sexe="' + d.editSexe + '"' +
-          ' data-edit-birth-year="' + d.editBirthYear + '"' +
-          ' data-edit-orientation="' + d.editOrientation + '"' +
-          ' data-edit-email="' + d.editEmail + '"' +
-          ' data-edit-partner="' + d.editPartner + '"' +
-          ' data-edit-owned="' + d.editOwned + '"' +
-          ' data-self="' + d.self + '">Modifier</button>' +
-        '<button type="button" class="aqm-action-btn" data-pwd-id="' + uid + '" data-pwd-name="' + name + '">R&eacute;init. MDP</button>' +
-        '<button type="button" class="aqm-action-btn" data-grant-id="' + uid + '" data-grant-name="' + name + '">Offrir des lootboxes</button>';
-      if (!isSelf) {
-        actionsHtml += '<button type="button" class="aqm-action-btn aqm-action-btn--danger" data-del-id="' + uid + '" data-del-name="' + name + '">Supprimer</button>';
-      }
-      document.getElementById('aqm-actions').innerHTML = actionsHtml;
+      var role = d.role || 'normal';
+      var hue = ROLE_HUE[role] || 217;
 
-      // Lien profil complet
-      document.getElementById('aqm-profile-link').href = '/admin/utilisateur/' + uid;
+      // Bandeau couleur rôle
+      var band = document.getElementById('aqm-band');
+      band.style.background = 'hsl(' + hue + ',55%,28%)';
+      band.style.borderBottom = '2px solid hsl(' + hue + ',65%,40%)';
+      document.getElementById('aqm-name').textContent = d.displayName;
+
+      // Activités — loading
+      document.getElementById('aqm-activities').innerHTML = '<span class="aqm-loading">…</span>';
+      document.getElementById('aqm-activity-line').innerHTML = '';
+
+      // Fetch activité
+      fetch('/admin/profils/' + uid + '/recent-activity')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          // 4 dernières sessions
+          var acts = data.sessions || [];
+          var html = '<div class="aqm-act-row">';
+          if (acts.length === 0) {
+            html += '<span class="aqm-act-empty">Aucune activité enregistrée</span>';
+          } else {
+            for (var i = 0; i < acts.length; i++) {
+              html += '<span class="aqm-act-chip">' + relTime(acts[i].start) + '</span>';
+            }
+          }
+          html += '</div>';
+          document.getElementById('aqm-activities').innerHTML = html;
+
+          // Ligne activité
+          var lineHtml = '';
+          var lastMs = data.lastActiveAt ? new Date(data.lastActiveAt).getTime() : 0;
+          var isOnline = lastMs && (Date.now() - lastMs) < 15 * 60 * 1000;
+          if (isOnline && data.lastPath) {
+            lineHtml = '<span class="aqm-online-dot"></span><span class="aqm-act-page">' + cleanPath(data.lastPath) + '</span>';
+          } else if (lastMs) {
+            lineHtml = '<span class="aqm-act-label">Dernière activité :</span> <span class="aqm-act-val">' + relTime(lastMs) + '</span>';
+          } else {
+            lineHtml = '<span class="aqm-act-label">Jamais connecté</span>';
+          }
+          document.getElementById('aqm-activity-line').innerHTML = lineHtml;
+        })
+        .catch(function() {
+          document.getElementById('aqm-activities').innerHTML = '<span class="aqm-act-empty">Erreur</span>';
+        });
+
+      // Boutons
+      var isSelf = d.self === '1';
+      var hasShare = d.share === '1';
+      var name = d.displayName;
+
+      var actHtml =
+        '<a href="/admin/utilisateur/' + uid + '" class="aqm-btn aqm-btn--profile' + (hasShare ? ' aqm-btn--green' : ' aqm-btn--red') + '">Voir le profil</a>' +
+        '<button type="button" class="aqm-btn aqm-btn--neutral" id="aqm-reset-pwd-btn" data-uid="' + uid + '">R&eacute;init. MDP</button>' +
+        '<button type="button" class="aqm-btn aqm-btn--neutral" data-grant-id="' + uid + '" data-grant-name="' + name + '">Offrir des lootboxes</button>';
+      if (!isSelf) {
+        actHtml += '<button type="button" class="aqm-btn aqm-btn--danger" id="aqm-del-btn" data-uid="' + uid + '" data-name="' + name + '">Supprimer</button>';
+      }
+      document.getElementById('aqm-actions').innerHTML = actHtml;
 
       overlay.hidden = false;
     }
@@ -992,23 +1019,68 @@
     closeBtn.addEventListener('click', closeQuick);
     overlay.addEventListener('click', function (e) { if (e.target === overlay) closeQuick(); });
 
-    // Délégation des actions dans la popup vers les handlers existants
+    // Délégation actions popup
     document.getElementById('aqm-actions').addEventListener('click', function (e) {
-      var btn = e.target.closest('button');
+      var btn = e.target.closest('button, a');
       if (!btn) return;
-      closeQuick();
-      // Cloner les data-* et déclencher un faux clic sur les modals existants
-      if (btn.dataset.editId) {
-        var fakeBtn = document.querySelector('[data-edit-id="' + btn.dataset.editId + '"]');
+
+      // Reset MDP — génère un mot de passe aléatoire, POST, copie
+      if (btn.id === 'aqm-reset-pwd-btn') {
+        var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
+        var pwd = '';
+        for (var i = 0; i < 12; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+        fetch('/admin/profils/' + btn.dataset.uid + '/reset-pwd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd }),
+        }).then(function(r) {
+          if (!r.ok) return;
+          navigator.clipboard.writeText(pwd).catch(function(){});
+          btn.textContent = pwd + ' ✓';
+          btn.disabled = true;
+          setTimeout(function() { btn.textContent = 'Réinit. MDP'; btn.disabled = false; }, 4000);
+        });
+        return;
+      }
+
+      // Supprimer — confirmation inline
+      if (btn.id === 'aqm-del-btn') {
+        var uid = btn.dataset.uid;
+        var uname = btn.dataset.name;
+        var actEl = document.getElementById('aqm-actions');
+        actEl.innerHTML =
+          '<p class="aqm-confirm-msg">Supprimer <strong>' + uname + '</strong> ?</p>' +
+          '<div class="aqm-confirm-row">' +
+            '<button type="button" class="aqm-btn aqm-btn--danger" id="aqm-del-confirm" data-uid="' + uid + '">Confirmer</button>' +
+            '<button type="button" class="aqm-btn aqm-btn--neutral" id="aqm-del-cancel">Annuler</button>' +
+          '</div>';
+        return;
+      }
+
+      // Confirm delete
+      if (btn.id === 'aqm-del-confirm') {
+        var fakeBtn = document.querySelector('[data-del-id="' + btn.dataset.uid + '"]');
+        closeQuick();
         if (fakeBtn) fakeBtn.click();
-      } else if (btn.dataset.pwdId) {
-        var fakeBtn = document.querySelector('[data-pwd-id="' + btn.dataset.pwdId + '"]');
-        if (fakeBtn) fakeBtn.click();
-      } else if (btn.dataset.grantId) {
+        return;
+      }
+
+      // Cancel delete — rouvrir la popup sur la même carte
+      if (btn.id === 'aqm-del-cancel') {
+        var card = document.querySelector('.admin-utile[data-id="' + document.getElementById('aqm-name').textContent + '"]');
+        // Simple: recharger les boutons depuis la carte courante
+        // On retrouve la carte via le nom affiché
+        var cards = document.querySelectorAll('.admin-utile[data-role]');
+        var targetCard = null;
+        cards.forEach(function(c) { if (c.dataset.id && document.getElementById('aqm-name').textContent === c.dataset.displayName) targetCard = c; });
+        if (targetCard) openQuick(targetCard);
+        return;
+      }
+
+      // Offrir lootboxes
+      if (btn.dataset.grantId) {
         var fakeBtn = document.querySelector('[data-grant-id="' + btn.dataset.grantId + '"]');
-        if (fakeBtn) fakeBtn.click();
-      } else if (btn.dataset.delId) {
-        var fakeBtn = document.querySelector('[data-del-id="' + btn.dataset.delId + '"]');
+        closeQuick();
         if (fakeBtn) fakeBtn.click();
       }
     });

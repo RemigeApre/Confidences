@@ -70,6 +70,7 @@ db.exec(`
 try { db.exec("ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'actif'"); } catch (_) {}
 // Dernière activité réelle (login + actions fortes + visites throttlées)
 try { db.exec("ALTER TABLE users ADD COLUMN last_active_at TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN last_path TEXT"); } catch (_) {}
 
 // Migrations non destructives
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN meta TEXT NOT NULL DEFAULT '{}'"); } catch (_) {}
@@ -692,6 +693,7 @@ function rowToUser(row) {
     activeTheme: row.active_theme || 'default',
     accountStatus: row.account_status || 'actif',
     lastActiveAt: row.last_active_at || null,
+    lastPath: row.last_path || null,
   };
 }
 
@@ -2394,7 +2396,7 @@ function listConnectionLogsForUser(userId, limit) {
 const ACTIVITY_PING_THROTTLE_MS = 3 * 60 * 1000; // 1 ping max toutes les 3 min / profil
 const ACTIVITY_SESSION_GAP_MS = 30 * 60 * 1000; // > 30 min sans ping = nouvelle session
 
-function recordActivityPing(userId) {
+function recordActivityPing(userId, path) {
   if (!userId) return;
   const last = db
     .prepare("SELECT created_at FROM activity_pings WHERE user_id = ? ORDER BY id DESC LIMIT 1")
@@ -2403,7 +2405,7 @@ function recordActivityPing(userId) {
   if (last && now - new Date(last.created_at).getTime() < ACTIVITY_PING_THROTTLE_MS) return;
   const iso = new Date(now).toISOString();
   db.prepare("INSERT INTO activity_pings (user_id, created_at) VALUES (?, ?)").run(userId, iso);
-  db.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").run(iso, userId);
+  db.prepare("UPDATE users SET last_active_at = ?, last_path = ? WHERE id = ?").run(iso, path || null, userId);
 }
 
 // Regroupe les pings bruts en "sessions" de présence : deux pings séparés de
@@ -2436,6 +2438,16 @@ function listActivitySessions(userId, limit) {
       pings: s.pings,
     };
   });
+}
+
+function getRecentActivity(userId) {
+  const sessions = listActivitySessions(userId, 8).slice(0, 4);
+  const user = db.prepare("SELECT last_active_at, last_path FROM users WHERE id = ?").get(userId);
+  return {
+    sessions: sessions.map(function(s) { return { start: s.start, end: s.end }; }),
+    lastActiveAt: user ? (user.last_active_at || null) : null,
+    lastPath: user ? (user.last_path || null) : null,
+  };
 }
 
 function setGalleryImageFeatured(id, featured) {
@@ -3891,6 +3903,7 @@ module.exports = {
   listConnectionLogsForUser,
   recordActivityPing,
   listActivitySessions,
+  getRecentActivity,
   listBlacklistedTags,
   addBlacklistedTag,
   removeBlacklistedTag,

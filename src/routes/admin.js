@@ -33,6 +33,7 @@ const {
   listFavoriteRows,
   listConnectionLogsForUser,
   listActivitySessions,
+  getRecentActivity,
   setCouplePartners,
   clearCouplePartner,
   grantLootbox,
@@ -367,6 +368,20 @@ function buildAdminRouter(config) {
       return res.status(400).json({ error: 'invalid' });
     }
     setUserAccountStatus(id, status);
+    res.json({ ok: true });
+  });
+
+  router.get("/profils/:id/recent-activity", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid' });
+    res.json(getRecentActivity(id));
+  });
+
+  router.post("/profils/:id/reset-pwd", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const password = String(req.body.password || '').trim();
+    if (!Number.isInteger(id) || password.length < 6) return res.status(400).json({ error: 'invalid' });
+    updateUserPassword(id, hashPassword(password));
     res.json({ ok: true });
   });
 
