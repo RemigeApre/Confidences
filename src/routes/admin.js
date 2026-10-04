@@ -59,6 +59,7 @@ const {
   listAllParodies,
   deleteGalleryImage,
   deleteCharmById,
+  countCompletedQuizzes,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -197,7 +198,18 @@ function buildAdminRouter(config) {
       const livePercentage = liveMax ? Math.round((liveRaw / liveMax) * 1000) / 10 : 0;
       const favorites = getUserFavoritesWithDetails(u.id);
       const reactionStats = getUserReactionStats(u.id);
-      return { user: u, attempt, liveScores, livePercentage, favorites, reactionStats };
+      const completedQuizzes = countCompletedQuizzes(u.id);
+      let profileThumb = null;
+      if (u.profileImageId) {
+        const img = getGalleryImage(u.profileImageId);
+        if (img) {
+          try {
+            const paths = typeof img.imagePaths === 'string' ? JSON.parse(img.imagePaths) : (img.imagePaths || []);
+            profileThumb = paths[0] || null;
+          } catch (_) {}
+        }
+      }
+      return { user: u, attempt, liveScores, livePercentage, favorites, reactionStats, completedQuizzes, profileThumb };
     });
     const wikiPages = listWikiPages().sort((a, b) => b.views - a.views);
     const allWikiPagesSorted = listWikiPages().sort((a, b) =>

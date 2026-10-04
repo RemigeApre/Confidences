@@ -303,6 +303,7 @@
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
+  text-align: center;
 }
 .adm-uf-search:focus { border-color: hsl(240, 8%, 38%); }
 .adm-uf-search::placeholder { color: hsl(240, 8%, 38%); }
@@ -314,6 +315,7 @@
   letter-spacing: 0.07em;
   color: hsl(240, 8%, 45%);
   margin-bottom: 0.35rem;
+  text-align: center;
 }
 .adm-uf-select {
   width: 100%;
@@ -322,7 +324,7 @@
   border-radius: 8px;
   color: #e4e4e7;
   font-size: 0.85rem;
-  padding: 0.4rem 0.65rem;
+  padding: 0.4rem 1.8rem 0.4rem 0.65rem;
   outline: none;
   cursor: pointer;
   transition: border-color 0.15s;
@@ -331,7 +333,7 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.65rem center;
-  padding-right: 1.8rem;
+  text-align: center;
 }
 .adm-uf-select:focus { border-color: hsl(240, 8%, 38%); }
 .adm-uf-bottom {
@@ -340,16 +342,18 @@
 }
 .adm-uf-reset {
   width: 100%;
-  background: none;
-  border: 1px solid hsl(240, 8%, 25%);
+  background: hsl(0, 65%, 38%);
+  border: 1px solid hsl(0, 65%, 45%);
   border-radius: 8px;
-  color: hsl(240, 8%, 50%);
+  color: #fff;
   font-size: 0.8rem;
-  padding: 0.4rem;
+  font-weight: 600;
+  padding: 0.45rem;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: background 0.15s;
+  text-align: center;
 }
-.adm-uf-reset:hover { border-color: hsl(0, 60%, 50%); color: hsl(0, 60%, 65%); }
+.adm-uf-reset:hover { background: hsl(0, 65%, 44%); }
 .admin-section-title {
   font-size: 1rem;
   font-weight: 700;
@@ -496,30 +500,28 @@
 /* ── Bibliothèque utilisateurs ── */
 .admin-user-lib {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.65rem;
   padding: 0.25rem 0 1rem;
 }
 
-/* Tuile de base */
+/* Tuile de base — layout horizontal : avatar gauche + corps droite */
 .admin-utile {
-  aspect-ratio: 1;
-  border-radius: 14px;
+  border-radius: 12px;
   background: hsl(225, 16%, 14%);
   border: 1px solid rgba(255,255,255,0.07);
   display: flex;
-  flex-direction: column;
-  padding: 1rem;
-  cursor: pointer;
+  flex-direction: row;
+  align-items: stretch;
   position: relative;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   overflow: hidden;
   text-decoration: none;
   color: var(--text, #e0e0f0);
 }
 .admin-utile:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+  border-color: rgba(255,255,255,0.14);
 }
 
 /* Variante admin (violet) */
@@ -650,58 +652,123 @@
   letter-spacing: 0.07em;
 }
 
-/* En-tête de tuile : avatar + menu */
-.admin-utile-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: auto;
+/* Avatar carré collé à gauche */
+.admin-utile-avatar-wrap {
+  width: 56px;
+  flex-shrink: 0;
+  align-self: stretch;
+  overflow: hidden;
+  border-radius: 12px 0 0 12px;
+  border-right: 1px solid rgba(255,255,255,0.07);
 }
-
-.admin-utile-avatar {
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.08);
+.admin-utile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.admin-utile-avatar--letter {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: rgba(255,255,255,0.85);
-  flex-shrink: 0;
-  letter-spacing: 0;
+  background: color-mix(in srgb, var(--avatar-color, #6b7280) 30%, hsl(225,16%,14%));
 }
-.admin-utile--admin .admin-utile-avatar { background: rgba(124,58,237,0.3); }
-.admin-utile--test .admin-utile-avatar { background: rgba(217,119,6,0.3); }
+
+/* Corps de la tuile */
+.admin-utile-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.6rem 0.5rem 0.5rem;
+  position: relative;
+  gap: 0.3rem;
+}
+
+/* Badge activité haut droite */
+.admin-utile-badge {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  letter-spacing: 0.02em;
+}
+.admin-utile-badge--active {
+  color: hsl(140, 65%, 45%);
+  background: hsl(140, 55%, 12%);
+}
+.admin-utile-badge--inactive {
+  color: hsl(0, 55%, 50%);
+  background: hsl(0, 40%, 12%);
+}
+.admin-utile-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: hsl(140, 65%, 45%);
+  flex-shrink: 0;
+}
+
+/* Pseudo centré */
+.admin-utile-name-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 0.4rem;
+  cursor: pointer;
+  color: rgba(255,255,255,0.9);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
 
 /* Menu contextuel (⋯) */
 .admin-utile-menu {
   position: relative;
   flex-shrink: 0;
+  align-self: center;
+  margin-top: auto;
 }
-.admin-utile-menu > summary {
+.admin-utile-menu-btn {
   list-style: none;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  color: rgba(255,255,255,0.25);
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.2);
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
+.admin-utile-menu-btn::-webkit-details-marker { display: none; }
+.admin-utile-menu > summary { list-style: none; }
 .admin-utile-menu > summary::-webkit-details-marker { display: none; }
 .admin-utile-menu > summary:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
 .admin-utile-menu[open] > summary { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
 
 .admin-utile-menu-body {
   position: absolute;
-  top: calc(100% + 4px);
+  bottom: calc(100% + 4px);
   right: 0;
-  min-width: 140px;
+  min-width: 150px;
   background: hsl(225,18%,18%);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px;
@@ -731,43 +798,13 @@
 .admin-utile-menu-item--danger { color: rgba(248,113,113,0.8); }
 .admin-utile-menu-item--danger:hover { background: rgba(239,68,68,0.12); color: #f87171; }
 
-/* Corps de la tuile : nom + dernière connexion */
-.admin-utile-body-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  margin-bottom: 0.5rem;
-  background: none;
-  border: none;
-  padding: 0;
-  text-align: left;
-  width: 100%;
-  cursor: pointer;
-}
-.admin-utile-name {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
-}
-.admin-utile-login {
-  font-size: 0.63rem;
-  color: rgba(255,255,255,0.28);
-  margin-top: 0.15rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Stats en bas de la tuile */
+/* Stats */
 .admin-utile-stats {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.2rem;
   border-top: 1px solid rgba(255,255,255,0.06);
-  padding-top: 0.5rem;
+  padding-top: 0.35rem;
+  width: 100%;
   margin-top: auto;
 }
 .admin-utile-stat {
@@ -775,16 +812,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
+  gap: 0.05rem;
 }
 .admin-utile-stat-val {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: rgba(255,255,255,0.82);
   font-variant-numeric: tabular-nums;
 }
 .admin-utile-stat-key {
-  font-size: 0.52rem;
+  font-size: 0.5rem;
   color: rgba(255,255,255,0.25);
   text-transform: uppercase;
   letter-spacing: 0.05em;

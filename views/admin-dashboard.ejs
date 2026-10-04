@@ -82,27 +82,78 @@
 
       <% userStates.forEach(function(state) { %>
         <%
-          var uVariant = state.user.isAdmin ? 'admin' : (state.user.isTest ? 'test' : 'normal');
-          var uInitial = (state.user.displayName || '?').charAt(0).toUpperCase();
-          var uLastLogin = '';
-          if (state.user.lastLoginAt) {
-            var diff = Date.now() - new Date(state.user.lastLoginAt).getTime();
-            var days = Math.floor(diff / 86400000);
-            if (days === 0) uLastLogin = 'aujourd\u2019hui';
-            else if (days === 1) uLastLogin = 'hier';
-            else if (days < 30) uLastLogin = 'il y a ' + days + 'j';
-            else uLastLogin = new Date(state.user.lastLoginAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+          var uVariant  = state.user.isAdmin ? 'admin' : (state.user.isTest ? 'test' : 'normal');
+          var uInitial  = (state.user.displayName || '?').charAt(0).toUpperCase();
+          var uLoginMs  = state.user.lastLoginAt ? new Date(state.user.lastLoginAt).getTime() : 0;
+          var uLoginLabel = '';
+          var uLoginActive = false;
+          if (uLoginMs) {
+            var diff  = Date.now() - uLoginMs;
+            var secs  = Math.floor(diff / 1000);
+            var mins  = Math.floor(diff / 60000);
+            var hours = Math.floor(diff / 3600000);
+            var days  = Math.floor(diff / 86400000);
+            var weeks = Math.floor(days / 7);
+            uLoginActive = days < 14;
+            if (secs < 60)       uLoginLabel = secs + 's';
+            else if (mins < 60)  uLoginLabel = mins + 'min';
+            else if (hours < 24) uLoginLabel = hours + 'h';
+            else if (days < 7)   uLoginLabel = days + 'j';
+            else                 uLoginLabel = weeks + 'sem';
           } else {
-            uLastLogin = 'jamais connect\u00e9';
+            uLoginLabel = 'jamais';
           }
         %>
         <div class="admin-utile admin-utile--<%= uVariant %>"
           data-role="<%= uVariant %>"
           data-name="<%= (state.user.displayName || '').toLowerCase() %>"
-          data-last-login="<%= state.user.lastLoginAt ? new Date(state.user.lastLoginAt).getTime() : 0 %>"
+          data-last-login="<%= uLoginMs %>"
           data-created="<%= state.user.createdAt ? new Date(state.user.createdAt).getTime() : 0 %>">
-          <div class="admin-utile-top">
-            <div class="admin-utile-avatar"><%= uInitial %></div>
+
+          <%# Avatar carré collé à gauche %>
+          <div class="admin-utile-avatar-wrap">
+            <% if (state.profileThumb) { %>
+              <img src="<%= state.profileThumb %>" alt="" class="admin-utile-avatar-img" loading="lazy" />
+            <% } else { %>
+              <div class="admin-utile-avatar admin-utile-avatar--letter"
+                style="--avatar-color: <%= state.user.profileColor || '#6b7280' %>"><%= uInitial %></div>
+            <% } %>
+          </div>
+
+          <%# Corps de carte %>
+          <div class="admin-utile-body">
+
+            <%# Badge activité haut droite %>
+            <span class="admin-utile-badge admin-utile-badge--<%= uLoginActive ? 'active' : 'inactive' %>">
+              <% if (uLoginActive && uLoginMs) { %><span class="admin-utile-badge-dot"></span><% } %>
+              <%= uLoginLabel %>
+            </span>
+
+            <%# Pseudo centré %>
+            <button type="button" class="admin-utile-name-btn" data-profile-id="<%= state.user.id %>">
+              <%= state.user.displayName %>
+              <% if (state.user.shareNotesWithAdmin) { %>
+                <span class="admin-share-badge" title="Partage ses notes" aria-label="Partage ses notes">&#128065;</span>
+              <% } %>
+            </button>
+
+            <%# Stats %>
+            <div class="admin-utile-stats">
+              <div class="admin-utile-stat">
+                <span class="admin-utile-stat-val"><%= state.completedQuizzes %></span>
+                <span class="admin-utile-stat-key">Quizz</span>
+              </div>
+              <div class="admin-utile-stat">
+                <span class="admin-utile-stat-val"><%= state.reactionStats.ratingCount %></span>
+                <span class="admin-utile-stat-key">Notes</span>
+              </div>
+              <div class="admin-utile-stat">
+                <span class="admin-utile-stat-val"><%= state.reactionStats.flameCount %></span>
+                <span class="admin-utile-stat-key">J&rsquo;adore</span>
+              </div>
+            </div>
+
+            <%# Menu actions (accessible) %>
             <details class="admin-utile-menu" onclick="event.stopPropagation()">
               <summary class="admin-utile-menu-btn" title="Actions">&#8943;</summary>
               <div class="admin-utile-menu-body">
@@ -131,31 +182,7 @@
                 <% } %>
               </div>
             </details>
-          </div>
 
-          <button type="button" class="admin-utile-body-link" data-profile-id="<%= state.user.id %>">
-            <div class="admin-utile-name">
-              <%= state.user.displayName %>
-              <% if (state.user.shareNotesWithAdmin) { %>
-                <span class="admin-share-badge" title="Partage ses notes et favoris avec l'admin" aria-label="Partage ses notes et favoris avec l'admin">&#128065;</span>
-              <% } %>
-            </div>
-            <div class="admin-utile-login"><%= uLastLogin %></div>
-          </button>
-
-          <div class="admin-utile-stats">
-            <div class="admin-utile-stat">
-              <span class="admin-utile-stat-val"><%= state.livePercentage > 0 ? state.livePercentage + '%' : 'N/A' %></span>
-              <span class="admin-utile-stat-key">Quizz</span>
-            </div>
-            <div class="admin-utile-stat">
-              <span class="admin-utile-stat-val"><%= state.reactionStats.ratingCount %></span>
-              <span class="admin-utile-stat-key">Notes</span>
-            </div>
-            <div class="admin-utile-stat">
-              <span class="admin-utile-stat-val"><%= state.reactionStats.flameCount %></span>
-              <span class="admin-utile-stat-key">J&rsquo;adore</span>
-            </div>
           </div>
         </div>
       <% }) %>

@@ -2713,6 +2713,10 @@ function listQuizzesNotCompleted(userId) {
     WHERE q.id NOT IN (SELECT quiz_id FROM custom_quiz_answers WHERE user_id=? AND completed=1)
     ORDER BY q.updated_at DESC`).all(userId);
 }
+function countCompletedQuizzes(userId) {
+  const row = db.prepare(`SELECT COUNT(*) as n FROM custom_quiz_answers WHERE user_id=? AND completed=1`).get(userId);
+  return row ? row.n : 0;
+}
 function getAllQuizAnswers(quizId) {
   return db.prepare(`
     SELECT a.*, u.username
@@ -3922,6 +3926,7 @@ module.exports = {
   deleteQuizPart,
   reorderAllQuizQuestions,
   getAllQuizAnswers,
+  countCompletedQuizzes,
   getQuizFlags,
   saveQuizFlag,
   listNouvelles,
