@@ -136,8 +136,8 @@
   left: 50%;
   transform: translateX(-50%);
   font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.06em;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #e4e4e7;
   pointer-events: none;
@@ -145,7 +145,6 @@
 .admin-tabs-nav {
   display: flex;
   align-items: center;
-  gap: 0;
   background: #450a0a;
   border-bottom: 1px solid #7f1d1d;
   padding: 0 0.5rem;
@@ -158,6 +157,14 @@
 }
 .admin-tabs-nav::-webkit-scrollbar { display: none; }
 
+/* Groupe centré — prend tout l'espace, centre son contenu */
+.admin-tabs-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Séparateur entre familles */
 .admin-tabs-sep {
   display: inline-block;
@@ -169,7 +176,7 @@
 }
 
 /* Base commune à tous les boutons/liens de nav */
-.admin-tab-btn, .admin-tab-home, .admin-tab-recompenses {
+.admin-tab-btn, .admin-tab-home {
   white-space: nowrap;
   flex-shrink: 0;
   text-decoration: none;
@@ -202,34 +209,24 @@
 .admin-tab--content:not(.active):hover { color: hsl(20, 80%, 88%); }
 .admin-tab-btn--link { text-decoration: none; }
 
-/* ── Récompenses : pill ambré ── */
-.admin-tab-recompenses {
-  background: hsl(36, 55%, 20%);
-  border: 1px solid hsl(36, 60%, 38%);
-  color: hsl(44, 90%, 68%);
+/* ── Retour au site : bouton couleur franche, ancré à droite ── */
+.admin-tab-home {
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+  padding: 0.3rem 0.9rem;
+  background: hsl(213, 70%, 30%);
+  border: 1px solid hsl(213, 70%, 48%);
+  color: hsl(213, 90%, 82%);
   font-size: 0.8rem;
   font-weight: 600;
-  border-radius: 5px;
-  padding: 0.28rem 0.75rem;
-  margin: 0 0.5rem 0 0.25rem;
+  border-radius: 6px;
+  gap: 0.35rem;
   transition: background 0.15s, color 0.15s;
 }
-.admin-tab-recompenses:hover {
-  background: hsl(36, 55%, 27%);
-  color: hsl(44, 95%, 80%);
+.admin-tab-home:hover {
+  background: hsl(213, 70%, 38%);
+  color: #fff;
 }
-
-/* ── Retour au site : ghost droit ── */
-.admin-tab-home {
-  margin-left: auto;
-  padding: 0.55rem 0.9rem;
-  color: rgba(255,255,255,0.35);
-  font-size: 0.78rem;
-  border-left: 1px solid rgba(255,255,255,0.1);
-  transition: color 0.15s;
-  gap: 0.3rem;
-}
-.admin-tab-home:hover { color: rgba(255,255,255,0.75); }
 
 /* ── Bouton retour (pages détail) ── */
 .admin-topbar-back {
