@@ -1012,21 +1012,32 @@
       var btn = e.target.closest('button, a');
       if (!btn) return;
 
-      // Reset MDP — génère un mot de passe aléatoire, POST, copie
+      // Reset MDP : 1er clic = génère + affiche, 2e clic = copie
       if (btn.id === 'aqm-reset-pwd-btn') {
-        var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
+        if (btn.dataset.pwd) {
+          navigator.clipboard.writeText(btn.dataset.pwd).catch(function(){});
+          var prev = btn.textContent;
+          btn.textContent = 'Copié !';
+          setTimeout(function() { btn.textContent = prev; }, 1500);
+          return;
+        }
+        var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
         var pwd = '';
-        for (var i = 0; i < 12; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+        for (var i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+        btn.textContent = '…';
+        btn.disabled = true;
         fetch('/admin/profils/' + btn.dataset.uid + '/reset-pwd', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: pwd }),
         }).then(function(r) {
-          if (!r.ok) return;
-          navigator.clipboard.writeText(pwd).catch(function(){});
-          btn.textContent = pwd + ' ✓';
-          btn.disabled = true;
-          setTimeout(function() { btn.textContent = 'Réinit. MDP'; btn.disabled = false; }, 4000);
+          btn.disabled = false;
+          if (!r.ok) { btn.textContent = 'Erreur'; return; }
+          btn.dataset.pwd = pwd;
+          btn.textContent = pwd;
+        }).catch(function() {
+          btn.disabled = false;
+          btn.textContent = 'Erreur';
         });
         return;
       }
