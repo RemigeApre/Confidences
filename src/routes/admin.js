@@ -61,6 +61,7 @@ const {
   deleteCharmById,
   countCompletedQuizzes,
   countUserNotes,
+  setUserAccountStatus,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -357,6 +358,16 @@ function buildAdminRouter(config) {
       deleteUser(id);
     }
     res.redirect("/admin#tab-utilisateurs");
+  });
+
+  router.post("/profils/:id/status", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const status = String(req.body.status || '');
+    if (!Number.isInteger(id) || !['actif', 'restreint', 'bloque'].includes(status)) {
+      return res.status(400).json({ error: 'invalid' });
+    }
+    setUserAccountStatus(id, status);
+    res.json({ ok: true });
   });
 
   // Teinte du volet, même logique que src/routes/favorites.js pour le profil

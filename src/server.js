@@ -187,6 +187,27 @@ app.use((req, res, next) => {
   next();
 });
 
+// Enforcement du statut de compte.
+// bloqué  → page de blocage sur toutes les routes (sauf /admin et login)
+// restreint → bloque galerie, BD, nouvelles, et uploads (contenu adulte/privé)
+// inactif est informatif uniquement (calculé, jamais stocké).
+const RESTRICTED_PREFIXES = ['/galerie', '/bd', '/nouvelles', '/uploads'];
+app.use((req, res, next) => {
+  if (!req.user) return next();
+  const status = req.user.accountStatus || 'actif';
+  if (status === 'bloque') {
+    // Les admins ne peuvent pas se bloquer eux-mêmes
+    if (req.user.isAdmin) return next();
+    if (req.path.startsWith('/admin') || req.path === '/login' || req.path === '/logout') return next();
+    return res.status(403).render('blocked', { user: req.user });
+  }
+  if (status === 'restreint') {
+    const blocked = RESTRICTED_PREFIXES.some(p => req.path.startsWith(p));
+    if (blocked) return res.status(403).render('blocked-restricted', { user: req.user });
+  }
+  next();
+});
+
 // Expose le chemin courant pour que le lien "Se connecter" dans la nav
 // puisse y revenir après connexion (paramètre ?next=).
 // Expose aussi les catégories wiki pour le menu déroulant desktop.

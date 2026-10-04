@@ -66,6 +66,9 @@ db.exec(`
     updated_at TEXT NOT NULL
   )
 `);
+// Statut de compte (actif/restreint/bloque — inactif est calculé, jamais stocké)
+try { db.exec("ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'actif'"); } catch (_) {}
+
 // Migrations non destructives
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN meta TEXT NOT NULL DEFAULT '{}'"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN image_paths TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
@@ -685,6 +688,7 @@ function rowToUser(row) {
     memoryCardCharmId: row.memory_card_charm_id || null,
     memoryCardColor: row.memory_card_color || 'default',
     activeTheme: row.active_theme || 'default',
+    accountStatus: row.account_status || 'actif',
   };
 }
 
@@ -784,6 +788,12 @@ function listUsers() {
 
 function updateUserPassword(id, passwordHash) {
   db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(passwordHash, new Date().toISOString(), id);
+}
+
+const VALID_ACCOUNT_STATUSES = ['actif', 'restreint', 'bloque'];
+function setUserAccountStatus(userId, status) {
+  if (!VALID_ACCOUNT_STATUSES.includes(status)) return;
+  db.prepare("UPDATE users SET account_status = ? WHERE id = ?").run(status, userId);
 }
 
 function addFavorite(userId, itemType, itemId) {
@@ -3766,6 +3776,7 @@ function updateWordleStreakAndStats(userId, date, solved) {
 
 module.exports = {
   db,
+  setUserAccountStatus,
   insertSubmission,
   listSubmissions,
   getSubmission,

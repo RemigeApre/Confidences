@@ -131,7 +131,8 @@
           data-edit-orientation="<%= state.user.orientation || '' %>"
           data-edit-email="<%= state.user.email || '' %>"
           data-edit-partner="<%= state.user.partnerId || '' %>"
-          data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>">
+          data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>"
+          data-account-status="<%= state.user.accountStatus || 'actif' %>">
 
           <%# Corps de carte %>
           <div class="admin-utile-body">
@@ -154,6 +155,12 @@
             <div class="admin-utile-name-btn">
               <%= state.user.displayName %>
             </div>
+
+            <%# Statut de compte (masqué si actif/inactif) %>
+            <% var uStatus = state.user.accountStatus || 'actif'; %>
+            <% if (uStatus === 'restreint' || uStatus === 'bloque') { %>
+              <span class="admin-utile-status admin-utile-status--<%= uStatus %>"><%= uStatus === 'restreint' ? 'Restreint' : 'Bloqué' %></span>
+            <% } %>
 
             <%# Grille 2×3 de stats %>
             <div class="admin-utile-stats">
@@ -226,6 +233,16 @@
         </div>
 
         <div class="aqm-stats" id="aqm-stats"></div>
+
+        <div class="aqm-status-row">
+          <label class="aqm-status-label" for="aqm-status-select">Statut du compte</label>
+          <select class="aqm-status-select" id="aqm-status-select">
+            <option value="actif">Actif</option>
+            <option value="inactif">Inactif (automatique)</option>
+            <option value="restreint">Restreint</option>
+            <option value="bloque">Bloqu&eacute;</option>
+          </select>
+        </div>
 
         <div class="aqm-actions" id="aqm-actions"></div>
 
@@ -925,6 +942,21 @@
       }
       document.getElementById('aqm-actions').innerHTML = actionsHtml;
 
+      // Statut de compte
+      var statusSel = document.getElementById('aqm-status-select');
+      var storedStatus = d.accountStatus || 'actif';
+      // Calculer si inactif (actif + jamais connecté ou > 90 jours)
+      var effectiveStatus = storedStatus;
+      if (storedStatus === 'actif') {
+        var lastLogin = parseInt(d.lastLogin || '0', 10);
+        var ninetyDays = 90 * 24 * 3600000;
+        if (!lastLogin || (Date.now() - lastLogin) > ninetyDays) effectiveStatus = 'inactif';
+      }
+      statusSel.value = effectiveStatus === 'inactif' ? 'inactif' : storedStatus;
+      statusSel.dataset.uid = uid;
+      statusSel.dataset.prev = storedStatus;
+      statusSel.className = 'aqm-status-select aqm-status-select--' + effectiveStatus;
+
       // Lien profil complet
       document.getElementById('aqm-profile-link').href = '/admin/utilisateur/' + uid;
 
@@ -932,6 +964,45 @@
     }
 
     function closeQuick() { overlay.hidden = true; }
+
+    // Changement de statut de compte via le dropdown
+    document.getElementById('aqm-status-select').addEventListener('change', function () {
+      var sel = this;
+      var uid = sel.dataset.uid;
+      var newStatus = sel.value;
+      if (!uid || newStatus === 'inactif') return;
+      fetch('/admin/profils/' + uid + '/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      }).then(function (r) {
+        if (!r.ok) { sel.value = sel.dataset.prev || 'actif'; return; }
+        // Mettre à jour le data-attribute de la carte correspondante
+        var card = document.querySelector('.admin-utile[data-id="' + uid + '"]');
+        if (card) {
+          card.dataset.accountStatus = newStatus;
+          // Mettre à jour le chip de statut sur la carte
+          var chip = card.querySelector('.admin-utile-status');
+          if (newStatus === 'actif') {
+            if (chip) chip.remove();
+          } else {
+            var label = newStatus === 'restreint' ? 'Restreint' : 'Bloqué';
+            if (chip) { chip.textContent = label; chip.className = 'admin-utile-status admin-utile-status--' + newStatus; }
+            else {
+              var nameBtn = card.querySelector('.admin-utile-name-btn');
+              if (nameBtn) {
+                var newChip = document.createElement('span');
+                newChip.className = 'admin-utile-status admin-utile-status--' + newStatus;
+                newChip.textContent = label;
+                nameBtn.after(newChip);
+              }
+            }
+          }
+        }
+        sel.dataset.prev = newStatus;
+        sel.className = 'aqm-status-select aqm-status-select--' + newStatus;
+      }).catch(function () { sel.value = sel.dataset.prev || 'actif'; });
+    });
 
     // Clic sur une carte (pas sur le menu)
     lib.addEventListener('click', function (e) {
