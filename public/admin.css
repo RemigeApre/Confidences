@@ -535,9 +535,8 @@
 .admin-utile--admin .aust-key { color: hsl(268, 60%, 68%); }
 .admin-utile--admin .admin-utile-stats { border-color: hsl(268, 35%, 28%); }
 .admin-utile--admin .admin-utile-stat { border-color: hsl(268, 30%, 22%); }
-.admin-utile--admin .admin-utile-status-wrap { border-color: hsl(268, 40%, 30%); background: hsl(268, 35%, 13%); }
-.admin-utile--admin .admin-utile-status-sel { color: hsl(268, 70%, 70%); }
-.admin-utile--admin .admin-utile-status-arrow { color: hsl(268, 60%, 55%); }
+.admin-utile--admin .admin-utile-status-wrap--actif { border-color: hsl(268, 40%, 28%); background: hsl(268, 35%, 11%); }
+.admin-utile--admin .admin-utile-status-wrap--actif .admin-utile-status-sel { color: hsl(140, 65%, 50%); }
 .admin-utile--admin .admin-utile-badge--inactive { background: hsl(268, 35%, 14%); color: hsl(268, 70%, 65%); }
 
 /* Variante test (orange franc) */
@@ -550,9 +549,8 @@
 .admin-utile--test .aust-key { color: hsl(34, 70%, 62%); }
 .admin-utile--test .admin-utile-stats { border-color: hsl(34, 40%, 28%); }
 .admin-utile--test .admin-utile-stat { border-color: hsl(34, 35%, 22%); }
-.admin-utile--test .admin-utile-status-wrap { border-color: hsl(34, 45%, 28%); background: hsl(34, 38%, 12%); }
-.admin-utile--test .admin-utile-status-sel { color: hsl(34, 80%, 65%); }
-.admin-utile--test .admin-utile-status-arrow { color: hsl(34, 65%, 50%); }
+.admin-utile--test .admin-utile-status-wrap--actif { border-color: hsl(34, 40%, 26%); background: hsl(34, 35%, 10%); }
+.admin-utile--test .admin-utile-status-wrap--actif .admin-utile-status-sel { color: hsl(140, 65%, 50%); }
 .admin-utile--test .admin-utile-badge--inactive { background: hsl(34, 35%, 13%); color: hsl(34, 80%, 62%); }
 
 /* Tuiles jeux */
@@ -919,14 +917,24 @@
   border-color: rgba(255,255,255,0.18);
   background: rgba(255,255,255,0.07);
 }
-.admin-utile-status-wrap--restreint {
-  border-color: hsl(35, 55%, 30%);
-  background: hsl(35, 60%, 12%);
+.admin-utile-status-wrap--actif {
+  border-color: hsl(140, 50%, 22%);
+  background: hsl(140, 45%, 9%);
 }
-.admin-utile-status-wrap--restreint:hover { border-color: hsl(35, 70%, 40%); }
+.admin-utile-status-wrap--actif:hover { border-color: hsl(140, 60%, 32%); }
+.admin-utile-status-wrap--inactif {
+  border-color: hsl(220, 10%, 28%);
+  background: hsl(220, 10%, 11%);
+}
+.admin-utile-status-wrap--inactif:hover { border-color: hsl(220, 10%, 38%); }
+.admin-utile-status-wrap--restreint {
+  border-color: hsl(48, 70%, 28%);
+  background: hsl(48, 60%, 10%);
+}
+.admin-utile-status-wrap--restreint:hover { border-color: hsl(48, 80%, 40%); }
 .admin-utile-status-wrap--bloque {
-  border-color: hsl(0, 50%, 28%);
-  background: hsl(0, 55%, 11%);
+  border-color: hsl(0, 55%, 28%);
+  background: hsl(0, 55%, 10%);
 }
 .admin-utile-status-wrap--bloque:hover { border-color: hsl(0, 65%, 40%); }
 .admin-utile-status-sel {
@@ -935,26 +943,20 @@
   border: none;
   outline: none;
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
   appearance: none;
   padding: 0.32rem 0;
-  color: rgba(255,255,255,0.4);
+  text-align: center;
+  color: hsl(140, 65%, 50%);
 }
-.admin-utile-status-wrap--actif   .admin-utile-status-sel { color: rgba(255,255,255,0.4); }
-.admin-utile-status-wrap--inactif .admin-utile-status-sel { color: rgba(255,255,255,0.28); }
-.admin-utile-status-wrap--restreint .admin-utile-status-sel { color: hsl(35, 90%, 60%); }
-.admin-utile-status-wrap--bloque  .admin-utile-status-sel { color: hsl(0, 80%, 62%); }
+.admin-utile-status-wrap--actif   .admin-utile-status-sel { color: hsl(140, 65%, 50%); }
+.admin-utile-status-wrap--inactif .admin-utile-status-sel { color: hsl(220, 10%, 50%); }
+.admin-utile-status-wrap--restreint .admin-utile-status-sel { color: hsl(48, 95%, 55%); }
+.admin-utile-status-wrap--bloque  .admin-utile-status-sel { color: hsl(0, 80%, 58%); }
 .admin-utile-status-sel option { background: hsl(225, 16%, 14%); color: #fff; }
-.admin-utile-status-arrow {
-  pointer-events: none;
-  flex-shrink: 0;
-  color: rgba(255,255,255,0.25);
-}
-.admin-utile-status-wrap--restreint .admin-utile-status-arrow { color: hsl(35, 80%, 45%); }
-.admin-utile-status-wrap--bloque  .admin-utile-status-arrow { color: hsl(0, 65%, 45%); }
 
 .aqm-actions {
   display: flex;

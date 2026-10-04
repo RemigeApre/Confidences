@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { thumbUrl } = require("../thumbs");
+const { touchLastActive } = require("../db");
 
 function buildLootboxRouter(config) {
   const router = express.Router();
@@ -24,6 +25,7 @@ function buildLootboxRouter(config) {
   router.post("/open", express.json(), (req, res) => {
     const result = db.openLootbox(req.user.id);
     if (!result) return res.json({ ok: false, error: "no_lootbox" });
+    touchLastActive(req.user.id);
 
     if (result.isChoice) {
       return res.json({

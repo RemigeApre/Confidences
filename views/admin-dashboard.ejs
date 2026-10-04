@@ -85,22 +85,25 @@
           var uVariant  = state.user.isAdmin ? 'admin' : (state.user.isTest ? 'test' : 'normal');
           var uInitial  = (state.user.displayName || '?').charAt(0).toUpperCase();
           var uLoginMs  = state.user.lastLoginAt ? new Date(state.user.lastLoginAt).getTime() : 0;
+          var uActiveMs = state.user.lastActiveAt ? new Date(state.user.lastActiveAt).getTime() : uLoginMs;
           var uStatus = state.user.accountStatus || 'actif';
           var uEffectiveStatus = uStatus;
           if (uStatus === 'actif') {
-            var _diff90 = uLoginMs ? (Date.now() - uLoginMs) : Infinity;
+            var _diff90 = uActiveMs ? (Date.now() - uActiveMs) : Infinity;
             if (_diff90 > 90 * 24 * 3600000) uEffectiveStatus = 'inactif';
           }
+          // Anneau vert = actif dans les 15 dernières minutes (lastActiveAt)
+          var uLoginActive = uActiveMs && (Date.now() - uActiveMs) < 15 * 60 * 1000;
+          // Badge inactivité = basé sur lastActiveAt (ou lastLoginAt en fallback)
           var uLoginLabel = '';
-          var uLoginActive = false;
-          if (uLoginMs) {
-            var diff  = Date.now() - uLoginMs;
+          var uRefMs = uActiveMs || uLoginMs;
+          if (uRefMs) {
+            var diff  = Date.now() - uRefMs;
             var secs  = Math.floor(diff / 1000);
             var mins  = Math.floor(diff / 60000);
             var hours = Math.floor(diff / 3600000);
             var days  = Math.floor(diff / 86400000);
             var weeks = Math.floor(days / 7);
-            uLoginActive = days < 14;
             if (secs < 60)       uLoginLabel = secs + 's';
             else if (mins < 60)  uLoginLabel = mins + 'min';
             else if (hours < 24) uLoginLabel = hours + 'h';
@@ -114,6 +117,7 @@
           data-role="<%= uVariant %>"
           data-name="<%= (state.user.displayName || '').toLowerCase() %>"
           data-last-login="<%= uLoginMs %>"
+          data-last-active="<%= uActiveMs %>"
           data-created="<%= state.user.createdAt ? new Date(state.user.createdAt).getTime() : 0 %>"
           data-id="<%= state.user.id %>"
           data-display-name="<%= state.user.displayName %>"
@@ -175,7 +179,6 @@
                 <option value="restreint"<%= uStatus === 'restreint' ? ' selected' : '' %>>Restreint</option>
                 <option value="bloque"<%= uStatus === 'bloque' ? ' selected' : '' %>>Bloqu&eacute;</option>
               </select>
-              <svg class="admin-utile-status-arrow" viewBox="0 0 10 6" width="8" height="8" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
 
             <%# Grille 2×3 de stats %>

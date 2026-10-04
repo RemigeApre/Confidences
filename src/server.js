@@ -191,7 +191,7 @@ app.use((req, res, next) => {
 // bloqué  → page de blocage sur toutes les routes (sauf /admin et login)
 // restreint → bloque galerie, BD, nouvelles, et uploads (contenu adulte/privé)
 // inactif est informatif uniquement (calculé, jamais stocké).
-const RESTRICTED_PREFIXES = ['/galerie', '/bd', '/nouvelles', '/uploads'];
+const RESTRICTED_PREFIXES = ['/galerie', '/bd', '/nouvelles', '/lootbox'];
 app.use((req, res, next) => {
   if (!req.user) return next();
   const status = req.user.accountStatus || 'actif';
@@ -225,9 +225,25 @@ fs.mkdirSync(uploadsDir, { recursive: true });
 // Chaque fichier uploade a un nom unique (horodatage + aleatoire, voir les
 // routes wiki/galerie/BD) et n'est jamais modifie sur place : un cache tres
 // long est donc sans risque (une URL donnee sert toujours le meme contenu).
+const RESTRICTED_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <rect width="48" height="48" rx="4" fill="#1a1208"/>
+  <polygon points="24,10 6,38 42,38" fill="none" stroke="#c8880a" stroke-width="2.5" stroke-linejoin="round"/>
+  <line x1="24" y1="20" x2="24" y2="30" stroke="#c8880a" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="24" cy="34.5" r="1.4" fill="#c8880a"/>
+</svg>`;
+
 app.use(
   "/uploads",
-  (req, res, next) => (req.user ? next() : res.status(403).end()),
+  (req, res, next) => {
+    if (!req.user) return res.status(403).end();
+    const status = req.user.accountStatus || 'actif';
+    if (status === 'restreint' && !req.user.isAdmin) {
+      res.set('Content-Type', 'image/svg+xml');
+      res.set('Cache-Control', 'no-store');
+      return res.send(RESTRICTED_IMAGE_SVG);
+    }
+    next();
+  },
   express.static(uploadsDir, { maxAge: "1y", immutable: true })
 );
 

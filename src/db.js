@@ -68,6 +68,8 @@ db.exec(`
 `);
 // Statut de compte (actif/restreint/bloque — inactif est calculé, jamais stocké)
 try { db.exec("ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'actif'"); } catch (_) {}
+// Dernière activité réelle (login + actions fortes + visites throttlées)
+try { db.exec("ALTER TABLE users ADD COLUMN last_active_at TEXT"); } catch (_) {}
 
 // Migrations non destructives
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN meta TEXT NOT NULL DEFAULT '{}'"); } catch (_) {}
@@ -689,6 +691,7 @@ function rowToUser(row) {
     memoryCardColor: row.memory_card_color || 'default',
     activeTheme: row.active_theme || 'default',
     accountStatus: row.account_status || 'actif',
+    lastActiveAt: row.last_active_at || null,
   };
 }
 
@@ -742,8 +745,14 @@ function updateOwnProfile(id, { displayName, email, sexe, birthYear }) {
   ).run(displayName, email || "", sexe || "", birthYear || null, new Date().toISOString(), id);
 }
 
+function touchLastActive(id) {
+  const now = new Date().toISOString();
+  db.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").run(now, id);
+}
+
 function touchLastLogin(id) {
-  db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(new Date().toISOString(), id);
+  const now = new Date().toISOString();
+  db.prepare("UPDATE users SET last_login_at = ?, last_active_at = ? WHERE id = ?").run(now, now, id);
 }
 
 const ORIENTATION_VALUES = ["", "hetero", "gay", "bi"];
@@ -800,6 +809,7 @@ function addFavorite(userId, itemType, itemId) {
   db.prepare(
     "INSERT OR IGNORE INTO favorites (user_id, item_type, item_id, created_at) VALUES (?, ?, ?, ?)"
   ).run(userId, itemType, itemId, new Date().toISOString());
+  touchLastActive(userId);
 }
 
 function removeFavorite(userId, itemType, itemId) {
@@ -911,6 +921,7 @@ function setUserReaction(userId, itemType, itemId, { rating, flame, interested, 
      ON CONFLICT(user_id, item_type, item_id) DO UPDATE SET
        rating = excluded.rating, flame = excluded.flame, interested = excluded.interested, read_later = excluded.read_later, hidden = excluded.hidden, practiced = excluded.practiced, updated_at = excluded.updated_at`
   ).run(userId, itemType, itemId, r, f ? 1 : 0, it ? 1 : 0, rl ? 1 : 0, h ? 1 : 0, pr ? 1 : 0, new Date().toISOString());
+  touchLastActive(userId);
 }
 
 function getUserNote(pageId, userId) {
@@ -923,6 +934,7 @@ function setUserNote(pageId, userId, content) {
     `INSERT INTO wiki_page_user_notes (page_id, user_id, content, updated_at) VALUES (?, ?, ?, ?)
      ON CONFLICT(page_id, user_id) DO UPDATE SET content = excluded.content, updated_at = excluded.updated_at`
   ).run(pageId, userId, String(content || "").slice(0, 10000), new Date().toISOString());
+  touchLastActive(userId);
 }
 
 // Cree les profils initiaux au demarrage a partir des variables d'env
@@ -2389,7 +2401,9 @@ function recordActivityPing(userId) {
     .get(userId);
   const now = Date.now();
   if (last && now - new Date(last.created_at).getTime() < ACTIVITY_PING_THROTTLE_MS) return;
-  db.prepare("INSERT INTO activity_pings (user_id, created_at) VALUES (?, ?)").run(userId, new Date(now).toISOString());
+  const iso = new Date(now).toISOString();
+  db.prepare("INSERT INTO activity_pings (user_id, created_at) VALUES (?, ?)").run(userId, iso);
+  db.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").run(iso, userId);
 }
 
 // Regroupe les pings bruts en "sessions" de présence : deux pings séparés de
@@ -3777,6 +3791,7 @@ function updateWordleStreakAndStats(userId, date, solved) {
 module.exports = {
   db,
   setUserAccountStatus,
+  touchLastActive,
   insertSubmission,
   listSubmissions,
   getSubmission,
