@@ -52,6 +52,7 @@ const {
   setActiveTheme,
   buyTheme,
   THEME_DEFINITIONS,
+  getUserCards,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -223,13 +224,14 @@ function buildFavoritesRouter(config) {
 
   // ── Coffre ────────────────────────────────────────────────────────────────
   router.get("/coffre", requireUser, (req, res) => {
-    const view = ['images', 'charms', 'themes'].includes(req.query.view) ? req.query.view : null;
+    const view = ['images', 'charms', 'themes', 'cartes'].includes(req.query.view) ? req.query.view : null;
     const unlocks   = getUserUnlocks(req.user.id);
     const charms    = getUserUnlockedCharms(req.user.id);
     const userThemes = getUserThemes(req.user.id);
     const shopItems = view === 'images' ? getShopItems(req.user.id) : [];
     const cfg       = getLootboxConfig();
     const cfgBuy    = cfg.buyPrices;
+    const userCards = getUserCards(req.user.id);
     const coffreUnlocks = unlocks.length;
     const coffreCharms  = charms.filter(c => c.owned).length;
     const coffreThemes  = userThemes.filter(t => t.owned).length;
@@ -247,6 +249,7 @@ function buildFavoritesRouter(config) {
       CHARM_BUY_PRICE: cfgBuy,
       THEME_BUY_PRICE: cfgBuy,
       userThemes,
+      userCards,
       coffreUnlocks,
       coffreCharms,
       coffreThemes,

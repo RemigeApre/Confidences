@@ -156,6 +156,30 @@
               <div class="wiki-lp-type-badge"><%= SOUS_CAT_PART[pm.sous_cat] %></div>
             <% } %>
 
+            <%# Genre / switch de variante %>
+            <%
+              var GENRE_LBL = { male: 'Mâle', female: 'Femelle', neutre: 'Neutre / Autre', les_deux: 'Les deux' };
+              var GENRE_SYM = { male: '♂', female: '♀', neutre: '⚬', les_deux: '⚥' };
+              var genreVal = pm.genre_partenaire || '';
+            %>
+            <% if (variantePage) { %>
+              <%
+                var vmGenre = (variantePage.meta || {}).genre_partenaire || '';
+                var myLabel = GENRE_LBL[genreVal] || genreVal;
+                var vmLabel = GENRE_LBL[vmGenre] || vmGenre;
+                var mySym   = GENRE_SYM[genreVal] || '';
+                var vmSym   = GENRE_SYM[vmGenre] || '';
+              %>
+              <div class="wiki-lp-genre-switch">
+                <span class="wiki-lp-genre-btn wiki-lp-genre-btn--active"><%= mySym %> <%= myLabel %></span>
+                <a href="/wiki/<%= variantePage.id %>" class="wiki-lp-genre-btn wiki-lp-genre-btn--other"><%= vmSym %> <%= vmLabel %></a>
+              </div>
+            <% } else if (genreVal && genreVal !== 'les_deux') { %>
+              <div class="wiki-lp-genre-badge">
+                <span><%= GENRE_SYM[genreVal] || '' %> <%= GENRE_LBL[genreVal] || '' %></span>
+              </div>
+            <% } %>
+
             <%# Général %>
             <% if (hasCommuns) { %>
               <div class="wiki-lp-group">

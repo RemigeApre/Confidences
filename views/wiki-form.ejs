@@ -354,6 +354,35 @@
     <%# ── Paramètres partenaires (après images) ── %>
     <div id="wf-partenaires-params" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
 
+      <%# ── Genre du partenaire ── %>
+      <div class="wf-part-genre-block">
+        <p class="wiki-meta-label" style="margin:0 0 .4rem">Genre du partenaire</p>
+        <div class="wiki-meta-options">
+          <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="male"    <%= psel('genre_partenaire','male')    %>><span>&#9794; M&acirc;le</span></label>
+          <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="female"  <%= psel('genre_partenaire','female')  %>><span>&#9792; Femelle</span></label>
+          <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="neutre"  <%= psel('genre_partenaire','neutre')  %>><span>Neutre / Autre</span></label>
+          <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="les_deux"<%= psel('genre_partenaire','les_deux')%>><span>&#9893; Les deux</span></label>
+        </div>
+
+        <%# Lien vers la version de genre opposé %>
+        <div id="wf-variante-genre-wrap" style="margin-top:.55rem">
+          <p style="font-size:.75rem;color:#64748b;margin:0 0 .3rem">Variante de genre (page li&eacute;e)</p>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input type="text" id="wf-variante-search" placeholder="Chercher une page partenaire&hellip;" autocomplete="off"
+              style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none"
+              value="<%= pm.variante_genre_id ? (pages.find(function(p){ return p.id === pm.variante_genre_id; }) || {title:''}).title : '' %>">
+            <button type="button" id="wf-variante-clear" style="background:none;border:none;color:#f87171;font-size:1rem;cursor:pointer;padding:.2rem" title="Retirer le lien">&#215;</button>
+          </div>
+          <ul id="wf-variante-results" style="list-style:none;margin:.25rem 0 0;padding:0;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;max-height:160px;overflow-y:auto;display:none"></ul>
+          <p id="wf-variante-current" style="font-size:.75rem;color:#4ade80;margin:.25rem 0 0;min-height:1em">
+            <% if (pm.variante_genre_id) { var vp = pages.find(function(p){ return p.id === pm.variante_genre_id; }); %>
+              <% if (vp) { %>Li&eacute; &agrave; : <strong><%= vp.title %></strong><% } %>
+            <% } %>
+          </p>
+          <input type="hidden" name="meta_variante_genre_id" id="wf-variante-genre-id" value="<%= pm.variante_genre_id || '' %>">
+        </div>
+      </div>
+
       <%# Communs à tous %>
       <details class="wf-part-details" open>
         <summary>Param&egrave;tres communs</summary>
@@ -750,4 +779,65 @@
 </script>
 <script>window._wikiEditContent = <%- JSON.stringify(page.content || '') %>;</script>
 <script src="/wiki.js?v=<%= assetVersion %>"></script>
+<script>
+(function() {
+  var searchInput  = document.getElementById('wf-variante-search');
+  var hiddenId     = document.getElementById('wf-variante-genre-id');
+  var resultsList  = document.getElementById('wf-variante-results');
+  var currentLabel = document.getElementById('wf-variante-current');
+  var clearBtn     = document.getElementById('wf-variante-clear');
+  if (!searchInput || !hiddenId) return;
+
+  var allPages = JSON.parse(document.getElementById('wiki-existing-pages').textContent || '[]');
+  var _debounce = null;
+
+  searchInput.addEventListener('input', function() {
+    clearTimeout(_debounce);
+    var q = searchInput.value.trim().toLowerCase();
+    if (!q) { resultsList.style.display = 'none'; return; }
+    _debounce = setTimeout(function() {
+      var matches = allPages.filter(function(p) {
+        return p.title.toLowerCase().includes(q);
+      }).slice(0, 12);
+      resultsList.innerHTML = '';
+      if (!matches.length) { resultsList.style.display = 'none'; return; }
+      matches.forEach(function(p) {
+        var li = document.createElement('li');
+        li.textContent = p.title;
+        li.style.cssText = 'padding:.35rem .65rem;cursor:pointer;font-size:.82rem;color:#e2e8f0';
+        li.addEventListener('mouseenter', function() { li.style.background = 'rgba(255,255,255,.07)'; });
+        li.addEventListener('mouseleave', function() { li.style.background = ''; });
+        li.addEventListener('click', function() {
+          hiddenId.value = p.id;
+          searchInput.value = p.title;
+          if (currentLabel) {
+            currentLabel.textContent = '';
+            var pfx = document.createTextNode('Li\u00e9 \u00e0\u00a0: ');
+            var strong = document.createElement('strong');
+            strong.textContent = p.title;
+            currentLabel.appendChild(pfx);
+            currentLabel.appendChild(strong);
+          }
+          resultsList.style.display = 'none';
+        });
+        resultsList.appendChild(li);
+      });
+      resultsList.style.display = 'block';
+    }, 200);
+  });
+
+  clearBtn && clearBtn.addEventListener('click', function() {
+    hiddenId.value = '';
+    searchInput.value = '';
+    if (currentLabel) currentLabel.textContent = '';
+    resultsList.style.display = 'none';
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!resultsList.contains(e.target) && e.target !== searchInput) {
+      resultsList.style.display = 'none';
+    }
+  });
+})();
+</script>
 <%- include('partials/foot') %>

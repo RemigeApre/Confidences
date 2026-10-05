@@ -69,6 +69,38 @@
       <% } %>
     </section>
 
+    <%# ── Section cartes Codex (aperçu) ── %>
+    <%
+      var _overviewCards = userCards || [];
+      var RARITY_LBL_C = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
+    %>
+    <section class="coffre-section">
+      <div class="coffre-section-header">
+        <h2 class="coffre-section-title">Cartes Codex <span class="coffre-section-count">(<%= _overviewCards.length %>)</span></h2>
+        <% if (_overviewCards.length) { %><a href="/favoris/coffre?view=cartes" class="coffre-voir-plus">Voir tout &rarr;</a><% } %>
+      </div>
+      <% if (!_overviewCards.length) { %>
+        <p class="coffre-empty">Ouvrez des lootboxes pour obtenir des cartes Codex.</p>
+      <% } else { %>
+        <div class="coffre-cards-preview">
+          <% _overviewCards.slice(0, 6).forEach(function(c) { %>
+            <a href="/wiki/<%= c.wikiPageId %>"
+               class="coffre-card-mini coffre-card-mini--<%= c.rarity %>"
+               title="<%= c.title %> (<%= RARITY_LBL_C[c.rarity] || c.rarity %>)">
+              <% if (c.thumb) { %>
+                <img src="<%= thumbUrl(c.thumb) %>" alt="<%= c.title %>" loading="lazy">
+              <% } else { %>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:22px;height:22px;opacity:.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <% } %>
+            </a>
+          <% }) %>
+          <% if (_overviewCards.length > 6) { %>
+            <a href="/favoris/coffre?view=cartes" class="coffre-preview-more">+<%= _overviewCards.length - 6 %></a>
+          <% } %>
+        </div>
+      <% } %>
+    </section>
+
     <%# ── Section thèmes ── %>
     <section class="coffre-section">
       <div class="coffre-section-header">
@@ -446,6 +478,84 @@
       </div>
       <div class="coffre-gutter-divider"></div>
       <button class="coffre-sell-mode-btn" id="coffre-theme-sell-toggle">Vendre</button>
+    </div></div><%# /coffre-gutter-slot %>
+    </div><%# /coffre-view-wrap %>
+
+    <% } else if (view === 'cartes') { %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+    <%# ── VUE CARTES CODEX ── %>
+    <%# ════════════════════════════════════════════════════════════════ %>
+    <%
+      var _allCards = userCards || [];
+      var RARITY_LABELS = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
+      var _cardCats = [];
+      var _catSeen = {};
+      _allCards.forEach(function(c) { if (c.category && !_catSeen[c.category]) { _catSeen[c.category] = 1; _cardCats.push(c.category); } });
+      _cardCats.sort();
+      var CAT_LABEL = { position:'Positions', lieux:'Lieux', partenaires:'Partenaires', jeu_de_role:'Scénarios', tenues:'Tenues', objets:'Objets', pratique:'Pratiques', autre:'Autre' };
+    %>
+
+    <div class="coffre-view-wrap">
+    <div class="coffre-view-main">
+    <section class="coffre-section">
+      <% if (!_allCards.length) { %>
+        <p class="coffre-empty">Aucune carte obtenue — ouvrez des lootboxes pour en débloquer.</p>
+      <% } else { %>
+        <div class="coffre-cards-grid" id="coffre-cards-grid">
+          <% _allCards.forEach(function(card) { %>
+            <div class="coffre-card-item"
+                 data-rarity="<%= card.rarity %>"
+                 data-category="<%= card.category || '' %>">
+              <div class="coffre-card-flip-wrap js-coffre-card-flip">
+                <div class="lb-codex-flip-front">
+                  <% if (card.thumb) { %>
+                    <img src="<%= thumbUrl(card.thumb) %>" alt="<%= card.title %>" class="lb-codex-flip-cover" loading="lazy">
+                  <% } else { %>
+                    <div class="coffre-card-no-thumb">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    </div>
+                  <% } %>
+                  <span class="lb-codex-flip-cat"><%= card.category || '' %></span>
+                  <span class="lb-codex-flip-cta-icon">&#8635;</span>
+                  <span class="coffre-card-rarity-badge coffre-card-rarity-badge--<%= card.rarity %>"><%= RARITY_LABELS[card.rarity] || card.rarity %></span>
+                </div>
+                <div class="lb-codex-flip-back">
+                  <span class="lb-codex-flip-cat lb-codex-flip-cat--back"><%= card.category || '' %></span>
+                  <strong class="coffre-card-back-title"><%= card.title %></strong>
+                  <% if (card.summary) { %><p class="lb-codex-flip-summary"><%= card.summary %></p><% } %>
+                  <a href="/wiki/<%= card.wikiPageId %>" class="coffre-card-back-link">Voir la fiche &rarr;</a>
+                </div>
+              </div>
+              <p class="coffre-card-title"><%= card.title %></p>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+    </div><%# /coffre-view-main %>
+    <div class="coffre-gutter-slot">
+    <button class="coffre-filter-burger" aria-label="Filtres" aria-expanded="false">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:16px;height:16px;flex-shrink:0"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+      Filtres
+    </button>
+    <div class="coffre-gutter-panel">
+      <div class="coffre-filter-bar coffre-filter-bar--vert" id="coffre-card-f-rarity">
+        <button class="coffre-filter-btn active" data-rarity="all">Tout</button>
+        <button class="coffre-filter-btn" data-rarity="common">Commun</button>
+        <button class="coffre-filter-btn" data-rarity="rare">Rare</button>
+        <button class="coffre-filter-btn" data-rarity="epic">&Eacute;pique</button>
+        <button class="coffre-filter-btn" data-rarity="legendary">L&eacute;g.</button>
+        <button class="coffre-filter-btn" data-rarity="mythic">Mythique</button>
+      </div>
+      <% if (_cardCats.length > 1) { %>
+      <div class="coffre-gutter-divider"></div>
+      <div class="coffre-filter-bar coffre-filter-bar--vert coffre-filter-bar--sm" id="coffre-card-f-cat">
+        <button class="coffre-filter-btn active" data-cat="all">Tout</button>
+        <% _cardCats.forEach(function(cat) { %>
+          <button class="coffre-filter-btn" data-cat="<%= cat %>"><%= CAT_LABEL[cat] || cat %></button>
+        <% }) %>
+      </div>
+      <% } %>
     </div></div><%# /coffre-gutter-slot %>
     </div><%# /coffre-view-wrap %>
     <% } %>
@@ -981,6 +1091,45 @@
 })();
 </script>
 
+<% } else if (view === 'cartes') { %>
+</main>
+<%- include('partials/foot') %>
+<script>
+(function() {
+  var _cardRarity = 'all', _cardCat = 'all';
+  function applyCardFilters() {
+    document.querySelectorAll('#coffre-cards-grid .coffre-card-item').forEach(function(card) {
+      var ok = (_cardRarity === 'all' || card.dataset.rarity === _cardRarity) &&
+               (_cardCat === 'all' || card.dataset.category === _cardCat);
+      card.hidden = !ok;
+    });
+  }
+  function bindCardFilterBar(barId, prop, setter) {
+    var bar = document.getElementById(barId); if (!bar) return;
+    bar.addEventListener('click', function(e) {
+      var btn = e.target.closest('.coffre-filter-btn'); if (!btn) return;
+      bar.querySelectorAll('.coffre-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      setter(btn.dataset[prop]);
+      applyCardFilters();
+    });
+  }
+  bindCardFilterBar('coffre-card-f-rarity', 'rarity', function(v) { _cardRarity = v; });
+  bindCardFilterBar('coffre-card-f-cat',    'cat',    function(v) { _cardCat    = v; });
+
+  document.querySelectorAll('.js-coffre-card-flip').forEach(function(el) {
+    el.addEventListener('click', function() { el.classList.toggle('flipped'); });
+  });
+
+  document.querySelectorAll('.coffre-filter-burger').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var panel = btn.nextElementSibling;
+      var open = panel.classList.toggle('coffre-gutter-panel--open');
+      btn.setAttribute('aria-expanded', String(open));
+    });
+  });
+})();
+</script>
 <% } else { %>
 
 <div class="coffre-sell-bar" id="coffre-sell-bar" hidden>
