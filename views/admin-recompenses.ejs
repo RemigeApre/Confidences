@@ -142,6 +142,17 @@
 .pc-card-tile-name { font-size:.72rem; font-weight:700; color:#f1f5f9; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .pc-card-tile-parody { font-size:.6rem; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
+/* ── Admin edit button on card front ── */
+.pc-admin-edit-btn {
+  position:absolute; top:.38rem; right:.42rem; z-index:2;
+  background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.22);
+  color:#f1f5f9; border-radius:4px; width:22px; height:22px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.78rem; cursor:pointer; line-height:1; padding:0;
+  transition:background .12s;
+}
+.pc-admin-edit-btn:hover { background:rgba(255,255,255,.18); }
+
 /* ── Modal personnage ── */
 .pc-modal-overlay { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.82); display:flex; align-items:center; justify-content:center; padding:1rem; }
 .pc-modal-overlay[hidden] { display:none; }
@@ -686,13 +697,16 @@
           style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
       </div>
 
-      <div class="pc-cards-grid" id="pc-grid">
+      <div class="coffre-cards-grid" id="pc-grid">
         <% (personnageCards || []).forEach(function(pc) { %>
         <%
-          var pcRarityColor = pc.cardRarity === 'mythic' ? '#f87171' : pc.cardRarity === 'legendary' ? '#fbbf24' : pc.cardRarity === 'epic' ? '#a78bfa' : pc.cardRarity === 'rare' ? '#60a5fa' : '#94a3b8';
-          var pcRarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[pc.cardRarity] || pc.cardRarity;
+          var _pcRL = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
+          var _pcRarityLabel = _pcRL[pc.cardRarity] || pc.cardRarity;
+          var _pcCatLabel = [pc.parody, pc.nature && pc.nature !== 'humain' ? (_pcNatLabels[pc.nature] || pc.nature) : ''].filter(Boolean).join(' · ');
+          var _pcDs = pc.domSub || 0;
+          var _pcDsLabel = _pcDs < -15 ? 'Soumis' : _pcDs > 15 ? 'Dominant' : 'Switch';
         %>
-        <div class="pc-card-tile js-pc-open-modal card-wiki-item"
+        <div class="coffre-card-item pc-card-tile"
              data-card-id="<%= pc.id %>" data-rarity="<%= pc.cardRarity %>"
              data-nat="<%= pc.nature || '' %>" data-parody="<%= pc.parody || '' %>"
              data-pc='<%- JSON.stringify({
@@ -704,18 +718,61 @@
                actionActeName: pc.actionActeName, actionActePower: pc.actionActePower,
                actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower
              }) %>'>
-          <div class="pc-card-tile-img">
-            <% if (pc.thumb) { %>
-              <img src="<%= thumbUrl(pc.thumb) %>" alt="" loading="lazy">
-            <% } else { %>
-              <div class="pc-card-tile-placeholder">&#128100;</div>
-            <% } %>
-            <span class="pc-card-tile-rarity" style="color:<%= pcRarityColor %>"><%= pcRarityLabel %></span>
+          <div class="coffre-card-flip-wrap js-coffre-card-flip-admin">
+            <%/* ── Recto ── */%>
+            <div class="lb-codex-flip-front">
+              <% if (pc.thumb) { %>
+                <img src="<%= thumbUrl(pc.thumb) %>" alt="<%= pc.title %>" class="lb-codex-flip-cover" loading="lazy">
+              <% } else { %>
+                <div class="coffre-card-no-thumb">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:32px;height:32px;opacity:.3"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                </div>
+              <% } %>
+              <% if (_pcCatLabel) { %><span class="lb-codex-flip-cat"><%= _pcCatLabel %></span><% } %>
+              <span class="lb-codex-flip-cta-icon">&#8635;</span>
+              <span class="coffre-card-rarity-badge coffre-card-rarity-badge--<%= pc.cardRarity %>"><%= _pcRarityLabel %></span>
+              <button class="pc-admin-edit-btn js-pc-open-modal" title="Modifier" type="button">&#9998;</button>
+            </div>
+            <%/* ── Verso ── */%>
+            <div class="lb-codex-flip-back lb-codex-flip-back--pc">
+              <% if (pc.gender) { %><span class="lb-codex-flip-cat lb-codex-flip-cat--back"><%= pc.gender === 'femme' ? '♀ Femme' : pc.gender === 'homme' ? '♂ Homme' : 'Autre' %></span><% } %>
+              <strong class="coffre-card-back-title"><%= pc.title %></strong>
+              <div class="pc-card-stats">
+                <div class="pc-card-stat-row">
+                  <span class="pc-card-stat" title="Vitesse">
+                    <span class="pc-card-stat-icon">&#9889;</span>
+                    <span class="pc-card-stat-val"><%= pc.vitesse || 5 %></span>
+                    <span class="pc-card-stat-max">/10</span>
+                  </span>
+                  <span class="pc-card-stat" title="Défense">
+                    <span class="pc-card-stat-icon">&#128737;</span>
+                    <span class="pc-card-stat-val"><%= pc.defense || 5 %></span>
+                    <span class="pc-card-stat-max">/10</span>
+                  </span>
+                </div>
+                <div class="pc-card-domsub">
+                  <div class="pc-card-domsub-track">
+                    <div class="pc-card-domsub-fill" style="left:<%= Math.round((_pcDs+50)/100*100) %>%"></div>
+                  </div>
+                  <span class="pc-card-domsub-label"><%= _pcDsLabel %> (<%= _pcDs > 0 ? '+' : '' %><%= _pcDs %>)</span>
+                </div>
+                <div class="pc-card-actions">
+                  <% [
+                    { name: pc.actionPrelimName,   power: pc.actionPrelimPower   || 3,  label: 'Prél.' },
+                    { name: pc.actionActeName,     power: pc.actionActePower     || 7,  label: 'Acte' },
+                    { name: pc.actionFinitionName, power: pc.actionFinitionPower || 20, label: 'Fin.' }
+                  ].forEach(function(a) { %>
+                  <div class="pc-card-action">
+                    <span class="pc-card-action-label"><%= a.label %></span>
+                    <span class="pc-card-action-name"><%= a.name || '—' %></span>
+                    <span class="pc-card-action-power"><%= a.power %></span>
+                  </div>
+                  <% }) %>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="pc-card-tile-footer">
-            <span class="pc-card-tile-name"><%= pc.title %></span>
-            <% if (pc.parody) { %><span class="pc-card-tile-parody"><%= pc.parody %></span><% } %>
-          </div>
+          <p class="coffre-card-title"><%= pc.title %></p>
         </div>
         <% }) %>
       </div>
@@ -1827,8 +1884,21 @@
     activePcId = null;
   }
 
-  document.querySelectorAll('.js-pc-open-modal').forEach(function(tile) {
-    tile.addEventListener('click', function() { openPcModal(tile); });
+  // Flip cards
+  document.querySelectorAll('.js-coffre-card-flip-admin').forEach(function(wrap) {
+    wrap.addEventListener('click', function(e) {
+      if (e.target.closest('.js-pc-open-modal')) return;
+      wrap.classList.toggle('flipped');
+    });
+  });
+
+  // Edit button opens modal
+  document.querySelectorAll('.js-pc-open-modal').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const tile = btn.closest('.pc-card-tile');
+      if (tile) openPcModal(tile);
+    });
   });
 
   document.querySelector('.js-pc-modal-close').addEventListener('click', closePcModal);
@@ -1873,7 +1943,7 @@
       const [d1, d2] = await Promise.all([r1.json ? r1.json() : r1, r2.json()]);
       const ok = (!rarity || d1.ok) && d2.ok;
       // Update tile dataset
-      const tile = document.querySelector('.js-pc-open-modal[data-card-id="' + activePcId + '"]');
+      const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
       if (tile && rarity) {
         tile.dataset.rarity = rarity;
         let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
@@ -1912,7 +1982,7 @@
         { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       const d = await r.json();
       // Update tile dataset
-      const tile = document.querySelector('.js-pc-open-modal[data-card-id="' + activePcId + '"]');
+      const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
       if (tile && d.ok) {
         let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
         Object.assign(pc, { vitesse: +payload.vitesse, defense: +payload.defense,
