@@ -142,16 +142,38 @@
 .pc-card-tile-name { font-size:.72rem; font-weight:700; color:#f1f5f9; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .pc-card-tile-parody { font-size:.6rem; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-/* ── Admin edit button on card front ── */
-.pc-admin-edit-btn {
-  position:absolute; top:.38rem; right:.42rem; z-index:2;
-  background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.22);
-  color:#f1f5f9; border-radius:4px; width:22px; height:22px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:.78rem; cursor:pointer; line-height:1; padding:0;
-  transition:background .12s;
+/* ── Admin personnage card specifics ── */
+.pc-admin-card-name {
+  position:absolute; bottom:0; left:0; right:0;
+  padding:.45rem .5rem .4rem;
+  background:linear-gradient(transparent, rgba(0,0,0,.82));
+  color:#fff; font-size:.82rem; font-weight:700;
+  text-align:center; line-height:1.25;
 }
-.pc-admin-edit-btn:hover { background:rgba(255,255,255,.18); }
+.pc-admin-ultra-badge {
+  position:absolute; top:.38rem; left:.42rem;
+  background:rgba(168,85,247,.85); color:#fff;
+  font-size:.52rem; font-weight:800; letter-spacing:.08em;
+  text-transform:uppercase; padding:.12rem .35rem; border-radius:3px;
+}
+.pc-admin-card-back {
+  background:rgba(15,23,42,.97);
+  display:flex; align-items:center; justify-content:center;
+}
+.pc-admin-back-edit-btn {
+  background:#1e3a5f; border:1px solid #2563eb; color:#93c5fd;
+  border-radius:7px; padding:.5rem 1.1rem; font-size:.85rem;
+  cursor:pointer; font-family:inherit; transition:background .12s;
+}
+.pc-admin-back-edit-btn:hover { background:#1e40af; }
+/* Flag toggle buttons */
+.pc-flag-btn {
+  background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.15);
+  color:#94a3b8; border-radius:6px; padding:.3rem .7rem; font-size:.78rem;
+  font-weight:600; cursor:pointer; font-family:inherit; transition:all .12s;
+}
+.pc-flag-btn.active[data-flag="isBaseDeck"] { background:rgba(52,211,153,.15); border-color:#34d399; color:#34d399; }
+.pc-flag-btn.active[data-flag="isUltra"]    { background:rgba(168,85,247,.2);  border-color:#a855f7; color:#d8b4fe; }
 
 /* ── Modal personnage ── */
 .pc-modal-overlay { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.82); display:flex; align-items:center; justify-content:center; padding:1rem; }
@@ -673,13 +695,11 @@
         var _pcNatLabels = { humain:'Humain', monstre:'Monstre', animal:'Animal', pokemon:'Pokémon', autre:'Autre' };
       %>
       <div class="obj-section-toolbar" style="gap:.5rem;flex-wrap:wrap;align-items:center">
-        <select id="pc-rarity-sel" class="admin-filter-select">
-          <option value="all">Toutes raretés</option>
-          <option value="common">Commun</option>
-          <option value="rare">Rare</option>
-          <option value="epic">Épique</option>
-          <option value="legendary">Légendaire</option>
-          <option value="mythic">Mythique</option>
+        <select id="pc-deck-sel" class="admin-filter-select">
+          <option value="all">Tous</option>
+          <option value="base">Deck de base</option>
+          <option value="combat">Combat uniquement</option>
+          <option value="ultra">Ultra</option>
         </select>
         <% if (_pcNatures.length > 1) { %>
         <select id="pc-nature-sel" class="admin-filter-select">
@@ -697,7 +717,7 @@
           style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
       </div>
 
-      <div class="coffre-cards-grid" id="pc-grid">
+      <div class="coffre-cards-grid" id="pc-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem">
         <% (personnageCards || []).forEach(function(pc) { %>
         <%
           var _pcRL = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
@@ -707,16 +727,18 @@
           var _pcDsLabel = _pcDs < -15 ? 'Soumis' : _pcDs > 15 ? 'Dominant' : 'Switch';
         %>
         <div class="coffre-card-item pc-card-tile"
-             data-card-id="<%= pc.id %>" data-rarity="<%= pc.cardRarity %>"
+             data-card-id="<%= pc.id %>"
+             data-deck="<%= pc.isUltra ? 'ultra' : pc.isBaseDeck ? 'base' : 'combat' %>"
              data-nat="<%= pc.nature || '' %>" data-parody="<%= pc.parody || '' %>"
              data-pc='<%- JSON.stringify({
                id: pc.id, title: pc.title, description: pc.description,
-               cardRarity: pc.cardRarity, thumb: pc.thumb ? thumbUrl(pc.thumb) : null,
+               thumb: pc.thumb ? thumbUrl(pc.thumb) : null,
                nature: pc.nature, parody: pc.parody, gender: pc.gender,
                vitesse: pc.vitesse, defense: pc.defense, domSub: pc.domSub, orientation: pc.orientation,
                actionPrelimName: pc.actionPrelimName, actionPrelimPower: pc.actionPrelimPower,
                actionActeName: pc.actionActeName, actionActePower: pc.actionActePower,
-               actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower
+               actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower,
+               isBaseDeck: pc.isBaseDeck, isUltra: pc.isUltra
              }) %>'>
           <div class="coffre-card-flip-wrap js-coffre-card-flip-admin">
             <%/* ── Recto ── */%>
@@ -728,51 +750,17 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:32px;height:32px;opacity:.3"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                 </div>
               <% } %>
-              <% if (_pcCatLabel) { %><span class="lb-codex-flip-cat"><%= _pcCatLabel %></span><% } %>
               <span class="lb-codex-flip-cta-icon">&#8635;</span>
-              <span class="coffre-card-rarity-badge coffre-card-rarity-badge--<%= pc.cardRarity %>"><%= _pcRarityLabel %></span>
-              <button class="pc-admin-edit-btn js-pc-open-modal" title="Modifier" type="button">&#9998;</button>
+              <div class="pc-admin-card-name"><%= pc.title %></div>
+              <% if (pc.isUltra) { %><span class="pc-admin-ultra-badge">ULTRA</span><% } %>
             </div>
-            <%/* ── Verso ── */%>
-            <div class="lb-codex-flip-back lb-codex-flip-back--pc">
-              <% if (pc.gender) { %><span class="lb-codex-flip-cat lb-codex-flip-cat--back"><%= pc.gender === 'femme' ? '♀ Femme' : pc.gender === 'homme' ? '♂ Homme' : 'Autre' %></span><% } %>
-              <strong class="coffre-card-back-title"><%= pc.title %></strong>
-              <div class="pc-card-stats">
-                <div class="pc-card-stat-row">
-                  <span class="pc-card-stat" title="Vitesse">
-                    <span class="pc-card-stat-icon">&#9889;</span>
-                    <span class="pc-card-stat-val"><%= pc.vitesse || 5 %></span>
-                    <span class="pc-card-stat-max">/10</span>
-                  </span>
-                  <span class="pc-card-stat" title="Défense">
-                    <span class="pc-card-stat-icon">&#128737;</span>
-                    <span class="pc-card-stat-val"><%= pc.defense || 5 %></span>
-                    <span class="pc-card-stat-max">/10</span>
-                  </span>
-                </div>
-                <div class="pc-card-domsub">
-                  <div class="pc-card-domsub-track">
-                    <div class="pc-card-domsub-fill" style="left:<%= Math.round((_pcDs+50)/100*100) %>%"></div>
-                  </div>
-                  <span class="pc-card-domsub-label"><%= _pcDsLabel %> (<%= _pcDs > 0 ? '+' : '' %><%= _pcDs %>)</span>
-                </div>
-                <div class="pc-card-actions">
-                  <% [
-                    { name: pc.actionPrelimName,   power: pc.actionPrelimPower   || 3,  label: 'Prél.' },
-                    { name: pc.actionActeName,     power: pc.actionActePower     || 7,  label: 'Acte' },
-                    { name: pc.actionFinitionName, power: pc.actionFinitionPower || 20, label: 'Fin.' }
-                  ].forEach(function(a) { %>
-                  <div class="pc-card-action">
-                    <span class="pc-card-action-label"><%= a.label %></span>
-                    <span class="pc-card-action-name"><%= a.name || '—' %></span>
-                    <span class="pc-card-action-power"><%= a.power %></span>
-                  </div>
-                  <% }) %>
-                </div>
-              </div>
+            <%/* ── Verso (admin) ── */%>
+            <div class="lb-codex-flip-back pc-admin-card-back">
+              <button class="js-pc-open-modal pc-admin-back-edit-btn" type="button">
+                &#9998; &Eacute;diter
+              </button>
             </div>
           </div>
-          <p class="coffre-card-title"><%= pc.title %></p>
         </div>
         <% }) %>
       </div>
@@ -796,14 +784,16 @@
         </div>
         <div class="pc-modal-right">
           <div class="pc-modal-section">
-            <p class="pc-modal-label">Raret&eacute;</p>
-            <div class="ari-rarity-btns" id="pcModalRarityBtns">
-              <button class="ari-rarity-btn" data-rarity="common">Commun</button>
-              <button class="ari-rarity-btn" data-rarity="rare">Rare</button>
-              <button class="ari-rarity-btn" data-rarity="epic">&Eacute;pique</button>
-              <button class="ari-rarity-btn" data-rarity="legendary">L&eacute;gendaire</button>
-              <button class="ari-rarity-btn" data-rarity="mythic">Mythique</button>
+            <p class="pc-modal-label">Disponibilit&eacute;</p>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button id="pcFlagBaseDeck" class="pc-flag-btn" type="button" data-flag="isBaseDeck">
+                &#127919; Deck de base
+              </button>
+              <button id="pcFlagUltra" class="pc-flag-btn" type="button" data-flag="isUltra">
+                &#9889; Ultra
+              </button>
             </div>
+            <span id="pcFlagStatus" style="font-size:.72rem;color:#4ade80;margin-top:.1rem;display:block"></span>
           </div>
           <div class="pc-modal-section">
             <p class="pc-modal-label">Description courte <span style="color:#475569;font-weight:400">(dos de carte)</span></p>
@@ -1790,34 +1780,31 @@
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
   const pcItems = Array.from(document.querySelectorAll('#pc-grid .pc-card-tile'));
 
-  const pcRaritySel  = document.getElementById('pc-rarity-sel');
+  const pcDeckSel    = document.getElementById('pc-deck-sel');
   const pcNatureSel  = document.getElementById('pc-nature-sel');
   const pcParodySel  = document.getElementById('pc-parody-sel');
-  pcRaritySel  && pcRaritySel.addEventListener('change', applyPcFilters);
+  pcDeckSel    && pcDeckSel.addEventListener('change', applyPcFilters);
   pcNatureSel  && pcNatureSel.addEventListener('change', applyPcFilters);
   pcParodySel  && pcParodySel.addEventListener('change', applyPcFilters);
 
   function applyPcFilters() {
-    const rarity = pcRaritySel ? pcRaritySel.value : 'all';
-    const nat    = pcNatureSel ? pcNatureSel.value : 'all';
-    const par    = pcParodySel ? pcParodySel.value : 'all';
+    const deck = pcDeckSel ? pcDeckSel.value : 'all';
+    const nat  = pcNatureSel ? pcNatureSel.value : 'all';
+    const par  = pcParodySel ? pcParodySel.value : 'all';
     const q = (document.getElementById('pc-search-input') || {}).value;
     const ql = q ? q.trim().toLowerCase() : '';
     pcItems.forEach(c => {
-      const rarityMatch = rarity === 'all' || c.dataset.rarity === rarity;
-      const natMatch    = nat === 'all' || c.dataset.nat === nat;
-      const parMatch    = par === 'all' || c.dataset.parody === par;
-      const nameEl = c.querySelector('.pc-card-tile-name');
+      const deckMatch = deck === 'all' || c.dataset.deck === deck;
+      const natMatch  = nat === 'all' || c.dataset.nat === nat;
+      const parMatch  = par === 'all' || c.dataset.parody === par;
+      const nameEl = c.querySelector('.pc-admin-card-name');
       const textMatch = !ql || (nameEl && nameEl.textContent.toLowerCase().includes(ql));
-      c.hidden = !(rarityMatch && natMatch && parMatch && textMatch);
+      c.hidden = !(deckMatch && natMatch && parMatch && textMatch);
     });
   }
 
   const pcSearch = document.getElementById('pc-search-input');
   pcSearch && pcSearch.addEventListener('input', applyPcFilters);
-
-  // Rarity change (kept for modal)
-  const RARITY_LABELS_PC = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
 
   // ── Modal ──
   const modal       = document.getElementById('pcModal');
@@ -1828,8 +1815,10 @@
   const modalDesc   = document.getElementById('pcModalDesc');
   const modalStatus = document.getElementById('pcModalMainStatus');
   const modalStatsStatus = document.getElementById('pcModalStatsStatus');
-  const rarityBtns  = document.querySelectorAll('#pcModalRarityBtns .ari-rarity-btn');
+  const pcFlagBaseDeck = document.getElementById('pcFlagBaseDeck');
+  const pcFlagUltra    = document.getElementById('pcFlagUltra');
   let activePcId = null;
+  let _pcFlags = { isBaseDeck: 1, isUltra: 0 };
 
   function openPcModal(tile) {
     let pc;
@@ -1849,10 +1838,10 @@
     const tags = [pc.parody, pc.nature && pc.nature !== 'humain' ? pc.nature : ''].filter(Boolean);
     modalTags.textContent = tags.join(' · ');
 
-    // Rarity
-    rarityBtns.forEach(function(b) {
-      b.classList.toggle('active', b.dataset.rarity === pc.cardRarity);
-    });
+    // Flags
+    _pcFlags = { isBaseDeck: pc.isBaseDeck != null ? pc.isBaseDeck : 1, isUltra: pc.isUltra || 0 };
+    pcFlagBaseDeck && pcFlagBaseDeck.classList.toggle('active', !!_pcFlags.isBaseDeck);
+    pcFlagUltra    && pcFlagUltra.classList.toggle('active',    !!_pcFlags.isUltra);
 
     // Description
     modalDesc.value = pc.description || '';
@@ -1919,44 +1908,56 @@
     arrow.textContent   = open ? '▶' : '▼';
   });
 
-  // Rarity buttons in modal
-  rarityBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      rarityBtns.forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
+  // Flag toggle buttons
+  [pcFlagBaseDeck, pcFlagUltra].forEach(function(btn) {
+    if (!btn) return;
+    btn.addEventListener('click', async function() {
+      if (!activePcId) return;
+      const flag = btn.dataset.flag;
+      _pcFlags[flag] = _pcFlags[flag] ? 0 : 1;
+      btn.classList.toggle('active', !!_pcFlags[flag]);
+      const flagStatus = document.getElementById('pcFlagStatus');
+      if (flagStatus) { flagStatus.textContent = '…'; flagStatus.style.color = '#94a3b8'; }
+      try {
+        const r = await fetch('/admin/recompenses/personnages/' + activePcId + '/flags',
+          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(_pcFlags) });
+        const d = await r.json();
+        // Update tile dataset
+        const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
+        if (tile && d.ok) {
+          let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
+          Object.assign(pc, _pcFlags); tile.dataset.pc = JSON.stringify(pc);
+          // Toggle ultra badge visibility
+          const ultraBadge = tile.querySelector('.pc-admin-ultra-badge');
+          if (_pcFlags.isUltra && !ultraBadge) {
+            const badge = document.createElement('span');
+            badge.className = 'pc-admin-ultra-badge'; badge.textContent = 'ULTRA';
+            tile.querySelector('.lb-codex-flip-front').appendChild(badge);
+          } else if (!_pcFlags.isUltra && ultraBadge) {
+            ultraBadge.remove();
+          }
+        }
+        if (flagStatus) { flagStatus.textContent = d.ok ? '✓' : '✗'; flagStatus.style.color = d.ok ? '#4ade80' : '#f87171'; setTimeout(function() { flagStatus.textContent = ''; }, 1500); }
+      } catch(e) { if (document.getElementById('pcFlagStatus')) { document.getElementById('pcFlagStatus').textContent = '✗'; } }
     });
   });
 
-  // Save rarity + description
+  // Save description
   document.querySelector('.js-pc-modal-save-main').addEventListener('click', async function() {
     if (!activePcId) return;
-    const rarity = (document.querySelector('#pcModalRarityBtns .ari-rarity-btn.active') || {}).dataset.rarity;
     const description = modalDesc.value.trim();
     modalStatus.textContent = '…'; modalStatus.style.color = '#94a3b8';
     try {
-      const [r1, r2] = await Promise.all([
-        rarity ? fetch('/admin/recompenses/personnages/' + activePcId + '/rarity',
-          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ rarity }) }) : Promise.resolve({ json: () => ({ ok: true }) }),
-        fetch('/admin/recompenses/personnages/' + activePcId + '/description',
-          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ description }) }),
-      ]);
-      const [d1, d2] = await Promise.all([r1.json ? r1.json() : r1, r2.json()]);
-      const ok = (!rarity || d1.ok) && d2.ok;
-      // Update tile dataset
+      const r = await fetch('/admin/recompenses/personnages/' + activePcId + '/description',
+        { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ description }) });
+      const d = await r.json();
       const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
-      if (tile && rarity) {
-        tile.dataset.rarity = rarity;
+      if (tile && d.ok) {
         let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
-        pc.cardRarity = rarity; pc.description = description;
-        tile.dataset.pc = JSON.stringify(pc);
-        const badge = tile.querySelector('.pc-card-tile-rarity');
-        if (badge) {
-          const c = RARITY_COLORS[rarity] || '#94a3b8';
-          badge.style.color = c; badge.textContent = RARITY_LABELS_PC[rarity] || rarity;
-        }
+        pc.description = description; tile.dataset.pc = JSON.stringify(pc);
       }
-      modalStatus.textContent = ok ? '✓ Enregistré' : '✗ Erreur';
-      modalStatus.style.color = ok ? '#4ade80' : '#f87171';
+      modalStatus.textContent = d.ok ? '✓ Enregistré' : '✗ Erreur';
+      modalStatus.style.color = d.ok ? '#4ade80' : '#f87171';
       setTimeout(function() { modalStatus.textContent = ''; }, 2000);
     } catch(e) { modalStatus.textContent = '✗'; modalStatus.style.color = '#f87171'; }
   });

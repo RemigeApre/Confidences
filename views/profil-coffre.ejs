@@ -566,11 +566,8 @@
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:32px;height:32px;opacity:.3"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                     </div>
                   <% } %>
-                  <% if (card.parody || card.nature) { %>
-                    <span class="lb-codex-flip-cat"><%= [card.parody, card.nature && card.nature !== 'humain' ? (_pcNatL[card.nature] || card.nature) : ''].filter(Boolean).join(' · ') %></span>
-                  <% } %>
                   <span class="lb-codex-flip-cta-icon">&#8635;</span>
-                  <span class="coffre-card-rarity-badge coffre-card-rarity-badge--<%= card.rarity %>"><%= RARITY_LABELS[card.rarity] || card.rarity %></span>
+                  <div class="pc-coffre-card-name"><%= card.title %></div>
                 </div>
                 <div class="lb-codex-flip-back lb-codex-flip-back--pc">
                   <% if (card.gender) { %><span class="lb-codex-flip-cat lb-codex-flip-cat--back"><%= card.gender === 'femme' ? '♀ Femme' : card.gender === 'homme' ? '♂ Homme' : 'Autre' %></span><% } %>

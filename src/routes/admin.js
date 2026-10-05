@@ -67,6 +67,7 @@ const {
   listProtagonistesForCards,
   setPersonnageDescription,
   setPersonnageCardStats,
+  setPersonnageFlags,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
@@ -713,6 +714,14 @@ function buildAdminRouter(config) {
       actionActeName: req.body.actionActeName, actionActePower: req.body.actionActePower,
       actionFinitionName: req.body.actionFinitionName, actionFinitionPower: req.body.actionFinitionPower,
     });
+    res.json({ ok: true });
+  });
+
+  // ── Cartes Personnages — flags (deck de base / ultra) ────────────────────
+  router.post("/recompenses/personnages/:id/flags", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    setPersonnageFlags(id, { isBaseDeck: req.body.isBaseDeck, isUltra: req.body.isUltra });
     res.json({ ok: true });
   });
 
