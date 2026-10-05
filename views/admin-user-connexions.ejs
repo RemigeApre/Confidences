@@ -24,12 +24,19 @@
       <% if (sessions.length) { %>
         <ul class="aud-activity-list">
           <% sessions.forEach(function(s) { %>
-            <li class="aud-activity-row">
-              <span class="aud-activity-date"><%= new Date(s.start).toLocaleString('fr-FR') %></span>
-              <% if (s.end !== s.start) { %>
-                <span class="admin-muted">&rarr; <%= new Date(s.end).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
+            <li class="aud-activity-row aud-activity-row--block">
+              <div class="aud-activity-header">
+                <span class="aud-activity-date"><%= new Date(s.start).toLocaleString('fr-FR') %></span>
+                <% if (s.end !== s.start) { %>
+                  <span class="admin-muted">&rarr; <%= new Date(s.end).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
+                <% } %>
+                <span class="aud-card-views" style="margin-left:auto">&#8987; <%= fmtDuration(s.durationMinutes) %></span>
+              </div>
+              <% if (s.pages && s.pages.length) { %>
+                <div class="aud-activity-pages">
+                  <% s.pages.forEach(function(p) { %><span class="aud-page-chip"><%= p %></span><% }) %>
+                </div>
               <% } %>
-              <span class="aud-card-views" style="margin-left:auto">&#8987; <%= fmtDuration(s.durationMinutes) %></span>
             </li>
           <% }) %>
         </ul>

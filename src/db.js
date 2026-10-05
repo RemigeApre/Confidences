@@ -2633,14 +2633,17 @@ function setPersonnageCardRarity(protagonisteId, rarity) {
 
 function listProtagonistesForCards() {
   return db.prepare(
-    `SELECT id, name, description, gender, nature, parody, image_path,
-            vitesse, defense, dom_sub, orientation, pv,
-            passif, affinites,
-            action_prelim_name, action_prelim_power, action_prelim_effet,
-            action_acte_name, action_acte_power, action_acte_effet,
-            action_finition_name, action_finition_power, action_finition_effet,
-            is_base_deck, is_ultra
-     FROM protagonistes ORDER BY name COLLATE NOCASE`
+    `SELECT p.id, p.name, p.description, p.gender, p.nature, p.parody, p.image_path,
+            p.vitesse, p.defense, p.dom_sub, p.orientation, p.pv,
+            p.passif, p.affinites,
+            p.action_prelim_name, p.action_prelim_power, p.action_prelim_effet,
+            p.action_acte_name, p.action_acte_power, p.action_acte_effet,
+            p.action_finition_name, p.action_finition_power, p.action_finition_effet,
+            p.is_base_deck, p.is_ultra,
+            p.collection_id, cc.name AS collection_name, cc.color AS collection_color
+     FROM protagonistes p
+     LEFT JOIN card_collections cc ON cc.id = p.collection_id
+     ORDER BY p.name COLLATE NOCASE`
   ).all().map(r => {
     let affinites = [];
     try { affinites = JSON.parse(r.affinites || '[]'); } catch { affinites = []; }
@@ -2657,6 +2660,9 @@ function listProtagonistesForCards() {
       actionActeName: r.action_acte_name || '', actionActePower: r.action_acte_power ?? 7, actionActeEffet: r.action_acte_effet || '',
       actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20, actionFinitionEffet: r.action_finition_effet || '',
       isBaseDeck: r.is_base_deck ?? 1, isUltra: r.is_ultra ?? 0,
+      collectionId: r.collection_id || null,
+      collectionName: r.collection_name || '',
+      collectionColor: r.collection_color || '',
     };
   });
 }
@@ -2778,6 +2784,58 @@ function getAnonStats(days, pathQ) {
 const ACTIVITY_PING_THROTTLE_MS = 3 * 60 * 1000; // 1 ping max toutes les 3 min / profil
 const ACTIVITY_SESSION_GAP_MS = 30 * 60 * 1000; // > 30 min sans ping = nouvelle session
 
+try { db.exec("ALTER TABLE activity_pings ADD COLUMN page_label TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+
+// Convertit un chemin URL en libellé lisible pour les logs admin.
+// Pour les pages dynamiques (/wiki/:id, /recompenses/:id), fait une requête DB.
+function pathToLabel(path) {
+  if (!path) return 'Inconnu';
+  // Normalise : retire query string et trailing slash
+  const clean = path.split('?')[0].replace(/\/$/, '') || '/';
+
+  if (clean === '/') return 'Accueil';
+  if (clean === '/wiki') return 'Accueil Codex';
+  if (clean === '/jeu') return 'Jeu / Arcade';
+  if (clean === '/galerie') return 'Galerie';
+  if (clean === '/bd') return 'BD';
+  if (clean === '/histoires') return 'Histoires';
+  if (clean === '/quiz') return 'Quiz';
+  if (clean === '/profil') return 'Profil';
+  if (clean === '/favoris') return 'Favoris';
+  if (clean === '/favoris/coffre') return 'Coffre';
+  if (clean === '/admin') return 'Admin';
+
+  const wikiMatch = clean.match(/^\/wiki\/(\d+)/);
+  if (wikiMatch) {
+    const row = db.prepare("SELECT title FROM wiki_pages WHERE id = ?").get(Number(wikiMatch[1]));
+    return row ? 'Codex : ' + row.title : 'Codex';
+  }
+
+  const recompMatch = clean.match(/^\/recompenses\/(\d+)/);
+  if (recompMatch) {
+    const row = db.prepare("SELECT name FROM protagonistes WHERE id = ?").get(Number(recompMatch[1]));
+    return row ? 'Carte : ' + row.name : 'Récompenses';
+  }
+
+  const bdMatch = clean.match(/^\/bd\/(\d+)/);
+  if (bdMatch) {
+    const row = db.prepare("SELECT title FROM bd_books WHERE id = ?").get(Number(bdMatch[1])) ||
+                db.prepare("SELECT title FROM bd_chapters WHERE id = ?").get(Number(bdMatch[1]));
+    return row ? 'BD : ' + row.title : 'BD';
+  }
+
+  const histMatch = clean.match(/^\/histoires\/(\d+)/);
+  if (histMatch) {
+    const row = db.prepare("SELECT title FROM stories WHERE id = ?").get(Number(histMatch[1]));
+    return row ? 'Histoire : ' + row.title : 'Histoires';
+  }
+
+  // Fallback : nettoie le chemin pour qu'il soit lisible
+  return clean.replace(/^\//, '').split('/').map(function(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }).join(' / ');
+}
+
 function recordActivityPing(userId, path) {
   if (!userId) return;
   const last = db
@@ -2786,7 +2844,8 @@ function recordActivityPing(userId, path) {
   const now = Date.now();
   if (last && now - new Date(last.created_at).getTime() < ACTIVITY_PING_THROTTLE_MS) return;
   const iso = new Date(now).toISOString();
-  db.prepare("INSERT INTO activity_pings (user_id, created_at) VALUES (?, ?)").run(userId, iso);
+  const label = pathToLabel(path);
+  db.prepare("INSERT INTO activity_pings (user_id, created_at, page_label) VALUES (?, ?, ?)").run(userId, iso, label);
   db.prepare("UPDATE users SET last_active_at = ?, last_path = ? WHERE id = ?").run(iso, path || null, userId);
 }
 
@@ -2796,19 +2855,20 @@ function recordActivityPing(userId, path) {
 // dernier ping (sous-estimée pour une session à un seul ping, faute de mieux).
 function listActivitySessions(userId, limit) {
   const pings = db
-    .prepare("SELECT created_at FROM activity_pings WHERE user_id = ? ORDER BY id DESC LIMIT 1000")
+    .prepare("SELECT created_at, page_label FROM activity_pings WHERE user_id = ? ORDER BY id DESC LIMIT 1000")
     .all(userId)
-    .map(function(r) { return new Date(r.created_at).getTime(); })
-    .sort(function(a, b) { return a - b; });
+    .map(function(r) { return { t: new Date(r.created_at).getTime(), label: r.page_label || '' }; })
+    .sort(function(a, b) { return a.t - b.t; });
 
   const sessions = [];
-  pings.forEach(function(t) {
+  pings.forEach(function(p) {
     const current = sessions[sessions.length - 1];
-    if (current && t - current.end <= ACTIVITY_SESSION_GAP_MS) {
-      current.end = t;
+    if (current && p.t - current.end <= ACTIVITY_SESSION_GAP_MS) {
+      current.end = p.t;
       current.pings += 1;
+      if (p.label && !current.pages.includes(p.label)) current.pages.push(p.label);
     } else {
-      sessions.push({ start: t, end: t, pings: 1 });
+      sessions.push({ start: p.t, end: p.t, pings: 1, pages: p.label ? [p.label] : [] });
     }
   });
 
@@ -2818,6 +2878,7 @@ function listActivitySessions(userId, limit) {
       end: new Date(s.end).toISOString(),
       durationMinutes: Math.max(1, Math.round((s.end - s.start) / 60000)),
       pings: s.pings,
+      pages: s.pages,
     };
   });
 }
@@ -4199,6 +4260,76 @@ const ACTION_EFFETS = [
   // Les effets spéciaux d'action seront ajoutés ici
 ];
 
+// ── Collections de cartes personnages ────────────────────────────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS card_collections (
+      id          INTEGER PRIMARY KEY,
+      name        TEXT    NOT NULL DEFAULT '',
+      slug        TEXT    NOT NULL DEFAULT '',
+      description TEXT    NOT NULL DEFAULT '',
+      color       TEXT    NOT NULL DEFAULT '#6366f1',
+      banner_path TEXT    NOT NULL DEFAULT '',
+      sort_order  INTEGER NOT NULL DEFAULT 0,
+      is_published INTEGER NOT NULL DEFAULT 1,
+      created_at  INTEGER DEFAULT (unixepoch())
+    )
+  `);
+} catch(_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN collection_id INTEGER REFERENCES card_collections(id)"); } catch(_) {}
+
+function listCardCollections() {
+  return db.prepare(
+    `SELECT cc.*, COUNT(p.id) as card_count
+     FROM card_collections cc
+     LEFT JOIN protagonistes p ON p.collection_id = cc.id
+     GROUP BY cc.id
+     ORDER BY cc.sort_order, cc.name COLLATE NOCASE`
+  ).all();
+}
+
+function getCardCollection(id) {
+  return db.prepare("SELECT * FROM card_collections WHERE id=?").get(id);
+}
+
+function createCardCollection({ name, slug, description, color, sortOrder, isPublished }) {
+  const r = db.prepare(
+    "INSERT INTO card_collections (name,slug,description,color,sort_order,is_published) VALUES (?,?,?,?,?,?)"
+  ).run(
+    String(name||'').trim(),
+    String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
+    String(description||'').trim(),
+    String(color||'#6366f1').trim(),
+    Number(sortOrder)||0,
+    isPublished ? 1 : 0
+  );
+  return r.lastInsertRowid;
+}
+
+function updateCardCollection(id, { name, slug, description, color, sortOrder, isPublished }) {
+  db.prepare(
+    "UPDATE card_collections SET name=?,slug=?,description=?,color=?,sort_order=?,is_published=? WHERE id=?"
+  ).run(
+    String(name||'').trim(),
+    String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
+    String(description||'').trim(),
+    String(color||'#6366f1').trim(),
+    Number(sortOrder)||0,
+    isPublished ? 1 : 0,
+    id
+  );
+}
+
+function deleteCardCollection(id) {
+  db.prepare("UPDATE protagonistes SET collection_id=NULL WHERE collection_id=?").run(id);
+  db.prepare("DELETE FROM card_collections WHERE id=?").run(id);
+}
+
+function setPersonnageCollection(protagonisteId, collectionId) {
+  db.prepare("UPDATE protagonistes SET collection_id=? WHERE id=?")
+    .run(collectionId || null, protagonisteId);
+}
+
 // ── Jeu de cartes — sessions ──────────────────────────────────────────────
 try {
   db.exec(`
@@ -4565,6 +4696,12 @@ module.exports = {
   getPlayerCardGameDeck,
   getAICardGameDeck,
   getAICardGamePersonnage,
+  listCardCollections,
+  getCardCollection,
+  createCardCollection,
+  updateCardCollection,
+  deleteCardCollection,
+  setPersonnageCollection,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,

@@ -70,6 +70,12 @@ const {
   setPersonnageFlags,
   PASSIFS,
   ACTION_EFFETS,
+  listCardCollections,
+  getCardCollection,
+  createCardCollection,
+  updateCardCollection,
+  deleteCardCollection,
+  setPersonnageCollection,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
@@ -548,7 +554,8 @@ function buildAdminRouter(config) {
     const cardStatsByRarity = Object.fromEntries(rarities.map(r => [r, wikiCards.filter(c => c.cardRarity === r).length]));
     const personnageCards = listProtagonistesForCards();
     const personnageCardStatsByRarity = Object.fromEntries(rarities.map(r => [r, personnageCards.filter(c => c.cardRarity === r).length]));
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity, passifs: PASSIFS, actionEffets: ACTION_EFFETS });
+    const cardCollections = listCardCollections();
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity, passifs: PASSIFS, actionEffets: ACTION_EFFETS, cardCollections });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -719,6 +726,41 @@ function buildAdminRouter(config) {
       actionActeName: req.body.actionActeName, actionActePower: req.body.actionActePower, actionActeEffet: req.body.actionActeEffet,
       actionFinitionName: req.body.actionFinitionName, actionFinitionPower: req.body.actionFinitionPower, actionFinitionEffet: req.body.actionFinitionEffet,
     });
+    res.json({ ok: true });
+  });
+
+  // ── Cartes Personnages — collection ──────────────────────────────────────
+  router.post("/recompenses/personnages/:id/collection", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    const collectionId = req.body.collectionId ? Number(req.body.collectionId) : null;
+    setPersonnageCollection(id, collectionId);
+    res.json({ ok: true });
+  });
+
+  // ── Collections de cartes — CRUD ──────────────────────────────────────────
+  router.get("/recompenses/collections", requireAdmin, (req, res) => {
+    res.json({ ok: true, collections: listCardCollections() });
+  });
+
+  router.post("/recompenses/collections", requireAdmin, express.json(), (req, res) => {
+    const { name, slug, description, color, sortOrder, isPublished } = req.body;
+    if (!name) return res.json({ ok: false, error: 'Nom requis' });
+    const id = createCardCollection({ name, slug: slug || name, description, color, sortOrder, isPublished: isPublished !== false });
+    res.json({ ok: true, id, collection: getCardCollection(id) });
+  });
+
+  router.put("/recompenses/collections/:id", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    updateCardCollection(id, req.body);
+    res.json({ ok: true, collection: getCardCollection(id) });
+  });
+
+  router.delete("/recompenses/collections/:id", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    deleteCardCollection(id);
     res.json({ ok: true });
   });
 

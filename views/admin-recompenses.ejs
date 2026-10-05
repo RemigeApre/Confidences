@@ -243,6 +243,12 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 .pc-affinite-chip-del { background:none; border:none; color:#f87171; cursor:pointer; padding:0; font-size:.7rem; line-height:1; }
 /* Genre sur carte gwent */
 .pc-gwent-gender { font-size:.6rem; color:rgba(26,26,26,.55); font-style:italic; letter-spacing:.03em; }
+/* Badge collection sur carte */
+.pc-admin-collection-badge {
+  position:absolute; bottom:.38rem; left:.42rem;
+  font-size:.46rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
+  padding:.12rem .35rem; border-radius:3px; color:#fff; opacity:.92; max-width:90%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 </style>
 
 <div class="admin-topbar">
@@ -302,6 +308,11 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     <button class="obj-nav-link" data-section="personnages">
       <span style="font-size:1.1rem">&#128100;</span> Personnages
       <span class="obj-nav-count"><%= (personnageCards || []).length %></span>
+    </button>
+
+    <button class="obj-nav-link" data-section="collections">
+      <span style="font-size:1.1rem">&#128218;</span> Collections
+      <span class="obj-nav-count"><%= (cardCollections || []).length %></span>
     </button>
 
   </nav>
@@ -752,6 +763,15 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           <option value="combat">Combat uniquement</option>
           <option value="ultra">Ultra</option>
         </select>
+        <% if ((cardCollections||[]).length > 0) { %>
+        <select id="pc-collection-sel" class="admin-filter-select">
+          <option value="all">Toutes collections</option>
+          <option value="none">Sans collection</option>
+          <% (cardCollections||[]).forEach(function(col) { %>
+            <option value="<%= col.id %>"><%= col.name %></option>
+          <% }) %>
+        </select>
+        <% } %>
         <% if (_pcNatures.length > 1) { %>
         <select id="pc-nature-sel" class="admin-filter-select">
           <option value="all">Toutes natures</option>
@@ -781,6 +801,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
              data-card-id="<%= pc.id %>"
              data-deck="<%= pc.isUltra ? 'ultra' : pc.isBaseDeck ? 'base' : 'combat' %>"
              data-nat="<%= pc.nature || '' %>" data-parody="<%= pc.parody || '' %>"
+             data-collection="<%= pc.collectionId || 'none' %>"
              data-pc='<%- JSON.stringify({
                id: pc.id, title: pc.title, description: pc.description,
                thumb: pc.thumb ? thumbUrl(pc.thumb) : null,
@@ -790,7 +811,8 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
                actionPrelimName: pc.actionPrelimName, actionPrelimPower: pc.actionPrelimPower, actionPrelimEffet: pc.actionPrelimEffet,
                actionActeName: pc.actionActeName, actionActePower: pc.actionActePower, actionActeEffet: pc.actionActeEffet,
                actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower, actionFinitionEffet: pc.actionFinitionEffet,
-               isBaseDeck: pc.isBaseDeck, isUltra: pc.isUltra
+               isBaseDeck: pc.isBaseDeck, isUltra: pc.isUltra,
+               collectionId: pc.collectionId, collectionName: pc.collectionName, collectionColor: pc.collectionColor
              }) %>'>
           <div class="coffre-card-flip-wrap js-coffre-card-flip-admin">
             <%/* ── Recto Gwent ── */%>
@@ -811,6 +833,9 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
               </div>
               <span class="lb-codex-flip-cta-icon">&#8635;</span>
               <% if (pc.isUltra) { %><span class="pc-admin-ultra-badge">ULTRA</span><% } %>
+              <% if (pc.collectionName) { %>
+                <span class="pc-admin-collection-badge" style="background:<%= pc.collectionColor || '#6366f1' %>"><%= pc.collectionName %></span>
+              <% } %>
             </div>
             <%/* ── Verso (admin) ── */%>
             <div class="lb-codex-flip-back pc-admin-card-back">
@@ -821,6 +846,78 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           </div>
         </div>
         <% }) %>
+      </div>
+    </div>
+
+    <%/* ── Collections de cartes ── */%>
+    <div class="obj-section" data-section="collections">
+      <div class="obj-section-toolbar" style="justify-content:flex-end">
+        <button class="ari-save-btn" id="col-new-btn" style="font-size:.78rem;padding:.3rem .8rem">
+          + Nouvelle collection
+        </button>
+      </div>
+
+      <div id="col-list" style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem">
+        <% if (!(cardCollections||[]).length) { %>
+          <p style="color:#475569;font-size:.82rem">Aucune collection. Créez-en une pour regrouper vos personnages.</p>
+        <% } %>
+        <% (cardCollections||[]).forEach(function(col) { %>
+        <div class="col-item" data-col-id="<%= col.id %>"
+             style="background:#1e293b;border-radius:10px;border:2px solid <%= col.color || '#6366f1' %>33;padding:.65rem .85rem;display:flex;align-items:center;gap:.75rem">
+          <div class="col-item-dot" style="width:14px;height:14px;border-radius:50%;background:<%= col.color || '#6366f1' %>;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <strong style="color:#f1f5f9;font-size:.88rem"><%= col.name %></strong>
+            <% if (col.description) { %><span style="color:#64748b;font-size:.72rem;display:block;margin-top:.1rem"><%= col.description %></span><% } %>
+          </div>
+          <span style="font-size:.72rem;color:#64748b;flex-shrink:0">
+            <%= col.card_count %> personnage<%= col.card_count !== 1 ? 's' : '' %>
+          </span>
+          <button class="js-col-edit ari-save-btn" data-col='<%- JSON.stringify(col) %>'
+            style="font-size:.72rem;padding:.2rem .55rem;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#94a3b8">
+            &#9998; Modifier
+          </button>
+          <button class="js-col-delete" data-col-id="<%= col.id %>" data-col-name="<%= col.name %>"
+            style="background:none;border:none;color:#f87171;cursor:pointer;font-size:.8rem;padding:.2rem .35rem">
+            &#10005;
+          </button>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <%/* ── Modal collection ── */%>
+    <div class="pc-modal-overlay" id="colModal" hidden>
+      <div style="background:#1e293b;border-radius:14px;width:min(95vw,480px);display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;align-items:center;padding:.7rem 1rem;background:#162032;border-bottom:1px solid rgba(255,255,255,.08)">
+          <strong id="colModalTitle" style="flex:1;color:#f1f5f9;font-size:.95rem">Nouvelle collection</strong>
+          <button id="colModalClose" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:1rem;padding:.2rem">&#10005;</button>
+        </div>
+        <div style="padding:1rem;display:flex;flex-direction:column;gap:.65rem">
+          <input type="hidden" id="colModalId">
+          <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em">
+            Nom
+            <input type="text" id="colModalName" class="pc-modal-input" placeholder="Ex: Harry Potter, Marvel...">
+          </label>
+          <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em">
+            Description
+            <input type="text" id="colModalDesc" class="pc-modal-input" placeholder="Courte description (optionnel)">
+          </label>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:1">
+              Couleur
+              <input type="color" id="colModalColor" value="#6366f1"
+                style="width:100%;height:32px;border-radius:5px;border:1px solid rgba(255,255,255,.12);background:#0f172a;cursor:pointer;padding:.1rem .2rem;margin-top:.25rem">
+            </label>
+            <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:1">
+              Ordre d'affichage
+              <input type="number" id="colModalOrder" class="pc-modal-input" min="0" value="0">
+            </label>
+          </div>
+          <div style="display:flex;justify-content:center;gap:.6rem;margin-top:.2rem">
+            <button id="colModalSave" class="ari-save-btn" style="font-size:.82rem;padding:.38rem 1.4rem">Enregistrer</button>
+            <span id="colModalStatus" style="font-size:.72rem;color:#4ade80;align-self:center"></span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -851,6 +948,14 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
               <option value="normal">Normal</option>
               <option value="ultra">Ultra</option>
             </select>
+            <% if ((cardCollections||[]).length > 0) { %>
+            <select id="pcSelCollection" class="pc-modal-input" style="width:100%">
+              <option value="">Sans collection</option>
+              <% (cardCollections||[]).forEach(function(col) { %>
+                <option value="<%= col.id %>" data-color="<%= col.color %>"><%= col.name %></option>
+              <% }) %>
+            </select>
+            <% } %>
           </div>
           <%/* Colonne droite */%>
           <div class="pc-modal-right">
@@ -998,7 +1103,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 (function() {
   var links = document.querySelectorAll('.obj-nav-link[data-section]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
-  var VALID = ['accueil','images','charms','themes','speciaux','cartes','personnages'];
+  var VALID = ['accueil','images','charms','themes','speciaux','cartes','personnages','collections'];
 
   function activate(key) {
     links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });
@@ -1856,26 +1961,32 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
   const pcItems = Array.from(document.querySelectorAll('#pc-grid .pc-card-tile'));
 
-  const pcDeckSel    = document.getElementById('pc-deck-sel');
-  const pcNatureSel  = document.getElementById('pc-nature-sel');
-  const pcParodySel  = document.getElementById('pc-parody-sel');
-  pcDeckSel    && pcDeckSel.addEventListener('change', applyPcFilters);
-  pcNatureSel  && pcNatureSel.addEventListener('change', applyPcFilters);
-  pcParodySel  && pcParodySel.addEventListener('change', applyPcFilters);
+  const pcDeckSel       = document.getElementById('pc-deck-sel');
+  const pcNatureSel     = document.getElementById('pc-nature-sel');
+  const pcParodySel     = document.getElementById('pc-parody-sel');
+  const pcCollectionSel = document.getElementById('pc-collection-sel');
+  pcDeckSel       && pcDeckSel.addEventListener('change', applyPcFilters);
+  pcNatureSel     && pcNatureSel.addEventListener('change', applyPcFilters);
+  pcParodySel     && pcParodySel.addEventListener('change', applyPcFilters);
+  pcCollectionSel && pcCollectionSel.addEventListener('change', applyPcFilters);
 
   function applyPcFilters() {
     const deck = pcDeckSel ? pcDeckSel.value : 'all';
     const nat  = pcNatureSel ? pcNatureSel.value : 'all';
     const par  = pcParodySel ? pcParodySel.value : 'all';
+    const col  = pcCollectionSel ? pcCollectionSel.value : 'all';
     const q = (document.getElementById('pc-search-input') || {}).value;
     const ql = q ? q.trim().toLowerCase() : '';
     pcItems.forEach(c => {
       const deckMatch = deck === 'all' || c.dataset.deck === deck;
       const natMatch  = nat === 'all' || c.dataset.nat === nat;
       const parMatch  = par === 'all' || c.dataset.parody === par;
-      const nameEl = c.querySelector('.pc-admin-card-name');
+      const colMatch  = col === 'all'
+        || (col === 'none' && (!c.dataset.collection || c.dataset.collection === 'none'))
+        || c.dataset.collection === col;
+      const nameEl = c.querySelector('.pc-gwent-name');
       const textMatch = !ql || (nameEl && nameEl.textContent.toLowerCase().includes(ql));
-      c.hidden = !(deckMatch && natMatch && parMatch && textMatch);
+      c.hidden = !(deckMatch && natMatch && parMatch && colMatch && textMatch);
     });
   }
 
@@ -1892,6 +2003,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   const modalStatsStatus = document.getElementById('pcModalStatsStatus');
   const pcSelStatut      = document.getElementById('pcSelStatut');
   const pcSelVisibilite  = document.getElementById('pcSelVisibilite');
+  const pcSelCollection  = document.getElementById('pcSelCollection');
   let activePcId = null;
 
   const passifDescs = <%- JSON.stringify(Object.fromEntries(passifs.map(p => [p.id, p.desc || '']))) %>;
@@ -1943,6 +2055,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
     if (pcSelStatut)     pcSelStatut.value     = (pc.isBaseDeck != null ? pc.isBaseDeck : 1) ? 'base' : 'gagner';
     if (pcSelVisibilite) pcSelVisibilite.value  = pc.isUltra ? 'ultra' : 'normal';
+    if (pcSelCollection) pcSelCollection.value  = pc.collectionId || '';
 
     modalDesc.value = pc.description || '';
 
@@ -2029,13 +2142,15 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     try {
       const base = '/admin/recompenses/personnages/' + activePcId;
       const opts = (body) => ({ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-      const [r1, r2, r3] = await Promise.all([
+      const collectionId = pcSelCollection ? (pcSelCollection.value || null) : null;
+      const [r1, r2, r3, r4] = await Promise.all([
         fetch(base + '/flags',       opts(flags)),
         fetch(base + '/description', opts({ description })),
         fetch(base + '/stats',       opts(statsPayload)),
+        fetch(base + '/collection',  opts({ collectionId })),
       ]);
-      const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
-      const ok = d1.ok && d2.ok && d3.ok;
+      const [d1, d2, d3, d4] = await Promise.all([r1.json(), r2.json(), r3.json(), r4.json()]);
+      const ok = d1.ok && d2.ok && d3.ok && d4.ok;
       // Mettre à jour le dataset de la tuile
       const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
       if (tile && ok) {
@@ -2059,6 +2174,20 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           badge.className = 'pc-admin-ultra-badge'; badge.textContent = 'ULTRA';
           tile.querySelector('.lb-codex-flip-front').appendChild(badge);
         } else if (!flags.isUltra && ultraBadge) { ultraBadge.remove(); }
+        // Badge collection
+        tile.dataset.collection = collectionId || 'none';
+        const colBadgeEl = tile.querySelector('.pc-admin-collection-badge');
+        if (collectionId && pcSelCollection) {
+          const opt = pcSelCollection.options[pcSelCollection.selectedIndex];
+          const colColor = opt ? (opt.dataset.color || '#6366f1') : '#6366f1';
+          const colName  = opt ? opt.textContent : '';
+          if (colBadgeEl) { colBadgeEl.textContent = colName; colBadgeEl.style.background = colColor; }
+          else {
+            const cb = document.createElement('span');
+            cb.className = 'pc-admin-collection-badge'; cb.textContent = colName; cb.style.background = colColor;
+            tile.querySelector('.lb-codex-flip-front').appendChild(cb);
+          }
+        } else if (colBadgeEl) { colBadgeEl.remove(); }
         // Mettre à jour la description dans le footer de la carte
         const quoteEl = tile.querySelector('.pc-gwent-quote');
         if (description && !quoteEl) {
@@ -2070,6 +2199,85 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       modalStatsStatus.style.color = ok ? '#4ade80' : '#f87171';
       setTimeout(function() { modalStatsStatus.textContent = ''; }, 2000);
     } catch(e) { modalStatsStatus.textContent = '✗ Erreur réseau'; modalStatsStatus.style.color = '#f87171'; }
+  });
+})();
+</script>
+
+<!-- ── Collections JS ── -->
+<script>
+(function() {
+  var modal     = document.getElementById('colModal');
+  var closeBtn  = document.getElementById('colModalClose');
+  var saveBtn   = document.getElementById('colModalSave');
+  var titleEl   = document.getElementById('colModalTitle');
+  var idInp     = document.getElementById('colModalId');
+  var nameInp   = document.getElementById('colModalName');
+  var descInp   = document.getElementById('colModalDesc');
+  var colorInp  = document.getElementById('colModalColor');
+  var orderInp  = document.getElementById('colModalOrder');
+  var statusEl  = document.getElementById('colModalStatus');
+  if (!modal) return;
+
+  function openModal(col) {
+    idInp.value    = col ? col.id    : '';
+    nameInp.value  = col ? col.name  : '';
+    descInp.value  = col ? col.description : '';
+    colorInp.value = col ? (col.color || '#6366f1') : '#6366f1';
+    orderInp.value = col ? (col.sort_order || 0) : 0;
+    titleEl.textContent = col ? 'Modifier la collection' : 'Nouvelle collection';
+    statusEl.textContent = '';
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() { modal.hidden = true; document.body.style.overflow = ''; }
+
+  closeBtn && closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+
+  document.getElementById('col-new-btn') && document.getElementById('col-new-btn').addEventListener('click', function() {
+    openModal(null);
+  });
+
+  document.querySelectorAll('.js-col-edit').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      try { openModal(JSON.parse(btn.dataset.col)); } catch(e) {}
+    });
+  });
+
+  document.querySelectorAll('.js-col-delete').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm('Supprimer la collection "' + btn.dataset.colName + '" ? Les personnages ne seront pas supprimés.')) return;
+      fetch('/admin/recompenses/collections/' + btn.dataset.colId, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { if (d.ok) location.reload(); else alert('Erreur'); });
+    });
+  });
+
+  saveBtn && saveBtn.addEventListener('click', async function() {
+    const id   = idInp.value;
+    const body = {
+      name:        nameInp.value.trim(),
+      description: descInp.value.trim(),
+      color:       colorInp.value,
+      sortOrder:   parseInt(orderInp.value) || 0,
+      isPublished: true,
+    };
+    if (!body.name) { statusEl.textContent = 'Nom requis'; statusEl.style.color = '#f87171'; return; }
+    statusEl.textContent = '…'; statusEl.style.color = '#94a3b8';
+
+    const url    = id ? '/admin/recompenses/collections/' + id : '/admin/recompenses/collections';
+    const method = id ? 'PUT' : 'POST';
+    try {
+      const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (d.ok) {
+        statusEl.textContent = '✓ Enregistré'; statusEl.style.color = '#4ade80';
+        setTimeout(function() { location.reload(); }, 600);
+      } else {
+        statusEl.textContent = d.error || 'Erreur'; statusEl.style.color = '#f87171';
+      }
+    } catch(e) { statusEl.textContent = 'Erreur réseau'; statusEl.style.color = '#f87171'; }
   });
 })();
 </script>
