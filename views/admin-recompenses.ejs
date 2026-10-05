@@ -190,20 +190,45 @@
 /* ── Modal personnage ── */
 .pc-modal-overlay { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.82); display:flex; align-items:center; justify-content:center; padding:1rem; }
 .pc-modal-overlay[hidden] { display:none; }
-.pc-modal-box { position:relative; background:#1e293b; border-radius:14px; width:min(95vw,760px); max-height:90vh; display:flex; gap:0; overflow:hidden; }
-.pc-modal-close { position:absolute; top:.65rem; right:.8rem; background:none; border:none; color:#f87171; cursor:pointer; padding:.2rem; line-height:0; z-index:2; }
+.pc-modal-box { background:#1e293b; border-radius:14px; width:min(95vw,680px); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+/* Header bandeau */
+.pc-modal-header { display:flex; align-items:center; gap:.75rem; padding:.7rem 1rem .65rem; background:#162032; border-bottom:1px solid rgba(255,255,255,.08); flex-shrink:0; }
+.pc-modal-header-info { flex:1; min-width:0; }
+.pc-modal-header-name { font-size:.95rem; font-weight:700; color:#f1f5f9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+.pc-modal-header-tags { font-size:.72rem; color:#64748b; display:block; }
+.pc-modal-close { background:none; border:none; color:#f87171; cursor:pointer; padding:.2rem; line-height:0; flex-shrink:0; }
 .pc-modal-close:hover { color:#ef4444; }
-.pc-modal-left { width:180px; min-width:160px; flex-shrink:0; display:flex; flex-direction:column; }
-.pc-modal-img-wrap { flex:1; min-height:200px; overflow:hidden; position:relative; background:#0f172a; }
+/* Corps */
+.pc-modal-body { display:flex; flex-direction:row; gap:0; flex:1; min-height:0; overflow:hidden; }
+.pc-modal-img-col { width:110px; min-width:110px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:.5rem; padding:.85rem .6rem .85rem .8rem; align-self:flex-start; }
+.pc-modal-img-wrap { width:90px; height:120px; border-radius:7px; overflow:hidden; background:#0f172a; flex-shrink:0; }
 .pc-modal-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
-.pc-modal-identity { padding:.6rem .7rem; display:flex; flex-direction:column; gap:.2rem; border-top:1px solid rgba(255,255,255,.07); }
-.pc-modal-right { flex:1; padding:1.1rem 1.2rem 1rem; overflow-y:auto; display:flex; flex-direction:column; gap:.8rem; }
-.pc-modal-section { display:flex; flex-direction:column; gap:.3rem; }
-.pc-modal-label { font-size:.72rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin:0; }
-.pc-modal-stats-section { border-top:1px solid rgba(255,255,255,.07); padding-top:.6rem; }
-.pc-modal-field-label { font-size:.7rem; color:#94a3b8; display:flex; flex-direction:column; gap:.15rem; }
-.pc-modal-input { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#f1f5f9; border-radius:5px; padding:.28rem .4rem; font-size:.78rem; outline:none; font-family:inherit; width:100%; box-sizing:border-box; }
-.pc-modal-input:focus { border-color:rgba(255,255,255,.3); }
+.pc-modal-img-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#334155; }
+.pc-modal-right { flex:1; padding:.85rem 1rem .85rem .5rem; overflow-y:auto; display:flex; flex-direction:column; gap:.6rem; }
+.pc-modal-section { display:flex; flex-direction:column; gap:.28rem; }
+.pc-modal-label { font-size:.68rem; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin:0; }
+/* Inputs */
+.pc-modal-input {
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+  color:#f1f5f9; border-radius:5px; padding:.28rem .4rem; font-size:.78rem;
+  outline:none; font-family:inherit; width:100%; box-sizing:border-box;
+  text-align:center;
+}
+.pc-modal-input:focus { border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.09); }
+/* Selects colorés */
+select#pcSelStatut[value="base"]   { border-color:#34d399; color:#34d399; }
+select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
+/* Stat inputs colorés */
+#pcStatVitesse { border-color:rgba(251,191,36,.35); color:#fbbf24; }
+#pcStatDefense { border-color:rgba(96,165,250,.35); color:#60a5fa; }
+#pcStatDomSub  { border-color:rgba(167,139,250,.35); color:#a78bfa; }
+#pcStatOrientation { border-color:rgba(52,211,153,.3); color:#6ee7b7; }
+/* Champ texte action */
+.pc-modal-input[id*="_name"] { color:#e2e8f0; text-align:left; }
+/* Champ puissance */
+.pc-modal-input[id*="_power"] { border-color:rgba(251,191,36,.3); color:#fbbf24; }
+/* Label action coloré */
+.pc-action-label { font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; text-align:center; }
 </style>
 
 <div class="admin-topbar">
@@ -786,45 +811,42 @@
     <%/* ── Modal édition personnage ── */%>
     <div class="pc-modal-overlay" id="pcModal" hidden>
       <div class="pc-modal-box" role="dialog" aria-modal="true">
-        <button class="pc-modal-close js-pc-modal-close" aria-label="Fermer">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <div class="pc-modal-left">
-          <div class="pc-modal-img-wrap">
-            <img id="pcModalImg" src="" alt="" style="display:none">
-            <div id="pcModalImgPlaceholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;color:#334155">&#128100;</div>
+        <%/* ── Bandeau header ── */%>
+        <div class="pc-modal-header">
+          <div class="pc-modal-header-info">
+            <span class="pc-modal-header-name" id="pcModalName"></span>
+            <span class="pc-modal-header-tags" id="pcModalTags"></span>
           </div>
-          <div class="pc-modal-identity">
-            <strong id="pcModalName" style="font-size:1rem;color:#f1f5f9"></strong>
-            <span id="pcModalTags" style="font-size:.72rem;color:#64748b"></span>
-          </div>
+          <button class="pc-modal-close js-pc-modal-close" aria-label="Fermer">&#10005;</button>
         </div>
-        <div class="pc-modal-right">
-          <%/* ── Statut + Visibilité ── */%>
-          <div class="pc-modal-section" style="flex-direction:row;gap:.45rem;align-items:center">
-            <select id="pcSelStatut" class="pc-modal-input" style="flex:1">
+        <%/* ── Corps ── */%>
+        <div class="pc-modal-body">
+          <%/* Colonne gauche : image fixe + selects */%>
+          <div class="pc-modal-img-col">
+            <div class="pc-modal-img-wrap">
+              <img id="pcModalImg" src="" alt="" style="display:none">
+              <div id="pcModalImgPlaceholder" class="pc-modal-img-ph">&#128100;</div>
+            </div>
+            <select id="pcSelStatut" class="pc-modal-input" style="width:100%;margin-top:.3rem">
               <option value="base">Base</option>
               <option value="gagner">&Agrave; gagner</option>
             </select>
-            <select id="pcSelVisibilite" class="pc-modal-input" style="flex:1">
+            <select id="pcSelVisibilite" class="pc-modal-input" style="width:100%">
               <option value="normal">Normal</option>
               <option value="ultra">Ultra</option>
             </select>
           </div>
-          <%/* ── Description ── */%>
-          <div class="pc-modal-section">
-            <p class="pc-modal-label">Description <span style="color:#475569;font-weight:400">(dos de carte)</span></p>
-            <textarea id="pcModalDesc" rows="3" placeholder="Description qui appara&icirc;t au dos de la carte&hellip;"
-              style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#cbd5e1;border-radius:6px;padding:.4rem .55rem;font-size:.82rem;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box"></textarea>
-          </div>
-          <%/* ── Stats de combat ── */%>
-          <div class="pc-modal-section pc-modal-stats-section">
-            <button class="js-pc-modal-stats-toggle"
-              style="background:none;border:none;color:#64748b;font-size:.78rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:.35rem;width:100%">
-              <span class="js-pc-modal-stats-arrow" style="font-size:.65rem">&#9654;</span>
-              Stats de combat
-            </button>
-            <div class="js-pc-modal-stats-body" style="display:none;margin-top:.45rem;flex-direction:column;gap:.3rem">
+          <%/* Colonne droite */%>
+          <div class="pc-modal-right">
+            <%/* ── Description ── */%>
+            <div class="pc-modal-section">
+              <p class="pc-modal-label">Description <span style="color:#475569;font-weight:400">(dos de carte)</span></p>
+              <textarea id="pcModalDesc" rows="3" placeholder="Description qui appara&icirc;t au dos de la carte&hellip;"
+                style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#cbd5e1;border-radius:6px;padding:.4rem .55rem;font-size:.82rem;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box;text-align:center"></textarea>
+            </div>
+            <%/* ── Stats de combat (toujours ouvertes) ── */%>
+            <div class="pc-modal-section">
+              <p class="pc-modal-label">Stats de combat</p>
               <%/* Ligne unique : Vitesse / Défense / Dom-Sub / Orientation */%>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.1fr;gap:.3rem">
                 <label class="pc-modal-field-label">Vit.
@@ -845,26 +867,26 @@
                   </select>
                 </label>
               </div>
-              <%/* Actions : label + nom + puissance sur la même ligne */%>
+              <%/* Actions */%>
               <% [
                 ['prelim','Prél.'],
                 ['acte','Acte'],
                 ['finition','Fin.']
               ].forEach(function(a) { %>
-              <div style="display:grid;grid-template-columns:38px 1fr 50px;gap:.28rem;align-items:center">
+              <div style="display:grid;grid-template-columns:38px 1fr 50px;gap:.28rem;align-items:center;margin-top:.25rem">
                 <span style="font-size:.6rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em"><%= a[1] %></span>
-                <input type="text" id="pcStat_<%= a[0] %>_name" class="pc-modal-input" placeholder="Nom…">
+                <input type="text" id="pcStat_<%= a[0] %>_name" class="pc-modal-input" placeholder="Nom&hellip;">
                 <input type="number" id="pcStat_<%= a[0] %>_power" class="pc-modal-input" min="1" max="99" style="text-align:center">
               </div>
               <% }) %>
-              <%/* Bouton unique tout enregistrer */%>
-              <div style="display:flex;align-items:center;gap:.6rem;margin-top:.1rem">
-                <button class="js-pc-modal-stats-save"
-                  style="background:#1e3a5f;border:1px solid #1e40af;color:#93c5fd;font-size:.78rem;padding:.32rem .8rem;border-radius:5px;cursor:pointer">
-                  Enregistrer
-                </button>
-                <span id="pcModalStatsStatus" style="font-size:.72rem;color:#4ade80"></span>
-              </div>
+            </div>
+            <%/* ── Bouton enregistrer centré ── */%>
+            <div style="display:flex;justify-content:center;align-items:center;gap:.7rem;margin-top:.3rem">
+              <button class="js-pc-modal-stats-save"
+                style="background:#1e3a5f;border:1px solid #1e40af;color:#93c5fd;font-size:.82rem;padding:.4rem 1.4rem;border-radius:6px;cursor:pointer">
+                Enregistrer
+              </button>
+              <span id="pcModalStatsStatus" style="font-size:.72rem;color:#4ade80"></span>
             </div>
           </div>
         </div>
@@ -1888,14 +1910,6 @@
   modal.addEventListener('click', function(e) { if (e.target === modal) closePcModal(); });
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !modal.hidden) closePcModal(); });
 
-  // Stats panel toggle
-  document.querySelector('.js-pc-modal-stats-toggle').addEventListener('click', function() {
-    const body  = document.querySelector('.js-pc-modal-stats-body');
-    const arrow = document.querySelector('.js-pc-modal-stats-arrow');
-    const open  = body.style.display !== 'none';
-    body.style.display = open ? 'none' : 'flex';
-    arrow.textContent  = open ? '▶' : '▼';
-  });
 
   // Bouton unique — tout enregistrer
   document.querySelector('.js-pc-modal-stats-save').addEventListener('click', async function() {
