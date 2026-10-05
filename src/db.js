@@ -531,6 +531,21 @@ db.exec(`
 `);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_connection_logs_user ON connection_logs (user_id)`);
 
+// ── Cartes Codex — items collectibles liés aux pages wiki ──────────────────
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN card_summary TEXT"); } catch(_) {}
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN card_rarity TEXT NOT NULL DEFAULT 'rare'"); } catch(_) {}
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_cards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    wiki_page_id INTEGER NOT NULL,
+    rarity TEXT NOT NULL DEFAULT 'rare',
+    obtained_at TEXT NOT NULL,
+    UNIQUE(user_id, wiki_page_id)
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_user_cards_user ON user_cards (user_id)`);
+
 // Visites de pages par des visiteurs non connectés
 try { db.exec("ALTER TABLE anon_page_visits ADD COLUMN path TEXT NOT NULL DEFAULT ''"); } catch(_) {}
 db.exec(`
@@ -1546,6 +1561,8 @@ function rowToWikiPage(row) {
     subParody: row.sub_parody || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    cardSummary: row.card_summary || null,
+    cardRarity: row.card_rarity || 'rare',
   };
 }
 
@@ -1611,20 +1628,23 @@ function getWikiPage(id) {
   return rowToWikiPage(row);
 }
 
-function updateWikiPage(id, { title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody }) {
+function updateWikiPage(id, { title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody, cardSummary }) {
   const existing = db.prepare("SELECT image_paths, image_path FROM wiki_pages WHERE id = ?").get(id);
   if (!existing) return false;
-  // Si imagePaths n'est pas fourni, conserver les images existantes
   let finalImagePaths = imagePaths;
   if (finalImagePaths === undefined) {
     finalImagePaths = JSON.parse(existing.image_paths || "[]");
     if (!finalImagePaths.length && existing.image_path) finalImagePaths = [existing.image_path];
   }
   db.prepare(
-    `UPDATE wiki_pages SET title = ?, category = ?, content = ?, tags = ?, image_paths = ?, owned = ?, meta = ?, extra_categories = ?, parody = ?, sub_parody = ?, updated_at = ?
+    `UPDATE wiki_pages SET title = ?, category = ?, content = ?, tags = ?, image_paths = ?, owned = ?, meta = ?, extra_categories = ?, parody = ?, sub_parody = ?, card_summary = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", new Date().toISOString(), id);
+  ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", cardSummary !== undefined ? (cardSummary || null) : existing.card_summary, new Date().toISOString(), id);
   return true;
+}
+
+function updateWikiCardSummary(wikiPageId, summary) {
+  db.prepare("UPDATE wiki_pages SET card_summary = ? WHERE id = ?").run(summary || null, wikiPageId);
 }
 
 function reactWikiPage(id, userId, { rating, flame, interested, readLater, hidden, practiced }) {
@@ -2400,6 +2420,87 @@ function listConnectionLogsForUser(userId, limit) {
     "SELECT id, ip, user_agent, created_at FROM connection_logs WHERE user_id = ? ORDER BY id DESC LIMIT ?"
   ).all(userId, limit || 20).map(function(r) {
     return { id: r.id, ip: r.ip, userAgent: r.user_agent, createdAt: r.created_at };
+  });
+}
+
+// ── Cartes Codex ──────────────────────────────────────────────────────────────
+const CARD_EXCLUDED_CATEGORIES = ['fantasme', 'biologie'];
+
+function _buildCardPool(userId) {
+  const ownedIds = new Set(
+    db.prepare("SELECT wiki_page_id FROM user_cards WHERE user_id = ?").all(userId).map(r => r.wiki_page_id)
+  );
+  const placeholders = CARD_EXCLUDED_CATEGORIES.map(() => '?').join(',');
+  const pages = db.prepare(
+    `SELECT id, title, category, card_rarity, card_summary, image_paths FROM wiki_pages
+     WHERE category NOT IN (${placeholders})
+     ORDER BY RANDOM() LIMIT 150`
+  ).all(...CARD_EXCLUDED_CATEGORIES);
+  return pages.filter(p => !ownedIds.has(p.id));
+}
+
+function _grantCardReward(userId, rarity) {
+  const pool = _buildCardPool(userId);
+  const now = new Date().toISOString();
+  if (!pool.length) {
+    const coins = 8;
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+    return { isCoins: true, coins, rarity: rarity || 'rare' };
+  }
+  // Préférer une carte de la rareté tirée, sinon n'importe laquelle
+  const rarityPool = pool.filter(p => p.card_rarity === rarity);
+  const chosen = (rarityPool.length ? rarityPool : pool)[Math.floor(Math.random() * (rarityPool.length || pool.length))];
+  const cardRarity = chosen.card_rarity || rarity || 'rare';
+  const ins = db.prepare(
+    "INSERT OR IGNORE INTO user_cards (user_id, wiki_page_id, rarity, obtained_at) VALUES (?, ?, ?, ?)"
+  ).run(userId, chosen.id, cardRarity, now);
+  if (ins.changes === 0) {
+    const cfg = getLootboxConfig();
+    const coins = Math.ceil((cfg.buyPrices[cardRarity] || RARITY_BUY_PRICE[cardRarity] || RARITY_BUY_PRICE.common) / 4);
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+    return { isCoins: true, coins, rarity: cardRarity };
+  }
+  let imagePaths = []; try { imagePaths = JSON.parse(chosen.image_paths || '[]'); } catch(_) {}
+  return { isCard: true, wikiPageId: chosen.id, title: chosen.title, category: chosen.category, rarity: cardRarity, thumb: imagePaths[0] || null, cardSummary: chosen.card_summary || null, isDuplicate: false };
+}
+
+function getUserCards(userId) {
+  return db.prepare(
+    `SELECT uc.wiki_page_id, uc.rarity, uc.obtained_at,
+            wp.title, wp.category, wp.card_summary, wp.image_paths
+     FROM user_cards uc
+     JOIN wiki_pages wp ON wp.id = uc.wiki_page_id
+     WHERE uc.user_id = ?
+     ORDER BY uc.obtained_at DESC`
+  ).all(userId).map(r => {
+    let imagePaths = []; try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
+    return { wikiPageId: r.wiki_page_id, rarity: r.rarity, obtainedAt: r.obtained_at, title: r.title, category: r.category, summary: r.card_summary || null, thumb: imagePaths[0] || null };
+  });
+}
+
+function setWikiCardRarity(wikiPageId, rarity) {
+  const valid = ['common','rare','epic','legendary','mythic'];
+  if (!valid.includes(rarity)) return false;
+  db.prepare("UPDATE wiki_pages SET card_rarity = ? WHERE id = ?").run(rarity, wikiPageId);
+  return true;
+}
+
+function getCardStats() {
+  const placeholders = CARD_EXCLUDED_CATEGORIES.map(() => '?').join(',');
+  const total = db.prepare(`SELECT COUNT(*) as n FROM wiki_pages WHERE category NOT IN (${placeholders})`).get(...CARD_EXCLUDED_CATEGORIES).n;
+  const byRarity = db.prepare(`SELECT card_rarity as rarity, COUNT(*) as n FROM wiki_pages WHERE category NOT IN (${placeholders}) GROUP BY card_rarity`).all(...CARD_EXCLUDED_CATEGORIES);
+  return { total, byRarity };
+}
+
+function listWikiPagesForCards() {
+  const placeholders = CARD_EXCLUDED_CATEGORIES.map(() => '?').join(',');
+  return db.prepare(
+    `SELECT id, title, category, card_rarity, card_summary, image_paths FROM wiki_pages
+     WHERE category NOT IN (${placeholders})
+     ORDER BY category, title`
+  ).all(...CARD_EXCLUDED_CATEGORIES).map(r => {
+    let imagePaths = []; try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
+    return { id: r.id, title: r.title, category: r.category, cardRarity: r.card_rarity || 'rare', cardSummary: r.card_summary || null, thumb: imagePaths[0] || null };
   });
 }
 
@@ -3421,7 +3522,7 @@ function openLootbox(userId) {
     return { rewards: [{ isTheme: true, themeKey: theme.key, label: theme.label, rarity: theme.rarity || 'rare', isDuplicate: false }] };
   }
 
-  // ── Lootbox standard / image : récompense (image non possédée ou pièces + chance joker)
+  // ── Lootbox standard / image : récompense (image non possédée ou pièces + chance joker/carte)
   db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
   const rewards = [];
   for (let i = 0; i < 1; i++) {
@@ -3430,6 +3531,9 @@ function openLootbox(userId) {
       rewards.push(_grantJoker(userId, null, 'joker_charm',  'mythic'));
     } else if (rarity === 'legendary' && Math.random() < 0.08 && type !== 'image') {
       rewards.push(_grantJoker(userId, null, 'joker_image', 'legendary'));
+    } else if (type !== 'image' && Math.random() < 0.15) {
+      // ~15% chance d'obtenir une carte codex
+      rewards.push(_grantCardReward(userId, rarity));
     } else {
       rewards.push(_grantImageReward(userId, null));
     }
@@ -4110,6 +4214,11 @@ module.exports = {
   THEME_DEFINITIONS,
   recordAnonVisit,
   getAnonStats,
+  getUserCards,
+  setWikiCardRarity,
+  updateWikiCardSummary,
+  getCardStats,
+  listWikiPagesForCards,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

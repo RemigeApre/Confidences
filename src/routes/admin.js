@@ -58,6 +58,10 @@ const {
   setThemeRarity,
   listAllSiteTags,
   listProtagonistes,
+  setWikiCardRarity,
+  updateWikiCardSummary,
+  getCardStats,
+  listWikiPagesForCards,
   listAllParodies,
   deleteGalleryImage,
   deleteCharmById,
@@ -526,7 +530,10 @@ function buildAdminRouter(config) {
     const charmStats = Object.fromEntries(rarities.map(r => [r, charms.filter(c => c.rarity === r).length]));
     const themeStats = Object.fromEntries(rarities.map(r => [r, (THEME_DEFINITIONS||[]).filter(t => t.rarity === r).length]));
     const themeAlways = (THEME_DEFINITIONS||[]).filter(t => t.always).length;
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways });
+    const wikiCards = listWikiPagesForCards();
+    const cardStats = getCardStats();
+    const cardStatsByRarity = Object.fromEntries(rarities.map(r => [r, wikiCards.filter(c => c.cardRarity === r).length]));
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -650,6 +657,21 @@ function buildAdminRouter(config) {
     if (!ids.length) return res.json({ ok: false, error: 'aucun_id' });
     for (const id of ids) { try { deleteCharmById(id); } catch (_) {} }
     res.json({ ok: true, deleted: ids });
+  });
+
+  // ── Cartes Codex — rareté + résumé ────────────────────────────────────────
+  router.post("/recompenses/cards/:id/rarity", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const rarity = String(req.body.rarity || '');
+    const ok = setWikiCardRarity(id, rarity);
+    res.json({ ok });
+  });
+
+  router.post("/recompenses/cards/:id/summary", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const summary = String(req.body.summary || '').trim();
+    updateWikiCardSummary(id, summary || null);
+    res.json({ ok: true });
   });
 
   // ── Gestion des jeux ─────────────────────────────────────────────────────

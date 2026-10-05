@@ -89,6 +89,14 @@
   var themeApplyBtn  = document.getElementById("lootbox-theme-apply-btn");
   var themeApplyDone = document.getElementById("lootbox-theme-apply-done");
 
+  // Carte Codex (flip)
+  var ucardCodex     = document.getElementById("lootbox-ucard-codex");
+  var codexFlip      = document.getElementById("lb-codex-flip");
+  var codexFlipImg   = document.getElementById("lb-codex-flip-img");
+  var codexFlipCat   = document.getElementById("lb-codex-flip-cat");
+  var codexFlipCatBk = document.getElementById("lb-codex-flip-cat-back");
+  var codexFlipSumm  = document.getElementById("lb-codex-flip-summary");
+
   // Bannière cadeau externe
   var giftSlot = document.getElementById("lootbox-gift-slot");
 
@@ -244,6 +252,7 @@
     if (r.isCharm) { showCharmReveal(r, hasMore); return; }
     if (r.isCoins) { showCoinsCard(r, hasMore); return; }
     if (r.isTheme) { showThemeReveal(r, hasMore); return; }
+    if (r.isCard)  { showCardReveal(r, hasMore);  return; }
     showRewardCard(r, hasMore);
   }
 
@@ -266,9 +275,10 @@
   }
 
   function hideCardFills() {
-    [imgEl, placeholder, ucardTheme, ucardCharm, ucardCoins, ucardJoker].forEach(function(el) {
+    [imgEl, placeholder, ucardTheme, ucardCharm, ucardCoins, ucardJoker, ucardCodex].forEach(function(el) {
       if (el) el.setAttribute('hidden', '');
     });
+    if (codexFlip) codexFlip.classList.remove('flipped');
     [themeApplyBtn, themeApplyDone, charmEquipBtn, charmEquipDone, jokerUseBtn].forEach(function(el) {
       if (el) el.setAttribute('hidden', '');
     });
@@ -579,6 +589,28 @@
     revealCard(hasNext);
   }
 
+  // ── Récompense carte codex ───────────────────────────────────────────────
+  function showCardReveal(reward, hasNext) {
+    hideAll();
+    if (!card) { closeOverlay(); return; }
+    hideCardFills();
+    setCardMeta('Carte', reward.rarity || 'rare', reward._isGift);
+    if (ucardTitle) ucardTitle.textContent = reward.title || '';
+    if (hintEl) hintEl.setAttribute('hidden', '');
+    var catLabel = reward.category || '';
+    if (codexFlipImg) { codexFlipImg.src = reward.thumb || ''; codexFlipImg.alt = reward.title || ''; }
+    if (codexFlipCat) codexFlipCat.textContent = catLabel;
+    if (codexFlipCatBk) codexFlipCatBk.textContent = catLabel;
+    if (codexFlipSumm) codexFlipSumm.textContent = reward.cardSummary || '';
+    if (codexFlip) codexFlip.classList.remove('flipped');
+    if (ucardCodex) ucardCodex.removeAttribute('hidden');
+    revealCard(hasNext);
+  }
+
+  codexFlip && codexFlip.addEventListener('click', function () {
+    codexFlip.classList.toggle('flipped');
+  });
+
   jokerUseBtn && jokerUseBtn.addEventListener("click", function () {
     var type = jokerUseBtn.dataset.jokerType;
     _pendingJokerType = type;
@@ -783,6 +815,7 @@
       else if (reward.isCharm) typeLabel = 'Charme';
       else if (reward.isTheme) typeLabel = 'Th\u00e8me';
       else if (reward.isJoker) typeLabel = 'Joker';
+      else if (reward.isCard)  typeLabel = 'Carte';
       typeEl.textContent = typeLabel;
       item.appendChild(typeEl);
 
@@ -829,6 +862,20 @@
         jokerSpan.textContent = '\u2660';
         visual.appendChild(jokerSpan);
 
+      } else if (reward.isCard) {
+        var cardBg = document.createElement('div');
+        cardBg.style.cssText = 'width:100%;height:100%;position:relative;overflow:hidden;cursor:pointer';
+        if (reward.thumb) {
+          var cardCover = document.createElement('img');
+          cardCover.src = reward.thumb; cardCover.alt = ''; cardCover.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+          cardBg.appendChild(cardCover);
+        }
+        var catTag = document.createElement('span');
+        catTag.textContent = reward.category || '';
+        catTag.style.cssText = 'position:absolute;bottom:4px;left:4px;right:4px;font-size:.55rem;font-weight:700;text-transform:uppercase;text-align:center;background:rgba(0,0,0,.55);color:rgba(255,255,255,.8);border-radius:3px;padding:.1rem .3rem';
+        cardBg.appendChild(catTag);
+        visual.appendChild(cardBg);
+
       } else if (reward.imageId && reward.thumb) {
         var img = document.createElement('img');
         img.src = reward.thumb; img.alt = ''; img.loading = 'lazy';
@@ -850,6 +897,7 @@
       var batchTitleLabel = reward.isCoins
         ? (reward.coins || 0) + '\u00a0' + ((reward.coins || 0) > 1 ? 'pi\u00e8ces' : 'pi\u00e8ce')
         : reward.isJoker ? (reward.jokerType === 'image' ? 'Joker Image' : 'Joker Charme')
+        : reward.isCard ? (reward.title || '')
         : (reward.title || reward.label || '');
       var titleRow = document.createElement('p');
       titleRow.className = 'lootbox-batch-card-title';

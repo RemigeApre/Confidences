@@ -124,6 +124,19 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
           <p class="lootbox-joker-reveal-title" id="lootbox-joker-title"></p>
           <p class="lootbox-joker-reveal-desc" id="lootbox-joker-desc"></p>
         </div>
+        <div class="lootbox-ucard-codex-fill" id="lootbox-ucard-codex" hidden>
+          <div class="lb-codex-flip" id="lb-codex-flip">
+            <div class="lb-codex-flip-front">
+              <img id="lb-codex-flip-img" src="" alt="" class="lb-codex-flip-cover" />
+              <span class="lb-codex-flip-cat" id="lb-codex-flip-cat"></span>
+              <span class="lb-codex-flip-cta-icon">&#8635;</span>
+            </div>
+            <div class="lb-codex-flip-back">
+              <span class="lb-codex-flip-cat lb-codex-flip-cat--back" id="lb-codex-flip-cat-back"></span>
+              <p class="lb-codex-flip-summary" id="lb-codex-flip-summary"></p>
+            </div>
+          </div>
+        </div>
       </div>
       <p class="lootbox-ucard-title" id="lootbox-ucard-title"></p>
       <div class="lootbox-ucard-stars" id="lootbox-ucard-stars"></div>
@@ -190,6 +203,19 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
 </div>
 
 <script src="/lootbox.js?v=<%= assetVersion %>"></script>
+<style>
+/* ── Carte Codex flip ──────────────────────────────────────── */
+.lootbox-ucard-codex-fill{position:absolute;inset:0;display:flex;align-items:stretch;justify-content:stretch;perspective:900px}
+.lb-codex-flip{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.22,1,.36,1);cursor:pointer}
+.lb-codex-flip.flipped{transform:rotateY(180deg)}
+.lb-codex-flip-front,.lb-codex-flip-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:inherit}
+.lb-codex-flip-back{transform:rotateY(180deg);background:rgba(15,23,42,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;padding:1.1rem .85rem}
+.lb-codex-flip-cover{width:100%;height:100%;object-fit:cover;display:block}
+.lb-codex-flip-cat{position:absolute;bottom:.55rem;left:.55rem;right:.55rem;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:center;padding:.18rem .45rem;border-radius:4px;background:rgba(0,0,0,.55);color:rgba(255,255,255,.85)}
+.lb-codex-flip-cat--back{position:static;background:rgba(255,255,255,.06);font-size:.65rem}
+.lb-codex-flip-cta-icon{position:absolute;top:.5rem;right:.6rem;font-size:1.1rem;color:rgba(255,255,255,.5);line-height:1;pointer-events:none}
+.lb-codex-flip-summary{margin:0;font-size:.8rem;line-height:1.6;color:#cbd5e1;text-align:center;max-height:100%;overflow:hidden}
+</style>
 
 <%# ── Joker image picker ──────────────────────────────────────── %>
 <div class="lootbox-joker-picker" id="lootbox-joker-image-picker" hidden aria-modal="true" role="dialog">

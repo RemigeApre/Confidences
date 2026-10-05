@@ -154,6 +154,11 @@
       <span style="font-size:1.1rem">&#9824;</span> Sp&eacute;ciaux
     </button>
 
+    <button class="obj-nav-link" data-section="cartes">
+      <span style="font-size:1.1rem">&#127183;</span> Cartes
+      <span class="obj-nav-count"><%= (wikiCards || []).length %></span>
+    </button>
+
   </nav>
 
   <%/* ── Main content ── */%>
@@ -229,6 +234,25 @@
             <span style="color:#94a3b8">Toujours dispo</span>
           </span>
           <% } %>
+        </div>
+      </div>
+
+      <%/* Cartes Codex card */%>
+      <div class="obj-home-card">
+        <div class="obj-home-card-header">
+          <span class="obj-home-card-icon">&#127183;</span>
+          <span class="obj-home-card-title">Cartes Codex</span>
+          <span class="obj-home-card-total"><%= (wikiCards || []).length %> au total</span>
+          <button class="obj-home-goto js-goto-section" data-section="cartes">&#8594; Gérer</button>
+        </div>
+        <div class="obj-home-rarities">
+          <% rarityList.forEach(function(r) { %>
+          <span class="obj-rarity-chip" data-rarity="<%= r %>">
+            <span class="obj-rarity-chip-dot"></span>
+            <strong><%= (cardStatsByRarity && cardStatsByRarity[r]) || 0 %></strong>
+            <span style="color:#94a3b8"><%= rarityLabels[r] %></span>
+          </span>
+          <% }) %>
         </div>
       </div>
 
@@ -445,6 +469,56 @@
       </div>
     </div>
 
+    <%/* ── Cartes Codex ── */%>
+    <div class="obj-section" data-section="cartes">
+      <div class="obj-section-toolbar">
+        <div class="ari-filter-bar" id="card-filter-bar">
+          <button class="ari-filter-btn active" data-filter="all">Toutes</button>
+          <button class="ari-filter-btn" data-filter="common">Commun</button>
+          <button class="ari-filter-btn" data-filter="rare">Rare</button>
+          <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
+          <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
+          <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
+        </div>
+        <input type="text" id="card-search-input" placeholder="Chercher&hellip;"
+          style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px">
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin-top:.75rem" id="card-wiki-grid">
+        <% (wikiCards || []).forEach(function(wc) { %>
+        <%
+          var wcRarityColor = wc.cardRarity === 'mythic' ? '#f87171' : wc.cardRarity === 'legendary' ? '#fbbf24' : wc.cardRarity === 'epic' ? '#a78bfa' : wc.cardRarity === 'rare' ? '#60a5fa' : '#94a3b8';
+        %>
+        <div class="card-wiki-item" data-card-id="<%= wc.id %>" data-rarity="<%= wc.cardRarity %>" data-cat="<%= wc.category %>"
+          style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
+          <% if (wc.thumb) { %>
+          <div style="height:80px;overflow:hidden;flex-shrink:0">
+            <img src="<%= wc.thumb %>" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">
+          </div>
+          <% } else { %>
+          <div style="height:80px;background:#0f172a;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">&#127183;</div>
+          <% } %>
+          <div style="padding:.55rem .6rem;display:flex;flex-direction:column;gap:.35rem;flex:1">
+            <div style="font-size:.8rem;font-weight:700;color:#f1f5f9;line-height:1.3"><%= wc.title %></div>
+            <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b"><%= wc.category %></div>
+            <select class="charm-rarity-select no-arrow js-card-rarity" data-card-id="<%= wc.id %>"
+                    style="border-color:<%= wcRarityColor %>;color:<%= wcRarityColor %>">
+              <% ['common','rare','epic','legendary','mythic'].forEach(function(r) { %>
+                <option value="<%= r %>"<%= wc.cardRarity === r ? ' selected' : '' %>>
+                  <%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[r] %>
+                </option>
+              <% }) %>
+            </select>
+            <textarea class="js-card-summary" data-card-id="<%= wc.id %>" rows="2"
+              placeholder="Résumé (dos de carte)…"
+              style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;border-radius:5px;padding:.3rem .45rem;font-size:.72rem;resize:vertical;outline:none;font-family:inherit"><%= wc.cardSummary || '' %></textarea>
+            <span class="js-card-save-status" style="font-size:.68rem;height:.85em;color:#4ade80;display:block">&nbsp;</span>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -504,7 +578,7 @@
 (function() {
   var links = document.querySelectorAll('.obj-nav-link[data-section]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
-  var VALID = ['accueil','images','charms','themes','speciaux'];
+  var VALID = ['accueil','images','charms','themes','speciaux','cartes'];
 
   function activate(key) {
     links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });
@@ -1178,6 +1252,87 @@
       coinsStatus.style.color = '#f87171';
       coinsBtn.disabled = false;
     }
+  });
+})();
+</script>
+
+<!-- ── Cartes Codex JS ── -->
+<script>
+(function() {
+  const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
+  const cardItems = Array.from(document.querySelectorAll('.card-wiki-item'));
+
+  // Filter by rarity
+  const cardFilterBar = document.getElementById('card-filter-bar');
+  cardFilterBar && cardFilterBar.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
+    cardFilterBar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyCardFilters();
+  });
+
+  // Search by title/category
+  const searchInput = document.getElementById('card-search-input');
+  searchInput && searchInput.addEventListener('input', applyCardFilters);
+
+  function applyCardFilters() {
+    const activeFilter = cardFilterBar ? cardFilterBar.querySelector('.ari-filter-btn.active') : null;
+    const rarityFilter = activeFilter ? activeFilter.dataset.filter : 'all';
+    const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    cardItems.forEach(c => {
+      const rarityMatch = rarityFilter === 'all' || c.dataset.rarity === rarityFilter;
+      const textMatch = !q || c.dataset.cat.toLowerCase().includes(q) || c.querySelector('[style*="font-size:.8rem"]').textContent.toLowerCase().includes(q);
+      c.hidden = !(rarityMatch && textMatch);
+    });
+  }
+
+  // Rarity change
+  document.querySelectorAll('.js-card-rarity').forEach(function(sel) {
+    sel.addEventListener('change', async function() {
+      const cardId = sel.dataset.cardId;
+      const rarity = sel.value;
+      const item = sel.closest('.card-wiki-item');
+      if (item) item.dataset.rarity = rarity;
+      const statusEl = sel.parentElement.querySelector('.js-card-save-status');
+      sel.style.color = RARITY_COLORS[rarity] || '#94a3b8';
+      sel.style.borderColor = RARITY_COLORS[rarity] || 'rgba(255,255,255,.2)';
+      if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
+      try {
+        const r = await fetch('/admin/recompenses/cards/' + cardId + '/rarity', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rarity }),
+        });
+        const json = await r.json();
+        if (statusEl) {
+          statusEl.textContent = json.ok ? '✓' : '✗';
+          statusEl.style.color = json.ok ? '#4ade80' : '#f87171';
+          setTimeout(function() { if (statusEl) statusEl.textContent = '\u00a0'; }, 1500);
+        }
+      } catch(e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
+    });
+  });
+
+  // Summary auto-save
+  const _summaryTimers = {};
+  document.querySelectorAll('.js-card-summary').forEach(function(ta) {
+    ta.addEventListener('input', function() {
+      const cardId = ta.dataset.cardId;
+      const statusEl = ta.parentElement.querySelector('.js-card-save-status');
+      clearTimeout(_summaryTimers[cardId]);
+      if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
+      _summaryTimers[cardId] = setTimeout(async function() {
+        try {
+          const r = await fetch('/admin/recompenses/cards/' + cardId + '/summary', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ summary: ta.value }),
+          });
+          const json = await r.json();
+          if (statusEl) {
+            statusEl.textContent = json.ok ? '✓ Enregistré' : '✗ Erreur';
+            statusEl.style.color = json.ok ? '#4ade80' : '#f87171';
+            setTimeout(function() { if (statusEl) statusEl.textContent = '\u00a0'; }, 2000);
+          }
+        } catch(e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
+      }, 700);
+    });
   });
 })();
 </script>

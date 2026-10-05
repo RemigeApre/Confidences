@@ -878,7 +878,8 @@ function buildWikiRouter(config) {
     const enrichedTags = autoEnrichTags(tags, title, meta.termes_derives || []);
     const parody = normalizeParody(String(req.body.parody || ""));
     const subParody = normalizeParody(String(req.body.sub_parody || ""));
-    updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody });
+    const cardSummary = req.body.card_summary !== undefined ? String(req.body.card_summary || '').trim() : undefined;
+    updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody, cardSummary: cardSummary || null });
     syncPageGalleryImages(id, title, imagePaths, meta, existing.title.trim().toLowerCase());
     res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${id}`));
   });
