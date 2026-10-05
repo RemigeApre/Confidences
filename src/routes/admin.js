@@ -62,6 +62,9 @@ const {
   updateWikiCardSummary,
   getCardStats,
   listWikiPagesForCards,
+  getUserPersonnageCards,
+  setPersonnageCardRarity,
+  listProtagonistesForCards,
   listAllParodies,
   deleteGalleryImage,
   deleteCharmById,
@@ -533,7 +536,9 @@ function buildAdminRouter(config) {
     const wikiCards = listWikiPagesForCards();
     const cardStats = getCardStats();
     const cardStatsByRarity = Object.fromEntries(rarities.map(r => [r, wikiCards.filter(c => c.cardRarity === r).length]));
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity });
+    const personnageCards = listProtagonistesForCards();
+    const personnageCardStatsByRarity = Object.fromEntries(rarities.map(r => [r, personnageCards.filter(c => c.cardRarity === r).length]));
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -672,6 +677,14 @@ function buildAdminRouter(config) {
     const summary = String(req.body.summary || '').trim();
     updateWikiCardSummary(id, summary || null);
     res.json({ ok: true });
+  });
+
+  // ── Cartes Personnages — rareté ───────────────────────────────────────────
+  router.post("/recompenses/personnages/:id/rarity", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const rarity = String(req.body.rarity || '');
+    const ok = setPersonnageCardRarity(id, rarity);
+    res.json({ ok });
   });
 
   // ── Gestion des jeux ─────────────────────────────────────────────────────

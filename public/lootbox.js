@@ -253,6 +253,15 @@
     if (r.isCoins) { showCoinsCard(r, hasMore); return; }
     if (r.isTheme) { showThemeReveal(r, hasMore); return; }
     if (r.isCard)  { showCardReveal(r, hasMore);  return; }
+    if (r.isPersonnageCard) {
+      showCardReveal({
+        isCard: true, _isPersonnage: true, protagonisteId: r.protagonisteId,
+        title: r.title, rarity: r.rarity, thumb: r.thumb,
+        category: [r.parody, r.nature ? (r.nature === 'pokemon' ? 'Pok\u00e9mon' : r.nature) : ''].filter(Boolean).join(' \u00b7 ') || 'Personnage',
+        cardSummary: r.description ? r.description.slice(0, 200) : ''
+      }, hasMore);
+      return;
+    }
     showRewardCard(r, hasMore);
   }
 
@@ -816,6 +825,7 @@
       else if (reward.isTheme) typeLabel = 'Th\u00e8me';
       else if (reward.isJoker) typeLabel = 'Joker';
       else if (reward.isCard)  typeLabel = 'Carte';
+      else if (reward.isPersonnageCard) typeLabel = 'Personnage';
       typeEl.textContent = typeLabel;
       item.appendChild(typeEl);
 
@@ -862,7 +872,7 @@
         jokerSpan.textContent = '\u2660';
         visual.appendChild(jokerSpan);
 
-      } else if (reward.isCard) {
+      } else if (reward.isCard || reward.isPersonnageCard) {
         var cardBg = document.createElement('div');
         cardBg.style.cssText = 'width:100%;height:100%;position:relative;overflow:hidden;cursor:pointer';
         if (reward.thumb) {
@@ -871,7 +881,9 @@
           cardBg.appendChild(cardCover);
         }
         var catTag = document.createElement('span');
-        catTag.textContent = reward.category || '';
+        catTag.textContent = reward.isPersonnageCard
+          ? ([reward.parody, reward.nature ? (reward.nature === 'pokemon' ? 'Pok\u00e9mon' : reward.nature) : ''].filter(Boolean).join(' \u00b7 ') || 'Personnage')
+          : (reward.category || '');
         catTag.style.cssText = 'position:absolute;bottom:4px;left:4px;right:4px;font-size:.55rem;font-weight:700;text-transform:uppercase;text-align:center;background:rgba(0,0,0,.55);color:rgba(255,255,255,.8);border-radius:3px;padding:.1rem .3rem';
         cardBg.appendChild(catTag);
         visual.appendChild(cardBg);
@@ -897,7 +909,7 @@
       var batchTitleLabel = reward.isCoins
         ? (reward.coins || 0) + '\u00a0' + ((reward.coins || 0) > 1 ? 'pi\u00e8ces' : 'pi\u00e8ce')
         : reward.isJoker ? (reward.jokerType === 'image' ? 'Joker Image' : 'Joker Charme')
-        : reward.isCard ? (reward.title || '')
+        : (reward.isCard || reward.isPersonnageCard) ? (reward.title || '')
         : (reward.title || reward.label || '');
       var titleRow = document.createElement('p');
       titleRow.className = 'lootbox-batch-card-title';

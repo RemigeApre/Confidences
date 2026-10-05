@@ -546,6 +546,20 @@ db.exec(`
 `);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_user_cards_user ON user_cards (user_id)`);
 
+// ── Cartes Personnages — items collectibles liés aux protagonistes ───────────
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN card_rarity TEXT NOT NULL DEFAULT 'rare'"); } catch(_) {}
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_personnage_cards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    protagoniste_id INTEGER NOT NULL,
+    rarity TEXT NOT NULL DEFAULT 'rare',
+    obtained_at TEXT NOT NULL,
+    UNIQUE(user_id, protagoniste_id)
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_user_personnage_cards_user ON user_personnage_cards (user_id)`);
+
 // Visites de pages par des visiteurs non connectés
 try { db.exec("ALTER TABLE anon_page_visits ADD COLUMN path TEXT NOT NULL DEFAULT ''"); } catch(_) {}
 db.exec(`
@@ -2440,6 +2454,11 @@ function _buildCardPool(userId) {
 }
 
 function _grantCardReward(userId, rarity) {
+  // 30% chance d'une carte personnage si la pool est non vide
+  const _pPool = _buildPersonnageCardPool(userId);
+  if (_pPool.length && Math.random() < 0.30) {
+    return _grantPersonnageCardReward(userId, rarity);
+  }
   const pool = _buildCardPool(userId);
   const now = new Date().toISOString();
   if (!pool.length) {
@@ -2476,6 +2495,71 @@ function getUserCards(userId) {
     let imagePaths = []; try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
     return { wikiPageId: r.wiki_page_id, rarity: r.rarity, obtainedAt: r.obtained_at, title: r.title, category: r.category, summary: r.card_summary || null, thumb: imagePaths[0] || null };
   });
+}
+
+function _buildPersonnageCardPool(userId) {
+  const ownedIds = new Set(
+    db.prepare("SELECT protagoniste_id FROM user_personnage_cards WHERE user_id = ?").all(userId).map(r => r.protagoniste_id)
+  );
+  const prots = db.prepare(
+    `SELECT id, name, description, gender, nature, parody, image_path, card_rarity FROM protagonistes ORDER BY RANDOM() LIMIT 50`
+  ).all();
+  return prots.filter(p => !ownedIds.has(p.id));
+}
+
+function _grantPersonnageCardReward(userId, rarity) {
+  const pool = _buildPersonnageCardPool(userId);
+  const now = new Date().toISOString();
+  if (!pool.length) {
+    const coins = 8;
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+    return { isCoins: true, coins, rarity: rarity || 'rare' };
+  }
+  const rarityPool = pool.filter(p => p.card_rarity === rarity);
+  const chosen = (rarityPool.length ? rarityPool : pool)[Math.floor(Math.random() * (rarityPool.length || pool.length))];
+  const cardRarity = chosen.card_rarity || rarity || 'rare';
+  const ins = db.prepare(
+    "INSERT OR IGNORE INTO user_personnage_cards (user_id, protagoniste_id, rarity, obtained_at) VALUES (?, ?, ?, ?)"
+  ).run(userId, chosen.id, cardRarity, now);
+  if (ins.changes === 0) {
+    const cfg = getLootboxConfig();
+    const coins = Math.ceil((cfg.buyPrices[cardRarity] || RARITY_BUY_PRICE[cardRarity] || RARITY_BUY_PRICE.common) / 4);
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+    return { isCoins: true, coins, rarity: cardRarity };
+  }
+  return { isPersonnageCard: true, protagonisteId: chosen.id, title: chosen.name, description: chosen.description || '', gender: chosen.gender || '', nature: chosen.nature || '', parody: chosen.parody || '', thumb: chosen.image_path || null, rarity: cardRarity };
+}
+
+function getUserPersonnageCards(userId) {
+  return db.prepare(
+    `SELECT upc.protagoniste_id, upc.rarity, upc.obtained_at,
+            p.name, p.description, p.gender, p.nature, p.parody, p.image_path
+     FROM user_personnage_cards upc
+     JOIN protagonistes p ON p.id = upc.protagoniste_id
+     WHERE upc.user_id = ?
+     ORDER BY upc.obtained_at DESC`
+  ).all(userId).map(r => ({
+    protagonisteId: r.protagoniste_id, rarity: r.rarity, obtainedAt: r.obtained_at,
+    title: r.name, description: r.description || '', gender: r.gender || '',
+    nature: r.nature || '', parody: r.parody || '', thumb: r.image_path || null
+  }));
+}
+
+function setPersonnageCardRarity(protagonisteId, rarity) {
+  const valid = ['common','rare','epic','legendary','mythic'];
+  if (!valid.includes(rarity)) return false;
+  db.prepare("UPDATE protagonistes SET card_rarity = ? WHERE id = ?").run(rarity, protagonisteId);
+  return true;
+}
+
+function listProtagonistesForCards() {
+  return db.prepare(
+    `SELECT id, name, description, gender, nature, parody, image_path, card_rarity FROM protagonistes ORDER BY name COLLATE NOCASE`
+  ).all().map(r => ({
+    id: r.id, title: r.name, description: r.description || '', gender: r.gender || '',
+    nature: r.nature || '', parody: r.parody || '', thumb: r.image_path || null,
+    cardRarity: r.card_rarity || 'rare'
+  }));
 }
 
 function setWikiCardRarity(wikiPageId, rarity) {
@@ -4219,6 +4303,9 @@ module.exports = {
   updateWikiCardSummary,
   getCardStats,
   listWikiPagesForCards,
+  getUserPersonnageCards,
+  setPersonnageCardRarity,
+  listProtagonistesForCards,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
