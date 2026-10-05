@@ -65,6 +65,16 @@
 /* General admin select rule */
 .obj-section select { background:#1e293b; color:#f1f5f9; }
 
+/* ── Filter select dropdowns ── */
+.admin-filter-select {
+  background:#1e293b; border:1px solid rgba(255,255,255,.2);
+  color:#f1f5f9; border-radius:6px; padding:.3rem .55rem; font-size:.78rem;
+  font-weight:600; cursor:pointer; outline:none; font-family:inherit;
+  transition:border-color .15s;
+}
+.admin-filter-select:focus { border-color:rgba(255,255,255,.4); }
+.admin-filter-select option { background:#1e293b; color:#f1f5f9; }
+
 /* ── Section switching ── */
 .obj-section { display:none; }
 .obj-section.active { display:block; }
@@ -153,10 +163,27 @@
 
 <div class="admin-topbar">
   <a href="/admin" class="admin-topbar-back">&#8592; Retour</a>
-  <span class="admin-topbar-title"><%= config.title %> &mdash; Objets</span>
+  <span class="admin-topbar-title"><%= config.title %></span>
 </div>
 
-<div style="display:flex;min-height:calc(100vh - 52px)">
+<nav class="admin-tabs-nav">
+  <div class="admin-tabs-center">
+    <a href="/admin#tab-utilisateurs" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">Utilisateurs</a>
+    <span class="admin-tab-btn active admin-tab--sys" style="cursor:default">R&eacute;compenses</span>
+    <span class="admin-tabs-sep" aria-hidden="true"></span>
+    <a href="/admin#tab-wiki" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Codex</a>
+    <a href="/admin#tab-galerie" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Galerie</a>
+    <a href="/admin#tab-bd" class="admin-tab-btn admin-tab--content admin-tab-btn--link">BD</a>
+    <a href="/admin#tab-histoires" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Histoires</a>
+    <a href="/admin/jeux" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Jeux</a>
+    <span class="admin-tabs-sep" aria-hidden="true"></span>
+    <a href="/admin#tab-ia" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">IA</a>
+    <a href="/admin#tab-log" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">Log</a>
+  </div>
+  <a href="/" class="admin-tab-home">&#8617; Site</a>
+</nav>
+
+<div style="display:flex;min-height:calc(100vh - 3.25rem - 2.5rem)">
 
   <%/* ── Sidebar ── */%>
   <nav style="width:200px;min-width:180px;background:rgba(255,255,255,.035);border-right:1px solid rgba(255,255,255,.08);padding:1.5rem .75rem;display:flex;flex-direction:column;gap:.25rem;flex-shrink:0">
@@ -368,14 +395,14 @@
     <%/* ── Images de profil ── */%>
     <div class="obj-section" data-section="images">
       <div class="obj-section-toolbar">
-        <div class="ari-filter-bar" id="ari-filter-bar">
-          <button class="ari-filter-btn active" data-filter="all">Tout</button>
-          <button class="ari-filter-btn" data-filter="common">Commun</button>
-          <button class="ari-filter-btn" data-filter="rare">Rare</button>
-          <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
-          <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
-          <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
-        </div>
+        <select id="ari-filter-sel" class="admin-filter-select">
+          <option value="all">Toutes raretés</option>
+          <option value="common">Commun</option>
+          <option value="rare">Rare</option>
+          <option value="epic">Épique</option>
+          <option value="legendary">Légendaire</option>
+          <option value="mythic">Mythique</option>
+        </select>
         <div class="obj-tools">
           <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="images">&#127873;</button>
           <button class="obj-tool-btn js-sel-mode" data-action="delete" title="Supprimer en lot" data-section="images">&#128465;</button>
@@ -399,14 +426,14 @@
     <%/* ── Charmes ── */%>
     <div class="obj-section" data-section="charms">
       <div class="obj-section-toolbar">
-        <div class="ari-filter-bar" id="charm-filter-bar">
-          <button class="ari-filter-btn active" data-filter="all">Tout</button>
-          <button class="ari-filter-btn" data-filter="common">Commun</button>
-          <button class="ari-filter-btn" data-filter="rare">Rare</button>
-          <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
-          <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
-          <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
-        </div>
+        <select id="charm-filter-sel" class="admin-filter-select">
+          <option value="all">Toutes raretés</option>
+          <option value="common">Commun</option>
+          <option value="rare">Rare</option>
+          <option value="epic">Épique</option>
+          <option value="legendary">Légendaire</option>
+          <option value="mythic">Mythique</option>
+        </select>
         <div class="obj-tools">
           <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="charms">&#127873;</button>
           <button class="obj-tool-btn js-sel-mode" data-action="delete" title="Supprimer en lot" data-section="charms">&#128465;</button>
@@ -440,14 +467,14 @@
     <%/* ── Thèmes ── */%>
     <div class="obj-section" data-section="themes">
       <div class="obj-section-toolbar">
-        <div class="ari-filter-bar" id="theme-filter-bar">
-          <button class="ari-filter-btn active" data-filter="all">Tout</button>
-          <button class="ari-filter-btn" data-filter="common">Commun</button>
-          <button class="ari-filter-btn" data-filter="rare">Rare</button>
-          <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
-          <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
-          <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
-        </div>
+        <select id="theme-filter-sel" class="admin-filter-select">
+          <option value="all">Toutes raretés</option>
+          <option value="common">Commun</option>
+          <option value="rare">Rare</option>
+          <option value="epic">Épique</option>
+          <option value="legendary">Légendaire</option>
+          <option value="mythic">Mythique</option>
+        </select>
         <div class="obj-tools">
           <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="themes">&#127873;</button>
         </div>
@@ -530,25 +557,23 @@
         var _wcCats = Object.keys(_wcCatSet).sort();
         var _wcCatLabels = { position:'Positions', lieux:'Lieux', partenaires:'Partenaires', jeu_de_role:'Scénarios', tenues:'Tenues', objets:'Objets', pratique:'Pratiques', autre:'Autre' };
       %>
-      <div class="obj-section-toolbar" style="flex-direction:column;align-items:flex-start;gap:.5rem">
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;width:100%">
-          <div class="ari-filter-bar" id="card-filter-bar">
-            <button class="ari-filter-btn active" data-filter="all">Toutes</button>
-            <button class="ari-filter-btn" data-filter="common">Commun</button>
-            <button class="ari-filter-btn" data-filter="rare">Rare</button>
-            <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
-            <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
-            <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
-          </div>
-          <input type="text" id="card-search-input" placeholder="Chercher&hellip;"
-            style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
-        </div>
-        <div class="ari-filter-bar" id="card-cat-filter-bar">
-          <button class="ari-filter-btn active" data-cat="all">Toutes catég.</button>
+      <div class="obj-section-toolbar" style="gap:.5rem;flex-wrap:wrap;align-items:center">
+        <select id="card-filter-sel" class="admin-filter-select">
+          <option value="all">Toutes raretés</option>
+          <option value="common">Commun</option>
+          <option value="rare">Rare</option>
+          <option value="epic">Épique</option>
+          <option value="legendary">Légendaire</option>
+          <option value="mythic">Mythique</option>
+        </select>
+        <select id="card-cat-filter-sel" class="admin-filter-select">
+          <option value="all">Toutes catégories</option>
           <% _wcCats.forEach(function(cat) { %>
-            <button class="ari-filter-btn" data-cat="<%= cat %>"><%= _wcCatLabels[cat] || cat %></button>
+            <option value="<%= cat %>"><%= _wcCatLabels[cat] || cat %></option>
           <% }) %>
-        </div>
+        </select>
+        <input type="text" id="card-search-input" placeholder="Chercher&hellip;"
+          style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin-top:.75rem" id="card-wiki-grid">
@@ -637,31 +662,29 @@
         _pcNatures.sort();
         var _pcNatLabels = { humain:'Humain', monstre:'Monstre', animal:'Animal', pokemon:'Pokémon', autre:'Autre' };
       %>
-      <div class="obj-section-toolbar" style="flex-direction:column;align-items:flex-start;gap:.5rem">
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;width:100%">
-          <div class="ari-filter-bar" id="pc-rarity-filter-bar">
-            <button class="ari-filter-btn active" data-filter="all">Toutes</button>
-            <button class="ari-filter-btn" data-filter="common">Commun</button>
-            <button class="ari-filter-btn" data-filter="rare">Rare</button>
-            <button class="ari-filter-btn" data-filter="epic">&Eacute;pique</button>
-            <button class="ari-filter-btn" data-filter="legendary">L&eacute;g.</button>
-            <button class="ari-filter-btn" data-filter="mythic">Mythique</button>
-          </div>
-          <input type="text" id="pc-search-input" placeholder="Chercher&hellip;"
-            style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
-        </div>
+      <div class="obj-section-toolbar" style="gap:.5rem;flex-wrap:wrap;align-items:center">
+        <select id="pc-rarity-sel" class="admin-filter-select">
+          <option value="all">Toutes raretés</option>
+          <option value="common">Commun</option>
+          <option value="rare">Rare</option>
+          <option value="epic">Épique</option>
+          <option value="legendary">Légendaire</option>
+          <option value="mythic">Mythique</option>
+        </select>
         <% if (_pcNatures.length > 1) { %>
-        <div class="ari-filter-bar" id="pc-nature-filter-bar">
-          <button class="ari-filter-btn active" data-nat="all">Toutes natures</button>
-          <% _pcNatures.forEach(function(nat) { %><button class="ari-filter-btn" data-nat="<%= nat %>"><%= _pcNatLabels[nat] || nat %></button><% }) %>
-        </div>
+        <select id="pc-nature-sel" class="admin-filter-select">
+          <option value="all">Toutes natures</option>
+          <% _pcNatures.forEach(function(nat) { %><option value="<%= nat %>"><%= _pcNatLabels[nat] || nat %></option><% }) %>
+        </select>
         <% } %>
         <% if (_pcParodies.length > 1) { %>
-        <div class="ari-filter-bar" id="pc-parody-filter-bar">
-          <button class="ari-filter-btn active" data-parody="all">Tous univers</button>
-          <% _pcParodies.forEach(function(par) { %><button class="ari-filter-btn" data-parody="<%= par %>"><%= par %></button><% }) %>
-        </div>
+        <select id="pc-parody-sel" class="admin-filter-select">
+          <option value="all">Tous univers</option>
+          <% _pcParodies.forEach(function(par) { %><option value="<%= par %>"><%= par %></option><% }) %>
+        </select>
         <% } %>
+        <input type="text" id="pc-search-input" placeholder="Chercher&hellip;"
+          style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
       </div>
 
       <div class="pc-cards-grid" id="pc-grid">
@@ -887,12 +910,9 @@
   let visibleIdxs = data.map((_, i) => i);
   let zoomIdx = 0;
 
-  const filterBar = document.getElementById('ari-filter-bar');
-  filterBar && filterBar.addEventListener('click', function(e) {
-    const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
-    filterBar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const f = btn.dataset.filter;
+  const filterSel = document.getElementById('ari-filter-sel');
+  filterSel && filterSel.addEventListener('change', function() {
+    const f = filterSel.value;
     visibleIdxs = [];
     cards.forEach((c, i) => { const show = f === 'all' || c.dataset.rarity === f; c.hidden = !show; if (show) visibleIdxs.push(i); });
   });
@@ -966,8 +986,8 @@
           const card = cards[dataIdx]; card.dataset.rarity = rarity; card.querySelector('.ari-card-rarity').textContent = rarity;
           rarityBtns.forEach(b => b.classList.toggle('active', b.dataset.rarity === rarity));
           saveStatus.textContent = '✓ Enregistré'; saveStatus.style.color = '#4ade80';
-          const activeFilter = document.querySelector('.ari-filter-btn.active');
-          if (activeFilter && activeFilter.dataset.filter !== 'all' && activeFilter.dataset.filter !== rarity) {
+          const activeFilter = document.getElementById('ari-filter-sel');
+          if (activeFilter && activeFilter.value !== 'all' && activeFilter.value !== rarity) {
             card.hidden = true; visibleIdxs = visibleIdxs.filter(vi => vi !== dataIdx);
             if (!visibleIdxs.length) { closeZoom(); return; }
             zoomIdx = Math.min(zoomIdx, visibleIdxs.length - 1); renderZoom();
@@ -1018,14 +1038,11 @@
 (function() {
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
 
-  // Charm filter bar
-  const charmFilterBar = document.getElementById('charm-filter-bar');
+  // Charm filter select
+  const charmFilterSel = document.getElementById('charm-filter-sel');
   const charmCards = Array.from(document.querySelectorAll('.ari-charm-card'));
-  charmFilterBar && charmFilterBar.addEventListener('click', function(e) {
-    const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
-    charmFilterBar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const f = btn.dataset.filter;
+  charmFilterSel && charmFilterSel.addEventListener('change', function() {
+    const f = charmFilterSel.value;
     charmCards.forEach(c => { c.hidden = !(f === 'all' || c.dataset.rarity === f); });
   });
 
@@ -1085,14 +1102,11 @@
 (function() {
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
 
-  // Theme filter bar
-  const themeFilterBar = document.getElementById('theme-filter-bar');
+  // Theme filter select
+  const themeFilterSel = document.getElementById('theme-filter-sel');
   const themeCards = Array.from(document.querySelectorAll('.obj-theme-selcard'));
-  themeFilterBar && themeFilterBar.addEventListener('click', function(e) {
-    const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
-    themeFilterBar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const f = btn.dataset.filter;
+  themeFilterSel && themeFilterSel.addEventListener('change', function() {
+    const f = themeFilterSel.value;
     themeCards.forEach(c => {
       const rarity = c.dataset.rarity;
       const always = c.dataset.always === '1';
@@ -1537,32 +1551,17 @@
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
   const cardItems = Array.from(document.querySelectorAll('.card-wiki-item'));
 
-  // Filter by rarity
-  const cardFilterBar = document.getElementById('card-filter-bar');
-  cardFilterBar && cardFilterBar.addEventListener('click', function(e) {
-    const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
-    cardFilterBar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    applyCardFilters();
-  });
-
-  // Search by title/category
+  // Filter selects
+  const cardFilterSel = document.getElementById('card-filter-sel');
+  const cardCatFilterSel = document.getElementById('card-cat-filter-sel');
   const searchInput = document.getElementById('card-search-input');
+  cardFilterSel && cardFilterSel.addEventListener('change', applyCardFilters);
+  cardCatFilterSel && cardCatFilterSel.addEventListener('change', applyCardFilters);
   searchInput && searchInput.addEventListener('input', applyCardFilters);
 
-  const cardCatFilterBar = document.getElementById('card-cat-filter-bar');
-  cardCatFilterBar && cardCatFilterBar.addEventListener('click', function(e) {
-    const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
-    cardCatFilterBar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    applyCardFilters();
-  });
-
   function applyCardFilters() {
-    const activeFilter = cardFilterBar ? cardFilterBar.querySelector('.ari-filter-btn.active') : null;
-    const rarityFilter = activeFilter ? activeFilter.dataset.filter : 'all';
-    const activeCat = cardCatFilterBar ? cardCatFilterBar.querySelector('.ari-filter-btn.active') : null;
-    const catFilter = activeCat ? activeCat.dataset.cat : 'all';
+    const rarityFilter = cardFilterSel ? cardFilterSel.value : 'all';
+    const catFilter = cardCatFilterSel ? cardCatFilterSel.value : 'all';
     const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
     cardItems.forEach(c => {
       const rarityMatch = rarityFilter === 'all' || c.dataset.rarity === rarityFilter;
@@ -1733,39 +1732,31 @@
 <script>
 (function() {
   const RARITY_COLORS = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' };
-  const pcItems = Array.from(document.querySelectorAll('#pc-grid .card-wiki-item'));
+  const pcItems = Array.from(document.querySelectorAll('#pc-grid .pc-card-tile'));
 
-  function bindFilterBar(barId, prop, apply) {
-    const bar = document.getElementById(barId); if (!bar) return;
-    bar.addEventListener('click', function(e) {
-      const btn = e.target.closest('.ari-filter-btn'); if (!btn) return;
-      bar.querySelectorAll('.ari-filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      apply();
-    });
-  }
+  const pcRaritySel  = document.getElementById('pc-rarity-sel');
+  const pcNatureSel  = document.getElementById('pc-nature-sel');
+  const pcParodySel  = document.getElementById('pc-parody-sel');
+  pcRaritySel  && pcRaritySel.addEventListener('change', applyPcFilters);
+  pcNatureSel  && pcNatureSel.addEventListener('change', applyPcFilters);
+  pcParodySel  && pcParodySel.addEventListener('change', applyPcFilters);
 
   function applyPcFilters() {
-    const activeRarity = document.querySelector('#pc-rarity-filter-bar .ari-filter-btn.active');
-    const rarity = activeRarity ? activeRarity.dataset.filter : 'all';
-    const activeNat = document.querySelector('#pc-nature-filter-bar .ari-filter-btn.active');
-    const nat = activeNat ? activeNat.dataset.nat : 'all';
-    const activePar = document.querySelector('#pc-parody-filter-bar .ari-filter-btn.active');
-    const par = activePar ? activePar.dataset.parody : 'all';
+    const rarity = pcRaritySel ? pcRaritySel.value : 'all';
+    const nat    = pcNatureSel ? pcNatureSel.value : 'all';
+    const par    = pcParodySel ? pcParodySel.value : 'all';
     const q = (document.getElementById('pc-search-input') || {}).value;
     const ql = q ? q.trim().toLowerCase() : '';
     pcItems.forEach(c => {
       const rarityMatch = rarity === 'all' || c.dataset.rarity === rarity;
-      const natMatch = nat === 'all' || c.dataset.nat === nat;
-      const parMatch = par === 'all' || c.dataset.parody === par;
-      const textMatch = !ql || c.querySelector('[style*="font-weight:700"]').textContent.toLowerCase().includes(ql);
+      const natMatch    = nat === 'all' || c.dataset.nat === nat;
+      const parMatch    = par === 'all' || c.dataset.parody === par;
+      const nameEl = c.querySelector('.pc-card-tile-name');
+      const textMatch = !ql || (nameEl && nameEl.textContent.toLowerCase().includes(ql));
       c.hidden = !(rarityMatch && natMatch && parMatch && textMatch);
     });
   }
 
-  bindFilterBar('pc-rarity-filter-bar',  'filter',  applyPcFilters);
-  bindFilterBar('pc-nature-filter-bar',  'nat',     applyPcFilters);
-  bindFilterBar('pc-parody-filter-bar',  'parody',  applyPcFilters);
   const pcSearch = document.getElementById('pc-search-input');
   pcSearch && pcSearch.addEventListener('input', applyPcFilters);
 
