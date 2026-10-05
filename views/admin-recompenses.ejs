@@ -800,80 +800,71 @@
           </div>
         </div>
         <div class="pc-modal-right">
-          <div class="pc-modal-section">
-            <p class="pc-modal-label">Disponibilit&eacute;</p>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-              <button id="pcFlagBaseDeck" class="pc-flag-btn" type="button" data-flag="isBaseDeck">
-                &#127919; Deck de base
-              </button>
-              <button id="pcFlagUltra" class="pc-flag-btn" type="button" data-flag="isUltra">
-                &#9889; Ultra
-              </button>
-            </div>
-            <span id="pcFlagStatus" style="font-size:.72rem;color:#4ade80;margin-top:.1rem;display:block"></span>
+          <%/* ── Statut + Visibilité ── */%>
+          <div class="pc-modal-section" style="flex-direction:row;gap:.45rem;align-items:center">
+            <select id="pcSelStatut" class="pc-modal-input" style="flex:1">
+              <option value="base">Base</option>
+              <option value="gagner">&Agrave; gagner</option>
+            </select>
+            <select id="pcSelVisibilite" class="pc-modal-input" style="flex:1">
+              <option value="normal">Normal</option>
+              <option value="ultra">Ultra</option>
+            </select>
           </div>
+          <%/* ── Description ── */%>
           <div class="pc-modal-section">
-            <p class="pc-modal-label">Description courte <span style="color:#475569;font-weight:400">(dos de carte)</span></p>
+            <p class="pc-modal-label">Description <span style="color:#475569;font-weight:400">(dos de carte)</span></p>
             <textarea id="pcModalDesc" rows="3" placeholder="Description qui appara&icirc;t au dos de la carte&hellip;"
               style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#cbd5e1;border-radius:6px;padding:.4rem .55rem;font-size:.82rem;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box"></textarea>
           </div>
-          <div class="pc-modal-section">
-            <button class="pc-modal-save-main js-pc-modal-save-main"
-              style="background:#1e3a5f;border:1px solid #2563eb;color:#93c5fd;font-size:.8rem;padding:.35rem .75rem;border-radius:6px;cursor:pointer">
-              Enregistrer
-            </button>
-            <span id="pcModalMainStatus" style="font-size:.75rem;color:#4ade80;margin-left:.5rem"></span>
-          </div>
+          <%/* ── Stats de combat ── */%>
           <div class="pc-modal-section pc-modal-stats-section">
             <button class="js-pc-modal-stats-toggle"
               style="background:none;border:none;color:#64748b;font-size:.78rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:.35rem;width:100%">
               <span class="js-pc-modal-stats-arrow" style="font-size:.65rem">&#9654;</span>
               Stats de combat
             </button>
-            <div class="js-pc-modal-stats-body" style="display:none;margin-top:.5rem;display:none;flex-direction:column;gap:.35rem">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
-                <label class="pc-modal-field-label">Vitesse (1–10)
+            <div class="js-pc-modal-stats-body" style="display:none;margin-top:.45rem;flex-direction:column;gap:.3rem">
+              <%/* Ligne unique : Vitesse / Défense / Dom-Sub / Orientation */%>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.1fr;gap:.3rem">
+                <label class="pc-modal-field-label">Vit.
                   <input type="number" id="pcStatVitesse" class="pc-modal-input" min="1" max="10">
                 </label>
-                <label class="pc-modal-field-label">D&eacute;fense (1–10)
+                <label class="pc-modal-field-label">D&eacute;f.
                   <input type="number" id="pcStatDefense" class="pc-modal-input" min="1" max="10">
                 </label>
-              </div>
-              <label class="pc-modal-field-label">Orientation
-                <select id="pcStatOrientation" class="pc-modal-input">
-                  <option value="hetero">H&eacute;t&eacute;ro</option>
-                  <option value="homo">Homo</option>
-                  <option value="bi">Bi</option>
-                  <option value="pan">Pan</option>
-                </select>
-              </label>
-              <label class="pc-modal-field-label">Dom / Sub
-                <span id="pcStatDomSubVal" style="color:#f1f5f9;font-weight:700;margin-left:.3rem">0</span>
-                <input type="range" id="pcStatDomSub" min="-50" max="50" style="width:100%;accent-color:#a78bfa;margin-top:.2rem">
-                <span style="display:flex;justify-content:space-between;font-size:.6rem;color:#475569">
-                  <span>Soumis</span><span>Switch</span><span>Dominant</span>
-                </span>
-              </label>
-              <p class="pc-modal-label" style="margin:.1rem 0 0;font-weight:600">Actions</p>
-              <% [
-                ['prelim','Pr&eacute;liminaire'],
-                ['acte','Acte'],
-                ['finition','Finition']
-              ].forEach(function(a) { %>
-              <div style="background:rgba(0,0,0,.18);border-radius:6px;padding:.35rem .45rem;display:flex;flex-direction:column;gap:.2rem">
-                <span style="font-size:.6rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em"><%- a[1] %></span>
-                <input type="text" id="pcStat_<%= a[0] %>_name" class="pc-modal-input" placeholder="Nom de l'action…">
-                <label class="pc-modal-field-label" style="flex-direction:row;align-items:center;gap:.4rem">
-                  Puissance
-                  <input type="number" id="pcStat_<%= a[0] %>_power" class="pc-modal-input" min="1" max="99" style="width:55px">
+                <label class="pc-modal-field-label">Dom/Sub
+                  <input type="number" id="pcStatDomSub" class="pc-modal-input" min="-50" max="50">
+                </label>
+                <label class="pc-modal-field-label">Orient.
+                  <select id="pcStatOrientation" class="pc-modal-input">
+                    <option value="hetero">H&eacute;t&eacute;ro</option>
+                    <option value="homo">Homo</option>
+                    <option value="bi">Bi</option>
+                    <option value="pan">Pan</option>
+                  </select>
                 </label>
               </div>
+              <%/* Actions : label + nom + puissance sur la même ligne */%>
+              <% [
+                ['prelim','Prél.'],
+                ['acte','Acte'],
+                ['finition','Fin.']
+              ].forEach(function(a) { %>
+              <div style="display:grid;grid-template-columns:38px 1fr 50px;gap:.28rem;align-items:center">
+                <span style="font-size:.6rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em"><%= a[1] %></span>
+                <input type="text" id="pcStat_<%= a[0] %>_name" class="pc-modal-input" placeholder="Nom…">
+                <input type="number" id="pcStat_<%= a[0] %>_power" class="pc-modal-input" min="1" max="99" style="text-align:center">
+              </div>
               <% }) %>
-              <button class="js-pc-modal-stats-save"
-                style="background:#1e3a5f;border:1px solid #1e40af;color:#93c5fd;font-size:.78rem;padding:.3rem .65rem;border-radius:5px;cursor:pointer;align-self:flex-start">
-                Enregistrer les stats
-              </button>
-              <span id="pcModalStatsStatus" style="font-size:.72rem;color:#4ade80"></span>
+              <%/* Bouton unique tout enregistrer */%>
+              <div style="display:flex;align-items:center;gap:.6rem;margin-top:.1rem">
+                <button class="js-pc-modal-stats-save"
+                  style="background:#1e3a5f;border:1px solid #1e40af;color:#93c5fd;font-size:.78rem;padding:.32rem .8rem;border-radius:5px;cursor:pointer">
+                  Enregistrer
+                </button>
+                <span id="pcModalStatsStatus" style="font-size:.72rem;color:#4ade80"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -1824,25 +1815,22 @@
   pcSearch && pcSearch.addEventListener('input', applyPcFilters);
 
   // ── Modal ──
-  const modal       = document.getElementById('pcModal');
-  const modalImg    = document.getElementById('pcModalImg');
-  const modalImgPh  = document.getElementById('pcModalImgPlaceholder');
-  const modalName   = document.getElementById('pcModalName');
-  const modalTags   = document.getElementById('pcModalTags');
-  const modalDesc   = document.getElementById('pcModalDesc');
-  const modalStatus = document.getElementById('pcModalMainStatus');
+  const modal            = document.getElementById('pcModal');
+  const modalImg         = document.getElementById('pcModalImg');
+  const modalImgPh       = document.getElementById('pcModalImgPlaceholder');
+  const modalName        = document.getElementById('pcModalName');
+  const modalTags        = document.getElementById('pcModalTags');
+  const modalDesc        = document.getElementById('pcModalDesc');
   const modalStatsStatus = document.getElementById('pcModalStatsStatus');
-  const pcFlagBaseDeck = document.getElementById('pcFlagBaseDeck');
-  const pcFlagUltra    = document.getElementById('pcFlagUltra');
+  const pcSelStatut      = document.getElementById('pcSelStatut');
+  const pcSelVisibilite  = document.getElementById('pcSelVisibilite');
   let activePcId = null;
-  let _pcFlags = { isBaseDeck: 1, isUltra: 0 };
 
   function openPcModal(tile) {
     let pc;
     try { pc = JSON.parse(tile.dataset.pc); } catch(e) { return; }
     activePcId = pc.id;
 
-    // Image
     if (pc.thumb) {
       modalImg.src = pc.thumb; modalImg.style.display = 'block';
       modalImgPh.style.display = 'none';
@@ -1850,26 +1838,19 @@
       modalImg.style.display = 'none'; modalImgPh.style.display = 'flex';
     }
 
-    // Identity
     modalName.textContent = pc.title;
     const tags = [pc.parody, pc.nature && pc.nature !== 'humain' ? pc.nature : ''].filter(Boolean);
     modalTags.textContent = tags.join(' · ');
 
-    // Flags
-    _pcFlags = { isBaseDeck: pc.isBaseDeck != null ? pc.isBaseDeck : 1, isUltra: pc.isUltra || 0 };
-    pcFlagBaseDeck && pcFlagBaseDeck.classList.toggle('active', !!_pcFlags.isBaseDeck);
-    pcFlagUltra    && pcFlagUltra.classList.toggle('active',    !!_pcFlags.isUltra);
+    if (pcSelStatut)     pcSelStatut.value     = (pc.isBaseDeck != null ? pc.isBaseDeck : 1) ? 'base' : 'gagner';
+    if (pcSelVisibilite) pcSelVisibilite.value  = pc.isUltra ? 'ultra' : 'normal';
 
-    // Description
     modalDesc.value = pc.description || '';
 
-    // Stats
     document.getElementById('pcStatVitesse').value    = pc.vitesse  != null ? pc.vitesse  : 5;
     document.getElementById('pcStatDefense').value    = pc.defense  != null ? pc.defense  : 5;
     document.getElementById('pcStatDomSub').value     = pc.domSub   != null ? pc.domSub   : 0;
-    document.getElementById('pcStatDomSubVal').textContent = pc.domSub != null ? pc.domSub : 0;
-    const ori = document.getElementById('pcStatOrientation');
-    ori.value = pc.orientation || 'bi';
+    document.getElementById('pcStatOrientation').value = pc.orientation || 'bi';
     document.getElementById('pcStat_prelim_name').value    = pc.actionPrelimName    || '';
     document.getElementById('pcStat_prelim_power').value   = pc.actionPrelimPower   != null ? pc.actionPrelimPower   : 3;
     document.getElementById('pcStat_acte_name').value      = pc.actionActeName      || '';
@@ -1877,20 +1858,16 @@
     document.getElementById('pcStat_finition_name').value  = pc.actionFinitionName  || '';
     document.getElementById('pcStat_finition_power').value = pc.actionFinitionPower != null ? pc.actionFinitionPower : 20;
 
-    // Reset statuses
-    modalStatus.textContent = ''; modalStatsStatus.textContent = '';
-
+    modalStatsStatus.textContent = '';
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
   }
 
   function closePcModal() {
-    modal.hidden = true;
-    document.body.style.overflow = '';
-    activePcId = null;
+    modal.hidden = true; document.body.style.overflow = ''; activePcId = null;
   }
 
-  // Flip cards
+  // Flip
   document.querySelectorAll('.js-coffre-card-flip-admin').forEach(function(wrap) {
     wrap.addEventListener('click', function(e) {
       if (e.target.closest('.js-pc-open-modal')) return;
@@ -1898,7 +1875,7 @@
     });
   });
 
-  // Edit button opens modal
+  // Edit button
   document.querySelectorAll('.js-pc-open-modal').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -1911,109 +1888,76 @@
   modal.addEventListener('click', function(e) { if (e.target === modal) closePcModal(); });
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !modal.hidden) closePcModal(); });
 
-  // Dom/Sub live label in modal
-  document.getElementById('pcStatDomSub').addEventListener('input', function() {
-    document.getElementById('pcStatDomSubVal').textContent = this.value;
-  });
-
   // Stats panel toggle
   document.querySelector('.js-pc-modal-stats-toggle').addEventListener('click', function() {
     const body  = document.querySelector('.js-pc-modal-stats-body');
     const arrow = document.querySelector('.js-pc-modal-stats-arrow');
     const open  = body.style.display !== 'none';
-    body.style.display  = open ? 'none' : 'flex';
-    arrow.textContent   = open ? '▶' : '▼';
+    body.style.display = open ? 'none' : 'flex';
+    arrow.textContent  = open ? '▶' : '▼';
   });
 
-  // Flag toggle buttons
-  [pcFlagBaseDeck, pcFlagUltra].forEach(function(btn) {
-    if (!btn) return;
-    btn.addEventListener('click', async function() {
-      if (!activePcId) return;
-      const flag = btn.dataset.flag;
-      _pcFlags[flag] = _pcFlags[flag] ? 0 : 1;
-      btn.classList.toggle('active', !!_pcFlags[flag]);
-      const flagStatus = document.getElementById('pcFlagStatus');
-      if (flagStatus) { flagStatus.textContent = '…'; flagStatus.style.color = '#94a3b8'; }
-      try {
-        const r = await fetch('/admin/recompenses/personnages/' + activePcId + '/flags',
-          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(_pcFlags) });
-        const d = await r.json();
-        // Update tile dataset
-        const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
-        if (tile && d.ok) {
-          let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
-          Object.assign(pc, _pcFlags); tile.dataset.pc = JSON.stringify(pc);
-          // Toggle ultra badge visibility
-          const ultraBadge = tile.querySelector('.pc-admin-ultra-badge');
-          if (_pcFlags.isUltra && !ultraBadge) {
-            const badge = document.createElement('span');
-            badge.className = 'pc-admin-ultra-badge'; badge.textContent = 'ULTRA';
-            tile.querySelector('.lb-codex-flip-front').appendChild(badge);
-          } else if (!_pcFlags.isUltra && ultraBadge) {
-            ultraBadge.remove();
-          }
-        }
-        if (flagStatus) { flagStatus.textContent = d.ok ? '✓' : '✗'; flagStatus.style.color = d.ok ? '#4ade80' : '#f87171'; setTimeout(function() { flagStatus.textContent = ''; }, 1500); }
-      } catch(e) { if (document.getElementById('pcFlagStatus')) { document.getElementById('pcFlagStatus').textContent = '✗'; } }
-    });
-  });
-
-  // Save description
-  document.querySelector('.js-pc-modal-save-main').addEventListener('click', async function() {
-    if (!activePcId) return;
-    const description = modalDesc.value.trim();
-    modalStatus.textContent = '…'; modalStatus.style.color = '#94a3b8';
-    try {
-      const r = await fetch('/admin/recompenses/personnages/' + activePcId + '/description',
-        { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ description }) });
-      const d = await r.json();
-      const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
-      if (tile && d.ok) {
-        let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
-        pc.description = description; tile.dataset.pc = JSON.stringify(pc);
-      }
-      modalStatus.textContent = d.ok ? '✓ Enregistré' : '✗ Erreur';
-      modalStatus.style.color = d.ok ? '#4ade80' : '#f87171';
-      setTimeout(function() { modalStatus.textContent = ''; }, 2000);
-    } catch(e) { modalStatus.textContent = '✗'; modalStatus.style.color = '#f87171'; }
-  });
-
-  // Save stats
+  // Bouton unique — tout enregistrer
   document.querySelector('.js-pc-modal-stats-save').addEventListener('click', async function() {
     if (!activePcId) return;
-    const payload = {
-      vitesse:           document.getElementById('pcStatVitesse').value,
-      defense:           document.getElementById('pcStatDefense').value,
-      domSub:            document.getElementById('pcStatDomSub').value,
-      orientation:       document.getElementById('pcStatOrientation').value,
-      actionPrelimName:  document.getElementById('pcStat_prelim_name').value,
-      actionPrelimPower: document.getElementById('pcStat_prelim_power').value,
-      actionActeName:    document.getElementById('pcStat_acte_name').value,
-      actionActePower:   document.getElementById('pcStat_acte_power').value,
+    const statut = pcSelStatut ? pcSelStatut.value : 'base';
+    const visib  = pcSelVisibilite ? pcSelVisibilite.value : 'normal';
+    const flags  = { isBaseDeck: statut === 'base' ? 1 : 0, isUltra: visib === 'ultra' ? 1 : 0 };
+    const description = modalDesc.value.trim();
+    const statsPayload = {
+      vitesse:             document.getElementById('pcStatVitesse').value,
+      defense:             document.getElementById('pcStatDefense').value,
+      domSub:              document.getElementById('pcStatDomSub').value,
+      orientation:         document.getElementById('pcStatOrientation').value,
+      actionPrelimName:    document.getElementById('pcStat_prelim_name').value,
+      actionPrelimPower:   document.getElementById('pcStat_prelim_power').value,
+      actionActeName:      document.getElementById('pcStat_acte_name').value,
+      actionActePower:     document.getElementById('pcStat_acte_power').value,
       actionFinitionName:  document.getElementById('pcStat_finition_name').value,
       actionFinitionPower: document.getElementById('pcStat_finition_power').value,
     };
     modalStatsStatus.textContent = '…'; modalStatsStatus.style.color = '#94a3b8';
     try {
-      const r = await fetch('/admin/recompenses/personnages/' + activePcId + '/stats',
-        { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      const d = await r.json();
-      // Update tile dataset
+      const base = '/admin/recompenses/personnages/' + activePcId;
+      const opts = (body) => ({ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const [r1, r2, r3] = await Promise.all([
+        fetch(base + '/flags',       opts(flags)),
+        fetch(base + '/description', opts({ description })),
+        fetch(base + '/stats',       opts(statsPayload)),
+      ]);
+      const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
+      const ok = d1.ok && d2.ok && d3.ok;
+      // Mettre à jour le dataset de la tuile
       const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
-      if (tile && d.ok) {
+      if (tile && ok) {
         let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
-        Object.assign(pc, { vitesse: +payload.vitesse, defense: +payload.defense,
-          domSub: +payload.domSub, orientation: payload.orientation,
-          actionPrelimName: payload.actionPrelimName, actionPrelimPower: +payload.actionPrelimPower,
-          actionActeName: payload.actionActeName, actionActePower: +payload.actionActePower,
-          actionFinitionName: payload.actionFinitionName, actionFinitionPower: +payload.actionFinitionPower });
+        Object.assign(pc, flags, { description },
+          { vitesse: +statsPayload.vitesse, defense: +statsPayload.defense,
+            domSub: +statsPayload.domSub, orientation: statsPayload.orientation,
+            actionPrelimName: statsPayload.actionPrelimName, actionPrelimPower: +statsPayload.actionPrelimPower,
+            actionActeName: statsPayload.actionActeName, actionActePower: +statsPayload.actionActePower,
+            actionFinitionName: statsPayload.actionFinitionName, actionFinitionPower: +statsPayload.actionFinitionPower });
         tile.dataset.pc = JSON.stringify(pc);
+        // Mettre à jour data-deck sur la tuile
+        tile.dataset.deck = flags.isUltra ? 'ultra' : flags.isBaseDeck ? 'base' : 'combat';
+        // Badge ultra
+        const ultraBadge = tile.querySelector('.pc-admin-ultra-badge');
+        if (flags.isUltra && !ultraBadge) {
+          const badge = document.createElement('span');
+          badge.className = 'pc-admin-ultra-badge'; badge.textContent = 'ULTRA';
+          tile.querySelector('.lb-codex-flip-front').appendChild(badge);
+        } else if (!flags.isUltra && ultraBadge) { ultraBadge.remove(); }
+        // Mettre à jour la description dans le footer de la carte
+        const quoteEl = tile.querySelector('.pc-gwent-quote');
+        if (description && !quoteEl) {
+          const q = document.createElement('span'); q.className = 'pc-gwent-quote'; q.textContent = description;
+          tile.querySelector('.pc-gwent-footer').appendChild(q);
+        } else if (quoteEl) { quoteEl.textContent = description; quoteEl.hidden = !description; }
       }
-      modalStatsStatus.textContent = d.ok ? '✓ Enregistré' : '✗ Erreur';
-      modalStatsStatus.style.color = d.ok ? '#4ade80' : '#f87171';
+      modalStatsStatus.textContent = ok ? '✓ Enregistré' : '✗ Erreur';
+      modalStatsStatus.style.color = ok ? '#4ade80' : '#f87171';
       setTimeout(function() { modalStatsStatus.textContent = ''; }, 2000);
-    } catch(e) { modalStatsStatus.textContent = '✗'; modalStatsStatus.style.color = '#f87171'; }
+    } catch(e) { modalStatsStatus.textContent = '✗ Erreur réseau'; modalStatsStatus.style.color = '#f87171'; }
   });
 })();
 </script>
