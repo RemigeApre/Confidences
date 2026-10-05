@@ -65,6 +65,7 @@ const {
   getUserPersonnageCards,
   setPersonnageCardRarity,
   listProtagonistesForCards,
+  setPersonnageCardStats,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
@@ -690,6 +691,20 @@ function buildAdminRouter(config) {
     const rarity = String(req.body.rarity || '');
     const ok = setPersonnageCardRarity(id, rarity);
     res.json({ ok });
+  });
+
+  // ── Cartes Personnages — stats de combat ──────────────────────────────────
+  router.post("/recompenses/personnages/:id/stats", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    setPersonnageCardStats(id, {
+      vitesse: req.body.vitesse, defense: req.body.defense,
+      domSub: req.body.domSub, orientation: req.body.orientation,
+      actionPrelimName: req.body.actionPrelimName, actionPrelimPower: req.body.actionPrelimPower,
+      actionActeName: req.body.actionActeName, actionActePower: req.body.actionActePower,
+      actionFinitionName: req.body.actionFinitionName, actionFinitionPower: req.body.actionFinitionPower,
+    });
+    res.json({ ok: true });
   });
 
   // ── Déclinaisons de cartes ────────────────────────────────────────────────

@@ -18891,6 +18891,16 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
 .coffre-sell-mode-btn:hover { background: rgba(248,113,113,.16); border-color: rgba(248,113,113,.65); }
 .coffre-sell-mode-btn.active { background: rgba(248,113,113,.22); border-color: #f87171; }
 
+/* ── Coffre gutter — navigation entre sections ── */
+.coffre-gutter-nav { display: flex; flex-direction: column; gap: .15rem; }
+.coffre-gutter-nav-link {
+  display: block; padding: .3rem .5rem;
+  font-size: .78rem; color: #94a3b8; text-decoration: none;
+  border-radius: 5px; transition: background .15s, color .15s;
+}
+.coffre-gutter-nav-link:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+.coffre-gutter-nav-link.active { color: #f1f5f9; font-weight: 600; background: rgba(255,255,255,.08); }
+
 /* ── Coffre — mode sélection vente ── */
 .coffre-sell-mode .coffre-item--owned,
 .coffre-sell-mode .coffre-charm-card--owned,
@@ -20606,6 +20616,43 @@ details[open] > .qe-panel-summary::before { transform: rotate(90deg); }
   border:1px solid rgba(96,165,250,.25);padding:.18rem .5rem;border-radius:20px
 }
 .coffre-card-back-link:hover { background:rgba(96,165,250,.1) }
+
+/* ── Carte personnage — dos (fiche de combat) ── */
+.lb-codex-flip-back--pc { gap: .3rem; justify-content: flex-start; padding: .55rem .5rem .4rem; }
+.pc-card-stats { display: flex; flex-direction: column; gap: .28rem; width: 100%; }
+.pc-card-stat-row { display: flex; gap: .4rem; justify-content: center; }
+.pc-card-stat {
+  display: flex; align-items: baseline; gap: .15rem;
+  background: rgba(255,255,255,.06); border-radius: 5px;
+  padding: .18rem .4rem; font-size: .78rem;
+}
+.pc-card-stat-icon { font-size: .7rem; }
+.pc-card-stat-val { color: #f1f5f9; font-weight: 700; }
+.pc-card-stat-max { color: #475569; font-size: .6rem; }
+.pc-card-domsub { display: flex; flex-direction: column; gap: .12rem; }
+.pc-card-domsub-track {
+  height: 5px; background: rgba(255,255,255,.1); border-radius: 3px;
+  position: relative; overflow: visible;
+}
+.pc-card-domsub-fill {
+  position: absolute; top: -2px; width: 9px; height: 9px;
+  background: #a78bfa; border-radius: 50%; transform: translateX(-50%);
+}
+.pc-card-domsub-label { font-size: .6rem; color: #94a3b8; text-align: center; }
+.pc-card-actions { display: flex; flex-direction: column; gap: .18rem; }
+.pc-card-action {
+  display: grid; grid-template-columns: 28px 1fr auto;
+  align-items: center; gap: .25rem;
+  background: rgba(0,0,0,.2); border-radius: 4px; padding: .15rem .35rem;
+  font-size: .66rem;
+}
+.pc-card-action-label { color: #64748b; font-weight: 600; text-transform: uppercase; font-size: .55rem; }
+.pc-card-action-name { color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-card-action-power {
+  color: #fbbf24; font-weight: 700; font-size: .72rem;
+  background: rgba(251,191,36,.1); border-radius: 3px; padding: .05rem .25rem;
+}
+
 .coffre-card-title {
   font-size:.68rem;color:#94a3b8;text-align:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3

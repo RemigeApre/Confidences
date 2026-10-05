@@ -289,6 +289,14 @@
       </div>
       <div class="coffre-gutter-divider"></div>
       <button class="coffre-sell-mode-btn" id="coffre-img-sell-toggle">Vendre</button>
+      <div class="coffre-gutter-divider"></div>
+      <nav class="coffre-gutter-nav">
+        <a href="/favoris/coffre?view=images"      class="coffre-gutter-nav-link active">Images</a>
+        <a href="/favoris/coffre?view=charms"      class="coffre-gutter-nav-link">Charmes</a>
+        <a href="/favoris/coffre?view=themes"      class="coffre-gutter-nav-link">Th&egrave;mes</a>
+        <a href="/favoris/coffre?view=cartes"      class="coffre-gutter-nav-link">Cartes</a>
+        <a href="/favoris/coffre?view=personnages" class="coffre-gutter-nav-link">Personnages</a>
+      </nav>
     </div></div><%# /coffre-gutter-slot %>
     </div><%# /coffre-view-wrap %>
 
@@ -406,6 +414,14 @@
       </div>
       <div class="coffre-gutter-divider"></div>
       <button class="coffre-sell-mode-btn" id="coffre-charm-sell-toggle">Vendre</button>
+      <div class="coffre-gutter-divider"></div>
+      <nav class="coffre-gutter-nav">
+        <a href="/favoris/coffre?view=images"      class="coffre-gutter-nav-link">Images</a>
+        <a href="/favoris/coffre?view=charms"      class="coffre-gutter-nav-link active">Charmes</a>
+        <a href="/favoris/coffre?view=themes"      class="coffre-gutter-nav-link">Th&egrave;mes</a>
+        <a href="/favoris/coffre?view=cartes"      class="coffre-gutter-nav-link">Cartes</a>
+        <a href="/favoris/coffre?view=personnages" class="coffre-gutter-nav-link">Personnages</a>
+      </nav>
     </div></div><%# /coffre-gutter-slot %>
     </div><%# /coffre-view-wrap %>
 
@@ -507,6 +523,14 @@
       </div>
       <div class="coffre-gutter-divider"></div>
       <button class="coffre-sell-mode-btn" id="coffre-theme-sell-toggle">Vendre</button>
+      <div class="coffre-gutter-divider"></div>
+      <nav class="coffre-gutter-nav">
+        <a href="/favoris/coffre?view=images"      class="coffre-gutter-nav-link">Images</a>
+        <a href="/favoris/coffre?view=charms"      class="coffre-gutter-nav-link">Charmes</a>
+        <a href="/favoris/coffre?view=themes"      class="coffre-gutter-nav-link active">Th&egrave;mes</a>
+        <a href="/favoris/coffre?view=cartes"      class="coffre-gutter-nav-link">Cartes</a>
+        <a href="/favoris/coffre?view=personnages" class="coffre-gutter-nav-link">Personnages</a>
+      </nav>
     </div></div><%# /coffre-gutter-slot %>
     </div><%# /coffre-view-wrap %>
 
@@ -548,10 +572,44 @@
                   <span class="lb-codex-flip-cta-icon">&#8635;</span>
                   <span class="coffre-card-rarity-badge coffre-card-rarity-badge--<%= card.rarity %>"><%= RARITY_LABELS[card.rarity] || card.rarity %></span>
                 </div>
-                <div class="lb-codex-flip-back">
+                <div class="lb-codex-flip-back lb-codex-flip-back--pc">
                   <% if (card.gender) { %><span class="lb-codex-flip-cat lb-codex-flip-cat--back"><%= card.gender === 'femme' ? '♀ Femme' : card.gender === 'homme' ? '♂ Homme' : 'Autre' %></span><% } %>
                   <strong class="coffre-card-back-title"><%= card.title %></strong>
-                  <% if (card.description) { %><p class="lb-codex-flip-summary"><%= card.description.slice(0, 200) %></p><% } %>
+                  <%/* Stats de combat */%>
+                  <div class="pc-card-stats">
+                    <div class="pc-card-stat-row">
+                      <span class="pc-card-stat" title="Vitesse">
+                        <span class="pc-card-stat-icon">&#9889;</span>
+                        <span class="pc-card-stat-val"><%= card.vitesse || 5 %></span>
+                        <span class="pc-card-stat-max">/10</span>
+                      </span>
+                      <span class="pc-card-stat" title="Défense">
+                        <span class="pc-card-stat-icon">&#128737;</span>
+                        <span class="pc-card-stat-val"><%= card.defense || 5 %></span>
+                        <span class="pc-card-stat-max">/10</span>
+                      </span>
+                    </div>
+                    <div class="pc-card-domsub">
+                      <% var _ds = card.domSub || 0; var _dsLabel = _ds < -15 ? 'Soumis' : _ds > 15 ? 'Dominant' : 'Switch'; %>
+                      <div class="pc-card-domsub-track">
+                        <div class="pc-card-domsub-fill" style="left:<%= Math.round((_ds+50)/100*100) %>%"></div>
+                      </div>
+                      <span class="pc-card-domsub-label"><%= _dsLabel %> (<%= _ds > 0 ? '+' : '' %><%= _ds %>)</span>
+                    </div>
+                    <div class="pc-card-actions">
+                      <% [
+                        { name: card.actionPrelimName,   power: card.actionPrelimPower   || 3,  label: 'Prél.' },
+                        { name: card.actionActeName,     power: card.actionActePower     || 7,  label: 'Acte' },
+                        { name: card.actionFinitionName, power: card.actionFinitionPower || 20, label: 'Fin.' }
+                      ].forEach(function(a) { %>
+                      <div class="pc-card-action">
+                        <span class="pc-card-action-label"><%= a.label %></span>
+                        <span class="pc-card-action-name"><%= a.name || '—' %></span>
+                        <span class="pc-card-action-power"><%= a.power %></span>
+                      </div>
+                      <% }) %>
+                    </div>
+                  </div>
                   <a href="/personnages/<%= card.protagonisteId %>" class="coffre-card-back-link">Voir la fiche &rarr;</a>
                 </div>
               </div>
@@ -585,6 +643,14 @@
         <% }) %>
       </div>
       <% } %>
+      <div class="coffre-gutter-divider"></div>
+      <nav class="coffre-gutter-nav">
+        <a href="/favoris/coffre?view=images"      class="coffre-gutter-nav-link">Images</a>
+        <a href="/favoris/coffre?view=charms"      class="coffre-gutter-nav-link">Charmes</a>
+        <a href="/favoris/coffre?view=themes"      class="coffre-gutter-nav-link">Th&egrave;mes</a>
+        <a href="/favoris/coffre?view=cartes"      class="coffre-gutter-nav-link">Cartes</a>
+        <a href="/favoris/coffre?view=personnages" class="coffre-gutter-nav-link active">Personnages</a>
+      </nav>
     </div></div><%# /coffre-gutter-slot %>
     </div><%# /coffre-view-wrap %>
 
@@ -663,6 +729,14 @@
         <% }) %>
       </div>
       <% } %>
+      <div class="coffre-gutter-divider"></div>
+      <nav class="coffre-gutter-nav">
+        <a href="/favoris/coffre?view=images"      class="coffre-gutter-nav-link">Images</a>
+        <a href="/favoris/coffre?view=charms"      class="coffre-gutter-nav-link">Charmes</a>
+        <a href="/favoris/coffre?view=themes"      class="coffre-gutter-nav-link">Th&egrave;mes</a>
+        <a href="/favoris/coffre?view=cartes"      class="coffre-gutter-nav-link active">Cartes</a>
+        <a href="/favoris/coffre?view=personnages" class="coffre-gutter-nav-link">Personnages</a>
+      </nav>
     </div></div><%# /coffre-gutter-slot %>
     </div><%# /coffre-view-wrap %>
     <% } %>

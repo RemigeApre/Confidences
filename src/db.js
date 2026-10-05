@@ -2603,7 +2603,11 @@ function _grantPersonnageCardReward(userId, rarity) {
 function getUserPersonnageCards(userId) {
   return db.prepare(
     `SELECT upc.protagoniste_id, upc.rarity, upc.obtained_at,
-            p.name, p.description, p.gender, p.nature, p.parody, p.image_path
+            p.name, p.description, p.gender, p.nature, p.parody, p.image_path,
+            p.vitesse, p.defense, p.dom_sub, p.orientation,
+            p.action_prelim_name, p.action_prelim_power,
+            p.action_acte_name, p.action_acte_power,
+            p.action_finition_name, p.action_finition_power
      FROM user_personnage_cards upc
      JOIN protagonistes p ON p.id = upc.protagoniste_id
      WHERE upc.user_id = ?
@@ -2611,7 +2615,12 @@ function getUserPersonnageCards(userId) {
   ).all(userId).map(r => ({
     protagonisteId: r.protagoniste_id, rarity: r.rarity, obtainedAt: r.obtained_at,
     title: r.name, description: r.description || '', gender: r.gender || '',
-    nature: r.nature || '', parody: r.parody || '', thumb: r.image_path || null
+    nature: r.nature || '', parody: r.parody || '', thumb: r.image_path || null,
+    vitesse: r.vitesse ?? 5, defense: r.defense ?? 5,
+    domSub: r.dom_sub ?? 0, orientation: r.orientation || 'bi',
+    actionPrelimName: r.action_prelim_name || '', actionPrelimPower: r.action_prelim_power ?? 3,
+    actionActeName: r.action_acte_name || '', actionActePower: r.action_acte_power ?? 7,
+    actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20,
   }));
 }
 
@@ -2624,12 +2633,42 @@ function setPersonnageCardRarity(protagonisteId, rarity) {
 
 function listProtagonistesForCards() {
   return db.prepare(
-    `SELECT id, name, description, gender, nature, parody, image_path, card_rarity FROM protagonistes ORDER BY name COLLATE NOCASE`
+    `SELECT id, name, description, gender, nature, parody, image_path, card_rarity,
+            vitesse, defense, dom_sub, orientation,
+            action_prelim_name, action_prelim_power,
+            action_acte_name, action_acte_power,
+            action_finition_name, action_finition_power
+     FROM protagonistes ORDER BY name COLLATE NOCASE`
   ).all().map(r => ({
     id: r.id, title: r.name, description: r.description || '', gender: r.gender || '',
     nature: r.nature || '', parody: r.parody || '', thumb: r.image_path || null,
-    cardRarity: r.card_rarity || 'rare'
+    cardRarity: r.card_rarity || 'rare',
+    vitesse: r.vitesse ?? 5, defense: r.defense ?? 5,
+    domSub: r.dom_sub ?? 0, orientation: r.orientation || 'bi',
+    actionPrelimName: r.action_prelim_name || '', actionPrelimPower: r.action_prelim_power ?? 3,
+    actionActeName: r.action_acte_name || '', actionActePower: r.action_acte_power ?? 7,
+    actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20,
   }));
+}
+
+function setPersonnageCardStats(protagonisteId, { vitesse, defense, domSub, orientation,
+    actionPrelimName, actionPrelimPower, actionActeName, actionActePower,
+    actionFinitionName, actionFinitionPower }) {
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, parseInt(v) || 0));
+  db.prepare(`UPDATE protagonistes SET
+    vitesse=?, defense=?, dom_sub=?, orientation=?,
+    action_prelim_name=?, action_prelim_power=?,
+    action_acte_name=?, action_acte_power=?,
+    action_finition_name=?, action_finition_power=?
+    WHERE id=?`).run(
+    clamp(vitesse, 1, 10), clamp(defense, 1, 10), clamp(domSub, -50, 50),
+    ['hetero','homo','bi','pan'].includes(orientation) ? orientation : 'bi',
+    String(actionPrelimName || '').trim(), clamp(actionPrelimPower, 1, 99),
+    String(actionActeName || '').trim(), clamp(actionActePower, 1, 99),
+    String(actionFinitionName || '').trim(), clamp(actionFinitionPower, 1, 99),
+    protagonisteId
+  );
+  return true;
 }
 
 function setWikiCardRarity(wikiPageId, rarity) {
@@ -4380,6 +4419,7 @@ module.exports = {
   getUserPersonnageCards,
   setPersonnageCardRarity,
   listProtagonistesForCards,
+  setPersonnageCardStats,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
@@ -4450,6 +4490,16 @@ try { db.exec("ALTER TABLE protagonistes ADD COLUMN nature TEXT NOT NULL DEFAULT
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN image_path TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN evolutions TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN special TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN vitesse INTEGER NOT NULL DEFAULT 5"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN defense INTEGER NOT NULL DEFAULT 5"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN dom_sub INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN orientation TEXT NOT NULL DEFAULT 'bi'"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_prelim_name TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_prelim_power INTEGER NOT NULL DEFAULT 3"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_acte_name TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_acte_power INTEGER NOT NULL DEFAULT 7"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_finition_name TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_finition_power INTEGER NOT NULL DEFAULT 20"); } catch (_) {}
 
 const VALID_SPECIALS = new Set(['', 'ultra', 'irrealiste']);
 function parseEvolutions(raw) { try { const a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a.filter(Boolean) : []; } catch { return []; } }

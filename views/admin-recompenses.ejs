@@ -664,6 +664,64 @@
               <% }) %>
             </select>
             <span class="js-pc-save-status" style="font-size:.68rem;height:.85em;color:#4ade80;display:block">&nbsp;</span>
+            <%/* Fiche de combat */%>
+            <div style="border-top:1px solid rgba(255,255,255,.07);margin-top:.2rem;padding-top:.3rem">
+              <button class="js-pc-stats-toggle"
+                style="background:none;border:none;color:#94a3b8;font-size:.7rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:.3rem;width:100%">
+                <span style="font-size:.65rem">&#9654;</span> Fiche de combat
+              </button>
+              <div class="js-pc-stats-body" style="display:none;margin-top:.45rem;display:none;flex-direction:column;gap:.3rem">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">
+                  <label style="font-size:.68rem;color:#94a3b8;display:flex;flex-direction:column;gap:.15rem">
+                    Vitesse
+                    <input type="number" class="js-pc-stat" data-stat="vitesse" min="1" max="10" value="<%= pc.vitesse != null ? pc.vitesse : 5 %>"
+                      style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.2rem .35rem;font-size:.8rem;outline:none;width:100%">
+                  </label>
+                  <label style="font-size:.68rem;color:#94a3b8;display:flex;flex-direction:column;gap:.15rem">
+                    D&eacute;fense
+                    <input type="number" class="js-pc-stat" data-stat="defense" min="1" max="10" value="<%= pc.defense != null ? pc.defense : 5 %>"
+                      style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.2rem .35rem;font-size:.8rem;outline:none;width:100%">
+                  </label>
+                </div>
+                <label style="font-size:.68rem;color:#94a3b8;display:flex;flex-direction:column;gap:.15rem">
+                  Orientation
+                  <select class="js-pc-stat charm-rarity-select" data-stat="orientation"
+                    style="border-color:rgba(255,255,255,.2);color:#cbd5e1">
+                    <% [['hetero','Hétéro'],['homo','Homo'],['bi','Bi'],['pan','Pan']].forEach(function(o) { %>
+                      <option value="<%= o[0] %>"<%= (pc.orientation||'bi') === o[0] ? ' selected' : '' %>><%= o[1] %></option>
+                    <% }) %>
+                  </select>
+                </label>
+                <label style="font-size:.68rem;color:#94a3b8;display:flex;flex-direction:column;gap:.15rem">
+                  Dom / Sub&nbsp;<span class="js-pc-domsubval" style="color:#f1f5f9;font-weight:700"><%= pc.domSub != null ? pc.domSub : 0 %></span>
+                  <input type="range" class="js-pc-stat js-pc-domsub-range" data-stat="domSub" min="-50" max="50" value="<%= pc.domSub != null ? pc.domSub : 0 %>"
+                    style="width:100%;accent-color:#a78bfa">
+                  <div style="display:flex;justify-content:space-between;font-size:.6rem;color:#475569;margin-top:.05rem"><span>Soumis</span><span>Switch</span><span>Dominant</span></div>
+                </label>
+                <div style="font-size:.68rem;color:#94a3b8;margin-top:.1rem;font-weight:600">Actions</div>
+                <% [
+                  ['prelim','Pr&eacute;liminaire','actionPrelimName','actionPrelimPower'],
+                  ['acte','Acte','actionActeName','actionActePower'],
+                  ['finition','Finition','actionFinitionName','actionFinitionPower']
+                ].forEach(function(act) { %>
+                <div style="background:rgba(0,0,0,.15);border-radius:5px;padding:.3rem .4rem;display:flex;flex-direction:column;gap:.2rem">
+                  <div style="font-size:.63rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em"><%- act[1] %></div>
+                  <input type="text" class="js-pc-stat" data-stat="action_<%= act[0] %>_name" value="<%= pc[act[2]] || '' %>" placeholder="Nom de l'action&hellip;"
+                    style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.2rem .35rem;font-size:.72rem;outline:none;font-family:inherit">
+                  <label style="font-size:.65rem;color:#94a3b8;display:flex;align-items:center;gap:.35rem">
+                    Puissance
+                    <input type="number" class="js-pc-stat" data-stat="action_<%= act[0] %>_power" min="1" max="99" value="<%= pc[act[3]] != null ? pc[act[3]] : (act[0]==='prelim'?3:act[0]==='acte'?7:20) %>"
+                      style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.2rem .35rem;font-size:.78rem;outline:none;width:55px">
+                  </label>
+                </div>
+                <% }) %>
+                <button class="js-pc-stats-save" data-pc-id="<%= pc.id %>"
+                  style="background:#1e3a5f;border:1px solid #1e40af;color:#93c5fd;font-size:.7rem;padding:.3rem .6rem;border-radius:5px;cursor:pointer;margin-top:.1rem">
+                  Enregistrer la fiche
+                </button>
+                <span class="js-pc-stats-status" style="font-size:.68rem;color:#4ade80;min-height:.9em"></span>
+              </div>
+            </div>
           </div>
         </div>
         <% }) %>
@@ -1644,6 +1702,55 @@
   bindFilterBar('pc-parody-filter-bar',  'parody',  applyPcFilters);
   const pcSearch = document.getElementById('pc-search-input');
   pcSearch && pcSearch.addEventListener('input', applyPcFilters);
+
+  // Fiche de combat — toggle
+  document.querySelectorAll('.js-pc-stats-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const body = btn.nextElementSibling;
+      if (!body) return;
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'flex';
+      btn.querySelector('span').textContent = open ? '▶' : '▼';
+    });
+  });
+
+  // Dom/Sub range live label
+  document.querySelectorAll('.js-pc-domsub-range').forEach(function(range) {
+    const label = range.closest('label').querySelector('.js-pc-domsubval');
+    range.addEventListener('input', function() { if (label) label.textContent = range.value; });
+  });
+
+  // Fiche de combat — save
+  document.querySelectorAll('.js-pc-stats-save').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      const pcId = btn.dataset.pcId;
+      const body = btn.closest('.js-pc-stats-body');
+      const statusEl = body.querySelector('.js-pc-stats-status');
+      const get = function(stat) {
+        const el = body.querySelector('[data-stat="' + stat + '"]');
+        return el ? el.value : null;
+      };
+      const payload = {
+        vitesse: get('vitesse'), defense: get('defense'),
+        domSub: get('domSub'), orientation: get('orientation'),
+        actionPrelimName: get('action_prelim_name'), actionPrelimPower: get('action_prelim_power'),
+        actionActeName: get('action_acte_name'), actionActePower: get('action_acte_power'),
+        actionFinitionName: get('action_finition_name'), actionFinitionPower: get('action_finition_power'),
+      };
+      if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
+      try {
+        const r = await fetch('/admin/recompenses/personnages/' + pcId + '/stats', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+        });
+        const d = await r.json();
+        if (statusEl) {
+          statusEl.textContent = d.ok ? '✓ Enregistré' : '✗ Erreur';
+          statusEl.style.color = d.ok ? '#4ade80' : '#f87171';
+          setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 2000);
+        }
+      } catch(e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
+    });
+  });
 
   // Rarity change
   document.querySelectorAll('.js-pc-rarity').forEach(function(sel) {
