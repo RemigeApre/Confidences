@@ -2634,44 +2634,64 @@ function setPersonnageCardRarity(protagonisteId, rarity) {
 function listProtagonistesForCards() {
   return db.prepare(
     `SELECT id, name, description, gender, nature, parody, image_path,
-            vitesse, defense, dom_sub, orientation,
-            action_prelim_name, action_prelim_power,
-            action_acte_name, action_acte_power,
-            action_finition_name, action_finition_power,
+            vitesse, defense, dom_sub, orientation, pv,
+            passif, affinites,
+            action_prelim_name, action_prelim_power, action_prelim_effet,
+            action_acte_name, action_acte_power, action_acte_effet,
+            action_finition_name, action_finition_power, action_finition_effet,
             is_base_deck, is_ultra
      FROM protagonistes ORDER BY name COLLATE NOCASE`
-  ).all().map(r => ({
-    id: r.id, title: r.name, description: r.description || '',
-    gender: r.gender || '', nature: r.nature || '', parody: r.parody || '',
-    thumb: r.image_path || null,
-    vitesse: r.vitesse ?? 5, defense: r.defense ?? 5,
-    domSub: r.dom_sub ?? 0, orientation: r.orientation || 'bi',
-    actionPrelimName: r.action_prelim_name || '', actionPrelimPower: r.action_prelim_power ?? 3,
-    actionActeName: r.action_acte_name || '', actionActePower: r.action_acte_power ?? 7,
-    actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20,
-    isBaseDeck: r.is_base_deck ?? 1, isUltra: r.is_ultra ?? 0,
-  }));
+  ).all().map(r => {
+    let affinites = [];
+    try { affinites = JSON.parse(r.affinites || '[]'); } catch { affinites = []; }
+    return {
+      id: r.id, title: r.name, description: r.description || '',
+      gender: r.gender || '', nature: r.nature || '', parody: r.parody || '',
+      thumb: r.image_path || null,
+      vitesse: r.vitesse ?? 5, defense: r.defense ?? 5,
+      domSub: r.dom_sub ?? 0, orientation: r.orientation || 'bi',
+      pv: r.pv ?? 100,
+      passif: r.passif || '',
+      affinites,
+      actionPrelimName: r.action_prelim_name || '', actionPrelimPower: r.action_prelim_power ?? 3, actionPrelimEffet: r.action_prelim_effet || '',
+      actionActeName: r.action_acte_name || '', actionActePower: r.action_acte_power ?? 7, actionActeEffet: r.action_acte_effet || '',
+      actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20, actionFinitionEffet: r.action_finition_effet || '',
+      isBaseDeck: r.is_base_deck ?? 1, isUltra: r.is_ultra ?? 0,
+    };
+  });
 }
 
 function setPersonnageDescription(protagonisteId, description) {
   db.prepare("UPDATE protagonistes SET description = ? WHERE id = ?").run(String(description || '').trim(), protagonisteId);
 }
 
-function setPersonnageCardStats(protagonisteId, { vitesse, defense, domSub, orientation,
-    actionPrelimName, actionPrelimPower, actionActeName, actionActePower,
-    actionFinitionName, actionFinitionPower }) {
+function setPersonnageCardStats(protagonisteId, { vitesse, defense, domSub, orientation, pv,
+    passif, affinites,
+    actionPrelimName, actionPrelimPower, actionPrelimEffet,
+    actionActeName, actionActePower, actionActeEffet,
+    actionFinitionName, actionFinitionPower, actionFinitionEffet }) {
   const clamp = (v, min, max) => Math.max(min, Math.min(max, parseInt(v) || 0));
+  const validPassifs = PASSIFS.map(p => p.id);
+  const validEffets  = ACTION_EFFETS.map(e => e.id);
+  const affinitesJson = JSON.stringify(
+    (Array.isArray(affinites) ? affinites : String(affinites || '').split(','))
+      .map(s => String(s).trim()).filter(Boolean)
+  );
   db.prepare(`UPDATE protagonistes SET
-    vitesse=?, defense=?, dom_sub=?, orientation=?,
-    action_prelim_name=?, action_prelim_power=?,
-    action_acte_name=?, action_acte_power=?,
-    action_finition_name=?, action_finition_power=?
+    vitesse=?, defense=?, dom_sub=?, orientation=?, pv=?,
+    passif=?, affinites=?,
+    action_prelim_name=?, action_prelim_power=?, action_prelim_effet=?,
+    action_acte_name=?, action_acte_power=?, action_acte_effet=?,
+    action_finition_name=?, action_finition_power=?, action_finition_effet=?
     WHERE id=?`).run(
     clamp(vitesse, 1, 10), clamp(defense, 1, 10), clamp(domSub, -50, 50),
     ['hetero','homo','bi','pan'].includes(orientation) ? orientation : 'bi',
-    String(actionPrelimName || '').trim(), clamp(actionPrelimPower, 1, 99),
-    String(actionActeName || '').trim(), clamp(actionActePower, 1, 99),
-    String(actionFinitionName || '').trim(), clamp(actionFinitionPower, 1, 99),
+    clamp(pv, 1, 999),
+    validPassifs.includes(passif) ? passif : '',
+    affinitesJson,
+    String(actionPrelimName || '').trim(), clamp(actionPrelimPower, 1, 99), validEffets.includes(actionPrelimEffet) ? actionPrelimEffet : '',
+    String(actionActeName || '').trim(), clamp(actionActePower, 1, 99), validEffets.includes(actionActeEffet) ? actionActeEffet : '',
+    String(actionFinitionName || '').trim(), clamp(actionFinitionPower, 1, 99), validEffets.includes(actionFinitionEffet) ? actionFinitionEffet : '',
     protagonisteId
   );
   return true;
@@ -4435,6 +4455,8 @@ module.exports = {
   setPersonnageDescription,
   setPersonnageCardStats,
   setPersonnageFlags,
+  PASSIFS,
+  ACTION_EFFETS,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
@@ -4517,6 +4539,24 @@ try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_finition_name TEXT NO
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_finition_power INTEGER NOT NULL DEFAULT 20"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN is_base_deck INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN is_ultra INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN pv INTEGER NOT NULL DEFAULT 100"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN passif TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN affinites TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_prelim_effet TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_acte_effet TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_finition_effet TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+
+// ── Capacités passives ──────────────────────────────────────────────────────
+const PASSIFS = [
+  { id: '', name: '— Aucun passif —', desc: '' },
+  { id: 'curiosite_insatiable', name: 'Curiosité insatiable', desc: 'Tous les 10 dégâts infligés, +1 Vitesse (partie uniquement)' },
+];
+
+// ── Effets spéciaux d'action ────────────────────────────────────────────────
+const ACTION_EFFETS = [
+  { id: '', name: '— Aucun effet —' },
+  // Les effets spéciaux d'action seront ajoutés ici
+];
 
 const VALID_SPECIALS = new Set(['', 'ultra', 'irrealiste']);
 function parseEvolutions(raw) { try { const a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a.filter(Boolean) : []; } catch { return []; } }

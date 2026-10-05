@@ -68,6 +68,8 @@ const {
   setPersonnageDescription,
   setPersonnageCardStats,
   setPersonnageFlags,
+  PASSIFS,
+  ACTION_EFFETS,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
@@ -546,7 +548,7 @@ function buildAdminRouter(config) {
     const cardStatsByRarity = Object.fromEntries(rarities.map(r => [r, wikiCards.filter(c => c.cardRarity === r).length]));
     const personnageCards = listProtagonistesForCards();
     const personnageCardStatsByRarity = Object.fromEntries(rarities.map(r => [r, personnageCards.filter(c => c.cardRarity === r).length]));
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity });
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity, passifs: PASSIFS, actionEffets: ACTION_EFFETS });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -710,9 +712,12 @@ function buildAdminRouter(config) {
     setPersonnageCardStats(id, {
       vitesse: req.body.vitesse, defense: req.body.defense,
       domSub: req.body.domSub, orientation: req.body.orientation,
-      actionPrelimName: req.body.actionPrelimName, actionPrelimPower: req.body.actionPrelimPower,
-      actionActeName: req.body.actionActeName, actionActePower: req.body.actionActePower,
-      actionFinitionName: req.body.actionFinitionName, actionFinitionPower: req.body.actionFinitionPower,
+      pv: req.body.pv,
+      passif: req.body.passif,
+      affinites: req.body.affinites,
+      actionPrelimName: req.body.actionPrelimName, actionPrelimPower: req.body.actionPrelimPower, actionPrelimEffet: req.body.actionPrelimEffet,
+      actionActeName: req.body.actionActeName, actionActePower: req.body.actionActePower, actionActeEffet: req.body.actionActeEffet,
+      actionFinitionName: req.body.actionFinitionName, actionFinitionPower: req.body.actionFinitionPower, actionFinitionEffet: req.body.actionFinitionEffet,
     });
     res.json({ ok: true });
   });

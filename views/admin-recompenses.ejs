@@ -215,6 +215,8 @@
   text-align:center;
 }
 .pc-modal-input:focus { border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.09); }
+.pc-modal-input option { background:#1e293b; color:#f1f5f9; }
+select.pc-modal-input { background:#1e293b; }
 /* Selects colorés */
 select#pcSelStatut[value="base"]   { border-color:#34d399; color:#34d399; }
 select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
@@ -227,8 +229,20 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 .pc-modal-input[id*="_name"] { color:#e2e8f0; text-align:left; }
 /* Champ puissance */
 .pc-modal-input[id*="_power"] { border-color:rgba(251,191,36,.3); color:#fbbf24; }
+/* PV */
+#pcStatPv { border-color:rgba(248,113,113,.4); color:#f87171; }
+/* Passif */
+#pcSelPassif { border-color:rgba(251,191,36,.25); color:#fde68a; }
+/* Effet action */
+.pc-modal-input[id*="_effet"] { border-color:rgba(52,211,153,.25); color:#6ee7b7; font-size:.72rem; }
 /* Label action coloré */
 .pc-action-label { font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; text-align:center; }
+/* Affinités */
+.pc-affinites-wrap { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.25rem; }
+.pc-affinite-chip { background:rgba(99,102,241,.2); border:1px solid rgba(99,102,241,.4); color:#a5b4fc; border-radius:20px; font-size:.65rem; padding:.15rem .5rem; display:flex; align-items:center; gap:.25rem; }
+.pc-affinite-chip-del { background:none; border:none; color:#f87171; cursor:pointer; padding:0; font-size:.7rem; line-height:1; }
+/* Genre sur carte gwent */
+.pc-gwent-gender { font-size:.6rem; color:rgba(26,26,26,.55); font-style:italic; letter-spacing:.03em; }
 </style>
 
 <div class="admin-topbar">
@@ -772,9 +786,10 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
                thumb: pc.thumb ? thumbUrl(pc.thumb) : null,
                nature: pc.nature, parody: pc.parody, gender: pc.gender,
                vitesse: pc.vitesse, defense: pc.defense, domSub: pc.domSub, orientation: pc.orientation,
-               actionPrelimName: pc.actionPrelimName, actionPrelimPower: pc.actionPrelimPower,
-               actionActeName: pc.actionActeName, actionActePower: pc.actionActePower,
-               actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower,
+               pv: pc.pv, passif: pc.passif, affinites: pc.affinites,
+               actionPrelimName: pc.actionPrelimName, actionPrelimPower: pc.actionPrelimPower, actionPrelimEffet: pc.actionPrelimEffet,
+               actionActeName: pc.actionActeName, actionActePower: pc.actionActePower, actionActeEffet: pc.actionActeEffet,
+               actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower, actionFinitionEffet: pc.actionFinitionEffet,
                isBaseDeck: pc.isBaseDeck, isUltra: pc.isUltra
              }) %>'>
           <div class="coffre-card-flip-wrap js-coffre-card-flip-admin">
@@ -791,6 +806,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
               </div>
               <div class="pc-gwent-footer">
                 <span class="pc-gwent-name"><%= pc.title %></span>
+                <% if (pc.gender) { %><span class="pc-gwent-gender"><%= pc.gender %></span><% } %>
                 <% if (pc.description) { %><span class="pc-gwent-quote"><%= pc.description %></span><% } %>
               </div>
               <span class="lb-codex-flip-cta-icon">&#8635;</span>
@@ -847,8 +863,8 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
             <%/* ── Stats de combat (toujours ouvertes) ── */%>
             <div class="pc-modal-section">
               <p class="pc-modal-label">Stats de combat</p>
-              <%/* Ligne unique : Vitesse / Défense / Dom-Sub / Orientation */%>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.1fr;gap:.3rem">
+              <%/* Ligne : Vitesse / Défense / Dom-Sub / Orientation / PV */%>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.1fr 1fr;gap:.3rem">
                 <label class="pc-modal-field-label">Vit.
                   <input type="number" id="pcStatVitesse" class="pc-modal-input" min="1" max="10">
                 </label>
@@ -866,19 +882,49 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
                     <option value="pan">Pan</option>
                   </select>
                 </label>
+                <label class="pc-modal-field-label">PV
+                  <input type="number" id="pcStatPv" class="pc-modal-input" min="1" max="999">
+                </label>
               </div>
-              <%/* Actions */%>
+              <%/* Actions : nom / puissance / effet spécial */%>
               <% [
                 ['prelim','Prél.'],
                 ['acte','Acte'],
                 ['finition','Fin.']
               ].forEach(function(a) { %>
-              <div style="display:grid;grid-template-columns:38px 1fr 50px;gap:.28rem;align-items:center;margin-top:.25rem">
+              <div style="display:grid;grid-template-columns:38px 1fr 50px 1fr;gap:.28rem;align-items:center;margin-top:.25rem">
                 <span style="font-size:.6rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em"><%= a[1] %></span>
                 <input type="text" id="pcStat_<%= a[0] %>_name" class="pc-modal-input" placeholder="Nom&hellip;">
                 <input type="number" id="pcStat_<%= a[0] %>_power" class="pc-modal-input" min="1" max="99" style="text-align:center">
+                <select id="pcStat_<%= a[0] %>_effet" class="pc-modal-input">
+                  <% actionEffets.forEach(function(ef) { %>
+                    <option value="<%= ef.id %>"><%= ef.name %></option>
+                  <% }) %>
+                </select>
               </div>
               <% }) %>
+            </div>
+            <%/* ── Effet passif ── */%>
+            <div class="pc-modal-section">
+              <p class="pc-modal-label">Effet passif</p>
+              <select id="pcSelPassif" class="pc-modal-input">
+                <% passifs.forEach(function(p) { %>
+                  <option value="<%= p.id %>"><%= p.name %></option>
+                <% }) %>
+              </select>
+              <span id="pcPassifDesc" style="font-size:.65rem;color:#94a3b8;font-style:italic;min-height:1.2em">&nbsp;</span>
+            </div>
+            <%/* ── Affinités ── */%>
+            <div class="pc-modal-section">
+              <p class="pc-modal-label">Affinit&eacute;s <span style="color:#475569;font-weight:400">(mots-cl&eacute;s)</span></p>
+              <div style="display:flex;gap:.35rem">
+                <input type="text" id="pcAffiniteInput" class="pc-modal-input" placeholder="Ex: manipulatrice, douce, &eacute;rudit&hellip;" style="flex:1">
+                <button id="pcAffiniteAdd" type="button"
+                  style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:#a5b4fc;border-radius:5px;padding:.28rem .6rem;font-size:.78rem;cursor:pointer;white-space:nowrap">
+                  + Ajouter
+                </button>
+              </div>
+              <div class="pc-affinites-wrap" id="pcAffinitesWrap"></div>
             </div>
             <%/* ── Bouton enregistrer centré ── */%>
             <div style="display:flex;justify-content:center;align-items:center;gap:.7rem;margin-top:.3rem">
@@ -1848,6 +1894,37 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   const pcSelVisibilite  = document.getElementById('pcSelVisibilite');
   let activePcId = null;
 
+  const passifDescs = <%- JSON.stringify(Object.fromEntries(passifs.map(p => [p.id, p.desc || '']))) %>;
+  let currentAffinites = [];
+
+  function renderAffinites() {
+    const wrap = document.getElementById('pcAffinitesWrap');
+    wrap.innerHTML = '';
+    currentAffinites.forEach(function(tag, i) {
+      const chip = document.createElement('span');
+      chip.className = 'pc-affinite-chip';
+      chip.innerHTML = tag + ' <button class="pc-affinite-chip-del" data-i="' + i + '" type="button">&#10005;</button>';
+      chip.querySelector('.pc-affinite-chip-del').addEventListener('click', function() {
+        currentAffinites.splice(i, 1); renderAffinites();
+      });
+      wrap.appendChild(chip);
+    });
+  }
+
+  document.getElementById('pcAffiniteAdd').addEventListener('click', function() {
+    const inp = document.getElementById('pcAffiniteInput');
+    const val = inp.value.trim();
+    if (val && !currentAffinites.includes(val)) { currentAffinites.push(val); renderAffinites(); }
+    inp.value = '';
+  });
+  document.getElementById('pcAffiniteInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('pcAffiniteAdd').click(); }
+  });
+
+  document.getElementById('pcSelPassif').addEventListener('change', function() {
+    document.getElementById('pcPassifDesc').textContent = passifDescs[this.value] || '\u00a0';
+  });
+
   function openPcModal(tile) {
     let pc;
     try { pc = JSON.parse(tile.dataset.pc); } catch(e) { return; }
@@ -1869,16 +1946,28 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
     modalDesc.value = pc.description || '';
 
-    document.getElementById('pcStatVitesse').value    = pc.vitesse  != null ? pc.vitesse  : 5;
-    document.getElementById('pcStatDefense').value    = pc.defense  != null ? pc.defense  : 5;
-    document.getElementById('pcStatDomSub').value     = pc.domSub   != null ? pc.domSub   : 0;
+    document.getElementById('pcStatVitesse').value     = pc.vitesse  != null ? pc.vitesse  : 5;
+    document.getElementById('pcStatDefense').value     = pc.defense  != null ? pc.defense  : 5;
+    document.getElementById('pcStatDomSub').value      = pc.domSub   != null ? pc.domSub   : 0;
     document.getElementById('pcStatOrientation').value = pc.orientation || 'bi';
+    document.getElementById('pcStatPv').value          = pc.pv != null ? pc.pv : 100;
     document.getElementById('pcStat_prelim_name').value    = pc.actionPrelimName    || '';
     document.getElementById('pcStat_prelim_power').value   = pc.actionPrelimPower   != null ? pc.actionPrelimPower   : 3;
+    document.getElementById('pcStat_prelim_effet').value   = pc.actionPrelimEffet   || '';
     document.getElementById('pcStat_acte_name').value      = pc.actionActeName      || '';
     document.getElementById('pcStat_acte_power').value     = pc.actionActePower     != null ? pc.actionActePower     : 7;
+    document.getElementById('pcStat_acte_effet').value     = pc.actionActeEffet     || '';
     document.getElementById('pcStat_finition_name').value  = pc.actionFinitionName  || '';
     document.getElementById('pcStat_finition_power').value = pc.actionFinitionPower != null ? pc.actionFinitionPower : 20;
+    document.getElementById('pcStat_finition_effet').value = pc.actionFinitionEffet || '';
+
+    const passifSel = document.getElementById('pcSelPassif');
+    passifSel.value = pc.passif || '';
+    document.getElementById('pcPassifDesc').textContent = passifDescs[passifSel.value] || '\u00a0';
+
+    currentAffinites = Array.isArray(pc.affinites) ? pc.affinites.slice() : [];
+    renderAffinites();
+    document.getElementById('pcAffiniteInput').value = '';
 
     modalStatsStatus.textContent = '';
     modal.hidden = false;
@@ -1923,12 +2012,18 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       defense:             document.getElementById('pcStatDefense').value,
       domSub:              document.getElementById('pcStatDomSub').value,
       orientation:         document.getElementById('pcStatOrientation').value,
+      pv:                  document.getElementById('pcStatPv').value,
+      passif:              document.getElementById('pcSelPassif').value,
+      affinites:           currentAffinites,
       actionPrelimName:    document.getElementById('pcStat_prelim_name').value,
       actionPrelimPower:   document.getElementById('pcStat_prelim_power').value,
+      actionPrelimEffet:   document.getElementById('pcStat_prelim_effet').value,
       actionActeName:      document.getElementById('pcStat_acte_name').value,
       actionActePower:     document.getElementById('pcStat_acte_power').value,
+      actionActeEffet:     document.getElementById('pcStat_acte_effet').value,
       actionFinitionName:  document.getElementById('pcStat_finition_name').value,
       actionFinitionPower: document.getElementById('pcStat_finition_power').value,
+      actionFinitionEffet: document.getElementById('pcStat_finition_effet').value,
     };
     modalStatsStatus.textContent = '…'; modalStatsStatus.style.color = '#94a3b8';
     try {
@@ -1945,12 +2040,15 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
       if (tile && ok) {
         let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
-        Object.assign(pc, flags, { description },
-          { vitesse: +statsPayload.vitesse, defense: +statsPayload.defense,
-            domSub: +statsPayload.domSub, orientation: statsPayload.orientation,
-            actionPrelimName: statsPayload.actionPrelimName, actionPrelimPower: +statsPayload.actionPrelimPower,
-            actionActeName: statsPayload.actionActeName, actionActePower: +statsPayload.actionActePower,
-            actionFinitionName: statsPayload.actionFinitionName, actionFinitionPower: +statsPayload.actionFinitionPower });
+        Object.assign(pc, flags, { description }, {
+          vitesse: +statsPayload.vitesse, defense: +statsPayload.defense,
+          domSub: +statsPayload.domSub, orientation: statsPayload.orientation,
+          pv: +statsPayload.pv,
+          passif: statsPayload.passif, affinites: statsPayload.affinites,
+          actionPrelimName: statsPayload.actionPrelimName, actionPrelimPower: +statsPayload.actionPrelimPower, actionPrelimEffet: statsPayload.actionPrelimEffet,
+          actionActeName: statsPayload.actionActeName, actionActePower: +statsPayload.actionActePower, actionActeEffet: statsPayload.actionActeEffet,
+          actionFinitionName: statsPayload.actionFinitionName, actionFinitionPower: +statsPayload.actionFinitionPower, actionFinitionEffet: statsPayload.actionFinitionEffet,
+        });
         tile.dataset.pc = JSON.stringify(pc);
         // Mettre à jour data-deck sur la tuile
         tile.dataset.deck = flags.isUltra ? 'ultra' : flags.isBaseDeck ? 'base' : 'combat';
