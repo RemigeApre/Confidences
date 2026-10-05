@@ -119,6 +119,36 @@
 .obj-tools { display:flex; gap:.4rem; margin-left:auto; }
 .obj-section-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; margin-bottom:.75rem; }
 .obj-section-toolbar .ari-filter-bar { margin-bottom:0; flex:1; flex-wrap:wrap; }
+
+/* ── Personnages — tuiles visuelles ── */
+.pc-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.65rem; margin-top:.75rem; }
+.pc-card-tile { border-radius:10px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,.07); transition:border-color .15s, transform .12s; display:flex; flex-direction:column; background:#0f172a; }
+.pc-card-tile:hover { transform:scale(1.03); border-color:rgba(255,255,255,.28); }
+.pc-card-tile-img { position:relative; aspect-ratio:3/4; overflow:hidden; flex-shrink:0; }
+.pc-card-tile-img img { width:100%; height:100%; object-fit:cover; display:block; }
+.pc-card-tile-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2.2rem; background:#0f172a; color:#334155; }
+.pc-card-tile-rarity { position:absolute; bottom:0; left:0; right:0; font-size:.58rem; font-weight:800; text-align:center; padding:.15rem; letter-spacing:.06em; text-transform:uppercase; background:rgba(0,0,0,.65); }
+.pc-card-tile-footer { padding:.35rem .45rem .4rem; display:flex; flex-direction:column; gap:.1rem; }
+.pc-card-tile-name { font-size:.72rem; font-weight:700; color:#f1f5f9; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pc-card-tile-parody { font-size:.6rem; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── Modal personnage ── */
+.pc-modal-overlay { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.82); display:flex; align-items:center; justify-content:center; padding:1rem; }
+.pc-modal-overlay[hidden] { display:none; }
+.pc-modal-box { position:relative; background:#1e293b; border-radius:14px; width:min(95vw,760px); max-height:90vh; display:flex; gap:0; overflow:hidden; }
+.pc-modal-close { position:absolute; top:.65rem; right:.8rem; background:none; border:none; color:#f87171; cursor:pointer; padding:.2rem; line-height:0; z-index:2; }
+.pc-modal-close:hover { color:#ef4444; }
+.pc-modal-left { width:180px; min-width:160px; flex-shrink:0; display:flex; flex-direction:column; }
+.pc-modal-img-wrap { flex:1; min-height:200px; overflow:hidden; position:relative; background:#0f172a; }
+.pc-modal-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+.pc-modal-identity { padding:.6rem .7rem; display:flex; flex-direction:column; gap:.2rem; border-top:1px solid rgba(255,255,255,.07); }
+.pc-modal-right { flex:1; padding:1.1rem 1.2rem 1rem; overflow-y:auto; display:flex; flex-direction:column; gap:.8rem; }
+.pc-modal-section { display:flex; flex-direction:column; gap:.3rem; }
+.pc-modal-label { font-size:.72rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin:0; }
+.pc-modal-stats-section { border-top:1px solid rgba(255,255,255,.07); padding-top:.6rem; }
+.pc-modal-field-label { font-size:.7rem; color:#94a3b8; display:flex; flex-direction:column; gap:.15rem; }
+.pc-modal-input { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#f1f5f9; border-radius:5px; padding:.28rem .4rem; font-size:.78rem; outline:none; font-family:inherit; width:100%; box-sizing:border-box; }
+.pc-modal-input:focus { border-color:rgba(255,255,255,.3); }
 </style>
 
 <div class="admin-topbar">
@@ -634,97 +664,133 @@
         <% } %>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin-top:.75rem" id="pc-grid">
+      <div class="pc-cards-grid" id="pc-grid">
         <% (personnageCards || []).forEach(function(pc) { %>
         <%
           var pcRarityColor = pc.cardRarity === 'mythic' ? '#f87171' : pc.cardRarity === 'legendary' ? '#fbbf24' : pc.cardRarity === 'epic' ? '#a78bfa' : pc.cardRarity === 'rare' ? '#60a5fa' : '#94a3b8';
+          var pcRarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[pc.cardRarity] || pc.cardRarity;
         %>
-        <div class="card-wiki-item" data-card-id="<%= pc.id %>" data-rarity="<%= pc.cardRarity %>"
+        <div class="pc-card-tile js-pc-open-modal card-wiki-item"
+             data-card-id="<%= pc.id %>" data-rarity="<%= pc.cardRarity %>"
              data-nat="<%= pc.nature || '' %>" data-parody="<%= pc.parody || '' %>"
-             style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
-          <% if (pc.thumb) { %>
-          <div style="height:90px;overflow:hidden;flex-shrink:0">
-            <img src="<%= thumbUrl(pc.thumb) %>" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">
+             data-pc='<%- JSON.stringify({
+               id: pc.id, title: pc.title, description: pc.description,
+               cardRarity: pc.cardRarity, thumb: pc.thumb ? thumbUrl(pc.thumb) : null,
+               nature: pc.nature, parody: pc.parody, gender: pc.gender,
+               vitesse: pc.vitesse, defense: pc.defense, domSub: pc.domSub, orientation: pc.orientation,
+               actionPrelimName: pc.actionPrelimName, actionPrelimPower: pc.actionPrelimPower,
+               actionActeName: pc.actionActeName, actionActePower: pc.actionActePower,
+               actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower
+             }) %>'>
+          <div class="pc-card-tile-img">
+            <% if (pc.thumb) { %>
+              <img src="<%= thumbUrl(pc.thumb) %>" alt="" loading="lazy">
+            <% } else { %>
+              <div class="pc-card-tile-placeholder">&#128100;</div>
+            <% } %>
+            <span class="pc-card-tile-rarity" style="color:<%= pcRarityColor %>"><%= pcRarityLabel %></span>
           </div>
-          <% } else { %>
-          <div style="height:90px;background:#0f172a;display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0">&#128100;</div>
-          <% } %>
-          <div style="padding:.55rem .6rem;display:flex;flex-direction:column;gap:.3rem;flex:1">
-            <div style="font-size:.8rem;font-weight:700;color:#f1f5f9;line-height:1.3"><%= pc.title %></div>
-            <div style="font-size:.62rem;color:#64748b;display:flex;gap:.35rem;flex-wrap:wrap">
-              <% if (pc.nature) { %><span style="text-transform:capitalize"><%= _pcNatLabels[pc.nature] || pc.nature %></span><% } %>
-              <% if (pc.parody) { %><span>&bull; <%= pc.parody %></span><% } %>
-            </div>
-            <select class="charm-rarity-select no-arrow js-pc-rarity" data-pc-id="<%= pc.id %>"
-                    style="border-color:<%= pcRarityColor %>;color:<%= pcRarityColor %>">
-              <% ['common','rare','epic','legendary','mythic'].forEach(function(r) { %>
-                <option value="<%= r %>"<%= pc.cardRarity === r ? ' selected' : '' %>>
-                  <%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[r] %>
-                </option>
-              <% }) %>
-            </select>
-            <span class="js-pc-save-status" style="font-size:.68rem;height:.85em;color:#4ade80;display:block">&nbsp;</span>
-            <%/* Fiche de combat */%>
-            <div style="border-top:1px solid rgba(255,255,255,.07);margin-top:.2rem;padding-top:.3rem">
-              <button class="js-pc-stats-toggle"
-                style="background:none;border:none;color:#94a3b8;font-size:.7rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:.3rem;width:100%">
-                <span style="font-size:.65rem">&#9654;</span> Fiche de combat
-              </button>
-              <div class="js-pc-stats-body" style="display:none;margin-top:.45rem;display:none;flex-direction:column;gap:.3rem">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">
-                  <label style="font-size:.68rem;color:#94a3b8;display:flex;flex-direction:column;gap:.15rem">
-                    Vitesse
-                    <input type="number" class="js-pc-stat" data-stat="vitesse" min="1" max="10" value="<%= pc.vitesse != null ? pc.vitesse : 5 %>"
-                      style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.2rem .35rem;font-size:.8rem;outline:none;width:100%">
-                  </label>
-                  <label style="font-size:.68rem;color:#94a3b8;display:flex;flex-direction:column;gap:.15rem">
-                    D&eacute;fense
-                    <input type="number" class="js-pc-stat" data-stat="defense" min="1" max="10" value="<%= pc.defense != null ? pc.defense : 5 %>"
-                      style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.2rem .35rem;font-size:.8rem;outline:none;width:100%">
-                  </label>
-                </div>
-                <label style="font-size:.68rem;color:#94a3b8;display:flex;flex-direction:column;gap:.15rem">
-                  Orientation
-                  <select class="js-pc-stat charm-rarity-select" data-stat="orientation"
-                    style="border-color:rgba(255,255,255,.2);color:#cbd5e1">
-                    <% [['hetero','Hétéro'],['homo','Homo'],['bi','Bi'],['pan','Pan']].forEach(function(o) { %>
-                      <option value="<%= o[0] %>"<%= (pc.orientation||'bi') === o[0] ? ' selected' : '' %>><%= o[1] %></option>
-                    <% }) %>
-                  </select>
-                </label>
-                <label style="font-size:.68rem;color:#94a3b8;display:flex;flex-direction:column;gap:.15rem">
-                  Dom / Sub&nbsp;<span class="js-pc-domsubval" style="color:#f1f5f9;font-weight:700"><%= pc.domSub != null ? pc.domSub : 0 %></span>
-                  <input type="range" class="js-pc-stat js-pc-domsub-range" data-stat="domSub" min="-50" max="50" value="<%= pc.domSub != null ? pc.domSub : 0 %>"
-                    style="width:100%;accent-color:#a78bfa">
-                  <div style="display:flex;justify-content:space-between;font-size:.6rem;color:#475569;margin-top:.05rem"><span>Soumis</span><span>Switch</span><span>Dominant</span></div>
-                </label>
-                <div style="font-size:.68rem;color:#94a3b8;margin-top:.1rem;font-weight:600">Actions</div>
-                <% [
-                  ['prelim','Pr&eacute;liminaire','actionPrelimName','actionPrelimPower'],
-                  ['acte','Acte','actionActeName','actionActePower'],
-                  ['finition','Finition','actionFinitionName','actionFinitionPower']
-                ].forEach(function(act) { %>
-                <div style="background:rgba(0,0,0,.15);border-radius:5px;padding:.3rem .4rem;display:flex;flex-direction:column;gap:.2rem">
-                  <div style="font-size:.63rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em"><%- act[1] %></div>
-                  <input type="text" class="js-pc-stat" data-stat="action_<%= act[0] %>_name" value="<%= pc[act[2]] || '' %>" placeholder="Nom de l'action&hellip;"
-                    style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.2rem .35rem;font-size:.72rem;outline:none;font-family:inherit">
-                  <label style="font-size:.65rem;color:#94a3b8;display:flex;align-items:center;gap:.35rem">
-                    Puissance
-                    <input type="number" class="js-pc-stat" data-stat="action_<%= act[0] %>_power" min="1" max="99" value="<%= pc[act[3]] != null ? pc[act[3]] : (act[0]==='prelim'?3:act[0]==='acte'?7:20) %>"
-                      style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.2rem .35rem;font-size:.78rem;outline:none;width:55px">
-                  </label>
-                </div>
-                <% }) %>
-                <button class="js-pc-stats-save" data-pc-id="<%= pc.id %>"
-                  style="background:#1e3a5f;border:1px solid #1e40af;color:#93c5fd;font-size:.7rem;padding:.3rem .6rem;border-radius:5px;cursor:pointer;margin-top:.1rem">
-                  Enregistrer la fiche
-                </button>
-                <span class="js-pc-stats-status" style="font-size:.68rem;color:#4ade80;min-height:.9em"></span>
-              </div>
-            </div>
+          <div class="pc-card-tile-footer">
+            <span class="pc-card-tile-name"><%= pc.title %></span>
+            <% if (pc.parody) { %><span class="pc-card-tile-parody"><%= pc.parody %></span><% } %>
           </div>
         </div>
         <% }) %>
+      </div>
+    </div>
+
+    <%/* ── Modal édition personnage ── */%>
+    <div class="pc-modal-overlay" id="pcModal" hidden>
+      <div class="pc-modal-box" role="dialog" aria-modal="true">
+        <button class="pc-modal-close js-pc-modal-close" aria-label="Fermer">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="pc-modal-left">
+          <div class="pc-modal-img-wrap">
+            <img id="pcModalImg" src="" alt="" style="display:none">
+            <div id="pcModalImgPlaceholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;color:#334155">&#128100;</div>
+          </div>
+          <div class="pc-modal-identity">
+            <strong id="pcModalName" style="font-size:1rem;color:#f1f5f9"></strong>
+            <span id="pcModalTags" style="font-size:.72rem;color:#64748b"></span>
+          </div>
+        </div>
+        <div class="pc-modal-right">
+          <div class="pc-modal-section">
+            <p class="pc-modal-label">Raret&eacute;</p>
+            <div class="ari-rarity-btns" id="pcModalRarityBtns">
+              <button class="ari-rarity-btn" data-rarity="common">Commun</button>
+              <button class="ari-rarity-btn" data-rarity="rare">Rare</button>
+              <button class="ari-rarity-btn" data-rarity="epic">&Eacute;pique</button>
+              <button class="ari-rarity-btn" data-rarity="legendary">L&eacute;gendaire</button>
+              <button class="ari-rarity-btn" data-rarity="mythic">Mythique</button>
+            </div>
+          </div>
+          <div class="pc-modal-section">
+            <p class="pc-modal-label">Description courte <span style="color:#475569;font-weight:400">(dos de carte)</span></p>
+            <textarea id="pcModalDesc" rows="3" placeholder="Description qui appara&icirc;t au dos de la carte&hellip;"
+              style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#cbd5e1;border-radius:6px;padding:.4rem .55rem;font-size:.82rem;resize:vertical;outline:none;font-family:inherit;box-sizing:border-box"></textarea>
+          </div>
+          <div class="pc-modal-section">
+            <button class="pc-modal-save-main js-pc-modal-save-main"
+              style="background:#1e3a5f;border:1px solid #2563eb;color:#93c5fd;font-size:.8rem;padding:.35rem .75rem;border-radius:6px;cursor:pointer">
+              Enregistrer
+            </button>
+            <span id="pcModalMainStatus" style="font-size:.75rem;color:#4ade80;margin-left:.5rem"></span>
+          </div>
+          <div class="pc-modal-section pc-modal-stats-section">
+            <button class="js-pc-modal-stats-toggle"
+              style="background:none;border:none;color:#64748b;font-size:.78rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:.35rem;width:100%">
+              <span class="js-pc-modal-stats-arrow" style="font-size:.65rem">&#9654;</span>
+              Stats de combat
+            </button>
+            <div class="js-pc-modal-stats-body" style="display:none;margin-top:.5rem;display:none;flex-direction:column;gap:.35rem">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
+                <label class="pc-modal-field-label">Vitesse (1–10)
+                  <input type="number" id="pcStatVitesse" class="pc-modal-input" min="1" max="10">
+                </label>
+                <label class="pc-modal-field-label">D&eacute;fense (1–10)
+                  <input type="number" id="pcStatDefense" class="pc-modal-input" min="1" max="10">
+                </label>
+              </div>
+              <label class="pc-modal-field-label">Orientation
+                <select id="pcStatOrientation" class="pc-modal-input">
+                  <option value="hetero">H&eacute;t&eacute;ro</option>
+                  <option value="homo">Homo</option>
+                  <option value="bi">Bi</option>
+                  <option value="pan">Pan</option>
+                </select>
+              </label>
+              <label class="pc-modal-field-label">Dom / Sub
+                <span id="pcStatDomSubVal" style="color:#f1f5f9;font-weight:700;margin-left:.3rem">0</span>
+                <input type="range" id="pcStatDomSub" min="-50" max="50" style="width:100%;accent-color:#a78bfa;margin-top:.2rem">
+                <span style="display:flex;justify-content:space-between;font-size:.6rem;color:#475569">
+                  <span>Soumis</span><span>Switch</span><span>Dominant</span>
+                </span>
+              </label>
+              <p class="pc-modal-label" style="margin:.1rem 0 0;font-weight:600">Actions</p>
+              <% [
+                ['prelim','Pr&eacute;liminaire'],
+                ['acte','Acte'],
+                ['finition','Finition']
+              ].forEach(function(a) { %>
+              <div style="background:rgba(0,0,0,.18);border-radius:6px;padding:.35rem .45rem;display:flex;flex-direction:column;gap:.2rem">
+                <span style="font-size:.6rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em"><%- a[1] %></span>
+                <input type="text" id="pcStat_<%= a[0] %>_name" class="pc-modal-input" placeholder="Nom de l'action…">
+                <label class="pc-modal-field-label" style="flex-direction:row;align-items:center;gap:.4rem">
+                  Puissance
+                  <input type="number" id="pcStat_<%= a[0] %>_power" class="pc-modal-input" min="1" max="99" style="width:55px">
+                </label>
+              </div>
+              <% }) %>
+              <button class="js-pc-modal-stats-save"
+                style="background:#1e3a5f;border:1px solid #1e40af;color:#93c5fd;font-size:.78rem;padding:.3rem .65rem;border-radius:5px;cursor:pointer;align-self:flex-start">
+                Enregistrer les stats
+              </button>
+              <span id="pcModalStatsStatus" style="font-size:.72rem;color:#4ade80"></span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1703,78 +1769,173 @@
   const pcSearch = document.getElementById('pc-search-input');
   pcSearch && pcSearch.addEventListener('input', applyPcFilters);
 
-  // Fiche de combat — toggle
-  document.querySelectorAll('.js-pc-stats-toggle').forEach(function(btn) {
+  // Rarity change (kept for modal)
+  const RARITY_LABELS_PC = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
+
+  // ── Modal ──
+  const modal       = document.getElementById('pcModal');
+  const modalImg    = document.getElementById('pcModalImg');
+  const modalImgPh  = document.getElementById('pcModalImgPlaceholder');
+  const modalName   = document.getElementById('pcModalName');
+  const modalTags   = document.getElementById('pcModalTags');
+  const modalDesc   = document.getElementById('pcModalDesc');
+  const modalStatus = document.getElementById('pcModalMainStatus');
+  const modalStatsStatus = document.getElementById('pcModalStatsStatus');
+  const rarityBtns  = document.querySelectorAll('#pcModalRarityBtns .ari-rarity-btn');
+  let activePcId = null;
+
+  function openPcModal(tile) {
+    let pc;
+    try { pc = JSON.parse(tile.dataset.pc); } catch(e) { return; }
+    activePcId = pc.id;
+
+    // Image
+    if (pc.thumb) {
+      modalImg.src = pc.thumb; modalImg.style.display = 'block';
+      modalImgPh.style.display = 'none';
+    } else {
+      modalImg.style.display = 'none'; modalImgPh.style.display = 'flex';
+    }
+
+    // Identity
+    modalName.textContent = pc.title;
+    const tags = [pc.parody, pc.nature && pc.nature !== 'humain' ? pc.nature : ''].filter(Boolean);
+    modalTags.textContent = tags.join(' · ');
+
+    // Rarity
+    rarityBtns.forEach(function(b) {
+      b.classList.toggle('active', b.dataset.rarity === pc.cardRarity);
+    });
+
+    // Description
+    modalDesc.value = pc.description || '';
+
+    // Stats
+    document.getElementById('pcStatVitesse').value    = pc.vitesse  != null ? pc.vitesse  : 5;
+    document.getElementById('pcStatDefense').value    = pc.defense  != null ? pc.defense  : 5;
+    document.getElementById('pcStatDomSub').value     = pc.domSub   != null ? pc.domSub   : 0;
+    document.getElementById('pcStatDomSubVal').textContent = pc.domSub != null ? pc.domSub : 0;
+    const ori = document.getElementById('pcStatOrientation');
+    ori.value = pc.orientation || 'bi';
+    document.getElementById('pcStat_prelim_name').value    = pc.actionPrelimName    || '';
+    document.getElementById('pcStat_prelim_power').value   = pc.actionPrelimPower   != null ? pc.actionPrelimPower   : 3;
+    document.getElementById('pcStat_acte_name').value      = pc.actionActeName      || '';
+    document.getElementById('pcStat_acte_power').value     = pc.actionActePower     != null ? pc.actionActePower     : 7;
+    document.getElementById('pcStat_finition_name').value  = pc.actionFinitionName  || '';
+    document.getElementById('pcStat_finition_power').value = pc.actionFinitionPower != null ? pc.actionFinitionPower : 20;
+
+    // Reset statuses
+    modalStatus.textContent = ''; modalStatsStatus.textContent = '';
+
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePcModal() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    activePcId = null;
+  }
+
+  document.querySelectorAll('.js-pc-open-modal').forEach(function(tile) {
+    tile.addEventListener('click', function() { openPcModal(tile); });
+  });
+
+  document.querySelector('.js-pc-modal-close').addEventListener('click', closePcModal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) closePcModal(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !modal.hidden) closePcModal(); });
+
+  // Dom/Sub live label in modal
+  document.getElementById('pcStatDomSub').addEventListener('input', function() {
+    document.getElementById('pcStatDomSubVal').textContent = this.value;
+  });
+
+  // Stats panel toggle
+  document.querySelector('.js-pc-modal-stats-toggle').addEventListener('click', function() {
+    const body  = document.querySelector('.js-pc-modal-stats-body');
+    const arrow = document.querySelector('.js-pc-modal-stats-arrow');
+    const open  = body.style.display !== 'none';
+    body.style.display  = open ? 'none' : 'flex';
+    arrow.textContent   = open ? '▶' : '▼';
+  });
+
+  // Rarity buttons in modal
+  rarityBtns.forEach(function(btn) {
     btn.addEventListener('click', function() {
-      const body = btn.nextElementSibling;
-      if (!body) return;
-      const open = body.style.display !== 'none';
-      body.style.display = open ? 'none' : 'flex';
-      btn.querySelector('span').textContent = open ? '▶' : '▼';
+      rarityBtns.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
     });
   });
 
-  // Dom/Sub range live label
-  document.querySelectorAll('.js-pc-domsub-range').forEach(function(range) {
-    const label = range.closest('label').querySelector('.js-pc-domsubval');
-    range.addEventListener('input', function() { if (label) label.textContent = range.value; });
-  });
-
-  // Fiche de combat — save
-  document.querySelectorAll('.js-pc-stats-save').forEach(function(btn) {
-    btn.addEventListener('click', async function() {
-      const pcId = btn.dataset.pcId;
-      const body = btn.closest('.js-pc-stats-body');
-      const statusEl = body.querySelector('.js-pc-stats-status');
-      const get = function(stat) {
-        const el = body.querySelector('[data-stat="' + stat + '"]');
-        return el ? el.value : null;
-      };
-      const payload = {
-        vitesse: get('vitesse'), defense: get('defense'),
-        domSub: get('domSub'), orientation: get('orientation'),
-        actionPrelimName: get('action_prelim_name'), actionPrelimPower: get('action_prelim_power'),
-        actionActeName: get('action_acte_name'), actionActePower: get('action_acte_power'),
-        actionFinitionName: get('action_finition_name'), actionFinitionPower: get('action_finition_power'),
-      };
-      if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
-      try {
-        const r = await fetch('/admin/recompenses/personnages/' + pcId + '/stats', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
-        });
-        const d = await r.json();
-        if (statusEl) {
-          statusEl.textContent = d.ok ? '✓ Enregistré' : '✗ Erreur';
-          statusEl.style.color = d.ok ? '#4ade80' : '#f87171';
-          setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 2000);
+  // Save rarity + description
+  document.querySelector('.js-pc-modal-save-main').addEventListener('click', async function() {
+    if (!activePcId) return;
+    const rarity = (document.querySelector('#pcModalRarityBtns .ari-rarity-btn.active') || {}).dataset.rarity;
+    const description = modalDesc.value.trim();
+    modalStatus.textContent = '…'; modalStatus.style.color = '#94a3b8';
+    try {
+      const [r1, r2] = await Promise.all([
+        rarity ? fetch('/admin/recompenses/personnages/' + activePcId + '/rarity',
+          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ rarity }) }) : Promise.resolve({ json: () => ({ ok: true }) }),
+        fetch('/admin/recompenses/personnages/' + activePcId + '/description',
+          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ description }) }),
+      ]);
+      const [d1, d2] = await Promise.all([r1.json ? r1.json() : r1, r2.json()]);
+      const ok = (!rarity || d1.ok) && d2.ok;
+      // Update tile dataset
+      const tile = document.querySelector('.js-pc-open-modal[data-card-id="' + activePcId + '"]');
+      if (tile && rarity) {
+        tile.dataset.rarity = rarity;
+        let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
+        pc.cardRarity = rarity; pc.description = description;
+        tile.dataset.pc = JSON.stringify(pc);
+        const badge = tile.querySelector('.pc-card-tile-rarity');
+        if (badge) {
+          const c = RARITY_COLORS[rarity] || '#94a3b8';
+          badge.style.color = c; badge.textContent = RARITY_LABELS_PC[rarity] || rarity;
         }
-      } catch(e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
-    });
+      }
+      modalStatus.textContent = ok ? '✓ Enregistré' : '✗ Erreur';
+      modalStatus.style.color = ok ? '#4ade80' : '#f87171';
+      setTimeout(function() { modalStatus.textContent = ''; }, 2000);
+    } catch(e) { modalStatus.textContent = '✗'; modalStatus.style.color = '#f87171'; }
   });
 
-  // Rarity change
-  document.querySelectorAll('.js-pc-rarity').forEach(function(sel) {
-    sel.addEventListener('change', async function() {
-      const pcId = sel.dataset.pcId;
-      const rarity = sel.value;
-      const item = sel.closest('.card-wiki-item');
-      if (item) item.dataset.rarity = rarity;
-      const statusEl = sel.parentElement.querySelector('.js-pc-save-status');
-      sel.style.color = RARITY_COLORS[rarity] || '#94a3b8';
-      sel.style.borderColor = RARITY_COLORS[rarity] || 'rgba(255,255,255,.2)';
-      if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
-      try {
-        const r = await fetch('/admin/recompenses/personnages/' + pcId + '/rarity', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rarity }),
-        });
-        const json = await r.json();
-        if (statusEl) {
-          statusEl.textContent = json.ok ? '✓' : '✗';
-          statusEl.style.color = json.ok ? '#4ade80' : '#f87171';
-          setTimeout(function() { if (statusEl) statusEl.textContent = '\u00a0'; }, 1500);
-        }
-      } catch(e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
-    });
+  // Save stats
+  document.querySelector('.js-pc-modal-stats-save').addEventListener('click', async function() {
+    if (!activePcId) return;
+    const payload = {
+      vitesse:           document.getElementById('pcStatVitesse').value,
+      defense:           document.getElementById('pcStatDefense').value,
+      domSub:            document.getElementById('pcStatDomSub').value,
+      orientation:       document.getElementById('pcStatOrientation').value,
+      actionPrelimName:  document.getElementById('pcStat_prelim_name').value,
+      actionPrelimPower: document.getElementById('pcStat_prelim_power').value,
+      actionActeName:    document.getElementById('pcStat_acte_name').value,
+      actionActePower:   document.getElementById('pcStat_acte_power').value,
+      actionFinitionName:  document.getElementById('pcStat_finition_name').value,
+      actionFinitionPower: document.getElementById('pcStat_finition_power').value,
+    };
+    modalStatsStatus.textContent = '…'; modalStatsStatus.style.color = '#94a3b8';
+    try {
+      const r = await fetch('/admin/recompenses/personnages/' + activePcId + '/stats',
+        { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const d = await r.json();
+      // Update tile dataset
+      const tile = document.querySelector('.js-pc-open-modal[data-card-id="' + activePcId + '"]');
+      if (tile && d.ok) {
+        let pc; try { pc = JSON.parse(tile.dataset.pc); } catch(_) { pc = {}; }
+        Object.assign(pc, { vitesse: +payload.vitesse, defense: +payload.defense,
+          domSub: +payload.domSub, orientation: payload.orientation,
+          actionPrelimName: payload.actionPrelimName, actionPrelimPower: +payload.actionPrelimPower,
+          actionActeName: payload.actionActeName, actionActePower: +payload.actionActePower,
+          actionFinitionName: payload.actionFinitionName, actionFinitionPower: +payload.actionFinitionPower });
+        tile.dataset.pc = JSON.stringify(pc);
+      }
+      modalStatsStatus.textContent = d.ok ? '✓ Enregistré' : '✗ Erreur';
+      modalStatsStatus.style.color = d.ok ? '#4ade80' : '#f87171';
+      setTimeout(function() { modalStatsStatus.textContent = ''; }, 2000);
+    } catch(e) { modalStatsStatus.textContent = '✗'; modalStatsStatus.style.color = '#f87171'; }
   });
 })();
 </script>

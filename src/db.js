@@ -2640,15 +2640,19 @@ function listProtagonistesForCards() {
             action_finition_name, action_finition_power
      FROM protagonistes ORDER BY name COLLATE NOCASE`
   ).all().map(r => ({
-    id: r.id, title: r.name, description: r.description || '', gender: r.gender || '',
-    nature: r.nature || '', parody: r.parody || '', thumb: r.image_path || null,
-    cardRarity: r.card_rarity || 'rare',
+    id: r.id, title: r.name, description: r.description || '',
+    gender: r.gender || '', nature: r.nature || '', parody: r.parody || '',
+    thumb: r.image_path || null, cardRarity: r.card_rarity || 'rare',
     vitesse: r.vitesse ?? 5, defense: r.defense ?? 5,
     domSub: r.dom_sub ?? 0, orientation: r.orientation || 'bi',
     actionPrelimName: r.action_prelim_name || '', actionPrelimPower: r.action_prelim_power ?? 3,
     actionActeName: r.action_acte_name || '', actionActePower: r.action_acte_power ?? 7,
     actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20,
   }));
+}
+
+function setPersonnageDescription(protagonisteId, description) {
+  db.prepare("UPDATE protagonistes SET description = ? WHERE id = ?").run(String(description || '').trim(), protagonisteId);
 }
 
 function setPersonnageCardStats(protagonisteId, { vitesse, defense, domSub, orientation,
@@ -4419,6 +4423,7 @@ module.exports = {
   getUserPersonnageCards,
   setPersonnageCardRarity,
   listProtagonistesForCards,
+  setPersonnageDescription,
   setPersonnageCardStats,
   createCardVariant,
   updateCardVariantRarity,

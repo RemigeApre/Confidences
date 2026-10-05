@@ -65,6 +65,7 @@ const {
   getUserPersonnageCards,
   setPersonnageCardRarity,
   listProtagonistesForCards,
+  setPersonnageDescription,
   setPersonnageCardStats,
   createCardVariant,
   updateCardVariantRarity,
@@ -691,6 +692,14 @@ function buildAdminRouter(config) {
     const rarity = String(req.body.rarity || '');
     const ok = setPersonnageCardRarity(id, rarity);
     res.json({ ok });
+  });
+
+  // ── Cartes Personnages — description ─────────────────────────────────────
+  router.post("/recompenses/personnages/:id/description", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    setPersonnageDescription(id, req.body.description || '');
+    res.json({ ok: true });
   });
 
   // ── Cartes Personnages — stats de combat ──────────────────────────────────
