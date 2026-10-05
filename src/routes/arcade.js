@@ -7,8 +7,15 @@ const {
   getLootboxConfig, RARITY_BUY_PRICE,
   getMemoryShop, setMemoryCardIcon, buyOrSetMemoryColor,
   getWordleDaily, getWordleUserGame, saveWordleGuess, updateWordleStreakAndStats, normalizeWordleWord,
+  getUserPersonnageCards,
+  getActiveCardGameSession, createCardGameSession, updateCardGameSession,
+  getPlayerCardGameDeck, getAICardGameDeck, getAICardGamePersonnage,
 } = require('../db');
 const { thumbUrl } = require('../thumbs');
+const {
+  createGameState, playCard, attackWithPersonnage, attackWithCard,
+  endTurn, runAITurn, VICTORY_EXTASE,
+} = require('../cardGame');
 
 const CHARM_SLOTS_COST = 4;
 const WIN_PROB = 0.05;
@@ -204,6 +211,144 @@ function buildArcadeRouter() {
       currentStreak: freshStats ? (freshStats.wordleCurrentStreak || 0) : null,
       bestStreak:    freshStats ? (freshStats.wordleBestStreak    || 0) : null,
     });
+  });
+
+  // ── Jeu de cartes — personnages disponibles ──────────────────────────────
+  router.get('/card-game/personnages', requireUserJson, (req, res) => {
+    const cards = getUserPersonnageCards(req.user.id).map(p => ({
+      ...p,
+      id: p.protagonisteId,
+      thumb: p.thumb ? thumbUrl(p.thumb) : null,
+    }));
+    res.json({ ok: true, personnages: cards });
+  });
+
+  // ── Jeu de cartes — état de la session active ─────────────────────────
+  router.get('/card-game/state', requireUserJson, (req, res) => {
+    const session = getActiveCardGameSession(req.user.id);
+    res.json({ ok: true, session: session || null });
+  });
+
+  // ── Jeu de cartes — démarrer une partie ───────────────────────────────
+  router.post('/card-game/start', requireUserJson, express.json(), (req, res) => {
+    const userId = req.user.id;
+
+    // Abandonner toute session active existante
+    const existing = getActiveCardGameSession(userId);
+    if (existing) updateCardGameSession(existing.id, existing.state, 'abandoned');
+
+    const { personnageId } = req.body;
+    if (!personnageId) return res.json({ ok: false, error: 'Personnage requis' });
+
+    // Vérifier que le joueur possède ce personnage
+    const userPersonnages = getUserPersonnageCards(userId);
+    const rawPersonnage = userPersonnages.find(p => p.protagonisteId === Number(personnageId));
+    if (!rawPersonnage) return res.json({ ok: false, error: 'Personnage non possédé' });
+
+    const playerPersonnage = {
+      ...rawPersonnage,
+      id: rawPersonnage.protagonisteId,
+      name: rawPersonnage.title,
+      thumb: rawPersonnage.thumb ? thumbUrl(rawPersonnage.thumb) : null,
+    };
+
+    const aiPersonnage = getAICardGamePersonnage();
+    if (!aiPersonnage) return res.json({ ok: false, error: 'Aucun personnage IA disponible' });
+    aiPersonnage.thumb = aiPersonnage.thumb ? thumbUrl(aiPersonnage.thumb) : null;
+
+    // Decks
+    let playerDeck = getPlayerCardGameDeck(userId).map(c => ({
+      ...c, thumb: c.thumb ? thumbUrl(c.thumb) : null,
+    }));
+    // Si le joueur a moins de 5 cartes jouables, on complète avec des cartes publiques
+    if (playerDeck.length < 5) {
+      const extra = getAICardGameDeck().map(c => ({ ...c, thumb: c.thumb ? thumbUrl(c.thumb) : null }));
+      playerDeck = [...playerDeck, ...extra].slice(0, 20);
+    }
+
+    const aiDeck = getAICardGameDeck().map(c => ({ ...c, thumb: c.thumb ? thumbUrl(c.thumb) : null }));
+
+    const state = createGameState(playerPersonnage, playerDeck, aiPersonnage, aiDeck);
+
+    // Si l'IA commence, on joue son premier tour immédiatement
+    if (state.activePlayer === 1) {
+      const r = runAITurn(state, 1);
+      if (r.victory) {
+        const sid = createCardGameSession(userId, state);
+        updateCardGameSession(sid, state, 'lost', 1);
+        return res.json({ ok: true, sessionId: sid, state, status: 'lost' });
+      }
+    }
+
+    const sessionId = createCardGameSession(userId, state);
+    res.json({ ok: true, sessionId, state, status: 'active' });
+  });
+
+  // ── Jeu de cartes — action en partie ─────────────────────────────────
+  router.post('/card-game/action', requireUserJson, express.json(), (req, res) => {
+    const userId  = req.user.id;
+    const session = getActiveCardGameSession(userId);
+    if (!session) return res.json({ ok: false, error: 'Pas de partie en cours' });
+
+    const state  = session.state;
+    const { action } = req.body;
+
+    if (action === 'abandon') {
+      updateCardGameSession(session.id, state, 'abandoned');
+      return res.json({ ok: true, state, status: 'abandoned' });
+    }
+
+    // Player = index 0, IA = index 1
+    if (state.activePlayer !== 0)
+      return res.json({ ok: false, error: 'Ce n\'est pas votre tour' });
+
+    let result;
+    switch (action) {
+      case 'play_card':
+        result = playCard(state, 0, req.body.cardKey, req.body.zone);
+        break;
+      case 'attack_personnage':
+        result = attackWithPersonnage(state, 0, req.body.actionType);
+        break;
+      case 'attack_card':
+        result = attackWithCard(state, 0, req.body.slotId);
+        break;
+      case 'end_turn': {
+        result = endTurn(state);
+        if (result.ok) {
+          // Tour de l'IA
+          const aiResult = runAITurn(state, 1);
+          const aiVictory = aiResult.victory || state.players[0].extase >= VICTORY_EXTASE;
+          const playerVictory = state.players[1].extase >= VICTORY_EXTASE;
+          if (playerVictory) {
+            updateCardGameSession(session.id, state, 'won', 0);
+            return res.json({ ok: true, state, status: 'won', message: 'Victoire !' });
+          }
+          if (aiVictory) {
+            updateCardGameSession(session.id, state, 'lost', 1);
+            return res.json({ ok: true, state, status: 'lost', message: 'Défaite...' });
+          }
+        }
+        break;
+      }
+      default:
+        return res.json({ ok: false, error: 'Action inconnue' });
+    }
+
+    if (!result || !result.ok) return res.json({ ok: false, error: (result && result.error) || 'Erreur' });
+
+    // Vérifier victoire après action
+    if (state.players[1].extase >= VICTORY_EXTASE) {
+      updateCardGameSession(session.id, state, 'won', 0);
+      return res.json({ ok: true, state, status: 'won', message: 'L\'adversaire atteint l\'extase !' });
+    }
+    if (state.players[0].extase >= VICTORY_EXTASE) {
+      updateCardGameSession(session.id, state, 'lost', 1);
+      return res.json({ ok: true, state, status: 'lost', message: 'Vous avez atteint l\'extase...' });
+    }
+
+    updateCardGameSession(session.id, state);
+    res.json({ ok: true, state, status: 'active' });
   });
 
   return router;

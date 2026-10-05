@@ -169,6 +169,27 @@
           </div>
         </div>
 
+        <%# Jeu de Cartes %>
+        <div class="ag-card ag-card--cardgame">
+          <div class="ag-card-visual ag-card-visual--cardgame">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="4" width="10" height="14" rx="2"/>
+              <rect x="12" y="6" width="10" height="14" rx="2"/>
+              <line x1="5" y1="9" x2="9" y2="9"/><line x1="5" y1="12" x2="9" y2="12"/>
+            </svg>
+          </div>
+          <div class="ag-card-body">
+            <div class="ag-card-head">
+              <span class="ag-card-name">Jeu de Cartes</span>
+              <span class="arcade-game-level-badge" id="arcade-cg-badge" hidden></span>
+            </div>
+            <p class="ag-card-desc">Affrontez un adversaire avec votre deck de cartes personnages.</p>
+            <div class="ag-card-footer">
+              <button class="ag-card-play" id="arcade-cg-play-btn">Jouer</button>
+            </div>
+          </div>
+        </div>
+
       </div><%# /arcade-games-grid %>
     </div>
 
@@ -298,6 +319,136 @@
       </div>
       <div class="wordle-message" id="wordle-message"></div>
       <div class="wordle-result" id="wordle-result" hidden></div>
+    </div>
+
+    <%# ── Jeu de Cartes — Sélection personnage ── %>
+    <div id="arcade-screen-cg-pick" class="arcade-screen" hidden>
+      <div class="cg-pick-wrap">
+        <p class="cg-pick-title">Choisissez votre personnage</p>
+        <p class="cg-pick-sub" id="cg-pick-sub">Chargement&hellip;</p>
+        <div class="cg-pick-grid" id="cg-pick-grid"></div>
+        <div class="cg-pick-footer">
+          <button class="cg-btn cg-btn--primary" id="cg-start-btn" disabled>Commencer la partie</button>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Jeu de Cartes — Plateau ── %>
+    <div id="arcade-screen-cg-board" class="arcade-screen" hidden>
+      <div class="cg-board">
+
+        <%# Zone IA (haut) %>
+        <div class="cg-zone cg-zone--ai">
+          <div class="cg-player-header">
+            <div class="cg-personnage-thumb-wrap">
+              <img id="cg-ai-thumb" src="" alt="" class="cg-personnage-thumb" style="display:none">
+              <span id="cg-ai-thumb-ph" class="cg-personnage-thumb-ph">&#128100;</span>
+            </div>
+            <div class="cg-player-info">
+              <span class="cg-player-name" id="cg-ai-name">Adversaire</span>
+              <div class="cg-extase-bar-wrap">
+                <div class="cg-extase-bar"><div class="cg-extase-fill cg-extase-fill--ai" id="cg-ai-extase-fill" style="width:0%"></div></div>
+                <span class="cg-extase-val" id="cg-ai-extase-val">0 / 100</span>
+              </div>
+            </div>
+            <div class="cg-energy-display cg-energy-display--ai" id="cg-ai-energy">
+              <span class="cg-energy-label">Énergie</span>
+              <span class="cg-energy-val" id="cg-ai-energy-val">3</span>
+            </div>
+          </div>
+          <div class="cg-terrain-row">
+            <div class="cg-terrain cg-terrain--def" id="cg-ai-defense">
+              <span class="cg-terrain-label">Défense</span>
+            </div>
+            <div class="cg-terrain cg-terrain--atk" id="cg-ai-attack">
+              <span class="cg-terrain-label">Attaque</span>
+            </div>
+          </div>
+        </div>
+
+        <%# Lieu partagé %>
+        <div class="cg-lieu-row">
+          <div class="cg-lieu-slot" id="cg-lieu-slot">
+            <span class="cg-lieu-empty">Aucun lieu actif</span>
+          </div>
+        </div>
+
+        <%# Zone Joueur (bas) %>
+        <div class="cg-zone cg-zone--player">
+          <div class="cg-terrain-row">
+            <div class="cg-terrain cg-terrain--atk cg-terrain--drop" id="cg-player-attack"
+                 data-zone="attack">
+              <span class="cg-terrain-label">Attaque</span>
+            </div>
+            <div class="cg-terrain cg-terrain--def cg-terrain--drop" id="cg-player-defense"
+                 data-zone="defense">
+              <span class="cg-terrain-label">Défense</span>
+            </div>
+          </div>
+          <div class="cg-player-header">
+            <div class="cg-personnage-thumb-wrap">
+              <img id="cg-p-thumb" src="" alt="" class="cg-personnage-thumb" style="display:none">
+              <span id="cg-p-thumb-ph" class="cg-personnage-thumb-ph">&#128100;</span>
+            </div>
+            <div class="cg-player-info">
+              <span class="cg-player-name" id="cg-p-name">Vous</span>
+              <div class="cg-extase-bar-wrap">
+                <div class="cg-extase-bar"><div class="cg-extase-fill cg-extase-fill--player" id="cg-p-extase-fill" style="width:0%"></div></div>
+                <span class="cg-extase-val" id="cg-p-extase-val">0 / 100</span>
+              </div>
+            </div>
+            <div class="cg-energy-display" id="cg-p-energy">
+              <span class="cg-energy-label">Énergie</span>
+              <span class="cg-energy-val" id="cg-p-energy-val">3</span>
+            </div>
+          </div>
+          <%# Actions du personnage %>
+          <div class="cg-actions-row" id="cg-actions-row">
+            <button class="cg-action-btn" id="cg-act-prelim" data-action="prelim">
+              <span class="cg-act-name" id="cg-act-prelim-name">Prél.</span>
+              <span class="cg-act-meta">coût 1 · <span id="cg-act-prelim-power">3</span> ext.</span>
+            </button>
+            <button class="cg-action-btn" id="cg-act-acte" data-action="acte">
+              <span class="cg-act-name" id="cg-act-acte-name">Acte</span>
+              <span class="cg-act-meta">coût 2 · <span id="cg-act-acte-power">7</span> ext.</span>
+            </button>
+            <button class="cg-action-btn cg-action-btn--finition" id="cg-act-finition" data-action="finition">
+              <span class="cg-act-name" id="cg-act-finition-name">Fin.</span>
+              <span class="cg-act-meta">coût 3 · <span id="cg-act-finition-power">20</span> ext.</span>
+            </button>
+            <button class="cg-btn cg-btn--end" id="cg-end-turn-btn">Fin de tour</button>
+          </div>
+          <%# Main du joueur %>
+          <div class="cg-hand-label">Main <span id="cg-hand-count"></span></div>
+          <div class="cg-hand" id="cg-hand"></div>
+          <%# Zone de dépôt sélectionnée %>
+          <div class="cg-drop-hint" id="cg-drop-hint" hidden>
+            Déposer en :
+            <button class="cg-drop-zone-btn" data-zone="attack">Attaque</button>
+            <button class="cg-drop-zone-btn" data-zone="defense">Défense</button>
+            <button class="cg-drop-zone-btn cg-drop-zone-btn--cancel" id="cg-drop-cancel">Annuler</button>
+          </div>
+        </div>
+
+        <%# Log & infos %>
+        <div class="cg-footer-bar">
+          <span class="cg-turn-label" id="cg-turn-label">Tour 1</span>
+          <span class="cg-phase-label" id="cg-phase-label">Préparation</span>
+          <button class="cg-btn cg-btn--abandon" id="cg-abandon-btn">Abandonner</button>
+        </div>
+        <div class="cg-log" id="cg-log"></div>
+      </div>
+    </div>
+
+    <%# ── Jeu de Cartes — Résultat ── %>
+    <div id="arcade-screen-cg-result" class="arcade-screen" hidden>
+      <div class="cg-result-box">
+        <div class="cg-result-icon" id="cg-result-icon">🏆</div>
+        <p class="cg-result-title" id="cg-result-title">Victoire !</p>
+        <p class="cg-result-msg" id="cg-result-msg"></p>
+        <button class="cg-btn cg-btn--primary" id="cg-replay-btn">Rejouer</button>
+        <button class="cg-btn cg-btn--secondary" id="cg-result-home-btn">Retour</button>
+      </div>
     </div>
 
     </div>
@@ -1980,5 +2131,299 @@
       slotsResultEl.textContent = 'Pas de chance\u2026 r\u00e9essayez\u00a0!';
     }
   }
+})();
+
+// ── JEU DE CARTES ───────────────────────────────────────────────────────────
+(function() {
+  var allScreens   = document.querySelectorAll('#arcade-modal .arcade-screen');
+  var hdrBack      = document.getElementById('arcade-hdr-back-btn');
+  var screenGames  = document.getElementById('arcade-screen-games');
+  var screenPick   = document.getElementById('arcade-screen-cg-pick');
+  var screenBoard  = document.getElementById('arcade-screen-cg-board');
+  var screenResult = document.getElementById('arcade-screen-cg-result');
+  if (!screenPick) return; // guard si écrans absents
+
+  var cgState      = null;
+  var cgSessionId  = null;
+  var selectedCard = null;
+
+  var RARITY_COST = { common:2, rare:3, epic:3, legendary:4, mythic:5 };
+  var TYPE_ICONS  = { partenaires:'❤', position:'⚡', lieux:'🌍', jeu_de_role:'🎭', tenues:'👗', objets:'🔮', pratique:'✨' };
+
+  function showScreen(el) {
+    allScreens.forEach(function(s){ s.hidden = true; });
+    el.hidden = false;
+    if (hdrBack) hdrBack.hidden = (el === screenGames);
+  }
+
+  function api(path, body) {
+    var opts = { method: body !== undefined ? 'POST' : 'GET', headers:{} };
+    if (body !== undefined) { opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body); }
+    return fetch('/arcade'+path, opts).then(function(r){ return r.json(); });
+  }
+
+  // ── Sélection personnage ─────────────────────────────────────────
+  function openPickScreen() {
+    selectedCard = null;
+    var grid = document.getElementById('cg-pick-grid');
+    var sub  = document.getElementById('cg-pick-sub');
+    var btn  = document.getElementById('cg-start-btn');
+    grid.innerHTML = '<p style="color:#64748b;font-size:.75rem">Chargement\u2026</p>';
+    sub.textContent = 'Vos personnages';
+    btn.disabled = true;
+    showScreen(screenPick);
+
+    api('/card-game/personnages').then(function(d) {
+      if (!d.ok || !d.personnages.length) {
+        grid.innerHTML = '<p style="color:#64748b;font-size:.78rem;text-align:center">Aucun personnage dans votre coffre.\u00a0Ouvrez des lootboxes\u00a0!</p>';
+        return;
+      }
+      sub.textContent = d.personnages.length + ' personnage' + (d.personnages.length>1?'s':'') + ' disponible' + (d.personnages.length>1?'s':'');
+      grid.innerHTML = '';
+      var selectedId = null;
+      d.personnages.forEach(function(pc) {
+        var card = document.createElement('div');
+        card.className = 'cg-pick-card';
+        card.dataset.id = pc.id;
+        card.innerHTML = (pc.thumb
+          ? '<img class="cg-pick-card-img" src="'+pc.thumb+'" alt="">'
+          : '<div class="cg-pick-card-img-ph">&#128100;</div>') +
+          '<div class="cg-pick-card-info">'+
+            '<span class="cg-pick-card-name">'+pc.title+'</span>'+
+            '<span class="cg-pick-card-stats">&#9889;'+(pc.vitesse||5)+' \u00b7 &#128737;'+(pc.defense||5)+' \u00b7 '+(pc.pv||100)+' PV</span>'+
+          '</div>';
+        card.addEventListener('click', function() {
+          grid.querySelectorAll('.cg-pick-card').forEach(function(c){ c.classList.remove('selected'); });
+          card.classList.add('selected');
+          selectedId = pc.id;
+          btn.disabled = false;
+        });
+        grid.appendChild(card);
+      });
+      btn.onclick = function() {
+        if (!selectedId) return;
+        btn.disabled = true; btn.textContent = 'D\u00e9marrage\u2026';
+        api('/card-game/start', { personnageId: selectedId }).then(function(d) {
+          btn.textContent = 'Commencer la partie'; btn.disabled = false;
+          if (!d.ok) { alert(d.error||'Erreur'); return; }
+          cgSessionId = d.sessionId;
+          if (d.state) updateState(d.state);
+          if (d.status==='lost'||d.status==='won') showResultScreen(d.status, d.message||'');
+          else showScreen(screenBoard);
+        });
+      };
+    });
+  }
+
+  // ── Rendu du plateau ───────────────────────────────────────────────
+  function updateState(state) {
+    cgState = state;
+    renderBoard();
+  }
+
+  function renderBoard() {
+    if (!cgState) return;
+    var p  = cgState.players[0];
+    var ai = cgState.players[1];
+    var isMyTurn = (cgState.activePlayer === 0);
+
+    setExtase('cg-p-extase-fill',  'cg-p-extase-val',  p.extase);
+    setExtase('cg-ai-extase-fill', 'cg-ai-extase-val', ai.extase);
+    setThumb('cg-p-thumb',  'cg-p-thumb-ph',  p.personnage.thumb);
+    setThumb('cg-ai-thumb', 'cg-ai-thumb-ph', ai.personnage.thumb);
+    setText('cg-p-name',       p.personnage.name);
+    setText('cg-ai-name',      ai.personnage.name);
+    setText('cg-p-energy-val', p.energy);
+    setText('cg-ai-energy-val',ai.energy);
+
+    renderTerrain('cg-player-attack',  p.terrain.attack,  false, isMyTurn && cgState.phase==='combat');
+    renderTerrain('cg-player-defense', p.terrain.defense, true,  false);
+    renderTerrain('cg-ai-attack',      ai.terrain.attack, false, false);
+    renderTerrain('cg-ai-defense',     ai.terrain.defense,true,  false);
+
+    var lieuSlot = document.getElementById('cg-lieu-slot');
+    if (lieuSlot) lieuSlot.innerHTML = cgState.sharedLieu
+      ? '<span class="cg-lieu-card">\uD83C\uDF0D '+cgState.sharedLieu.title+'</span>'
+      : '<span class="cg-lieu-empty">Aucun lieu actif</span>';
+
+    renderActions(p, isMyTurn && cgState.phase==='combat');
+    renderHand(p.hand, isMyTurn);
+
+    setText('cg-turn-label',  'Tour '+cgState.turn);
+    setText('cg-phase-label', cgState.phase==='setup'
+      ? 'Phase de pr\u00e9paration (pas d\u2019attaque)'
+      : (isMyTurn ? 'Votre tour' : 'Tour adversaire\u2026'));
+
+    var endBtn = document.getElementById('cg-end-turn-btn');
+    if (endBtn) endBtn.disabled = !isMyTurn;
+    renderLog(cgState.log);
+  }
+
+  function setExtase(fillId, valId, extase) {
+    var f=document.getElementById(fillId), v=document.getElementById(valId);
+    if(f) f.style.width=Math.min(100,extase)+'%';
+    if(v) v.textContent=extase+' / 100';
+  }
+  function setThumb(imgId, phId, thumb) {
+    var img=document.getElementById(imgId), ph=document.getElementById(phId);
+    if(!img||!ph) return;
+    if(thumb){img.src=thumb;img.style.display='block';ph.style.display='none';}
+    else{img.style.display='none';ph.style.display='flex';}
+  }
+  function setText(id, text) { var el=document.getElementById(id); if(el) el.textContent=text; }
+
+  function renderTerrain(elId, slots, isDefense, canAtk) {
+    var el=document.getElementById(elId);
+    if(!el) return;
+    var label=el.querySelector('.cg-terrain-label');
+    el.innerHTML='';
+    if(label) el.appendChild(label);
+    slots.forEach(function(slot) {
+      var chip=document.createElement('div');
+      var type=slot.card.type||'';
+      chip.className='cg-chip cg-chip--'+type+((!isDefense&&slot.hasAttacked)?' cg-chip--attacked':'');
+      chip.dataset.slotId=slot.slotId;
+      chip.innerHTML=(slot.card.thumb
+        ?'<img class="cg-chip-img" src="'+slot.card.thumb+'" alt="">'
+        :'<div class="cg-chip-img-ph">'+(TYPE_ICONS[type]||'\uD83C\uDCCF')+'</div>')+
+        '<span class="cg-chip-name">'+slot.card.title+'</span>'+
+        (isDefense&&slot.defensePoints?'<span class="cg-chip-def-pts">\uD83D\uDEE1 '+slot.defensePoints+'</span>':'');
+      if(canAtk && type==='partenaires' && !slot.hasAttacked) {
+        chip.classList.add('can-attack');
+        chip.addEventListener('click', function() { sendAction({action:'attack_card',slotId:slot.slotId}); });
+      }
+      el.appendChild(chip);
+    });
+  }
+
+  function renderActions(player, enabled) {
+    [
+      {id:'cg-act-prelim',   nid:'cg-act-prelim-name',   pid:'cg-act-prelim-power',   type:'prelim',   a:player.personnage.actionPrelim,   cost:1},
+      {id:'cg-act-acte',     nid:'cg-act-acte-name',     pid:'cg-act-acte-power',     type:'acte',     a:player.personnage.actionActe,     cost:2},
+      {id:'cg-act-finition', nid:'cg-act-finition-name', pid:'cg-act-finition-power', type:'finition', a:player.personnage.actionFinition, cost:3},
+    ].forEach(function(act) {
+      var btn=document.getElementById(act.id);
+      var ne=document.getElementById(act.nid), pe=document.getElementById(act.pid);
+      if(!btn) return;
+      if(ne) ne.textContent=act.a.name||act.type;
+      if(pe) pe.textContent=act.a.power;
+      btn.disabled=!enabled||player.energy<act.cost||player.hasAttackedThisTurn;
+    });
+  }
+
+  function renderHand(hand, isMyTurn) {
+    var container=document.getElementById('cg-hand');
+    var countEl=document.getElementById('cg-hand-count');
+    if(!container) return;
+    container.innerHTML='';
+    if(countEl) countEl.textContent='('+hand.length+')';
+    hand.forEach(function(card) {
+      var el=document.createElement('div');
+      var cost=RARITY_COST[card.rarity]||2;
+      el.className='cg-hand-card'+(selectedCard===card.key?' selected':'');
+      el.dataset.key=card.key;
+      el.innerHTML=(card.thumb
+        ?'<img class="cg-hand-card-img" src="'+card.thumb+'" alt="">'
+        :'<div class="cg-hand-card-img-ph">'+(TYPE_ICONS[card.type||'']||'\uD83C\uDCCF')+'</div>')+
+        '<span class="cg-hand-card-name">'+card.title+'</span>'+
+        '<span class="cg-hand-card-cost">&#9889;'+cost+'</span>';
+      if(isMyTurn) {
+        el.addEventListener('click', function() {
+          if(selectedCard===card.key){
+            selectedCard=null; hideDropHint(); renderHand(hand, isMyTurn);
+          } else {
+            selectedCard=card.key; renderHand(hand, isMyTurn);
+            if(card.type==='lieux') sendPlayCard('attack');
+            else showDropHint(card);
+          }
+        });
+      }
+      container.appendChild(el);
+    });
+  }
+
+  function showDropHint(card) {
+    var hint=document.getElementById('cg-drop-hint');
+    if(!hint) return; hint.hidden=false;
+    hint.querySelectorAll('.cg-drop-zone-btn:not(.cg-drop-zone-btn--cancel)').forEach(function(btn) {
+      var noDefense=['position','jeu_de_role','objets'].includes(card.type);
+      btn.disabled=(btn.dataset.zone==='defense'&&noDefense);
+      btn.style.opacity=btn.disabled?'.3':'';
+    });
+  }
+  function hideDropHint() {
+    var hint=document.getElementById('cg-drop-hint');
+    if(hint) hint.hidden=true; selectedCard=null;
+  }
+  function sendPlayCard(zone) {
+    if(!selectedCard) return;
+    var key=selectedCard; hideDropHint();
+    sendAction({action:'play_card', cardKey:key, zone:zone});
+  }
+
+  function renderLog(log) {
+    var el=document.getElementById('cg-log');
+    if(!el) return; el.innerHTML='';
+    log.slice(-6).forEach(function(entry) {
+      var line=document.createElement('div');
+      line.className='cg-log-entry'; line.textContent=entry;
+      el.appendChild(line);
+    });
+    el.scrollTop=el.scrollHeight;
+  }
+
+  function sendAction(body) {
+    api('/card-game/action', body).then(function(d) {
+      if(!d.ok) {
+        if(cgState&&d.error){ cgState.log.push('\u2717 '+d.error); renderLog(cgState.log); }
+        return;
+      }
+      if(d.state) updateState(d.state);
+      if(d.status&&d.status!=='active') showResultScreen(d.status, d.message||'');
+    });
+  }
+
+  function showResultScreen(status, message) {
+    var icon=document.getElementById('cg-result-icon');
+    var title=document.getElementById('cg-result-title');
+    var msg=document.getElementById('cg-result-msg');
+    if(icon)  icon.textContent =(status==='won'?'\uD83C\uDFC6':'\uD83D\uDC94');
+    if(title) title.textContent=(status==='won'?'Victoire\u00a0!':'D\u00e9faite\u2026');
+    if(msg)   msg.textContent  =message;
+    showScreen(screenResult);
+  }
+
+  // ── Événements ─────────────────────────────────────────────────────
+  var playBtnCg=document.getElementById('arcade-cg-play-btn');
+  if(playBtnCg) playBtnCg.addEventListener('click', openPickScreen);
+
+  document.querySelectorAll('.cg-drop-zone-btn:not(.cg-drop-zone-btn--cancel)').forEach(function(btn) {
+    btn.addEventListener('click', function() { sendPlayCard(btn.dataset.zone); });
+  });
+  var cancelBtn=document.getElementById('cg-drop-cancel');
+  if(cancelBtn) cancelBtn.addEventListener('click', hideDropHint);
+
+  ['prelim','acte','finition'].forEach(function(type) {
+    var btn=document.getElementById('cg-act-'+type);
+    if(btn) btn.addEventListener('click', function() {
+      sendAction({action:'attack_personnage', actionType:type});
+    });
+  });
+
+  var endBtn=document.getElementById('cg-end-turn-btn');
+  if(endBtn) endBtn.addEventListener('click', function() { sendAction({action:'end_turn'}); });
+
+  var abandonBtn=document.getElementById('cg-abandon-btn');
+  if(abandonBtn) abandonBtn.addEventListener('click', function() {
+    if(!confirm('Abandonner la partie\u00a0?')) return;
+    sendAction({action:'abandon'});
+    showScreen(screenGames);
+  });
+
+  var replayBtn=document.getElementById('cg-replay-btn');
+  if(replayBtn) replayBtn.addEventListener('click', openPickScreen);
+
+  var resultHomeBtn=document.getElementById('cg-result-home-btn');
+  if(resultHomeBtn) resultHomeBtn.addEventListener('click', function() { showScreen(screenGames); });
 })();
 </script>

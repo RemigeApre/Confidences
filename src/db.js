@@ -4199,6 +4199,96 @@ const ACTION_EFFETS = [
   // Les effets spéciaux d'action seront ajoutés ici
 ];
 
+// ── Jeu de cartes — sessions ──────────────────────────────────────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS card_game_sessions (
+      id         INTEGER PRIMARY KEY,
+      user_id    INTEGER NOT NULL,
+      state      TEXT    NOT NULL DEFAULT '{}',
+      status     TEXT    NOT NULL DEFAULT 'active',
+      winner     INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_at INTEGER DEFAULT (unixepoch())
+    )
+  `);
+} catch(_) {}
+
+function getActiveCardGameSession(userId) {
+  const row = db.prepare(
+    "SELECT * FROM card_game_sessions WHERE user_id=? AND status='active' ORDER BY id DESC LIMIT 1"
+  ).get(userId);
+  if (!row) return null;
+  try { row.state = JSON.parse(row.state); } catch { row.state = {}; }
+  return row;
+}
+
+function createCardGameSession(userId, state) {
+  const r = db.prepare("INSERT INTO card_game_sessions (user_id, state) VALUES (?,?)")
+    .run(userId, JSON.stringify(state));
+  return r.lastInsertRowid;
+}
+
+function updateCardGameSession(id, state, status = 'active', winner = null) {
+  db.prepare("UPDATE card_game_sessions SET state=?, status=?, winner=?, updated_at=unixepoch() WHERE id=?")
+    .run(JSON.stringify(state), status, winner, id);
+}
+
+const CG_CATEGORIES = ['partenaires', 'position', 'lieux', 'jeu_de_role', 'tenues', 'objets', 'pratique'];
+const CG_PLACEHOLDERS = CG_CATEGORIES.map(() => '?').join(',');
+
+function getPlayerCardGameDeck(userId) {
+  return db.prepare(`
+    SELECT wp.id, wp.title, wp.category, wp.image_path, wp.card_summary, uc.rarity
+    FROM user_cards uc
+    JOIN wiki_pages wp ON wp.id = uc.wiki_page_id
+    WHERE uc.user_id = ? AND wp.category IN (${CG_PLACEHOLDERS})
+    ORDER BY RANDOM() LIMIT 20
+  `).all(userId, ...CG_CATEGORIES).map(r => ({
+    key: 'wiki_' + r.id,
+    id: r.id, type: r.category,
+    title: r.title, summary: r.card_summary || '',
+    rarity: r.rarity || 'common', thumb: r.image_path || null,
+  }));
+}
+
+function getAICardGameDeck() {
+  return db.prepare(`
+    SELECT id, title, category, image_path, card_summary, card_rarity AS rarity
+    FROM wiki_pages
+    WHERE category IN (${CG_PLACEHOLDERS})
+    ORDER BY RANDOM() LIMIT 20
+  `).all(...CG_CATEGORIES).map(r => ({
+    key: 'wiki_' + r.id,
+    id: r.id, type: r.category,
+    title: r.title, summary: r.card_summary || '',
+    rarity: r.rarity || 'common', thumb: r.image_path || null,
+  }));
+}
+
+function getAICardGamePersonnage() {
+  const r = db.prepare(
+    `SELECT id, name, description, gender, nature, parody, image_path,
+            vitesse, defense, dom_sub, orientation, pv, passif,
+            action_prelim_name, action_prelim_power,
+            action_acte_name, action_acte_power,
+            action_finition_name, action_finition_power
+     FROM protagonistes WHERE is_base_deck=1 AND is_ultra=0 ORDER BY RANDOM() LIMIT 1`
+  ).get();
+  if (!r) return null;
+  return {
+    id: r.id, name: r.name, title: r.name,
+    gender: r.gender || '', nature: r.nature || '', parody: r.parody || '',
+    thumb: r.image_path || null,
+    vitesse: r.vitesse ?? 5, defense: r.defense ?? 5,
+    pv: r.pv ?? 100, domSub: r.dom_sub ?? 0,
+    passif: r.passif || '',
+    actionPrelimName: r.action_prelim_name || '', actionPrelimPower: r.action_prelim_power ?? 3,
+    actionActeName:   r.action_acte_name   || '', actionActePower:   r.action_acte_power   ?? 7,
+    actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20,
+  };
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -4469,6 +4559,12 @@ module.exports = {
   setPersonnageFlags,
   PASSIFS,
   ACTION_EFFETS,
+  getActiveCardGameSession,
+  createCardGameSession,
+  updateCardGameSession,
+  getPlayerCardGameDeck,
+  getAICardGameDeck,
+  getAICardGamePersonnage,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
