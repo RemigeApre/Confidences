@@ -4187,6 +4187,18 @@ function updateWordleStreakAndStats(userId, date, solved) {
   `).run(streak, bestStreak, totalPlayed, totalWins, userId);
 }
 
+// ── Capacités passives ──────────────────────────────────────────────────────
+const PASSIFS = [
+  { id: '', name: '— Aucun passif —', desc: '' },
+  { id: 'curiosite_insatiable', name: 'Curiosité insatiable', desc: 'Tous les 10 dégâts infligés, +1 Vitesse (partie uniquement)' },
+];
+
+// ── Effets spéciaux d'action ────────────────────────────────────────────────
+const ACTION_EFFETS = [
+  { id: '', name: '— Aucun effet —' },
+  // Les effets spéciaux d'action seront ajoutés ici
+];
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -4545,18 +4557,6 @@ try { db.exec("ALTER TABLE protagonistes ADD COLUMN affinites TEXT NOT NULL DEFA
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_prelim_effet TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_acte_effet TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_finition_effet TEXT NOT NULL DEFAULT ''"); } catch (_) {}
-
-// ── Capacités passives ──────────────────────────────────────────────────────
-const PASSIFS = [
-  { id: '', name: '— Aucun passif —', desc: '' },
-  { id: 'curiosite_insatiable', name: 'Curiosité insatiable', desc: 'Tous les 10 dégâts infligés, +1 Vitesse (partie uniquement)' },
-];
-
-// ── Effets spéciaux d'action ────────────────────────────────────────────────
-const ACTION_EFFETS = [
-  { id: '', name: '— Aucun effet —' },
-  // Les effets spéciaux d'action seront ajoutés ici
-];
 
 const VALID_SPECIALS = new Set(['', 'ultra', 'irrealiste']);
 function parseEvolutions(raw) { try { const a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a.filter(Boolean) : []; } catch { return []; } }
