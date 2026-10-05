@@ -546,6 +546,39 @@ db.exec(`
 `);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_user_cards_user ON user_cards (user_id)`);
 
+// ── Migration user_cards : suppression contrainte UNIQUE, ajout variant_id ──
+// (SQLite ne supporte pas DROP CONSTRAINT — on recrée la table si besoin)
+{
+  const _ucSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='user_cards'").get();
+  if (_ucSql && _ucSql.sql && !_ucSql.sql.includes('variant_id')) {
+    db.exec(`CREATE TABLE user_cards_mig (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      wiki_page_id INTEGER NOT NULL,
+      variant_id INTEGER,
+      rarity TEXT NOT NULL DEFAULT 'rare',
+      obtained_at TEXT NOT NULL
+    )`);
+    db.exec(`INSERT INTO user_cards_mig (id, user_id, wiki_page_id, rarity, obtained_at)
+             SELECT id, user_id, wiki_page_id, rarity, obtained_at FROM user_cards`);
+    db.exec(`DROP TABLE user_cards`);
+    db.exec(`ALTER TABLE user_cards_mig RENAME TO user_cards`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_user_cards_user ON user_cards (user_id)`);
+  }
+}
+
+// ── Déclinaisons de cartes (variants d'une même page wiki) ─────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS wiki_card_variants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    wiki_page_id INTEGER NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    card_summary TEXT,
+    card_rarity TEXT NOT NULL DEFAULT 'rare'
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_wcv_page ON wiki_card_variants (wiki_page_id)`);
+
 // ── Cartes Personnages — items collectibles liés aux protagonistes ───────────
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN card_rarity TEXT NOT NULL DEFAULT 'rare'"); } catch(_) {}
 db.exec(`
@@ -2440,17 +2473,28 @@ function listConnectionLogsForUser(userId, limit) {
 // ── Cartes Codex ──────────────────────────────────────────────────────────────
 const CARD_EXCLUDED_CATEGORIES = ['fantasme', 'biologie'];
 
-function _buildCardPool(userId) {
-  const ownedIds = new Set(
-    db.prepare("SELECT wiki_page_id FROM user_cards WHERE user_id = ?").all(userId).map(r => r.wiki_page_id)
-  );
+function _buildCardPool() {
+  // Pool de base : toutes les pages wiki éligibles (le stacking est autorisé, pas de filtre owned)
   const placeholders = CARD_EXCLUDED_CATEGORIES.map(() => '?').join(',');
   const pages = db.prepare(
-    `SELECT id, title, category, card_rarity, card_summary, image_paths FROM wiki_pages
+    `SELECT id, title, category, card_rarity, card_summary, image_paths, NULL as variant_id, NULL as variant_title FROM wiki_pages
      WHERE category NOT IN (${placeholders})
-     ORDER BY RANDOM() LIMIT 150`
+     ORDER BY RANDOM() LIMIT 120`
   ).all(...CARD_EXCLUDED_CATEGORIES);
-  return pages.filter(p => !ownedIds.has(p.id));
+  // Variants : même sélection aléatoire
+  const variants = db.prepare(
+    `SELECT wcv.id as variant_id, wcv.title as variant_title, wcv.card_summary, wcv.card_rarity,
+            wp.id, wp.category, wp.image_paths
+     FROM wiki_card_variants wcv
+     JOIN wiki_pages wp ON wp.id = wcv.wiki_page_id
+     WHERE wp.category NOT IN (${placeholders})
+     ORDER BY RANDOM() LIMIT 60`
+  ).all(...CARD_EXCLUDED_CATEGORIES).map(v => ({
+    id: v.id, title: v.variant_title, category: v.category,
+    card_rarity: v.card_rarity, card_summary: v.card_summary,
+    image_paths: v.image_paths, variant_id: v.variant_id
+  }));
+  return [...pages, ...variants];
 }
 
 function _grantCardReward(userId, rarity) {
@@ -2459,7 +2503,7 @@ function _grantCardReward(userId, rarity) {
   if (_pPool.length && Math.random() < 0.30) {
     return _grantPersonnageCardReward(userId, rarity);
   }
-  const pool = _buildCardPool(userId);
+  const pool = _buildCardPool();
   const now = new Date().toISOString();
   if (!pool.length) {
     const coins = 8;
@@ -2470,31 +2514,57 @@ function _grantCardReward(userId, rarity) {
   const rarityPool = pool.filter(p => p.card_rarity === rarity);
   const chosen = (rarityPool.length ? rarityPool : pool)[Math.floor(Math.random() * (rarityPool.length || pool.length))];
   const cardRarity = chosen.card_rarity || rarity || 'rare';
-  const ins = db.prepare(
-    "INSERT OR IGNORE INTO user_cards (user_id, wiki_page_id, rarity, obtained_at) VALUES (?, ?, ?, ?)"
-  ).run(userId, chosen.id, cardRarity, now);
-  if (ins.changes === 0) {
-    const cfg = getLootboxConfig();
-    const coins = Math.ceil((cfg.buyPrices[cardRarity] || RARITY_BUY_PRICE[cardRarity] || RARITY_BUY_PRICE.common) / 4);
-    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
-    return { isCoins: true, coins, rarity: cardRarity };
-  }
+  // Stacking autorisé : INSERT direct (pas OR IGNORE)
   let imagePaths = []; try { imagePaths = JSON.parse(chosen.image_paths || '[]'); } catch(_) {}
-  return { isCard: true, wikiPageId: chosen.id, title: chosen.title, category: chosen.category, rarity: cardRarity, thumb: imagePaths[0] || null, cardSummary: chosen.card_summary || null, isDuplicate: false };
+  db.prepare(
+    "INSERT INTO user_cards (user_id, wiki_page_id, variant_id, rarity, obtained_at) VALUES (?, ?, ?, ?, ?)"
+  ).run(userId, chosen.id, chosen.variant_id || null, cardRarity, now);
+  return { isCard: true, wikiPageId: chosen.id, variantId: chosen.variant_id || null, title: chosen.title, category: chosen.category, rarity: cardRarity, thumb: imagePaths[0] || null, cardSummary: chosen.card_summary || null };
 }
 
 function getUserCards(userId) {
   return db.prepare(
-    `SELECT uc.wiki_page_id, uc.rarity, uc.obtained_at,
-            wp.title, wp.category, wp.card_summary, wp.image_paths
+    `SELECT uc.id as entry_id, uc.wiki_page_id, uc.variant_id, uc.rarity, uc.obtained_at,
+            COALESCE(wcv.title, wp.title) as title,
+            COALESCE(wcv.card_summary, wp.card_summary) as card_summary,
+            wp.title as base_title, wp.category, wp.image_paths
      FROM user_cards uc
      JOIN wiki_pages wp ON wp.id = uc.wiki_page_id
+     LEFT JOIN wiki_card_variants wcv ON wcv.id = uc.variant_id
      WHERE uc.user_id = ?
      ORDER BY uc.obtained_at DESC`
   ).all(userId).map(r => {
     let imagePaths = []; try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
-    return { wikiPageId: r.wiki_page_id, rarity: r.rarity, obtainedAt: r.obtained_at, title: r.title, category: r.category, summary: r.card_summary || null, thumb: imagePaths[0] || null };
+    return { entryId: r.entry_id, wikiPageId: r.wiki_page_id, variantId: r.variant_id || null, rarity: r.rarity, obtainedAt: r.obtained_at, title: r.title, baseTitle: r.base_title, category: r.category, summary: r.card_summary || null, thumb: imagePaths[0] || null, isVariant: !!r.variant_id };
   });
+}
+
+function createCardVariant(wikiPageId, { title, cardSummary, cardRarity }) {
+  const valid = ['common','rare','epic','legendary','mythic'];
+  const r = db.prepare(
+    "INSERT INTO wiki_card_variants (wiki_page_id, title, card_summary, card_rarity) VALUES (?, ?, ?, ?)"
+  ).run(wikiPageId, String(title || '').trim(), cardSummary || null, valid.includes(cardRarity) ? cardRarity : 'rare');
+  return r.lastInsertRowid;
+}
+
+function updateCardVariantRarity(variantId, rarity) {
+  const valid = ['common','rare','epic','legendary','mythic'];
+  if (!valid.includes(rarity)) return false;
+  db.prepare("UPDATE wiki_card_variants SET card_rarity = ? WHERE id = ?").run(rarity, variantId);
+  return true;
+}
+
+function updateCardVariantSummary(variantId, summary) {
+  db.prepare("UPDATE wiki_card_variants SET card_summary = ? WHERE id = ?").run(summary || null, variantId);
+}
+
+function updateCardVariantTitle(variantId, title) {
+  db.prepare("UPDATE wiki_card_variants SET title = ? WHERE id = ?").run(String(title || '').trim(), variantId);
+}
+
+function deleteCardVariant(variantId) {
+  db.prepare("DELETE FROM wiki_card_variants WHERE id = ?").run(variantId);
+  db.prepare("DELETE FROM user_cards WHERE variant_id = ?").run(variantId);
 }
 
 function _buildPersonnageCardPool(userId) {
@@ -2578,14 +2648,18 @@ function getCardStats() {
 
 function listWikiPagesForCards() {
   const placeholders = CARD_EXCLUDED_CATEGORIES.map(() => '?').join(',');
-  return db.prepare(
+  const pages = db.prepare(
     `SELECT id, title, category, card_rarity, card_summary, image_paths FROM wiki_pages
      WHERE category NOT IN (${placeholders})
      ORDER BY category, title`
   ).all(...CARD_EXCLUDED_CATEGORIES).map(r => {
     let imagePaths = []; try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
-    return { id: r.id, title: r.title, category: r.category, cardRarity: r.card_rarity || 'rare', cardSummary: r.card_summary || null, thumb: imagePaths[0] || null };
+    const variants = db.prepare(
+      "SELECT id, title, card_summary, card_rarity FROM wiki_card_variants WHERE wiki_page_id = ? ORDER BY id"
+    ).all(r.id);
+    return { id: r.id, title: r.title, category: r.category, cardRarity: r.card_rarity || 'rare', cardSummary: r.card_summary || null, thumb: imagePaths[0] || null, variants };
   });
+  return pages;
 }
 
 function recordAnonVisit(path, ip, userAgent) {
@@ -4306,6 +4380,11 @@ module.exports = {
   getUserPersonnageCards,
   setPersonnageCardRarity,
   listProtagonistesForCards,
+  createCardVariant,
+  updateCardVariantRarity,
+  updateCardVariantSummary,
+  updateCardVariantTitle,
+  deleteCardVariant,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

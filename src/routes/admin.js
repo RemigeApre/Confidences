@@ -65,6 +65,11 @@ const {
   getUserPersonnageCards,
   setPersonnageCardRarity,
   listProtagonistesForCards,
+  createCardVariant,
+  updateCardVariantRarity,
+  updateCardVariantSummary,
+  updateCardVariantTitle,
+  deleteCardVariant,
   listAllParodies,
   deleteGalleryImage,
   deleteCharmById,
@@ -685,6 +690,47 @@ function buildAdminRouter(config) {
     const rarity = String(req.body.rarity || '');
     const ok = setPersonnageCardRarity(id, rarity);
     res.json({ ok });
+  });
+
+  // ── Déclinaisons de cartes ────────────────────────────────────────────────
+  router.post("/recompenses/cards/:id/variants", requireAdmin, express.json(), (req, res) => {
+    const pageId = Number(req.params.id);
+    const title = String(req.body.title || '').trim();
+    const rarity = String(req.body.rarity || 'rare');
+    const summary = String(req.body.summary || '').trim() || null;
+    if (!pageId || !title) return res.json({ ok: false, error: 'params_invalides' });
+    const variantId = createCardVariant(pageId, { title, cardRarity: rarity, cardSummary: summary });
+    const variant = { id: variantId, title, card_rarity: rarity, card_summary: summary };
+    res.json({ ok: true, variant });
+  });
+
+  router.post("/recompenses/card-variants/:id/rarity", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const rarity = String(req.body.rarity || '');
+    const ok = updateCardVariantRarity(id, rarity);
+    res.json({ ok });
+  });
+
+  router.post("/recompenses/card-variants/:id/summary", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const summary = String(req.body.summary || '').trim();
+    updateCardVariantSummary(id, summary || null);
+    res.json({ ok: true });
+  });
+
+  router.post("/recompenses/card-variants/:id/title", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    const title = String(req.body.title || '').trim();
+    if (!title) return res.json({ ok: false, error: 'titre_vide' });
+    updateCardVariantTitle(id, title);
+    res.json({ ok: true });
+  });
+
+  router.post("/recompenses/card-variants/:id/delete", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    deleteCardVariant(id);
+    res.json({ ok: true });
   });
 
   // ── Gestion des jeux ─────────────────────────────────────────────────────

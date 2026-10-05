@@ -550,6 +550,47 @@
               placeholder="Résumé (dos de carte)…"
               style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;border-radius:5px;padding:.3rem .45rem;font-size:.72rem;resize:vertical;outline:none;font-family:inherit"><%= wc.cardSummary || '' %></textarea>
             <span class="js-card-save-status" style="font-size:.68rem;height:.85em;color:#4ade80;display:block">&nbsp;</span>
+            <%/* Déclinaisons */%>
+            <div class="js-variants-wrap" style="border-top:1px solid rgba(255,255,255,.07);margin-top:.3rem;padding-top:.3rem">
+              <button class="js-variants-toggle" data-card-id="<%= wc.id %>"
+                style="background:none;border:none;color:#94a3b8;font-size:.7rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:.3rem;width:100%">
+                <span style="font-size:.65rem">&#9654;</span>
+                Déclinaisons (<span class="js-variant-count"><%= (wc.variants||[]).length %></span>)
+              </button>
+              <div class="js-variants-body" style="display:none;margin-top:.4rem;display:none">
+                <% (wc.variants || []).forEach(function(v) { %>
+                <%
+                  var vColor = v.card_rarity === 'mythic' ? '#f87171' : v.card_rarity === 'legendary' ? '#fbbf24' : v.card_rarity === 'epic' ? '#a78bfa' : v.card_rarity === 'rare' ? '#60a5fa' : '#94a3b8';
+                %>
+                <div class="js-variant-row" data-variant-id="<%= v.id %>"
+                  style="background:rgba(0,0,0,.2);border-radius:6px;padding:.4rem .5rem;margin-bottom:.3rem;display:flex;flex-direction:column;gap:.25rem">
+                  <input type="text" class="js-variant-title" value="<%= v.title %>"
+                    placeholder="Titre…"
+                    style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.25rem .4rem;font-size:.72rem;font-family:inherit;outline:none;width:100%">
+                  <select class="charm-rarity-select no-arrow js-variant-rarity" style="border-color:<%= vColor %>;color:<%= vColor %>">
+                    <% ['common','rare','epic','legendary','mythic'].forEach(function(r) { %>
+                      <option value="<%= r %>"<%= v.card_rarity === r ? ' selected' : '' %>><%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[r] %></option>
+                    <% }) %>
+                  </select>
+                  <textarea class="js-variant-summary" rows="2" placeholder="Résumé…"
+                    style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;border-radius:4px;padding:.25rem .4rem;font-size:.72rem;resize:vertical;outline:none;font-family:inherit"><%= v.card_summary || '' %></textarea>
+                  <div style="display:flex;gap:.3rem;align-items:center">
+                    <button class="js-variant-save" style="background:#1e40af;border:none;color:#fff;font-size:.65rem;padding:.2rem .45rem;border-radius:4px;cursor:pointer">Sauver</button>
+                    <button class="js-variant-delete" style="background:#7f1d1d;border:none;color:#fca5a5;font-size:.65rem;padding:.2rem .45rem;border-radius:4px;cursor:pointer">Suppr.</button>
+                    <span class="js-variant-status" style="font-size:.65rem;color:#4ade80"></span>
+                  </div>
+                </div>
+                <% }) %>
+                <div class="js-add-variant-form" style="margin-top:.25rem;display:flex;flex-direction:column;gap:.2rem">
+                  <input type="text" class="js-new-variant-title" placeholder="Nouveau titre…"
+                    style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.25rem .4rem;font-size:.72rem;font-family:inherit;outline:none">
+                  <button class="js-add-variant-btn" data-card-id="<%= wc.id %>"
+                    style="background:#064e3b;border:1px solid #065f46;color:#6ee7b7;font-size:.68rem;padding:.25rem .5rem;border-radius:4px;cursor:pointer">
+                    + Ajouter une déclinaison
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <% }) %>
@@ -1453,6 +1494,112 @@
           }
         } catch(e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
       }, 700);
+    });
+  });
+
+  // ── Déclinaisons (variants) ──
+  document.querySelectorAll('.js-variants-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const body = btn.closest('.js-variants-wrap').querySelector('.js-variants-body');
+      if (!body) return;
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      btn.querySelector('span').textContent = open ? '▶' : '▼';
+    });
+  });
+
+  function bindVariantRow(row) {
+    const vid = row.dataset.variantId;
+    const saveBtn = row.querySelector('.js-variant-save');
+    const delBtn  = row.querySelector('.js-variant-delete');
+    const statusEl = row.querySelector('.js-variant-status');
+    const raritySel = row.querySelector('.js-variant-rarity');
+
+    raritySel && raritySel.addEventListener('change', function() {
+      raritySel.style.color = RARITY_COLORS[raritySel.value] || '#94a3b8';
+      raritySel.style.borderColor = RARITY_COLORS[raritySel.value] || 'rgba(255,255,255,.2)';
+    });
+
+    saveBtn && saveBtn.addEventListener('click', async function() {
+      const title   = row.querySelector('.js-variant-title').value.trim();
+      const rarity  = raritySel ? raritySel.value : 'rare';
+      const summary = row.querySelector('.js-variant-summary').value.trim();
+      if (!title) return;
+      statusEl.textContent = '…'; statusEl.style.color = '#94a3b8';
+      try {
+        await fetch('/admin/recompenses/card-variants/' + vid + '/title',   { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title }) });
+        await fetch('/admin/recompenses/card-variants/' + vid + '/rarity',  { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ rarity }) });
+        await fetch('/admin/recompenses/card-variants/' + vid + '/summary', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ summary: summary || null }) });
+        statusEl.textContent = '✓'; statusEl.style.color = '#4ade80';
+        setTimeout(function(){ statusEl.textContent = ''; }, 1500);
+      } catch(e) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; }
+    });
+
+    delBtn && delBtn.addEventListener('click', async function() {
+      if (!confirm('Supprimer cette déclinaison ?')) return;
+      try {
+        const r = await fetch('/admin/recompenses/card-variants/' + vid + '/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: '{}' });
+        const d = await r.json();
+        if (d.ok) {
+          row.remove();
+          const wrap = document.querySelector('.js-variants-toggle[data-card-id="' + row.closest('[data-card-id]').dataset.cardId + '"]');
+          if (wrap) {
+            const cnt = wrap.querySelector('.js-variant-count');
+            if (cnt) cnt.textContent = parseInt(cnt.textContent, 10) - 1;
+          }
+        }
+      } catch(e) {}
+    });
+  }
+
+  document.querySelectorAll('.js-variant-row').forEach(bindVariantRow);
+
+  document.querySelectorAll('.js-add-variant-btn').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      const cardId = btn.dataset.cardId;
+      const form   = btn.closest('.js-add-variant-form');
+      const titleInput = form.querySelector('.js-new-variant-title');
+      const title = (titleInput ? titleInput.value : '').trim();
+      if (!title) { titleInput && titleInput.focus(); return; }
+      try {
+        const r = await fetch('/admin/recompenses/cards/' + cardId + '/variants', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, rarity: 'rare', summary: null }),
+        });
+        const d = await r.json();
+        if (!d.ok) return;
+        const v = d.variant;
+        const variantsBody = btn.closest('.js-variants-body');
+        const rowHtml = `<div class="js-variant-row" data-variant-id="${v.id}"
+          style="background:rgba(0,0,0,.2);border-radius:6px;padding:.4rem .5rem;margin-bottom:.3rem;display:flex;flex-direction:column;gap:.25rem">
+          <input type="text" class="js-variant-title" value="${v.title.replace(/"/g,'&quot;')}"
+            style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.25rem .4rem;font-size:.72rem;font-family:inherit;outline:none;width:100%">
+          <select class="charm-rarity-select no-arrow js-variant-rarity" style="border-color:#60a5fa;color:#60a5fa">
+            <option value="common">Commun</option>
+            <option value="rare" selected>Rare</option>
+            <option value="epic">Épique</option>
+            <option value="legendary">Légendaire</option>
+            <option value="mythic">Mythique</option>
+          </select>
+          <textarea class="js-variant-summary" rows="2" placeholder="Résumé…"
+            style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;border-radius:4px;padding:.25rem .4rem;font-size:.72rem;resize:vertical;outline:none;font-family:inherit"></textarea>
+          <div style="display:flex;gap:.3rem;align-items:center">
+            <button class="js-variant-save" style="background:#1e40af;border:none;color:#fff;font-size:.65rem;padding:.2rem .45rem;border-radius:4px;cursor:pointer">Sauver</button>
+            <button class="js-variant-delete" style="background:#7f1d1d;border:none;color:#fca5a5;font-size:.65rem;padding:.2rem .45rem;border-radius:4px;cursor:pointer">Suppr.</button>
+            <span class="js-variant-status" style="font-size:.65rem;color:#4ade80"></span>
+          </div>
+        </div>`;
+        const tmp = document.createElement('div'); tmp.innerHTML = rowHtml;
+        const newRow = tmp.firstElementChild;
+        variantsBody.insertBefore(newRow, form);
+        bindVariantRow(newRow);
+        titleInput.value = '';
+        const toggleBtn = variantsBody.closest('.js-variants-wrap').querySelector('.js-variants-toggle');
+        if (toggleBtn) {
+          const cnt = toggleBtn.querySelector('.js-variant-count');
+          if (cnt) cnt.textContent = parseInt(cnt.textContent, 10) + 1;
+        }
+      } catch(e) {}
     });
   });
 })();

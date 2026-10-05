@@ -47,7 +47,7 @@ function buildLootboxRouter(config) {
         if (r.isCharm) return { isCharm: true, charmKey: r.charmKey || null, label: r.label || null, symbol: r.symbol || null, rarity: r.rarity || 'legendary', isDuplicate: !!r.isDuplicate, coins: r.coins || 0 };
         if (r.isCoins) return { isCoins: true, coins: r.coins || 0, rarity: r.rarity || 'common' };
         if (r.isTheme) return { isTheme: true, themeKey: r.themeKey || null, label: r.label || null, rarity: r.rarity || 'rare', isDuplicate: !!r.isDuplicate, coins: r.coins || 0 };
-        if (r.isCard) return { isCard: true, wikiPageId: r.wikiPageId, title: r.title, category: r.category, rarity: r.rarity || 'rare', thumb: r.thumb ? thumbUrl(r.thumb) : null, cardSummary: r.cardSummary || null, isDuplicate: false };
+        if (r.isCard) return { isCard: true, wikiPageId: r.wikiPageId, variantId: r.variantId || null, title: r.title, category: r.category, rarity: r.rarity || 'rare', thumb: r.thumb ? thumbUrl(r.thumb) : null, cardSummary: r.cardSummary || null };
         if (r.isPersonnageCard) return { isPersonnageCard: true, protagonisteId: r.protagonisteId, title: r.title, description: r.description || '', gender: r.gender || '', nature: r.nature || '', parody: r.parody || '', rarity: r.rarity || 'rare', thumb: r.thumb ? thumbUrl(r.thumb) : null };
         return { imageId: r.imageId, title: r.title, rarity: r.rarity, thumb: r.thumb ? thumbUrl(r.thumb) : null, isDuplicate: false };
       }),
