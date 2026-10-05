@@ -552,22 +552,27 @@
       <% if (!_allPc.length) { %>
         <p class="coffre-empty">Aucun personnage obtenu — ouvrez des lootboxes pour en débloquer.</p>
       <% } else { %>
-        <div class="coffre-cards-grid" id="coffre-pc-grid">
+        <div class="coffre-cards-grid" id="coffre-pc-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
           <% _allPc.forEach(function(card) { %>
             <div class="coffre-card-item"
                  data-rarity="<%= card.rarity %>"
                  data-parody="<%= card.parody || '' %>">
               <div class="coffre-card-flip-wrap js-coffre-card-flip">
-                <div class="lb-codex-flip-front">
-                  <% if (card.thumb) { %>
-                    <img src="<%= thumbUrl(card.thumb) %>" alt="<%= card.title %>" class="lb-codex-flip-cover" loading="lazy">
-                  <% } else { %>
-                    <div class="coffre-card-no-thumb">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:32px;height:32px;opacity:.3"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                    </div>
-                  <% } %>
+                <div class="lb-codex-flip-front pc-gwent-front">
+                  <div class="pc-gwent-art">
+                    <% if (card.thumb) { %>
+                      <img src="<%= thumbUrl(card.thumb) %>" alt="<%= card.title %>" loading="lazy">
+                    <% } else { %>
+                      <div class="pc-gwent-art-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:36px;height:36px;opacity:.2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                      </div>
+                    <% } %>
+                  </div>
+                  <div class="pc-gwent-footer">
+                    <span class="pc-gwent-name"><%= card.title %></span>
+                    <% if (card.description) { %><span class="pc-gwent-quote"><%= card.description %></span><% } %>
+                  </div>
                   <span class="lb-codex-flip-cta-icon">&#8635;</span>
-                  <div class="pc-coffre-card-name"><%= card.title %></div>
                 </div>
                 <div class="lb-codex-flip-back lb-codex-flip-back--pc">
                   <% if (card.gender) { %><span class="lb-codex-flip-cat lb-codex-flip-cat--back"><%= card.gender === 'femme' ? '♀ Femme' : card.gender === 'homme' ? '♂ Homme' : 'Autre' %></span><% } %>
