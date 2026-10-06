@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const Database = require("better-sqlite3");
 const { hashPassword } = require("./passwords");
 
@@ -595,12 +596,14 @@ db.exec(`CREATE INDEX IF NOT EXISTS idx_user_personnage_cards_user ON user_perso
 
 // Visites de pages par des visiteurs non connectés
 try { db.exec("ALTER TABLE anon_page_visits ADD COLUMN path TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE anon_page_visits ADD COLUMN visitor_id TEXT NOT NULL DEFAULT ''"); } catch(_) {}
 db.exec(`
   CREATE TABLE IF NOT EXISTS anon_page_visits (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     path TEXT NOT NULL,
     ip TEXT NOT NULL DEFAULT '',
     user_agent TEXT DEFAULT '',
+    visitor_id TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
   )
 `);
@@ -2740,16 +2743,34 @@ function listWikiPagesForCards() {
   return pages;
 }
 
+// Identifiant court et stable pour un visiteur anonyme (8 hex = 16M combinaisons),
+// basé sur IP + User-Agent. Pas réversible, pas de données perso en clair.
+function anonVisitorId(ip, userAgent) {
+  return crypto.createHash('md5').update((ip || '') + '|' + (userAgent || '')).digest('hex').slice(0, 8);
+}
+
+// Chemins suspects typiques des bots/scanners de vulnérabilités
+const SCAN_PATH_PATTERNS = [
+  /^\/(\.env|\.git|\.DS_Store|\.vscode|\.htaccess|wp-|phpmy|adminer|\.well-known)/i,
+  /\.(php|asp|aspx|jsp|cgi|sh|sql|bak|cfg|ini|xml|yaml|yml)$/i,
+  /^\/[0-9a-f]{16,}$/i, // hash-like paths
+];
+
+function isScanPath(p) {
+  return SCAN_PATH_PATTERNS.some(function(re) { return re.test(p); });
+}
+
 function recordAnonVisit(path, ip, userAgent) {
+  const visitorId = anonVisitorId(ip, userAgent);
   // Throttle : 1 enregistrement max par IP+path toutes les 10 minutes
   db.prepare(
-    `INSERT INTO anon_page_visits (path, ip, user_agent, created_at)
-     SELECT ?, ?, ?, ?
+    `INSERT INTO anon_page_visits (path, ip, user_agent, visitor_id, created_at)
+     SELECT ?, ?, ?, ?, ?
      WHERE NOT EXISTS (
        SELECT 1 FROM anon_page_visits
        WHERE path = ? AND ip = ? AND created_at > datetime('now', '-10 minutes')
      )`
-  ).run(path, ip || '', userAgent || '', new Date().toISOString(), path, ip || '');
+  ).run(path, ip || '', userAgent || '', visitorId, new Date().toISOString(), path, ip || '');
 }
 
 function getAnonStats(days, pathQ) {
@@ -2759,6 +2780,8 @@ function getAnonStats(days, pathQ) {
     `SELECT path,
             COUNT(*) as views,
             COUNT(DISTINCT ip) as unique_ips,
+            COUNT(DISTINCT visitor_id) as unique_visitors,
+            GROUP_CONCAT(DISTINCT visitor_id) as visitor_ids_raw,
             MAX(created_at) as last_seen
      FROM anon_page_visits
      WHERE created_at >= datetime('now', '-' || ? || ' days')
@@ -2766,7 +2789,21 @@ function getAnonStats(days, pathQ) {
      GROUP BY path
      ORDER BY views DESC
      LIMIT 200`
-  ).all(d, filter, filter);
+  ).all(d, filter, filter).map(function(r) {
+    const visitorIds = r.visitor_ids_raw
+      ? r.visitor_ids_raw.split(',').filter(Boolean).slice(0, 8) // max 8 badges
+      : [];
+    return {
+      path: r.path,
+      label: pathToLabel(r.path),
+      isScan: isScanPath(r.path),
+      views: r.views,
+      unique_ips: r.unique_ips,
+      unique_visitors: r.unique_visitors,
+      visitor_ids: visitorIds,
+      last_seen: r.last_seen,
+    };
+  });
   const daily = db.prepare(
     `SELECT DATE(created_at) as day, COUNT(*) as views, COUNT(DISTINCT ip) as unique_ips
      FROM anon_page_visits
@@ -4252,6 +4289,7 @@ function updateWordleStreakAndStats(userId, date, solved) {
 const PASSIFS = [
   { id: '', name: '— Aucun passif —', desc: '' },
   { id: 'curiosite_insatiable', name: 'Curiosité insatiable', desc: 'Tous les 10 dégâts infligés, +1 Vitesse (partie uniquement)' },
+  { id: 'mode_hysterie', name: 'Mode Hystérie', desc: 'À 80% de dégâts reçus : défense annulée, attaques gratuites et +40% de dégâts' },
 ];
 
 // ── Effets spéciaux d'action ────────────────────────────────────────────────

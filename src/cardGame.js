@@ -29,6 +29,15 @@ function shuffle(arr) {
 function cardPower(card) { return RARITY_POWER[card.rarity] || RARITY_POWER.common; }
 function cardCost(card)  { return RARITY_COST[card.rarity]  || RARITY_COST.common; }
 
+// ── Passif : Mode Hystérie ────────────────────────────────────────────────
+// Actif quand le personnage a subi ≥ 80 % de ses PV en dégâts.
+// Effets : réduction de dégâts entrants = 0, attaques gratuites, +40% dégâts.
+function isHysterieActive(player) {
+  if (player.personnage.passif !== 'mode_hysterie') return false;
+  const maxPv = player.personnage.pv || VICTORY_EXTASE;
+  return player.extase >= maxPv * 0.8;
+}
+
 // Bonus d'attaque provenant des cartes de soutien sur le terrain
 function computeAttackBonus(terrain) {
   let bonus = 0;
@@ -52,7 +61,8 @@ function computeDefenseReduction(terrain) {
 
 // Applique les dégâts à un joueur — passe d'abord par les partenaires en défense
 function applyDamage(defender, rawDamage) {
-  const reduction = computeDefenseReduction(defender.terrain);
+  // Mode Hystérie : la défense est annulée, aucune réduction de dégâts
+  const reduction = isHysterieActive(defender) ? 0 : computeDefenseReduction(defender.terrain);
   let damage = Math.max(0, rawDamage - reduction);
   let blocked = 0;
 
@@ -228,17 +238,26 @@ function attackWithPersonnage(state, attackerIdx, actionType) {
   };
   const action = actionMap[actionType];
   if (!action) return { ok: false, error: 'Action invalide' };
-  if (attacker.energy < action.cost)
-    return { ok: false, error: `Énergie insuffisante (coût: ${action.cost})` };
+
+  const hysterie = isHysterieActive(attacker);
+  const effectiveCost = hysterie ? 0 : action.cost;
+  if (attacker.energy < effectiveCost)
+    return { ok: false, error: `Énergie insuffisante (coût: ${effectiveCost})` };
 
   const bonus  = computeAttackBonus(attacker.terrain);
-  const damage = action.power + bonus;
+  const baseDmg = action.power + bonus;
+  const damage = hysterie ? Math.round(baseDmg * 1.4) : baseDmg;
+  const wasHysterie = isHysterieActive(defender);
   const result = applyDamage(defender, damage);
+  const nowHysterie = isHysterieActive(defender);
 
-  attacker.energy -= action.cost;
+  attacker.energy -= effectiveCost;
   attacker.hasAttackedThisTurn = true;
 
-  state.log.push(`${attacker.personnage.name} utilise "${action.name}" — ${damage} dégâts${result.blocked ? ` (${result.blocked} bloqués)` : ''} → Extase: ${defender.extase}`);
+  const hysterieTag = hysterie ? ' [HYSTÉRIE]' : '';
+  state.log.push(`${attacker.personnage.name} utilise "${action.name}"${hysterieTag} — ${damage} dégâts${result.blocked ? ` (${result.blocked} bloqués)` : ''} → Extase: ${defender.extase}`);
+  if (!wasHysterie && nowHysterie)
+    state.log.push(`⚡ ${defender.personnage.name} entre en MODE HYSTÉRIE !`);
   return { ok: true, damage, extase: defender.extase };
 }
 
@@ -255,17 +274,26 @@ function attackWithCard(state, attackerIdx, slotId) {
   if (slot.card.type !== TYPE_PARTENAIRE)
     return { ok: false, error: 'Seuls les partenaires peuvent attaquer' };
   if (slot.hasAttacked) return { ok: false, error: 'Ce partenaire a déjà attaqué' };
-  if (attacker.energy < ATTACK_ENERGY_COST)
+
+  const hysterie = isHysterieActive(attacker);
+  const effectiveCost = hysterie ? 0 : ATTACK_ENERGY_COST;
+  if (attacker.energy < effectiveCost)
     return { ok: false, error: 'Énergie insuffisante' };
 
-  const bonus  = computeAttackBonus(attacker.terrain);
-  const damage = cardPower(slot.card) + bonus;
-  const result = applyDamage(defender, damage);
+  const bonus   = computeAttackBonus(attacker.terrain);
+  const baseDmg = cardPower(slot.card) + bonus;
+  const damage  = hysterie ? Math.round(baseDmg * 1.4) : baseDmg;
+  const wasHysterie = isHysterieActive(defender);
+  const result  = applyDamage(defender, damage);
+  const nowHysterie = isHysterieActive(defender);
 
-  attacker.energy -= ATTACK_ENERGY_COST;
+  attacker.energy -= effectiveCost;
   slot.hasAttacked = true;
 
-  state.log.push(`"${slot.card.title}" attaque — ${damage} dégâts${result.blocked ? ` (${result.blocked} bloqués)` : ''} → Extase: ${defender.extase}`);
+  const hysterieTag = hysterie ? ' [HYSTÉRIE]' : '';
+  state.log.push(`"${slot.card.title}"${hysterieTag} attaque — ${damage} dégâts${result.blocked ? ` (${result.blocked} bloqués)` : ''} → Extase: ${defender.extase}`);
+  if (!wasHysterie && nowHysterie)
+    state.log.push(`⚡ ${defender.personnage.name} entre en MODE HYSTÉRIE !`);
   return { ok: true, damage, extase: defender.extase };
 }
 
@@ -315,13 +343,14 @@ function runAITurn(state, aiIdx) {
 
   // Attaquer avec le personnage
   if (state.turn >= 3 && !ai.hasAttackedThisTurn) {
+    const hysterie = isHysterieActive(ai);
     const actions = [
       { type: 'finition', a: ai.personnage.actionFinition },
       { type: 'acte',     a: ai.personnage.actionActe     },
       { type: 'prelim',   a: ai.personnage.actionPrelim   },
     ];
     for (const { type, a } of actions) {
-      if (ai.energy >= a.cost) {
+      if (hysterie || ai.energy >= a.cost) {
         attackWithPersonnage(state, aiIdx, type);
         break;
       }
@@ -330,8 +359,9 @@ function runAITurn(state, aiIdx) {
 
   // Attaquer avec les partenaires disponibles
   if (state.turn >= 3) {
+    const hysterie = isHysterieActive(ai);
     for (const slot of ai.terrain.attack.filter(s => s.card.type === TYPE_PARTENAIRE && !s.hasAttacked)) {
-      if (ai.energy >= ATTACK_ENERGY_COST)
+      if (hysterie || ai.energy >= ATTACK_ENERGY_COST)
         attackWithCard(state, aiIdx, slot.slotId);
     }
   }

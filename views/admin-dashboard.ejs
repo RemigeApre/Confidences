@@ -850,17 +850,28 @@
           <thead>
             <tr>
               <th>Page</th>
+              <th>Visiteurs</th>
               <th style="text-align:right">Vues</th>
-              <th style="text-align:right">Uniques</th>
               <th style="white-space:nowrap">Dernière visite</th>
             </tr>
           </thead>
           <tbody id="log-anon-tbody">
             <% (anonStats.rows || []).forEach(function(r) { %>
-            <tr>
-              <td class="log-anon-path"><%= r.path %></td>
+            <tr class="<%= r.isScan ? 'log-anon-row--scan' : '' %>">
+              <td class="log-anon-path">
+                <% if (r.isScan) { %><span class="log-anon-scan-badge" title="Chemin suspect (bot/scanner)">⚠</span> <% } %>
+                <span class="log-anon-label" title="<%= r.path %>"><%= r.label %></span>
+                <span class="log-anon-rawpath"><%= r.path %></span>
+              </td>
+              <td class="log-anon-visitors">
+                <% (r.visitor_ids || []).forEach(function(vid) { %>
+                  <span class="log-anon-vid" style="background:<%- '#' + vid.slice(0,6) %>" title="Visiteur <%= vid %>"></span>
+                <% }); %>
+                <% if (r.unique_visitors > (r.visitor_ids||[]).length) { %>
+                  <span class="log-anon-vid-more">+<%= r.unique_visitors - (r.visitor_ids||[]).length %></span>
+                <% } %>
+              </td>
               <td style="text-align:right;font-variant-numeric:tabular-nums"><%= r.views %></td>
-              <td style="text-align:right;font-variant-numeric:tabular-nums"><%= r.unique_ips %></td>
               <td class="log-anon-lastseen" style="white-space:nowrap;color:var(--muted)"><%= r.last_seen ? new Date(r.last_seen).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—' %></td>
             </tr>
             <% }); %>
@@ -912,6 +923,17 @@
       return new Date(iso).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     }
 
+    function visitorBadges(row) {
+      var ids = row.visitor_ids || [];
+      var html = '';
+      ids.forEach(function(vid) {
+        html += '<span class="log-anon-vid" style="background:#' + vid.slice(0,6) + '" title="Visiteur ' + vid + '"></span>';
+      });
+      var extra = (row.unique_visitors || 0) - ids.length;
+      if (extra > 0) html += '<span class="log-anon-vid-more">+' + extra + '</span>';
+      return html;
+    }
+
     function loadAnon() {
       var q = searchInp ? searchInp.value.trim() : '';
       fetch('/admin/log/anon?days=' + currentDays + '&path=' + encodeURIComponent(q))
@@ -920,9 +942,15 @@
           // Table
           var html = '';
           (data.rows || []).forEach(function(r) {
-            html += '<tr><td class="log-anon-path">' + r.path + '</td>' +
+            var scanCls = r.isScan ? ' log-anon-row--scan' : '';
+            var scanBadge = r.isScan ? '<span class="log-anon-scan-badge" title="Chemin suspect">⚠</span> ' : '';
+            html += '<tr class="' + scanCls + '">' +
+              '<td class="log-anon-path">' + scanBadge +
+                '<span class="log-anon-label" title="' + r.path + '">' + r.label + '</span>' +
+                '<span class="log-anon-rawpath">' + r.path + '</span>' +
+              '</td>' +
+              '<td class="log-anon-visitors">' + visitorBadges(r) + '</td>' +
               '<td style="text-align:right;font-variant-numeric:tabular-nums">' + r.views + '</td>' +
-              '<td style="text-align:right;font-variant-numeric:tabular-nums">' + r.unique_ips + '</td>' +
               '<td style="white-space:nowrap;color:var(--muted)">' + formatAnonTime(r.last_seen) + '</td></tr>';
           });
           tbody.innerHTML = html || '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucune donnée</td></tr>';
