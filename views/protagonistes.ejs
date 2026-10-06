@@ -35,6 +35,22 @@
           </div>
         </div>
 
+        <% if (races && races.length) { %>
+        <%# Race / Espèce %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Race / Esp&egrave;ce</span>
+          <div class="links-filter" id="prot-race-filter">
+            <button type="button" class="tag-chip active" data-race="">Toutes</button>
+            <% races.forEach(function(r) { %>
+              <button type="button" class="tag-chip" data-race="<%= r.id %>"
+                style="<%= r.color ? '--chip-accent:' + r.color : '' %>">
+                <%= r.icon ? r.icon + ' ' : '' %><%= r.name %>
+              </button>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
         <% if (parodies && parodies.length) { %>
         <%# Univers %>
         <div class="wiki-filter-section">
@@ -72,6 +88,7 @@
           data-gender="<%= p.gender || '' %>"
           data-nature="<%= p.nature || '' %>"
           data-parody="<%= p.parody || '' %>"
+          data-race="<%= p.race_id || '' %>"
           data-special="<%= _pSpecial %>">
 
           <% if (p.image_path) { %>
@@ -79,10 +96,22 @@
               <% if (p.nature && p.nature !== 'humain') { %>
                 <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
               <% } %>
+              <% if (p.race_name) { %>
+                <div class="prot-card-race-badge" style="<%= p.race_color ? 'background:' + p.race_color + '22;border-color:' + p.race_color + '66;color:' + p.race_color : '' %>">
+                  <%= p.race_icon ? p.race_icon + ' ' : '' %><%= p.race_name %>
+                </div>
+              <% } %>
               <img src="<%= p.image_path %>" alt="<%= p.name %>" class="prot-card-img" loading="lazy" />
             </div>
-          <% } else if (p.nature && p.nature !== 'humain') { %>
-            <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
+          <% } else { %>
+            <% if (p.nature && p.nature !== 'humain') { %>
+              <div class="prot-card-nature-banner prot-card-nature-banner--<%= p.nature %>"><%= p.nature === 'pokemon' ? 'Pok\u00e9mon' : p.nature %></div>
+            <% } %>
+            <% if (p.race_name) { %>
+              <div class="prot-card-race-badge" style="<%= p.race_color ? 'background:' + p.race_color + '22;border-color:' + p.race_color + '66;color:' + p.race_color : '' %>">
+                <%= p.race_icon ? p.race_icon + ' ' : '' %><%= p.race_name %>
+              </div>
+            <% } %>
           <% } %>
 
           <div class="prot-card-body">
@@ -130,6 +159,7 @@
   var activeGender = '';
   var activeNature = '';
   var activeParody = '';
+  var activeRace   = '';
   var hideUltra      = localStorage.getItem('gallery-hide-ultra') !== '0';   // masqué par défaut
   var hideIrrealiste = localStorage.getItem('gallery-hide-irrealiste') === '1';
 
@@ -140,6 +170,7 @@
       if (activeGender && c.dataset.gender !== activeGender) ok = false;
       if (activeNature && c.dataset.nature !== activeNature) ok = false;
       if (activeParody && c.dataset.parody !== activeParody) ok = false;
+      if (activeRace   && c.dataset.race   !== activeRace)   ok = false;
       var sp = c.dataset.special || '';
       if (hideUltra && sp === 'ultra') ok = false;
       if (hideIrrealiste && sp === 'irrealiste') ok = false;
@@ -195,6 +226,7 @@
   wireChips('prot-gender-filter', 'gender', function(v) { activeGender = v; });
   wireChips('prot-nature-filter', 'nature', function(v) { activeNature = v; });
   wireChips('prot-parody-filter', 'parody', function(v) { activeParody = v; });
+  wireChips('prot-race-filter',   'race',   function(v) { activeRace   = v; });
   applyFilters();
 })();
 </script>

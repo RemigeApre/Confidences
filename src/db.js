@@ -4368,6 +4368,122 @@ function setPersonnageCollection(protagonisteId, collectionId) {
     .run(collectionId || null, protagonisteId);
 }
 
+// ── Races / Espèces ───────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS races (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT    NOT NULL DEFAULT '',
+    slug        TEXT    NOT NULL DEFAULT '',
+    description TEXT    NOT NULL DEFAULT '',
+    color       TEXT    NOT NULL DEFAULT '#6366f1',
+    icon        TEXT    NOT NULL DEFAULT '',
+    sort_order  INTEGER NOT NULL DEFAULT 0
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS race_clans (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    race_id     INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
+    name        TEXT    NOT NULL DEFAULT '',
+    slug        TEXT    NOT NULL DEFAULT '',
+    description TEXT    NOT NULL DEFAULT '',
+    color       TEXT    NOT NULL DEFAULT '',
+    sort_order  INTEGER NOT NULL DEFAULT 0
+  )
+`);
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN race_id INTEGER REFERENCES races(id)"); } catch(_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN clan_id INTEGER REFERENCES race_clans(id)"); } catch(_) {}
+
+function listRaces() {
+  const races = db.prepare("SELECT * FROM races ORDER BY sort_order, name").all();
+  return races.map(function(r) {
+    const clans = db.prepare("SELECT * FROM race_clans WHERE race_id=? ORDER BY sort_order, name").all(r.id);
+    const count = db.prepare("SELECT COUNT(*) as n FROM protagonistes WHERE race_id=?").get(r.id).n;
+    return { ...r, clans, count };
+  });
+}
+
+function getRace(id) {
+  const r = db.prepare("SELECT * FROM races WHERE id=?").get(id);
+  if (!r) return null;
+  r.clans = db.prepare("SELECT * FROM race_clans WHERE race_id=? ORDER BY sort_order, name").all(r.id);
+  return r;
+}
+
+function createRace({ name, slug, description, color, icon, sortOrder }) {
+  const r = db.prepare(
+    "INSERT INTO races (name,slug,description,color,icon,sort_order) VALUES (?,?,?,?,?,?)"
+  ).run(
+    String(name || '').trim(),
+    String(slug || name || '').trim().toLowerCase().replace(/\s+/g, '_'),
+    String(description || '').trim(),
+    String(color || '#6366f1'),
+    String(icon || '').trim(),
+    Number(sortOrder) || 0
+  );
+  return r.lastInsertRowid;
+}
+
+function updateRace(id, { name, slug, description, color, icon, sortOrder }) {
+  db.prepare(
+    "UPDATE races SET name=?,slug=?,description=?,color=?,icon=?,sort_order=? WHERE id=?"
+  ).run(
+    String(name || '').trim(),
+    String(slug || name || '').trim().toLowerCase().replace(/\s+/g, '_'),
+    String(description || '').trim(),
+    String(color || '#6366f1'),
+    String(icon || '').trim(),
+    Number(sortOrder) || 0,
+    id
+  );
+}
+
+function deleteRace(id) {
+  db.prepare("UPDATE protagonistes SET race_id=NULL, clan_id=NULL WHERE race_id=?").run(id);
+  db.prepare("DELETE FROM races WHERE id=?").run(id);
+}
+
+function listClansForRace(raceId) {
+  return db.prepare("SELECT * FROM race_clans WHERE race_id=? ORDER BY sort_order, name").all(raceId);
+}
+
+function createClan(raceId, { name, slug, description, color, sortOrder }) {
+  const r = db.prepare(
+    "INSERT INTO race_clans (race_id,name,slug,description,color,sort_order) VALUES (?,?,?,?,?,?)"
+  ).run(
+    raceId,
+    String(name || '').trim(),
+    String(slug || name || '').trim().toLowerCase().replace(/\s+/g, '_'),
+    String(description || '').trim(),
+    String(color || '').trim(),
+    Number(sortOrder) || 0
+  );
+  return r.lastInsertRowid;
+}
+
+function updateClan(id, { name, slug, description, color, sortOrder }) {
+  db.prepare(
+    "UPDATE race_clans SET name=?,slug=?,description=?,color=?,sort_order=? WHERE id=?"
+  ).run(
+    String(name || '').trim(),
+    String(slug || name || '').trim().toLowerCase().replace(/\s+/g, '_'),
+    String(description || '').trim(),
+    String(color || '').trim(),
+    Number(sortOrder) || 0,
+    id
+  );
+}
+
+function deleteClan(id) {
+  db.prepare("UPDATE protagonistes SET clan_id=NULL WHERE clan_id=?").run(id);
+  db.prepare("DELETE FROM race_clans WHERE id=?").run(id);
+}
+
+function setProtagonisteRace(protagonisteId, raceId, clanId) {
+  db.prepare("UPDATE protagonistes SET race_id=?, clan_id=? WHERE id=?")
+    .run(raceId || null, clanId || null, protagonisteId);
+}
+
 // ── Jeu de cartes — sessions ──────────────────────────────────────────────
 try {
   db.exec(`
@@ -4740,6 +4856,9 @@ module.exports = {
   updateCardCollection,
   deleteCardCollection,
   setPersonnageCollection,
+  listRaces, getRace, createRace, updateRace, deleteRace,
+  listClansForRace, createClan, updateClan, deleteClan,
+  setProtagonisteRace,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
@@ -4833,11 +4952,31 @@ const VALID_SPECIALS = new Set(['', 'ultra', 'irrealiste']);
 function parseEvolutions(raw) { try { const a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a.filter(Boolean) : []; } catch { return []; } }
 
 function listProtagonistes() {
-  return db.prepare(`SELECT id, name, description, tags, parody, sub_parody, gender, nature, image_path, evolutions, special, created_at, updated_at FROM protagonistes ORDER BY name COLLATE NOCASE`).all()
-    .map(p => { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } p.evolutions = parseEvolutions(p.evolutions); return p; });
+  return db.prepare(`
+    SELECT p.id, p.name, p.description, p.tags, p.parody, p.sub_parody, p.gender, p.nature,
+           p.image_path, p.evolutions, p.special, p.created_at, p.updated_at,
+           p.race_id, p.clan_id,
+           r.name  AS race_name,  r.color AS race_color,  r.icon AS race_icon,
+           rc.name AS clan_name,  rc.color AS clan_color
+    FROM protagonistes p
+    LEFT JOIN races r       ON r.id  = p.race_id
+    LEFT JOIN race_clans rc ON rc.id = p.clan_id
+    ORDER BY p.name COLLATE NOCASE
+  `).all().map(p => {
+    try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; }
+    p.evolutions = parseEvolutions(p.evolutions);
+    return p;
+  });
 }
 function getProtagoniste(id) {
-  const p = db.prepare(`SELECT * FROM protagonistes WHERE id=?`).get(id);
+  const p = db.prepare(`
+    SELECT p.*, r.name AS race_name, r.color AS race_color, r.icon AS race_icon,
+           rc.name AS clan_name, rc.color AS clan_color
+    FROM protagonistes p
+    LEFT JOIN races r       ON r.id  = p.race_id
+    LEFT JOIN race_clans rc ON rc.id = p.clan_id
+    WHERE p.id=?
+  `).get(id);
   if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } p.evolutions = parseEvolutions(p.evolutions); }
   return p;
 }

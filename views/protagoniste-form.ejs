@@ -97,6 +97,33 @@
         </select>
       </div>
 
+      <%# ── Race / Espèce ── %>
+      <% var _races = races || []; var _curRaceId = protagoniste ? (protagoniste.race_id || '') : ''; var _curClanId = protagoniste ? (protagoniste.clan_id || '') : ''; %>
+      <% var _curRaceClans = _races.find(function(r){ return String(r.id) === String(_curRaceId); }); %>
+      <div class="prot-form-field-group">
+        <label class="prot-form-field-label" for="prot-race">Race / Espèce</label>
+        <select name="race_id" id="prot-race" class="prot-form-select-elegant">
+          <option value="">— aucune —</option>
+          <% _races.forEach(function(r) { %>
+            <option value="<%= r.id %>" <%= String(_curRaceId) === String(r.id) ? 'selected' : '' %>
+              data-color="<%= r.color || '' %>" data-icon="<%= r.icon || '' %>">
+              <%= r.icon ? r.icon + ' ' : '' %><%= r.name %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <%# ── Clan (dépend de la race) ── %>
+      <div class="prot-form-field-group" id="prot-clan-group" style="<%= (!_curRaceId || !_curRaceClans || !_curRaceClans.clans || !_curRaceClans.clans.length) ? 'display:none' : '' %>">
+        <label class="prot-form-field-label" for="prot-clan">Clan</label>
+        <select name="clan_id" id="prot-clan" class="prot-form-select-elegant">
+          <option value="">— aucun clan —</option>
+          <% if (_curRaceClans && _curRaceClans.clans) { _curRaceClans.clans.forEach(function(c) { %>
+            <option value="<%= c.id %>" <%= String(_curClanId) === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
+          <% }); } %>
+        </select>
+      </div>
+
       <%# ── Évolutions (Pokémon / nature évolutive) ── %>
       <div class="prot-form-field-group prot-evo-section" id="prot-evo-section">
         <div class="prot-form-field-label">Chaîne d'évolution <span style="font-weight:400;font-size:.75rem;opacity:.6">(formes précédentes, dans l'ordre)</span></div>
@@ -336,6 +363,38 @@
       if (specialHidden) specialHidden.value = btn.dataset.val || '';
     });
   });
+
+  // Race → chargement dynamique des clans
+  var raceSelect = document.getElementById('prot-race');
+  var clanGroup  = document.getElementById('prot-clan-group');
+  var clanSelect = document.getElementById('prot-clan');
+  if (raceSelect) {
+    raceSelect.addEventListener('change', function() {
+      var raceId = raceSelect.value;
+      if (!raceId) {
+        clanGroup.style.display = 'none';
+        clanSelect.innerHTML = '<option value="">— aucun clan —</option>';
+        return;
+      }
+      fetch('/protagonistes/api/races/' + raceId + '/clans')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var clans = data.clans || [];
+          while (clanSelect.options.length > 0) clanSelect.remove(0);
+          var defaultOpt = document.createElement('option');
+          defaultOpt.value = '';
+          defaultOpt.textContent = '— aucun clan —';
+          clanSelect.appendChild(defaultOpt);
+          clans.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            clanSelect.appendChild(opt);
+          });
+          clanGroup.style.display = clans.length ? '' : 'none';
+        });
+    });
+  }
   </script>
 
 </main>

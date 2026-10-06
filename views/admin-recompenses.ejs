@@ -315,6 +315,11 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       <span class="obj-nav-count"><%= (cardCollections || []).length %></span>
     </button>
 
+    <button class="obj-nav-link" data-section="races">
+      <span style="font-size:1.1rem">&#129425;</span> Races
+      <span class="obj-nav-count"><%= (races || []).length %></span>
+    </button>
+
   </nav>
 
   <%/* ── Main content ── */%>
@@ -1096,14 +1101,210 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       </div>
     </div>
   </div>
+
+    <%/* ── Races / Espèces ── */%>
+    <div class="obj-section" data-section="races">
+      <div class="obj-section-toolbar" style="justify-content:flex-end">
+        <button class="ari-save-btn" id="race-new-btn" style="font-size:.78rem;padding:.3rem .8rem">+ Nouvelle race</button>
+      </div>
+
+      <div id="race-list" style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem">
+        <% if (!(races||[]).length) { %>
+          <p style="color:#475569;font-size:.82rem">Aucune race. Cr&eacute;ez-en une (ex&nbsp;: D&eacute;mon, Vampire, Elfe).</p>
+        <% } %>
+        <% (races||[]).forEach(function(race) { %>
+        <div class="race-row" data-race-id="<%= race.id %>"
+          style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:10px;overflow:hidden">
+          <div class="race-row-header" style="display:flex;align-items:center;gap:.75rem;padding:.65rem .85rem;cursor:pointer">
+            <span class="race-row-dot" style="width:12px;height:12px;border-radius:50%;background:<%= race.color || '#6366f1' %>;flex-shrink:0"></span>
+            <span class="race-row-icon" style="font-size:1.2rem"><%= race.icon || '' %></span>
+            <span class="race-row-name" style="font-size:.88rem;font-weight:700;color:#e2e8f0;flex:1"><%= race.name %></span>
+            <span style="font-size:.72rem;color:#64748b"><%= race.count %> perso. · <%= (race.clans||[]).length %> clan(s)</span>
+            <button class="race-edit-btn" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:.8rem;padding:.1rem .3rem">&#9998;</button>
+            <button class="race-delete-btn" style="background:none;border:none;color:#7f1d1d;cursor:pointer;font-size:.85rem;padding:.1rem .3rem">&#128465;</button>
+            <span class="race-row-toggle" style="color:#64748b;font-size:.7rem">&#9654;</span>
+          </div>
+          <div class="race-row-body" style="display:none;padding:0 .85rem .75rem;border-top:1px solid rgba(255,255,255,.06)">
+            <%/* Éditeur inline de la race */%>
+            <div class="race-edit-form" style="display:none;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:.6rem">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.4rem">
+                <input type="text" class="race-inp-name admin-filter-select" placeholder="Nom" value="<%= race.name %>" style="grid-column:1/-1">
+                <input type="text" class="race-inp-desc admin-filter-select" placeholder="Description" value="<%= race.description || '' %>" style="grid-column:1/-1">
+                <div style="display:flex;align-items:center;gap:.4rem">
+                  <label style="font-size:.7rem;color:#64748b">Couleur</label>
+                  <input type="color" class="race-inp-color" value="<%= race.color || '#6366f1' %>" style="width:32px;height:24px;border:none;background:none;cursor:pointer;padding:0">
+                </div>
+                <input type="text" class="race-inp-icon admin-filter-select" placeholder="Icône (emoji)" value="<%= race.icon || '' %>" style="text-align:center">
+              </div>
+              <button class="race-save-btn ari-save-btn" style="font-size:.72rem;padding:.25rem .65rem">Sauver</button>
+            </div>
+            <%/* Clans */%>
+            <div class="clan-list" style="display:flex;flex-direction:column;gap:.35rem">
+              <% (race.clans||[]).forEach(function(clan) { %>
+              <div class="clan-row" data-clan-id="<%= clan.id %>"
+                style="display:flex;align-items:center;gap:.5rem;background:rgba(0,0,0,.2);border-radius:6px;padding:.35rem .6rem">
+                <span style="width:8px;height:8px;border-radius:50%;background:<%= clan.color || race.color || '#6366f1' %>;flex-shrink:0"></span>
+                <input type="text" class="clan-inp-name" value="<%= clan.name %>"
+                  style="flex:1;background:none;border:none;color:#e2e8f0;font-size:.8rem;outline:none;font-family:inherit">
+                <input type="color" class="clan-inp-color" value="<%= clan.color || '' %>"
+                  style="width:22px;height:22px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0" title="Couleur">
+                <button class="clan-save-btn" style="background:none;border:1px solid rgba(255,255,255,.15);color:#94a3b8;font-size:.65rem;padding:.1rem .35rem;border-radius:4px;cursor:pointer">✓</button>
+                <button class="clan-delete-btn" style="background:none;border:none;color:#7f1d1d;font-size:.8rem;cursor:pointer;padding:.1rem .2rem">×</button>
+              </div>
+              <% }) %>
+            </div>
+            <div class="clan-add-row" style="display:flex;gap:.4rem;margin-top:.4rem;align-items:center">
+              <input type="text" class="clan-new-name admin-filter-select" placeholder="Nouveau clan…"
+                style="flex:1;font-size:.78rem;padding:.25rem .5rem">
+              <button class="clan-add-btn ari-save-btn" style="font-size:.72rem;padding:.25rem .65rem">+ Ajouter</button>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+  </div>
 </div>
+
+<script>
+(function() {
+  // ── Gestion des races ────────────────────────────────────────────────────
+  var raceList = document.getElementById('race-list');
+  if (raceList) {
+    // Toggle expand
+    raceList.addEventListener('click', function(e) {
+      var header = e.target.closest('.race-row-header');
+      if (!header || e.target.closest('.race-edit-btn') || e.target.closest('.race-delete-btn')) return;
+      var row = header.closest('.race-row');
+      var body = row.querySelector('.race-row-body');
+      var tog = header.querySelector('.race-row-toggle');
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      if (tog) tog.textContent = open ? '▶' : '▼';
+    });
+    // Toggle éditeur race
+    raceList.addEventListener('click', function(e) {
+      if (!e.target.closest('.race-edit-btn')) return;
+      var row = e.target.closest('.race-row');
+      var body = row.querySelector('.race-row-body');
+      var form = row.querySelector('.race-edit-form');
+      body.style.display = 'block';
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+    // Sauver race
+    raceList.addEventListener('click', function(e) {
+      if (!e.target.closest('.race-save-btn')) return;
+      var row = e.target.closest('.race-row');
+      var raceId = row.dataset.raceId;
+      var name  = row.querySelector('.race-inp-name').value.trim();
+      var desc  = row.querySelector('.race-inp-desc').value.trim();
+      var color = row.querySelector('.race-inp-color').value;
+      var icon  = row.querySelector('.race-inp-icon').value.trim();
+      if (!name) return;
+      fetch('/admin/races/' + raceId, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: desc, color, icon })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) return;
+        row.querySelector('.race-row-name').textContent = name;
+        row.querySelector('.race-row-dot').style.background = color;
+        row.querySelector('.race-row-icon').textContent = icon;
+        row.querySelector('.race-edit-form').style.display = 'none';
+      });
+    });
+    // Supprimer race
+    raceList.addEventListener('click', function(e) {
+      if (!e.target.closest('.race-delete-btn')) return;
+      var row = e.target.closest('.race-row');
+      var name = row.querySelector('.race-row-name').textContent;
+      if (!confirm('Supprimer la race "' + name + '" ? Les personnages associés perdront leur race.')) return;
+      fetch('/admin/races/' + row.dataset.raceId, { method: 'DELETE' })
+        .then(function(r) { return r.json(); }).then(function(d) { if (d.ok) row.remove(); });
+    });
+    // Sauver clan
+    raceList.addEventListener('click', function(e) {
+      if (!e.target.closest('.clan-save-btn')) return;
+      var clanRow = e.target.closest('.clan-row');
+      var clanId = clanRow.dataset.clanId;
+      var name  = clanRow.querySelector('.clan-inp-name').value.trim();
+      var color = clanRow.querySelector('.clan-inp-color').value;
+      if (!name) return;
+      fetch('/admin/clans/' + clanId, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, color })
+      });
+    });
+    // Supprimer clan
+    raceList.addEventListener('click', function(e) {
+      if (!e.target.closest('.clan-delete-btn')) return;
+      var clanRow = e.target.closest('.clan-row');
+      if (!confirm('Supprimer ce clan ?')) return;
+      fetch('/admin/clans/' + clanRow.dataset.clanId, { method: 'DELETE' })
+        .then(function(r) { return r.json(); }).then(function(d) { if (d.ok) clanRow.remove(); });
+    });
+    // Ajouter clan
+    raceList.addEventListener('click', function(e) {
+      if (!e.target.closest('.clan-add-btn')) return;
+      var raceRow = e.target.closest('.race-row');
+      var raceId  = raceRow.dataset.raceId;
+      var inp     = raceRow.querySelector('.clan-new-name');
+      var name    = inp.value.trim();
+      if (!name) return;
+      fetch('/admin/races/' + raceId + '/clans', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) return;
+        var clanList = raceRow.querySelector('.clan-list');
+        var div = document.createElement('div');
+        div.className = 'clan-row';
+        div.dataset.clanId = d.id;
+        div.style.cssText = 'display:flex;align-items:center;gap:.5rem;background:rgba(0,0,0,.2);border-radius:6px;padding:.35rem .6rem';
+        var dot = document.createElement('span');
+        dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:#6366f1;flex-shrink:0';
+        var nameInp = document.createElement('input');
+        nameInp.type = 'text'; nameInp.className = 'clan-inp-name';
+        nameInp.value = name;
+        nameInp.style.cssText = 'flex:1;background:none;border:none;color:#e2e8f0;font-size:.8rem;outline:none;font-family:inherit';
+        var colorInp = document.createElement('input');
+        colorInp.type = 'color'; colorInp.className = 'clan-inp-color';
+        colorInp.style.cssText = 'width:22px;height:22px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0';
+        var saveBtn = document.createElement('button');
+        saveBtn.className = 'clan-save-btn';
+        saveBtn.textContent = '✓';
+        saveBtn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,.15);color:#94a3b8;font-size:.65rem;padding:.1rem .35rem;border-radius:4px;cursor:pointer';
+        var delBtn = document.createElement('button');
+        delBtn.className = 'clan-delete-btn';
+        delBtn.textContent = '×';
+        delBtn.style.cssText = 'background:none;border:none;color:#7f1d1d;font-size:.8rem;cursor:pointer;padding:.1rem .2rem';
+        div.appendChild(dot); div.appendChild(nameInp); div.appendChild(colorInp);
+        div.appendChild(saveBtn); div.appendChild(delBtn);
+        clanList.appendChild(div);
+        inp.value = '';
+      });
+    });
+    // Nouvelle race
+    document.getElementById('race-new-btn').addEventListener('click', function() {
+      var name = prompt('Nom de la nouvelle race (ex\u00a0: D\u00e9mon)\u00a0:');
+      if (!name || !name.trim()) return;
+      fetch('/admin/races', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), color: '#6366f1' })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.ok) location.reload();
+      });
+    });
+  }
+})();
+</script>
 
 <!-- ── Section switching ── -->
 <script>
 (function() {
   var links = document.querySelectorAll('.obj-nav-link[data-section]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
-  var VALID = ['accueil','images','charms','themes','speciaux','cartes','personnages','collections'];
+  var VALID = ['accueil','images','charms','themes','speciaux','cartes','personnages','collections','races'];
 
   function activate(key) {
     links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });

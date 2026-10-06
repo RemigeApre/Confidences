@@ -48,6 +48,20 @@
         </div>
       <% } %>
 
+      <%# ── Race / Clan ── %>
+      <% if (protagoniste.race_name) { %>
+        <div class="prot-detail-race">
+          <span class="prot-badge prot-badge--race" style="<%= protagoniste.race_color ? 'background:' + protagoniste.race_color + '22;border-color:' + protagoniste.race_color + '55;color:' + protagoniste.race_color : '' %>">
+            <%= protagoniste.race_icon ? protagoniste.race_icon + ' ' : '' %><%= protagoniste.race_name %>
+          </span>
+          <% if (protagoniste.clan_name) { %>
+            <span class="prot-badge prot-badge--clan" style="<%= protagoniste.clan_color ? 'background:' + protagoniste.clan_color + '22;border-color:' + protagoniste.clan_color + '55;color:' + protagoniste.clan_color : '' %>">
+              <%= protagoniste.clan_name %>
+            </span>
+          <% } %>
+        </div>
+      <% } %>
+
       <%# ── Univers (parodie) — visuellement distinct des tags ── %>
       <% if (protagoniste.parody) { %>
         <a href="/parodies/<%= encodeURIComponent(protagoniste.parody) %><% if (protagoniste.sub_parody) { %>/<%= encodeURIComponent(protagoniste.sub_parody) %><% } %>" class="prot-detail-univers">

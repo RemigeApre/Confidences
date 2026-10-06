@@ -4,7 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
-const { normalizeParody } = db;
+const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace } = db;
 const { insertGalleryImage } = db;
 const { generateThumb } = require("../thumbs");
 
@@ -49,12 +49,20 @@ function buildProtagonistesRouter(config) {
   router.get("/", (req, res) => {
     const all = db.listProtagonistes();
     const parodies = [...new Set(all.map(p => p.parody).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
-    res.render("protagonistes", { config, protagonistes: all, parodies });
+    const races = listRaces();
+    res.render("protagonistes", { config, protagonistes: all, parodies, races });
+  });
+
+  // API : clans d'une race (pour le formulaire dynamique)
+  router.get("/api/races/:raceId/clans", requireAdmin, (req, res) => {
+    const clans = listClansForRace(Number(req.params.raceId));
+    res.json({ ok: true, clans });
   });
 
   router.get("/new", requireAdmin, (req, res) => {
     const allTags = db.listAllSiteTags();
-    res.render("protagoniste-form", { config, protagoniste: null, allTags, allParodies: db.listAllParodies() });
+    const races = listRaces();
+    res.render("protagoniste-form", { config, protagoniste: null, allTags, allParodies: db.listAllParodies(), races });
   });
   router.post("/new", requireAdmin, upload.single("character_image"), (req, res) => {
     const name = String(req.body.name || "").slice(0, 200).trim();
@@ -67,6 +75,9 @@ function buildProtagonistesRouter(config) {
     const imagePath = req.file ? `/uploads/personnages/${req.file.filename}` : "";
     const special = req.body.special || "";
     const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody, subParody, gender, nature, imagePath, special });
+    const raceId = req.body.race_id ? Number(req.body.race_id) : null;
+    const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
+    if (raceId) setProtagonisteRace(id, raceId, clanId);
     res.redirect(`/protagonistes/${id}`);
   });
 
@@ -97,7 +108,8 @@ function buildProtagonistesRouter(config) {
     const protagoniste = db.getProtagoniste(req.params.id);
     if (!protagoniste) return res.redirect("/protagonistes");
     const allTags = db.listAllSiteTags();
-    res.render("protagoniste-form", { config, protagoniste, allTags, allParodies: db.listAllParodies() });
+    const races = listRaces();
+    res.render("protagoniste-form", { config, protagoniste, allTags, allParodies: db.listAllParodies(), races });
   });
   router.post("/:id/update", requireAdmin, upload.single("character_image"), (req, res) => {
     const protagoniste = db.getProtagoniste(req.params.id);
@@ -130,6 +142,9 @@ function buildProtagonistesRouter(config) {
       evolutions,
       special: req.body.special || "",
     });
+    const raceId = req.body.race_id ? Number(req.body.race_id) : null;
+    const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
+    setProtagonisteRace(protagoniste.id, raceId, clanId);
     res.redirect(`/protagonistes/${protagoniste.id}`);
   });
   router.post("/:id/delete", requireAdmin, (req, res) => {

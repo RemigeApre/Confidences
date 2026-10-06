@@ -76,6 +76,8 @@ const {
   updateCardCollection,
   deleteCardCollection,
   setPersonnageCollection,
+  listRaces, getRace, createRace, updateRace, deleteRace,
+  listClansForRace, createClan, updateClan, deleteClan,
   createCardVariant,
   updateCardVariantRarity,
   updateCardVariantSummary,
@@ -555,7 +557,8 @@ function buildAdminRouter(config) {
     const personnageCards = listProtagonistesForCards();
     const personnageCardStatsByRarity = Object.fromEntries(rarities.map(r => [r, personnageCards.filter(c => c.cardRarity === r).length]));
     const cardCollections = listCardCollections();
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity, passifs: PASSIFS, actionEffets: ACTION_EFFETS, cardCollections });
+    const races = listRaces();
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity, passifs: PASSIFS, actionEffets: ACTION_EFFETS, cardCollections, races });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -761,6 +764,51 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     if (!id) return res.json({ ok: false });
     deleteCardCollection(id);
+    res.json({ ok: true });
+  });
+
+  // ── Races / Espèces ───────────────────────────────────────────────────────
+  router.get("/races", requireAdmin, (req, res) => {
+    res.json({ ok: true, races: listRaces() });
+  });
+  router.post("/races", requireAdmin, express.json(), (req, res) => {
+    const { name, description, color, icon, sortOrder } = req.body;
+    if (!name) return res.json({ ok: false, error: 'Nom requis' });
+    const id = createRace({ name, description, color, icon, sortOrder });
+    res.json({ ok: true, id, race: getRace(id) });
+  });
+  router.put("/races/:id", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    updateRace(id, req.body);
+    res.json({ ok: true, race: getRace(id) });
+  });
+  router.delete("/races/:id", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    deleteRace(id);
+    res.json({ ok: true });
+  });
+  router.get("/races/:id/clans", requireAdmin, (req, res) => {
+    res.json({ ok: true, clans: listClansForRace(Number(req.params.id)) });
+  });
+  router.post("/races/:id/clans", requireAdmin, express.json(), (req, res) => {
+    const raceId = Number(req.params.id);
+    const { name, description, color, sortOrder } = req.body;
+    if (!raceId || !name) return res.json({ ok: false, error: 'Paramètres invalides' });
+    const id = createClan(raceId, { name, description, color, sortOrder });
+    res.json({ ok: true, id, clan: { id, race_id: raceId, name, description: description || '', color: color || '', sort_order: sortOrder || 0 } });
+  });
+  router.put("/clans/:id", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    updateClan(id, req.body);
+    res.json({ ok: true });
+  });
+  router.delete("/clans/:id", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    deleteClan(id);
     res.json({ ok: true });
   });
 
