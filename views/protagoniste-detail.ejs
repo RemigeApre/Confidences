@@ -8,7 +8,7 @@
 
     <% if (protagoniste.image_path) { %>
       <div class="prot-detail-img-wrap">
-        <img src="<%= protagoniste.image_path %>" alt="<%= protagoniste.name %>" class="prot-detail-img" />
+        <img src="<%= protagoniste.image_path %>" alt="<%= protagoniste.name %>" class="prot-detail-img prot-lightbox-trigger" data-lightbox="<%= protagoniste.image_path %>" style="cursor:zoom-in" />
       </div>
     <% } %>
 
@@ -118,11 +118,12 @@
             <% galleryImages.forEach(function(img) { %>
               <% var thumb = (img.imagePaths || [])[0] || ''; %>
               <% if (thumb) { %>
-                <a href="/galerie" class="prot-carousel-item"
+                <button type="button" class="prot-carousel-item"
                   title="<%= img.title || '' %>"
-                  data-special="<%= imgSpecial(img) %>">
+                  data-special="<%= imgSpecial(img) %>"
+                  data-lightbox="<%= thumb %>">
                   <img src="<%= thumb %>" alt="<%= img.title || protagoniste.name %>" loading="lazy" />
-                </a>
+                </button>
               <% } %>
             <% }) %>
           </div>
@@ -295,6 +296,51 @@
   }
 
   applyFilters();
+})();
+</script>
+
+<%# ── Lightbox ── %>
+<div id="prot-lightbox" role="dialog" aria-modal="true" aria-label="Image agrandie" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);cursor:zoom-out;align-items:center;justify-content:center">
+  <img id="prot-lightbox-img" src="" alt="" style="max-width:92vw;max-height:92vh;object-fit:contain;border-radius:6px;pointer-events:none;box-shadow:0 8px 48px rgba(0,0,0,.7)" />
+  <button type="button" id="prot-lightbox-close" aria-label="Fermer" style="position:absolute;top:1rem;right:1.25rem;background:none;border:none;color:#fff;font-size:2rem;line-height:1;cursor:pointer;opacity:.7;padding:.2rem .4rem">&times;</button>
+</div>
+
+<script>
+(function() {
+  var lb    = document.getElementById('prot-lightbox');
+  var lbImg = document.getElementById('prot-lightbox-img');
+  var lbClose = document.getElementById('prot-lightbox-close');
+  if (!lb || !lbImg) return;
+
+  function open(src, alt) {
+    lbImg.src = src;
+    lbImg.alt = alt || '';
+    lb.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lb.style.display = 'none';
+    lbImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  // Portrait principal
+  document.querySelectorAll('.prot-lightbox-trigger').forEach(function(el) {
+    el.addEventListener('click', function() { open(el.dataset.lightbox, el.alt); });
+  });
+
+  // Images du carrousel
+  document.querySelectorAll('.prot-carousel-item[data-lightbox]').forEach(function(btn) {
+    btn.style.cursor = 'zoom-in';
+    btn.addEventListener('click', function() {
+      var img = btn.querySelector('img');
+      open(btn.dataset.lightbox, img ? img.alt : '');
+    });
+  });
+
+  lb.addEventListener('click', function(e) { if (e.target === lb) close(); });
+  if (lbClose) lbClose.addEventListener('click', close);
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && lb.style.display !== 'none') close(); });
 })();
 </script>
 

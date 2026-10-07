@@ -156,12 +156,19 @@
   var noResults = document.getElementById('prot-no-results');
   var countEl = document.getElementById('prot-count-hero');
 
-  var activeGender = '';
-  var activeNature = '';
-  var activeParody = '';
-  var activeRace   = '';
-  var hideUltra      = localStorage.getItem('gallery-hide-ultra') !== '0';   // masqué par défaut
+  var SS_KEY = 'prot-filters';
+  var saved = (function() { try { return JSON.parse(sessionStorage.getItem(SS_KEY) || '{}'); } catch(_) { return {}; } })();
+
+  var activeGender = saved.gender || '';
+  var activeNature = saved.nature || '';
+  var activeParody = saved.parody || '';
+  var activeRace   = saved.race   || '';
+  var hideUltra      = localStorage.getItem('gallery-hide-ultra') !== '0';
   var hideIrrealiste = localStorage.getItem('gallery-hide-irrealiste') === '1';
+
+  function saveFilters() {
+    try { sessionStorage.setItem(SS_KEY, JSON.stringify({ gender: activeGender, nature: activeNature, parody: activeParody, race: activeRace })); } catch(_) {}
+  }
 
   function applyFilters() {
     var shown = 0;
@@ -210,23 +217,32 @@
     });
   }
 
-  function wireChips(containerId, key, setter) {
+  function wireChips(containerId, key, setter, currentVal) {
     var box = document.getElementById(containerId);
     if (!box) return;
+    // Restaurer le chip actif
+    if (currentVal) {
+      var toActivate = box.querySelector('[data-' + key + '="' + currentVal + '"]');
+      if (toActivate) {
+        box.querySelectorAll('.tag-chip').forEach(function(b) { b.classList.remove('active'); });
+        toActivate.classList.add('active');
+      }
+    }
     box.querySelectorAll('.tag-chip').forEach(function(btn) {
       btn.addEventListener('click', function() {
         box.querySelectorAll('.tag-chip').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
         setter(btn.dataset[key] || '');
+        saveFilters();
         applyFilters();
       });
     });
   }
 
-  wireChips('prot-gender-filter', 'gender', function(v) { activeGender = v; });
-  wireChips('prot-nature-filter', 'nature', function(v) { activeNature = v; });
-  wireChips('prot-parody-filter', 'parody', function(v) { activeParody = v; });
-  wireChips('prot-race-filter',   'race',   function(v) { activeRace   = v; });
+  wireChips('prot-gender-filter', 'gender', function(v) { activeGender = v; }, activeGender);
+  wireChips('prot-nature-filter', 'nature', function(v) { activeNature = v; }, activeNature);
+  wireChips('prot-parody-filter', 'parody', function(v) { activeParody = v; }, activeParody);
+  wireChips('prot-race-filter',   'race',   function(v) { activeRace   = v; }, activeRace);
   applyFilters();
 })();
 </script>

@@ -24,7 +24,7 @@ const {
   listWikiPages, listGalleryImages, getGalleryImage, listBdBooks, recordActivityPing, recordAnonVisit,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
-  getUserById,
+  getUserById, isScanPath,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -149,6 +149,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Bloqueur de scans bots ───────────────────────────────────────────────────
+// Avant la session : les scanners ne méritent pas qu'on parse leurs cookies.
+// 404 silencieux, pas de redirect, pas de corps : ne leur confirme rien.
+app.use((req, res, next) => {
+  if (isScanPath(req.path)) return res.status(404).end();
+  next();
+});
+
 app.use(
   session({
     store: new SqliteSessionStore(db),
@@ -178,6 +186,31 @@ app.use((req, res, next) => {
 });
 
 app.use(attachUser);
+
+// ── Mur d'authentification global ───────────────────────────────────────────
+// Seules routes accessibles sans être connecté :
+//   - la page de login et logout
+//   - le Codex (wiki) — texte uniquement, pas les uploads (déjà protégés)
+//   - la page d'accueil et les quizz
+//   - les assets statiques (déjà servis par express.static avant ce middleware)
+// Tout le reste → redirect vers login pour les humains (GET),
+//                 403 pour les appels API/POST sans session.
+const _AUTH_PUBLIC = [
+  /^\/admin\/(login|logout)(\/.*)?$/,
+  /^\/wiki(\/.*)?$/,
+  /^\/quizz(\/.*)?$/,
+  /^\/$/,
+  /^\/api\/search$/,
+  /^\/api\/tags\/results$/,
+];
+app.use((req, res, next) => {
+  if (req.user) return next();
+  if (_AUTH_PUBLIC.some(re => re.test(req.path))) return next();
+  if (req.method === 'GET') {
+    return res.redirect(302, '/admin/login?next=' + encodeURIComponent(req.originalUrl));
+  }
+  return res.status(403).end();
+});
 
 // Ping de présence discret (throttlé, voir recordActivityPing dans db.js) :
 // contrairement à connection_logs (uniquement à la saisie du mot de passe),

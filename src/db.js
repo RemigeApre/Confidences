@@ -4831,6 +4831,7 @@ module.exports = {
   THEME_DEFINITIONS,
   recordAnonVisit,
   getAnonStats,
+  isScanPath,
   getUserCards,
   setWikiCardRarity,
   updateWikiCardSummary,
