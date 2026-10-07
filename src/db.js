@@ -4368,6 +4368,34 @@ function setPersonnageCollection(protagonisteId, collectionId) {
     .run(collectionId || null, protagonisteId);
 }
 
+// ── Sécurité login : suivi des échecs par username ───────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS login_failures (
+    username   TEXT    PRIMARY KEY,
+    count      INTEGER NOT NULL DEFAULT 0,
+    last_at    TEXT    NOT NULL DEFAULT ''
+  )
+`);
+
+function recordLoginFailure(username) {
+  db.prepare(`
+    INSERT INTO login_failures (username, count, last_at)
+    VALUES (?, 1, datetime('now'))
+    ON CONFLICT(username) DO UPDATE SET
+      count   = count + 1,
+      last_at = datetime('now')
+  `).run(String(username).toLowerCase().trim());
+}
+
+function getLoginFailureCount(username) {
+  const row = db.prepare("SELECT count FROM login_failures WHERE username = ?").get(String(username).toLowerCase().trim());
+  return row ? row.count : 0;
+}
+
+function resetLoginFailures(username) {
+  db.prepare("DELETE FROM login_failures WHERE username = ?").run(String(username).toLowerCase().trim());
+}
+
 // ── Races / Espèces ───────────────────────────────────────────────────────
 db.exec(`
   CREATE TABLE IF NOT EXISTS races (
@@ -4832,6 +4860,9 @@ module.exports = {
   recordAnonVisit,
   getAnonStats,
   isScanPath,
+  recordLoginFailure,
+  getLoginFailureCount,
+  resetLoginFailures,
   getUserCards,
   setWikiCardRarity,
   updateWikiCardSummary,

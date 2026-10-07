@@ -116,7 +116,7 @@
             style="width:100%;box-sizing:border-box" />
           <ul class="parody-ac-drop" id="gf-prot-drop" hidden></ul>
         </div>
-        <script>
+        <script nonce="<%= nonce %>">
         (function() {
           var ALL_PROTS = <%- JSON.stringify((allProtagonists || []).map(function(p){ return { id: p.id, name: p.name }; })) %>;
           var chips = document.getElementById('gf-prot-chips');
@@ -292,7 +292,7 @@
   </div>
 
 </main>
-<script>
+<script nonce="<%= nonce %>">
 (function () {
   var IMAGE_ID = <%= image.id %>;
 
@@ -380,6 +380,6 @@
   });
 })();
 </script>
-<script src="/wiki.js?v=<%= assetVersion %>"></script>
-<script src="/gallery.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/gallery.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

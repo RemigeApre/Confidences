@@ -149,6 +149,41 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Nonce CSP — généré par requête, injecté dans res.locals ─────────────────
+// Chaque script inline ou externe doit porter cet attribut nonce pour être
+// autorisé. Valeur différente à chaque requête → impossible à deviner.
+app.use((req, res, next) => {
+  res.locals.nonce = crypto.randomBytes(16).toString("base64");
+  next();
+});
+
+// ── Headers de sécurité ──────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  const n = res.locals.nonce;
+  // CSP : seuls les scripts portant ce nonce (+ ceux qu'ils chargent dynamiquement)
+  // sont autorisés. Bloque toute injection XSS n'ayant pas le bon nonce.
+  // style-src unsafe-inline : les <style> inline sont nombreux dans les templates
+  // et n'exécutent pas de JS — le risque est nettement moindre.
+  // img-src blob: : nécessaire pour les aperçus d'upload (URL.createObjectURL).
+  res.set("Content-Security-Policy",
+    `default-src 'self'; ` +
+    `script-src 'nonce-${n}' 'strict-dynamic'; ` +
+    `style-src 'self' 'unsafe-inline'; ` +
+    `img-src 'self' data: blob:; ` +
+    `font-src 'self'; ` +
+    `connect-src 'self'; ` +
+    `media-src 'self'; ` +
+    `object-src 'none'; ` +
+    `base-uri 'self'; ` +
+    `frame-ancestors 'none';`
+  );
+  res.set("X-Frame-Options", "DENY");
+  res.set("X-Content-Type-Options", "nosniff");
+  res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (req.secure) res.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  next();
+});
+
 // ── Bloqueur de scans bots ───────────────────────────────────────────────────
 // Avant la session : les scanners ne méritent pas qu'on parse leurs cookies.
 // 404 silencieux, pas de redirect, pas de corps : ne leur confirme rien.
@@ -310,13 +345,13 @@ function readGamesJson() {
 //   2. Shim Electron → remplace ipcRenderer / fs par des équivalents navigateur
 //      (openOffline/openOnline, saveGame/getSavedGame, saveGallery/getGallerySave)
 
-function buildGameInject(userId, game) {
+function buildGameInject(userId, game, nonce) {
   const prefix = "u" + userId + "_";
   const slug   = game.slug;
   const onlineUrl = game.online_url ? JSON.stringify(game.online_url) : "null";
 
   return (
-    `<script>(function(){` +
+    `<script nonce="${nonce}">(function(){` +
     // ── 1. Wrapper localStorage ──────────────────────────────────────────────
     `var p=${JSON.stringify(prefix)},_s=window.localStorage;` +
     `function NS(){` +
@@ -358,7 +393,22 @@ function serveGameHtml(req, res, next, game, filePath) {
   let html;
   try { html = fs.readFileSync(filePath, "utf8"); }
   catch { return next(); }
-  const inject = buildGameInject(req.user.id, game);
+  // Nonce dédié pour cette page de jeu
+  const gameNonce = crypto.randomBytes(16).toString("base64");
+  // Les jeux HTML ont leurs propres scripts internes sans nonce : on autorise
+  // 'unsafe-inline' uniquement sur les pages /games/* et nulle part ailleurs.
+  res.setHeader("Content-Security-Policy",
+    `default-src 'self'; ` +
+    `script-src 'nonce-${gameNonce}' 'unsafe-inline' 'self'; ` +
+    `style-src 'self' 'unsafe-inline'; ` +
+    `img-src 'self' data: blob:; ` +
+    `connect-src 'self'; ` +
+    `media-src 'self'; ` +
+    `object-src 'none'; ` +
+    `base-uri 'self'; ` +
+    `frame-ancestors 'none';`
+  );
+  const inject = buildGameInject(req.user.id, game, gameNonce);
   if (html.includes("<head>")) html = html.replace("<head>", "<head>" + inject);
   else if (/<html/i.test(html)) html = html.replace(/(<html[^>]*>)/i, "$1" + inject);
   else html = inject + html;
@@ -445,7 +495,14 @@ app.use((req, res, next) => {
 // calculé (une seule lecture par PK, négligeable) plutôt que scopé à
 // certaines pages, pour que le lien apparaisse dans le header partout.
 app.use((req, res, next) => {
-  res.locals.partnerUser = (req.user && req.user.partnerId) ? getUserById(req.user.partnerId) : null;
+  // Seuls les champs nécessaires à la nav sont exposés — jamais l'objet complet
+  // (email, birthYear, coins, orientation, lastPath, etc. sont privés).
+  const _pRaw = (req.user && req.user.partnerId) ? getUserById(req.user.partnerId) : null;
+  // Vérification bidirectionnelle : le partenaire doit aussi pointer vers moi.
+  const _pValid = _pRaw && _pRaw.partnerId === req.user.id;
+  res.locals.partnerUser = _pValid
+    ? { id: _pRaw.id, displayName: _pRaw.displayName, profileColor: _pRaw.profileColor, profileImageId: _pRaw.profileImageId, profileImageCrop: _pRaw.profileImageCrop }
+    : null;
   next();
 });
 

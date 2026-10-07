@@ -7,6 +7,7 @@
   <% } %>
 
   <form method="POST" action="/admin/login" class="gate-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <input type="text" name="username" placeholder="identifiant" required autofocus autocomplete="username" autocapitalize="none" spellcheck="false" />
     <input type="password" name="password" placeholder="mot de passe" required autocomplete="current-password" />
     <input type="hidden" name="next" value="<%= next %>" />

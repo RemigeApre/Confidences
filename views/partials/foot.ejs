@@ -1,5 +1,5 @@
 <%- include('tag-popup') %>
-<script src="/nav.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/nav.js?v=<%= assetVersion %>"></script>
 
 <% if (currentUser) { %>
 <%# ── Charme actif : injection du symbole pour JS ─────────────── %>
@@ -8,7 +8,7 @@
 <% var _charmSym      = _charmMap[currentUser.ratingCharm]      || null; %>
 <% var _charmSymEmpty = _charmEmptyMap[currentUser.ratingCharm] || null; %>
 <% if (_charmSym) { %>
-<script>
+<script nonce="<%= nonce %>">
 window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, symbol: <%- JSON.stringify(_charmSym) %>, symbolEmpty: <%- JSON.stringify(_charmSymEmpty) %> };
 (function() {
   var sym  = window.RATING_CHARM.symbol;
@@ -202,7 +202,7 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
   </button>
 </div>
 
-<script src="/lootbox.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/lootbox.js?v=<%= assetVersion %>"></script>
 <style>
 /* ── Carte Codex flip ──────────────────────────────────────── */
 .lootbox-ucard-codex-fill{position:absolute;inset:0;display:flex;align-items:stretch;justify-content:stretch;perspective:900px}

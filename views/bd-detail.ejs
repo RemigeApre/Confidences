@@ -48,7 +48,7 @@
 </main>
 
 <% if (book.imagePaths.length) { %>
-<script>
+<script nonce="<%= nonce %>">
 (function() {
   var pages = Array.from(document.querySelectorAll(".bd-reader-page"));
   var counter = document.getElementById("bd-counter");
@@ -225,7 +225,7 @@
 })();
 </script>
 <% } %>
-<script>
+<script nonce="<%= nonce %>">
 (function () {
   var bookId = <%= book.id %>;
 

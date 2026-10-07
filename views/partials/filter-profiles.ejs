@@ -12,7 +12,7 @@
     "Catégorie"/"Notation" du volet filtre : wiki-subpanel-details côté
     Codex, gallery-cat-details côté Galerie (styles jumeaux, voir style.css)
     — pas le volet "Filtres" lui-même. %>
-<script>
+<script nonce="<%= nonce %>">
 window.<%= section === 'wiki' ? 'WIKI' : 'GALLERY' %>_FILTER_PROFILES = <%- JSON.stringify(profiles || []) %>;
 </script>
 

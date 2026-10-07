@@ -274,7 +274,7 @@
     </aside>
   <% } %>
 </main>
-<script>window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>
-<script src="/wiki.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>">window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>
+<script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
 <%- include('partials/codex-offline') %>
 <%- include('partials/foot') %>

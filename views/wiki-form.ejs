@@ -739,7 +739,7 @@
   </div>
   <% } %>
 </main>
-<script>
+<script nonce="<%= nonce %>">
 (function () {
   var inp    = document.getElementById("wf-stats-type");
   var fields = document.getElementById("wf-stats-fields");
@@ -778,9 +778,9 @@
   });
 })();
 </script>
-<script>window._wikiEditContent = <%- JSON.stringify(page.content || '') %>;</script>
-<script src="/wiki.js?v=<%= assetVersion %>"></script>
-<script>
+<script nonce="<%= nonce %>">window._wikiEditContent = <%- JSON.stringify(page.content || '') %>;</script>
+<script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>">
 (function() {
   var searchInput  = document.getElementById('wf-variante-search');
   var hiddenId     = document.getElementById('wf-variante-genre-id');

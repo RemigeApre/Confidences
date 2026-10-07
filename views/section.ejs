@@ -223,13 +223,13 @@
     </div>
   </div>
 </main>
-<script>
+<script nonce="<%= nonce %>">
   window.DEFAULT_SCALE = <%- JSON.stringify(config.scaleLabels) %>;
   window.JAMAIS_SCALE = <%- JSON.stringify(scaleForLevel("jamais")) %>;
 </script>
-<script src="/quiz.js?v=<%= assetVersion %>"></script>
-<script src="/section.js?v=<%= assetVersion %>"></script>
-<script src="/autosave.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/quiz.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/section.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/autosave.js?v=<%= assetVersion %>"></script>
 
 <div id="quiz-warning-popup" class="quiz-warning-overlay" hidden>
   <div class="quiz-warning-box">
@@ -237,7 +237,7 @@
     <button type="button" id="quiz-warning-ok" class="quiz-warning-btn">OK</button>
   </div>
 </div>
-<script>
+<script nonce="<%= nonce %>">
 (function() {
   if (!sessionStorage.getItem("quiz-warning-seen")) {
     var popup = document.getElementById("quiz-warning-popup");

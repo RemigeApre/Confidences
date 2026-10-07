@@ -382,12 +382,12 @@
   </div>
 </div>
 
-<script>
+<script nonce="<%= nonce %>">
 window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;
 window.GALLERY_PROTAGONISTS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;
 window.GALLERY_PROT_META = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = { parody: p.parody || '', sub_parody: p.sub_parody || '' }; return m; }, {})) %>;
 window.GALLERY_PROT_EVOS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { if (p.evolutions && p.evolutions.length) m[p.id] = p.evolutions; return m; }, {})) %>;
 window.GALLERY_PROT_SPECIAL = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { if (p.special) m[p.id] = p.special; return m; }, {})) %>;
 </script>
-<script src="/gallery.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/gallery.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

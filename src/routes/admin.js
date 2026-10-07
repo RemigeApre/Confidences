@@ -89,10 +89,14 @@ const {
   countCompletedQuizzes,
   countUserNotes,
   setUserAccountStatus,
+  recordLoginFailure,
+  getLoginFailureCount,
+  resetLoginFailures,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
 const { createThrottle } = require("../loginThrottle");
+const crypto = require("crypto");
 const { slugify, computeScores, flattenItemsRaw } = require("../scoring");
 const multer = require("multer");
 const os = require("os");
@@ -148,29 +152,75 @@ function safeNext(next) {
 function buildAdminRouter(config) {
   const router = express.Router();
 
+  // Génère un token CSRF en session s'il n'existe pas encore
+  function ensureCsrf(req) {
+    if (!req.session.csrfToken) {
+      req.session.csrfToken = crypto.randomBytes(24).toString("hex");
+    }
+    return req.session.csrfToken;
+  }
+
   router.get("/login", (req, res) => {
-    res.render("admin-login", { error: null, next: safeNext(req.query.next) || "" });
+    if (req.user) return res.redirect(req.user.isAdmin ? "/admin" : "/favoris");
+    const csrfToken = ensureCsrf(req);
+    res.render("admin-login", { error: null, next: safeNext(req.query.next) || "", csrfToken });
   });
 
   router.post("/login", (req, res) => {
-    const key = req.ip;
-    const wait = loginThrottle.secondsToWait(key);
     const next = safeNext(req.body.next);
+
+    // ── CSRF ──────────────────────────────────────────────────────────────
+    const sessionToken = req.session && req.session.csrfToken;
+    const bodyToken    = req.body._csrf;
+    if (!sessionToken || !bodyToken || sessionToken !== bodyToken) {
+      return res.status(403).render("admin-login", { error: "Requête invalide.", next: next || "", csrfToken: ensureCsrf(req) });
+    }
+
+    // ── Throttle par IP ───────────────────────────────────────────────────
+    const key  = req.ip;
+    const wait = loginThrottle.secondsToWait(key);
     if (wait > 0) {
-      return res.render("admin-login", { error: `Trop de tentatives. Reessaie dans ${wait}s.`, next: next || "" });
+      return res.render("admin-login", { error: `Trop de tentatives. Réessaie dans ${wait}s.`, next: next || "", csrfToken: ensureCsrf(req) });
     }
 
-    const user = verifyLogin(req.body.username, req.body.password);
+    const rawUsername = String(req.body.username || "").trim();
+    const password    = String(req.body.password || "");
+
+    const user = verifyLogin(rawUsername, password);
+
     if (user) {
+      // Succès : reset compteurs, régénérer session (fixation de session)
       loginThrottle.recordSuccess(key);
-      req.session.userId = user.id;
-      logConnection(user.id, req.ip, req.headers["user-agent"] || "");
-      touchLastLogin(user.id);
-      return res.redirect(next || (user.isAdmin ? "/admin" : "/favoris"));
+      resetLoginFailures(rawUsername);
+      const userId = user.id;
+      req.session.regenerate((err) => {
+        if (err) return res.redirect("/admin/login");
+        req.session.userId = userId;
+        logConnection(userId, req.ip, req.headers["user-agent"] || "");
+        touchLastLogin(userId);
+        return res.redirect(next || (user.isAdmin ? "/admin" : "/favoris"));
+      });
+      return;
     }
 
+    // Échec : incrémenter par IP et par username
     loginThrottle.recordFailure(key);
-    res.render("admin-login", { error: "Identifiants incorrects", next: next || "" });
+    recordLoginFailure(rawUsername);
+
+    // Escalade du statut selon le nombre d'échecs sur ce username
+    const targetUser = getUserByUsername(rawUsername);
+    if (targetUser && !targetUser.isAdmin) {
+      const failures = getLoginFailureCount(rawUsername);
+      const currentStatus = targetUser.accountStatus || "actif";
+      if (failures >= 10 && currentStatus !== "bloque") {
+        setUserAccountStatus(targetUser.id, "bloque");
+      } else if (failures >= 3 && currentStatus === "actif") {
+        setUserAccountStatus(targetUser.id, "restreint");
+      }
+    }
+
+    // Message identique qu'il existe ou non (anti-énumération)
+    res.render("admin-login", { error: "Identifiants incorrects.", next: next || "", csrfToken: ensureCsrf(req) });
   });
 
   router.post("/logout", (req, res) => {

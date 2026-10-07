@@ -29,9 +29,21 @@ function buildCoupleRouter(config) {
 
   router.use(requireUser);
   router.use((req, res, next) => {
-    const partner = req.user.partnerId ? getUserById(req.user.partnerId) : null;
-    if (!partner) return res.redirect("/favoris");
-    req.partner = partner;
+    if (!req.user.partnerId) return res.redirect("/favoris");
+    const partner = getUserById(req.user.partnerId);
+    // Vérification bidirectionnelle : le lien doit être mutuel.
+    // Empêche qu'un utilisateur accède aux données d'un autre si un admin
+    // a créé une liaison asymétrique (ou l'a partiellement supprimée).
+    if (!partner || partner.partnerId !== req.user.id) return res.redirect("/favoris");
+    // N'exposer que les champs nécessaires aux vues couple
+    req.partner = {
+      id:               partner.id,
+      displayName:      partner.displayName,
+      profileColor:     partner.profileColor,
+      profileImageId:   partner.profileImageId,
+      profileImageCrop: partner.profileImageCrop,
+      sexe:             partner.sexe,
+    };
     next();
   });
 

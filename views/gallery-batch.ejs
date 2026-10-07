@@ -104,8 +104,8 @@
 
   </form>
 </main>
-<script>
+<script nonce="<%= nonce %>">
 window.GB_CATEGORIES = <%- JSON.stringify(categories.map(function(c){ return { key: c.key, label: c.label }; })) %>;
 </script>
-<script src="/gallery-batch.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/gallery-batch.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

@@ -1,9 +1,17 @@
 const { getUserCredentials, getUserById } = require("./db");
 const { verifyPassword } = require("./passwords");
 
+// Hash factice utilisé quand l'username n'existe pas : force scrypt à tourner
+// quand même → le temps de réponse est identique qu'il existe ou non.
+// Empêche l'énumération de comptes par mesure de temps.
+const DUMMY_HASH = "0000000000000000:0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+
 function verifyLogin(username, password) {
   const row = getUserCredentials(username);
-  if (!row) return null;
+  if (!row) {
+    verifyPassword(password, DUMMY_HASH); // consomme le même temps
+    return null;
+  }
   if (!verifyPassword(password, row.password_hash)) return null;
   return getUserById(row.id);
 }

@@ -76,7 +76,7 @@
         <button type="submit" class="qe-import-submit">Importer</button>
       </div>
     </form>
-    <script>
+    <script nonce="<%= nonce %>">
     (function(){
       var inp = document.querySelector('.qe-import-file-input');
       var lbl = document.querySelector('.qe-import-file-name');
@@ -185,7 +185,7 @@
   </div><%# /qe-content %>
 
   <% if (quiz) { %>
-  <script>
+  <script nonce="<%= nonce %>">
   (function() {
     var quizId = <%= quiz.id %>;
     var draggingEl = null;

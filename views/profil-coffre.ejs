@@ -789,7 +789,7 @@
 
 <%- include('partials/foot') %>
 
-<script>
+<script nonce="<%= nonce %>">
 (function () {
   var coinsEl = document.getElementById('coffre-coins-value');
   function cloneTpl(id) { var tpl = document.getElementById(id); return tpl ? tpl.content.cloneNode(true) : null; }
@@ -1085,7 +1085,7 @@
 
 <%- include('partials/foot') %>
 
-<script>
+<script nonce="<%= nonce %>">
 (function() {
   var coinsEl = document.getElementById('coffre-coins-value');
 
@@ -1277,7 +1277,7 @@
 <% } else if (view === 'personnages') { %>
 </main>
 <%- include('partials/foot') %>
-<script>
+<script nonce="<%= nonce %>">
 (function() {
   var _pcRarity = 'all', _pcParody = 'all';
   function applyPcFilters() {
@@ -1314,7 +1314,7 @@
 <% } else if (view === 'cartes') { %>
 </main>
 <%- include('partials/foot') %>
-<script>
+<script nonce="<%= nonce %>">
 (function() {
   var _cardRarity = 'all', _cardCat = 'all';
   function applyCardFilters() {
@@ -1363,7 +1363,7 @@
 
 <%# ── Thèmes : handler universel (overview + vue thèmes) ── %>
 <% if (!view || view === 'themes') { %>
-<script>
+<script nonce="<%= nonce %>">
 (function() {
   document.querySelectorAll('.js-theme-apply').forEach(function(btn) {
     btn.addEventListener('click', function() {

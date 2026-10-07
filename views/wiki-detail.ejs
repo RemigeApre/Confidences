@@ -657,7 +657,7 @@
             </div>
           </div>
           <% if (secCount > 1) { %>
-          <script>
+          <script nonce="<%= nonce %>">
           (function () {
             var carousel = document.getElementById("wiki-sec-carousel");
             var counter  = document.getElementById("wiki-sec-counter");
@@ -783,9 +783,9 @@
   </div>
 </div>
 <% } %>
-<script>window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>
+<script nonce="<%= nonce %>">window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>
 <script id="wiki-pos-images-data" type="application/json"><%- JSON.stringify(pm.positional_images || []) %></script>
-<script>
+<script nonce="<%= nonce %>">
 (function () {
   try {
     var backInfo = JSON.parse(sessionStorage.getItem("wikiNavBack") || "null");
@@ -842,7 +842,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="<%= nonce %>">
 window.GALLERY_CAN_EDIT = false;
 window.GALLERY_PROTAGONISTS = {};
 window.GALLERY_PROT_META = {};
@@ -853,7 +853,7 @@ window.ULTRA_MODE = 'visible';
 window.IRREALISTE_MODE = 'visible';
 </script>
 
-<script>
+<script nonce="<%= nonce %>">
 (function () {
   // Clic sur une image secondaire : fetch les données galerie, crée une fausse
   // carte .gallery-card et ouvre le vrai lightbox galerie via _galleryOpenCard.
@@ -908,9 +908,9 @@ window.IRREALISTE_MODE = 'visible';
   });
 })();
 </script>
-<script src="/gallery.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/gallery.js?v=<%= assetVersion %>"></script>
 <% } %>
 
-<script src="/wiki.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
 <%- include('partials/codex-offline') %>
 <%- include('partials/foot') %>
