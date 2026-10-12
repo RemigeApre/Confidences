@@ -1774,28 +1774,24 @@
 
 /* ── Log layout ─────────────────────────────────────────────────────────── */
 .log-layout {
-  display: grid;
-  grid-template-columns: 170px 1fr 190px;
-  gap: 1rem;
-  align-items: flex-start;
   margin-top: 0.5rem;
 }
 .log-sidebar-left {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  position: sticky;
-  top: calc(3.25rem + 2.8rem + 1rem);
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
 }
 .log-main {
   min-width: 0;
 }
 .log-sidebar-right {
   display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-  position: sticky;
-  top: calc(3.25rem + 2.8rem + 1rem);
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 .log-sidebar-block {
   display: flex;
@@ -1808,6 +1804,30 @@
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: rgba(255,255,255,0.28);
+}
+@media (min-width: 1220px) {
+  .log-sidebar-left {
+    position: fixed;
+    top: calc(3.25rem + 2.8rem + 1.5rem);
+    left: max(1rem, calc(50% - 480px - 185px - 1.5rem));
+    width: 170px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    margin-bottom: 0;
+  }
+}
+@media (min-width: 1380px) {
+  .log-sidebar-right {
+    position: fixed;
+    top: calc(3.25rem + 2.8rem + 1.5rem);
+    right: max(1rem, calc(50% - 480px - 205px - 1.5rem));
+    width: 190px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 1.1rem;
+    margin-bottom: 0;
+  }
 }
 .log-nav-btn {
   display: flex;
@@ -1836,6 +1856,7 @@
 }
 .log-panel {
   min-width: 0;
+  width: 100%;
 }
 
 /* Connexions */
