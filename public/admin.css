@@ -1774,19 +1774,40 @@
 
 /* ── Log layout ─────────────────────────────────────────────────────────── */
 .log-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: 170px 1fr 190px;
   gap: 1rem;
   align-items: flex-start;
   margin-top: 0.5rem;
 }
-.log-nav {
+.log-sidebar-left {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  flex-shrink: 0;
-  width: 170px;
   position: sticky;
   top: calc(3.25rem + 2.8rem + 1rem);
+}
+.log-main {
+  min-width: 0;
+}
+.log-sidebar-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  position: sticky;
+  top: calc(3.25rem + 2.8rem + 1rem);
+}
+.log-sidebar-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.log-sidebar-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.28);
 }
 .log-nav-btn {
   display: flex;
@@ -1814,7 +1835,6 @@
   color: rgba(255,255,255,0.5);
 }
 .log-panel {
-  flex: 1;
   min-width: 0;
 }
 
@@ -1885,13 +1905,6 @@
 }
 
 /* Anonymes */
-.log-anon-filters {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  flex-wrap: wrap;
-}
 .log-anon-period {
   display: flex;
   border: 1px solid hsl(225, 16%, 22%);
@@ -1899,21 +1912,23 @@
   overflow: hidden;
 }
 .log-anon-period-btn {
+  flex: 1;
   background: none;
   border: none;
-  padding: 0.3rem 0.7rem;
+  padding: 0.35rem 0.5rem;
   font-size: 0.78rem;
   font-weight: 600;
   color: rgba(255,255,255,0.4);
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
+  text-align: center;
 }
 .log-anon-period-btn + .log-anon-period-btn { border-left: 1px solid hsl(225, 16%, 22%); }
 .log-anon-period-btn.active { background: hsl(225, 16%, 22%); color: #fff; }
 .log-anon-period-btn:hover:not(.active) { color: rgba(255,255,255,0.7); }
 .log-anon-search {
-  flex: 1;
-  min-width: 160px;
+  width: 100%;
+  box-sizing: border-box;
   background: hsl(225, 16%, 13%);
   border: 1px solid hsl(225, 16%, 22%);
   border-radius: 7px;
@@ -1925,9 +1940,8 @@
 .log-anon-search:focus { border-color: hsl(225, 16%, 35%); }
 .log-anon-summary {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 .log-anon-kpi {
   font-size: 0.8rem;

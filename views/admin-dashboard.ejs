@@ -744,8 +744,8 @@
 
   <div class="log-layout">
 
-    <%# ── Navigation gauche ── %>
-    <nav class="log-nav">
+    <%# ── Volet gauche : navigation ── %>
+    <nav class="log-sidebar-left">
       <button class="log-nav-btn active" data-log="connexions">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
         Connexions
@@ -756,6 +756,9 @@
         Visiteurs anonymes
       </button>
     </nav>
+
+    <%# ── Zone centrale ── %>
+    <div class="log-main">
 
     <%# ── Panneau connexions ── %>
     <div class="log-panel" id="log-panel-connexions">
@@ -834,17 +837,6 @@
     <%# ── Panneau visiteurs anonymes ── %>
     <div class="log-panel" id="log-panel-anonymes" hidden>
 
-      <div class="log-anon-filters">
-        <div class="log-anon-period" id="log-anon-period">
-          <button class="log-anon-period-btn active" data-days="7">7 j</button>
-          <button class="log-anon-period-btn" data-days="30">30 j</button>
-          <button class="log-anon-period-btn" data-days="90">90 j</button>
-        </div>
-        <input type="search" class="log-anon-search" id="log-anon-search" placeholder="Filtrer par page&hellip;" autocomplete="off" />
-      </div>
-
-      <div class="log-anon-summary" id="log-anon-summary"></div>
-
       <div class="log-anon-table-wrap" id="log-anon-table-wrap">
         <table class="admin-table log-anon-table" id="log-anon-table">
           <thead>
@@ -852,14 +844,14 @@
               <th>Page</th>
               <th>Visiteurs</th>
               <th style="text-align:right">Vues</th>
-              <th style="white-space:nowrap">Dernière visite</th>
+              <th style="white-space:nowrap">Derni&egrave;re visite</th>
             </tr>
           </thead>
           <tbody id="log-anon-tbody">
             <% (anonStats.rows || []).forEach(function(r) { %>
             <tr class="<%= r.isScan ? 'log-anon-row--scan' : '' %>">
               <td class="log-anon-path">
-                <% if (r.isScan) { %><span class="log-anon-scan-badge" title="Chemin suspect (bot/scanner)">⚠</span> <% } %>
+                <% if (r.isScan) { %><span class="log-anon-scan-badge" title="Chemin suspect (bot/scanner)">&#9888;</span> <% } %>
                 <span class="log-anon-label" title="<%= r.path %>"><%= r.label %></span>
                 <span class="log-anon-rawpath"><%= r.path %></span>
               </td>
@@ -872,7 +864,7 @@
                 <% } %>
               </td>
               <td style="text-align:right;font-variant-numeric:tabular-nums"><%= r.views %></td>
-              <td class="log-anon-lastseen" style="white-space:nowrap;color:var(--muted)"><%= r.last_seen ? new Date(r.last_seen).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—' %></td>
+              <td class="log-anon-lastseen" style="white-space:nowrap;color:var(--muted)"><%= r.last_seen ? new Date(r.last_seen).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '&mdash;' %></td>
             </tr>
             <% }); %>
           </tbody>
@@ -893,20 +885,56 @@
       </div>
 
     </div>
+
+    </div><%# /log-main %>
+
+    <%# ── Volet droit : contrôles anonymes ── %>
+    <aside class="log-sidebar-right" id="log-sidebar-right" hidden>
+
+      <div class="log-sidebar-block">
+        <span class="log-sidebar-label">P&eacute;riode</span>
+        <div class="log-anon-period" id="log-anon-period">
+          <button class="log-anon-period-btn active" data-days="7">7 j</button>
+          <button class="log-anon-period-btn" data-days="30">30 j</button>
+          <button class="log-anon-period-btn" data-days="90">90 j</button>
+        </div>
+      </div>
+
+      <div class="log-sidebar-block">
+        <span class="log-sidebar-label">R&eacute;sum&eacute;</span>
+        <div class="log-anon-summary" id="log-anon-summary"></div>
+      </div>
+
+      <div class="log-sidebar-block">
+        <span class="log-sidebar-label">Filtrer</span>
+        <input type="search" class="log-anon-search" id="log-anon-search" placeholder="Page&hellip;" autocomplete="off" />
+      </div>
+
+    </aside>
+
   </div>
 
   <script nonce="<%= nonce %>">
   (function() {
-    // Nav log
-    var navBtns = document.querySelectorAll('.log-nav-btn');
-    var panels = document.querySelectorAll('.log-panel');
+    var SS_KEY = 'log-active-panel';
+    var navBtns      = document.querySelectorAll('.log-nav-btn');
+    var panels       = document.querySelectorAll('.log-panel');
+    var sidebarRight = document.getElementById('log-sidebar-right');
+
+    function activatePanel(name) {
+      navBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.log === name); });
+      panels.forEach(function(p) { p.hidden = p.id !== 'log-panel-' + name; });
+      if (sidebarRight) sidebarRight.hidden = (name !== 'anonymes');
+      try { sessionStorage.setItem(SS_KEY, name); } catch(_) {}
+    }
+
+    // Restaurer le panneau actif
+    var saved = '';
+    try { saved = sessionStorage.getItem(SS_KEY) || ''; } catch(_) {}
+    if (saved === 'anonymes') activatePanel('anonymes');
+
     navBtns.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        navBtns.forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        var target = btn.dataset.log;
-        panels.forEach(function(p) { p.hidden = p.id !== 'log-panel-' + target; });
-      });
+      btn.addEventListener('click', function() { activatePanel(btn.dataset.log); });
     });
 
     // Filtre anonymes
