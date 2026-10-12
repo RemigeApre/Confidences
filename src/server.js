@@ -90,11 +90,13 @@ if (certPath && keyPath && !usingHttps) {
   );
 }
 
-// Pas de "trust proxy" ici : ce deploiement expose l'app directement
-// (IP:port, sans nginx devant). L'activer sans proxy reel permettrait a
-// n'importe qui de falsifier son IP via un en-tete et de contourner le
-// ralentissement anti-brute-force. A reactiver seulement si un reverse
-// proxy (nginx, etc.) est effectivement place devant l'app.
+// TRUST_PROXY=1 dans .env quand l'app est derrière un reverse proxy
+// (Nginx Proxy Manager, nginx, etc.) qui pose X-Forwarded-For / X-Forwarded-Proto.
+// Sans cette variable, on n'active pas trust proxy pour éviter qu'un client
+// direct falsifie son IP via l'en-tête.
+if (process.env.TRUST_PROXY === "1") {
+  app.set("trust proxy", 1);
+}
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "..", "views"));
 
@@ -212,9 +214,9 @@ app.use(
   })
 );
 
-// Ajustement dynamique du flag "secure" : true uniquement si la connexion
-// courante est réellement TLS (req.secure). Évite toute désynchronisation
-// entre la détection au démarrage (usingHttps) et le protocole réel.
+// Ajustement dynamique du flag "secure" : true si TLS direct OU si le proxy
+// a transmis X-Forwarded-Proto: https (Nginx Proxy Manager, etc.).
+// Avec trust proxy actif, req.secure tient déjà compte de X-Forwarded-Proto.
 app.use((req, res, next) => {
   if (req.session) req.session.cookie.secure = req.secure;
   next();
