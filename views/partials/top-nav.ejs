@@ -40,51 +40,48 @@
     <a href="/" class="pc-nav-brand-link"><%= config.title %></a>
 
     <div class="pc-nav-links">
-      <a href="/wiki" class="pc-nav-link pc-nav-link--wiki<%= _onWiki ? ' pc-nav-link--active' : '' %>">Codex</a>
+      <a href="/wiki" class="pc-nav-link pc-nav-link--wiki<%= _onWiki ? ' pc-nav-link--active' : '' %>" data-fr="Codex" data-en="Codex">Codex</a>
       <% if (currentUser) { %>
         <div class="pc-nav-item pc-has-drop">
-          <span class="pc-nav-link pc-nav-link--galerie pc-nav-link--label<%= _onGalerie ? ' pc-nav-link--active' : '' %>">Exploration</span>
+          <span class="pc-nav-link pc-nav-link--galerie pc-nav-link--label<%= _onGalerie ? ' pc-nav-link--active' : '' %>" data-fr="Exploration" data-en="Explore">Exploration</span>
           <div class="pc-drop">
-            <a href="/galerie" class="pc-drop-link pc-drop-link--images">Images</a>
-            <a href="/bd" class="pc-drop-link pc-drop-link--bd">BD</a>
-            <% if (currentUser && currentUser.isAdmin) { %><a href="/nouvelles" class="pc-drop-link pc-drop-link--histoire">Histoire</a><% } %>
+            <a href="/galerie" class="pc-drop-link pc-drop-link--images" data-fr="Images" data-en="Images">Images</a>
+            <a href="/bd" class="pc-drop-link pc-drop-link--bd" data-fr="BD" data-en="Comics">BD</a>
+            <% if (currentUser && currentUser.isAdmin) { %><a href="/nouvelles" class="pc-drop-link pc-drop-link--histoire" data-fr="Histoire" data-en="Stories">Histoire</a><% } %>
             <hr class="pc-drop-sep" />
-            <a href="/tags" class="pc-drop-link pc-drop-link--labels">Labels</a>
-            <a href="/parodies" class="pc-drop-link pc-drop-link--parodies">Parodies</a>
-            <a href="/protagonistes" class="pc-drop-link pc-drop-link--prot">Personnages</a>
+            <a href="/tags" class="pc-drop-link pc-drop-link--labels" data-fr="Labels" data-en="Labels">Labels</a>
+            <a href="/parodies" class="pc-drop-link pc-drop-link--parodies" data-fr="Parodies" data-en="Parodies">Parodies</a>
+            <a href="/protagonistes" class="pc-drop-link pc-drop-link--prot" data-fr="Personnages" data-en="Characters">Personnages</a>
           </div>
         </div>
-        <a href="/quizz" class="pc-nav-link pc-nav-link--quizz<%= _onQuizz ? ' pc-nav-link--active' : '' %>">Quizz</a>
-        <a href="/jeu" class="pc-nav-link pc-nav-link--jeu<%= _onJeu ? ' pc-nav-link--active' : '' %>">Jeu<span class="lootbox-nav-badge" id="nav-jeu-badge" hidden></span></a>
+        <a href="/quizz" class="pc-nav-link pc-nav-link--quizz<%= _onQuizz ? ' pc-nav-link--active' : '' %>" data-fr="Quizz" data-en="Quiz">Quizz</a>
+        <a href="/jeu" class="pc-nav-link pc-nav-link--jeu<%= _onJeu ? ' pc-nav-link--active' : '' %>"><span data-fr="Jeu" data-en="Game">Jeu</span><span class="lootbox-nav-badge" id="nav-jeu-badge" hidden></span></a>
       <% } %>
     </div>
 
     <div class="pc-nav-actions">
-        <button type="button" class="pc-lang-btn" id="pc-lang-btn" data-lang="<%= locals.lang === 'en' ? 'fr' : 'en' %>" title="<%= locals.lang === 'en' ? 'Passer en français' : 'Switch to English' %>">
-          <% if (locals.lang === 'en') { %>
-            <svg width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="22" height="15" fill="#012169"/>
-              <path d="M0,0 L22,15 M22,0 L0,15" stroke="#fff" stroke-width="3.2"/>
-              <rect x="9.5" width="3" height="15" fill="#fff"/>
-              <rect y="6" width="22" height="3" fill="#fff"/>
-              <rect x="10" width="2" height="15" fill="#C8102E"/>
-              <rect y="6.5" width="22" height="2" fill="#C8102E"/>
-            </svg>
-          <% } else { %>
-            <svg width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="7" height="15" fill="#002395"/>
-              <rect x="7" width="8" height="15" fill="#fff"/>
-              <rect x="15" width="7" height="15" fill="#ED2939"/>
-            </svg>
-          <% } %>
+        <button type="button" class="pc-lang-btn" id="pc-lang-btn" title="Switch language">
+          <svg class="flag-fr" width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="7" height="15" fill="#002395"/>
+            <rect x="7" width="8" height="15" fill="#fff"/>
+            <rect x="15" width="7" height="15" fill="#ED2939"/>
+          </svg>
+          <svg class="flag-en" width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="22" height="15" fill="#012169"/>
+            <path d="M0,0 L22,15 M22,0 L0,15" stroke="#fff" stroke-width="3.2"/>
+            <rect x="9.5" width="3" height="15" fill="#fff"/>
+            <rect y="6" width="22" height="3" fill="#fff"/>
+            <rect x="10" width="2" height="15" fill="#C8102E"/>
+            <rect y="6.5" width="22" height="2" fill="#C8102E"/>
+          </svg>
         </button>
         <details class="pc-consent-details pc-hover-menu">
           <summary class="pc-icon-btn pc-consent-btn" title="Rappel consentement" aria-label="Rappel sur le consentement">?</summary>
           <div class="pc-consent-panel">
-            <p class="pc-consent-title">Consentement</p>
-            <p>Un fantasme n&rsquo;est pas un accord. Une discussion n&rsquo;est pas un accord. Le consentement se donne librement, clairement, et il est r&eacute;vocable &agrave; tout moment par chacun des partenaires.</p>
-            <p class="pc-consent-legal">Certains fantasmes abord&eacute;s sont ill&eacute;gaux dans leur pratique. Nous le rappelons sur les fiches individuelles. Nous soutenons le droit au fantasme, mais condamnons et d&eacute;courageons toute pratique ill&eacute;gale ou dangereuse.</p>
-            <p class="pc-consent-legal">Aucune photo de personne r&eacute;elle n&rsquo;est publi&eacute;e ici, par respect pour le consentement.</p>
+            <p class="pc-consent-title" data-fr="Consentement" data-en="Consent">Consentement</p>
+            <p data-fr="Un fantasme n'est pas un accord. Une discussion n'est pas un accord. Le consentement se donne librement, clairement, et il est révocable à tout moment par chacun des partenaires." data-en="A fantasy is not consent. A discussion is not consent. Consent is given freely, clearly, and can be revoked at any time by either partner.">Un fantasme n&rsquo;est pas un accord. Une discussion n&rsquo;est pas un accord. Le consentement se donne librement, clairement, et il est r&eacute;vocable &agrave; tout moment par chacun des partenaires.</p>
+            <p class="pc-consent-legal" data-fr="Certains fantasmes abordés sont illégaux dans leur pratique. Nous le rappelons sur les fiches individuelles. Nous soutenons le droit au fantasme, mais condamnons et décourageons toute pratique illégale ou dangereuse." data-en="Some fantasies discussed are illegal in practice. We note this on individual pages. We support the right to fantasy, but condemn and discourage any illegal or dangerous practice.">Certains fantasmes abord&eacute;s sont ill&eacute;gaux dans leur pratique. Nous le rappelons sur les fiches individuelles. Nous soutenons le droit au fantasme, mais condamnons et d&eacute;courageons toute pratique ill&eacute;gale ou dangereuse.</p>
+            <p class="pc-consent-legal" data-fr="Aucune photo de personne réelle n'est publiée ici, par respect pour le consentement." data-en="No real person photos are published here, out of respect for consent.">Aucune photo de personne r&eacute;elle n&rsquo;est publi&eacute;e ici, par respect pour le consentement.</p>
           </div>
         </details>
         <% if (currentUser) { %>
@@ -101,16 +98,16 @@
           <div class="pc-nav-item pc-has-drop pc-hover-menu">
             <button type="button" class="pc-icon-btn pc-avatar-btn <%= _roleClass %>" title="<%= currentUser.displayName %>"><%- include('profile-avatar') %></button>
             <div class="pc-drop pc-drop-right">
-              <a href="/favoris" class="pc-drop-link">Profil</a>
+              <a href="/favoris" class="pc-drop-link" data-fr="Profil" data-en="Profile">Profil</a>
               <% if (locals.partnerUser) { %>
-                <a href="/couple" class="pc-drop-link">Profil de <%= partnerUser.displayName %></a>
+                <a href="/couple" class="pc-drop-link" data-fr="Profil de <%= partnerUser.displayName %>" data-en="<%= partnerUser.displayName %>'s profile">Profil de <%= partnerUser.displayName %></a>
               <% } %>
-              <a href="/liens" class="pc-drop-link">Liens</a>
+              <a href="/liens" class="pc-drop-link" data-fr="Liens" data-en="Links">Liens</a>
               <% if (currentUser.isAdmin) { %>
-                <a href="/admin" class="pc-drop-link">Admin</a>
+                <a href="/admin" class="pc-drop-link" data-fr="Admin" data-en="Admin">Admin</a>
               <% } %>
               <form method="POST" action="/admin/logout" style="margin:0">
-                <button type="submit" class="pc-drop-link pc-drop-link-btn pc-drop-link--danger">D&eacute;connexion</button>
+                <button type="submit" class="pc-drop-link pc-drop-link-btn pc-drop-link--danger" data-fr="Déconnexion" data-en="Sign out">D&eacute;connexion</button>
               </form>
             </div>
           </div>

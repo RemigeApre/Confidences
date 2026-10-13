@@ -8637,6 +8637,10 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
   }
   .pc-lang-btn:hover { opacity: 1; }
   .pc-lang-btn svg { display: block; border-radius: 2px; }
+  /* FR visible par défaut, EN masqué ; inversé quand data-lang="en" sur <html> */
+  .pc-lang-btn .flag-en { display: none; }
+  :root[data-lang="en"] .pc-lang-btn .flag-fr { display: none; }
+  :root[data-lang="en"] .pc-lang-btn .flag-en { display: block; }
 
   /* Icône clé : couleur selon le rôle du profil connecté. */
   .pc-icon-btn.pc-key-admin, .pc-icon-btn.pc-key-admin:hover { color: #7c3aed; }

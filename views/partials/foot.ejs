@@ -2,20 +2,30 @@
 <script nonce="<%= nonce %>" src="/nav.js?v=<%= assetVersion %>"></script>
 <script nonce="<%= nonce %>">
 (function(){
-  var btn = document.getElementById('pc-lang-btn');
-  if (!btn) return;
-  var saved = sessionStorage.getItem('_lsY');
-  if (saved) { sessionStorage.removeItem('_lsY'); window.scrollTo(0, +saved); }
-  btn.addEventListener('click', function() {
-    fetch('/set-lang', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: 'lang=' + btn.dataset.lang
-    }).then(function() {
-      sessionStorage.setItem('_lsY', window.scrollY);
-      location.reload();
+  function getLang() { return localStorage.getItem('slang') === 'en' ? 'en' : 'fr'; }
+
+  function applyLang(lang) {
+    document.querySelectorAll('[data-fr]').forEach(function(el) {
+      el.textContent = lang === 'en' ? el.dataset.en : el.dataset.fr;
     });
-  });
+    document.documentElement.setAttribute('data-lang', lang);
+  }
+
+  applyLang(getLang());
+
+  var btn = document.getElementById('pc-lang-btn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      var next = getLang() === 'en' ? 'fr' : 'en';
+      localStorage.setItem('slang', next);
+      applyLang(next);
+      fetch('/set-lang', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'lang=' + next
+      });
+    });
+  }
 })();
 </script>
 
