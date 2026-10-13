@@ -18,7 +18,7 @@
 <% if (_tags.length) { %>
 <div class="wiki-filter-section">
   <input type="search" id="wiki-tag-search" class="wiki-tag-search-input"
-    placeholder="Chercher un tag" autocomplete="off" />
+    placeholder="Chercher un tag" data-placeholder-fr="Chercher un tag" data-placeholder-en="Search a tag" autocomplete="off" />
   <div class="wiki-tag-cloud" id="wiki-tag-filter">
     <% _tags.forEach(function(t) { %>
       <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
@@ -28,8 +28,8 @@
     <% }) %>
   </div>
   <div class="wiki-tag-footer">
-    <button type="button" id="wiki-tag-expand-btn" class="wiki-tag-expand-btn" hidden>&#9660; Plus</button>
-    <a href="/tags" class="wiki-tag-all-link" id="wiki-tag-all-link" hidden>Tous les tags</a>
+    <button type="button" id="wiki-tag-expand-btn" class="wiki-tag-expand-btn" hidden data-fr="▾ Plus" data-en="▾ More">&#9660; Plus</button>
+    <a href="/tags" class="wiki-tag-all-link" id="wiki-tag-all-link" hidden data-fr="Tous les tags" data-en="All tags">Tous les tags</a>
   </div>
 </div>
 <% } %>

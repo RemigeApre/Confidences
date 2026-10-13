@@ -16,16 +16,17 @@
  *    block._reset()
  */
   var _fid   = filterId;
-  var _label = (typeof label          !== 'undefined') ? label          : 'Notation';
+  var _label   = (typeof label          !== 'undefined') ? label          : 'Notation';
+  var _labelEn = (typeof labelEn        !== 'undefined') ? labelEn        : 'Rating';
   var _flame = (typeof showFlame      !== 'undefined') ? showFlame      : true;
   var _int   = (typeof showInterested !== 'undefined') ? showInterested : false;
   var _intLb = (typeof interestedLabel!== 'undefined') ? interestedLabel: 'Intéressé';
   var _notR  = (typeof showNotRated   !== 'undefined') ? showNotRated   : true;
 %>
 <details class="wiki-subpanel-details filter-block filter-block--rating" id="<%= _fid %>-block">
-  <summary class="wiki-subpanel-summary"><%= _label %></summary>
+  <summary class="wiki-subpanel-summary" data-fr="<%= _label %>" data-en="<%= _labelEn %>"><%= _label %></summary>
   <div class="wiki-filter-label-row">
-    <span style="font-size:.7rem;color:var(--muted)">Note minimale</span>
+    <span style="font-size:.7rem;color:var(--muted)" data-fr="Note minimale" data-en="Minimum rating">Note minimale</span>
     <button type="button" class="wiki-adv-star-reset" id="<%= _fid %>-star-reset"
       title="Retirer le filtre note" aria-label="Retirer">✕</button>
   </div>
@@ -36,8 +37,8 @@
   </div>
   <% if (_notR || _flame || _int) { %>
   <div class="wiki-prop-grid" id="<%= _fid %>-props" style="margin-top:.45rem">
-    <% if (_notR) { %><button type="button" class="wiki-prop-btn" data-prop="notRated"  data-state="0">Pas noté</button><% } %>
-    <% if (_flame){ %><button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0">&#128293; J'adore</button><% } %>
+    <% if (_notR) { %><button type="button" class="wiki-prop-btn" data-prop="notRated"  data-state="0" data-fr="Pas noté" data-en="Not rated">Pas noté</button><% } %>
+    <% if (_flame){ %><button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0" data-fr="🔥 J'adore" data-en="🔥 Love it">&#128293; J'adore</button><% } %>
     <% if (_int)  { %><button type="button" class="wiki-prop-btn" data-prop="interested"data-state="0"><%= _intLb %></button><% } %>
   </div>
   <% } %>

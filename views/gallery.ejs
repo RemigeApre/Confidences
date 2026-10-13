@@ -14,36 +14,36 @@
       <%- include('partials/search-bar', { searchId: 'gallery-search' }) %>
 
       <details class="wiki-sidebar-filter-details">
-      <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+      <summary class="wiki-sidebar-filter-summary" data-fr="Filtres" data-en="Filters">Filtres</summary>
 
       <%# Tri + taille (en premier, comme Codex) %>
       <div class="wiki-filter-section wiki-sort-cols-row">
         <select id="gallery-sort-select" class="wiki-sort-select">
-          <option value="date-desc">Plus r&eacute;cent</option>
-          <option value="date-asc">Plus ancien</option>
-          <option value="alpha-asc">Ordre alphab&eacute;tique</option>
-          <option value="rating-desc">Mieux not&eacute;</option>
-          <option value="random">Al&eacute;atoire</option>
+          <option value="date-desc" data-fr="Plus récent" data-en="Most recent">Plus r&eacute;cent</option>
+          <option value="date-asc" data-fr="Plus ancien" data-en="Oldest">Plus ancien</option>
+          <option value="alpha-asc" data-fr="Ordre alphabétique" data-en="Alphabetical">Ordre alphab&eacute;tique</option>
+          <option value="rating-desc" data-fr="Mieux noté" data-en="Top rated">Mieux not&eacute;</option>
+          <option value="random" data-fr="Aléatoire" data-en="Random">Al&eacute;atoire</option>
         </select>
         <select id="gallery-size-select" class="wiki-sort-select">
-          <option value="small">Petit</option>
-          <option value="medium" selected>Moyen</option>
-          <option value="large">Grand</option>
-          <option value="xlarge">Tr&egrave;s grand</option>
+          <option value="small" data-fr="Petit" data-en="Small">Petit</option>
+          <option value="medium" selected data-fr="Moyen" data-en="Medium">Moyen</option>
+          <option value="large" data-fr="Grand" data-en="Large">Grand</option>
+          <option value="xlarge" data-fr="Très grand" data-en="Extra large">Tr&egrave;s grand</option>
         </select>
       </div>
 
       <%# Toggles %>
       <div class="wiki-filter-section wiki-filter-toggles">
-        <button type="button" id="gallery-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
-        <button type="button" id="gallery-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
-        <button type="button" id="gallery-hide-ai-toggle" class="wiki-ultra-btn">Cacher images IA</button>
+        <button type="button" id="gallery-ultra-toggle" class="wiki-ultra-btn" data-fr="Ultra" data-en="Ultra">Ultra</button>
+        <button type="button" id="gallery-irrealiste-toggle" class="wiki-ultra-btn" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
+        <button type="button" id="gallery-hide-ai-toggle" class="wiki-ultra-btn" data-fr="Cacher images IA" data-en="Hide AI images">Cacher images IA</button>
       </div>
 
       <%# Catégories %>
       <% if (categories.length) { %>
       <details class="wiki-subpanel-details">
-        <summary class="wiki-subpanel-summary">Cat&eacute;gories</summary>
+        <summary class="wiki-subpanel-summary" data-fr="Catégories" data-en="Categories">Cat&eacute;gories</summary>
         <div class="links-filter" id="gallery-category-filter">
           <% categories.forEach(function (c) { %>
             <button type="button" class="tag-chip" data-category="<%= c.key %>"><%= c.label %></button>
@@ -55,9 +55,9 @@
       <%# Tags %>
       <% if (allTags.length) { %>
       <details class="wiki-subpanel-details">
-        <summary class="wiki-subpanel-summary">Tags</summary>
+        <summary class="wiki-subpanel-summary" data-fr="Tags" data-en="Tags">Tags</summary>
         <input type="search" id="gallery-tag-search" class="wiki-tag-search-input"
-          placeholder="Chercher un tag" autocomplete="off" />
+          placeholder="Chercher un tag" data-placeholder-fr="Chercher un tag" data-placeholder-en="Search a tag" autocomplete="off" />
         <div class="wiki-tag-cloud" id="gallery-tag-filter">
           <% allTags.forEach(function(t) { %>
             <% var ni = tagImageCounts[t] || 0; %>
@@ -75,11 +75,11 @@
 
       <% if (currentUser && currentUser.isAdmin) { %>
       <details class="wiki-subpanel-details">
-        <summary class="wiki-subpanel-summary">Traitement</summary>
+        <summary class="wiki-subpanel-summary" data-fr="Traitement" data-en="Processing">Traitement</summary>
         <div class="links-filter" id="gallery-processed-filter">
-          <button type="button" class="tag-chip active" data-processed-filter="">Tous</button>
-          <button type="button" class="tag-chip gallery-filter-chip--todo" data-processed-filter="0">&Agrave; traiter</button>
-          <button type="button" class="tag-chip gallery-filter-chip--done" data-processed-filter="1">Trait&eacute;</button>
+          <button type="button" class="tag-chip active" data-processed-filter="" data-fr="Tous" data-en="All">Tous</button>
+          <button type="button" class="tag-chip gallery-filter-chip--todo" data-processed-filter="0" data-fr="À traiter" data-en="To process">&Agrave; traiter</button>
+          <button type="button" class="tag-chip gallery-filter-chip--done" data-processed-filter="1" data-fr="Traité" data-en="Processed">Trait&eacute;</button>
         </div>
       </details>
       <% } %>
@@ -89,15 +89,16 @@
         <%- include('partials/filters/filter-parodies', {
               filterId:  'gallery-parody-filter',
               parodies:  allParodies,
-              label:     'Parodies'
+              label:     'Parodies',
+              labelEn:   'Parodies'
             }) %>
       <% } %>
 
       <% if (allProtagonists && allProtagonists.length) { %>
       <details class="wiki-subpanel-details">
-        <summary class="wiki-subpanel-summary">Personnages</summary>
+        <summary class="wiki-subpanel-summary" data-fr="Personnages" data-en="Characters">Personnages</summary>
         <input type="search" id="gallery-prot-search" class="wiki-tag-search-input"
-          placeholder="Chercher un personnage" autocomplete="off" />
+          placeholder="Chercher un personnage" data-placeholder-fr="Chercher un personnage" data-placeholder-en="Search a character" autocomplete="off" />
         <div class="wiki-tag-cloud" id="gallery-prot-filter">
           <% allProtagonists.forEach(function(p) { %>
             <button type="button" class="wiki-tag-chip gallery-prot-chip" data-prot-id="<%= p.id %>">

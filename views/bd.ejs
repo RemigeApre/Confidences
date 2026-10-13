@@ -15,7 +15,7 @@
 
       <%# ── Filtres : toujours visible ── %>
       <details class="wiki-sidebar-filter-details" open>
-        <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+        <summary class="wiki-sidebar-filter-summary" data-fr="Filtres" data-en="Filters">Filtres</summary>
         <div class="wiki-sidebar-filters">
 
           <%- include('partials/filters/filter-base', {
@@ -25,12 +25,12 @@
 
           <%# Couleur (spécifique BD — dans son propre bloc toggles) %>
           <div class="wiki-filter-section wiki-filter-toggles">
-            <button type="button" id="bd-couleur-toggle" class="wiki-ultra-btn">&#127775; Couleur</button>
+            <button type="button" id="bd-couleur-toggle" class="wiki-ultra-btn" data-fr="✧ Couleur" data-en="✧ Color">&#127775; Couleur</button>
           </div>
 
           <%# Langue (spécifique BD) %>
           <details class="wiki-subpanel-details">
-            <summary class="wiki-subpanel-summary">Langue</summary>
+            <summary class="wiki-subpanel-summary" data-fr="Langue" data-en="Language">Langue</summary>
             <div class="bd-langue-filter" id="bd-langue-filter">
               <button type="button" class="tag-chip bd-langue-chip" data-langue="francais">&#127467;&#127479; FR</button>
               <button type="button" class="tag-chip bd-langue-chip" data-langue="anglais">&#127468;&#127463; EN</button>
@@ -43,13 +43,15 @@
             <%- include('partials/filters/filter-tags', {
                   filterId: 'bd-tag-filter',
                   tags:     allTags,
-                  label:    'Tags'
+                  label:    'Tags',
+                  labelEn:  'Tags'
                 }) %>
           <% } %>
 
           <%- include('partials/filters/filter-rating', {
                 filterId:        'bd-rating',
                 label:           'Notation',
+                labelEn:         'Rating',
                 showFlame:       true,
                 showInterested:  true,
                 interestedLabel: 'Intéressé',
@@ -60,7 +62,8 @@
             <%- include('partials/filters/filter-parodies', {
                   filterId:  'bd-parody-filter',
                   parodies:  allParodies,
-                  label:     'Parodies'
+                  label:     'Parodies',
+                  labelEn:   'Parodies'
                 }) %>
           <% } %>
 

@@ -5,7 +5,8 @@
  */
   var _fid    = filterId;
   var _items  = parodies || [];
-  var _label  = (typeof label !== 'undefined') ? label : 'Parodies';
+  var _label   = (typeof label   !== 'undefined') ? label   : 'Parodies';
+  var _labelEn = (typeof labelEn !== 'undefined') ? labelEn : '';
 %>
 <%- include('filter-chips', {
       filterId:  _fid,
@@ -13,6 +14,7 @@
       itemKey:   'parody',
       chipClass: 'parody-chip',
       label:     _label,
+      labelEn:   _labelEn,
       mode:      'single',
       eventName: 'parodyfilter:change'
     }) %>

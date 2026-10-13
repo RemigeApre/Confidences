@@ -19,23 +19,29 @@
  *    {filterId}-save-btn     bouton enregistrer (si showSave)
  */
   var _bid      = (typeof filterId     !== 'undefined') ? filterId     : 'filter-reset-' + Math.random().toString(36).slice(2);
-  var _explore  = (typeof showExplore  !== 'undefined') ? showExplore  : true;
-  var _save     = (typeof showSave     !== 'undefined') ? showSave     : false;
-  var _exLabel  = (typeof exploreLabel !== 'undefined') ? exploreLabel : "Explorer l'inconnu";
-  var _rstLabel = (typeof resetLabel   !== 'undefined') ? resetLabel   : 'Réinitialiser';
-  var _svLabel  = (typeof saveLabel    !== 'undefined') ? saveLabel    : 'Enregistrer le filtre';
+  var _explore    = (typeof showExplore    !== 'undefined') ? showExplore    : true;
+  var _save       = (typeof showSave       !== 'undefined') ? showSave       : false;
+  var _exLabel    = (typeof exploreLabel   !== 'undefined') ? exploreLabel   : "Explorer l'inconnu";
+  var _rstLabel   = (typeof resetLabel     !== 'undefined') ? resetLabel     : 'Réinitialiser';
+  var _svLabel    = (typeof saveLabel      !== 'undefined') ? saveLabel      : 'Enregistrer le filtre';
+  var _exLabelEn  = (typeof exploreLabelEn !== 'undefined') ? exploreLabelEn : 'Explore the unknown';
+  var _rstLabelEn = (typeof resetLabelEn   !== 'undefined') ? resetLabelEn   : 'Reset filters';
+  var _svLabelEn  = (typeof saveLabelEn    !== 'undefined') ? saveLabelEn    : 'Save filter';
 %>
 <div class="filter-block filter-block--reset" id="<%= _bid %>-reset-block">
   <div class="wiki-filter-section wiki-filter-bottom-actions">
     <% if (_save) { %>
     <button type="button" id="<%= _bid %>-save-btn"
-      class="wiki-filter-reset-btn filter-profile-save-btn" hidden><%= _svLabel %></button>
+      class="wiki-filter-reset-btn filter-profile-save-btn" hidden
+      data-fr="<%= _svLabel %>" data-en="<%= _svLabelEn %>"><%= _svLabel %></button>
     <% } %>
     <button type="button" id="<%= _bid %>-reset-btn"
-      class="wiki-filter-reset-btn wiki-filter-reset-btn--danger js-filter-reset"><%= _rstLabel %></button>
+      class="wiki-filter-reset-btn wiki-filter-reset-btn--danger js-filter-reset"
+      data-fr="<%= _rstLabel %>" data-en="<%= _rstLabelEn %>"><%= _rstLabel %></button>
     <% if (_explore) { %>
     <button type="button" id="<%= _bid %>-explore-btn"
-      class="wiki-filter-reset-btn wiki-explore-btn js-filter-explore"><%= _exLabel %></button>
+      class="wiki-filter-reset-btn wiki-explore-btn js-filter-explore"
+      data-fr="<%= _exLabel %>" data-en="<%= _exLabelEn %>"><%= _exLabel %></button>
     <% } %>
   </div>
 </div>

@@ -8,6 +8,9 @@
     document.querySelectorAll('[data-fr]').forEach(function(el) {
       el.textContent = lang === 'en' ? el.dataset.en : el.dataset.fr;
     });
+    document.querySelectorAll('[data-placeholder-fr]').forEach(function(el) {
+      el.placeholder = lang === 'en' ? (el.dataset.placeholderEn || '') : el.dataset.placeholderFr;
+    });
     document.documentElement.setAttribute('data-lang', lang);
   }
 

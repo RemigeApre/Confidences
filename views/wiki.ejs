@@ -26,29 +26,29 @@
         <%- include('partials/search-bar', { searchId: 'wiki-search-input', showCount: true }) %>
 
         <details class="wiki-sidebar-filter-details">
-        <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+        <summary class="wiki-sidebar-filter-summary" data-fr="Filtres" data-en="Filters">Filtres</summary>
         <div class="wiki-sidebar-filters">
 
           <div class="wiki-filter-section wiki-sort-cols-row">
             <select id="wiki-cols-select" class="wiki-sort-select wiki-cols-select">
-              <option value="1">1 colonne</option>
-              <option value="2">2 colonnes</option>
-              <option value="3" selected>3 colonnes</option>
-              <option value="4">4 colonnes</option>
-              <option value="5">5 colonnes</option>
+              <option value="1" data-fr="1 colonne" data-en="1 column">1 colonne</option>
+              <option value="2" data-fr="2 colonnes" data-en="2 columns">2 colonnes</option>
+              <option value="3" selected data-fr="3 colonnes" data-en="3 columns">3 colonnes</option>
+              <option value="4" data-fr="4 colonnes" data-en="4 columns">4 colonnes</option>
+              <option value="5" data-fr="5 colonnes" data-en="5 columns">5 colonnes</option>
             </select>
             <select id="wiki-sort-select" class="wiki-sort-select">
-              <option value="alpha-asc">Ordre alphab&eacute;tique</option>
-              <option value="alpha-desc">Ordre alphab&eacute;tique inverse</option>
-              <option value="date-desc">Plus r&eacute;cent</option>
-              <option value="date-asc">Plus ancien</option>
-              <option value="rating-desc">Mieux not&eacute;</option>
+              <option value="alpha-asc" data-fr="Ordre alphabétique" data-en="Alphabetical">Ordre alphab&eacute;tique</option>
+              <option value="alpha-desc" data-fr="Ordre alphabétique inverse" data-en="Reverse alphabetical">Ordre alphab&eacute;tique inverse</option>
+              <option value="date-desc" data-fr="Plus récent" data-en="Most recent">Plus r&eacute;cent</option>
+              <option value="date-asc" data-fr="Plus ancien" data-en="Oldest">Plus ancien</option>
+              <option value="rating-desc" data-fr="Mieux noté" data-en="Top rated">Mieux not&eacute;</option>
             </select>
           </div>
 
           <div class="wiki-filter-section wiki-filter-toggles">
-            <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
-            <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
+            <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn" data-fr="Ultra" data-en="Ultra">Ultra</button>
+            <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
           </div>
 
           <%
@@ -66,7 +66,7 @@
           %>
           <% if (lockedCategory.key === 'objets' && objetsSubs && objetsSubs.length) { %>
             <div class="wiki-filter-section">
-              <span class="wiki-filter-label">Sous-cat&eacute;gorie</span>
+              <span class="wiki-filter-label" data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</span>
               <div class="wiki-sous-cat-filter" id="wiki-sous-cat-filter">
                 <% objetsSubs.forEach(function(s) { %>
                   <button type="button" class="tag-chip wiki-sous-cat-chip" data-sous-cat="<%= s.key %>"><%= s.label %></button>
@@ -77,7 +77,7 @@
 
           <% if (availExtraCatObjs.length) { %>
             <div class="wiki-filter-section">
-              <span class="wiki-filter-label">Cat&eacute;gories li&eacute;es</span>
+              <span class="wiki-filter-label" data-fr="Catégories liées" data-en="Related categories">Cat&eacute;gories li&eacute;es</span>
 <div class="wiki-extra-cat-filter" id="wiki-extra-cat-filter">
                 <% availExtraCatObjs.forEach(function(ec) { %>
                   <button type="button" class="tag-chip wiki-extra-cat-chip" data-cat="<%= ec.key %>" style="--ec-hue: <%= ec.hue %>"><%= ec.label %></button>
@@ -90,7 +90,7 @@
 
           <% if (currentUser && currentUser.isAdmin) { %>
           <div class="wiki-filter-section">
-            <span class="wiki-filter-label">Maturit&eacute;</span>
+            <span class="wiki-filter-label" data-fr="Maturité" data-en="Maturity">Maturit&eacute;</span>
             <div class="wiki-maturity-filter" id="wiki-maturity-filter">
               <button type="button" class="wiki-maturity-filter-btn" data-level="0">0&nbsp;Brouillon</button>
               <button type="button" class="wiki-maturity-filter-btn" data-level="1">1&nbsp;&Eacute;crite</button>
@@ -105,18 +105,18 @@
           <%- include('partials/filters/filter-wiki-tags', { tags: allTags, counts: (typeof tagCounts !== 'undefined' ? tagCounts : null) }) %>
 
           <details class="wiki-subpanel-details">
-            <summary class="wiki-subpanel-summary">Affichage des cartes</summary>
+            <summary class="wiki-subpanel-summary" data-fr="Affichage des cartes" data-en="Card display">Affichage des cartes</summary>
             <div class="wiki-display-opts" id="wiki-display-opts">
               <label class="wiki-display-opt-label">
                 <input type="checkbox" id="wiki-opt-stat-femme" checked hidden />
                 <span class="wiki-display-opt-track"></span>
-                <span class="wiki-display-opt-text">Stat femmes</span>
+                <span class="wiki-display-opt-text" data-fr="Stat femmes" data-en="Female stats">Stat femmes</span>
               </label>
               <% if (currentUser && currentUser.isAdmin) { %>
               <label class="wiki-display-opt-label">
                 <input type="checkbox" id="wiki-opt-maturity" checked hidden />
                 <span class="wiki-display-opt-track"></span>
-                <span class="wiki-display-opt-text">Version</span>
+                <span class="wiki-display-opt-text" data-fr="Version" data-en="Version">Version</span>
               </label>
               <% } %>
             </div>
@@ -131,11 +131,11 @@
 
         <div class="wiki-filter-section wiki-filter-bottom-actions">
           <% if (currentUser) { %>
-            <button type="button" id="wiki-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
+            <button type="button" id="wiki-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden data-fr="Enregistrer le filtre" data-en="Save filter">Enregistrer le filtre</button>
           <% } %>
-          <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+          <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger" data-fr="Réinitialiser les filtres" data-en="Reset filters">R&eacute;initialiser les filtres</button>
           <% if (currentUser) { %>
-            <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
+            <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn" data-fr="Explorer l'inconnu" data-en="Explore the unknown">Explorer l&rsquo;inconnu</button>
           <% } %>
         </div>
 
@@ -155,12 +155,12 @@
 
     <%# ─── FILTRES + TRI ─────────────────────────────────────────────────── %>
     <details class="wiki-filters-panel" id="wiki-filters-panel">
-      <summary class="wiki-filters-summary">Filtres &amp; tri</summary>
+      <summary class="wiki-filters-summary" data-fr="Filtres &amp; tri" data-en="Filters &amp; sort">Filtres &amp; tri</summary>
       <div class="wiki-filters-body">
-        <button type="button" id="wiki-adv-toggle" class="wiki-adv-toggle">Filtres avancés &#9662;</button>
+        <button type="button" id="wiki-adv-toggle" class="wiki-adv-toggle" data-fr="Filtres avancés ▾" data-en="Advanced filters ▾">Filtres avancés &#9662;</button>
         <div id="wiki-adv-panel" class="wiki-adv-panel" hidden>
           <div class="wiki-adv-row">
-            <label class="wiki-adv-label">Note min.</label>
+            <label class="wiki-adv-label" data-fr="Note min." data-en="Min. rating">Note min.</label>
             <div class="wiki-adv-stars" id="wiki-adv-stars">
               <% for (var _ri = 1; _ri <= 5; _ri++) { %>
                 <button type="button" class="wiki-adv-star" data-value="<%= _ri %>">&#9734;</button>
@@ -169,8 +169,8 @@
             </div>
           </div>
           <div class="wiki-prop-grid" id="wiki-prop-grid">
-            <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0">Pas encore not&eacute;</button>
-            <button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0">J&apos;adore</button>
+            <button type="button" class="wiki-prop-btn" data-prop="not-rated" data-state="0" data-fr="Pas encore noté" data-en="Not yet rated">Pas encore not&eacute;</button>
+            <button type="button" class="wiki-prop-btn" data-prop="flame"     data-state="0" data-fr="J'adore" data-en="Love it">J&apos;adore</button>
             <button type="button" class="wiki-prop-btn" data-prop="interested"data-state="0"><%= interestedLabel %></button>
           </div>
         </div>
@@ -181,7 +181,7 @@
               <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"<% if (c.desc) { %> data-desc="<%= c.desc %>"<% } %>><%= c.label %></button>
             <% }) %>
             <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
-              <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">Nos objets</button>
+              <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets" data-fr="Nos objets" data-en="Our items">Nos objets</button>
             <% } %>
           </div>
 
@@ -200,34 +200,34 @@
             <label class="wiki-display-opt-label">
               <input type="checkbox" id="wiki-opt-stat-femme" checked hidden />
               <span class="wiki-display-opt-track"></span>
-              <span class="wiki-display-opt-text">Stat femmes</span>
+              <span class="wiki-display-opt-text" data-fr="Stat femmes" data-en="Female stats">Stat femmes</span>
             </label>
             <% if (currentUser && currentUser.isAdmin) { %>
             <label class="wiki-display-opt-label">
               <input type="checkbox" id="wiki-opt-maturity" checked hidden />
               <span class="wiki-display-opt-track"></span>
-              <span class="wiki-display-opt-text">Version</span>
+              <span class="wiki-display-opt-text" data-fr="Version" data-en="Version">Version</span>
             </label>
             <% } %>
           </div>
 
           <div class="wiki-sort-row">
-            <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
-            <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
+            <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn" data-fr="Ultra" data-en="Ultra">Ultra</button>
+            <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
             <select id="wiki-cols-select" class="wiki-sort-select wiki-cols-select">
-              <option value="1">1 col</option>
-              <option value="2">2 col</option>
-              <option value="3" selected>3 col</option>
-              <option value="4">4 col</option>
-              <option value="5">5 col</option>
+              <option value="1" data-fr="1 col" data-en="1 col">1 col</option>
+              <option value="2" data-fr="2 col" data-en="2 col">2 col</option>
+              <option value="3" selected data-fr="3 col" data-en="3 col">3 col</option>
+              <option value="4" data-fr="4 col" data-en="4 col">4 col</option>
+              <option value="5" data-fr="5 col" data-en="5 col">5 col</option>
             </select>
             <select id="wiki-sort-select" class="wiki-sort-select">
-              <option value="alpha-asc" selected>A &rarr; Z</option>
-              <option value="alpha-desc">Z &rarr; A</option>
-              <option value="date-desc">Plus r&eacute;cent</option>
-              <option value="date-asc">Plus ancien</option>
-              <option value="rating-desc">Mieux not&eacute;</option>
-              <option value="category">Cat&eacute;gorie</option>
+              <option value="alpha-asc" selected data-fr="A → Z" data-en="A → Z">A &rarr; Z</option>
+              <option value="alpha-desc" data-fr="Z → A" data-en="Z → A">Z &rarr; A</option>
+              <option value="date-desc" data-fr="Plus récent" data-en="Most recent">Plus r&eacute;cent</option>
+              <option value="date-asc" data-fr="Plus ancien" data-en="Oldest">Plus ancien</option>
+              <option value="rating-desc" data-fr="Mieux noté" data-en="Top rated">Mieux not&eacute;</option>
+              <option value="category" data-fr="Catégorie" data-en="Category">Cat&eacute;gorie</option>
             </select>
           </div>
         </div>

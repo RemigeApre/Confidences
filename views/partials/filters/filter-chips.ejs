@@ -23,7 +23,8 @@
   var _items  = items  || [];
   var _key    = (typeof itemKey   !== 'undefined') ? itemKey   : 'value';
   var _cls    = (typeof chipClass !== 'undefined') ? chipClass : 'wiki-tag-chip';
-  var _label  = (typeof label     !== 'undefined') ? label     : 'Filtre';
+  var _label   = (typeof label   !== 'undefined') ? label   : 'Filtre';
+  var _labelEn = (typeof labelEn !== 'undefined') ? labelEn : '';
   var _mode   = (typeof mode      !== 'undefined') ? mode      : 'multi';
   var _evt    = eventName;
   var _cnt    = (typeof counts    !== 'undefined') ? counts    : null;
@@ -31,9 +32,9 @@
 %>
 <% if (_items.length) { %>
 <details class="wiki-subpanel-details filter-block filter-block--chips" id="<%= _fid %>-block">
-  <summary class="wiki-subpanel-summary"><%= _label %></summary>
+  <summary class="wiki-subpanel-summary"<% if (_labelEn) { %> data-fr="<%= _label %>" data-en="<%= _labelEn %>"<% } %>><%= _label %></summary>
   <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
-    placeholder="Chercher&hellip;" autocomplete="off" />
+    placeholder="Chercher&hellip;" data-placeholder-fr="Chercher…" data-placeholder-en="Search…" autocomplete="off" />
   <div class="wiki-tag-cloud" id="<%= _fid %>">
     <% _items.slice(0, _max).forEach(function(item) {
       var val   = (typeof item === 'object') ? item.name  : item;

@@ -17,39 +17,39 @@
       <%- include('partials/search-bar', { searchId: 'wiki-search-input', showCount: true }) %>
 
       <details class="wiki-sidebar-filter-details">
-      <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+      <summary class="wiki-sidebar-filter-summary" data-fr="Filtres" data-en="Filters">Filtres</summary>
       <div class="wiki-sidebar-filters">
 
         <div class="wiki-filter-section wiki-sort-cols-row">
           <select id="wiki-cols-select" class="wiki-sort-select wiki-cols-select">
-            <option value="1">1 colonne</option>
-            <option value="2">2 colonnes</option>
-            <option value="3" selected>3 colonnes</option>
-            <option value="4">4 colonnes</option>
-            <option value="5">5 colonnes</option>
+            <option value="1" data-fr="1 colonne" data-en="1 column">1 colonne</option>
+            <option value="2" data-fr="2 colonnes" data-en="2 columns">2 colonnes</option>
+            <option value="3" selected data-fr="3 colonnes" data-en="3 columns">3 colonnes</option>
+            <option value="4" data-fr="4 colonnes" data-en="4 columns">4 colonnes</option>
+            <option value="5" data-fr="5 colonnes" data-en="5 columns">5 colonnes</option>
           </select>
           <select id="wiki-sort-select" class="wiki-sort-select">
-            <option value="alpha-asc">Ordre alphab&eacute;tique</option>
-            <option value="alpha-desc">Ordre alphab&eacute;tique inverse</option>
-            <option value="date-desc">Plus r&eacute;cent</option>
-            <option value="date-asc">Plus ancien</option>
-            <option value="rating-desc">Mieux not&eacute;</option>
-            <option value="category">Cat&eacute;gorie</option>
+            <option value="alpha-asc" data-fr="Ordre alphabétique" data-en="Alphabetical">Ordre alphab&eacute;tique</option>
+            <option value="alpha-desc" data-fr="Ordre alphabétique inverse" data-en="Reverse alphabetical">Ordre alphab&eacute;tique inverse</option>
+            <option value="date-desc" data-fr="Plus récent" data-en="Most recent">Plus r&eacute;cent</option>
+            <option value="date-asc" data-fr="Plus ancien" data-en="Oldest">Plus ancien</option>
+            <option value="rating-desc" data-fr="Mieux noté" data-en="Top rated">Mieux not&eacute;</option>
+            <option value="category" data-fr="Catégorie" data-en="Category">Cat&eacute;gorie</option>
           </select>
         </div>
 
         <div class="wiki-filter-section wiki-filter-toggles">
-          <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn">Ultra</button>
-          <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn">Irr&eacute;aliste</button>
+          <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn" data-fr="Ultra" data-en="Ultra">Ultra</button>
+          <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
           <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
-            <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets">Nos objets</button>
+            <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets" data-fr="Nos objets" data-en="Our items">Nos objets</button>
           <% } %>
         </div>
 
         <%# Pas de "Tous" : aucune catégorie cochée = toutes affichées. Volet
             réduit (fermé par défaut) pour limiter l'espace pris par la liste. %>
         <details class="wiki-subpanel-details">
-          <summary class="wiki-subpanel-summary">Cat&eacute;gorie</summary>
+          <summary class="wiki-subpanel-summary" data-fr="Catégorie" data-en="Category">Cat&eacute;gorie</summary>
           <div class="links-filter wiki-index-cat-filter" id="wiki-category-filter">
             <% categories.forEach(function (c) { %>
               <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"><%= c.label %></button>
@@ -70,11 +70,11 @@
 
       <div class="wiki-filter-section wiki-filter-bottom-actions">
         <% if (currentUser) { %>
-          <button type="button" id="wiki-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden>Enregistrer le filtre</button>
+          <button type="button" id="wiki-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden data-fr="Enregistrer le filtre" data-en="Save filter">Enregistrer le filtre</button>
         <% } %>
-        <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser les filtres</button>
+        <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger" data-fr="Réinitialiser les filtres" data-en="Reset filters">R&eacute;initialiser les filtres</button>
         <% if (currentUser) { %>
-          <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn">Explorer l&rsquo;inconnu</button>
+          <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn" data-fr="Explorer l'inconnu" data-en="Explore the unknown">Explorer l&rsquo;inconnu</button>
         <% } %>
       </div>
 

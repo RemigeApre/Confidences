@@ -49,7 +49,7 @@
     <% if (_srt) { %>
     <select id="<%= _srtId %>" class="wiki-sort-select" data-default="<%= _defSrt %>">
       <% _srtOpts.forEach(function(o) { %>
-        <option value="<%= o.value %>"<%= o.value === _defSrt ? ' selected' : '' %>><%= o.label %></option>
+        <option value="<%= o.value %>"<%= o.value === _defSrt ? ' selected' : '' %><% if (o.labelEn) { %> data-fr="<%= o.label %>" data-en="<%= o.labelEn %>"<% } %>><%= o.label %></option>
       <% }) %>
     </select>
     <% } %>
@@ -66,10 +66,10 @@
   <%# ── Type (ultra / irréaliste / objets) ── %>
   <% if (_type) { %>
   <div class="wiki-filter-section wiki-filter-toggles">
-    <button type="button" class="wiki-ultra-btn" data-type="ultra"      data-state="0">Ultra</button>
-    <button type="button" class="wiki-ultra-btn" data-type="irrealiste" data-state="0">Irr&eacute;aliste</button>
+    <button type="button" class="wiki-ultra-btn" data-type="ultra"      data-state="0" data-fr="Ultra" data-en="Ultra">Ultra</button>
+    <button type="button" class="wiki-ultra-btn" data-type="irrealiste" data-state="0" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
     <% if (_objet) { %>
-    <button type="button" class="wiki-ultra-btn" data-type="objet"      data-state="0">Objets</button>
+    <button type="button" class="wiki-ultra-btn" data-type="objet"      data-state="0" data-fr="Objets" data-en="Items">Objets</button>
     <% } %>
   </div>
   <% } %>

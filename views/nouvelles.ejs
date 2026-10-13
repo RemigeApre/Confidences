@@ -14,18 +14,18 @@
 
       <%# ── Filtres : toujours visible ── %>
       <details class="wiki-sidebar-filter-details" open>
-        <summary class="wiki-sidebar-filter-summary">Filtres</summary>
+        <summary class="wiki-sidebar-filter-summary" data-fr="Filtres" data-en="Filters">Filtres</summary>
         <div class="wiki-sidebar-filters">
 
           <%- include('partials/filters/filter-base', {
                 searchId:    'nv-search',
                 showSort:    true,
                 sortOptions: [
-                  { value: 'date-desc',  label: 'Plus récent'  },
-                  { value: 'date-asc',   label: 'Plus ancien'  },
-                  { value: 'alpha-asc',  label: 'Alphabétique' },
-                  { value: 'length-desc',label: 'Plus long'    },
-                  { value: 'random',     label: 'Aléatoire'    }
+                  { value: 'date-desc',  label: 'Plus récent',  labelEn: 'Most recent'  },
+                  { value: 'date-asc',   label: 'Plus ancien',   labelEn: 'Oldest'       },
+                  { value: 'alpha-asc',  label: 'Alphabétique',  labelEn: 'Alphabetical' },
+                  { value: 'length-desc',label: 'Plus long',     labelEn: 'Longest'      },
+                  { value: 'random',     label: 'Aléatoire',     labelEn: 'Random'       }
                 ],
                 defaultSort: 'date-desc',
                 showType:    true
@@ -34,14 +34,16 @@
           <%- include('partials/filters/filter-categories', {
                 filterId:   'nv-cat-filter',
                 categories: categories,
-                label:      'Catégorie'
+                label:      'Catégorie',
+                labelEn:    'Category'
               }) %>
 
           <% if (allTags && allTags.length) { %>
             <%- include('partials/filters/filter-tags', {
                   filterId: 'nv-tag-filter',
                   tags:     allTags,
-                  label:    'Tags'
+                  label:    'Tags',
+                  labelEn:  'Tags'
                 }) %>
           <% } %>
 
@@ -49,7 +51,8 @@
             <%- include('partials/filters/filter-parodies', {
                   filterId:  'nv-parody-filter',
                   parodies:  allParodies,
-                  label:     'Parodies'
+                  label:     'Parodies',
+                  labelEn:   'Parodies'
                 }) %>
           <% } %>
 
