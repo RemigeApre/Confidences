@@ -510,17 +510,9 @@ app.use((req, res, next) => {
 });
 
 // ── Langue active ────────────────────────────────────────────────────────────
-// Priorité : session.lang (choix explicite) > Accept-Language > 'fr' (défaut).
-// Exposée dans res.locals.lang et dans le helper res.locals.t() pour les vues.
+// Langue : session.lang (choix explicite) ou 'fr' par défaut.
 app.use((req, res, next) => {
-  let lang = "fr";
-  if (req.session && req.session.lang) {
-    lang = req.session.lang;
-  } else {
-    const accept = req.headers["accept-language"] || "";
-    const primary = accept.split(",")[0].split("-")[0].toLowerCase().trim();
-    if (primary === "en") lang = "en";
-  }
+  const lang = (req.session && req.session.lang === "en") ? "en" : "fr";
   res.locals.lang = lang;
   // Helper dans les vues : t(fallbackFr, entityType, id, field)
   // Retourne la traduction EN si dispo, sinon le texte FR fourni.
