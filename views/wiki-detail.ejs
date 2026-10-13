@@ -92,12 +92,14 @@
 
     <%# ─ Navigation prev/next (mobile — cachée sur PC, remplacée par celle du volet droit) ─ %>
     <nav class="wiki-page-nav wiki-page-nav--mobile" aria-label="Navigation entre pages">
-      <a href="<%= prevPage ? '/wiki/' + prevPage.id : '#' %>" class="wiki-page-nav-btn wiki-page-nav-prev<%= prevPage ? '' : ' wiki-page-nav-disabled' %>" title="<%= prevPage ? prevPage.title : '' %>">
+      <% var _prevTitle = prevPage ? t(prevPage.title, 'wiki', prevPage.id, 'title') : ''; %>
+      <% var _nextTitle = nextPage ? t(nextPage.title, 'wiki', nextPage.id, 'title') : ''; %>
+      <a href="<%= prevPage ? '/wiki/' + prevPage.id : '#' %>" class="wiki-page-nav-btn wiki-page-nav-prev<%= prevPage ? '' : ' wiki-page-nav-disabled' %>" title="<%= _prevTitle %>">
         <span class="wiki-page-nav-arrow">&#8592;</span>
-        <span class="wiki-page-nav-label"><%= prevPage ? prevPage.title : '' %></span>
+        <span class="wiki-page-nav-label"><%= _prevTitle %></span>
       </a>
-      <a href="<%= nextPage ? '/wiki/' + nextPage.id : '#' %>" class="wiki-page-nav-btn wiki-page-nav-next<%= nextPage ? '' : ' wiki-page-nav-disabled' %>" title="<%= nextPage ? nextPage.title : '' %>">
-        <span class="wiki-page-nav-label"><%= nextPage ? nextPage.title : '' %></span>
+      <a href="<%= nextPage ? '/wiki/' + nextPage.id : '#' %>" class="wiki-page-nav-btn wiki-page-nav-next<%= nextPage ? '' : ' wiki-page-nav-disabled' %>" title="<%= _nextTitle %>">
+        <span class="wiki-page-nav-label"><%= _nextTitle %></span>
         <span class="wiki-page-nav-arrow">&#8594;</span>
       </a>
     </nav>
@@ -399,7 +401,8 @@
         <% } %>
 
         <%# Scénario (partenaires) ─ %>
-        <% if (page.category === 'partenaires' && pm.scenario) { %>
+        <% var _pmScenario = t(pm.scenario, 'wiki', page.id, 'meta_scenario'); %>
+        <% if (page.category === 'partenaires' && _pmScenario) { %>
           <details class="wiki-pos-section wiki-pos-nouvelles wiki-scenario-details">
             <summary class="wiki-pos-section-heading wiki-scenario-summary">
               Sc&eacute;nario
@@ -412,19 +415,20 @@
             <% if (pm.scenario_image) { %>
               <img src="<%= thumbUrl(pm.scenario_image) %>" data-src="<%= pm.scenario_image %>" alt="" class="wiki-scenario-img" loading="lazy" />
             <% } %>
-            <div class="wiki-pos-nouvelles-text"><%= pm.scenario %></div>
+            <div class="wiki-pos-nouvelles-text"><%= _pmScenario %></div>
           </details>
         <% } %>
 
         <%# Orce (toutes catégories) ─ %>
-        <% if (pm.orce_content) { %>
+        <% var _pmOrce = t(pm.orce_content, 'wiki', page.id, 'meta_orce_content'); %>
+        <% if (_pmOrce) { %>
           <details class="wiki-pos-section wiki-orce-section">
             <summary class="wiki-pos-section-heading wiki-orce-summary">
               <span class="wiki-orce-logo">Orce</span>
             </summary>
             <p class="wiki-orce-pastille">Orce est un univers de fiction, de dark fantasy. Les cr&eacute;atures list&eacute;es ont leurs pendants, avec des noms l&eacute;g&egrave;rement diff&eacute;rents, et des caract&eacute;ristiques diff&eacute;rentes. Nous int&eacute;grons ici alors le contenu descriptif li&eacute;.</p>
             <% if (pm.orce_name) { %><p class="wiki-orce-name">Nom en Orce&nbsp;: <strong><%= pm.orce_name %></strong></p><% } %>
-            <div class="wiki-md wiki-orce-content"><span class="wiki-md-raw" hidden><%= pm.orce_content %></span></div>
+            <div class="wiki-md wiki-orce-content"><span class="wiki-md-raw" hidden><%= _pmOrce %></span></div>
           </details>
         <% } %>
 
@@ -481,10 +485,11 @@
         <% } %>
 
         <%# Informations utiles (positions) ─ %>
-        <% if (page.category === 'position' && pm.infos_utiles) { %>
+        <% var _pmInfos = t(pm.infos_utiles, 'wiki', page.id, 'meta_infos_utiles'); %>
+        <% if (page.category === 'position' && _pmInfos) { %>
           <div class="wiki-pos-section wiki-pos-infos">
             <h3 class="wiki-pos-section-heading">Informations utiles</h3>
-            <div class="wiki-md"><span class="wiki-md-raw" hidden><%= pm.infos_utiles %></span></div>
+            <div class="wiki-md"><span class="wiki-md-raw" hidden><%= _pmInfos %></span></div>
           </div>
         <% } %>
 
@@ -572,9 +577,9 @@
 
         <%# ─ Navigation PC : titre encadré par prev/next ─ %>
         <div class="wiki-right-nav">
-          <a href="<%= prevPage ? '/wiki/' + prevPage.id : '#' %>" class="wiki-right-nav-btn<%= prevPage ? '' : ' disabled' %>" title="<%= prevPage ? prevPage.title : '' %>">&#8249;</a>
-          <span class="wiki-right-nav-title"><%= page.title %></span>
-          <a href="<%= nextPage ? '/wiki/' + nextPage.id : '#' %>" class="wiki-right-nav-btn<%= nextPage ? '' : ' disabled' %>" title="<%= nextPage ? nextPage.title : '' %>">&#8250;</a>
+          <a href="<%= prevPage ? '/wiki/' + prevPage.id : '#' %>" class="wiki-right-nav-btn<%= prevPage ? '' : ' disabled' %>" title="<%= _prevTitle %>">&#8249;</a>
+          <span class="wiki-right-nav-title"><%= t(page.title, 'wiki', page.id, 'title') %></span>
+          <a href="<%= nextPage ? '/wiki/' + nextPage.id : '#' %>" class="wiki-right-nav-btn<%= nextPage ? '' : ' disabled' %>" title="<%= _nextTitle %>">&#8250;</a>
         </div>
 
         <%# c) Image principale ─ %>

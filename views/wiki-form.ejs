@@ -200,7 +200,9 @@
           <div class="md-toolbar-spacer"></div>
           <button type="button" class="md-btn md-preview-btn">Aper&ccedil;u</button>
         </div>
-        <textarea name="meta_scenario" class="wiki-textarea wiki-pos-textarea" rows="6" placeholder="Une courte histoire, un contexte&hellip;"><%= pm.scenario || '' %></textarea>
+        <% var _trScenario = (locals.editLang === 'en') ? ((locals.translations || {}).meta_scenario || '') : (pm.scenario || ''); %>
+        <textarea name="meta_scenario" class="wiki-textarea wiki-pos-textarea" rows="6"
+          placeholder="<%= locals.editLang === 'en' ? (pm.scenario || 'Scénario EN\u2026') : 'Une courte histoire, un contexte\u2026' %>"><%= _trScenario %></textarea>
         <div class="wiki-md-preview wiki-md" hidden></div>
       </div>
       <label class="wf-scenario-human-label">
@@ -278,10 +280,11 @@
              placeholder="Nom en Orce (ajout&eacute; automatiquement en tag)&hellip;"
              value="<%= pm.orce_name || '' %>"
              maxlength="200" />
+      <% var _trOrce = (locals.editLang === 'en') ? ((locals.translations || {}).meta_orce_content || '') : (pm.orce_content || ''); %>
       <textarea name="meta_orce_content"
                 class="wf-orce-content-input wf-md-input"
                 rows="6"
-                placeholder="Description Orce (laisser vide si non applicable)&hellip;"><%= pm.orce_content || '' %></textarea>
+                placeholder="<%= locals.editLang === 'en' ? (pm.orce_content || 'Orce description EN\u2026') : 'Description Orce (laisser vide si non applicable)\u2026' %>"><%= _trOrce %></textarea>
     </div>
 
     <%# ── Tags ── %>
@@ -697,7 +700,9 @@
       </div>
       <div class="wiki-meta-group">
         <p class="wiki-meta-label">Informations utiles</p>
-        <textarea name="meta_infos_utiles" class="wiki-textarea wiki-pos-textarea" rows="5" placeholder="Conditions, pr&eacute;requis&hellip;"><%= pm.infos_utiles || '' %></textarea>
+        <% var _trInfos = (locals.editLang === 'en') ? ((locals.translations || {}).meta_infos_utiles || '') : (pm.infos_utiles || ''); %>
+        <textarea name="meta_infos_utiles" class="wiki-textarea wiki-pos-textarea" rows="5"
+          placeholder="<%= locals.editLang === 'en' ? (pm.infos_utiles || 'Useful information EN\u2026') : 'Conditions, pr\u00e9requis\u2026' %>"><%= _trInfos %></textarea>
       </div>
       <div class="wiki-meta-group">
         <p class="wiki-meta-label">Nouvelles</p>
