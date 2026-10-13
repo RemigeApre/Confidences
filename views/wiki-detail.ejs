@@ -66,7 +66,7 @@
     <%# ─ Bandeau : retour + titre (mobile / fallback) ─ %>
     <div class="wiki-detail-banner">
       <a href="<%= backHref %>" class="wiki-detail-banner-back" title="<%= backLabel %>" aria-label="<%= backLabel %>">&#8592;</a>
-      <h1 class="wiki-detail-banner-title"><%= page.title %></h1>
+      <h1 class="wiki-detail-banner-title"><%= t(page.title, 'wiki', page.id, 'title') %></h1>
       <% if ((page.extraCategories && page.extraCategories.length) || (wdCanSeeOwned && page.owned)) { %>
         <div class="wiki-detail-banner-sub">
           <% if (wdCanSeeOwned && page.owned) { %><span>&#9733; Poss&eacute;d&eacute;</span><% } %>
@@ -353,8 +353,9 @@
         <% } %>
 
         <%# Description markdown ─ %>
-        <% if (page.content) { %>
-          <div class="wiki-md"><span class="wiki-md-raw" hidden><%= page.content %></span></div>
+        <% var _wdContent = t(page.content, 'wiki', page.id, 'content'); %>
+        <% if (_wdContent) { %>
+          <div class="wiki-md"><span class="wiki-md-raw" hidden><%= _wdContent %></span></div>
         <% } %>
 
         <%# Image principale — mobile uniquement, glissée par JS avant le 1er h2 ─ %>

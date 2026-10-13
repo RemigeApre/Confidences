@@ -3,6 +3,7 @@
   <%- include('partials/top-nav', { config: config }) %>
   <a href="/galerie" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
+    <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/galerie/' + image.id + '/edit' }) %>
     <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
   </div>
   <form method="POST" action="/galerie/<%= image.id %>/delete" class="wf-delete-form-fixed"
@@ -11,6 +12,7 @@
   </form>
 
   <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form gf-form" id="gf-form" data-no-enter-submit>
+    <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
 
     <%# ── BLOC 1 : META ──────────────────────────────────────────────────── %>
     <div class="ef-block">
@@ -23,7 +25,9 @@
         </select>
       </div>
 
-      <input type="text" name="title" class="wiki-title-input ef-block-title" value="<%= image.title %>" placeholder="Titre&hellip;" />
+      <% var _gfTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : image.title; %>
+      <input type="text" name="title" class="wiki-title-input ef-block-title" value="<%= _gfTitle %>"
+             placeholder="<%= locals.editLang === 'en' ? image.title : 'Titre\u2026' %>" />
       <label class="ef-title-visible-label">
         <input type="checkbox" name="title_visible" value="1" <%= image.titleVisible ? 'checked' : '' %> />
         Titre visible dans le volet

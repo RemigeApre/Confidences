@@ -27,7 +27,7 @@
             <% } %>
           </span>
         <% } %>
-        <h1 class="prot-detail-name"><%= protagoniste.name %></h1>
+        <h1 class="prot-detail-name"><%= t(protagoniste.name, 'protagoniste', protagoniste.id, 'name') %></h1>
       </div>
 
       <%# ── Chaîne d'évolution ── %>
@@ -78,8 +78,9 @@
       <% } %>
 
       <%# ── Description ── %>
-      <% if (protagoniste.description) { %>
-        <div class="prot-detail-desc"><%- protagoniste.description.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
+      <% var _protDesc = t(protagoniste.description, 'protagoniste', protagoniste.id, 'description'); %>
+      <% if (_protDesc) { %>
+        <div class="prot-detail-desc"><%- _protDesc.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>') %></div>
       <% } %>
 
     </div>

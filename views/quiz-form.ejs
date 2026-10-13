@@ -3,17 +3,25 @@
   <%- include('partials/top-nav', { config: config, navTitle: quiz ? quiz.title : 'Nouveau quizz', navBack: '/quizz' }) %>
 
   <% if (quiz) { %>
+  <%
+    var _qEditLang = locals.editLang || 'fr';
+    var _qTr = locals.translations || {};
+  %>
   <%# ── Volet gauche : titre + paramètres ────────────────────────────────── %>
   <aside class="qe-sidebar">
     <form id="qe-meta-form" method="POST" action="/quizz/<%= quiz.id %>/update">
+      <% if (_qEditLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
       <div class="qe-sidebar-head">
+        <%- include('partials/lang-toggle', { editLang: _qEditLang, editUrl: '/quizz/' + quiz.id + '/edit' }) %>
         <input type="text" name="title" class="qe-sidebar-title" required maxlength="200"
-          value="<%= quiz.title %>" placeholder="Titre du quizz…" />
+          value="<%= _qEditLang === 'en' ? (_qTr.title || '') : quiz.title %>"
+          placeholder="<%= _qEditLang === 'en' ? quiz.title : 'Titre du quizz\u2026' %>" />
       </div>
       <div class="qe-sidebar-body">
         <label class="qe-field-label">Description</label>
         <textarea name="description" class="wf-stats-note-input qe-desc-input"
-          rows="3" placeholder="Description courte…" style="resize:vertical"><%= quiz.description || '' %></textarea>
+          rows="3" placeholder="<%= _qEditLang === 'en' ? (quiz.description || 'Description\u2026') : 'Description courte\u2026' %>"
+          style="resize:vertical"><%= _qEditLang === 'en' ? (_qTr.description || '') : (quiz.description || '') %></textarea>
         <div class="qe-sidebar-toggles">
           <label class="wiki-display-opt-label" style="margin:0">
             <input type="checkbox" name="featured" value="1"
@@ -103,12 +111,14 @@
             data-subtype="<%= q.subtype || '' %>"
             data-wiki-link-id="<%= q.wiki_link_id || '' %>"
             data-wiki-link-title="<%= q.wiki_link_title || '' %>"
-            data-opts="<%= JSON.stringify(q.options || []) %>">
+            data-opts="<%= JSON.stringify(q.options || []) %>"
+            data-en-text="<%= (q._enText || '').replace(/"/g,'&quot;') %>"
+            data-en-opts="<%= JSON.stringify(q._enOptions || []).replace(/"/g,'&quot;') %>">
             <div class="qe-q-header">
               <span class="qe-q-handle" title="Déplacer">&#11835;</span>
               <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
             </div>
-            <p class="qe-q-text"><%= q.text %></p>
+            <p class="qe-q-text"><%= _qEditLang === 'en' ? (q._enText || '') : q.text %></p>
             <div class="qe-q-badge-row">
               <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= tl %></span>
               <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
@@ -147,12 +157,14 @@
                   data-subtype="<%= q.subtype || '' %>"
                   data-wiki-link-id="<%= q.wiki_link_id || '' %>"
                   data-wiki-link-title="<%= q.wiki_link_title || '' %>"
-                  data-opts="<%= JSON.stringify(q.options || []) %>">
+                  data-opts="<%= JSON.stringify(q.options || []) %>"
+                  data-en-text="<%= (q._enText || '').replace(/"/g,'&quot;') %>"
+                  data-en-opts="<%= JSON.stringify(q._enOptions || []).replace(/"/g,'&quot;') %>">
                   <div class="qe-q-header">
                     <span class="qe-q-handle" title="Déplacer">&#11835;</span>
                     <button type="button" class="qe-q-del" title="Supprimer">&#215;</button>
                   </div>
-                  <p class="qe-q-text"><%= q.text %></p>
+                  <p class="qe-q-text"><%= _qEditLang === 'en' ? (q._enText || '') : q.text %></p>
                   <div class="qe-q-badge-row">
                     <span class="quiz-qitem-type quiz-qtype--<%= q.type %>"><%= tl %></span>
                     <% if (q.has_sides) { %><span class="qe-sides-badge">&#8645; Donner/Subir</span><% } %>
@@ -188,6 +200,7 @@
   <script nonce="<%= nonce %>">
   (function() {
     var quizId = <%= quiz.id %>;
+    var editLang = '<%= _qEditLang %>';
     var draggingEl = null;
     var dropIndicator = null;
 
@@ -384,6 +397,20 @@
       function doSave(cb) {
         var state = getState();
         if (!state.text) { if (cb) cb(null); return; }
+        // Mode EN : sauvegarde uniquement text + options dans translations
+        if (editLang === 'en') {
+          fetch('/quizz/' + quizId + '/questions/' + qid + '/update-en', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: state.text, options: state.options })
+          }).then(function(r) { return r.json(); }).then(function(d) {
+            if (d.ok) {
+              el.dataset.enText = state.text;
+              el.dataset.enOpts = JSON.stringify(state.options || []);
+            }
+            if (cb) cb(d.ok ? { text: state.text } : null);
+          });
+          return;
+        }
         fetch('/quizz/' + quizId + '/questions/' + qid + '/update', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(state)

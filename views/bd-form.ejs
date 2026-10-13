@@ -3,6 +3,7 @@
   <%- include('partials/top-nav', { config: config }) %>
   <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
+    <% if (book) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/bd/' + book.id + '/edit' }) %><% } %>
     <button type="submit" form="bd-form" class="wf-save-btn">Enregistrer</button>
   </div>
   <% if (book) { %>
@@ -15,14 +16,17 @@
   <h1 class="section-title-h1"><%= book ? 'Modifier' : 'Nouvelle BD' %></h1>
 
   <form method="POST" action="<%= book ? '/bd/' + book.id : '/bd' %>" enctype="multipart/form-data" class="wiki-form" id="bd-form" data-no-enter-submit>
+    <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
 
     <div class="ef-block">
+    <% var _bdTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : (book ? book.title : ''); %>
+    <% var _bdDesc  = (locals.editLang === 'en') ? ((locals.translations || {}).description || '') : (book ? book.description : ''); %>
 
     <input type="text" name="title" class="wiki-title-input" required
-      value="<%= book ? book.title : '' %>" placeholder="Titre&hellip;" />
+      value="<%= _bdTitle %>" placeholder="<%= locals.editLang === 'en' && book ? book.title : 'Titre\u2026' %>" />
 
     <textarea name="description" class="wiki-textarea" rows="3"
-      placeholder="Description (optionnel)&hellip;"><%= book ? book.description : '' %></textarea>
+      placeholder="<%= locals.editLang === 'en' && book ? book.description : 'Description (optionnel)\u2026' %>"><%= _bdDesc %></textarea>
 
     <%# Tags %>
     <div class="wiki-tags-widget">

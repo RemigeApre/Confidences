@@ -144,8 +144,8 @@
         data-category="<%= item.category || '' %>"
         data-ultra="<%= item.tags.indexOf('ultra') !== -1 ? '1' : '0' %>"
         data-irrealiste="<%= (item.tags.indexOf('irréaliste') !== -1 || item.tags.indexOf('fantaisie') !== -1) ? '1' : '0' %>"
-        data-title="<%= (item.title || '').toLowerCase() %>"
-        data-display-title="<%= (item.title || '').replace(/"/g, '') %>"
+        data-title="<%= (t(item.title, 'gallery', item.id, 'title') || '').toLowerCase() %>"
+        data-display-title="<%= (t(item.title, 'gallery', item.id, 'title') || '').replace(/"/g, '') %>"
         data-images="<%= item.imagePaths.join('|') %>"
         data-wiki-id="<%= item.wikiPageId || '' %>"
         data-gallery-id="<%= item.id || '' %>"
@@ -181,7 +181,7 @@
           </label>
         <% } %>
 
-        <img src="<%= thumbUrl(item.imagePaths[0]) %>" alt="<%= item.title %>" class="gallery-img" loading="lazy" />
+        <img src="<%= thumbUrl(item.imagePaths[0]) %>" alt="<%= t(item.title, 'gallery', item.id, 'title') %>" class="gallery-img" loading="lazy" />
 
         <div class="gallery-card-overlay">
           <span class="wiki-card-badges">

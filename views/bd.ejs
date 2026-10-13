@@ -88,7 +88,7 @@
           data-ultra="<%= book.tags.indexOf('ultra') !== -1 ? '1' : '0' %>"
           data-irrealiste="<%= (book.tags.indexOf('irréaliste') !== -1 || book.tags.indexOf('fantaisie') !== -1) ? '1' : '0' %>"
           data-tags="<%= book.tags.join(',') %>"
-          data-title="<%= book.title.toLowerCase() %>"
+          data-title="<%= t(book.title, 'bd', book.id, 'title').toLowerCase() %>"
           data-langue="<%= book.langue || '' %>"
           data-couleur="<%= book.tags.indexOf('en couleur') !== -1 ? '1' : '0' %>"
           data-rating="<%= book.rating || 0 %>"
@@ -108,7 +108,7 @@
             </div>
           <% } %>
           <div class="bd-card-body">
-            <p class="bd-card-title"><%= book.title %></p>
+            <p class="bd-card-title"><%= t(book.title, 'bd', book.id, 'title') %></p>
             <div class="bd-card-reactions">
               <% if (book.flame) { %><span class="bd-card-react-badge" title="J&rsquo;adore">&#128293;</span><% } %>
               <% if (book.interested) { %><span class="bd-card-react-badge" title="Ça m&rsquo;int&eacute;resse">&#10024;</span><% } %>

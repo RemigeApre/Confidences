@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -96,9 +96,12 @@ function buildBdRouter(config) {
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
-    const book = getBdBook(Number(req.params.id));
+    const id = Number(req.params.id);
+    const book = getBdBook(id);
     if (!book) return res.redirect("/bd");
-    res.render("bd-form", { config, book, allParodies: listAllParodies() });
+    const editLang = req.query.editLang === "en" ? "en" : "fr";
+    const translations = editLang === "en" ? getTranslationsForEntity("bd", id, "en") : {};
+    res.render("bd-form", { config, book, allParodies: listAllParodies(), editLang, translations });
   });
 
   router.post("/:id/delete", requireAdmin, (req, res) => {
@@ -118,6 +121,12 @@ function buildBdRouter(config) {
     const id = Number(req.params.id);
     const book = getBdBook(id);
     if (!book) return res.redirect("/bd");
+
+    if (req.body._editLang === "en") {
+      setTranslation("bd", id, "title", "en", String(req.body.title || "").trim());
+      setTranslation("bd", id, "description", "en", String(req.body.description || "").trim());
+      return res.redirect(`/bd/${id}/edit?editLang=en`);
+    }
 
     const title = String(req.body.title || "").trim() || book.title;
     const description = String(req.body.description || "").trim();
@@ -195,6 +204,10 @@ function buildBdRouter(config) {
     const partnerPageReactions = req.user && req.user.partnerId
       ? getBdPageReactionsMap(req.user.partnerId, book)
       : {};
+    const lang = req.session && req.session.lang === "en" ? "en" : "fr";
+    const _bdTr = lang === "en" ? getTranslationsForEntity("bd", id, "en") : {};
+    if (lang === "en" && _bdTr.title)       book._title       = _bdTr.title;
+    if (lang === "en" && _bdTr.description) book._description = _bdTr.description;
     res.render("bd-detail", {
       config, book, prevBook, nextBook,
       isFavorite: isFavorite(req.user.id, "bd", book.id),

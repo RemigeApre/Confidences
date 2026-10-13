@@ -43,6 +43,8 @@ const {
   listNouvelles,
   checkAndGrantActionLootbox,
   countUserRatingsTotal,
+  getTranslationsForEntity,
+  setTranslation,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -505,7 +507,9 @@ function buildGalleryRouter(config) {
     const existingLinks = rawLinks.map(function(l) {
       return { type: l.link_type, id: l.linked_id, label: l.label };
     });
-    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, imageSeries, allSeries, allProtagonists, existingLinks, allAuthors: listGalleryAuthors() });
+    const editLang = req.query.editLang === "en" ? "en" : "fr";
+    const translations = editLang === "en" ? getTranslationsForEntity("gallery", id, "en") : {};
+    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, imageSeries, allSeries, allProtagonists, existingLinks, allAuthors: listGalleryAuthors(), editLang, translations });
   });
 
   router.post("/:id/view", (req, res) => {
@@ -534,6 +538,11 @@ function buildGalleryRouter(config) {
     const id = Number(req.params.id);
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
     if (!image) return res.redirect("/galerie");
+
+    if (req.body._editLang === "en") {
+      setTranslation("gallery", id, "title", "en", String(req.body.title || "").trim());
+      return res.redirect(`/galerie/${id}/edit?editLang=en`);
+    }
 
     const toRemove = [].concat(req.body.remove_image || []);
     const imagePaths = image.imagePaths.filter((p) => !toRemove.includes(p));

@@ -62,7 +62,7 @@
   data-category="<%= page.category %>"
   data-owned="<%= (wcCanSeeOwned && page.owned) ? '1' : '0' %>"
   data-tags="<%= page.tags.join('|').toLowerCase() %>"
-  data-title="<%= page.title.toLowerCase() %>"
+  data-title="<%= t(page.title, 'wiki', page.id, 'title').toLowerCase() %>"
   data-date="<%= new Date(page.updatedAt).getTime() %>"
   data-rating="<%= page.rating || 0 %>"
   data-flame="<%= page.flame ? '1' : '0' %>"
@@ -113,7 +113,7 @@
       </div>
     </div>
     <div class="wiki-card-body">
-      <p class="wiki-card-title"><%= page.title %></p>
+      <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
     </div>
     <span class="wiki-card-accent" style="background: <%= wcAccent %>">
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label"><%= cat ? cat.label : page.category %></span><% } %>
@@ -154,7 +154,7 @@
       </div>
     </div>
     <div class="wiki-card-body">
-      <p class="wiki-card-title"><%= page.title %></p>
+      <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
     </div>
     <span class="wiki-card-accent" style="background: <%= wcAccent %>">
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label"><%= cat ? cat.label : page.category %></span><% } %>

@@ -89,11 +89,27 @@ function buildCustomQuizRouter(config) {
     const parts = db.getQuizParts(quiz.id);
     const questions = db.getCustomQuizQuestions(quiz.id);
     questions.forEach(q => { try { q.options = JSON.parse(q.options); } catch { q.options = []; } });
-    res.render("quiz-form", { config, quiz, questions, parts });
+    const editLang = req.query.editLang === "en" ? "en" : "fr";
+    const translations = editLang === "en" ? db.getTranslationsForEntity("quiz", quiz.id, "en") : {};
+    // Charger les trad EN de chaque question si mode EN
+    if (editLang === "en") {
+      questions.forEach(q => {
+        const qt = db.getTranslationsForEntity("quiz_question", q.id, "en");
+        q._enText = qt.text || "";
+        const rawOpts = qt.options;
+        q._enOptions = rawOpts ? (() => { try { return JSON.parse(rawOpts); } catch { return []; } })() : [];
+      });
+    }
+    res.render("quiz-form", { config, quiz, questions, parts, editLang, translations });
   });
   router.post("/:id/update", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const quiz = db.getCustomQuiz(req.params.id);
     if (!quiz) return res.redirect("/quizz");
+    if (req.body._editLang === "en") {
+      db.setTranslation("quiz", quiz.id, "title", "en", String(req.body.title || "").slice(0, 200).trim());
+      db.setTranslation("quiz", quiz.id, "description", "en", String(req.body.description || "").slice(0, 2000).trim());
+      return res.redirect(`/quizz/${quiz.id}/edit?editLang=en`);
+    }
     const title = String(req.body.title || "").slice(0, 200).trim();
     const desc  = String(req.body.description || "").slice(0, 2000).trim();
     const featured = req.body.featured === "1" ? 1 : 0;
@@ -172,6 +188,16 @@ function buildCustomQuizRouter(config) {
   });
   router.post("/:id/questions/:qid/delete", requireAdmin, express.json(), (req, res) => {
     db.deleteCustomQuizQuestion(req.params.qid);
+    res.json({ ok: true });
+  });
+
+  // Sauvegarde la traduction EN d'une question (texte + options)
+  router.post("/:id/questions/:qid/update-en", requireAdmin, express.json(), (req, res) => {
+    const qid = Number(req.params.qid);
+    const text = String(req.body.text || "").slice(0, 500).trim();
+    const options = Array.isArray(req.body.options) ? req.body.options.map(o => String(o).slice(0, 200)) : [];
+    db.setTranslation("quiz_question", qid, "text", "en", text);
+    db.setTranslation("quiz_question", qid, "options", "en", JSON.stringify(options));
     res.json({ ok: true });
   });
 
@@ -291,6 +317,18 @@ function buildCustomQuizRouter(config) {
     const flags = userId ? db.getQuizFlags(quiz.id, userId) : { practiced: {}, interested: {} };
     const steps = buildSteps(parts, questions);
     const completed = existing ? existing.completed : 0;
+    // Appliquer les traductions EN si la session est en anglais
+    const lang = req.session && req.session.lang === "en" ? "en" : "fr";
+    if (lang === "en") {
+      const qzTr = db.getTranslationsForEntity("quiz", quiz.id, "en");
+      if (qzTr.title)       quiz._title       = qzTr.title;
+      if (qzTr.description) quiz._description = qzTr.description;
+      questions.forEach(q => {
+        const qt = db.getTranslationsForEntity("quiz_question", q.id, "en");
+        if (qt.text) q._text = qt.text;
+        if (qt.options) { try { q._options = JSON.parse(qt.options); } catch { q._options = null; } }
+      });
+    }
     if (!steps.length) {
       return res.render("quiz-detail", { config, quiz, steps: [], stepIdx: 0, stepData: null, answers, completed, flags });
     }

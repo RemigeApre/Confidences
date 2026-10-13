@@ -1,11 +1,11 @@
-<%- include('partials/head', { title: quiz.title }) %>
+<%- include('partials/head', { title: quiz._title || quiz.title }) %>
 <main class="container wide">
-  <%- include('partials/top-nav', { config: config, navTitle: quiz.title, navBack: '/quizz' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: quiz._title || quiz.title, navBack: '/quizz' }) %>
 
   <% if (locals.completed && !stepData) { %>
     <%# ── Écran de fin ───────────────────────────────────────────────── %>
     <div class="quiz-done-wrap">
-      <p class="quiz-done-thanks">Merci d&rsquo;avoir terminé <strong><%= quiz.title %></strong>&nbsp;!</p>
+      <p class="quiz-done-thanks">Merci d&rsquo;avoir terminé <strong><%= quiz._title || quiz.title %></strong>&nbsp;!</p>
       <p class="quiz-done-hint">Pensez à faire les autres quizz disponibles.</p>
       <% if (locals.firstCompletion) { %>
         <p class="quiz-done-lootbox">&#127381; C&rsquo;est votre premi&egrave;re compl&eacute;tion&nbsp;&mdash; un coffre vous attend dans votre profil&nbsp;!</p>
@@ -16,8 +16,8 @@
   <% } else if (!steps.length || !stepData) { %>
     <%# ── Quizz vide ─────────────────────────────────────────────────── %>
     <div class="quiz-detail-wrap">
-      <h1 class="quiz-detail-title"><%= quiz.title %></h1>
-      <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
+      <h1 class="quiz-detail-title"><%= quiz._title || quiz.title %></h1>
+      <% if (quiz._description || quiz.description) { %><p class="quiz-detail-desc"><%= quiz._description || quiz.description %></p><% } %>
       <p class="quiz-hub-empty">Ce quizz n'a pas encore de questions.</p>
     </div>
 
@@ -74,7 +74,7 @@
       <div class="wiki-chapter-hero">
         <div class="wiki-chapter-hero-top">
           <span></span>
-          <h1 class="wiki-chapter-hero-title"><%= quiz.title %></h1>
+          <h1 class="wiki-chapter-hero-title"><%= quiz._title || quiz.title %></h1>
           <span></span>
         </div>
       </div>
@@ -106,8 +106,8 @@
           déjà donné par la frise du volet gauche — seule l'étape sans
           partie garde le titre du quizz + sa description. ────────────── %>
       <% if (!stepData.part) { %>
-        <h1 class="quiz-detail-title"><%= quiz.title %></h1>
-        <% if (quiz.description) { %><p class="quiz-detail-desc"><%= quiz.description %></p><% } %>
+        <h1 class="quiz-detail-title"><%= quiz._title || quiz.title %></h1>
+        <% if (quiz._description || quiz.description) { %><p class="quiz-detail-desc"><%= quiz._description || quiz.description %></p><% } %>
       <% } %>
 
       <%# ── Encart d'usage (collapsible, fermé en localStorage) ──────── %>
@@ -183,6 +183,7 @@
 
           /* ── Render inputs (tous types, avec suffixe pour has_sides) ── */
           var qLevels = GRAD_LEVELS_MAP[q.subtype] || GRAD_LEVELS_MAP['default'];
+          var qOpts = q._options || q.options;
           function renderInputs(suffix, savedVal) {
             var name = suffix ? 'q_' + q.id + '_' + suffix : 'q_' + q.id;
             var html = '';
@@ -190,7 +191,7 @@
               html = renderGradBar(name, savedVal, qLevels);
             } else if (q.type === 'visual') {
               html += '<div class="quiz-visual-list">';
-              q.options.forEach(function(opt, oi) {
+              qOpts.forEach(function(opt, oi) {
                 html += '<label class="quiz-visual-opt' + (String(savedVal) == String(oi) ? ' quiz-visual-opt--checked' : '') + '">'
                   + '<input type="radio" name="' + name + '" value="' + oi + '"' + (String(savedVal) == String(oi) ? ' checked' : '') + ' />'
                   + '<span>' + opt + '</span></label>';
@@ -202,7 +203,7 @@
               var suffix2 = suffix ? '-' + suffix : '';
               html += '<p class="quiz-points-total">Répartir <span class="quiz-points-remaining" id="qpoints-remaining-' + q.id + suffix2 + '">' + total + '</span> / ' + total + ' points</p>';
               html += '<div class="quiz-points-list">';
-              q.options.forEach(function(opt, oi) {
+              qOpts.forEach(function(opt, oi) {
                 var v = parseInt(savedObj[String(oi)], 10) || 0;
                 html += '<div class="quiz-points-row">'
                   + '<span class="quiz-points-label">' + opt + '</span>'
@@ -216,14 +217,14 @@
               html += '</div>';
             } else if (q.type === 'single') {
               html += '<div class="quiz-choice-list">';
-              q.options.forEach(function(opt, oi) {
+              qOpts.forEach(function(opt, oi) {
                 html += '<label class="quiz-choice-opt"><input type="radio" name="' + name + '" value="' + oi + '"'
                   + (String(savedVal) == String(oi) ? ' checked' : '') + ' /><span>' + opt + '</span></label>';
               });
               html += '</div>';
             } else if (q.type === 'multiple') {
               html += '<div class="quiz-choice-list">';
-              q.options.forEach(function(opt, oi) {
+              qOpts.forEach(function(opt, oi) {
                 var checked = Array.isArray(savedVal) && savedVal.indexOf(String(oi)) !== -1;
                 html += '<label class="quiz-choice-opt"><input type="checkbox" name="' + name + '_' + oi + '" value="' + oi + '"'
                   + (checked ? ' checked' : '') + ' /><span>' + opt + '</span></label>';
@@ -231,13 +232,13 @@
               html += '</div>';
             } else if (q.type === 'ranking') {
               var rankOrder = (Array.isArray(savedVal) && savedVal.length)
-                ? savedVal.map(Number) : q.options.map(function(_, i){ return i; });
+                ? savedVal.map(Number) : qOpts.map(function(_, i){ return i; });
               var rankKey = suffix ? q.id + '-' + suffix : q.id;
               html += '<div class="quiz-rank-list" id="qrank-' + rankKey + '">';
               rankOrder.forEach(function(idx) {
-                if (!q.options[idx]) return;
+                if (!qOpts[idx]) return;
                 html += '<div class="quiz-rank-item" draggable="true" data-idx="' + idx + '">'
-                  + '<span class="quiz-rank-handle">&#11835;</span><span class="quiz-rank-label">' + q.options[idx] + '</span></div>';
+                  + '<span class="quiz-rank-handle">&#11835;</span><span class="quiz-rank-label">' + qOpts[idx] + '</span></div>';
               });
               html += '</div>';
               html += '<input type="hidden" name="' + name + '_rank" id="qrank-input-' + rankKey + '" value="' + rankOrder.join(',') + '" />';
@@ -249,7 +250,7 @@
           <div class="quiz-q-block" id="qblock-<%= q.id %>" data-qid="<%= q.id %>" data-qtype="<%= q.type %>">
             <div class="quiz-q-header">
               <span class="quiz-q-num"><%= qNum %></span>
-              <p class="quiz-q-text"><%= q.text %></p>
+              <p class="quiz-q-text"><%= q._text || q.text %></p>
               <% if (q.tendency === 'positive') { %><span class="quiz-q-tendency quiz-q-tendency--positive" title="Tendance positive (aimer)">&#9650;</span><% } %>
               <% if (q.tendency === 'negative') { %><span class="quiz-q-tendency quiz-q-tendency--negative" title="Tendance négative (ne pas aimer)">&#9660;</span><% } %>
               <% if (q.wiki_link_id) { %><a href="/wiki/<%= q.wiki_link_id %>" target="_blank" rel="noopener" class="quiz-q-wiki-btn" title="Voir la page Codex">&#63;</a><% } %>

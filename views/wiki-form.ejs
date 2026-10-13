@@ -7,6 +7,7 @@
 
   <%# Boutons Save + Cancel (fixe droite) %>
   <div class="wf-actions-right">
+    <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
     <button type="submit" form="wiki-edit-form" class="wf-save-btn">Enregistrer</button>
   </div>
 
@@ -27,10 +28,14 @@
 
   <form method="POST" action="<%= page.id ? '/wiki/' + page.id : '/wiki/' %>" enctype="multipart/form-data" class="wiki-form" id="wiki-edit-form" data-no-enter-submit>
     <input type="hidden" name="_returnTo" value="<%= returnTo || '' %>" />
+    <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
 
     <%# ── 1. Titre + Catégorie ── %>
     <div class="wf-title-row">
-      <input type="text" name="title" class="wiki-title-input" required value="<%= page.title %>" placeholder="Titre&hellip;" />
+      <% var _trTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : page.title; %>
+      <input type="text" name="title" class="wiki-title-input" required value="<%= _trTitle %>"
+             placeholder="<%= locals.editLang === 'en' ? page.title : 'Titre\u2026' %>"
+             <% if (locals.editLang === 'en') { %>data-fr-placeholder="<%= page.title %>"<% } %> />
       <select name="category" id="wiki-category-select" class="wiki-cat-inline-select">
         <% categories.forEach(function(c) { %>
           <option value="<%= c.key %>" data-hue="<%= c.hue %>" <%= c.key === page.category ? 'selected' : '' %>><%= c.label %></option>
@@ -778,7 +783,10 @@
   });
 })();
 </script>
-<script nonce="<%= nonce %>">window._wikiEditContent = <%- JSON.stringify(page.content || '') %>;</script>
+<script nonce="<%= nonce %>">window._wikiEditContent = <%- JSON.stringify(locals.editLang === 'en' ? ((locals.translations || {}).content || '') : (page.content || '')) %>;</script>
+<% if (locals.editLang === 'en') { %>
+<script nonce="<%= nonce %>">window._wikiFrContent = <%- JSON.stringify(page.content || '') %>;</script>
+<% } %>
 <script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
 <script nonce="<%= nonce %>">
 (function() {

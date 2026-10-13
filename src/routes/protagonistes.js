@@ -105,15 +105,25 @@ function buildProtagonistesRouter(config) {
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
-    const protagoniste = db.getProtagoniste(req.params.id);
+    const id = Number(req.params.id);
+    const protagoniste = db.getProtagoniste(id);
     if (!protagoniste) return res.redirect("/protagonistes");
     const allTags = db.listAllSiteTags();
     const races = listRaces();
-    res.render("protagoniste-form", { config, protagoniste, allTags, allParodies: db.listAllParodies(), races });
+    const editLang = req.query.editLang === "en" ? "en" : "fr";
+    const translations = editLang === "en" ? db.getTranslationsForEntity("protagoniste", id, "en") : {};
+    res.render("protagoniste-form", { config, protagoniste, allTags, allParodies: db.listAllParodies(), races, editLang, translations });
   });
   router.post("/:id/update", requireAdmin, upload.single("character_image"), (req, res) => {
     const protagoniste = db.getProtagoniste(req.params.id);
     if (!protagoniste) return res.redirect("/protagonistes");
+
+    if (req.body._editLang === "en") {
+      db.setTranslation("protagoniste", protagoniste.id, "name", "en", String(req.body.name || "").slice(0, 200).trim());
+      db.setTranslation("protagoniste", protagoniste.id, "description", "en", String(req.body.description || ""));
+      return res.redirect(`/protagonistes/${protagoniste.id}/edit?editLang=en`);
+    }
+
     const tags = String(req.body.tags || "").split(",").map(t => t.trim()).filter(Boolean);
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));

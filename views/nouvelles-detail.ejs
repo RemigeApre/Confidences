@@ -33,8 +33,8 @@
     <%# ── Corps : UNIQUEMENT le texte ─────────────────────────────────────── %>
     <div class="wiki-detail-body nv-reader-body">
 
-      <% if (nouvelle.summary) { %>
-        <p class="nv-reader-accroche"><em><%= nouvelle.summary %></em></p>
+      <% if (nouvelle.summary || nouvelle._summary) { %>
+        <p class="nv-reader-accroche"><em><%= nouvelle._summary || nouvelle.summary %></em></p>
       <% } %>
 
       <div class="nv-reader-content"><%- contentHtml %></div>
@@ -68,7 +68,7 @@
 
       <%# Titre centré %>
       <div class="nv-right-title-block">
-        <h1 class="nv-right-title"><%= nouvelle.title %></h1>
+        <h1 class="nv-right-title"><%= nouvelle._title || nouvelle.title %></h1>
         <% if (stageObj && (stageObj.key !== 'stade_1' || nouvelle.hidden)) { %>
           <span class="nv-right-stage-badge<%= nouvelle.hidden ? ' nv-right-stage-hidden' : '' %>"><%= stageObj.label %><%= nouvelle.hidden ? ' · Masqué' : '' %></span>
         <% } %>

@@ -8623,6 +8623,26 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
     stroke-width: 2.3;
   }
 
+  /* Bouton langue FR / EN */
+  .pc-lang-form { margin: 0; display: flex; align-items: center; }
+  .pc-lang-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.6rem;
+    padding: 0 0.5rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 5px;
+    background: none;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .pc-lang-btn:hover { color: var(--fg); border-color: rgba(255,255,255,0.35); }
+
   /* Icône clé : couleur selon le rôle du profil connecté. */
   .pc-icon-btn.pc-key-admin, .pc-icon-btn.pc-key-admin:hover { color: #7c3aed; }
   .pc-icon-btn.pc-key-test,  .pc-icon-btn.pc-key-test:hover  { color: #d97706; }
@@ -11273,6 +11293,29 @@ body.wiki-todo-open { overflow: hidden; }
   white-space: nowrap;
 }
 .wf-save-btn:hover { opacity: 0.88; transform: scale(1.03); }
+.wf-lang-toggle {
+  display: flex;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+.wf-lang-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.4);
+  text-decoration: none;
+  background: hsl(225,16%,12%);
+  transition: background 0.12s, color 0.12s;
+}
+.wf-lang-btn + .wf-lang-btn { border-left: 1px solid rgba(255,255,255,0.1); }
+.wf-lang-btn:hover { color: rgba(255,255,255,0.8); }
+.wf-lang-btn.active { background: hsl(225,16%,22%); color: #fff; }
 .wf-cancel-link {
   color: var(--muted);
   font-size: 0.8rem;

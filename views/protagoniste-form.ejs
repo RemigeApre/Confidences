@@ -4,6 +4,7 @@
 
   <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
+    <% if (protagoniste) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/protagonistes/' + protagoniste.id + '/edit' }) %><% } %>
     <button type="submit" form="prot-form" class="wf-save-btn">Enregistrer</button>
   </div>
   <% if (protagoniste) { %>
@@ -16,9 +17,11 @@
   <div class="nv-form-wrap">
     <form method="POST" action="<%= protagoniste ? '/protagonistes/' + protagoniste.id + '/update' : '/protagonistes/new' %>"
       class="nv-form" id="prot-form" data-no-enter-submit enctype="multipart/form-data">
+      <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
+      <% var _ptName = (locals.editLang === 'en') ? ((locals.translations || {}).name || '') : (protagoniste ? protagoniste.name : ''); %>
 
       <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
-        value="<%= protagoniste ? protagoniste.name : '' %>" placeholder="Nom du personnage…" />
+        value="<%= _ptName %>" placeholder="<%= locals.editLang === 'en' && protagoniste ? protagoniste.name : 'Nom du personnage\u2026' %>" />
 
       <%# ── Image du personnage ── %>
       <div class="prot-form-img-section prot-form-img-section--centered">
@@ -225,9 +228,10 @@
         <button type="button" class="prot-evo-add-btn" id="prot-evo-add">+ Ajouter une forme précédente</button>
       </div>
 
+      <% var _ptDesc = (locals.editLang === 'en') ? ((locals.translations || {}).description || '') : (protagoniste ? protagoniste.description : ''); %>
       <textarea name="description" class="nv-form-content" rows="10"
-        placeholder="Description, traits de caractère, apparence…"
-        style="resize:vertical"><%= protagoniste ? protagoniste.description : '' %></textarea>
+        placeholder="<%= locals.editLang === 'en' ? 'English description\u2026' : 'Description, traits de caract\u00e8re, apparence\u2026' %>"
+        style="resize:vertical"><%= _ptDesc %></textarea>
 
       <%# ── Parodie / Univers ── %>
       <%- include('partials/parody-input', {

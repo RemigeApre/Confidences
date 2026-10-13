@@ -25,6 +25,7 @@ const {
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
   getUserById, isScanPath,
+  getTranslation, getTranslationsForEntity,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -506,6 +507,37 @@ app.use((req, res, next) => {
     ? { id: _pRaw.id, displayName: _pRaw.displayName, profileColor: _pRaw.profileColor, profileImageId: _pRaw.profileImageId, profileImageCrop: _pRaw.profileImageCrop }
     : null;
   next();
+});
+
+// ── Langue active ────────────────────────────────────────────────────────────
+// Priorité : session.lang (choix explicite) > Accept-Language > 'fr' (défaut).
+// Exposée dans res.locals.lang et dans le helper res.locals.t() pour les vues.
+app.use((req, res, next) => {
+  let lang = "fr";
+  if (req.session && req.session.lang) {
+    lang = req.session.lang;
+  } else {
+    const accept = req.headers["accept-language"] || "";
+    const primary = accept.split(",")[0].split("-")[0].toLowerCase().trim();
+    if (primary === "en") lang = "en";
+  }
+  res.locals.lang = lang;
+  // Helper dans les vues : t(fallbackFr, entityType, id, field)
+  // Retourne la traduction EN si dispo, sinon le texte FR fourni.
+  res.locals.t = function(fallback, entity, id, field) {
+    if (lang === "fr" || !entity) return fallback;
+    const tr = getTranslation(entity, id, field, lang);
+    return (tr !== null && tr !== "") ? tr : fallback;
+  };
+  next();
+});
+
+// Route POST /set-lang : change la langue en session et redirige.
+app.post("/set-lang", (req, res) => {
+  const lang = req.body && req.body.lang === "en" ? "en" : "fr";
+  if (req.session) req.session.lang = lang;
+  const back = req.get("Referer") || "/";
+  res.redirect(back);
 });
 
 // Profils de recherche personnels (voir "Enregistrer le filtre" dans les

@@ -164,7 +164,11 @@ function buildNouvellesRouter(config) {
       ? nouvelle.protagoniste_ids.map(id => db.getProtagoniste(id)).filter(Boolean)
       : [];
     const userReaction  = getUserReaction(req.user ? req.user.id : null, "nouvelle", nouvelle.id);
-    const contentHtml   = renderContent(nouvelle.content);
+    const lang = req.session && req.session.lang === "en" ? "en" : "fr";
+    const _nTr = lang === "en" ? db.getTranslationsForEntity("nouvelle", nouvelle.id, "en") : {};
+    const contentHtml = renderContent(_nTr.content || nouvelle.content);
+    if (lang === "en" && _nTr.title)    nouvelle._title   = _nTr.title;
+    if (lang === "en" && _nTr.summary)  nouvelle._summary = _nTr.summary;
     res.render("nouvelles-detail", { config, nouvelle, contentHtml, serie, chapters, chapterIndex, prev, next, protagonistes, userReaction, categories: CATEGORIES, stages: STAGES });
   });
 
@@ -182,17 +186,28 @@ function buildNouvellesRouter(config) {
 
   // ── Éditer ─────────────────────────────────────────────────────────────────
   router.get("/:id/edit", requireAdmin, (req, res) => {
-    const nouvelle = db.getNouvelleById(req.params.id);
+    const id = Number(req.params.id);
+    const nouvelle = db.getNouvelleById(id);
     if (!nouvelle) return res.redirect("/nouvelles");
     parseNouvelle(nouvelle);
     const series        = db.listNouvelleSeries();
     const allTags       = db.listAllSiteTags();
     const protagonistes = db.listProtagonistes();
-    res.render("nouvelles-form", { config, nouvelle, series, allTags, protagonistes, preSerieId: null, allParodies: db.listAllParodies(), categories: CATEGORIES, stages: STAGES });
+    const editLang = req.query.editLang === "en" ? "en" : "fr";
+    const translations = editLang === "en" ? db.getTranslationsForEntity("nouvelle", id, "en") : {};
+    res.render("nouvelles-form", { config, nouvelle, series, allTags, protagonistes, preSerieId: null, allParodies: db.listAllParodies(), categories: CATEGORIES, stages: STAGES, editLang, translations });
   });
   router.post("/:id/update", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const nouvelle = db.getNouvelleById(req.params.id);
     if (!nouvelle) return res.redirect("/nouvelles");
+
+    if (req.body._editLang === "en") {
+      db.setTranslation("nouvelle", nouvelle.id, "title", "en", String(req.body.title || "").slice(0, 300).trim());
+      db.setTranslation("nouvelle", nouvelle.id, "summary", "en", String(req.body.summary || "").slice(0, 500));
+      db.setTranslation("nouvelle", nouvelle.id, "content", "en", String(req.body.content || ""));
+      return res.redirect(`/nouvelles/${nouvelle.id}/edit?editLang=en`);
+    }
+
     const serieId         = req.body.serie_id ? Number(req.body.serie_id) : null;
     const protagonisteIds = [].concat(req.body.protagoniste_ids || []).map(Number).filter(Boolean);
     const title           = String(req.body.title || "").slice(0, 300).trim();

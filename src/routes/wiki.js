@@ -42,6 +42,8 @@ const {
   normalizeParody,
   checkAndGrantActionLootbox,
   countUserRatingsTotal,
+  getTranslationsForEntity,
+  setTranslation,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
@@ -849,13 +851,22 @@ function buildWikiRouter(config) {
     const pages = sortedPages();
     const allTags = getAllTags(pages);
     const returnTo = safeReturnTo(req.get("referer"), `/wiki/${id}`);
-    res.render("wiki-form", { config, page, pages, allTags, returnTo, ...CTX });
+    const editLang = req.query.editLang === "en" ? "en" : "fr";
+    const translations = editLang === "en" ? getTranslationsForEntity("wiki", id, "en") : {};
+    res.render("wiki-form", { config, page, pages, allTags, returnTo, editLang, translations, ...CTX });
   });
 
   router.post("/:id", requireAdmin, upload.any(), (req, res) => {
     const id = Number(req.params.id);
     const existing = Number.isInteger(id) ? getWikiPage(id) : null;
     if (!existing) return res.redirect("/wiki");
+
+    // Mode traduction EN : sauvegarde uniquement les champs traduits.
+    if (req.body._editLang === "en") {
+      setTranslation("wiki", id, "title", "en", String(req.body.title || "").trim());
+      setTranslation("wiki", id, "content", "en", String(req.body.content || "").trim());
+      return res.redirect(`/wiki/${id}/edit?editLang=en`);
+    }
 
     const title    = String(req.body.title || "").trim() || existing.title;
     const category = normalizeCategory(req.body.category);

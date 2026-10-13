@@ -87,6 +87,20 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity_set_at TEXT"); } catch
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
+// ── Traductions (FR → EN, extensible) ─────────────────────────────────────────
+// Le texte source (FR) reste dans les colonnes existantes.
+// Seules les versions traduites (EN) sont stockées ici.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS translations (
+    entity     TEXT    NOT NULL,
+    entity_id  INTEGER NOT NULL,
+    field      TEXT    NOT NULL,
+    lang       TEXT    NOT NULL DEFAULT 'en',
+    value      TEXT    NOT NULL,
+    PRIMARY KEY (entity, entity_id, field, lang)
+  )
+`);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS gallery_images (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -4602,6 +4616,36 @@ function getAICardGamePersonnage() {
   };
 }
 
+// ── Fonctions traductions ──────────────────────────────────────────────────────
+function getTranslation(entity, id, field, lang) {
+  const row = db.prepare(
+    "SELECT value FROM translations WHERE entity=? AND entity_id=? AND field=? AND lang=?"
+  ).get(entity, id, field, lang);
+  return row ? row.value : null;
+}
+
+function setTranslation(entity, id, field, lang, value) {
+  if (!value || !String(value).trim()) {
+    db.prepare(
+      "DELETE FROM translations WHERE entity=? AND entity_id=? AND field=? AND lang=?"
+    ).run(entity, id, field, lang);
+  } else {
+    db.prepare(
+      "INSERT OR REPLACE INTO translations (entity, entity_id, field, lang, value) VALUES (?,?,?,?,?)"
+    ).run(entity, id, field, lang, String(value).trim());
+  }
+}
+
+// Retourne un objet { field: value } pour tous les champs traduits d'un item.
+function getTranslationsForEntity(entity, id, lang) {
+  const rows = db.prepare(
+    "SELECT field, value FROM translations WHERE entity=? AND entity_id=? AND lang=?"
+  ).all(entity, id, lang);
+  const out = {};
+  rows.forEach((r) => { out[r.field] = r.value; });
+  return out;
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -4863,6 +4907,9 @@ module.exports = {
   recordLoginFailure,
   getLoginFailureCount,
   resetLoginFailures,
+  getTranslation,
+  setTranslation,
+  getTranslationsForEntity,
   getUserCards,
   setWikiCardRarity,
   updateWikiCardSummary,
