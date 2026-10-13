@@ -60,11 +60,49 @@
     </div>
 
     <div class="pc-nav-actions">
-        <form method="POST" action="/set-lang" class="pc-lang-form">
-          <button type="submit" name="lang" value="<%= locals.lang === 'en' ? 'fr' : 'en' %>" class="pc-lang-btn<%= locals.lang === 'en' ? ' pc-lang-btn--en' : '' %>" title="<%= locals.lang === 'en' ? 'Passer en français' : 'Switch to English' %>">
-            <%= locals.lang === 'en' ? '🇬🇧' : '🇫🇷' %>
-          </button>
-        </form>
+        <button type="button" class="pc-lang-btn<%= locals.lang === 'en' ? ' pc-lang-btn--en' : '' %>" id="pc-lang-btn" data-lang="<%= locals.lang === 'en' ? 'fr' : 'en' %>" title="<%= locals.lang === 'en' ? 'Passer en français' : 'Switch to English' %>">
+          <% if (locals.lang === 'en') { %>
+            <svg width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="22" height="15" fill="#012169"/>
+              <path d="M0,0 L22,15 M22,0 L0,15" stroke="#fff" stroke-width="3.2"/>
+              <rect x="9.5" width="3" height="15" fill="#fff"/>
+              <rect y="6" width="22" height="3" fill="#fff"/>
+              <rect x="10" width="2" height="15" fill="#C8102E"/>
+              <rect y="6.5" width="22" height="2" fill="#C8102E"/>
+            </svg>
+          <% } else { %>
+            <svg width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="7" height="15" fill="#002395"/>
+              <rect x="7" width="8" height="15" fill="#fff"/>
+              <rect x="15" width="7" height="15" fill="#ED2939"/>
+            </svg>
+          <% } %>
+        </button>
+        <script>
+        (function(){
+          var btn = document.getElementById('pc-lang-btn');
+          if (!btn) return;
+          btn.addEventListener('click', function() {
+            var lang = btn.dataset.lang;
+            var scrollY = window.scrollY;
+            btn.disabled = true;
+            fetch('/set-lang', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: 'lang=' + lang,
+            }).then(function() {
+              try { sessionStorage.setItem('_lsScrollY', scrollY); } catch(_) {}
+              location.reload();
+            }).catch(function() { btn.disabled = false; });
+          });
+          // Restaurer la position après le reload
+          var saved = sessionStorage.getItem('_lsScrollY');
+          if (saved !== null) {
+            sessionStorage.removeItem('_lsScrollY');
+            window.scrollTo(0, parseInt(saved, 10));
+          }
+        })();
+        </script>
         <details class="pc-consent-details pc-hover-menu">
           <summary class="pc-icon-btn pc-consent-btn" title="Rappel consentement" aria-label="Rappel sur le consentement">?</summary>
           <div class="pc-consent-panel">

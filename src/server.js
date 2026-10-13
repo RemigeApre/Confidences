@@ -532,15 +532,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Route POST /set-lang : change la langue en session et redirige.
+// Route POST /set-lang : change la langue en session, répond 204 (appelé en fetch).
 app.post("/set-lang", (req, res) => {
   const lang = req.body && req.body.lang === "en" ? "en" : "fr";
-  const back = req.get("Referer") || "/";
   if (req.session) {
     req.session.lang = lang;
-    req.session.save(() => res.redirect(back));
+    req.session.save(() => res.sendStatus(204));
   } else {
-    res.redirect(back);
+    res.sendStatus(204);
   }
 });
 

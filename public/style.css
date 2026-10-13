@@ -8623,24 +8623,22 @@ input:checked ~ .wiki-display-opt-text { color: var(--fg); }
     stroke-width: 2.3;
   }
 
-  /* Bouton langue (drapeau actif) */
-  .pc-lang-form { margin: 0; display: flex; align-items: center; }
+  /* Bouton langue (drapeau SVG) */
   .pc-lang-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 1.6rem;
-    width: 1.6rem;
-    padding: 0;
-    border: 1px solid rgba(255,255,255,0.15);
+    height: 1.75rem;
+    padding: 0 4px;
+    border: 1px solid rgba(255,255,255,0.18);
     border-radius: 5px;
     background: none;
-    font-size: 1rem;
-    line-height: 1;
     cursor: pointer;
-    transition: border-color 0.15s, transform 0.1s;
+    transition: border-color 0.15s, opacity 0.15s;
   }
-  .pc-lang-btn:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.1); }
+  .pc-lang-btn:hover { border-color: rgba(255,255,255,0.45); }
+  .pc-lang-btn:disabled { opacity: 0.5; cursor: wait; }
+  .pc-lang-btn svg { display: block; border-radius: 2px; }
 
   /* Icône clé : couleur selon le rôle du profil connecté. */
   .pc-icon-btn.pc-key-admin, .pc-icon-btn.pc-key-admin:hover { color: #7c3aed; }
