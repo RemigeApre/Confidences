@@ -535,9 +535,13 @@ app.use((req, res, next) => {
 // Route POST /set-lang : change la langue en session et redirige.
 app.post("/set-lang", (req, res) => {
   const lang = req.body && req.body.lang === "en" ? "en" : "fr";
-  if (req.session) req.session.lang = lang;
   const back = req.get("Referer") || "/";
-  res.redirect(back);
+  if (req.session) {
+    req.session.lang = lang;
+    req.session.save(() => res.redirect(back));
+  } else {
+    res.redirect(back);
+  }
 });
 
 // Profils de recherche personnels (voir "Enregistrer le filtre" dans les

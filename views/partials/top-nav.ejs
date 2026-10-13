@@ -61,8 +61,8 @@
 
     <div class="pc-nav-actions">
         <form method="POST" action="/set-lang" class="pc-lang-form">
-          <button type="submit" name="lang" value="<%= locals.lang === 'en' ? 'fr' : 'en' %>" class="pc-lang-btn" title="Changer la langue / Switch language">
-            <%= locals.lang === 'en' ? 'FR' : 'EN' %>
+          <button type="submit" name="lang" value="<%= locals.lang === 'en' ? 'fr' : 'en' %>" class="pc-lang-btn<%= locals.lang === 'en' ? ' pc-lang-btn--en' : '' %>" title="<%= locals.lang === 'en' ? 'Passer en français' : 'Switch to English' %>">
+            <%= locals.lang === 'en' ? '🇬🇧' : '🇫🇷' %>
           </button>
         </form>
         <details class="pc-consent-details pc-hover-menu">
