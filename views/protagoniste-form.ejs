@@ -44,7 +44,7 @@
         <div class="prot-sb-en-badge" id="prot-sb-en-badge"<% if (!_isEn) { %> hidden<% } %>>Commun FR/EN</div>
 
         <%# Genre %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
+        <div class="prot-sb-section">
           <div class="prot-gender-btns prot-gender-btns--icon">
             <% genderOpts.forEach(function(opt) { %>
             <label class="prot-gender-btn prot-gender-btn--<%= opt.value %><%= currentGender === opt.value ? ' active' : '' %>" title="<%= opt.label %>">
@@ -62,7 +62,7 @@
         </div>
 
         <%# Classification %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
+        <div class="prot-sb-section">
           <input type="hidden" name="special" id="prot-special-hidden" value="<%= protagoniste ? (protagoniste.special || '') : '' %>" />
           <div class="prot-special-btns prot-special-btns--center">
             <button type="button" class="prot-special-btn prot-special-btn--ultra<%= (protagoniste && protagoniste.special === 'ultra') ? ' active' : '' %>" data-val="ultra">Ultra</button>
@@ -70,28 +70,26 @@
           </div>
         </div>
 
-        <%# Nature + Race — même ligne %>
-        <div class="prot-sb-section prot-sb-section--row<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
+        <%# Nature + Espèce — même ligne %>
+        <div class="prot-sb-section prot-sb-section--row">
           <select name="nature" id="prot-nature" class="prot-form-select-elegant prot-form-select-elegant--sm">
             <option value="">Nature</option>
             <option value="humain"  <%= protagoniste && protagoniste.nature === 'humain'  ? 'selected' : '' %>>Humain</option>
             <option value="monstre" <%= protagoniste && protagoniste.nature === 'monstre' ? 'selected' : '' %>>Monstre</option>
             <option value="animal"  <%= protagoniste && protagoniste.nature === 'animal'  ? 'selected' : '' %>>Animal</option>
-            <option value="pokemon" <%= protagoniste && protagoniste.nature === 'pokemon' ? 'selected' : '' %>>Pok&eacute;mon</option>
             <option value="autre"   <%= protagoniste && protagoniste.nature === 'autre'   ? 'selected' : '' %>>Autre</option>
           </select>
           <select name="race_id" id="prot-race" class="prot-form-select-elegant prot-form-select-elegant--sm">
-            <option value="">Esp&egrave;ce</option>
+            <option value="__add__">+ G&eacute;rer les esp&egrave;ces</option>
+            <option value="">— aucune —</option>
             <% _races.forEach(function(r) { %>
               <option value="<%= r.id %>" <%= String(_curRaceId) === String(r.id) ? 'selected' : '' %>><%= r.icon ? r.icon + ' ' : '' %><%= r.name %></option>
             <% }) %>
           </select>
-          <button type="button" id="prot-race-manage-btn"
-            style="background:none;border:1px solid rgba(255,255,255,.14);color:#64748b;font-size:.6rem;padding:.15rem .4rem;border-radius:4px;cursor:pointer;flex-shrink:0;white-space:nowrap">+</button>
         </div>
 
         <%# Âge + Orientation — même ligne %>
-        <div class="prot-sb-section prot-sb-section--row<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
+        <div class="prot-sb-section prot-sb-section--row">
           <input type="number" name="age" id="prot-age"
             class="prot-form-select-elegant prot-form-select-elegant--sm"
             min="18" max="999" step="1"
@@ -109,7 +107,7 @@
         </div>
 
         <%# Clan %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" id="prot-clan-group" data-lockable="hard"
+        <div class="prot-sb-section" id="prot-clan-group"
           style="<%= (!_curRaceId || !_curRaceClans || !_curRaceClans.clans || !_curRaceClans.clans.length) ? 'display:none' : '' %>">
           <select name="clan_id" id="prot-clan" class="prot-form-select-elegant prot-form-select-elegant--sm">
             <option value="">Clan</option>
@@ -173,8 +171,8 @@
           </div>
         </div>
 
-        <%# Évolution — section repliable, data-lockable=soft %>
-        <details class="prot-sb-details<% if (_isEn) { %> prot-sb-locked-soft<% } %>" data-lockable="soft"<% if (evols.length) { %> open<% } %>>
+        <%# Évolution — section repliable %>
+        <details class="prot-sb-details"<% if (evols.length) { %> open<% } %>>
           <summary class="prot-sb-details-summary">&Eacute;volution</summary>
           <div class="prot-sb-details-body">
             <input type="hidden" name="evolutions" id="prot-evo-hidden"
@@ -203,7 +201,7 @@
         </details>
 
         <%# Parodies — section repliable %>
-        <details class="prot-sb-details<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard"<% if (_hasParody) { %> open<% } %>>
+        <details class="prot-sb-details"<% if (_hasParody) { %> open<% } %>>
           <summary class="prot-sb-details-summary">Parodies</summary>
           <div class="prot-sb-details-body">
             <%- include('partials/parody-input', {
@@ -216,7 +214,7 @@
         </details>
 
         <%# Tags %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
+        <div class="prot-sb-section">
           <% if (allTags && allTags.length) { %>
             <script id="prot-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
           <% } %>
@@ -274,7 +272,7 @@
         placeholder="<%= _isEn && protagoniste ? protagoniste.name : 'Nom du personnage\u2026' %>" />
 
       <%# Image %>
-      <div class="prot-form-img-section prot-form-img-section--centered<% if (_isEn) { %> prot-sb-locked<% } %>" id="prot-img-section" data-lockable="hard">
+      <div class="prot-form-img-section prot-form-img-section--centered" id="prot-img-section">
         <div class="prot-form-field-label">Photo / Illustration</div>
         <div class="prot-form-img-wrap" id="prot-img-wrap">
           <% if (protagoniste && protagoniste.image_path) { %>
@@ -351,12 +349,6 @@
       // Badge EN
       var enBadge = document.getElementById('prot-sb-en-badge');
       if (enBadge) enBadge.hidden = !isEn;
-
-      // Sections verrouillables
-      document.querySelectorAll('[data-lockable]').forEach(function(el) {
-        if (el.dataset.lockable === 'hard') el.classList.toggle('prot-sb-locked', isEn);
-        else if (el.dataset.lockable === 'soft') el.classList.toggle('prot-sb-locked-soft', isEn);
-      });
 
       // Évolution : basculer contrôles FR ↔ EN
       document.querySelectorAll('.prot-evo-fr-ctl').forEach(function(el) { el.hidden = isEn; });
@@ -575,10 +567,19 @@
     }
     function appendRpRaceItem(id,name,icon,color){var list=document.getElementById('rp-race-list');var empty=list.querySelector('p[style*="italic"]');if(empty)empty.remove();var div=document.createElement('div');div.className='rp-race-item';div.dataset.raceId=id;div.style.cssText='background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:6px;padding:.4rem .5rem';div.innerHTML='<div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.3rem"><span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0"></span><span style="font-size:.75rem;font-weight:700;color:#e2e8f0;flex:1">'+(icon?icon+' ':'')+name+'</span><button type="button" class="rp-delete-race-btn" style="background:none;border:none;color:#ef4444;font-size:.7rem;cursor:pointer;padding:0" title="Supprimer">&#128465;</button></div><div class="rp-clan-list" style="display:flex;flex-wrap:wrap;gap:.2rem;margin-bottom:.3rem"><span style="font-size:.62rem;color:#475569;font-style:italic">Aucun clan</span></div><div style="display:flex;gap:.25rem;align-items:center"><input type="text" class="rp-new-clan-name" placeholder="+ Clan" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.15rem .35rem;font-size:.68rem;outline:none;font-family:inherit"><button type="button" class="rp-add-clan-btn" style="background:none;border:1px solid rgba(255,255,255,.14);color:#94a3b8;font-size:.62rem;padding:.15rem .35rem;border-radius:4px;cursor:pointer;white-space:nowrap">+ Clan</button></div>';list.appendChild(div);}
 
-    // ── Race → clans dynamiques ─────────────────────────────────────────────
+    // ── Race → clans dynamiques + "+" option ────────────────────────────────
     var clanGroup=document.getElementById('prot-clan-group'),clanSelect=document.getElementById('prot-clan');
+    var _prevRaceVal = raceSelect ? raceSelect.value : '';
     if(raceSelect){
       raceSelect.addEventListener('change',function(){
+        if(raceSelect.value === '__add__') {
+          raceSelect.value = _prevRaceVal; // revenir à la valeur précédente
+          if(racePanel) racePanel.style.display = racePanel.style.display === 'none' ? 'block' : 'none';
+          updateSelectColor(raceSelect);
+          return;
+        }
+        _prevRaceVal = raceSelect.value;
+        updateSelectColor(raceSelect);
         var raceId=raceSelect.value;
         if(!raceId){clanGroup.style.display='none';clanSelect.innerHTML='<option value="">Clan</option>';return;}
         fetch('/protagonistes/api/races/'+raceId+'/clans').then(function(r){return r.json();}).then(function(data){
@@ -586,9 +587,20 @@
           var def=document.createElement('option');def.value='';def.textContent='Clan';clanSelect.appendChild(def);
           clans.forEach(function(c){var opt=document.createElement('option');opt.value=c.id;opt.textContent=c.name;clanSelect.appendChild(opt);});
           clanGroup.style.display=clans.length?'':'none';
+          updateSelectColor(clanSelect);
         });
       });
     }
+
+    // ── Couleur des selects : muted si vide, blanc si valeur choisie ─────────
+    function updateSelectColor(sel) {
+      if (!sel) return;
+      sel.classList.toggle('prot-select--has-value', !!(sel.value && sel.value !== '__add__'));
+    }
+    document.querySelectorAll('.prot-edit-sidebar select').forEach(function(sel) {
+      updateSelectColor(sel);
+      sel.addEventListener('change', function() { updateSelectColor(sel); });
+    });
   })();
   </script>
 

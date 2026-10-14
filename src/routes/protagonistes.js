@@ -122,20 +122,7 @@ function buildProtagonistesRouter(config) {
     const protagoniste = db.getProtagoniste(req.params.id);
     if (!protagoniste) return res.redirect("/protagonistes");
 
-    if (req.body._editLang === "en") {
-      db.setTranslation("protagoniste", protagoniste.id, "name", "en", String(req.body.name || "").slice(0, 200).trim());
-      db.setTranslation("protagoniste", protagoniste.id, "description", "en", String(req.body.description || ""));
-      db.setTranslation("protagoniste", protagoniste.id, "published_en", "en", req.body.published_en === "1" ? "1" : "");
-      let evoEnArr = [];
-      try { evoEnArr = JSON.parse(req.body.evolutions_en || "[]"); } catch (_) {}
-      if (Array.isArray(evoEnArr)) {
-        evoEnArr.forEach((name, i) => {
-          db.setTranslation("protagoniste", protagoniste.id, `evo_${i}_en`, "en", String(name || "").trim());
-        });
-      }
-      return res.redirect(`/protagonistes/${protagoniste.id}/edit?editLang=en`);
-    }
-
+    // Extraire les champs partagés (communs FR/EN) — toujours sauvegardés
     const tags = String(req.body.tags || "").split(",").map(t => t.trim()).filter(Boolean);
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
@@ -147,7 +134,6 @@ function buildProtagonistesRouter(config) {
     const imagePath = req.file
       ? `/uploads/personnages/${req.file.filename}`
       : (req.body.remove_image === "1" ? "" : undefined);
-    // Delete old image if replaced or removed
     if (req.file && protagoniste.image_path) {
       try { fs.unlinkSync(path.join(uploadsDir, path.basename(protagoniste.image_path))); } catch (_) {}
     }
@@ -155,6 +141,31 @@ function buildProtagonistesRouter(config) {
     try { evolutions = JSON.parse(req.body.evolutions || "[]"); } catch (_) {}
     if (!Array.isArray(evolutions)) evolutions = [];
     evolutions = evolutions.map(e => String(e).trim()).filter(Boolean).slice(0, 20);
+    const raceId = req.body.race_id ? Number(req.body.race_id) : null;
+    const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
+
+    if (req.body._editLang === "en") {
+      // Sauvegarder les traductions EN
+      db.setTranslation("protagoniste", protagoniste.id, "name", "en", String(req.body.name || "").slice(0, 200).trim());
+      db.setTranslation("protagoniste", protagoniste.id, "description", "en", String(req.body.description || ""));
+      db.setTranslation("protagoniste", protagoniste.id, "published_en", "en", req.body.published_en === "1" ? "1" : "");
+      let evoEnArr = [];
+      try { evoEnArr = JSON.parse(req.body.evolutions_en || "[]"); } catch (_) {}
+      if (Array.isArray(evoEnArr)) {
+        evoEnArr.forEach((name, i) => {
+          db.setTranslation("protagoniste", protagoniste.id, `evo_${i}_en`, "en", String(name || "").trim());
+        });
+      }
+      // Sauvegarder aussi les champs partagés (le volet gauche est commun FR/EN)
+      db.updateProtagoniste(protagoniste.id, {
+        name: protagoniste.name, description: protagoniste.description,
+        tags, parody, subParody, gender, nature, imagePath, evolutions,
+        special: req.body.special || "", age: ageVal, orientation,
+      });
+      setProtagonisteRace(protagoniste.id, raceId, clanId);
+      return res.redirect(`/protagonistes/${protagoniste.id}/edit?editLang=en`);
+    }
+
     db.updateProtagoniste(protagoniste.id, {
       name:        String(req.body.name || "").slice(0, 200).trim() || protagoniste.name,
       description: String(req.body.description || ""),
@@ -169,8 +180,6 @@ function buildProtagonistesRouter(config) {
       age: ageVal,
       orientation,
     });
-    const raceId = req.body.race_id ? Number(req.body.race_id) : null;
-    const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
     setProtagonisteRace(protagoniste.id, raceId, clanId);
     res.redirect(`/protagonistes/${protagoniste.id}`);
   });
