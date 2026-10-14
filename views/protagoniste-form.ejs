@@ -104,7 +104,7 @@
             <option value="">Orientation</option>
             <option value="hetero"  data-fr-label="Hétéro"        data-en-label="Hetero"          <%= protagoniste && protagoniste.orientation === 'hetero' ? 'selected' : '' %>><%= _isEn ? 'Hetero'         : 'H\u00e9t\u00e9ro'       %></option>
             <option value="homo"    data-fr-label="Gay"           data-en-label="Gay"             <%= protagoniste && protagoniste.orientation === 'homo'   ? 'selected' : '' %>>Gay</option>
-            <option value="bi"      data-fr-label="Bi &amp; curieux" data-en-label="Bi &amp; curious" <%= protagoniste && protagoniste.orientation === 'bi'     ? 'selected' : '' %>><%= _isEn ? 'Bi &amp; curious' : 'Bi &amp; curieux' %></option>
+            <option value="bi"      data-fr-label="Bi & curieux" data-en-label="Bi & curious" <%= protagoniste && protagoniste.orientation === 'bi'     ? 'selected' : '' %>><%- _isEn ? 'Bi &amp; curious' : 'Bi &amp; curieux' %></option>
             <option value="autre"   data-fr-label="Autre"         data-en-label="Other"           <%= protagoniste && protagoniste.orientation === 'autre'  ? 'selected' : '' %>><%= _isEn ? 'Other'          : 'Autre'           %></option>
           </select>
         </div>
@@ -513,7 +513,6 @@
           frCtl.appendChild(badge);
         }
         if (_syncEvoHidden) _syncEvoHidden();
-        openEvoSheet(parentId, d.id, row);
       });
     }
 
