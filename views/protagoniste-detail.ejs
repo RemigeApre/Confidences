@@ -67,20 +67,12 @@
     <%# ── Colonne centrale : contenu ── %>
     <div class="prot-detail-main">
 
-      <%# En-tête : image + nom %>
+      <%# En-tête : nom %>
       <div class="prot-detail-hero">
-        <% if (protagoniste.image_path) { %>
-          <div class="prot-detail-img-wrap">
-            <img src="<%= protagoniste.image_path %>" alt="<%= protagoniste.name %>"
-              class="prot-detail-img prot-lightbox-trigger"
-              data-lightbox="<%= protagoniste.image_path %>"
-              style="cursor:zoom-in" />
-          </div>
-        <% } %>
         <div class="prot-detail-hero-text">
-          <% if (protagoniste.prenom) { %><div class="prot-detail-prenom"><%= protagoniste.prenom %></div><% } %>
-          <% if (protagoniste.nom) { %><div class="prot-detail-nom"><%= protagoniste.nom %></div>
-          <% } else { %><div class="prot-detail-nom"><%= protagoniste.name %></div><% } %>
+          <div class="prot-detail-fullname">
+            <% if (protagoniste.prenom) { %><span class="prot-detail-prenom"><%= protagoniste.prenom %></span> <% } %><span class="prot-detail-nom"><% if (protagoniste.nom) { %><%= protagoniste.nom %><% } else { %><%= protagoniste.name %><% } %></span>
+          </div>
         </div>
       </div>
 
@@ -109,7 +101,6 @@
         <section class="prot-section prot-section--versions">
           <h2 class="prot-versions-title">
             <%= childEvolutions.length === 1 ? 'Version' : 'Versions' %>
-            <span class="prot-versions-count"><%= childEvolutions.length %></span>
           </h2>
           <div class="prot-versions-grid">
             <% childEvolutions.forEach(function(child) { %>
@@ -142,7 +133,7 @@
         %>
         <section class="prot-section">
           <div class="prot-section-header">
-            <h2 class="nv-strip-title nv-strip-title--center">Images <span class="prot-section-count" id="prot-gallery-count">(<%= galleryImages.length %>)</span></h2>
+            <h2 class="nv-strip-title nv-strip-title--center">Images</h2>
             <div class="prot-gallery-toggles">
               <% if (hasUltra) { %><button type="button" class="wiki-ultra-btn" id="prot-ultra-toggle">Masquer Ultra</button><% } %>
               <% if (hasIrrealiste) { %><button type="button" class="wiki-ultra-btn" id="prot-irrealiste-toggle">Masquer Irr&eacute;aliste</button><% } %>
@@ -208,6 +199,15 @@
 
     <%# ── Colonne droite : paramètres ── %>
     <aside class="prot-detail-sidebar">
+
+      <% if (protagoniste.image_path) { %>
+        <div class="prot-ds-img-wrap">
+          <img src="<%= protagoniste.image_path %>" alt="<%= protagoniste.name %>"
+            class="prot-ds-img prot-lightbox-trigger"
+            data-lightbox="<%= protagoniste.image_path %>"
+            style="cursor:zoom-in" />
+        </div>
+      <% } %>
 
       <% if (protagoniste.gender) { %>
         <div class="prot-ds-gender">
@@ -302,7 +302,7 @@
   var wrap    = track.parentElement;
   var prevBtn = document.querySelector('.prot-carousel-prev');
   var nextBtn = document.querySelector('.prot-carousel-next');
-  var countEl = document.getElementById('prot-gallery-count');
+  var countEl = null;
   var pos = 0;
 
   function visibleItems() { return Array.from(track.querySelectorAll('.prot-carousel-item:not([hidden])')); }
