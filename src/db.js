@@ -919,6 +919,11 @@ function isFavorite(userId, itemType, itemId) {
 function listFavoriteRows(userId) {
   return db.prepare("SELECT item_type, item_id FROM favorites WHERE user_id = ? ORDER BY id DESC").all(userId);
 }
+function listFavoriteIdsByType(userId, itemType) {
+  return new Set(
+    db.prepare("SELECT item_id FROM favorites WHERE user_id = ? AND item_type = ?").all(userId, itemType).map(r => r.item_id)
+  );
+}
 
 function countFavorites() {
   return db.prepare("SELECT COUNT(*) AS c FROM favorites").get().c;
@@ -4796,6 +4801,7 @@ module.exports = {
   removeFavorite,
   isFavorite,
   listFavoriteRows,
+  listFavoriteIdsByType,
   countFavorites,
   getUserReaction,
   getUserReactionStats,

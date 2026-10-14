@@ -4,7 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
-const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes, setProtagonisteParent, mergeUserReactions, listFavoriteRows } = db;
+const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes, setProtagonisteParent, mergeUserReactions, listFavoriteIdsByType } = db;
 const { insertGalleryImage } = db;
 const { generateThumb } = require("../thumbs");
 
@@ -125,7 +125,7 @@ function buildProtagonistesRouter(config) {
     const userId = req.user ? req.user.id : null;
     const rawGalleryImages = db.listGalleryImagesByProtagoniste(protagoniste.id);
     const galleryImages = mergeUserReactions(rawGalleryImages, userId, "gallery");
-    const favoriteGalleryIds = userId ? new Set(listFavoriteRows(userId).filter(r => r.item_type === "gallery").map(r => r.item_id)) : new Set();
+    const favoriteGalleryIds = userId ? listFavoriteIdsByType(userId, "gallery") : new Set();
     const codexPages = protagoniste.name ? db.listWikiPagesByTag(protagoniste.name) : [];
     const tagMeta = db.getAllTagMeta();
     const childEvolutions = listChildProtagonistes(protagoniste.id);

@@ -10,10 +10,12 @@
   var _protDesc     = t(protagoniste.description,         'protagoniste', protagoniste.id, 'description');
   var _protDescPhys = t(protagoniste.description_physique,'protagoniste', protagoniste.id, 'description_physique');
   var _protDescOeuv = t(protagoniste.description_oeuvre,  'protagoniste', protagoniste.id, 'description_oeuvre');
-  var _liteEvos     = (protagoniste.evolutions || []).filter(function(e){ return !e.linked_id; });
-
   function fmtDesc(str) {
-    return str.replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>').replace(/^/,'<p>').replace(/$/,'</p>');
+    var esc = str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return esc.replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>').replace(/^/,'<p>').replace(/$/,'</p>');
+  }
+  function safeColor(c) {
+    return c && /^#[0-9a-fA-F]{3,6}$|^hsl\(|^rgb\(/.test(c) ? c : '';
   }
 %>
 <main class="prot-detail-page" style="--ch-hue:340">
@@ -212,7 +214,7 @@
         </section>
       <% } %>
 
-      <% if (!nouvelles?.length && !galleryImages?.length && !codexPages?.length) { %>
+      <% if ((!nouvelles || !nouvelles.length) && (!galleryImages || !galleryImages.length) && (!codexPages || !codexPages.length)) { %>
         <p class="nv-empty" style="margin-top:2rem">Ce personnage n&rsquo;appara&icirc;t dans aucun contenu pour le moment.</p>
       <% } %>
 
@@ -273,11 +275,13 @@
         <div class="prot-ds-row prot-ds-row--col">
           <span class="prot-ds-label">Esp&egrave;ce</span>
           <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.25rem">
-            <span class="prot-badge prot-badge--race" style="<%= protagoniste.race_color ? 'background:' + protagoniste.race_color + '22;border-color:' + protagoniste.race_color + '55;color:' + protagoniste.race_color : '' %>">
+            <% var _rc = safeColor(protagoniste.race_color); %>
+            <span class="prot-badge prot-badge--race" style="<%= _rc ? 'background:' + _rc + '22;border-color:' + _rc + '55;color:' + _rc : '' %>">
               <%= protagoniste.race_icon ? protagoniste.race_icon + ' ' : '' %><%= protagoniste.race_name %>
             </span>
             <% if (protagoniste.clan_name) { %>
-              <span class="prot-badge prot-badge--clan" style="<%= protagoniste.clan_color ? 'background:' + protagoniste.clan_color + '22;border-color:' + protagoniste.clan_color + '55;color:' + protagoniste.clan_color : '' %>">
+              <% var _cc = safeColor(protagoniste.clan_color); %>
+              <span class="prot-badge prot-badge--clan" style="<%= _cc ? 'background:' + _cc + '22;border-color:' + _cc + '55;color:' + _cc : '' %>">
                 <%= protagoniste.clan_name %>
               </span>
             <% } %>
@@ -323,7 +327,6 @@
   var wrap    = track.parentElement;
   var prevBtn = document.querySelector('.prot-carousel-prev');
   var nextBtn = document.querySelector('.prot-carousel-next');
-  var countEl = null;
   var pos = 0;
 
   function visibleItems() { return Array.from(track.querySelectorAll('.prot-carousel-item:not([hidden])')); }
@@ -339,7 +342,6 @@
     track.style.transform = 'translateX(-' + offset + 'px)';
     if (prevBtn) prevBtn.disabled = pos === 0;
     if (nextBtn) nextBtn.disabled = pos >= max;
-    if (countEl) countEl.textContent = '(' + items.length + ')';
   }
 
   if (prevBtn) prevBtn.addEventListener('click', function() { pos=Math.max(0,pos-1); update(); });
@@ -510,21 +512,24 @@
     openAt((currentIdx + dir + items.length) % items.length);
   }
 
-  // ─── Ouvrir depuis le carousel ────────────────────────────────────────
-  document.querySelectorAll('.prot-carousel-item[data-image-id]').forEach(function(btn) {
-    btn.style.cursor = 'zoom-in';
-    btn.addEventListener('click', function() {
+  // ─── Ouvrir depuis le carousel (délégation) ──────────────────────────
+  var carouselTrack = document.getElementById('prot-carousel-track');
+  if (carouselTrack) {
+    carouselTrack.style.cursor = 'zoom-in';
+    carouselTrack.addEventListener('click', function(e) {
+      var btn = e.target.closest('.prot-carousel-item[data-image-id]');
+      if (!btn) return;
       items = getItems();
       var idx = items.indexOf(btn);
       openAt(idx >= 0 ? idx : 0);
     });
-  });
+  }
 
   // ─── Image de profil (sidebar) ────────────────────────────────────────
-  document.querySelectorAll('.prot-lightbox-trigger').forEach(function(el) {
-    el.addEventListener('click', function() {
-      // Pas d'id galerie — ouvrir en mode simple (sans actions)
-      if (lbImg) { lbImg.src = el.dataset.lightbox || ''; lbImg.alt = el.alt || ''; }
+  var profileImg = document.querySelector('.prot-lightbox-trigger');
+  if (profileImg) {
+    profileImg.addEventListener('click', function() {
+      if (lbImg) { lbImg.src = profileImg.dataset.lightbox || ''; lbImg.alt = profileImg.alt || ''; }
       currentGalleryId = 0;
       updateStars(0); updateFav(false); updateHide(false);
       if (prevBtn) prevBtn.hidden = true;
@@ -532,7 +537,7 @@
       lb.hidden = false;
       document.body.style.overflow = 'hidden';
     });
-  });
+  }
 
   // ─── Fermer ───────────────────────────────────────────────────────────
   if (closeBtn) closeBtn.addEventListener('click', closeLb);

@@ -135,7 +135,7 @@
           </div>
 
           <% if (currentUser && currentUser.isAdmin) { %>
-            <a href="/protagonistes/<%= p.id %>/edit" class="prot-edit-btn" onclick="event.preventDefault();event.stopPropagation();location.href=this.href">&#9998;</a>
+            <a href="/protagonistes/<%= p.id %>/edit" class="prot-edit-btn" data-edit-link>&#9998;</a>
           <% } %>
         </a>
       <% }) %>
@@ -265,9 +265,10 @@
   function renderParodyList(q) {
     if (!parodyFilter) return;
     var filtered = q
-      ? allParodies.filter(function(p) { return p.name.toLowerCase().includes(q.toLowerCase()); })
+      ? allParodies.filter(function(p) { return p.name.toLowerCase().indexOf(q.toLowerCase()) !== -1; })
       : allParodies.slice(0, 5);
-    while (parodyFilter.firstChild) parodyFilter.removeChild(parodyFilter.firstChild);
+    parodyFilter.innerHTML = '';
+    var frag = document.createDocumentFragment();
     filtered.slice(0, 10).forEach(function(par) {
       var btn = document.createElement('button');
       btn.type = 'button';
@@ -298,8 +299,9 @@
         saveFilters();
         applyFilters();
       });
-      parodyFilter.appendChild(btn);
+      frag.appendChild(btn);
     });
+    parodyFilter.appendChild(frag);
   }
 
   if (parodySearch) {
@@ -348,6 +350,17 @@
   }
 
   applyFilters();
+
+  // Boutons d'édition (nested link workaround via délégation)
+  if (grid) {
+    grid.addEventListener('click', function(e) {
+      var editLink = e.target.closest('[data-edit-link]');
+      if (!editLink) return;
+      e.preventDefault();
+      e.stopPropagation();
+      location.href = editLink.href;
+    });
+  }
 })();
 </script>
 
