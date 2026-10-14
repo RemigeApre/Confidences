@@ -77,10 +77,10 @@
         <div class="prot-sb-section prot-sb-section--row">
           <select name="nature" id="prot-nature" class="prot-form-select-elegant prot-form-select-elegant--sm">
             <option value="">Nature</option>
-            <option value="humain"  <%= protagoniste && protagoniste.nature === 'humain'  ? 'selected' : '' %>>Humain</option>
-            <option value="monstre" <%= protagoniste && protagoniste.nature === 'monstre' ? 'selected' : '' %>>Monstre</option>
-            <option value="animal"  <%= protagoniste && protagoniste.nature === 'animal'  ? 'selected' : '' %>>Animal</option>
-            <option value="autre"   <%= protagoniste && protagoniste.nature === 'autre'   ? 'selected' : '' %>>Autre</option>
+            <option value="humain"  data-fr-label="Humain"  data-en-label="Human"   <%= protagoniste && protagoniste.nature === 'humain'  ? 'selected' : '' %>><%= _isEn ? 'Human'   : 'Humain'  %></option>
+            <option value="monstre" data-fr-label="Monstre" data-en-label="Monster" <%= protagoniste && protagoniste.nature === 'monstre' ? 'selected' : '' %>><%= _isEn ? 'Monster' : 'Monstre' %></option>
+            <option value="animal"  data-fr-label="Animal"  data-en-label="Animal"  <%= protagoniste && protagoniste.nature === 'animal'  ? 'selected' : '' %>>Animal</option>
+            <option value="autre"   data-fr-label="Autre"   data-en-label="Other"   <%= protagoniste && protagoniste.nature === 'autre'   ? 'selected' : '' %>><%= _isEn ? 'Other'   : 'Autre'   %></option>
           </select>
           <select name="race_id" id="prot-race" class="prot-form-select-elegant prot-form-select-elegant--sm">
             <option value="__add__">+ G&eacute;rer les esp&egrave;ces</option>
@@ -97,15 +97,16 @@
             class="prot-form-select-elegant prot-form-select-elegant--sm"
             min="18" max="999" step="1"
             value="<%= protagoniste && protagoniste.age ? protagoniste.age : '' %>"
-            placeholder="&Acirc;ge" />
+            data-placeholder-fr="Âge" data-placeholder-en="Age"
+            placeholder="<%= _isEn ? 'Age' : '\u00c2ge' %>" />
           <select name="orientation" id="prot-orientation" class="prot-form-select-elegant prot-form-select-elegant--sm">
             <option value="">Orientation</option>
-            <option value="hetero"  <%= protagoniste && protagoniste.orientation === 'hetero'  ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
+            <option value="hetero"  data-fr-label="Hétéro"   data-en-label="Hetero"    <%= protagoniste && protagoniste.orientation === 'hetero'  ? 'selected' : '' %>><%= _isEn ? 'Hetero'    : 'H\u00e9t\u00e9ro'  %></option>
             <option value="homo"    <%= protagoniste && protagoniste.orientation === 'homo'    ? 'selected' : '' %>>Homo</option>
             <option value="bi"      <%= protagoniste && protagoniste.orientation === 'bi'      ? 'selected' : '' %>>Bi</option>
             <option value="pan"     <%= protagoniste && protagoniste.orientation === 'pan'     ? 'selected' : '' %>>Pan</option>
-            <option value="ace"     <%= protagoniste && protagoniste.orientation === 'ace'     ? 'selected' : '' %>>Asexuel</option>
-            <option value="autre"   <%= protagoniste && protagoniste.orientation === 'autre'   ? 'selected' : '' %>>Autre</option>
+            <option value="ace"     data-fr-label="Asexuel"  data-en-label="Asexual"   <%= protagoniste && protagoniste.orientation === 'ace'     ? 'selected' : '' %>><%= _isEn ? 'Asexual'   : 'Asexuel'  %></option>
+            <option value="autre"   data-fr-label="Autre"    data-en-label="Other"     <%= protagoniste && protagoniste.orientation === 'autre'   ? 'selected' : '' %>><%= _isEn ? 'Other'     : 'Autre'    %></option>
           </select>
         </div>
 
@@ -176,7 +177,7 @@
 
         <%# Évolution — section repliable %>
         <details class="prot-sb-details"<% if (evols.length) { %> open<% } %>>
-          <summary class="prot-sb-details-summary">&Eacute;volution</summary>
+          <summary class="prot-sb-details-summary" data-fr-label="Évolution" data-en-label="Evolution"><%= _isEn ? 'Evolution' : '\u00c9volution' %></summary>
           <div class="prot-sb-details-body">
             <input type="hidden" name="evolutions" id="prot-evo-hidden"
               value="<%= protagoniste && protagoniste.evolutions ? JSON.stringify(protagoniste.evolutions) : '[]' %>" />
@@ -307,23 +308,29 @@
           </div>
         </div>
         <textarea name="description_physique" class="prot-desc-field"
-          data-fr-val="<%= (protagoniste ? (protagoniste.description_physique || '') : '').replace(/"/g, '&quot;') %>"
-          data-en-val="<%= (_trans.description_physique || '').replace(/"/g, '&quot;') %>"
+          data-fr-val="<%= protagoniste ? (protagoniste.description_physique || '') : '' %>"
+          data-en-val="<%= _trans.description_physique || '' %>"
+          data-placeholder-fr="Description physique, apparence…"
+          data-placeholder-en="Physical description…"
           placeholder="<%= _isEn ? 'Physical description\u2026' : 'Description physique, apparence\u2026' %>"
           rows="6" style="resize:vertical"><%= _vDescPhys %></textarea>
       </div>
 
       <%# Ligne 3 : Description générale %>
       <textarea name="description" class="prot-desc-field nv-form-content"
-        data-fr-val="<%= (protagoniste ? (protagoniste.description || '') : '').replace(/"/g, '&quot;') %>"
-        data-en-val="<%= (_trans.description || '').replace(/"/g, '&quot;') %>"
+        data-fr-val="<%= protagoniste ? (protagoniste.description || '') : '' %>"
+        data-en-val="<%= _trans.description || '' %>"
+        data-placeholder-fr="Description générale, personnalité, traits de caractère…"
+        data-placeholder-en="General description, personality…"
         placeholder="<%= _isEn ? 'General description, personality\u2026' : 'Description g\u00e9n\u00e9rale, personnalit\u00e9, traits de caract\u00e8re\u2026' %>"
         rows="6" style="resize:vertical"><%= _vDesc %></textarea>
 
       <%# Ligne 4 : Oeuvre et apparitions %>
       <textarea name="description_oeuvre" class="prot-desc-field"
-        data-fr-val="<%= (protagoniste ? (protagoniste.description_oeuvre || '') : '').replace(/"/g, '&quot;') %>"
-        data-en-val="<%= (_trans.description_oeuvre || '').replace(/"/g, '&quot;') %>"
+        data-fr-val="<%= protagoniste ? (protagoniste.description_oeuvre || '') : '' %>"
+        data-en-val="<%= _trans.description_oeuvre || '' %>"
+        data-placeholder-fr="Oeuvre d'origine, apparitions, rôle dans le récit…"
+        data-placeholder-en="Original work, appearances, role…"
         placeholder="<%= _isEn ? 'Original work, appearances, role\u2026' : 'Oeuvre d\u2019origine, apparitions, r\u00f4le dans le r\u00e9cit\u2026' %>"
         rows="5" style="resize:vertical"><%= _vDescOeuvre %></textarea>
 
@@ -355,7 +362,16 @@
       // Mettre à jour le champ caché _editLang
       if (_editLangHid) _editLangHid.value = isEn ? 'en' : '';
 
+      // Labels d'interface (options selects, summary…)
+      document.querySelectorAll('[data-fr-label]').forEach(function(el) {
+        if (el.children.length) return;
+        el.textContent = isEn ? (el.dataset.enLabel || el.textContent) : (el.dataset.frLabel || el.textContent);
+      });
 
+      // Placeholders
+      document.querySelectorAll('[data-placeholder-fr]').forEach(function(el) {
+        el.placeholder = isEn ? (el.dataset.placeholderEn || '') : (el.dataset.placeholderFr || '');
+      });
 
       // Évolution : basculer contrôles FR ↔ EN
       document.querySelectorAll('.prot-evo-fr-ctl').forEach(function(el) { el.hidden = isEn; });
