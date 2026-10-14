@@ -235,7 +235,42 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
   </button>
 </div>
 
-<script nonce="<%= nonce %>" src="/lootbox.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>">
+(function () {
+  // Badge immédiat depuis le serveur — sans attendre lootbox.js
+  var n = window.PENDING_LOOTBOXES || 0;
+  if (n > 0) {
+    var lbl = n > 99 ? '99+' : String(n);
+    ['nav-jeu-badge', 'nav-jeu-badge-mobile'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) { el.textContent = lbl; el.removeAttribute('hidden'); }
+    });
+  }
+
+  // Chargement paresseux : lootbox.js n'est chargé que si
+  //   - des lootboxes sont en attente (l'utilisateur voudra les ouvrir), OU
+  //   - on est sur une page qui a un déclencheur (jeu.ejs, favoris.ejs).
+  // Sur les autres pages avec count=0 : on économise ~10 Ko réseau par page.
+  function loadLb() {
+    var s = document.createElement('script');
+    s.src = '/lootbox.js?v=<%= assetVersion %>';
+    document.head.appendChild(s);
+  }
+
+  var hasTrigger = !!(
+    document.getElementById('jeu-lootbox-btn') ||
+    document.getElementById('pmd-lootbox-btn')
+  );
+
+  if (n > 0 || hasTrigger) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadLb);
+    } else {
+      loadLb();
+    }
+  }
+})();
+</script>
 <style>
 /* ── Carte Codex flip ──────────────────────────────────────── */
 .lootbox-ucard-codex-fill{position:absolute;inset:0;display:flex;align-items:stretch;justify-content:stretch;perspective:900px}

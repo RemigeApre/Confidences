@@ -92,6 +92,10 @@
     // Voir src/tagRegistry.js. Vide sur les pages qui ne le calculent pas
     // (evite le cout sur les pages sans aucun tag affiche).
     window.TAG_REGISTRY = <%- JSON.stringify(locals.tagRegistry || {}) %>;
+    // Lootboxes en attente — injecté côté serveur pour éviter un aller-retour
+    // réseau juste pour afficher le badge. Permet aussi le chargement paresseux
+    // de lootbox.js (voir foot.ejs).
+    window.PENDING_LOOTBOXES = <%= locals.pendingLootboxes || 0 %>;
   </script>
 </head>
 <body>

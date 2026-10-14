@@ -26,6 +26,7 @@ const {
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
   getUserById, isScanPath,
   getTranslation, getTranslationsForEntity,
+  getLootboxCount,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -100,6 +101,38 @@ if (process.env.TRUST_PROXY === "1") {
 }
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "..", "views"));
+
+// Fichiers statiques pré-compressés (.br / .gz) générés par scripts/build.js.
+// Ce middleware est placé AVANT compression() pour court-circuiter la
+// compression dynamique (plus lente) quand une version pré-compressée existe.
+// codex-sw.js exclu : il est servi no-cache par une route dédiée plus bas.
+const _STATIC_DIR   = path.join(__dirname, "..", "public");
+const _COMPRESS_EXT = new Set([".js", ".css"]);
+app.use(function servePrecompressed(req, res, next) {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  if (req.path === "/codex-sw.js") return next();
+  const ext = path.extname(req.path);
+  if (!_COMPRESS_EXT.has(ext)) return next();
+
+  const ae   = req.headers["accept-encoding"] || "";
+  const base = path.join(_STATIC_DIR, req.path);
+  let file = null, enc = null;
+
+  if (ae.includes("br") && fs.existsSync(base + ".br")) {
+    file = base + ".br"; enc = "br";
+  } else if (ae.includes("gzip") && fs.existsSync(base + ".gz")) {
+    file = base + ".gz"; enc = "gzip";
+  }
+  if (!file) return next();
+
+  res.set("Content-Encoding", enc);
+  res.set("Content-Type", ext === ".js"
+    ? "application/javascript; charset=utf-8"
+    : "text/css; charset=utf-8");
+  res.set("Cache-Control", "public, max-age=31536000, immutable");
+  res.set("Vary", "Accept-Encoding");
+  res.sendFile(file);
+});
 
 // Compression gzip/brotli des reponses texte (HTML/CSS/JS/JSON) : aucune
 // compression n'etait active avant (ni ici, ni dans le nginx.example.conf
@@ -224,6 +257,20 @@ app.use((req, res, next) => {
 });
 
 app.use(attachUser);
+
+// Compte les lootboxes en attente une seule fois par requête GET et l'injecte
+// dans res.locals pour que head.ejs puisse écrire window.PENDING_LOOTBOXES.
+// Permet à foot.ejs de charger lootbox.js de façon paresseuse (seulement si
+// count > 0 ou si la page contient un bouton déclencheur).
+app.use((req, res, next) => {
+  if (req.user && req.method === "GET") {
+    try { res.locals.pendingLootboxes = getLootboxCount(req.user.id); }
+    catch (_) { res.locals.pendingLootboxes = 0; }
+  } else {
+    res.locals.pendingLootboxes = 0;
+  }
+  next();
+});
 
 // ── Mur d'authentification global ───────────────────────────────────────────
 // Seules routes accessibles sans être connecté :
