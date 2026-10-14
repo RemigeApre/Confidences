@@ -12,7 +12,8 @@
     { value: 'homme', label: 'Homme' },
     { value: 'autre', label: 'Autre' }
   ];
-  var currentGender = protagoniste ? (protagoniste.gender || 'autre') : 'autre';
+  var currentGender = protagoniste ? (protagoniste.gender || '') : '';
+  var _hasParody = protagoniste && (protagoniste.parody || protagoniste.sub_parody);
 %>
 <main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste ? protagoniste.name : 'Nouveau personnage', navBack: protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' }) %>
@@ -31,77 +32,89 @@
 
     <%# ════════════════════════════════════════════════════════
         VOLET GAUCHE FIXE — paramètres partagés FR/EN
-        (position:fixed dans la marge gauche du container .wide)
         ════════════════════════════════════════════════════════ %>
     <aside class="prot-edit-sidebar" id="prot-edit-sidebar">
       <div class="prot-edit-sidebar-inner">
+
+        <%# Bouton retour — centré en haut du volet %>
+        <div class="prot-sb-back-wrap">
+          <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="prot-sb-back-btn">&#8592; Retour</a>
+        </div>
 
         <% if (_isEn) { %>
         <div class="prot-sb-en-badge">Commun FR/EN</div>
         <% } %>
 
-        <%# Genre %>
+        <%# Genre — pastilles icônes uniquement, centrées, sans titre %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
-          <span class="prot-sb-label">Genre</span>
-          <div class="prot-gender-btns prot-gender-btns--sm">
+          <div class="prot-gender-btns prot-gender-btns--icon">
             <% genderOpts.forEach(function(opt) { %>
-            <label class="prot-gender-btn prot-gender-btn--<%= opt.value %><%= currentGender === opt.value ? ' active' : '' %>">
+            <label class="prot-gender-btn prot-gender-btn--<%= opt.value %><%= currentGender === opt.value ? ' active' : '' %>" title="<%= opt.label %>">
               <input type="radio" name="gender" value="<%= opt.value %>" <%= currentGender === opt.value ? 'checked' : '' %> style="display:none" />
-              <% if (opt.value === 'femme') { %><svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
-              <% } else if (opt.value === 'homme') { %><svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
-              <% } else { %><svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+              <% if (opt.value === 'femme') { %>
+              <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+              <% } else if (opt.value === 'homme') { %>
+              <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+              <% } else { %>
+              <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
               <% } %>
-              <%= opt.label %>
             </label>
             <% }) %>
           </div>
         </div>
 
-        <%# Classification %>
+        <%# Classification — Ultra + Irréaliste uniquement, centrés, sans titre %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
-          <span class="prot-sb-label">Classification</span>
           <input type="hidden" name="special" id="prot-special-hidden" value="<%= protagoniste ? (protagoniste.special || '') : '' %>" />
-          <div class="prot-special-btns prot-special-btns--sm">
-            <button type="button" class="prot-special-btn<%= (!protagoniste || !protagoniste.special) ? ' active' : '' %>" data-val="">Normal</button>
+          <div class="prot-special-btns prot-special-btns--center">
             <button type="button" class="prot-special-btn prot-special-btn--ultra<%= (protagoniste && protagoniste.special === 'ultra') ? ' active' : '' %>" data-val="ultra">Ultra</button>
             <button type="button" class="prot-special-btn prot-special-btn--irrealiste<%= (protagoniste && protagoniste.special === 'irrealiste') ? ' active' : '' %>" data-val="irrealiste">Irr&eacute;aliste</button>
           </div>
         </div>
 
-        <%# Nature %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
-          <label class="prot-sb-label" for="prot-nature">Nature</label>
+        <%# Nature + Race/Espèce — sur la même ligne, sans titre %>
+        <div class="prot-sb-section prot-sb-section--row<% if (_isEn) { %> prot-sb-locked<% } %>">
           <select name="nature" id="prot-nature" class="prot-form-select-elegant prot-form-select-elegant--sm">
-            <option value="">— non d&eacute;finie —</option>
+            <option value="">Nature</option>
             <option value="humain"  <%= protagoniste && protagoniste.nature === 'humain'  ? 'selected' : '' %>>Humain</option>
             <option value="monstre" <%= protagoniste && protagoniste.nature === 'monstre' ? 'selected' : '' %>>Monstre</option>
             <option value="animal"  <%= protagoniste && protagoniste.nature === 'animal'  ? 'selected' : '' %>>Animal</option>
             <option value="pokemon" <%= protagoniste && protagoniste.nature === 'pokemon' ? 'selected' : '' %>>Pok&eacute;mon</option>
             <option value="autre"   <%= protagoniste && protagoniste.nature === 'autre'   ? 'selected' : '' %>>Autre</option>
           </select>
-        </div>
-
-        <%# Race / Espèce %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
-            <label class="prot-sb-label" for="prot-race" style="margin:0">Race / Esp&egrave;ce</label>
-            <button type="button" id="prot-race-manage-btn"
-              style="background:none;border:1px solid rgba(255,255,255,.14);color:#64748b;font-size:.62rem;padding:.1rem .4rem;border-radius:4px;cursor:pointer;flex-shrink:0">+ G&eacute;rer</button>
-          </div>
           <select name="race_id" id="prot-race" class="prot-form-select-elegant prot-form-select-elegant--sm">
-            <option value="">— aucune —</option>
+            <option value="">Esp&egrave;ce</option>
             <% _races.forEach(function(r) { %>
               <option value="<%= r.id %>" <%= String(_curRaceId) === String(r.id) ? 'selected' : '' %>><%= r.icon ? r.icon + ' ' : '' %><%= r.name %></option>
             <% }) %>
           </select>
+          <button type="button" id="prot-race-manage-btn"
+            style="background:none;border:1px solid rgba(255,255,255,.14);color:#64748b;font-size:.6rem;padding:.15rem .4rem;border-radius:4px;cursor:pointer;flex-shrink:0;white-space:nowrap">+</button>
         </div>
 
-        <%# Clan %>
+        <%# Âge + Orientation — sur la même ligne %>
+        <div class="prot-sb-section prot-sb-section--row<% if (_isEn) { %> prot-sb-locked<% } %>">
+          <input type="number" name="age" id="prot-age"
+            class="prot-form-select-elegant prot-form-select-elegant--sm"
+            min="18" max="999" step="1"
+            value="<%= protagoniste && protagoniste.age ? protagoniste.age : '' %>"
+            placeholder="&Acirc;ge" />
+          <select name="orientation" id="prot-orientation" class="prot-form-select-elegant prot-form-select-elegant--sm">
+            <option value="">Orientation</option>
+            <option value="hetero"  <%= protagoniste && protagoniste.orientation === 'hetero'  ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
+            <option value="homo"    <%= protagoniste && protagoniste.orientation === 'homo'    ? 'selected' : '' %>>Homo</option>
+            <option value="bi"      <%= protagoniste && protagoniste.orientation === 'bi'      ? 'selected' : '' %>>Bi</option>
+            <option value="pan"     <%= protagoniste && protagoniste.orientation === 'pan'     ? 'selected' : '' %>>Pan</option>
+            <option value="ace"     <%= protagoniste && protagoniste.orientation === 'ace'     ? 'selected' : '' %>>Asexuel</option>
+            <option value="autre"   <%= protagoniste && protagoniste.orientation === 'autre'   ? 'selected' : '' %>>Autre</option>
+          </select>
+        </div>
+
+        <%# Clan — apparaît si une race est sélectionnée %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" id="prot-clan-group"
           style="<%= (!_curRaceId || !_curRaceClans || !_curRaceClans.clans || !_curRaceClans.clans.length) ? 'display:none' : '' %>">
-          <label class="prot-sb-label" for="prot-clan">Clan</label>
           <select name="clan_id" id="prot-clan" class="prot-form-select-elegant prot-form-select-elegant--sm">
-            <option value="">— aucun clan —</option>
+            <option value="">Clan</option>
             <% if (_curRaceClans && _curRaceClans.clans) { _curRaceClans.clans.forEach(function(c) { %>
               <option value="<%= c.id %>" <%= String(_curClanId) === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
             <% }); } %>
@@ -162,49 +175,53 @@
           </div>
         </div>
 
-        <%# Évolutions %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked-soft<% } %>">
-          <span class="prot-sb-label">Cha&icirc;ne d'&eacute;volution</span>
-          <input type="hidden" name="evolutions" id="prot-evo-hidden"
-            value="<%= protagoniste && protagoniste.evolutions ? JSON.stringify(protagoniste.evolutions) : '[]' %>" />
-          <div class="prot-evo-chain" id="prot-evo-chain">
-            <% evols.forEach(function(evo, i) { %>
-              <div class="prot-evo-entry<% if (_isEn) { %> prot-evo-entry--en<% } %>" data-idx="<%= i %>">
-                <input type="text" class="prot-evo-inp lbep-input" value="<%= evo %>"
-                  placeholder="Forme pr&eacute;c&eacute;dente&hellip;" maxlength="100"<% if (_isEn) { %> disabled<% } %> />
-                <% if (_isEn) { %>
-                <input type="text" class="prot-evo-en-inp lbep-input"
-                  value="<%= _trans['evo_' + i + '_en'] || '' %>" placeholder="English name&hellip;" maxlength="100" />
-                <% } else { %>
-                <button type="button" class="prot-evo-btn prot-evo-up" title="Monter">&uarr;</button>
-                <button type="button" class="prot-evo-btn prot-evo-down" title="Descendre">&darr;</button>
-                <button type="button" class="prot-evo-btn prot-evo-remove" title="Supprimer">&times;</button>
-                <% } %>
-              </div>
-            <% }) %>
+        <%# Évolution — section repliable %>
+        <details class="prot-sb-details<% if (_isEn) { %> prot-sb-locked-soft<% } %>"<% if (evols.length) { %> open<% } %>>
+          <summary class="prot-sb-details-summary">&Eacute;volution</summary>
+          <div class="prot-sb-details-body">
+            <input type="hidden" name="evolutions" id="prot-evo-hidden"
+              value="<%= protagoniste && protagoniste.evolutions ? JSON.stringify(protagoniste.evolutions) : '[]' %>" />
+            <div class="prot-evo-chain" id="prot-evo-chain">
+              <% evols.forEach(function(evo, i) { %>
+                <div class="prot-evo-entry<% if (_isEn) { %> prot-evo-entry--en<% } %>" data-idx="<%= i %>">
+                  <input type="text" class="prot-evo-inp lbep-input" value="<%= evo %>"
+                    placeholder="Forme pr&eacute;c&eacute;dente&hellip;" maxlength="100"<% if (_isEn) { %> disabled<% } %> />
+                  <% if (_isEn) { %>
+                  <input type="text" class="prot-evo-en-inp lbep-input"
+                    value="<%= _trans['evo_' + i + '_en'] || '' %>" placeholder="English name&hellip;" maxlength="100" />
+                  <% } else { %>
+                  <button type="button" class="prot-evo-btn prot-evo-up" title="Monter">&uarr;</button>
+                  <button type="button" class="prot-evo-btn prot-evo-down" title="Descendre">&darr;</button>
+                  <button type="button" class="prot-evo-btn prot-evo-remove" title="Supprimer">&times;</button>
+                  <% } %>
+                </div>
+              <% }) %>
+            </div>
+            <div class="prot-evo-final">
+              <span class="prot-evo-arrow">&rarr;</span>
+              <span class="prot-evo-final-name"><%= protagoniste ? protagoniste.name : '(forme finale)' %></span>
+            </div>
+            <% if (!_isEn) { %>
+            <button type="button" class="prot-evo-add-btn" id="prot-evo-add">+ Ajouter</button>
+            <% } %>
           </div>
-          <div class="prot-evo-final">
-            <span class="prot-evo-arrow">&rarr;</span>
-            <span class="prot-evo-final-name"><%= protagoniste ? protagoniste.name : '(forme finale)' %></span>
-          </div>
-          <% if (!_isEn) { %>
-          <button type="button" class="prot-evo-add-btn" id="prot-evo-add">+ Ajouter</button>
-          <% } %>
-        </div>
+        </details>
 
-        <%# Parodies %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
-          <%- include('partials/parody-input', {
-                idPrefix:  'protf',
-                mainValue: protagoniste ? protagoniste.parody    : '',
-                subValue:  protagoniste ? protagoniste.sub_parody : '',
-                mainPh:    'Univers (ex\u00a0: Pok\u00e9mon)\u2026'
-              }) %>
-        </div>
+        <%# Parodies — section repliable %>
+        <details class="prot-sb-details<% if (_isEn) { %> prot-sb-locked<% } %>"<% if (_hasParody) { %> open<% } %>>
+          <summary class="prot-sb-details-summary">Parodies</summary>
+          <div class="prot-sb-details-body">
+            <%- include('partials/parody-input', {
+                  idPrefix:  'protf',
+                  mainValue: protagoniste ? protagoniste.parody    : '',
+                  subValue:  protagoniste ? protagoniste.sub_parody : '',
+                  mainPh:    'Univers (ex\u00a0: Pok\u00e9mon)\u2026'
+                }) %>
+          </div>
+        </details>
 
         <%# Tags %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
-          <span class="prot-sb-label">Tags</span>
           <% if (allTags && allTags.length) { %>
             <script id="prot-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
           <% } %>
@@ -239,7 +256,6 @@
     <%# ════════════════════════════════════════════════
         CONTENU CENTRAL — dans le flux normal du container
         ════════════════════════════════════════════════ %>
-    <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="wf-back-btn">&#8592; Retour</a>
 
     <div class="wf-actions-right">
       <% if (protagoniste) { %>
@@ -348,15 +364,25 @@
       });
     });
 
-    // ── Classification ──
+    // ── Classification — toggle (Ultra / Irréaliste) ──
     var specialHidden = document.getElementById('prot-special-hidden');
     document.querySelectorAll('.prot-special-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
+        var wasActive = btn.classList.contains('active');
         document.querySelectorAll('.prot-special-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        if (specialHidden) specialHidden.value = btn.dataset.val || '';
+        if (!wasActive) btn.classList.add('active');
+        if (specialHidden) specialHidden.value = wasActive ? '' : (btn.dataset.val || '');
       });
     });
+
+    // ── Âge : interdire < 18 ──
+    var ageInput = document.getElementById('prot-age');
+    if (ageInput) {
+      ageInput.addEventListener('blur', function() {
+        var v = parseInt(ageInput.value, 10);
+        if (!isNaN(v) && v > 0 && v < 18) ageInput.value = 18;
+      });
+    }
 
     // ── Évolutions ──
     (function() {
@@ -481,10 +507,10 @@
     if(raceSelect){
       raceSelect.addEventListener('change',function(){
         var raceId=raceSelect.value;
-        if(!raceId){clanGroup.style.display='none';clanSelect.innerHTML='<option value="">— aucun clan —</option>';return;}
+        if(!raceId){clanGroup.style.display='none';clanSelect.innerHTML='<option value="">Clan</option>';return;}
         fetch('/protagonistes/api/races/'+raceId+'/clans').then(function(r){return r.json();}).then(function(data){
           var clans=data.clans||[];while(clanSelect.options.length>0)clanSelect.remove(0);
-          var def=document.createElement('option');def.value='';def.textContent='— aucun clan —';clanSelect.appendChild(def);
+          var def=document.createElement('option');def.value='';def.textContent='Clan';clanSelect.appendChild(def);
           clans.forEach(function(c){var opt=document.createElement('option');opt.value=c.id;opt.textContent=c.name;clanSelect.appendChild(opt);});
           clanGroup.style.display=clans.length?'':'none';
         });

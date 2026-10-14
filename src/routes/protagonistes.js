@@ -41,6 +41,7 @@ const galleryUpload = multer({
 
 const VALID_GENDERS = new Set(["femme", "homme", "autre", ""]);
 const VALID_NATURES = new Set(["humain", "monstre", "animal", "pokemon", "autre", ""]);
+const VALID_ORIENTATIONS = new Set(["hetero", "homo", "bi", "pan", "ace", "autre", ""]);
 
 function buildProtagonistesRouter(config) {
   const router = express.Router();
@@ -72,9 +73,12 @@ function buildProtagonistesRouter(config) {
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
     const gender = VALID_GENDERS.has(req.body.gender) ? req.body.gender : "";
     const nature = VALID_NATURES.has(req.body.nature) ? req.body.nature : "";
+    const orientation = VALID_ORIENTATIONS.has(req.body.orientation) ? req.body.orientation : "";
+    const age = Math.max(0, parseInt(req.body.age || "0", 10) || 0);
+    const ageVal = age > 0 ? Math.max(18, age) : 0;
     const imagePath = req.file ? `/uploads/personnages/${req.file.filename}` : "";
     const special = req.body.special || "";
-    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody, subParody, gender, nature, imagePath, special });
+    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody, subParody, gender, nature, imagePath, special, age: ageVal, orientation });
     const raceId = req.body.race_id ? Number(req.body.race_id) : null;
     const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
     if (raceId) setProtagonisteRace(id, raceId, clanId);
@@ -137,6 +141,9 @@ function buildProtagonistesRouter(config) {
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
     const gender = VALID_GENDERS.has(req.body.gender) ? req.body.gender : "";
     const nature = VALID_NATURES.has(req.body.nature) ? req.body.nature : "";
+    const orientation = VALID_ORIENTATIONS.has(req.body.orientation) ? req.body.orientation : "";
+    const age = Math.max(0, parseInt(req.body.age || "0", 10) || 0);
+    const ageVal = age > 0 ? Math.max(18, age) : 0;
     const imagePath = req.file
       ? `/uploads/personnages/${req.file.filename}`
       : (req.body.remove_image === "1" ? "" : undefined);
@@ -159,6 +166,8 @@ function buildProtagonistesRouter(config) {
       imagePath,
       evolutions,
       special: req.body.special || "",
+      age: ageVal,
+      orientation,
     });
     const raceId = req.body.race_id ? Number(req.body.race_id) : null;
     const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
