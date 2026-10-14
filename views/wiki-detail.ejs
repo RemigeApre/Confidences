@@ -10,23 +10,35 @@
     var wdCanSeeOwned = !!(currentUser && (currentUser.isAdmin || currentUser.canSeeOwned));
     var pm = page.meta || {};
 
-    var FSUBS = { jeux_role: 'Jeux de rôle et comportement', hardcore: 'Hardcore', bdsm: 'BDSM', classique: 'Classique', fantaisie: 'Fantaisie' };
-    var PRATIQUES_SOUS = { sperme: 'Sperme', autre: 'Autre' };
+    var FSUBS    = { jeux_role: 'Jeux de rôle et comportement', hardcore: 'Hardcore', bdsm: 'BDSM', classique: 'Classique', fantaisie: 'Fantaisie' };
+    var FSUBS_EN = { jeux_role: 'Role-play & behaviour', hardcore: 'Hardcore', bdsm: 'BDSM', classique: 'Classic', fantaisie: 'Fantasy' };
+    var PRATIQUES_SOUS    = { sperme: 'Sperme', autre: 'Autre' };
+    var PRATIQUES_SOUS_EN = { sperme: 'Cum', autre: 'Other' };
     var nbTotal   = pm.nb_total    || '';
     var nbFem     = pm.nb_feminin  || pm.nb_femmes || '';
     var nbMasc    = pm.nb_masculin || pm.nb_hommes || '';
     var pmTypes   = Array.isArray(pm.types) ? pm.types : [];
-    var TYPES_PART = { nombre: 'Nombre', fetichisme: 'Fétichisme', monstre: 'Monstre', animaux: 'Animaux', autre: 'Autre' };
+    var TYPES_PART    = { nombre: 'Nombre', fetichisme: 'Fétichisme', monstre: 'Monstre', animaux: 'Animaux', autre: 'Autre' };
+    var TYPES_PART_EN = { nombre: 'Number', fetichisme: 'Fetishism', monstre: 'Monster', animaux: 'Animals', autre: 'Other' };
     var hasPartMeta = page.category === 'partenaires' && (nbTotal || nbFem || nbMasc || pmTypes.length);
-    var LIEU = { prive: 'Privé', public: 'Public', cache: 'Caché' };
-    var OBJETS_SOUS = { substance: 'Substance', gode: 'Gode', bdsm: 'BDSM', fantaisie: 'Fantaisie', tatouage: 'Tatouage', autre: 'Autre' };
+    var LIEU    = { prive: 'Privé', public: 'Public', cache: 'Caché' };
+    var LIEU_EN = { prive: 'Private', public: 'Public', cache: 'Hidden' };
+    var OBJETS_SOUS    = { substance: 'Substance', gode: 'Gode', bdsm: 'BDSM', fantaisie: 'Fantaisie', tatouage: 'Tatouage', autre: 'Autre' };
+    var OBJETS_SOUS_EN = { substance: 'Substance', gode: 'Dildo', bdsm: 'BDSM', fantaisie: 'Fantasy', tatouage: 'Tattoo', autre: 'Other' };
     var QUI    = { femme: 'Femme', homme: 'Homme', variable: 'Variable', aucun: 'Debout / aucun' };
+    var QUI_EN = { femme: 'Female', homme: 'Male', variable: 'Variable', aucun: 'Standing / none' };
     var CAN    = { vagin: 'Vagin', anus: 'Anus', bouche: 'Bouche', mains: 'Mains', autre: 'Autre' };
+    var CAN_EN = { vagin: 'Vagina', anus: 'Anus', bouche: 'Mouth', mains: 'Hands', autre: 'Other' };
     var ORI    = { face_a_face: 'Face à face', face_contre_dos: 'Face contre dos', cote_a_cote: 'Côte à côte', acrobatique: 'Acrobatique', autre: 'Autre' };
-    var POSCAT = { penetration: 'Pénétration', fellation_cunnilingus: 'Fellation / Cunnilingus', anilingus: 'Anilingus', stimulation_manuelle: 'Stimulation manuelle', double_penetration: 'Double pénétration', position_69: 'Position 69', autre: 'Autre' };
-    var NBPART = { '2': '2', '3': '3', '4plus': '4+', variable: 'Variable' };
-    var ACTIF  = { femme: 'Femme', homme: 'Homme', les_deux: 'Les deux', variable: 'Variable' };
+    var ORI_EN = { face_a_face: 'Face to face', face_contre_dos: 'Rear entry', cote_a_cote: 'Side by side', acrobatique: 'Acrobatic', autre: 'Other' };
+    var POSCAT    = { penetration: 'Pénétration', fellation_cunnilingus: 'Fellation / Cunnilingus', anilingus: 'Anilingus', stimulation_manuelle: 'Stimulation manuelle', double_penetration: 'Double pénétration', position_69: 'Position 69', autre: 'Autre' };
+    var POSCAT_EN = { penetration: 'Penetration', fellation_cunnilingus: 'Fellatio / Cunnilingus', anilingus: 'Anilingus', stimulation_manuelle: 'Manual stimulation', double_penetration: 'Double penetration', position_69: '69 position', autre: 'Other' };
+    var NBPART    = { '2': '2', '3': '3', '4plus': '4+', variable: 'Variable' };
+    var NBPART_EN = { '2': '2', '3': '3', '4plus': '4+', variable: 'Variable' };
+    var ACTIF    = { femme: 'Femme', homme: 'Homme', les_deux: 'Les deux', variable: 'Variable' };
+    var ACTIF_EN = { femme: 'Female', homme: 'Male', les_deux: 'Both', variable: 'Variable' };
     var SUP    = { lit: 'Lit', sol: 'Sol', chaise: 'Chaise', canape: 'Canapé / Bord de lit', mur: 'Contre un mur', table: 'Table / Plan', bain: 'Bain / Douche', autre: 'Autre' };
+    var SUP_EN = { lit: 'Bed', sol: 'Floor', chaise: 'Chair', canape: 'Sofa / Bedside', mur: 'Against a wall', table: 'Table / Counter', bain: 'Bath / Shower', autre: 'Other' };
     var pmOri  = Array.isArray(pm.orientation) ? pm.orientation : (pm.orientation ? [pm.orientation] : []);
     var pmSup  = Array.isArray(pm.supports) ? pm.supports : (pm.supports ? [pm.supports] : []);
     var hasPosMeta = page.category === 'position' && (pm.categorie || pm.qui_dessus || (pm.canal && pm.canal.length) || pmOri.length || pm.nb_partenaires || pm.partenaire_actif || pmSup.length);
@@ -38,24 +50,45 @@
     var hasAnyTags = page.tags.length || derivedTerms.length;
     // ── Maps de labels partenaires ──
     var SOUS_CAT_PART    = { nombre: 'Nombre', monstre: 'Monstre', animaux: 'Animal', fetichisme: 'Fétichisme', autre: 'Autre' };
-    var NATURE_ACTE_LBL  = { possible: 'Possible', improbable: 'Improbable', impossible: 'Impossible', fictif: 'Fictif\u00a0/\u00a0Fantastique', inconnu: 'Inconnu' };
-    var CADRE_LEGAL_LBL  = { legal: 'L\u00e9gal', flou: 'Flou', illegal: 'Ill\u00e9gal', inconnu: 'Inconnu' };
-    var RISQUE_LBL       = { inconnu: 'Inconnu', nul: 'Nul', faible: 'Faible', modere: 'Mod\u00e9r\u00e9', eleve: '\u00c9lev\u00e9', extreme: 'Extr\u00eame' };
-    var ACCES_LBL        = { tres_rare: 'Tr\u00e8s rare', rare: 'Rare', occasionnel: 'Occasionnel', frequent: 'Fr\u00e9quent', inconnu: 'Inconnu' };
-    var TYPE_CREATURE_LBL= { machine: 'Machine', sang_froid: 'Sang froid', mammifere: 'Mammif\u00e8re', insectoide: 'Insecto\u00efde', amorphe: 'Amorphe', elementaire: '\u00c9l\u00e9mentaire', autre: 'Autre' };
+    var SOUS_CAT_PART_EN = { nombre: 'Number', monstre: 'Monster', animaux: 'Animal', fetichisme: 'Fetishism', autre: 'Other' };
+    var NATURE_ACTE_LBL    = { possible: 'Possible', improbable: 'Improbable', impossible: 'Impossible', fictif: 'Fictif\u00a0/\u00a0Fantastique', inconnu: 'Inconnu' };
+    var NATURE_ACTE_LBL_EN = { possible: 'Possible', improbable: 'Improbable', impossible: 'Impossible', fictif: 'Fictional\u00a0/\u00a0Fantastic', inconnu: 'Unknown' };
+    var CADRE_LEGAL_LBL    = { legal: 'L\u00e9gal', flou: 'Flou', illegal: 'Ill\u00e9gal', inconnu: 'Inconnu' };
+    var CADRE_LEGAL_LBL_EN = { legal: 'Legal', flou: 'Unclear', illegal: 'Illegal', inconnu: 'Unknown' };
+    var RISQUE_LBL    = { inconnu: 'Inconnu', nul: 'Nul', faible: 'Faible', modere: 'Mod\u00e9r\u00e9', eleve: '\u00c9lev\u00e9', extreme: 'Extr\u00eame' };
+    var RISQUE_LBL_EN = { inconnu: 'Unknown', nul: 'None', faible: 'Low', modere: 'Moderate', eleve: 'High', extreme: 'Extreme' };
+    var ACCES_LBL    = { tres_rare: 'Tr\u00e8s rare', rare: 'Rare', occasionnel: 'Occasionnel', frequent: 'Fr\u00e9quent', inconnu: 'Inconnu' };
+    var ACCES_LBL_EN = { tres_rare: 'Very rare', rare: 'Rare', occasionnel: 'Occasional', frequent: 'Frequent', inconnu: 'Unknown' };
+    var TYPE_CREATURE_LBL    = { machine: 'Machine', sang_froid: 'Sang froid', mammifere: 'Mammif\u00e8re', insectoide: 'Insecto\u00efde', amorphe: 'Amorphe', elementaire: '\u00c9l\u00e9mentaire', autre: 'Autre' };
+    var TYPE_CREATURE_LBL_EN = { machine: 'Machine', sang_froid: 'Cold-blooded', mammifere: 'Mammal', insectoide: 'Insectoid', amorphe: 'Amorphous', elementaire: 'Elemental', autre: 'Other' };
     var TYPE_ACTE_LBL    = { penetration: 'P\u00e9n\u00e9tration', absorption: 'Absorption', constriction: 'Constriction', pondaison: 'Pondaison', investation: 'Investation', possession: 'Possession', fusion: 'Fusion', parasitage: 'Parasitage', transformation: 'Transformation', insemination: 'Ins\u00e9mination', aucun_variable: 'Aucun\u00a0/\u00a0variable', autre: 'Autre' };
-    var INTEL_LBL        = { bestiale: 'Bestiale', faible: 'Faible', correcte: 'Correcte', forte: 'Forte', inconnu: 'Inconnu' };
-    var PAROLE_LBL       = { impossible: 'Impossible', possible: 'Possible', oui: 'Oui', frequente: 'Fr\u00e9quente', inconnu: 'Inconnu' };
-    var COMPAT_LBL       = { oui: 'Oui', non: 'Non', partielle: 'Partielle', inconnu: 'Inconnu' };
-    var ORIGINE_LBL      = { fantaisie: 'Fantaisie', science_fiction: 'Science-fiction', imaginaire: 'Imaginaire', autre: 'Autre' };
-    var FAMILLE_ZOO_LBL  = { canide: 'Canid\u00e9', equide: '\u00c9quid\u00e9', felin: 'F\u00e9lin', bovin: 'Bovin', reptile: 'Reptile', aviaire: 'Aviaire', cetace: 'C\u00e9tac\u00e9', autre: 'Autre' };
-    var TAILLE_ANIM_LBL  = { petit: 'Petit', egal: '\u00c9gal', grand: 'Grand', tres_grand: 'Tr\u00e8s grand' };
-    var NATURE_ESP_LBL   = { domestique: 'Domestique', sauvage: 'Sauvage', inconnu: 'Inconnu' };
-    var QUAL_LBL         = { faible: 'Faible', modere: 'Mod\u00e9r\u00e9(e)', grand: 'Grand(e)', tres_grand: 'Tr\u00e8s grand(e)' };
-    var VERR_LBL         = { aucun: 'Aucun', noeud: 'N\u0153ud', epines: '\u00c9pines', ventouses: 'Ventouses', partiel: 'Partiel', autre: 'Autre', inconnu: 'Inconnu' };
-    var SENS_LBL         = { pression: 'Pression', remplissage: 'Remplissage', frottement: 'Frottement', elongation: '\u00c9longation', vibration: 'Vibration', chaleur: 'Chaleur', secousse: 'Secousse', autre: 'Autre' };
-    var MILIEU_LBL       = { terrestre: 'Terrestre', aerien: 'A\u00e9rien', aquatique_mer: 'Aquatique (mer)', dulcaquicole: 'Dul\u00e7aquicole', semi_aquatique: 'Semi-aquatique', souterrain: 'Souterrain', inconnu: 'Inconnu' };
-    var STRUCT_LBL       = { monogame: 'Monogame', polygame: 'Polygame', polyandrie: 'Polyandrie', promiscuite: 'Promiscuit\u00e9', sans_lien: 'Sans lien', harem: 'Harem', coloniale: 'Coloniale', saisonniere: 'Saisonni\u00e8re', variable: 'Variable', inconnu: 'Inconnu' };
+    var TYPE_ACTE_LBL_EN = { penetration: 'Penetration', absorption: 'Absorption', constriction: 'Constriction', pondaison: 'Egg-laying', investation: 'Infestation', possession: 'Possession', fusion: 'Fusion', parasitage: 'Parasitism', transformation: 'Transformation', insemination: 'Insemination', aucun_variable: 'None\u00a0/\u00a0variable', autre: 'Other' };
+    var INTEL_LBL    = { bestiale: 'Bestiale', faible: 'Faible', correcte: 'Correcte', forte: 'Forte', inconnu: 'Inconnu' };
+    var INTEL_LBL_EN = { bestiale: 'Bestial', faible: 'Low', correcte: 'Moderate', forte: 'High', inconnu: 'Unknown' };
+    var PAROLE_LBL    = { impossible: 'Impossible', possible: 'Possible', oui: 'Oui', frequente: 'Fr\u00e9quente', inconnu: 'Inconnu' };
+    var PAROLE_LBL_EN = { impossible: 'Impossible', possible: 'Possible', oui: 'Yes', frequente: 'Frequent', inconnu: 'Unknown' };
+    var COMPAT_LBL    = { oui: 'Oui', non: 'Non', partielle: 'Partielle', inconnu: 'Inconnu' };
+    var COMPAT_LBL_EN = { oui: 'Yes', non: 'No', partielle: 'Partial', inconnu: 'Unknown' };
+    var ORIGINE_LBL    = { fantaisie: 'Fantaisie', science_fiction: 'Science-fiction', imaginaire: 'Imaginaire', autre: 'Autre' };
+    var ORIGINE_LBL_EN = { fantaisie: 'Fantasy', science_fiction: 'Science fiction', imaginaire: 'Imaginary', autre: 'Other' };
+    var FAMILLE_ZOO_LBL    = { canide: 'Canid\u00e9', equide: '\u00c9quid\u00e9', felin: 'F\u00e9lin', bovin: 'Bovin', reptile: 'Reptile', aviaire: 'Aviaire', cetace: 'C\u00e9tac\u00e9', autre: 'Autre' };
+    var FAMILLE_ZOO_LBL_EN = { canide: 'Canid', equide: 'Equid', felin: 'Feline', bovin: 'Bovine', reptile: 'Reptile', aviaire: 'Avian', cetace: 'Cetacean', autre: 'Other' };
+    var TAILLE_ANIM_LBL    = { petit: 'Petit', egal: '\u00c9gal', grand: 'Grand', tres_grand: 'Tr\u00e8s grand' };
+    var TAILLE_ANIM_LBL_EN = { petit: 'Small', egal: 'Equal', grand: 'Large', tres_grand: 'Very large' };
+    var NATURE_ESP_LBL    = { domestique: 'Domestique', sauvage: 'Sauvage', inconnu: 'Inconnu' };
+    var NATURE_ESP_LBL_EN = { domestique: 'Domestic', sauvage: 'Wild', inconnu: 'Unknown' };
+    var QUAL_LBL    = { faible: 'Faible', modere: 'Mod\u00e9r\u00e9(e)', grand: 'Grand(e)', tres_grand: 'Tr\u00e8s grand(e)' };
+    var QUAL_LBL_EN = { faible: 'Low', modere: 'Moderate', grand: 'Large', tres_grand: 'Very large' };
+    var VERR_LBL    = { aucun: 'Aucun', noeud: 'N\u0153ud', epines: '\u00c9pines', ventouses: 'Ventouses', partiel: 'Partiel', autre: 'Autre', inconnu: 'Inconnu' };
+    var VERR_LBL_EN = { aucun: 'None', noeud: 'Knot', epines: 'Spines', ventouses: 'Suction cups', partiel: 'Partial', autre: 'Other', inconnu: 'Unknown' };
+    var SENS_LBL    = { pression: 'Pression', remplissage: 'Remplissage', frottement: 'Frottement', elongation: '\u00c9longation', vibration: 'Vibration', chaleur: 'Chaleur', secousse: 'Secousse', autre: 'Autre' };
+    var SENS_LBL_EN = { pression: 'Pressure', remplissage: 'Fullness', frottement: 'Friction', elongation: 'Stretching', vibration: 'Vibration', chaleur: 'Heat', secousse: 'Thrust', autre: 'Other' };
+    var MILIEU_LBL    = { terrestre: 'Terrestre', aerien: 'A\u00e9rien', aquatique_mer: 'Aquatique (mer)', dulcaquicole: 'Dul\u00e7aquicole', semi_aquatique: 'Semi-aquatique', souterrain: 'Souterrain', inconnu: 'Inconnu' };
+    var MILIEU_LBL_EN = { terrestre: 'Terrestrial', aerien: 'Aerial', aquatique_mer: 'Aquatic (sea)', dulcaquicole: 'Freshwater', semi_aquatique: 'Semi-aquatic', souterrain: 'Underground', inconnu: 'Unknown' };
+    var STRUCT_LBL    = { monogame: 'Monogame', polygame: 'Polygame', polyandrie: 'Polyandrie', promiscuite: 'Promiscuit\u00e9', sans_lien: 'Sans lien', harem: 'Harem', coloniale: 'Coloniale', saisonniere: 'Saisonni\u00e8re', variable: 'Variable', inconnu: 'Inconnu' };
+    var STRUCT_LBL_EN = { monogame: 'Monogamous', polygame: 'Polygamous', polyandrie: 'Polyandrous', promiscuite: 'Promiscuous', sans_lien: 'No bond', harem: 'Harem', coloniale: 'Colonial', saisonniere: 'Seasonal', variable: 'Variable', inconnu: 'Unknown' };
+
+    var WD_CAT_EN = { partenaires: 'Partners', position: 'Position', fantasmes: 'Fantasies', pratique: 'Practice', objets: 'Objects', lieux: 'Places', classique: 'Classic', hardcore: 'Hardcore', bdsm: 'BDSM', jeux_role: 'Role-play', fantaisie: 'Fantasy' };
   %>
 
   <script id="wiki-existing-pages" type="application/json"><%- JSON.stringify(pages.map(function(p){ return { id: p.id, title: p.title, category: p.category, extraCats: p.extraCategories || [], rating: p.rating || 0, date: new Date(p.updatedAt).getTime() }; })) %></script>
@@ -69,7 +102,7 @@
       <h1 class="wiki-detail-banner-title"><%= t(page.title, 'wiki', page.id, 'title') %></h1>
       <% if ((page.extraCategories && page.extraCategories.length) || (wdCanSeeOwned && page.owned)) { %>
         <div class="wiki-detail-banner-sub">
-          <% if (wdCanSeeOwned && page.owned) { %><span>&#9733; Poss&eacute;d&eacute;</span><% } %>
+          <% if (wdCanSeeOwned && page.owned) { %><span data-fr="★ Possédé" data-en="★ Owned">&#9733; Poss&eacute;d&eacute;</span><% } %>
           <% (page.extraCategories || []).forEach(function (eck) { var ecat = categories.find(function (c) { return c.key === eck; }); %>
             <span><%= ecat ? ecat.label : eck %></span>
           <% }) %>
@@ -81,10 +114,10 @@
         arrive ici via le bouton du volet filtre codex (?explore=1). ─ %>
     <% if (locals.exploreMode) { %>
       <div class="wiki-explore-banner" id="wiki-explore-banner" data-page-id="<%= page.id %>">
-        <span class="wiki-explore-banner-label">Mode exploration</span>
+        <span class="wiki-explore-banner-label" data-fr="Mode exploration" data-en="Explore mode">Mode exploration</span>
         <div class="wiki-explore-banner-actions">
-          <button type="button" id="wiki-explore-prev" class="wiki-explore-nav-btn" title="Page pr&eacute;c&eacute;dente" aria-label="Page pr&eacute;c&eacute;dente" disabled>&#8592; Pr&eacute;c&eacute;dent</button>
-          <button type="button" id="wiki-explore-next" class="wiki-explore-nav-btn" title="Page suivante" aria-label="Page suivante">Suivant &#8594;</button>
+          <button type="button" id="wiki-explore-prev" class="wiki-explore-nav-btn" title="Page pr&eacute;c&eacute;dente" aria-label="Page pr&eacute;c&eacute;dente" disabled data-fr="← Précédent" data-en="← Previous">&#8592; Pr&eacute;c&eacute;dent</button>
+          <button type="button" id="wiki-explore-next" class="wiki-explore-nav-btn" title="Page suivante" aria-label="Page suivante" data-fr="Suivant →" data-en="Next →">Suivant &#8594;</button>
         </div>
         <a href="/wiki/<%= page.id %>" class="wiki-explore-banner-close" title="Quitter le mode exploration" aria-label="Quitter le mode exploration">&times;</a>
       </div>
@@ -120,16 +153,16 @@
         <%# Ligne du haut : catégorie + icône éditoriale en face %>
         <div class="wiki-left-top-row">
           <% if (cat) { %>
-            <a href="/wiki/categorie/<%= page.category %>" class="wiki-left-cat-link"><%= cat.label %></a>
+            <a href="/wiki/categorie/<%= page.category %>" class="wiki-left-cat-link" data-fr="<%= cat.label %>" data-en="<%= WD_CAT_EN[page.category] || cat.label %>"><%= cat.label %></a>
           <% } %>
           <% if (page.category === 'partenaires' && (pm.sous_cat === 'monstre' || pm.sous_cat === 'animaux')) { %>
             <details class="wiki-editorial-note">
-              <summary class="wiki-editorial-icon" title="Note &eacute;ditoriale">!</summary>
+              <summary class="wiki-editorial-icon" title="Note &eacute;ditoriale" data-fr="Note éditoriale" data-en="Editorial note">!</summary>
               <div class="wiki-editorial-body">
-                <p class="wiki-editorial-body-title">Note &eacute;ditoriale</p>
-                <p>La zoophilie comme fantasme n&rsquo;est trait&eacute;e que sur l&rsquo;id&eacute;e femme&ndash;animal, idem pour les monstres, femme&ndash;monstre, sauf cas particulier. C&rsquo;est un choix &eacute;ditorial, et une volont&eacute;.</p>
+                <p class="wiki-editorial-body-title" data-fr="Note éditoriale" data-en="Editorial note">Note &eacute;ditoriale</p>
+                <p data-fr="La zoophilie comme fantasme n'est traitée que sur l'idée femme–animal, idem pour les monstres, femme–monstre, sauf cas particulier. C'est un choix éditorial, et une volonté." data-en="Zoophilia as a fantasy is only covered from the woman–animal perspective, same for monsters (woman–monster), except in specific cases. This is an editorial choice, and a deliberate one.">La zoophilie comme fantasme n&rsquo;est trait&eacute;e que sur l&rsquo;id&eacute;e femme&ndash;animal, idem pour les monstres, femme&ndash;monstre, sauf cas particulier. C&rsquo;est un choix &eacute;ditorial, et une volont&eacute;.</p>
                 <% if (currentUser) { %>
-                  <p>Le rapport femme&ndash;autre esp&egrave;ce part du postulat o&ugrave; l&rsquo;animal est consentant, ce que le rapport homme&ndash;animal ne permet pas du tout. De plus, c&rsquo;est aussi un choix esth&eacute;tique&nbsp;: le site et sa ligne &eacute;ditoriale ont go&ucirc;t de l&rsquo;&eacute;l&eacute;gance, que ne poss&egrave;derait en rien l&rsquo;homme en ce contexte de fantasme.</p>
+                  <p data-fr="Le rapport femme–autre espèce part du postulat où l'animal est consentant, ce que le rapport homme–animal ne permet pas du tout. De plus, c'est aussi un choix esthétique : le site et sa ligne éditoriale ont goût de l'élégance, que ne posséderait en rien l'homme en ce contexte de fantasme." data-en="The woman–other species dynamic rests on the premise that the animal is willing, which the man–animal dynamic simply does not allow. It is also an aesthetic choice: the site and its editorial line favour elegance, something a male perspective would entirely lack in this fantasy context.">Le rapport femme&ndash;autre esp&egrave;ce part du postulat o&ugrave; l&rsquo;animal est consentant, ce que le rapport homme&ndash;animal ne permet pas du tout. De plus, c&rsquo;est aussi un choix esth&eacute;tique&nbsp;: le site et sa ligne &eacute;ditoriale ont go&ucirc;t de l&rsquo;&eacute;l&eacute;gance, que ne poss&egrave;derait en rien l&rsquo;homme en ce contexte de fantasme.</p>
                 <% } %>
               </div>
             </details>
@@ -137,7 +170,7 @@
         </div>
 
         <% if (wdCanSeeOwned && page.owned) { %>
-          <span class="wiki-left-owned">&#9733;&nbsp;Poss&eacute;d&eacute;</span>
+          <span class="wiki-left-owned" data-fr="★ Possédé" data-en="★ Owned">&#9733;&nbsp;Poss&eacute;d&eacute;</span>
         <% } %>
 
         <%# ─ Partenaires : affichage riche complet ─ %>
@@ -155,52 +188,55 @@
 
             <%# Badge type %>
             <% if (pm.sous_cat && SOUS_CAT_PART[pm.sous_cat]) { %>
-              <div class="wiki-lp-type-badge"><%= SOUS_CAT_PART[pm.sous_cat] %></div>
+              <div class="wiki-lp-type-badge" data-fr="<%= SOUS_CAT_PART[pm.sous_cat] %>" data-en="<%= SOUS_CAT_PART_EN[pm.sous_cat] || SOUS_CAT_PART[pm.sous_cat] %>"><%= SOUS_CAT_PART[pm.sous_cat] %></div>
             <% } %>
 
             <%# Genre / switch de variante %>
             <%
-              var GENRE_LBL = { male: 'Mâle', female: 'Femelle', neutre: 'Neutre / Autre', les_deux: 'Les deux' };
+              var GENRE_LBL    = { male: 'Mâle', female: 'Femelle', neutre: 'Neutre / Autre', les_deux: 'Les deux' };
+              var GENRE_LBL_EN = { male: 'Male', female: 'Female', neutre: 'Neutral / Other', les_deux: 'Both' };
               var GENRE_SYM = { male: '♂', female: '♀', neutre: '⚬', les_deux: '⚥' };
               var genreVal = pm.genre_partenaire || '';
             %>
             <% if (variantePage) { %>
               <%
                 var vmGenre = (variantePage.meta || {}).genre_partenaire || '';
-                var myLabel = GENRE_LBL[genreVal] || genreVal;
-                var vmLabel = GENRE_LBL[vmGenre] || vmGenre;
+                var myLabel   = GENRE_LBL[genreVal] || genreVal;
+                var myLabelEn = GENRE_LBL_EN[genreVal] || myLabel;
+                var vmLabel   = GENRE_LBL[vmGenre] || vmGenre;
+                var vmLabelEn = GENRE_LBL_EN[vmGenre] || vmLabel;
                 var mySym   = GENRE_SYM[genreVal] || '';
                 var vmSym   = GENRE_SYM[vmGenre] || '';
               %>
               <div class="wiki-lp-genre-switch">
-                <span class="wiki-lp-genre-btn wiki-lp-genre-btn--active"><%= mySym %> <%= myLabel %></span>
-                <a href="/wiki/<%= variantePage.id %>" class="wiki-lp-genre-btn wiki-lp-genre-btn--other"><%= vmSym %> <%= vmLabel %></a>
+                <span class="wiki-lp-genre-btn wiki-lp-genre-btn--active" data-fr="<%= mySym %> <%= myLabel %>" data-en="<%= mySym %> <%= myLabelEn %>"><%= mySym %> <%= myLabel %></span>
+                <a href="/wiki/<%= variantePage.id %>" class="wiki-lp-genre-btn wiki-lp-genre-btn--other" data-fr="<%= vmSym %> <%= vmLabel %>" data-en="<%= vmSym %> <%= vmLabelEn %>"><%= vmSym %> <%= vmLabel %></a>
               </div>
             <% } else if (genreVal && genreVal !== 'les_deux') { %>
               <div class="wiki-lp-genre-badge">
-                <span><%= GENRE_SYM[genreVal] || '' %> <%= GENRE_LBL[genreVal] || '' %></span>
+                <span data-fr="<%= GENRE_SYM[genreVal] || '' %> <%= GENRE_LBL[genreVal] || '' %>" data-en="<%= GENRE_SYM[genreVal] || '' %> <%= GENRE_LBL_EN[genreVal] || '' %>"><%= GENRE_SYM[genreVal] || '' %> <%= GENRE_LBL[genreVal] || '' %></span>
               </div>
             <% } %>
 
             <%# Général %>
             <% if (hasCommuns) { %>
               <div class="wiki-lp-group">
-                <p class="wiki-lp-group-title">G&eacute;n&eacute;ral</p>
+                <p class="wiki-lp-group-title" data-fr="Général" data-en="General">G&eacute;n&eacute;ral</p>
                 <dl class="wiki-lp-dl">
                   <% if (pm.nature_acte && NATURE_ACTE_LBL[pm.nature_acte]) { %>
-                    <div class="wiki-lp-row"><dt>Nature</dt><dd><%= NATURE_ACTE_LBL[pm.nature_acte] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Nature" data-en="Nature">Nature</dt><dd data-fr="<%= NATURE_ACTE_LBL[pm.nature_acte] %>" data-en="<%= NATURE_ACTE_LBL_EN[pm.nature_acte] || NATURE_ACTE_LBL[pm.nature_acte] %>"><%= NATURE_ACTE_LBL[pm.nature_acte] %></dd></div>
                   <% } %>
                   <% if (pm.cadre_legal && CADRE_LEGAL_LBL[pm.cadre_legal]) { %>
-                    <div class="wiki-lp-row"><dt>L&eacute;galit&eacute;</dt><dd class="wiki-lp-legal wiki-lp-legal--<%= pm.cadre_legal %>"><%= CADRE_LEGAL_LBL[pm.cadre_legal] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Légalité" data-en="Legality">L&eacute;galit&eacute;</dt><dd class="wiki-lp-legal wiki-lp-legal--<%= pm.cadre_legal %>" data-fr="<%= CADRE_LEGAL_LBL[pm.cadre_legal] %>" data-en="<%= CADRE_LEGAL_LBL_EN[pm.cadre_legal] || CADRE_LEGAL_LBL[pm.cadre_legal] %>"><%= CADRE_LEGAL_LBL[pm.cadre_legal] %></dd></div>
                   <% } %>
                   <% if (pm.risque_physique && RISQUE_LBL[pm.risque_physique]) { %>
-                    <div class="wiki-lp-row"><dt>Risque phys.</dt><dd><span class="wiki-lp-risk wiki-lp-risk--<%= pm.risque_physique %>"><%= RISQUE_LBL[pm.risque_physique] %></span></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Risque phys." data-en="Phys. risk">Risque phys.</dt><dd><span class="wiki-lp-risk wiki-lp-risk--<%= pm.risque_physique %>" data-fr="<%= RISQUE_LBL[pm.risque_physique] %>" data-en="<%= RISQUE_LBL_EN[pm.risque_physique] || RISQUE_LBL[pm.risque_physique] %>"><%= RISQUE_LBL[pm.risque_physique] %></span></dd></div>
                   <% } %>
                   <% if (pm.risque_mst && RISQUE_LBL[pm.risque_mst]) { %>
-                    <div class="wiki-lp-row"><dt>Risque MST</dt><dd><span class="wiki-lp-risk wiki-lp-risk--<%= pm.risque_mst %>"><%= RISQUE_LBL[pm.risque_mst] %></span></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Risque MST" data-en="STI risk">Risque MST</dt><dd><span class="wiki-lp-risk wiki-lp-risk--<%= pm.risque_mst %>" data-fr="<%= RISQUE_LBL[pm.risque_mst] %>" data-en="<%= RISQUE_LBL_EN[pm.risque_mst] || RISQUE_LBL[pm.risque_mst] %>"><%= RISQUE_LBL[pm.risque_mst] %></span></dd></div>
                   <% } %>
                   <% if (pm.accessibilite && ACCES_LBL[pm.accessibilite]) { %>
-                    <div class="wiki-lp-row"><dt>Acc&egrave;s</dt><dd><%= ACCES_LBL[pm.accessibilite] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Accès" data-en="Access">Acc&egrave;s</dt><dd data-fr="<%= ACCES_LBL[pm.accessibilite] %>" data-en="<%= ACCES_LBL_EN[pm.accessibilite] || ACCES_LBL[pm.accessibilite] %>"><%= ACCES_LBL[pm.accessibilite] %></dd></div>
                   <% } %>
                 </dl>
               </div>
@@ -209,11 +245,11 @@
             <%# Nombre %>
             <% if (pm.sous_cat === 'nombre' && (pm.nb_total || pm.nb_feminin || pm.nb_masculin)) { %>
               <div class="wiki-lp-group">
-                <p class="wiki-lp-group-title">Composition</p>
+                <p class="wiki-lp-group-title" data-fr="Composition" data-en="Composition">Composition</p>
                 <dl class="wiki-lp-dl">
-                  <% if (pm.nb_total)    { %><div class="wiki-lp-row"><dt>Total</dt><dd><%= pm.nb_total    === '5plus' ? '5+' : pm.nb_total    %></dd></div><% } %>
-                  <% if (pm.nb_feminin)  { %><div class="wiki-lp-row"><dt>F&eacute;minin</dt><dd><%= pm.nb_feminin  === '3plus' ? '3+' : pm.nb_feminin  %></dd></div><% } %>
-                  <% if (pm.nb_masculin) { %><div class="wiki-lp-row"><dt>Masculin</dt><dd><%= pm.nb_masculin === '3plus' ? '3+' : pm.nb_masculin %></dd></div><% } %>
+                  <% if (pm.nb_total)    { %><div class="wiki-lp-row"><dt data-fr="Total" data-en="Total">Total</dt><dd><%= pm.nb_total    === '5plus' ? '5+' : pm.nb_total    %></dd></div><% } %>
+                  <% if (pm.nb_feminin)  { %><div class="wiki-lp-row"><dt data-fr="Féminin" data-en="Female">F&eacute;minin</dt><dd><%= pm.nb_feminin  === '3plus' ? '3+' : pm.nb_feminin  %></dd></div><% } %>
+                  <% if (pm.nb_masculin) { %><div class="wiki-lp-row"><dt data-fr="Masculin" data-en="Male">Masculin</dt><dd><%= pm.nb_masculin === '3plus' ? '3+' : pm.nb_masculin %></dd></div><% } %>
                 </dl>
               </div>
             <% } %>
@@ -221,28 +257,28 @@
             <%# Monstre %>
             <% if (pm.sous_cat === 'monstre' && hasMonstre) { %>
               <div class="wiki-lp-group">
-                <p class="wiki-lp-group-title">Caract&eacute;ristiques</p>
+                <p class="wiki-lp-group-title" data-fr="Caractéristiques" data-en="Characteristics">Caract&eacute;ristiques</p>
                 <dl class="wiki-lp-dl">
                   <% if (pm.type_creature && TYPE_CREATURE_LBL[pm.type_creature]) { %>
-                    <div class="wiki-lp-row"><dt>Cr&eacute;ature</dt><dd><%= TYPE_CREATURE_LBL[pm.type_creature] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Créature" data-en="Creature">Cr&eacute;ature</dt><dd data-fr="<%= TYPE_CREATURE_LBL[pm.type_creature] %>" data-en="<%= TYPE_CREATURE_LBL_EN[pm.type_creature] || TYPE_CREATURE_LBL[pm.type_creature] %>"><%= TYPE_CREATURE_LBL[pm.type_creature] %></dd></div>
                   <% } %>
                   <% if (pm.type_acte_sexuel && pm.type_acte_sexuel.length) { %>
                     <div class="wiki-lp-row wiki-lp-row--chips">
-                      <dt>Acte(s)</dt>
-                      <dd><div class="wiki-lp-chips"><% pm.type_acte_sexuel.forEach(function(v){ %><span class="wiki-lp-chip"><%= TYPE_ACTE_LBL[v] || v %></span><% }) %></div></dd>
+                      <dt data-fr="Acte(s)" data-en="Act(s)">Acte(s)</dt>
+                      <dd><div class="wiki-lp-chips"><% pm.type_acte_sexuel.forEach(function(v){ %><span class="wiki-lp-chip" data-fr="<%= TYPE_ACTE_LBL[v] || v %>" data-en="<%= TYPE_ACTE_LBL_EN[v] || TYPE_ACTE_LBL[v] || v %>"><%= TYPE_ACTE_LBL[v] || v %></span><% }) %></div></dd>
                     </div>
                   <% } %>
                   <% if (pm.niveau_intelligence && INTEL_LBL[pm.niveau_intelligence]) { %>
-                    <div class="wiki-lp-row"><dt>Intelligence</dt><dd><%= INTEL_LBL[pm.niveau_intelligence] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Intelligence" data-en="Intelligence">Intelligence</dt><dd data-fr="<%= INTEL_LBL[pm.niveau_intelligence] %>" data-en="<%= INTEL_LBL_EN[pm.niveau_intelligence] || INTEL_LBL[pm.niveau_intelligence] %>"><%= INTEL_LBL[pm.niveau_intelligence] %></dd></div>
                   <% } %>
                   <% if (pm.capacite_parole && PAROLE_LBL[pm.capacite_parole]) { %>
-                    <div class="wiki-lp-row"><dt>Parole</dt><dd><%= PAROLE_LBL[pm.capacite_parole] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Parole" data-en="Speech">Parole</dt><dd data-fr="<%= PAROLE_LBL[pm.capacite_parole] %>" data-en="<%= PAROLE_LBL_EN[pm.capacite_parole] || PAROLE_LBL[pm.capacite_parole] %>"><%= PAROLE_LBL[pm.capacite_parole] %></dd></div>
                   <% } %>
                   <% if (pm.compat_anatomique && COMPAT_LBL[pm.compat_anatomique]) { %>
-                    <div class="wiki-lp-row"><dt>Anatomie</dt><dd><%= COMPAT_LBL[pm.compat_anatomique] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Anatomie" data-en="Anatomy">Anatomie</dt><dd data-fr="<%= COMPAT_LBL[pm.compat_anatomique] %>" data-en="<%= COMPAT_LBL_EN[pm.compat_anatomique] || COMPAT_LBL[pm.compat_anatomique] %>"><%= COMPAT_LBL[pm.compat_anatomique] %></dd></div>
                   <% } %>
                   <% if (pm.origine_conceptuelle && ORIGINE_LBL[pm.origine_conceptuelle]) { %>
-                    <div class="wiki-lp-row"><dt>Origine</dt><dd><%= ORIGINE_LBL[pm.origine_conceptuelle] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Origine" data-en="Origin">Origine</dt><dd data-fr="<%= ORIGINE_LBL[pm.origine_conceptuelle] %>" data-en="<%= ORIGINE_LBL_EN[pm.origine_conceptuelle] || ORIGINE_LBL[pm.origine_conceptuelle] %>"><%= ORIGINE_LBL[pm.origine_conceptuelle] %></dd></div>
                   <% } %>
                 </dl>
               </div>
@@ -251,13 +287,13 @@
             <%# Animal %>
             <% if (pm.sous_cat === 'animaux' && (pm.famille_zoologique || pm.taille_animal)) { %>
               <div class="wiki-lp-group">
-                <p class="wiki-lp-group-title">Zoologie</p>
+                <p class="wiki-lp-group-title" data-fr="Zoologie" data-en="Zoology">Zoologie</p>
                 <dl class="wiki-lp-dl">
                   <% if (pm.famille_zoologique && FAMILLE_ZOO_LBL[pm.famille_zoologique]) { %>
-                    <div class="wiki-lp-row"><dt>Famille</dt><dd><%= FAMILLE_ZOO_LBL[pm.famille_zoologique] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Famille" data-en="Family">Famille</dt><dd data-fr="<%= FAMILLE_ZOO_LBL[pm.famille_zoologique] %>" data-en="<%= FAMILLE_ZOO_LBL_EN[pm.famille_zoologique] || FAMILLE_ZOO_LBL[pm.famille_zoologique] %>"><%= FAMILLE_ZOO_LBL[pm.famille_zoologique] %></dd></div>
                   <% } %>
                   <% if (pm.taille_animal && TAILLE_ANIM_LBL[pm.taille_animal]) { %>
-                    <div class="wiki-lp-row"><dt>Taille</dt><dd><%= TAILLE_ANIM_LBL[pm.taille_animal] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Taille" data-en="Size">Taille</dt><dd data-fr="<%= TAILLE_ANIM_LBL[pm.taille_animal] %>" data-en="<%= TAILLE_ANIM_LBL_EN[pm.taille_animal] || TAILLE_ANIM_LBL[pm.taille_animal] %>"><%= TAILLE_ANIM_LBL[pm.taille_animal] %></dd></div>
                   <% } %>
                 </dl>
               </div>
@@ -266,31 +302,31 @@
             <%# Biologie %>
             <% if ((pm.sous_cat === 'monstre' || pm.sous_cat === 'animaux') && hasBioData) { %>
               <div class="wiki-lp-group">
-                <p class="wiki-lp-group-title">Biologie</p>
+                <p class="wiki-lp-group-title" data-fr="Biologie" data-en="Biology">Biologie</p>
                 <dl class="wiki-lp-dl">
                   <% if (pm.nature_espece && NATURE_ESP_LBL[pm.nature_espece]) { %>
-                    <div class="wiki-lp-row"><dt>Esp&egrave;ce</dt><dd><%= NATURE_ESP_LBL[pm.nature_espece] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Espèce" data-en="Species">Esp&egrave;ce</dt><dd data-fr="<%= NATURE_ESP_LBL[pm.nature_espece] %>" data-en="<%= NATURE_ESP_LBL_EN[pm.nature_espece] || NATURE_ESP_LBL[pm.nature_espece] %>"><%= NATURE_ESP_LBL[pm.nature_espece] %></dd></div>
                   <% } %>
-                  <% if (tailleStr) { %><div class="wiki-lp-row"><dt>P&eacute;nis</dt><dd><%= tailleStr %></dd></div><% } %>
-                  <% if (circStr)   { %><div class="wiki-lp-row"><dt>Circonf.</dt><dd><%= circStr %></dd></div><% } %>
-                  <% if (ejacStr)   { %><div class="wiki-lp-row"><dt>&Eacute;jac.</dt><dd><%= ejacStr %></dd></div><% } %>
+                  <% if (tailleStr) { %><div class="wiki-lp-row"><dt data-fr="Pénis" data-en="Penis">P&eacute;nis</dt><dd><%= tailleStr %></dd></div><% } %>
+                  <% if (circStr)   { %><div class="wiki-lp-row"><dt data-fr="Circonf." data-en="Circumf.">Circonf.</dt><dd><%= circStr %></dd></div><% } %>
+                  <% if (ejacStr)   { %><div class="wiki-lp-row"><dt data-fr="Éjac." data-en="Ejac.">&Eacute;jac.</dt><dd><%= ejacStr %></dd></div><% } %>
                   <% if (hasSperme) { %>
-                    <div class="wiki-lp-row"><dt>Sperme</dt><dd><%= [pm.sperme_texture, pm.sperme_odeur, pm.sperme_gout].filter(Boolean).join(' \u00b7 ') %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Sperme" data-en="Cum">Sperme</dt><dd><%= [pm.sperme_texture, pm.sperme_odeur, pm.sperme_gout].filter(Boolean).join(' \u00b7 ') %></dd></div>
                   <% } %>
                   <% if (pm.type_verrouillage && VERR_LBL[pm.type_verrouillage]) { %>
-                    <div class="wiki-lp-row"><dt>Verr.</dt><dd><%= VERR_LBL[pm.type_verrouillage] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Verr." data-en="Lock">Verr.</dt><dd data-fr="<%= VERR_LBL[pm.type_verrouillage] %>" data-en="<%= VERR_LBL_EN[pm.type_verrouillage] || VERR_LBL[pm.type_verrouillage] %>"><%= VERR_LBL[pm.type_verrouillage] %></dd></div>
                   <% } %>
                   <% if (pm.sensations && pm.sensations.length) { %>
                     <div class="wiki-lp-row wiki-lp-row--chips">
-                      <dt>Sensations</dt>
-                      <dd><div class="wiki-lp-chips"><% pm.sensations.forEach(function(v){ %><span class="wiki-lp-chip"><%= SENS_LBL[v] || v %></span><% }) %></div></dd>
+                      <dt data-fr="Sensations" data-en="Sensations">Sensations</dt>
+                      <dd><div class="wiki-lp-chips"><% pm.sensations.forEach(function(v){ %><span class="wiki-lp-chip" data-fr="<%= SENS_LBL[v] || v %>" data-en="<%= SENS_LBL_EN[v] || SENS_LBL[v] || v %>"><%= SENS_LBL[v] || v %></span><% }) %></div></dd>
                     </div>
                   <% } %>
                   <% if (pm.milieu_vie && MILIEU_LBL[pm.milieu_vie]) { %>
-                    <div class="wiki-lp-row"><dt>Milieu</dt><dd><%= MILIEU_LBL[pm.milieu_vie] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Milieu" data-en="Habitat">Milieu</dt><dd data-fr="<%= MILIEU_LBL[pm.milieu_vie] %>" data-en="<%= MILIEU_LBL_EN[pm.milieu_vie] || MILIEU_LBL[pm.milieu_vie] %>"><%= MILIEU_LBL[pm.milieu_vie] %></dd></div>
                   <% } %>
                   <% if (pm.structure_sociale && STRUCT_LBL[pm.structure_sociale]) { %>
-                    <div class="wiki-lp-row"><dt>Structure</dt><dd><%= STRUCT_LBL[pm.structure_sociale] %></dd></div>
+                    <div class="wiki-lp-row"><dt data-fr="Structure" data-en="Structure">Structure</dt><dd data-fr="<%= STRUCT_LBL[pm.structure_sociale] %>" data-en="<%= STRUCT_LBL_EN[pm.structure_sociale] || STRUCT_LBL[pm.structure_sociale] %>"><%= STRUCT_LBL[pm.structure_sociale] %></dd></div>
                   <% } %>
                 </dl>
               </div>
@@ -302,32 +338,50 @@
           <%# Autres catégories : dl existant %>
           <dl class="wiki-left-meta">
             <% if (page.category === 'pratique' && pm.sous_cat && PRATIQUES_SOUS[pm.sous_cat]) { %>
-              <div class="wiki-left-meta-row"><dt>Sous-cat&eacute;gorie</dt><dd><%= PRATIQUES_SOUS[pm.sous_cat] %></dd></div>
+              <div class="wiki-left-meta-row"><dt data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</dt><dd data-fr="<%= PRATIQUES_SOUS[pm.sous_cat] %>" data-en="<%= PRATIQUES_SOUS_EN[pm.sous_cat] || PRATIQUES_SOUS[pm.sous_cat] %>"><%= PRATIQUES_SOUS[pm.sous_cat] %></dd></div>
             <% } %>
             <% if (page.category === 'fantasmes' && pm.sous_cat && FSUBS[pm.sous_cat]) { %>
-              <div class="wiki-left-meta-row"><dt>Sous-cat&eacute;gorie</dt><dd><%= FSUBS[pm.sous_cat] %></dd></div>
+              <div class="wiki-left-meta-row"><dt data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</dt><dd data-fr="<%= FSUBS[pm.sous_cat] %>" data-en="<%= FSUBS_EN[pm.sous_cat] || FSUBS[pm.sous_cat] %>"><%= FSUBS[pm.sous_cat] %></dd></div>
             <% } %>
             <% if (page.category === 'objets' && pm.sous_cat && OBJETS_SOUS[pm.sous_cat]) { %>
-              <div class="wiki-left-meta-row"><dt>Cat&eacute;gorie</dt><dd><%= OBJETS_SOUS[pm.sous_cat] %></dd></div>
+              <div class="wiki-left-meta-row"><dt data-fr="Catégorie" data-en="Category">Cat&eacute;gorie</dt><dd data-fr="<%= OBJETS_SOUS[pm.sous_cat] %>" data-en="<%= OBJETS_SOUS_EN[pm.sous_cat] || OBJETS_SOUS[pm.sous_cat] %>"><%= OBJETS_SOUS[pm.sous_cat] %></dd></div>
             <% } %>
             <% if (page.category === 'lieux' && pm.type_lieu && LIEU[pm.type_lieu]) { %>
-              <div class="wiki-left-meta-row"><dt>Type de lieu</dt><dd><%= LIEU[pm.type_lieu] %></dd></div>
+              <div class="wiki-left-meta-row"><dt data-fr="Type de lieu" data-en="Venue type">Type de lieu</dt><dd data-fr="<%= LIEU[pm.type_lieu] %>" data-en="<%= LIEU_EN[pm.type_lieu] || LIEU[pm.type_lieu] %>"><%= LIEU[pm.type_lieu] %></dd></div>
             <% } %>
             <% if (hasPosMeta) { %>
-              <% if (pm.categorie && POSCAT[pm.categorie]) { %><div class="wiki-left-meta-row"><dt>Cat&eacute;gorie</dt><dd><%= POSCAT[pm.categorie] %></dd></div><% } %>
-              <% if (pm.qui_dessus && QUI[pm.qui_dessus]) { %><div class="wiki-left-meta-row"><dt>Au-dessus</dt><dd><%= QUI[pm.qui_dessus] %></dd></div><% } %>
-              <% if (pm.canal && pm.canal.length) { %><div class="wiki-left-meta-row"><dt>Canal</dt><dd><%= pm.canal.map(function(c){ return CAN[c] || c; }).join(' &middot; ') %></dd></div><% } %>
-              <% if (pmOri.length) { %><div class="wiki-left-meta-row"><dt>Orientation</dt><dd><%= pmOri.map(function(o){ return ORI[o] || o; }).join(' &middot; ') %></dd></div><% } %>
-              <% if (pm.nb_partenaires && NBPART[pm.nb_partenaires]) { %><div class="wiki-left-meta-row"><dt>Partenaires</dt><dd><%= NBPART[pm.nb_partenaires] %></dd></div><% } %>
-              <% if (pm.partenaire_actif && ACTIF[pm.partenaire_actif]) { %><div class="wiki-left-meta-row"><dt>Partenaire actif</dt><dd><%= ACTIF[pm.partenaire_actif] %></dd></div><% } %>
-              <% if (pmSup.length) { %><div class="wiki-left-meta-row"><dt>Supports</dt><dd><%= pmSup.map(function(s){ return SUP[s] || s; }).join(' &middot; ') %></dd></div><% } %>
+              <% if (pm.categorie && POSCAT[pm.categorie]) { %><div class="wiki-left-meta-row"><dt data-fr="Catégorie" data-en="Category">Cat&eacute;gorie</dt><dd data-fr="<%= POSCAT[pm.categorie] %>" data-en="<%= POSCAT_EN[pm.categorie] || POSCAT[pm.categorie] %>"><%= POSCAT[pm.categorie] %></dd></div><% } %>
+              <% if (pm.qui_dessus && QUI[pm.qui_dessus]) { %><div class="wiki-left-meta-row"><dt data-fr="Au-dessus" data-en="On top">Au-dessus</dt><dd data-fr="<%= QUI[pm.qui_dessus] %>" data-en="<%= QUI_EN[pm.qui_dessus] || QUI[pm.qui_dessus] %>"><%= QUI[pm.qui_dessus] %></dd></div><% } %>
+              <% if (pm.canal && pm.canal.length) { %>
+                <%
+                  var _canalFr = pm.canal.map(function(c){ return CAN[c] || c; }).join(' · ');
+                  var _canalEn = pm.canal.map(function(c){ return CAN_EN[c] || CAN[c] || c; }).join(' · ');
+                %>
+                <div class="wiki-left-meta-row"><dt data-fr="Canal" data-en="Channel">Canal</dt><dd data-fr="<%= _canalFr %>" data-en="<%= _canalEn %>"><%= pm.canal.map(function(c){ return CAN[c] || c; }).join(' &middot; ') %></dd></div>
+              <% } %>
+              <% if (pmOri.length) { %>
+                <%
+                  var _oriFr = pmOri.map(function(o){ return ORI[o] || o; }).join(' · ');
+                  var _oriEn = pmOri.map(function(o){ return ORI_EN[o] || ORI[o] || o; }).join(' · ');
+                %>
+                <div class="wiki-left-meta-row"><dt data-fr="Orientation" data-en="Orientation">Orientation</dt><dd data-fr="<%= _oriFr %>" data-en="<%= _oriEn %>"><%= pmOri.map(function(o){ return ORI[o] || o; }).join(' &middot; ') %></dd></div>
+              <% } %>
+              <% if (pm.nb_partenaires && NBPART[pm.nb_partenaires]) { %><div class="wiki-left-meta-row"><dt data-fr="Partenaires" data-en="Partners">Partenaires</dt><dd data-fr="<%= NBPART[pm.nb_partenaires] %>" data-en="<%= NBPART_EN[pm.nb_partenaires] || NBPART[pm.nb_partenaires] %>"><%= NBPART[pm.nb_partenaires] %></dd></div><% } %>
+              <% if (pm.partenaire_actif && ACTIF[pm.partenaire_actif]) { %><div class="wiki-left-meta-row"><dt data-fr="Partenaire actif" data-en="Active partner">Partenaire actif</dt><dd data-fr="<%= ACTIF[pm.partenaire_actif] %>" data-en="<%= ACTIF_EN[pm.partenaire_actif] || ACTIF[pm.partenaire_actif] %>"><%= ACTIF[pm.partenaire_actif] %></dd></div><% } %>
+              <% if (pmSup.length) { %>
+                <%
+                  var _supFr = pmSup.map(function(s){ return SUP[s] || s; }).join(' · ');
+                  var _supEn = pmSup.map(function(s){ return SUP_EN[s] || SUP[s] || s; }).join(' · ');
+                %>
+                <div class="wiki-left-meta-row"><dt data-fr="Supports" data-en="Surfaces">Supports</dt><dd data-fr="<%= _supFr %>" data-en="<%= _supEn %>"><%= pmSup.map(function(s){ return SUP[s] || s; }).join(' &middot; ') %></dd></div>
+              <% } %>
             <% } %>
           </dl>
         <% } %>
 
         <% if (page.parody) { %>
           <div class="wiki-left-parody">
-            <span class="wiki-left-parody-label">Parodie</span>
+            <span class="wiki-left-parody-label" data-fr="Parodie" data-en="Parody">Parodie</span>
             <a href="/parodies/<%= encodeURIComponent(page.parody) %>" class="wiki-left-parody-link"><%= page.parody %></a>
             <% if (page.subParody) { %>
               <span class="wiki-left-parody-sep">›</span>
@@ -336,7 +390,11 @@
           </div>
         <% } %>
 
-        <p class="wiki-left-updated">Derni&egrave;re modification&nbsp;: <%= new Date(page.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) %></p>
+        <%
+          var _updDateFr = new Date(page.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+          var _updDateEn = new Date(page.updatedAt).toLocaleDateString('en-GB',  { day: 'numeric', month: 'long', year: 'numeric' });
+        %>
+        <p class="wiki-left-updated" data-fr="Dernière modification\u00a0: <%= _updDateFr %>" data-en="Last updated: <%= _updDateEn %>">Derni&egrave;re modification&nbsp;: <%= _updDateFr %></p>
 
       </aside>
 
@@ -346,10 +404,10 @@
         <%# Introduction thématique : partenaires non-humains (monstres / animaux) ─ %>
         <% if (page.category === 'partenaires' && (pm.sous_cat === 'monstre' || pm.sous_cat === 'animaux')) { %>
         <details class="wiki-thematic-intro">
-          <summary class="wiki-thematic-intro-summary">Introduction</summary>
+          <summary class="wiki-thematic-intro-summary" data-fr="Introduction" data-en="Introduction">Introduction</summary>
           <div class="wiki-thematic-intro-body">
-            <p>La femme, sujet de convoitise, d&rsquo;admiration ou de v&eacute;n&eacute;ration, devient l&rsquo;objet d&rsquo;attention de ce qui n&rsquo;est pas humain. Si belle, si sensuelle, si d&eacute;sirable que ces qualit&eacute;s d&eacute;passent l&rsquo;esp&egrave;ce&nbsp;: elle devient nature et divine par cela.</p>
-            <p>Ces fantasmes placent la femme au centre d&rsquo;un regard absolu&nbsp;; un d&eacute;sir sans langage commun, sans conventions sociales, sans retenue culturelle. Ce qui ne peut pas parler ne peut pas mentir. Ce qui ne connaît pas les codes humains ne peut qu&rsquo;ob&eacute;ir &agrave; l&rsquo;instinct&nbsp;: celui d&rsquo;&ecirc;tre attir&eacute;, irr&eacute;sistiblement, par elle.</p>
+            <p data-fr="La femme, sujet de convoitise, d'admiration ou de vénération, devient l'objet d'attention de ce qui n'est pas humain. Si belle, si sensuelle, si désirable que ces qualités dépassent l'espèce : elle devient nature et divine par cela." data-en="The woman, subject of desire, admiration or veneration, becomes the object of attention of what is not human. So beautiful, so sensual, so desirable that these qualities transcend species: she becomes nature itself, and divine because of it.">La femme, sujet de convoitise, d&rsquo;admiration ou de v&eacute;n&eacute;ration, devient l&rsquo;objet d&rsquo;attention de ce qui n&rsquo;est pas humain. Si belle, si sensuelle, si d&eacute;sirable que ces qualit&eacute;s d&eacute;passent l&rsquo;esp&egrave;ce&nbsp;: elle devient nature et divine par cela.</p>
+            <p data-fr="Ces fantasmes placent la femme au centre d'un regard absolu ; un désir sans langage commun, sans conventions sociales, sans retenue culturelle. Ce qui ne peut pas parler ne peut pas mentir. Ce qui ne connaît pas les codes humains ne peut qu'obéir à l'instinct : celui d'être attiré, irrésistiblement, par elle." data-en="These fantasies place the woman at the centre of an absolute gaze: a desire with no common language, no social conventions, no cultural restraint. What cannot speak cannot lie. What does not know human codes can only obey instinct: to be drawn, irresistibly, to her.">Ces fantasmes placent la femme au centre d&rsquo;un regard absolu&nbsp;; un d&eacute;sir sans langage commun, sans conventions sociales, sans retenue culturelle. Ce qui ne peut pas parler ne peut pas mentir. Ce qui ne conna&icirc;t pas les codes humains ne peut qu&rsquo;ob&eacute;ir &agrave; l&rsquo;instinct&nbsp;: celui d&rsquo;&ecirc;tre attir&eacute;, irr&eacute;sistiblement, par elle.</p>
           </div>
         </details>
         <% } %>
@@ -370,7 +428,7 @@
         <%# Variantes (positions) ─ %>
         <% if (page.category === 'position' && pm.variantes && pm.variantes.length) { %>
           <div class="wiki-pos-section wiki-pos-variantes">
-            <h3 class="wiki-pos-section-heading">Variantes</h3>
+            <h3 class="wiki-pos-section-heading" data-fr="Variantes" data-en="Variants">Variantes</h3>
             <% pm.variantes.forEach(function(v) { %>
               <% if (!v.nom) return; %>
               <details class="wiki-var-detail">
@@ -405,9 +463,9 @@
         <% if (page.category === 'partenaires' && _pmScenario) { %>
           <details class="wiki-pos-section wiki-pos-nouvelles wiki-scenario-details">
             <summary class="wiki-pos-section-heading wiki-scenario-summary">
-              Sc&eacute;nario
+              <span data-fr="Scénario" data-en="Scenario">Sc&eacute;nario</span>
               <% if (pm.scenario_human) { %>
-                <span class="wiki-scenario-human-badge" data-tooltip="Ce sc&#233;nario a &#233;t&#233; enti&#232;rement &#233;crit par un humain, sans IA.">&#9998;&nbsp;100&nbsp;% humain</span>
+                <span class="wiki-scenario-human-badge" data-fr="✎ 100 % humain" data-en="✎ 100% human" data-tooltip="Ce sc&#233;nario a &#233;t&#233; enti&#232;rement &#233;crit par un humain, sans IA.">&#9998;&nbsp;100&nbsp;% humain</span>
               <% } else { %>
                 <span class="wiki-scenario-info" data-tooltip="Les sc&#233;narios sont &#233;crits en premier jet par une IA, corrig&#233;s et am&#233;lior&#233;s &#224; la main. Le choix de l&#8217;IA est pour illustrer litt&#233;rairement chaque page du wiki.&#10;&#10;Pour du contenu original parfaitement humain, cela se passera dans une future page d&#233;di&#233;e.">!</span>
               <% } %>
@@ -426,8 +484,8 @@
             <summary class="wiki-pos-section-heading wiki-orce-summary">
               <span class="wiki-orce-logo">Orce</span>
             </summary>
-            <p class="wiki-orce-pastille">Orce est un univers de fiction, de dark fantasy. Les cr&eacute;atures list&eacute;es ont leurs pendants, avec des noms l&eacute;g&egrave;rement diff&eacute;rents, et des caract&eacute;ristiques diff&eacute;rentes. Nous int&eacute;grons ici alors le contenu descriptif li&eacute;.</p>
-            <% if (pm.orce_name) { %><p class="wiki-orce-name">Nom en Orce&nbsp;: <strong><%= pm.orce_name %></strong></p><% } %>
+            <p class="wiki-orce-pastille" data-fr="Orce est un univers de fiction, de dark fantasy. Les créatures listées ont leurs pendants, avec des noms légèrement différents, et des caractéristiques différentes. Nous intégrons ici alors le contenu descriptif lié." data-en="Orce is a fictional dark fantasy universe. The creatures listed here have counterparts with slightly different names and characteristics. We include the related descriptive content here.">Orce est un univers de fiction, de dark fantasy. Les cr&eacute;atures list&eacute;es ont leurs pendants, avec des noms l&eacute;g&egrave;rement diff&eacute;rents, et des caract&eacute;ristiques diff&eacute;rentes. Nous int&eacute;grons ici alors le contenu descriptif li&eacute;.</p>
+            <% if (pm.orce_name) { %><p class="wiki-orce-name"><span data-fr="Nom en Orce\u00a0:" data-en="Name in Orce:">Nom en Orce&nbsp;:</span> <strong><%= pm.orce_name %></strong></p><% } %>
             <div class="wiki-md wiki-orce-content"><span class="wiki-md-raw" hidden><%= _pmOrce %></span></div>
           </details>
         <% } %>
@@ -440,10 +498,14 @@
              var hasAny = stPctG !== null || stPctH !== null || stPctF !== null;
         %>
         <div class="wiki-stats-block">
-          <h3 class="wiki-stats-title">Statistiques</h3>
-          <p class="wiki-stats-subtitle"><%= pm.stats_type === 'pratique' ? 'Pourcentage de personnes ayant réalisé ce fantasme' : 'Pourcentage de personnes ayant particulièrement ce fantasme' %></p>
+          <h3 class="wiki-stats-title" data-fr="Statistiques" data-en="Statistics">Statistiques</h3>
+          <%
+            var _statSubFr = pm.stats_type === 'pratique' ? 'Pourcentage de personnes ayant r\u00e9alis\u00e9 ce fantasme' : 'Pourcentage de personnes ayant particuli\u00e8rement ce fantasme';
+            var _statSubEn = pm.stats_type === 'pratique' ? 'Percentage of people who have fulfilled this fantasy' : 'Percentage of people who particularly have this fantasy';
+          %>
+          <p class="wiki-stats-subtitle" data-fr="<%= _statSubFr %>" data-en="<%= _statSubEn %>"><%= _statSubFr %></p>
           <% if (!hasAny) { %>
-            <p class="wiki-stats-empty">Aucune donn&eacute;e disponible pour le moment.</p>
+            <p class="wiki-stats-empty" data-fr="Aucune donnée disponible pour le moment." data-en="No data available yet.">Aucune donn&eacute;e disponible pour le moment.</p>
           <% } else { %>
             <div class="wiki-stats-donuts">
               <% if (stPctG !== null) { %>
@@ -451,25 +513,31 @@
                   <div class="wiki-stats-donut" style="--pct:<%= stPctG %>;--clr:hsl(220,70%,62%)">
                     <span class="wiki-stats-donut-val" style="color:hsl(220,80%,76%)"><%= stPctG %><span class="wiki-stats-donut-sym">%</span></span>
                   </div>
-                  <span class="wiki-stats-donut-lbl">G&eacute;n&eacute;ral</span>
+                  <span class="wiki-stats-donut-lbl" data-fr="Général" data-en="General">G&eacute;n&eacute;ral</span>
                 </div>
               <% } %>
               <% if (stPctF !== null) { %>
-                <% var stDirF = pm.stats_type === 'pratique' ? (pm.stats_dir_femmes === 'donne' ? 'ont donn\u00e9' : 'ont re\u00e7u') : null; %>
+                <%
+                  var stDirF    = pm.stats_type === 'pratique' ? (pm.stats_dir_femmes === 'donne' ? 'ont donn\u00e9' : 'ont re\u00e7u') : null;
+                  var stDirF_En = pm.stats_type === 'pratique' ? (pm.stats_dir_femmes === 'donne' ? 'gave' : 'received') : null;
+                %>
                 <div class="wiki-stats-donut-wrap">
                   <div class="wiki-stats-donut" style="--pct:<%= stPctF %>;--clr:hsl(340,65%,62%)">
                     <span class="wiki-stats-donut-val" style="color:hsl(340,75%,78%)"><%= stPctF %><span class="wiki-stats-donut-sym">%</span></span>
                   </div>
-                  <span class="wiki-stats-donut-lbl">Femmes<% if (stDirF) { %><br><span class="wiki-stats-dir-badge"><%= stDirF %></span><% } %></span>
+                  <span class="wiki-stats-donut-lbl" data-fr="Femmes" data-en="Women">Femmes<% if (stDirF) { %><br><span class="wiki-stats-dir-badge" data-fr="<%= stDirF %>" data-en="<%= stDirF_En %>"><%= stDirF %></span><% } %></span>
                 </div>
               <% } %>
               <% if (stPctH !== null) { %>
-                <% var stDirH = pm.stats_type === 'pratique' ? (pm.stats_dir_hommes === 'donne' ? 'ont donn\u00e9' : 'ont re\u00e7u') : null; %>
+                <%
+                  var stDirH    = pm.stats_type === 'pratique' ? (pm.stats_dir_hommes === 'donne' ? 'ont donn\u00e9' : 'ont re\u00e7u') : null;
+                  var stDirH_En = pm.stats_type === 'pratique' ? (pm.stats_dir_hommes === 'donne' ? 'gave' : 'received') : null;
+                %>
                 <div class="wiki-stats-donut-wrap">
                   <div class="wiki-stats-donut" style="--pct:<%= stPctH %>;--clr:hsl(200,70%,56%)">
                     <span class="wiki-stats-donut-val" style="color:hsl(200,80%,74%)"><%= stPctH %><span class="wiki-stats-donut-sym">%</span></span>
                   </div>
-                  <span class="wiki-stats-donut-lbl">Hommes<% if (stDirH) { %><br><span class="wiki-stats-dir-badge"><%= stDirH %></span><% } %></span>
+                  <span class="wiki-stats-donut-lbl" data-fr="Hommes" data-en="Men">Hommes<% if (stDirH) { %><br><span class="wiki-stats-dir-badge" data-fr="<%= stDirH %>" data-en="<%= stDirH_En %>"><%= stDirH %></span><% } %></span>
                 </div>
               <% } %>
             </div>
@@ -480,7 +548,7 @@
           <% if (pm.stats_note) { %>
             <p class="wiki-stats-ctx-note"><%= pm.stats_note %></p>
           <% } %>
-          <p class="wiki-stats-note">Ces &eacute;tudes ont &eacute;t&eacute; faites sur la population commune, int&eacute;grant donc la majorit&eacute; ne s&rsquo;int&eacute;ressant pas au domaine. Les chiffres des personnes int&eacute;ress&eacute;es &agrave; la sexualit&eacute; sont bien plus hauts, en g&eacute;n&eacute;ral.</p>
+          <p class="wiki-stats-note" data-fr="Ces études ont été faites sur la population commune, intégrant donc la majorité ne s'intéressant pas au domaine. Les chiffres des personnes intéressées à la sexualité sont bien plus hauts, en général." data-en="These studies were conducted on the general population, which includes the majority who are not interested in the subject. Figures for people interested in sexuality are generally much higher.">Ces &eacute;tudes ont &eacute;t&eacute; faites sur la population commune, int&eacute;grant donc la majorit&eacute; ne s&rsquo;int&eacute;ressant pas au domaine. Les chiffres des personnes int&eacute;ress&eacute;es &agrave; la sexualit&eacute; sont bien plus hauts, en g&eacute;n&eacute;ral.</p>
         </div>
         <% } %>
 
@@ -488,7 +556,7 @@
         <% var _pmInfos = t(pm.infos_utiles, 'wiki', page.id, 'meta_infos_utiles'); %>
         <% if (page.category === 'position' && _pmInfos) { %>
           <div class="wiki-pos-section wiki-pos-infos">
-            <h3 class="wiki-pos-section-heading">Informations utiles</h3>
+            <h3 class="wiki-pos-section-heading" data-fr="Informations utiles" data-en="Useful information">Informations utiles</h3>
             <div class="wiki-md"><span class="wiki-md-raw" hidden><%= _pmInfos %></span></div>
           </div>
         <% } %>
@@ -496,7 +564,7 @@
         <%# Nouvelles (positions) ─ %>
         <% if (page.category === 'position' && pm.nouvelles) { %>
           <div class="wiki-pos-section wiki-pos-nouvelles">
-            <h3 class="wiki-pos-section-heading">Nouvelles</h3>
+            <h3 class="wiki-pos-section-heading" data-fr="Nouvelles" data-en="Stories">Nouvelles</h3>
             <div class="wiki-pos-nouvelles-text"><%= pm.nouvelles %></div>
           </div>
         <% } %>
@@ -519,9 +587,9 @@
         <% if (hasImages && secDisplay.length && currentUser) { %>
           <div class="wiki-secondary-section">
             <div class="wiki-secondary-header">
-              <span class="wiki-secondary-title">Images</span>
+              <span class="wiki-secondary-title" data-fr="Images" data-en="Images">Images</span>
               <% if (hasMoreSec) { %>
-                <a href="/galerie?tag=<%= galleryTag %>" class="wiki-secondary-gallery-link">
+                <a href="/galerie?tag=<%= galleryTag %>" class="wiki-secondary-gallery-link" data-fr="Voir toutes les images →" data-en="View all images →">
                   Voir toutes les images &#8594;
                 </a>
               <% } %>
@@ -536,21 +604,21 @@
             </div>
             <% if (isCollapsible) { %>
               <button type="button" class="wiki-secondary-expand-btn" id="wiki-secondary-expand"
-                      aria-expanded="false">Voir plus &#8964;</button>
+                      aria-expanded="false" data-fr="Voir plus ⌄" data-en="Show more ⌄">Voir plus &#8964;</button>
             <% } %>
           </div>
         <% } %>
 
         <%# Pages liées ─ %>
         <div class="wiki-page-links-view" data-page-id="<%= page.id %>" hidden>
-          <h3 class="wiki-pl-heading">Pages li&eacute;es</h3>
+          <h3 class="wiki-pl-heading" data-fr="Pages liées" data-en="Related pages">Pages li&eacute;es</h3>
           <div class="wiki-pl-cards" data-role="links"></div>
         </div>
 
         <%# Questions du quizz liées ─ %>
         <% if (currentUser) { %>
           <div class="wiki-question-links-view" data-page-id="<%= page.id %>" hidden>
-            <h3 class="wiki-ql-heading">Questions du quizz li&eacute;es</h3>
+            <h3 class="wiki-ql-heading" data-fr="Questions du quizz liées" data-en="Related quiz questions">Questions du quizz li&eacute;es</h3>
             <ul class="wiki-ql-list"></ul>
           </div>
         <% } %>
@@ -565,11 +633,11 @@
           <a href="<%= backHref %>" class="wiki-right-back" title="<%= backLabel %>">&#8592;</a>
           <div class="wiki-right-header-cats">
             <% if (cat) { %>
-              <a href="/wiki/categorie/<%= page.category %>" class="wiki-right-cat-text"><%= cat.label %></a>
+              <a href="/wiki/categorie/<%= page.category %>" class="wiki-right-cat-text" data-fr="<%= cat.label %>" data-en="<%= WD_CAT_EN[page.category] || cat.label %>"><%= cat.label %></a>
             <% } %>
             <% (page.extraCategories || []).forEach(function (eck) { var ecat = categories.find(function (c) { return c.key === eck; }); if (ecat) { %>
               <span class="wiki-right-cat-sep">&middot;</span>
-              <a href="/wiki/categorie/<%= eck %>" class="wiki-right-cat-text"><%= ecat.label %></a>
+              <a href="/wiki/categorie/<%= eck %>" class="wiki-right-cat-text" data-fr="<%= ecat.label %>" data-en="<%= WD_CAT_EN[eck] || ecat.label %>"><%= ecat.label %></a>
             <% } }) %>
             <% if (wdCanSeeOwned && page.owned) { %><span class="wiki-right-owned-tag">&#9733;</span><% } %>
           </div>
@@ -651,7 +719,7 @@
           <% var secCount = page.imagePaths.length - 1; %>
           <div class="wiki-mobile-sec-wrap">
             <div class="wiki-mobile-sec-heading">
-              <span>Autres images</span>
+              <span data-fr="Autres images" data-en="More images">Autres images</span>
               <span class="wiki-mobile-sec-counter" id="wiki-sec-counter"><%= secCount > 1 ? '1\u00a0/\u00a0' + secCount : '' %></span>
             </div>
             <div class="wiki-mobile-sec-carousel" id="wiki-sec-carousel">
@@ -694,20 +762,22 @@
                data-hidden="<%= page.hidden ? '1' : '0' %>">
             <div class="wiki-react-square">
               <button type="button" class="wiki-react-btn wiki-react-flame<%= (page.flame || isFavorite) ? ' active' : '' %>" data-key="flame">
-                <span class="wiki-react-icon">&#128293;</span><span class="wiki-react-label">J&apos;adore</span>
+                <span class="wiki-react-icon">&#128293;</span><span class="wiki-react-label" data-fr="J'adore" data-en="Love it">J&apos;adore</span>
               </button>
               <button type="button" class="wiki-react-btn wiki-react-interest<%= page.interested ? ' active' : '' %>" data-key="interested">
                 <span class="wiki-react-icon">&#10024;</span><span class="wiki-react-label"><%= interestedLabel %></span>
               </button>
               <button type="button" class="wiki-react-btn wiki-react-readlater<%= page.readLater ? ' active' : '' %>" data-key="readlater">
-                <span class="wiki-react-icon">&#9203;</span><span class="wiki-react-label">&Agrave; lire plus tard</span>
+                <span class="wiki-react-icon">&#9203;</span><span class="wiki-react-label" data-fr="À lire plus tard" data-en="Read later">&Agrave; lire plus tard</span>
               </button>
               <button type="button" class="wiki-react-btn wiki-react-practiced<%= page.practiced ? ' active' : '' %>" data-key="practiced">
-                <span class="wiki-react-icon">&#9989;</span><span class="wiki-react-label">D&eacute;j&agrave; pratiqu&eacute;</span>
+                <span class="wiki-react-icon">&#9989;</span><span class="wiki-react-label" data-fr="Déjà pratiqué" data-en="Already tried">D&eacute;j&agrave; pratiqu&eacute;</span>
               </button>
             </div>
-            <button type="button" class="wiki-react-btn wiki-react-hidden wiki-react-standalone<%= page.hidden ? ' active' : '' %>" data-key="hidden" title="<%= page.hidden ? 'Réafficher cette page' : 'Masquer cette page' %>">
-              <span class="wiki-react-icon">&#128065;</span><span class="wiki-react-label"><%= page.hidden ? 'Masquée' : 'Masquer' %></span>
+            <button type="button" class="wiki-react-btn wiki-react-hidden wiki-react-standalone<%= page.hidden ? ' active' : '' %>" data-key="hidden" title="<%= page.hidden ? 'Réafficher cette page' : 'Masquer cette page' %>"
+              data-label-fr="<%= page.hidden ? 'Masqu\u00e9e' : 'Masquer' %>" data-label-en="<%= page.hidden ? 'Hidden' : 'Hide' %>"
+              data-title-fr="<%= page.hidden ? 'R\u00e9afficher cette page' : 'Masquer cette page' %>" data-title-en="<%= page.hidden ? 'Show this page again' : 'Hide this page' %>">
+              <span class="wiki-react-icon">&#128065;</span><span class="wiki-react-label" data-fr="<%= page.hidden ? 'Masqu\u00e9e' : 'Masquer' %>" data-en="<%= page.hidden ? 'Hidden' : 'Hide' %>"><%= page.hidden ? 'Masquée' : 'Masquer' %></span>
             </button>
           </div>
         <% } %>
@@ -718,10 +788,10 @@
             <a href="/wiki/<%= page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
           </div>
           <div class="wiki-maturity-widget" id="wiki-maturity-widget" data-id="<%= page.id %>" data-level="<%= page.maturity || 0 %>">
-            <span class="wiki-maturity-label">Maturit&eacute;</span>
+            <span class="wiki-maturity-label" data-fr="Maturité" data-en="Maturity">Maturit&eacute;</span>
             <div class="wiki-maturity-levels">
-              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 0 ? ' active' : '' %>" data-level="0">Brouillon</button>
-              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 1 ? ' active' : '' %>" data-level="1">&Eacute;crite</button>
+              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 0 ? ' active' : '' %>" data-level="0" data-fr="Brouillon" data-en="Draft">Brouillon</button>
+              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 1 ? ' active' : '' %>" data-level="1" data-fr="Écrite" data-en="Written">&Eacute;crite</button>
               <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 2 ? ' active' : '' %>" data-level="2">2</button>
               <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 3 ? ' active' : '' %>" data-level="3">3</button>
               <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 4 ? ' active' : '' %>" data-level="4">4</button>
@@ -739,7 +809,7 @@
     <%# ─ Suggestions ─ %>
     <% if (suggestions && suggestions.length) { %>
       <div class="wiki-suggestions">
-        <h3 class="wiki-sugg-heading">Pages similaires</h3>
+        <h3 class="wiki-sugg-heading" data-fr="Pages similaires" data-en="Similar pages">Pages similaires</h3>
         <div class="wiki-sugg-row">
           <% suggestions.forEach(function (s) { %>
             <% var scat = categories.find(function (c) { return c.key === s.category; }); %>
@@ -759,8 +829,8 @@
     <%# ─ Notes personnelles ─ %>
     <% if (currentUser) { %>
       <div class="wiki-user-note" data-page-id="<%= page.id %>">
-        <h3 class="wiki-pos-section-heading wiki-user-note-heading">Mes notes</h3>
-        <textarea class="wiki-user-note-area" placeholder="Vos notes personnelles sur cette page…" rows="4"><%= locals.userNote || '' %></textarea>
+        <h3 class="wiki-pos-section-heading wiki-user-note-heading" data-fr="Mes notes" data-en="My notes">Mes notes</h3>
+        <textarea class="wiki-user-note-area" placeholder="Vos notes personnelles sur cette page…" data-placeholder-fr="Vos notes personnelles sur cette page…" data-placeholder-en="Your personal notes about this page…" rows="4"><%= locals.userNote || '' %></textarea>
         <p class="wiki-user-note-status" aria-live="polite"></p>
       </div>
     <% } %>
@@ -780,11 +850,11 @@
 <% if (!currentUser) { %>
 <div class="age-gate" id="age-gate">
   <div class="age-gate-card">
-    <p class="age-gate-title">Contenu pour adultes</p>
-    <p class="age-gate-msg">Cette page contient du contenu pornographique. Souhaitez-vous continuer&nbsp;?</p>
+    <p class="age-gate-title" data-fr="Contenu pour adultes" data-en="Adult content">Contenu pour adultes</p>
+    <p class="age-gate-msg" data-fr="Cette page contient du contenu pornographique. Souhaitez-vous continuer ?" data-en="This page contains pornographic content. Do you wish to continue?">Cette page contient du contenu pornographique. Souhaitez-vous continuer&nbsp;?</p>
     <div class="age-gate-actions">
-      <button type="button" class="age-gate-yes" id="age-gate-yes">Oui, j&rsquo;ai plus de 18&nbsp;ans</button>
-      <a href="/wiki" class="age-gate-no">Non</a>
+      <button type="button" class="age-gate-yes" id="age-gate-yes" data-fr="Oui, j'ai plus de 18 ans" data-en="Yes, I am over 18">Oui, j&rsquo;ai plus de 18&nbsp;ans</button>
+      <a href="/wiki" class="age-gate-no" data-fr="Non" data-en="No">Non</a>
     </div>
   </div>
 </div>

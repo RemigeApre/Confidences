@@ -22,7 +22,7 @@ window.<%= section === 'wiki' ? 'WIKI' : 'GALLERY' %>_FILTER_PROFILES = <%- JSON
 %>
 <% if (profiles && profiles.length) { %>
   <details class="<%= fpDetailsClass %> filter-profiles-details">
-    <summary class="<%= fpSummaryClass %>">Profils de recherche</summary>
+    <summary class="<%= fpSummaryClass %>" data-fr="Profils de recherche" data-en="Saved filters">Profils de recherche</summary>
     <div class="filter-profiles-list" id="<%= section %>-filter-profiles-list">
       <% profiles.forEach(function (p) { %>
         <div class="filter-profile-chip" data-profile-id="<%= p.id %>">
@@ -36,11 +36,11 @@ window.<%= section === 'wiki' ? 'WIKI' : 'GALLERY' %>_FILTER_PROFILES = <%- JSON
 
 <div class="filter-profile-modal-overlay" id="<%= section %>-filter-profile-modal" hidden>
   <div class="filter-profile-modal">
-    <p class="filter-profile-modal-title">Nommer ce profil de recherche</p>
-    <input type="text" class="filter-profile-modal-input" id="<%= section %>-filter-profile-name" placeholder="Ex. : Ultra bien not&eacute;" maxlength="60" autocomplete="off" />
+    <p class="filter-profile-modal-title" data-fr="Nommer ce profil de recherche" data-en="Name this filter">Nommer ce profil de recherche</p>
+    <input type="text" class="filter-profile-modal-input" id="<%= section %>-filter-profile-name" placeholder="Ex. : Ultra bien noté" data-placeholder-fr="Ex. : Ultra bien noté" data-placeholder-en="e.g. Top rated Ultra" maxlength="60" autocomplete="off" />
     <div class="filter-profile-modal-actions">
-      <button type="button" class="filter-profile-modal-cancel" id="<%= section %>-filter-profile-cancel">Annuler</button>
-      <button type="button" class="filter-profile-modal-confirm" id="<%= section %>-filter-profile-confirm">Enregistrer</button>
+      <button type="button" class="filter-profile-modal-cancel" id="<%= section %>-filter-profile-cancel" data-fr="Annuler" data-en="Cancel">Annuler</button>
+      <button type="button" class="filter-profile-modal-confirm" id="<%= section %>-filter-profile-confirm" data-fr="Enregistrer" data-en="Save">Enregistrer</button>
     </div>
   </div>
 </div>

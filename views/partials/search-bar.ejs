@@ -7,13 +7,14 @@
  *    showCount    {boolean} affiche un compteur de résultats (défaut false)
  */
   var _sid  = searchId;
-  var _ph   = (typeof placeholder !== 'undefined') ? placeholder : 'Recherche';
+  var _ph   = (typeof placeholder   !== 'undefined') ? placeholder   : 'Recherche';
+  var _phEn = (typeof placeholderEn !== 'undefined') ? placeholderEn : 'Search';
   var _cnt  = (typeof showCount   !== 'undefined') ? showCount   : false;
 %>
 <div class="wiki-search-wrap">
   <div class="wiki-search-bar">
     <input type="search" id="<%= _sid %>" class="wiki-search-input"
-      placeholder="<%= _ph %>" autocomplete="off" />
+      placeholder="<%= _ph %>" data-placeholder-fr="<%= _ph %>" data-placeholder-en="<%= _phEn %>" autocomplete="off" />
     <button type="button" id="<%= _sid %>-clear" class="wiki-search-clear"
       hidden aria-label="Effacer">&#215;</button>
   </div>

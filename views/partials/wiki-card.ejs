@@ -1,5 +1,12 @@
 <%
   var cat = categories.find(function (c) { return c.key === page.category; });
+
+  var WC_CAT_EN = {
+    partenaires: 'Partners', position: 'Position', fantasmes: 'Fantasies',
+    pratique: 'Practice', objets: 'Objects', lieux: 'Places',
+    classique: 'Classic', hardcore: 'Hardcore', bdsm: 'BDSM',
+    jeux_role: 'Role-play', fantaisie: 'Fantasy'
+  };
   var wcShowBadge = typeof showCategoryBadge !== 'undefined' ? showCategoryBadge : true;
 
   var wcHues = [cat ? cat.hue : 220].concat(
@@ -77,16 +84,18 @@
     var wcIsIrrealiste = page.tags.indexOf('irréaliste') !== -1;
     var wcIsFantaisie  = page.tags.indexOf('fantaisie') !== -1;
     var wcBannerText   = '';
+    var wcBannerTextEn = '';
     var wcBannerMod    = '';
     if (wcIsUltra && (wcIsIrrealiste || wcIsFantaisie)) {
-      wcBannerText = wcIsFantaisie ? 'Fantaisie & Ultra' : 'Ultra & Irr\u00e9aliste';
-      wcBannerMod  = 'both';
+      wcBannerText   = wcIsFantaisie ? 'Fantaisie & Ultra' : 'Ultra & Irr\u00e9aliste';
+      wcBannerTextEn = wcIsFantaisie ? 'Fantasy & Ultra'   : 'Ultra & Unrealistic';
+      wcBannerMod    = 'both';
     } else if (wcIsFantaisie) {
-      wcBannerText = 'Fantaisie';   wcBannerMod = 'irrealiste';
+      wcBannerText = 'Fantaisie';   wcBannerTextEn = 'Fantasy';     wcBannerMod = 'irrealiste';
     } else if (wcIsIrrealiste) {
-      wcBannerText = 'Irr\u00e9aliste'; wcBannerMod = 'irrealiste';
+      wcBannerText = 'Irr\u00e9aliste'; wcBannerTextEn = 'Unrealistic'; wcBannerMod = 'irrealiste';
     } else if (wcIsUltra) {
-      wcBannerText = 'Ultra';       wcBannerMod = 'ultra';
+      wcBannerText = 'Ultra';       wcBannerTextEn = 'Ultra';       wcBannerMod = 'ultra';
     }
   %>
   data-extra-cats="<%= (page.extraCategories || []).join('|') %>"
@@ -96,7 +105,7 @@
   <% if (page.imagePaths && page.imagePaths.length && currentUser) { %>
     <%# ── Carte AVEC image ───────────────────────────────────────────── %>
     <div class="wiki-card-image" data-images="<%= page.imagePaths.join('|') %>">
-      <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>"><%= wcBannerText %></span><% } %>
+      <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
       <% if (wcStatPctF !== null) { %>
         <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes"></div>
@@ -116,14 +125,14 @@
       <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
     </div>
     <span class="wiki-card-accent" style="background: <%= wcAccent %>">
-      <% if (wcShowBadge) { %><span class="wiki-card-accent-label"><%= cat ? cat.label : page.category %></span><% } %>
+      <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </span>
 
   <% } else { %>
     <%# ── Carte SANS image : placeholder géométrique ────────────────── %>
     <% var ph = cat ? cat.hue : 220; %>
     <div class="wiki-card-image">
-      <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>"><%= wcBannerText %></span><% } %>
+      <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
       <% if (wcStatPctF !== null) { %>
         <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes"></div>
@@ -157,7 +166,7 @@
       <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
     </div>
     <span class="wiki-card-accent" style="background: <%= wcAccent %>">
-      <% if (wcShowBadge) { %><span class="wiki-card-accent-label"><%= cat ? cat.label : page.category %></span><% } %>
+      <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </span>
   <% } %>
 </a>
