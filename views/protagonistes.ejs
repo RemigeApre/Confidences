@@ -11,75 +11,66 @@
     <div class="wiki-sidebar-body">
       <div class="wiki-sidebar-filters">
 
-        <%# Genre %>
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label" data-fr="Genre" data-en="Gender">Genre</span>
-          <div class="links-filter" id="prot-gender-filter">
-            <button type="button" class="tag-chip active" data-gender="" data-fr="Tous" data-en="All">Tous</button>
-            <button type="button" class="tag-chip" data-gender="femme" data-fr="Femme" data-en="Female">Femme</button>
-            <button type="button" class="tag-chip" data-gender="homme" data-fr="Homme" data-en="Male">Homme</button>
-            <button type="button" class="tag-chip" data-gender="autre" data-fr="Autre" data-en="Other">Autre</button>
+        <%# ── Boutons de contenu (en haut) ── %>
+        <div class="prot-sf-top-btns">
+          <button type="button" class="prot-sf-toggle-btn" id="prot-ultra-toggle">Ultra</button>
+          <button type="button" class="prot-sf-toggle-btn" id="prot-irrealiste-toggle">Irr&eacute;aliste</button>
+          <button type="button" class="prot-sf-variations-btn" id="prot-children-toggle">Variations</button>
+        </div>
+
+        <%# ── Genre : 3 icônes tristate ── %>
+        <div class="prot-sf-section prot-sf-section--icons">
+          <div class="prot-sf-gender-row" id="prot-gender-filter">
+            <%# femme %>
+            <button type="button" class="prot-sf-gender-btn" data-gender="femme" data-state="0" aria-label="Femme">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+            </button>
+            <%# homme %>
+            <button type="button" class="prot-sf-gender-btn" data-gender="homme" data-state="0" aria-label="Homme">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+            </button>
+            <%# autre %>
+            <button type="button" class="prot-sf-gender-btn" data-gender="autre" data-state="0" aria-label="Autre">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+            </button>
           </div>
         </div>
 
-        <%# Nature %>
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label" data-fr="Nature" data-en="Nature">Nature</span>
-          <div class="links-filter" id="prot-nature-filter">
-            <button type="button" class="tag-chip active" data-nature="" data-fr="Toutes" data-en="All">Toutes</button>
-            <button type="button" class="tag-chip" data-nature="humain" data-fr="Humain" data-en="Human">Humain</button>
-            <button type="button" class="tag-chip" data-nature="monstre" data-fr="Monstre" data-en="Monster">Monstre</button>
-            <button type="button" class="tag-chip" data-nature="animal" data-fr="Animal" data-en="Animal">Animal</button>
-            <button type="button" class="tag-chip" data-nature="pokemon" data-fr="Pokémon" data-en="Pokémon">Pok&eacute;mon</button>
-            <button type="button" class="tag-chip" data-nature="autre" data-fr="Autre" data-en="Other">Autre</button>
-          </div>
+        <%# ── Nature : tristate chips ── %>
+        <div class="prot-sf-section" id="prot-nature-filter">
+          <button type="button" class="prot-sf-chip" data-nature="humain" data-state="0" data-fr="Humain" data-en="Human">Humain</button>
+          <button type="button" class="prot-sf-chip" data-nature="monstre" data-state="0" data-fr="Monstre" data-en="Monster">Monstre</button>
+          <button type="button" class="prot-sf-chip" data-nature="animal" data-state="0" data-fr="Animal" data-en="Animal">Animal</button>
+          <button type="button" class="prot-sf-chip" data-nature="autre" data-state="0" data-fr="Autre" data-en="Other">Autre</button>
         </div>
 
         <% if (races && races.length) { %>
-        <%# Race / Espèce %>
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label" data-fr="Race / Espèce" data-en="Race / Species">Race / Esp&egrave;ce</span>
-          <div class="links-filter" id="prot-race-filter">
-            <button type="button" class="tag-chip active" data-race="">Toutes</button>
-            <% races.forEach(function(r) { %>
-              <button type="button" class="tag-chip" data-race="<%= r.id %>"
-                style="<%= r.color ? '--chip-accent:' + r.color : '' %>">
-                <%= r.icon ? r.icon + ' ' : '' %><%= r.name %>
+        <%# ── Race / Espèce : tristate chips ── %>
+        <div class="prot-sf-section" id="prot-race-filter">
+          <% races.forEach(function(r) { %>
+            <button type="button" class="prot-sf-chip" data-race="<%= r.id %>" data-state="0"
+              style="<%= r.color ? '--chip-accent:' + r.color : '' %>">
+              <%= r.icon ? r.icon + ' ' : '' %><%= r.name %>
+            </button>
+          <% }) %>
+        </div>
+        <% } %>
+
+        <% if (parodies && parodies.length) { %>
+        <%# ── Univers : top 5 + recherche ── %>
+        <div class="prot-sf-section prot-sf-section--univers" id="prot-parody-section">
+          <input type="search" class="prot-sf-search" id="prot-parody-search"
+            placeholder="Univers…" autocomplete="off" />
+          <div class="prot-sf-parody-list" id="prot-parody-filter">
+            <% parodies.slice(0, 5).forEach(function(par) { %>
+              <button type="button" class="prot-sf-parody-btn" data-parody="<%= par.name %>" data-state="0">
+                <span class="prot-sf-parody-name"><%= par.name %></span>
+                <span class="prot-sf-parody-count"><%= par.count %></span>
               </button>
             <% }) %>
           </div>
         </div>
         <% } %>
-
-        <% if (parodies && parodies.length) { %>
-        <%# Univers %>
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label" data-fr="Univers" data-en="Universe">Univers</span>
-          <div class="links-filter" id="prot-parody-filter">
-            <button type="button" class="tag-chip active" data-parody="">Tous</button>
-            <% parodies.forEach(function(par) { %>
-              <button type="button" class="tag-chip" data-parody="<%= par %>"><%= par %></button>
-            <% }) %>
-          </div>
-        </div>
-        <% } %>
-
-        <%# Ultra / Irréaliste %>
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label" data-fr="Contenu" data-en="Content">Contenu</span>
-          <div class="links-filter">
-            <button type="button" class="wiki-ultra-btn" id="prot-ultra-toggle" data-fr="Afficher Ultra" data-en="Show Ultra">Afficher Ultra</button>
-            <button type="button" class="wiki-ultra-btn" id="prot-irrealiste-toggle" data-fr="Masquer Irréaliste" data-en="Hide Unrealistic">Masquer Irréaliste</button>
-          </div>
-        </div>
-
-        <%# Versions liées %>
-        <div class="wiki-filter-section">
-          <span class="wiki-filter-label" data-fr="Versions" data-en="Versions">Versions</span>
-          <div class="links-filter">
-            <button type="button" class="wiki-ultra-btn" id="prot-children-toggle" data-fr="Afficher versions" data-en="Show versions">Afficher versions</button>
-          </div>
-        </div>
 
       </div>
     </div>
@@ -161,66 +152,181 @@
 (function() {
   var grid = document.getElementById('prot-grid');
   if (!grid) return;
-  var cards = Array.from(grid.querySelectorAll('.prot-card'));
+  var cards    = Array.from(grid.querySelectorAll('.prot-card'));
   var noResults = document.getElementById('prot-no-results');
-  var countEl = document.getElementById('prot-count-hero');
+  var countEl  = document.getElementById('prot-count-hero');
 
-  var SS_KEY = 'prot-filters';
+  // ── État tristate : 0 = neutre, 1 = inclus, -1 = exclu ──────────────
+  var SS_KEY = 'prot-filters-v2';
   var saved = (function() { try { return JSON.parse(sessionStorage.getItem(SS_KEY) || '{}'); } catch(_) { return {}; } })();
 
-  var activeGender = saved.gender || '';
-  var activeNature = saved.nature || '';
-  var activeParody = saved.parody || '';
-  var activeRace   = saved.race   || '';
+  var genderState = saved.gender || {};  // { femme: 0|1|-1, ... }
+  var natureState = saved.nature || {};
+  var raceState   = saved.race   || {};
+  var parodyState = saved.parody || {};  // { name: 0|1|-1 }
+
   var hideUltra      = localStorage.getItem('gallery-hide-ultra') !== '0';
   var hideIrrealiste = localStorage.getItem('gallery-hide-irrealiste') === '1';
   var hideChildren   = localStorage.getItem('prot-hide-children') !== '0';
 
   function saveFilters() {
-    try { sessionStorage.setItem(SS_KEY, JSON.stringify({ gender: activeGender, nature: activeNature, parody: activeParody, race: activeRace })); } catch(_) {}
+    try { sessionStorage.setItem(SS_KEY, JSON.stringify({ gender: genderState, nature: natureState, race: raceState, parody: parodyState })); } catch(_) {}
+  }
+
+  // Logique tristate : si au moins un +1 → la carte doit correspondre à un +1
+  // Si -1 → la carte ne doit pas correspondre
+  function tristateMatch(state, cardVal) {
+    var keys = Object.keys(state);
+    var included = keys.filter(function(k) { return state[k] === 1; });
+    var excluded = keys.filter(function(k) { return state[k] === -1; });
+    if (excluded.indexOf(cardVal) !== -1) return false;
+    if (included.length && included.indexOf(cardVal) === -1) return false;
+    return true;
   }
 
   function applyFilters() {
     var shown = 0;
     cards.forEach(function(c) {
       var ok = true;
-      if (activeGender && c.dataset.gender !== activeGender) ok = false;
-      if (activeNature && c.dataset.nature !== activeNature) ok = false;
-      if (activeParody && c.dataset.parody !== activeParody) ok = false;
-      if (activeRace   && c.dataset.race   !== activeRace)   ok = false;
+      if (!tristateMatch(genderState, c.dataset.gender || '')) ok = false;
+      if (!tristateMatch(natureState, c.dataset.nature || '')) ok = false;
+      if (!tristateMatch(raceState,   String(c.dataset.race || ''))) ok = false;
+      if (!tristateMatch(parodyState, c.dataset.parody || '')) ok = false;
       var sp = c.dataset.special || '';
-      if (hideUltra && sp === 'ultra') ok = false;
-      if (hideIrrealiste && sp === 'irrealiste') ok = false;
-      if (hideChildren && c.dataset.isChild === '1') ok = false;
+      if (hideUltra      && sp === 'ultra')       ok = false;
+      if (hideIrrealiste && sp === 'irrealiste')  ok = false;
+      if (hideChildren   && c.dataset.isChild === '1') ok = false;
       c.hidden = !ok;
       if (ok) shown++;
     });
     if (noResults) noResults.hidden = shown > 0;
-    if (countEl) countEl.textContent = shown;
+    if (countEl)   countEl.textContent = shown;
   }
 
-  function syncToggle(btn, hidden, labelHideFr, labelShowFr, labelHideEn, labelShowEn) {
-    if (!btn) return;
-    var isEn = localStorage.getItem('slang') === 'en';
-    btn.dataset.fr = hidden ? labelShowFr : labelHideFr;
-    btn.dataset.en = hidden ? labelShowEn : labelHideEn;
-    btn.textContent = hidden ? (isEn ? labelShowEn : labelShowFr) : (isEn ? labelHideEn : labelHideFr);
-    btn.classList.toggle('active', hidden);
+  // ── Wiring tristate générique ─────────────────────────────────────────
+  // state : l'objet d'état (partagé par référence via getter/setter)
+  function wireTristateGroup(containerEl, dataKey, getState, setState) {
+    if (!containerEl) return;
+    var btns = Array.from(containerEl.querySelectorAll('[data-' + dataKey + ']'));
+    btns.forEach(function(btn) {
+      var val = btn.dataset[dataKey];
+      // Restaurer état sauvegardé
+      var st = getState()[val] || 0;
+      applyBtnState(btn, st, dataKey);
+
+      btn.addEventListener('click', function() {
+        var cur = getState()[val] || 0;
+        var next = cur === 0 ? 1 : cur === 1 ? -1 : 0;
+        var s = getState();
+        s[val] = next;
+        setState(s);
+        applyBtnState(btn, next, dataKey);
+        saveFilters();
+        applyFilters();
+      });
+    });
   }
 
+  function applyBtnState(btn, state, dataKey) {
+    btn.dataset.state = state;
+    btn.classList.remove('prot-sf-state-inc', 'prot-sf-state-exc');
+    if (state === 1)  btn.classList.add('prot-sf-state-inc');
+    if (state === -1) btn.classList.add('prot-sf-state-exc');
+  }
+
+  // Genre (boutons icônes)
+  wireTristateGroup(
+    document.getElementById('prot-gender-filter'), 'gender',
+    function() { return genderState; },
+    function(s) { genderState = s; }
+  );
+
+  // Nature
+  wireTristateGroup(
+    document.getElementById('prot-nature-filter'), 'nature',
+    function() { return natureState; },
+    function(s) { natureState = s; }
+  );
+
+  // Race
+  wireTristateGroup(
+    document.getElementById('prot-race-filter'), 'race',
+    function() { return raceState; },
+    function(s) { raceState = s; }
+  );
+
+  // Univers (parody) — champ de recherche + top 5
+  var parodyFilter = document.getElementById('prot-parody-filter');
+  var parodySearch = document.getElementById('prot-parody-search');
+
+  // Données complètes injectées côté serveur
+  var allParodies = <%- JSON.stringify((parodies || []).map(function(p){ return { name: p.name || p, count: p.count || 0 }; })) %>;
+
+  function renderParodyList(q) {
+    if (!parodyFilter) return;
+    var filtered = q
+      ? allParodies.filter(function(p) { return p.name.toLowerCase().includes(q.toLowerCase()); })
+      : allParodies.slice(0, 5);
+    while (parodyFilter.firstChild) parodyFilter.removeChild(parodyFilter.firstChild);
+    filtered.slice(0, 10).forEach(function(par) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'prot-sf-parody-btn';
+      btn.dataset.parody = par.name;
+      var st = parodyState[par.name] || 0;
+      btn.dataset.state = st;
+      if (st === 1)  btn.classList.add('prot-sf-state-inc');
+      if (st === -1) btn.classList.add('prot-sf-state-exc');
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'prot-sf-parody-name';
+      nameSpan.textContent = par.name;
+      btn.appendChild(nameSpan);
+      if (par.count) {
+        var countSpan = document.createElement('span');
+        countSpan.className = 'prot-sf-parody-count';
+        countSpan.textContent = par.count;
+        btn.appendChild(countSpan);
+      }
+      btn.addEventListener('click', function() {
+        var cur = parodyState[par.name] || 0;
+        var next = cur === 0 ? 1 : cur === 1 ? -1 : 0;
+        parodyState[par.name] = next;
+        btn.dataset.state = next;
+        btn.classList.remove('prot-sf-state-inc', 'prot-sf-state-exc');
+        if (next === 1)  btn.classList.add('prot-sf-state-inc');
+        if (next === -1) btn.classList.add('prot-sf-state-exc');
+        saveFilters();
+        applyFilters();
+      });
+      parodyFilter.appendChild(btn);
+    });
+  }
+
+  if (parodySearch) {
+    parodySearch.addEventListener('input', function() { renderParodyList(parodySearch.value.trim()); });
+  }
+  renderParodyList('');
+
+  // ── Boutons Ultra / Irréaliste / Variations ───────────────────────────
   var ultraToggle      = document.getElementById('prot-ultra-toggle');
   var irrealisteToggle = document.getElementById('prot-irrealiste-toggle');
   var childrenToggle   = document.getElementById('prot-children-toggle');
 
-  syncToggle(ultraToggle,      hideUltra,      'Masquer Ultra',       'Afficher Ultra',       'Hide Ultra',        'Show Ultra');
-  syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste',  'Afficher Irréaliste',  'Hide Unrealistic',  'Show Unrealistic');
-  syncToggle(childrenToggle,   hideChildren,   'Masquer versions',    'Afficher versions',    'Hide versions',     'Show versions');
+  function syncToggleBtn(btn, active) {
+    if (!btn) return;
+    btn.classList.toggle('prot-sf-toggle-btn--on', active);
+  }
+
+  syncToggleBtn(ultraToggle,      hideUltra);
+  syncToggleBtn(irrealisteToggle, hideIrrealiste);
+  // Variations : actif = les variantes sont VISIBLES (hideChildren = false)
+  if (childrenToggle) childrenToggle.classList.toggle('prot-sf-variations-btn--on', !hideChildren);
 
   if (ultraToggle) {
     ultraToggle.addEventListener('click', function() {
       hideUltra = !hideUltra;
       localStorage.setItem('gallery-hide-ultra', hideUltra ? '1' : '0');
-      syncToggle(ultraToggle, hideUltra, 'Masquer Ultra', 'Afficher Ultra', 'Hide Ultra', 'Show Ultra');
+      syncToggleBtn(ultraToggle, hideUltra);
       applyFilters();
     });
   }
@@ -228,7 +334,7 @@
     irrealisteToggle.addEventListener('click', function() {
       hideIrrealiste = !hideIrrealiste;
       localStorage.setItem('gallery-hide-irrealiste', hideIrrealiste ? '1' : '0');
-      syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste', 'Afficher Irréaliste', 'Hide Unrealistic', 'Show Unrealistic');
+      syncToggleBtn(irrealisteToggle, hideIrrealiste);
       applyFilters();
     });
   }
@@ -236,37 +342,11 @@
     childrenToggle.addEventListener('click', function() {
       hideChildren = !hideChildren;
       localStorage.setItem('prot-hide-children', hideChildren ? '1' : '0');
-      syncToggle(childrenToggle, hideChildren, 'Masquer versions', 'Afficher versions', 'Hide versions', 'Show versions');
+      childrenToggle.classList.toggle('prot-sf-variations-btn--on', !hideChildren);
       applyFilters();
     });
   }
 
-  function wireChips(containerId, key, setter, currentVal) {
-    var box = document.getElementById(containerId);
-    if (!box) return;
-    // Restaurer le chip actif
-    if (currentVal) {
-      var toActivate = box.querySelector('[data-' + key + '="' + currentVal + '"]');
-      if (toActivate) {
-        box.querySelectorAll('.tag-chip').forEach(function(b) { b.classList.remove('active'); });
-        toActivate.classList.add('active');
-      }
-    }
-    box.querySelectorAll('.tag-chip').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        box.querySelectorAll('.tag-chip').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        setter(btn.dataset[key] || '');
-        saveFilters();
-        applyFilters();
-      });
-    });
-  }
-
-  wireChips('prot-gender-filter', 'gender', function(v) { activeGender = v; }, activeGender);
-  wireChips('prot-nature-filter', 'nature', function(v) { activeNature = v; }, activeNature);
-  wireChips('prot-parody-filter', 'parody', function(v) { activeParody = v; }, activeParody);
-  wireChips('prot-race-filter',   'race',   function(v) { activeRace   = v; }, activeRace);
   applyFilters();
 })();
 </script>

@@ -49,7 +49,12 @@ function buildProtagonistesRouter(config) {
 
   router.get("/", (req, res) => {
     const all = db.listProtagonistes({ includeChildren: true });
-    const parodies = [...new Set(all.map(p => p.parody).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+    // Parodies triées par nombre de personnages décroissant, avec leur count
+    const parodyCounts = {};
+    all.forEach(p => { if (p.parody) parodyCounts[p.parody] = (parodyCounts[p.parody] || 0) + 1; });
+    const parodies = Object.entries(parodyCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count }));
     const races = listRaces();
     res.render("protagonistes", { config, protagonistes: all, parodies, races });
   });
