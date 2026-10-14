@@ -14,64 +14,42 @@
   ];
   var currentGender = protagoniste ? (protagoniste.gender || 'autre') : 'autre';
 %>
-<main class="container" style="max-width:960px;margin:0 auto">
+<main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste ? protagoniste.name : 'Nouveau personnage', navBack: protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' }) %>
 
-  <%# ── Formulaire de suppression (vide, référencé par form=) ── %>
+  <%# ── Formulaire de suppression (vide, référencé via form=) ── %>
   <% if (protagoniste) { %>
   <form method="POST" action="/protagonistes/<%= protagoniste.id %>/delete" id="prot-delete-form"
     onsubmit="return confirm('Supprimer ce personnage d\u00e9finitivement ?')"></form>
   <% } %>
 
-  <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="wf-back-btn">&#8592; Retour</a>
-
-  <%# ── Barre d'actions en haut à droite ── %>
-  <div class="wf-actions-right">
-    <% if (protagoniste) { %>
-    <div class="prot-publish-wrap">
-      <% if (_isEn) { %>
-      <button type="button" id="prot-publish-btn"
-        class="prot-publish-btn<%= _trans.published_en === '1' ? ' prot-publish-btn--on' : '' %>">
-        <%= _trans.published_en === '1' ? 'Publi&eacute;' : '&Agrave; publier' %>
-      </button>
-      <input type="hidden" name="published_en" id="prot-publish-hidden" form="prot-form"
-        value="<%= _trans.published_en === '1' ? '1' : '' %>" />
-      <% } %>
-      <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/protagonistes/' + protagoniste.id + '/edit' }) %>
-    </div>
-    <% } %>
-    <button type="submit" form="prot-form" class="wf-save-btn">Enregistrer</button>
-  </div>
-
-  <%# ── Formulaire principal ── %>
+  <%# ── Formulaire principal (englobe le volet latéral fixe) ── %>
   <form method="POST" action="<%= protagoniste ? '/protagonistes/' + protagoniste.id + '/update' : '/protagonistes/new' %>"
     class="nv-form" id="prot-form" data-no-enter-submit enctype="multipart/form-data">
     <% if (_isEn) { %><input type="hidden" name="_editLang" value="en" /><% } %>
     <% if (_isEn) { %><input type="hidden" name="evolutions_en" id="prot-evo-en-hidden" value="[]" /><% } %>
 
-    <div class="prot-form-outer">
+    <%# ════════════════════════════════════════════════════════
+        VOLET GAUCHE FIXE — paramètres partagés FR/EN
+        (position:fixed dans la marge gauche du container .wide)
+        ════════════════════════════════════════════════════════ %>
+    <aside class="prot-edit-sidebar" id="prot-edit-sidebar">
+      <div class="prot-edit-sidebar-inner">
 
-      <%# ════════════════════════════════════════════════════
-          VOLET GAUCHE — paramètres partagés
-          ════════════════════════════════════════════════════ %>
-      <aside class="prot-param-sidebar" id="prot-param-sidebar">
         <% if (_isEn) { %>
         <div class="prot-sb-en-badge">Commun FR/EN</div>
         <% } %>
 
-        <%# ── Genre ── %>
+        <%# Genre %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
           <span class="prot-sb-label">Genre</span>
           <div class="prot-gender-btns prot-gender-btns--sm">
             <% genderOpts.forEach(function(opt) { %>
             <label class="prot-gender-btn prot-gender-btn--<%= opt.value %><%= currentGender === opt.value ? ' active' : '' %>">
               <input type="radio" name="gender" value="<%= opt.value %>" <%= currentGender === opt.value ? 'checked' : '' %> style="display:none" />
-              <% if (opt.value === 'femme') { %>
-                <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
-              <% } else if (opt.value === 'homme') { %>
-                <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
-              <% } else { %>
-                <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+              <% if (opt.value === 'femme') { %><svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+              <% } else if (opt.value === 'homme') { %><svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+              <% } else { %><svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
               <% } %>
               <%= opt.label %>
             </label>
@@ -79,7 +57,7 @@
           </div>
         </div>
 
-        <%# ── Classification ── %>
+        <%# Classification %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
           <span class="prot-sb-label">Classification</span>
           <input type="hidden" name="special" id="prot-special-hidden" value="<%= protagoniste ? (protagoniste.special || '') : '' %>" />
@@ -90,7 +68,7 @@
           </div>
         </div>
 
-        <%# ── Nature ── %>
+        <%# Nature %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
           <label class="prot-sb-label" for="prot-nature">Nature</label>
           <select name="nature" id="prot-nature" class="prot-form-select-elegant prot-form-select-elegant--sm">
@@ -103,26 +81,22 @@
           </select>
         </div>
 
-        <%# ── Race / Espèce ── %>
+        <%# Race / Espèce %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
             <label class="prot-sb-label" for="prot-race" style="margin:0">Race / Esp&egrave;ce</label>
             <button type="button" id="prot-race-manage-btn"
-              style="background:none;border:1px solid rgba(255,255,255,.14);color:#64748b;font-size:.62rem;padding:.1rem .4rem;border-radius:4px;cursor:pointer;flex-shrink:0">
-              + G&eacute;rer
-            </button>
+              style="background:none;border:1px solid rgba(255,255,255,.14);color:#64748b;font-size:.62rem;padding:.1rem .4rem;border-radius:4px;cursor:pointer;flex-shrink:0">+ G&eacute;rer</button>
           </div>
           <select name="race_id" id="prot-race" class="prot-form-select-elegant prot-form-select-elegant--sm">
             <option value="">— aucune —</option>
             <% _races.forEach(function(r) { %>
-              <option value="<%= r.id %>" <%= String(_curRaceId) === String(r.id) ? 'selected' : '' %>>
-                <%= r.icon ? r.icon + ' ' : '' %><%= r.name %>
-              </option>
+              <option value="<%= r.id %>" <%= String(_curRaceId) === String(r.id) ? 'selected' : '' %>><%= r.icon ? r.icon + ' ' : '' %><%= r.name %></option>
             <% }) %>
           </select>
         </div>
 
-        <%# ── Clan ── %>
+        <%# Clan %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" id="prot-clan-group"
           style="<%= (!_curRaceId || !_curRaceClans || !_curRaceClans.clans || !_curRaceClans.clans.length) ? 'display:none' : '' %>">
           <label class="prot-sb-label" for="prot-clan">Clan</label>
@@ -134,67 +108,61 @@
           </select>
         </div>
 
-        <%# ── Panneau de gestion des races (inline) ── %>
+        <%# Panneau gestion des races (s'ouvre inline) %>
         <div id="prot-race-panel" style="display:none" class="prot-race-panel">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem">
-            <span style="font-size:.65rem;font-weight:700;color:#a5b4fc;text-transform:uppercase;letter-spacing:.06em">Races</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem">
+            <span style="font-size:.62rem;font-weight:700;color:#a5b4fc;text-transform:uppercase;letter-spacing:.06em">Races</span>
             <button type="button" id="prot-race-panel-close" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:.95rem;line-height:1;padding:0">&times;</button>
           </div>
-          <div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.18);border-radius:6px;padding:.55rem .6rem;margin-bottom:.65rem">
-            <div style="font-size:.62rem;color:#818cf8;font-weight:600;margin-bottom:.4rem">Nouvelle race</div>
+          <div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.18);border-radius:6px;padding:.5rem .55rem;margin-bottom:.6rem">
+            <div style="font-size:.62rem;color:#818cf8;font-weight:600;margin-bottom:.35rem">Nouvelle race</div>
             <div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap">
               <input type="text" id="rp-new-race-name" placeholder="Nom…"
-                style="flex:1;min-width:70px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#f1f5f9;border-radius:5px;padding:.22rem .45rem;font-size:.75rem;outline:none;font-family:inherit">
+                style="flex:1;min-width:60px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#f1f5f9;border-radius:5px;padding:.2rem .4rem;font-size:.72rem;outline:none;font-family:inherit">
               <input type="text" id="rp-new-race-icon" placeholder="😈" title="Emoji"
-                style="width:36px;text-align:center;font-size:1rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#f1f5f9;border-radius:5px;padding:.22rem 0;outline:none">
+                style="width:34px;text-align:center;font-size:.95rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#f1f5f9;border-radius:5px;padding:.2rem 0;outline:none">
               <input type="color" id="rp-new-race-color" value="#6366f1" title="Couleur"
-                style="width:26px;height:26px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0">
+                style="width:24px;height:24px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0">
               <button type="button" id="rp-create-race-btn"
-                style="background:#4f46e5;border:none;color:#fff;font-size:.7rem;padding:.22rem .6rem;border-radius:5px;cursor:pointer;white-space:nowrap">
-                Cr&eacute;er
-              </button>
+                style="background:#4f46e5;border:none;color:#fff;font-size:.68rem;padding:.2rem .55rem;border-radius:5px;cursor:pointer;white-space:nowrap">Cr&eacute;er</button>
             </div>
-            <span id="rp-create-race-status" style="font-size:.65rem;color:#4ade80;display:block;height:.8em;margin-top:.25rem"></span>
+            <span id="rp-create-race-status" style="font-size:.62rem;color:#4ade80;display:block;height:.75em;margin-top:.2rem"></span>
           </div>
-          <div id="rp-race-list" style="display:flex;flex-direction:column;gap:.5rem">
+          <div id="rp-race-list" style="display:flex;flex-direction:column;gap:.45rem">
             <% if (!_races.length) { %>
-              <p style="font-size:.7rem;color:#475569;font-style:italic;margin:0">Aucune race.</p>
+              <p style="font-size:.68rem;color:#475569;font-style:italic;margin:0">Aucune race.</p>
             <% } %>
             <% _races.forEach(function(r) { %>
             <div class="rp-race-item" data-race-id="<%= r.id %>"
-              style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:7px;padding:.45rem .55rem">
-              <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem">
-                <span style="width:8px;height:8px;border-radius:50%;background:<%= r.color || '#6366f1' %>;flex-shrink:0"></span>
-                <span style="font-size:.78rem;font-weight:700;color:#e2e8f0;flex:1"><%= r.icon ? r.icon + ' ' : '' %><%= r.name %></span>
+              style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:6px;padding:.4rem .5rem">
+              <div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.3rem">
+                <span style="width:7px;height:7px;border-radius:50%;background:<%= r.color || '#6366f1' %>;flex-shrink:0"></span>
+                <span style="font-size:.75rem;font-weight:700;color:#e2e8f0;flex:1"><%= r.icon ? r.icon + ' ' : '' %><%= r.name %></span>
                 <button type="button" class="rp-delete-race-btn"
-                  style="background:none;border:none;color:#ef4444;font-size:.72rem;cursor:pointer;padding:.05rem .2rem" title="Supprimer">&#128465;</button>
+                  style="background:none;border:none;color:#ef4444;font-size:.7rem;cursor:pointer;padding:0" title="Supprimer">&#128465;</button>
               </div>
-              <div class="rp-clan-list" style="display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.35rem">
+              <div class="rp-clan-list" style="display:flex;flex-wrap:wrap;gap:.2rem;margin-bottom:.3rem">
                 <% (r.clans||[]).forEach(function(c) { %>
                   <span class="rp-clan-tag" data-clan-id="<%= c.id %>"
-                    style="display:inline-flex;align-items:center;gap:.2rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:.1rem .45rem;font-size:.68rem;color:#cbd5e1">
+                    style="display:inline-flex;align-items:center;gap:.18rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:.08rem .4rem;font-size:.65rem;color:#cbd5e1">
                     <%= c.name %>
-                    <button type="button" class="rp-delete-clan-btn" style="background:none;border:none;color:#f87171;cursor:pointer;padding:0;font-size:.78rem;line-height:1">&times;</button>
+                    <button type="button" class="rp-delete-clan-btn" style="background:none;border:none;color:#f87171;cursor:pointer;padding:0;font-size:.75rem;line-height:1">&times;</button>
                   </span>
                 <% }) %>
-                <% if (!(r.clans||[]).length) { %>
-                  <span style="font-size:.65rem;color:#475569;font-style:italic">Aucun clan</span>
-                <% } %>
+                <% if (!(r.clans||[]).length) { %><span style="font-size:.62rem;color:#475569;font-style:italic">Aucun clan</span><% } %>
               </div>
-              <div style="display:flex;gap:.3rem;align-items:center">
+              <div style="display:flex;gap:.25rem;align-items:center">
                 <input type="text" class="rp-new-clan-name" placeholder="+ Clan"
-                  style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.18rem .4rem;font-size:.7rem;outline:none;font-family:inherit">
+                  style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.15rem .35rem;font-size:.68rem;outline:none;font-family:inherit">
                 <button type="button" class="rp-add-clan-btn"
-                  style="background:none;border:1px solid rgba(255,255,255,.16);color:#94a3b8;font-size:.65rem;padding:.18rem .4rem;border-radius:4px;cursor:pointer;white-space:nowrap">
-                  + Clan
-                </button>
+                  style="background:none;border:1px solid rgba(255,255,255,.14);color:#94a3b8;font-size:.62rem;padding:.15rem .35rem;border-radius:4px;cursor:pointer;white-space:nowrap">+ Clan</button>
               </div>
             </div>
             <% }) %>
           </div>
         </div>
 
-        <%# ── Évolutions ── %>
+        <%# Évolutions %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked-soft<% } %>">
           <span class="prot-sb-label">Cha&icirc;ne d'&eacute;volution</span>
           <input type="hidden" name="evolutions" id="prot-evo-hidden"
@@ -224,7 +192,7 @@
           <% } %>
         </div>
 
-        <%# ── Parodies ── %>
+        <%# Parodies %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
           <%- include('partials/parody-input', {
                 idPrefix:  'protf',
@@ -234,7 +202,7 @@
               }) %>
         </div>
 
-        <%# ── Tags ── %>
+        <%# Tags %>
         <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
           <span class="prot-sb-label">Tags</span>
           <% if (allTags && allTags.length) { %>
@@ -256,7 +224,7 @@
           </div>
         </div>
 
-        <%# ── Supprimer ── %>
+        <%# Supprimer %>
         <% if (protagoniste) { %>
         <div class="prot-sb-section prot-sb-section--delete">
           <button type="submit" form="prot-delete-form" class="prot-sb-delete-btn">
@@ -264,57 +232,76 @@
           </button>
         </div>
         <% } %>
-      </aside>
 
-      <%# ════════════════════════════════════════════════════
-          COLONNE CENTRALE — contenu traduisible
-          ════════════════════════════════════════════════════ %>
-      <div class="prot-form-column">
-        <div class="nv-form-wrap">
+      </div><%# /prot-edit-sidebar-inner %>
+    </aside>
 
-          <%# ── Nom ── %>
-          <% var _ptName = _isEn ? (_trans.name || '') : (protagoniste ? protagoniste.name : ''); %>
-          <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
-            value="<%= _ptName %>"
-            placeholder="<%= _isEn && protagoniste ? protagoniste.name : 'Nom du personnage\u2026' %>" />
+    <%# ════════════════════════════════════════════════
+        CONTENU CENTRAL — dans le flux normal du container
+        ════════════════════════════════════════════════ %>
+    <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="wf-back-btn">&#8592; Retour</a>
 
-          <%# ── Image ── %>
-          <div class="prot-form-img-section prot-form-img-section--centered<% if (_isEn) { %> prot-sb-locked<% } %>">
-            <div class="prot-form-field-label">Photo / Illustration</div>
-            <div class="prot-form-img-wrap" id="prot-img-wrap">
-              <% if (protagoniste && protagoniste.image_path) { %>
-                <div class="prot-form-img-holder" id="prot-img-holder">
-                  <img src="<%= protagoniste.image_path %>" alt="Image actuelle" class="prot-form-img-thumb" id="prot-img-thumb" />
-                  <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
-                  <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
-                </div>
-              <% } else { %>
-                <div class="prot-form-img-holder" id="prot-img-holder" style="display:none">
-                  <img src="" alt="Aper&ccedil;u" class="prot-form-img-thumb" id="prot-img-thumb" />
-                  <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
-                  <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
-                </div>
-              <% } %>
-              <label class="prot-form-img-pick" id="prot-img-pick-btn">
-                <input type="file" name="character_image" accept="image/*" id="prot-img-input" style="display:none" />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                <span id="prot-img-pick-label">Choisir une image&hellip;</span>
-              </label>
+    <div class="wf-actions-right">
+      <% if (protagoniste) { %>
+      <div class="prot-publish-wrap">
+        <% if (_isEn) { %>
+        <button type="button" id="prot-publish-btn"
+          class="prot-publish-btn<%= _trans.published_en === '1' ? ' prot-publish-btn--on' : '' %>">
+          <%= _trans.published_en === '1' ? 'Publi&eacute;' : '&Agrave; publier' %>
+        </button>
+        <input type="hidden" name="published_en" id="prot-publish-hidden"
+          value="<%= _trans.published_en === '1' ? '1' : '' %>" />
+        <% } %>
+        <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/protagonistes/' + protagoniste.id + '/edit' }) %>
+      </div>
+      <% } %>
+      <button type="submit" class="wf-save-btn">Enregistrer</button>
+    </div>
+
+    <div class="nv-form-wrap">
+
+      <%# Nom %>
+      <% var _ptName = _isEn ? (_trans.name || '') : (protagoniste ? protagoniste.name : ''); %>
+      <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
+        value="<%= _ptName %>"
+        placeholder="<%= _isEn && protagoniste ? protagoniste.name : 'Nom du personnage\u2026' %>" />
+
+      <%# Image %>
+      <div class="prot-form-img-section prot-form-img-section--centered<% if (_isEn) { %> prot-sb-locked<% } %>">
+        <div class="prot-form-field-label">Photo / Illustration</div>
+        <div class="prot-form-img-wrap" id="prot-img-wrap">
+          <% if (protagoniste && protagoniste.image_path) { %>
+            <div class="prot-form-img-holder" id="prot-img-holder">
+              <img src="<%= protagoniste.image_path %>" alt="Image actuelle" class="prot-form-img-thumb" id="prot-img-thumb" />
+              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
+              <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
             </div>
-          </div>
-
-          <%# ── Description ── %>
-          <% var _ptDesc = _isEn ? (_trans.description || '') : (protagoniste ? protagoniste.description : ''); %>
-          <textarea name="description" class="nv-form-content" rows="10"
-            placeholder="<%= _isEn ? 'English description\u2026' : 'Description, traits de caract\u00e8re, apparence\u2026' %>"
-            style="resize:vertical"><%= _ptDesc %></textarea>
-
-          <div class="wiki-form-actions wf-mobile-actions">
-            <button type="submit">Enregistrer</button>
-          </div>
+          <% } else { %>
+            <div class="prot-form-img-holder" id="prot-img-holder" style="display:none">
+              <img src="" alt="Aper&ccedil;u" class="prot-form-img-thumb" id="prot-img-thumb" />
+              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
+              <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
+            </div>
+          <% } %>
+          <label class="prot-form-img-pick" id="prot-img-pick-btn">
+            <input type="file" name="character_image" accept="image/*" id="prot-img-input" style="display:none" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span id="prot-img-pick-label">Choisir une image&hellip;</span>
+          </label>
         </div>
       </div>
-    </div><%# /prot-form-outer %>
+
+      <%# Description %>
+      <% var _ptDesc = _isEn ? (_trans.description || '') : (protagoniste ? protagoniste.description : ''); %>
+      <textarea name="description" class="nv-form-content" rows="10"
+        placeholder="<%= _isEn ? 'English description\u2026' : 'Description, traits de caract\u00e8re, apparence\u2026' %>"
+        style="resize:vertical"><%= _ptDesc %></textarea>
+
+      <div class="wiki-form-actions wf-mobile-actions">
+        <button type="submit">Enregistrer</button>
+      </div>
+    </div><%# /nv-form-wrap %>
+
   </form>
 
   <script nonce="<%= nonce %>">
@@ -338,29 +325,22 @@
     var removeBtn = document.getElementById('prot-img-remove-btn');
     var removeHid = document.getElementById('prot-remove-hidden');
     var pickBtn   = document.getElementById('prot-img-pick-btn');
-
     if (imgHolder && imgHolder.style.display !== 'none' && pickBtn) pickBtn.hidden = true;
     if (imgInput) {
       imgInput.addEventListener('change', function() {
-        var file = imgInput.files[0];
-        if (!file) return;
-        imgThumb.src = URL.createObjectURL(file);
-        imgHolder.style.display = '';
-        if (removeHid) removeHid.value = '';
-        if (pickBtn) pickBtn.hidden = true;
+        var file = imgInput.files[0]; if (!file) return;
+        imgThumb.src = URL.createObjectURL(file); imgHolder.style.display = '';
+        if (removeHid) removeHid.value = ''; if (pickBtn) pickBtn.hidden = true;
       });
     }
     if (removeBtn) {
       removeBtn.addEventListener('click', function() {
-        imgHolder.style.display = 'none';
-        imgThumb.src = '';
-        if (removeHid) removeHid.value = '1';
-        if (imgInput) imgInput.value = '';
-        if (pickBtn) pickBtn.hidden = false;
+        imgHolder.style.display = 'none'; imgThumb.src = '';
+        if (removeHid) removeHid.value = '1'; if (imgInput) imgInput.value = ''; if (pickBtn) pickBtn.hidden = false;
       });
     }
 
-    // ── Genre : boutons radio ──
+    // ── Genre ──
     document.querySelectorAll('.prot-gender-btns .prot-gender-btn').forEach(function(lbl) {
       lbl.addEventListener('click', function() {
         document.querySelectorAll('.prot-gender-btns .prot-gender-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -368,7 +348,7 @@
       });
     });
 
-    // ── Classification (special) ──
+    // ── Classification ──
     var specialHidden = document.getElementById('prot-special-hidden');
     document.querySelectorAll('.prot-special-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
@@ -385,237 +365,129 @@
       var hiddenEn = document.getElementById('prot-evo-en-hidden');
       if (!chain || !hidden) return;
       var isEnMode = !!hiddenEn;
-
       function syncHidden() {
-        var vals = Array.from(chain.querySelectorAll('.prot-evo-inp')).map(function(i) { return i.value.trim(); }).filter(Boolean);
+        var vals = Array.from(chain.querySelectorAll('.prot-evo-inp')).map(function(i){ return i.value.trim(); }).filter(Boolean);
         hidden.value = JSON.stringify(vals);
       }
       function syncEnHidden() {
         if (!hiddenEn) return;
-        var vals = Array.from(chain.querySelectorAll('.prot-evo-en-inp')).map(function(i) { return i.value.trim(); });
-        hiddenEn.value = JSON.stringify(vals);
+        hiddenEn.value = JSON.stringify(Array.from(chain.querySelectorAll('.prot-evo-en-inp')).map(function(i){ return i.value.trim(); }));
       }
-
       if (isEnMode) {
-        chain.querySelectorAll('.prot-evo-en-inp').forEach(function(inp) { inp.addEventListener('input', syncEnHidden); });
-        syncEnHidden();
-        return;
+        chain.querySelectorAll('.prot-evo-en-inp').forEach(function(inp){ inp.addEventListener('input', syncEnHidden); });
+        syncEnHidden(); return;
       }
-
       var addBtn = document.getElementById('prot-evo-add');
       function makeEntry(val) {
         var row = document.createElement('div'); row.className = 'prot-evo-entry';
-        var inp = document.createElement('input');
-        inp.type = 'text'; inp.className = 'prot-evo-inp lbep-input';
-        inp.value = val || ''; inp.placeholder = 'Forme pr\u00e9c\u00e9dente\u2026'; inp.maxLength = 100;
-        inp.addEventListener('input', syncHidden);
-        var upBtn = document.createElement('button'); upBtn.type = 'button'; upBtn.className = 'prot-evo-btn prot-evo-up'; upBtn.title = 'Monter'; upBtn.textContent = '\u2191';
-        var dnBtn = document.createElement('button'); dnBtn.type = 'button'; dnBtn.className = 'prot-evo-btn prot-evo-down'; dnBtn.title = 'Descendre'; dnBtn.textContent = '\u2193';
-        var rmBtn = document.createElement('button'); rmBtn.type = 'button'; rmBtn.className = 'prot-evo-btn prot-evo-remove'; rmBtn.title = 'Supprimer'; rmBtn.textContent = '\xd7';
-        upBtn.addEventListener('click', function() { var p = row.previousElementSibling; if (p && p.classList.contains('prot-evo-entry')) { chain.insertBefore(row, p); syncHidden(); } });
-        dnBtn.addEventListener('click', function() { var n = row.nextElementSibling; if (n && n.classList.contains('prot-evo-entry')) { chain.insertBefore(n, row); syncHidden(); } });
-        rmBtn.addEventListener('click', function() { row.remove(); syncHidden(); });
-        row.appendChild(inp); row.appendChild(upBtn); row.appendChild(dnBtn); row.appendChild(rmBtn);
-        return row;
+        var inp = document.createElement('input'); inp.type='text'; inp.className='prot-evo-inp lbep-input'; inp.value=val||''; inp.placeholder='Forme pr\u00e9c\u00e9dente\u2026'; inp.maxLength=100; inp.addEventListener('input', syncHidden);
+        var upBtn = document.createElement('button'); upBtn.type='button'; upBtn.className='prot-evo-btn prot-evo-up'; upBtn.title='Monter'; upBtn.textContent='\u2191';
+        var dnBtn = document.createElement('button'); dnBtn.type='button'; dnBtn.className='prot-evo-btn prot-evo-down'; dnBtn.title='Descendre'; dnBtn.textContent='\u2193';
+        var rmBtn = document.createElement('button'); rmBtn.type='button'; rmBtn.className='prot-evo-btn prot-evo-remove'; rmBtn.title='Supprimer'; rmBtn.textContent='\xd7';
+        upBtn.addEventListener('click', function(){ var p=row.previousElementSibling; if(p&&p.classList.contains('prot-evo-entry')){chain.insertBefore(row,p);syncHidden();} });
+        dnBtn.addEventListener('click', function(){ var n=row.nextElementSibling; if(n&&n.classList.contains('prot-evo-entry')){chain.insertBefore(n,row);syncHidden();} });
+        rmBtn.addEventListener('click', function(){ row.remove(); syncHidden(); });
+        row.appendChild(inp); row.appendChild(upBtn); row.appendChild(dnBtn); row.appendChild(rmBtn); return row;
       }
-      chain.querySelectorAll('.prot-evo-entry').forEach(function(row) {
-        var inp = row.querySelector('.prot-evo-inp');
-        var upBtn = row.querySelector('.prot-evo-up');
-        var dnBtn = row.querySelector('.prot-evo-down');
-        var rmBtn = row.querySelector('.prot-evo-remove');
-        if (inp) inp.addEventListener('input', syncHidden);
-        if (upBtn) upBtn.addEventListener('click', function() { var p = row.previousElementSibling; if (p && p.classList.contains('prot-evo-entry')) { chain.insertBefore(row, p); syncHidden(); } });
-        if (dnBtn) dnBtn.addEventListener('click', function() { var n = row.nextElementSibling; if (n && n.classList.contains('prot-evo-entry')) { chain.insertBefore(n, row); syncHidden(); } });
-        if (rmBtn) rmBtn.addEventListener('click', function() { row.remove(); syncHidden(); });
+      chain.querySelectorAll('.prot-evo-entry').forEach(function(row){
+        var inp=row.querySelector('.prot-evo-inp'), upBtn=row.querySelector('.prot-evo-up'), dnBtn=row.querySelector('.prot-evo-down'), rmBtn=row.querySelector('.prot-evo-remove');
+        if(inp) inp.addEventListener('input',syncHidden);
+        if(upBtn) upBtn.addEventListener('click',function(){ var p=row.previousElementSibling; if(p&&p.classList.contains('prot-evo-entry')){chain.insertBefore(row,p);syncHidden();} });
+        if(dnBtn) dnBtn.addEventListener('click',function(){ var n=row.nextElementSibling; if(n&&n.classList.contains('prot-evo-entry')){chain.insertBefore(n,row);syncHidden();} });
+        if(rmBtn) rmBtn.addEventListener('click',function(){ row.remove(); syncHidden(); });
       });
-      if (addBtn) addBtn.addEventListener('click', function() {
-        chain.appendChild(makeEntry(''));
-        var ni = chain.lastElementChild.querySelector('.prot-evo-inp');
-        if (ni) ni.focus();
-      });
+      if(addBtn) addBtn.addEventListener('click',function(){ chain.appendChild(makeEntry('')); var ni=chain.lastElementChild.querySelector('.prot-evo-inp'); if(ni) ni.focus(); });
     })();
 
     // ── Tags widget ──
     document.querySelectorAll('.wiki-tags-widget').forEach(function(widget) {
-      var board      = widget.querySelector('.wiki-tags-board');
-      var typer      = widget.querySelector('.wiki-tags-typing');
-      var hidden     = widget.querySelector('.wiki-tags-hidden');
-      var suggestBox = widget.querySelector('.wiki-tag-suggestions');
-      if (!board || !typer || !hidden) return;
-      var tags = (hidden.value || '').split(/[,;]+/).map(function(t){ return t.trim(); }).filter(Boolean);
-      function findTag(t) { return tags.indexOf(t) !== -1; }
-      function syncHidden() { hidden.value = tags.join(', '); }
-      function syncSuggest() {
-        if (!suggestBox) return;
-        suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(c){
-          var s = findTag(c.dataset.tag); c.classList.toggle('active', s); c.hidden = s;
-        });
+      var board=widget.querySelector('.wiki-tags-board'), typer=widget.querySelector('.wiki-tags-typing'), hidden=widget.querySelector('.wiki-tags-hidden'), suggestBox=widget.querySelector('.wiki-tag-suggestions');
+      if(!board||!typer||!hidden) return;
+      var tags=(hidden.value||'').split(/[,;]+/).map(function(t){return t.trim();}).filter(Boolean);
+      function findTag(t){return tags.indexOf(t)!==-1;}
+      function syncHidden(){hidden.value=tags.join(', ');}
+      function syncSuggest(){if(!suggestBox)return;suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(c){var s=findTag(c.dataset.tag);c.classList.toggle('active',s);c.hidden=s;});}
+      var chipsArea=widget.querySelector('.wiki-tags-chips');
+      if(!chipsArea){chipsArea=document.createElement('div');chipsArea.className='wiki-tags-chips';board.parentNode.insertBefore(chipsArea,board);}
+      function renderBoard(){
+        chipsArea.querySelectorAll('.wiki-chip').forEach(function(c){c.remove();});
+        tags.forEach(function(t){var chip=document.createElement('span');chip.className='link-tag-pill wiki-chip';chip.style.cssText='background:hsl(340,50%,38%);color:#fff;cursor:pointer;margin:2px 3px 2px 0;display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.75rem';chip.textContent=t;chip.title='Cliquer pour retirer';chip.addEventListener('click',function(){tags=tags.filter(function(x){return x!==t;});syncHidden();renderBoard();syncSuggest();});chipsArea.appendChild(chip);});
+        syncHidden();syncSuggest();
       }
-      var chipsArea = widget.querySelector('.wiki-tags-chips');
-      if (!chipsArea) {
-        chipsArea = document.createElement('div'); chipsArea.className = 'wiki-tags-chips';
-        board.parentNode.insertBefore(chipsArea, board);
-      }
-      function renderBoard() {
-        chipsArea.querySelectorAll('.wiki-chip').forEach(function(c){ c.remove(); });
-        tags.forEach(function(t) {
-          var chip = document.createElement('span');
-          chip.className = 'link-tag-pill wiki-chip';
-          chip.style.cssText = 'background:hsl(340,50%,38%);color:#fff;cursor:pointer;margin:2px 3px 2px 0;display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.75rem';
-          chip.textContent = t; chip.title = 'Cliquer pour retirer';
-          chip.addEventListener('click', function(){ tags = tags.filter(function(x){ return x !== t; }); syncHidden(); renderBoard(); syncSuggest(); });
-          chipsArea.appendChild(chip);
-        });
-        syncHidden(); syncSuggest();
-      }
-      function addTag(t) { t = t.trim(); if (t && !findTag(t)) { tags.push(t); renderBoard(); } }
-      function removeTag(t) { tags = tags.filter(function(x){ return x !== t; }); syncHidden(); renderBoard(); syncSuggest(); }
-      typer.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ',' || e.key === ';') { e.preventDefault(); if (typer.value.trim()) { addTag(typer.value.trim()); typer.value = ''; closeAc(); } }
-        else if (e.key === 'Backspace' && !typer.value && tags.length) removeTag(tags[tags.length - 1]);
-      });
-      typer.addEventListener('blur', function() { if (typer.value.trim()) { addTag(typer.value.trim()); typer.value = ''; } setTimeout(closeAc, 160); });
-      board.addEventListener('click', function(e) { if (e.target === board) typer.focus(); });
-      if (suggestBox) suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(chip) {
-        chip.addEventListener('click', function() { if (!findTag(chip.dataset.tag)) addTag(chip.dataset.tag); else removeTag(chip.dataset.tag); });
-      });
-      var allAvail = (function(){ var el = document.getElementById('prot-all-tags'); if (el) { try { return JSON.parse(el.textContent); } catch(_){} } return []; })();
-      var acDrop = document.createElement('ul'); acDrop.className = 'wiki-tag-autocomplete'; acDrop.hidden = true;
-      board.parentNode.insertBefore(acDrop, board.nextSibling);
-      var acSel = -1;
-      function clearAcDrop() { while(acDrop.firstChild) acDrop.removeChild(acDrop.firstChild); }
-      function closeAc() { acDrop.hidden = true; clearAcDrop(); acSel = -1; }
-      function showAc(q) {
-        q = (q||'').trim().toLowerCase(); if (!q) { closeAc(); return; }
-        var m = allAvail.filter(function(t){ return t.toLowerCase().indexOf(q) !== -1 && !findTag(t); }).slice(0,9);
-        if (!m.length) { closeAc(); return; }
-        clearAcDrop(); acSel = -1;
-        m.forEach(function(t){ var li = document.createElement('li'); li.className='wiki-tag-ac-item'; li.textContent=t; li.addEventListener('mousedown',function(e){ e.preventDefault(); addTag(t); typer.value=''; closeAc(); typer.focus(); }); acDrop.appendChild(li); });
-        acDrop.hidden = false;
-      }
-      typer.addEventListener('input', function() {
-        showAc(typer.value);
-        if (suggestBox) { var q = typer.value.trim().toLowerCase(); suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(c){ c.hidden = q.length > 0 && c.dataset.tag.toLowerCase().indexOf(q) === -1; }); }
-      });
-      typer.addEventListener('keydown', function(e) {
-        if (acDrop.hidden) return;
-        var items = acDrop.querySelectorAll('.wiki-tag-ac-item');
-        if (e.key==='ArrowDown'){ e.preventDefault(); acSel=Math.min(acSel+1,items.length-1); items.forEach(function(li,i){ li.classList.toggle('selected',i===acSel); }); }
-        else if (e.key==='ArrowUp'){ e.preventDefault(); acSel=Math.max(acSel-1,0); items.forEach(function(li,i){ li.classList.toggle('selected',i===acSel); }); }
-        else if ((e.key==='Enter'||e.key==='Tab') && acSel>=0 && items[acSel]){ e.preventDefault(); e.stopImmediatePropagation(); addTag(items[acSel].textContent); typer.value=''; closeAc(); }
-        else if (e.key==='Escape') closeAc();
-      }, true);
+      function addTag(t){t=t.trim();if(t&&!findTag(t)){tags.push(t);renderBoard();}}
+      function removeTag(t){tags=tags.filter(function(x){return x!==t;});syncHidden();renderBoard();syncSuggest();}
+      typer.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===','||e.key===';'){e.preventDefault();if(typer.value.trim()){addTag(typer.value.trim());typer.value='';closeAc();}}else if(e.key==='Backspace'&&!typer.value&&tags.length)removeTag(tags[tags.length-1]);});
+      typer.addEventListener('blur',function(){if(typer.value.trim()){addTag(typer.value.trim());typer.value='';}setTimeout(closeAc,160);});
+      board.addEventListener('click',function(e){if(e.target===board)typer.focus();});
+      if(suggestBox)suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(chip){chip.addEventListener('click',function(){if(!findTag(chip.dataset.tag))addTag(chip.dataset.tag);else removeTag(chip.dataset.tag);});});
+      var allAvail=(function(){var el=document.getElementById('prot-all-tags');if(el){try{return JSON.parse(el.textContent);}catch(_){}}return[];})();
+      var acDrop=document.createElement('ul');acDrop.className='wiki-tag-autocomplete';acDrop.hidden=true;board.parentNode.insertBefore(acDrop,board.nextSibling);
+      var acSel=-1;
+      function clearAcDrop(){while(acDrop.firstChild)acDrop.removeChild(acDrop.firstChild);}
+      function closeAc(){acDrop.hidden=true;clearAcDrop();acSel=-1;}
+      function showAc(q){q=(q||'').trim().toLowerCase();if(!q){closeAc();return;}var m=allAvail.filter(function(t){return t.toLowerCase().indexOf(q)!==-1&&!findTag(t);}).slice(0,9);if(!m.length){closeAc();return;}clearAcDrop();acSel=-1;m.forEach(function(t){var li=document.createElement('li');li.className='wiki-tag-ac-item';li.textContent=t;li.addEventListener('mousedown',function(e){e.preventDefault();addTag(t);typer.value='';closeAc();typer.focus();});acDrop.appendChild(li);});acDrop.hidden=false;}
+      typer.addEventListener('input',function(){showAc(typer.value);if(suggestBox){var q=typer.value.trim().toLowerCase();suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(c){c.hidden=q.length>0&&c.dataset.tag.toLowerCase().indexOf(q)===-1;});}});
+      typer.addEventListener('keydown',function(e){if(acDrop.hidden)return;var items=acDrop.querySelectorAll('.wiki-tag-ac-item');if(e.key==='ArrowDown'){e.preventDefault();acSel=Math.min(acSel+1,items.length-1);items.forEach(function(li,i){li.classList.toggle('selected',i===acSel);});}else if(e.key==='ArrowUp'){e.preventDefault();acSel=Math.max(acSel-1,0);items.forEach(function(li,i){li.classList.toggle('selected',i===acSel);});}else if((e.key==='Enter'||e.key==='Tab')&&acSel>=0&&items[acSel]){e.preventDefault();e.stopImmediatePropagation();addTag(items[acSel].textContent);typer.value='';closeAc();}else if(e.key==='Escape')closeAc();},true);
       renderBoard();
     });
 
     // ── Panneau gestion des races ──
-    var raceManageBtn  = document.getElementById('prot-race-manage-btn');
-    var racePanel      = document.getElementById('prot-race-panel');
-    var racePanelClose = document.getElementById('prot-race-panel-close');
-    var raceSelect     = document.getElementById('prot-race');
-
-    if (raceManageBtn && racePanel) {
-      raceManageBtn.addEventListener('click', function() {
-        racePanel.style.display = racePanel.style.display === 'none' ? 'block' : 'none';
+    var raceManageBtn=document.getElementById('prot-race-manage-btn'), racePanel=document.getElementById('prot-race-panel'), racePanelClose=document.getElementById('prot-race-panel-close'), raceSelect=document.getElementById('prot-race');
+    if(raceManageBtn&&racePanel){
+      raceManageBtn.addEventListener('click',function(){racePanel.style.display=racePanel.style.display==='none'?'block':'none';});
+      racePanelClose.addEventListener('click',function(){racePanel.style.display='none';});
+      document.getElementById('rp-create-race-btn').addEventListener('click',function(){
+        var name=document.getElementById('rp-new-race-name').value.trim(), icon=document.getElementById('rp-new-race-icon').value.trim(), color=document.getElementById('rp-new-race-color').value, status=document.getElementById('rp-create-race-status');
+        if(!name){document.getElementById('rp-new-race-name').focus();return;}
+        fetch('/admin/races',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,icon:icon,color:color})}).then(function(r){return r.json();}).then(function(d){
+          if(!d.ok){if(status)status.textContent='Erreur';return;}
+          var opt=document.createElement('option');opt.value=d.id;opt.textContent=(icon?icon+' ':'')+name;raceSelect.appendChild(opt);raceSelect.value=d.id;raceSelect.dispatchEvent(new Event('change'));
+          appendRpRaceItem(d.id,name,icon,color);document.getElementById('rp-new-race-name').value='';document.getElementById('rp-new-race-icon').value='';
+          if(status){status.textContent='Cr\u00e9\u00e9';setTimeout(function(){status.textContent='';},2000);}
+        });
       });
-      racePanelClose.addEventListener('click', function() { racePanel.style.display = 'none'; });
-
-      document.getElementById('rp-create-race-btn').addEventListener('click', function() {
-        var name   = document.getElementById('rp-new-race-name').value.trim();
-        var icon   = document.getElementById('rp-new-race-icon').value.trim();
-        var color  = document.getElementById('rp-new-race-color').value;
-        var status = document.getElementById('rp-create-race-status');
-        if (!name) { document.getElementById('rp-new-race-name').focus(); return; }
-        fetch('/admin/races', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, icon: icon, color: color }) })
-          .then(function(r) { return r.json(); }).then(function(d) {
-            if (!d.ok) { if (status) status.textContent = 'Erreur'; return; }
-            var opt = document.createElement('option'); opt.value = d.id; opt.textContent = (icon ? icon + ' ' : '') + name;
-            raceSelect.appendChild(opt); raceSelect.value = d.id; raceSelect.dispatchEvent(new Event('change'));
-            appendRpRaceItem(d.id, name, icon, color);
-            document.getElementById('rp-new-race-name').value = ''; document.getElementById('rp-new-race-icon').value = '';
-            if (status) { status.textContent = 'Cr\u00e9\u00e9'; setTimeout(function() { status.textContent = ''; }, 2000); }
+      document.getElementById('rp-race-list').addEventListener('click',function(e){
+        if(e.target.closest('.rp-delete-race-btn')){
+          var item=e.target.closest('.rp-race-item'),raceId=item.dataset.raceId,raceName=item.querySelector('span[style*="font-weight"]').textContent.trim();
+          if(!confirm('Supprimer "'+raceName+'" ?'))return;
+          fetch('/admin/races/'+raceId,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(!d.ok)return;item.remove();var opt=raceSelect.querySelector('option[value="'+raceId+'"]');if(opt)opt.remove();if(raceSelect.value===raceId){raceSelect.value='';raceSelect.dispatchEvent(new Event('change'));}});return;
+        }
+        if(e.target.closest('.rp-delete-clan-btn')){
+          var tag=e.target.closest('.rp-clan-tag'),clanId=tag.dataset.clanId;if(!confirm('Supprimer ce clan ?'))return;
+          fetch('/admin/clans/'+clanId,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(d.ok){tag.remove();var cs=document.getElementById('prot-clan');if(cs){var co=cs.querySelector('option[value="'+clanId+'"]');if(co)co.remove();}}});return;
+        }
+        if(e.target.closest('.rp-add-clan-btn')){
+          var item2=e.target.closest('.rp-race-item'),raceId2=item2.dataset.raceId,inp2=item2.querySelector('.rp-new-clan-name'),clanName=inp2.value.trim();
+          if(!clanName){inp2.focus();return;}
+          fetch('/admin/races/'+raceId2+'/clans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:clanName})}).then(function(r){return r.json();}).then(function(d){
+            if(!d.ok)return;var cl=item2.querySelector('.rp-clan-list');var no=cl.querySelector('span[style*="italic"]');if(no)no.remove();
+            var t2=document.createElement('span');t2.className='rp-clan-tag';t2.dataset.clanId=d.id;t2.style.cssText='display:inline-flex;align-items:center;gap:.18rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:.08rem .4rem;font-size:.65rem;color:#cbd5e1';
+            var lb=document.createTextNode(clanName+' ');var db=document.createElement('button');db.type='button';db.className='rp-delete-clan-btn';db.style.cssText='background:none;border:none;color:#f87171;cursor:pointer;padding:0;font-size:.75rem;line-height:1';db.textContent='\xd7';
+            t2.appendChild(lb);t2.appendChild(db);cl.insertBefore(t2,null);inp2.value='';
+            if(raceSelect.value===raceId2){var cs2=document.getElementById('prot-clan');if(cs2){var no2=document.createElement('option');no2.value=d.id;no2.textContent=clanName;cs2.appendChild(no2);document.getElementById('prot-clan-group').style.display='';}}
           });
-      });
-
-      document.getElementById('rp-race-list').addEventListener('click', function(e) {
-        if (e.target.closest('.rp-delete-race-btn')) {
-          var item = e.target.closest('.rp-race-item'); var raceId = item.dataset.raceId;
-          var raceName = item.querySelector('span[style*="font-weight"]').textContent.trim();
-          if (!confirm('Supprimer "' + raceName + '" ?')) return;
-          fetch('/admin/races/' + raceId, { method: 'DELETE' }).then(function(r) { return r.json(); }).then(function(d) {
-            if (!d.ok) return; item.remove();
-            var opt = raceSelect.querySelector('option[value="' + raceId + '"]'); if (opt) opt.remove();
-            if (raceSelect.value === raceId) { raceSelect.value = ''; raceSelect.dispatchEvent(new Event('change')); }
-          }); return;
-        }
-        if (e.target.closest('.rp-delete-clan-btn')) {
-          var tag = e.target.closest('.rp-clan-tag'); var clanId = tag.dataset.clanId;
-          if (!confirm('Supprimer ce clan ?')) return;
-          fetch('/admin/clans/' + clanId, { method: 'DELETE' }).then(function(r) { return r.json(); }).then(function(d) {
-            if (d.ok) { tag.remove(); var clanSel = document.getElementById('prot-clan'); if (clanSel) { var co = clanSel.querySelector('option[value="' + clanId + '"]'); if (co) co.remove(); } }
-          }); return;
-        }
-        if (e.target.closest('.rp-add-clan-btn')) {
-          var item2 = e.target.closest('.rp-race-item'); var raceId2 = item2.dataset.raceId;
-          var inp2 = item2.querySelector('.rp-new-clan-name'); var clanName = inp2.value.trim();
-          if (!clanName) { inp2.focus(); return; }
-          fetch('/admin/races/' + raceId2 + '/clans', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: clanName }) })
-            .then(function(r) { return r.json(); }).then(function(d) {
-              if (!d.ok) return;
-              var clanList = item2.querySelector('.rp-clan-list');
-              var noText = clanList.querySelector('span[style*="italic"]'); if (noText) noText.remove();
-              var tag2 = document.createElement('span'); tag2.className = 'rp-clan-tag'; tag2.dataset.clanId = d.id;
-              tag2.style.cssText = 'display:inline-flex;align-items:center;gap:.2rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:.1rem .45rem;font-size:.68rem;color:#cbd5e1';
-              var clanLabel = document.createTextNode(clanName + ' ');
-              var delBtn = document.createElement('button'); delBtn.type = 'button'; delBtn.className = 'rp-delete-clan-btn';
-              delBtn.style.cssText = 'background:none;border:none;color:#f87171;cursor:pointer;padding:0;font-size:.78rem;line-height:1'; delBtn.textContent = '\xd7';
-              tag2.appendChild(clanLabel); tag2.appendChild(delBtn);
-              clanList.insertBefore(tag2, null); inp2.value = '';
-              if (raceSelect.value === raceId2) {
-                var clanSel2 = document.getElementById('prot-clan');
-                if (clanSel2) { var newOpt = document.createElement('option'); newOpt.value = d.id; newOpt.textContent = clanName; clanSel2.appendChild(newOpt); document.getElementById('prot-clan-group').style.display = ''; }
-              }
-            });
         }
       });
     }
-
-    function appendRpRaceItem(id, name, icon, color) {
-      var list = document.getElementById('rp-race-list');
-      var empty = list.querySelector('p[style*="italic"]'); if (empty) empty.remove();
-      var div = document.createElement('div'); div.className = 'rp-race-item'; div.dataset.raceId = id;
-      div.style.cssText = 'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:7px;padding:.45rem .55rem';
-      div.innerHTML = '<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem">' +
-        '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0"></span>' +
-        '<span style="font-size:.78rem;font-weight:700;color:#e2e8f0;flex:1">' + (icon ? icon + ' ' : '') + name + '</span>' +
-        '<button type="button" class="rp-delete-race-btn" style="background:none;border:none;color:#ef4444;font-size:.72rem;cursor:pointer;padding:.05rem .2rem" title="Supprimer">&#128465;</button>' +
-        '</div>' +
-        '<div class="rp-clan-list" style="display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.35rem">' +
-          '<span style="font-size:.65rem;color:#475569;font-style:italic">Aucun clan</span>' +
-        '</div>' +
-        '<div style="display:flex;gap:.3rem;align-items:center">' +
-          '<input type="text" class="rp-new-clan-name" placeholder="+ Clan" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.18rem .4rem;font-size:.7rem;outline:none;font-family:inherit">' +
-          '<button type="button" class="rp-add-clan-btn" style="background:none;border:1px solid rgba(255,255,255,.16);color:#94a3b8;font-size:.65rem;padding:.18rem .4rem;border-radius:4px;cursor:pointer;white-space:nowrap">+ Clan</button>' +
-        '</div>';
+    function appendRpRaceItem(id,name,icon,color){
+      var list=document.getElementById('rp-race-list');var empty=list.querySelector('p[style*="italic"]');if(empty)empty.remove();
+      var div=document.createElement('div');div.className='rp-race-item';div.dataset.raceId=id;div.style.cssText='background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:6px;padding:.4rem .5rem';
+      div.innerHTML='<div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.3rem"><span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0"></span><span style="font-size:.75rem;font-weight:700;color:#e2e8f0;flex:1">'+(icon?icon+' ':'')+name+'</span><button type="button" class="rp-delete-race-btn" style="background:none;border:none;color:#ef4444;font-size:.7rem;cursor:pointer;padding:0" title="Supprimer">&#128465;</button></div><div class="rp-clan-list" style="display:flex;flex-wrap:wrap;gap:.2rem;margin-bottom:.3rem"><span style="font-size:.62rem;color:#475569;font-style:italic">Aucun clan</span></div><div style="display:flex;gap:.25rem;align-items:center"><input type="text" class="rp-new-clan-name" placeholder="+ Clan" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.15rem .35rem;font-size:.68rem;outline:none;font-family:inherit"><button type="button" class="rp-add-clan-btn" style="background:none;border:1px solid rgba(255,255,255,.14);color:#94a3b8;font-size:.62rem;padding:.15rem .35rem;border-radius:4px;cursor:pointer;white-space:nowrap">+ Clan</button></div>';
       list.appendChild(div);
     }
 
     // ── Race → clans dynamiques ──
-    var clanGroup  = document.getElementById('prot-clan-group');
-    var clanSelect = document.getElementById('prot-clan');
-    if (raceSelect) {
-      raceSelect.addEventListener('change', function() {
-        var raceId = raceSelect.value;
-        if (!raceId) { clanGroup.style.display = 'none'; clanSelect.innerHTML = '<option value="">— aucun clan —</option>'; return; }
-        fetch('/protagonistes/api/races/' + raceId + '/clans')
-          .then(function(r) { return r.json(); })
-          .then(function(data) {
-            var clans = data.clans || [];
-            while (clanSelect.options.length > 0) clanSelect.remove(0);
-            var def = document.createElement('option'); def.value = ''; def.textContent = '— aucun clan —'; clanSelect.appendChild(def);
-            clans.forEach(function(c) { var opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; clanSelect.appendChild(opt); });
-            clanGroup.style.display = clans.length ? '' : 'none';
-          });
+    var clanGroup=document.getElementById('prot-clan-group'),clanSelect=document.getElementById('prot-clan');
+    if(raceSelect){
+      raceSelect.addEventListener('change',function(){
+        var raceId=raceSelect.value;
+        if(!raceId){clanGroup.style.display='none';clanSelect.innerHTML='<option value="">— aucun clan —</option>';return;}
+        fetch('/protagonistes/api/races/'+raceId+'/clans').then(function(r){return r.json();}).then(function(data){
+          var clans=data.clans||[];while(clanSelect.options.length>0)clanSelect.remove(0);
+          var def=document.createElement('option');def.value='';def.textContent='— aucun clan —';clanSelect.appendChild(def);
+          clans.forEach(function(c){var opt=document.createElement('option');opt.value=c.id;opt.textContent=c.name;clanSelect.appendChild(opt);});
+          clanGroup.style.display=clans.length?'':'none';
+        });
       });
     }
   })();
