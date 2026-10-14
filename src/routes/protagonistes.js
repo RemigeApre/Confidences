@@ -4,7 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
-const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes, setProtagonisteParent } = db;
+const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes, setProtagonisteParent, mergeUserReactions, listFavoriteRows } = db;
 const { insertGalleryImage } = db;
 const { generateThumb } = require("../thumbs");
 
@@ -122,11 +122,14 @@ function buildProtagonistesRouter(config) {
     if (!protagoniste) return res.redirect("/protagonistes");
     const nouvelles = db.listNouvellesByProtagoniste(protagoniste.id)
       .filter(n => !req.user?.isAdmin ? (n.stage !== "brouillon" && !n.hidden) : true);
-    const galleryImages = db.listGalleryImagesByProtagoniste(protagoniste.id);
+    const userId = req.user ? req.user.id : null;
+    const rawGalleryImages = db.listGalleryImagesByProtagoniste(protagoniste.id);
+    const galleryImages = mergeUserReactions(rawGalleryImages, userId, "gallery");
+    const favoriteGalleryIds = userId ? new Set(listFavoriteRows(userId).filter(r => r.item_type === "gallery").map(r => r.item_id)) : new Set();
     const codexPages = protagoniste.name ? db.listWikiPagesByTag(protagoniste.name) : [];
     const tagMeta = db.getAllTagMeta();
     const childEvolutions = listChildProtagonistes(protagoniste.id);
-    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, codexPages, tagMeta, childEvolutions });
+    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, favoriteGalleryIds, codexPages, tagMeta, childEvolutions });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {

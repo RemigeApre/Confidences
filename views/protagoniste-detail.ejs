@@ -149,7 +149,11 @@
                     <button type="button" class="prot-carousel-item"
                       title="<%= img.title || '' %>"
                       data-special="<%= imgSpecial(img) %>"
-                      data-lightbox="<%= thumb %>">
+                      data-lightbox="<%= thumb %>"
+                      data-image-id="<%= img.id %>"
+                      data-rating="<%= img.rating || 0 %>"
+                      data-fav="<%= favoriteGalleryIds && favoriteGalleryIds.has(img.id) ? '1' : '0' %>"
+                      data-hidden="<%= img.hidden ? '1' : '0' %>">
                       <img src="<%= thumb %>" alt="<%= img.title || protagoniste.name %>" loading="lazy" />
                     </button>
                   <% } %>
@@ -353,21 +357,319 @@
 })();
 </script>
 
-<div id="prot-lightbox" role="dialog" aria-modal="true" aria-label="Image agrandie" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);cursor:zoom-out;align-items:center;justify-content:center">
-  <img id="prot-lightbox-img" src="" alt="" style="max-width:92vw;max-height:92vh;object-fit:contain;border-radius:6px;pointer-events:none" />
-  <button type="button" id="prot-lightbox-close" aria-label="Fermer" style="position:absolute;top:1rem;right:1.25rem;background:none;border:none;color:#fff;font-size:2rem;line-height:1;cursor:pointer;opacity:.7;padding:.2rem .4rem">&times;</button>
+<%# ─── Lightbox galerie ────────────────────────────────────────────────── %>
+<div id="prot-lightbox" class="prot-lb" hidden aria-modal="true" role="dialog" aria-label="Image agrandie">
+  <div class="prot-lb-image-area">
+    <button type="button" class="prot-lb-prev" aria-label="Précédente">&#8249;</button>
+    <button type="button" class="prot-lb-next" aria-label="Suivante">&#8250;</button>
+    <img class="prot-lb-img" id="prot-lb-img" src="" alt="" />
+    <button type="button" class="prot-lb-close-mobile" aria-label="Fermer">&#215;</button>
+  </div>
+  <aside class="prot-lb-panel">
+    <button type="button" class="prot-lb-close" aria-label="Fermer">&#215;</button>
+    <% if (locals.currentUser) { %>
+    <div class="prot-lb-rating" id="prot-lb-rating">
+      <span class="prot-lb-star" data-val="1">&#9733;</span>
+      <span class="prot-lb-star" data-val="2">&#9733;</span>
+      <span class="prot-lb-star" data-val="3">&#9733;</span>
+      <span class="prot-lb-star" data-val="4">&#9733;</span>
+      <span class="prot-lb-star" data-val="5">&#9733;</span>
+    </div>
+    <div class="prot-lb-actions" id="prot-lb-actions">
+      <button type="button" class="prot-lb-act-btn" id="prot-lb-collection-btn" title="Ajouter à une collection">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <button type="button" class="prot-lb-act-main" id="prot-lb-fav-btn">J&rsquo;adore</button>
+      <button type="button" class="prot-lb-act-btn" id="prot-lb-hide-btn" aria-label="Masquer">
+        <svg class="prot-lb-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="prot-lb-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      </button>
+    </div>
+    <% } %>
+  </aside>
 </div>
+
+<%# Collection picker modal %>
+<div class="prot-collection-modal-overlay" id="prot-collection-modal" hidden>
+  <div class="prot-collection-modal">
+    <p class="prot-collection-modal-title">Ajouter &agrave; une collection</p>
+    <div class="prot-collection-list" id="prot-collection-list"></div>
+    <button type="button" class="link-button" id="prot-collection-new-toggle">+ Nouvelle collection</button>
+    <div id="prot-collection-new-form" hidden style="display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem">
+      <input type="text" class="filter-profile-modal-input" id="prot-collection-new-title" placeholder="Titre de la collection…" maxlength="80" autocomplete="off" />
+      <button type="button" class="filter-profile-modal-confirm" id="prot-collection-new-confirm">Créer et ajouter</button>
+    </div>
+    <div style="margin-top:.75rem">
+      <button type="button" class="filter-profile-modal-cancel" id="prot-collection-close">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <script nonce="<%= nonce %>">
 (function() {
-  var lb=document.getElementById('prot-lightbox'),lbImg=document.getElementById('prot-lightbox-img'),lbClose=document.getElementById('prot-lightbox-close');
-  if(!lb||!lbImg)return;
-  function open(src,alt){lbImg.src=src;lbImg.alt=alt||'';lb.style.display='flex';document.body.style.overflow='hidden';}
-  function close(){lb.style.display='none';lbImg.src='';document.body.style.overflow='';}
-  document.querySelectorAll('.prot-lightbox-trigger').forEach(function(el){el.addEventListener('click',function(){open(el.dataset.lightbox,el.alt);});});
-  document.querySelectorAll('.prot-carousel-item[data-lightbox]').forEach(function(btn){btn.style.cursor='zoom-in';btn.addEventListener('click',function(){var img=btn.querySelector('img');open(btn.dataset.lightbox,img?img.alt:'');});});
-  lb.addEventListener('click',function(e){if(e.target===lb)close();});
-  if(lbClose)lbClose.addEventListener('click',close);
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.style.display!=='none')close();});
+  var lb = document.getElementById('prot-lightbox');
+  if (!lb) return;
+
+  var lbImg       = document.getElementById('prot-lb-img');
+  var ratingBlock = document.getElementById('prot-lb-rating');
+  var favBtn      = document.getElementById('prot-lb-fav-btn');
+  var hideBtn     = document.getElementById('prot-lb-hide-btn');
+  var collBtn     = document.getElementById('prot-lb-collection-btn');
+  var collModal   = document.getElementById('prot-collection-modal');
+  var collList    = document.getElementById('prot-collection-list');
+  var collNewForm = document.getElementById('prot-collection-new-form');
+  var collNewTitle= document.getElementById('prot-collection-new-title');
+  var collNewConfirm = document.getElementById('prot-collection-new-confirm');
+  var collNewToggle = document.getElementById('prot-collection-new-toggle');
+  var collClose   = document.getElementById('prot-collection-close');
+  var prevBtn     = lb.querySelector('.prot-lb-prev');
+  var nextBtn     = lb.querySelector('.prot-lb-next');
+  var closeBtn    = lb.querySelector('.prot-lb-close');
+  var closeMobile = lb.querySelector('.prot-lb-close-mobile');
+
+  // Items visibles (non masqués par les filtres)
+  var items = [];
+  var currentIdx = 0;
+  var currentGalleryId = 0;
+  var collectionGalleryId = 0;
+
+  function getItems() {
+    return Array.from(document.querySelectorAll('.prot-carousel-item[data-image-id]:not([hidden])'));
+  }
+
+  function updateStars(rating) {
+    if (!ratingBlock) return;
+    ratingBlock.querySelectorAll('.prot-lb-star').forEach(function(s, i) {
+      s.classList.toggle('filled', i < rating);
+    });
+    ratingBlock.dataset.current = rating;
+  }
+
+  function updateFav(active) {
+    if (!favBtn) return;
+    favBtn.classList.toggle('active', !!active);
+  }
+
+  function updateHide(hidden) {
+    if (!hideBtn) return;
+    var open = hideBtn.querySelector('.prot-lb-eye-open');
+    var closed = hideBtn.querySelector('.prot-lb-eye-closed');
+    hideBtn.classList.toggle('active', !!hidden);
+    if (open) open.hidden = !!hidden;
+    if (closed) closed.hidden = !hidden;
+  }
+
+  function openAt(idx) {
+    items = getItems();
+    if (!items.length) return;
+    currentIdx = Math.max(0, Math.min(idx, items.length - 1));
+    var btn = items[currentIdx];
+    var src = btn.dataset.lightbox || '';
+    var alt = btn.querySelector('img') ? btn.querySelector('img').alt : '';
+    currentGalleryId = Number(btn.dataset.imageId) || 0;
+
+    if (lbImg) { lbImg.src = src; lbImg.alt = alt; }
+
+    if (prevBtn) prevBtn.hidden = items.length <= 1;
+    if (nextBtn) nextBtn.hidden = items.length <= 1;
+
+    updateStars(Number(btn.dataset.rating) || 0);
+    updateFav(btn.dataset.fav === '1');
+    updateHide(btn.dataset.hidden === '1');
+
+    lb.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLb() {
+    lb.hidden = true;
+    document.body.style.overflow = '';
+    if (lbImg) { lbImg.src = ''; }
+  }
+
+  function navigate(dir) {
+    items = getItems();
+    if (!items.length) return;
+    openAt((currentIdx + dir + items.length) % items.length);
+  }
+
+  // ─── Ouvrir depuis le carousel ────────────────────────────────────────
+  document.querySelectorAll('.prot-carousel-item[data-image-id]').forEach(function(btn) {
+    btn.style.cursor = 'zoom-in';
+    btn.addEventListener('click', function() {
+      items = getItems();
+      var idx = items.indexOf(btn);
+      openAt(idx >= 0 ? idx : 0);
+    });
+  });
+
+  // ─── Image de profil (sidebar) ────────────────────────────────────────
+  document.querySelectorAll('.prot-lightbox-trigger').forEach(function(el) {
+    el.addEventListener('click', function() {
+      // Pas d'id galerie — ouvrir en mode simple (sans actions)
+      if (lbImg) { lbImg.src = el.dataset.lightbox || ''; lbImg.alt = el.alt || ''; }
+      currentGalleryId = 0;
+      updateStars(0); updateFav(false); updateHide(false);
+      if (prevBtn) prevBtn.hidden = true;
+      if (nextBtn) nextBtn.hidden = true;
+      lb.hidden = false;
+      document.body.style.overflow = 'hidden';
+    });
+  });
+
+  // ─── Fermer ───────────────────────────────────────────────────────────
+  if (closeBtn) closeBtn.addEventListener('click', closeLb);
+  if (closeMobile) closeMobile.addEventListener('click', closeLb);
+  lb.querySelector('.prot-lb-image-area').addEventListener('click', function(e) {
+    if (e.target === this) closeLb();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (lb.hidden) return;
+    if (e.key === 'Escape') closeLb();
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); navigate(-1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); navigate(1);  }
+  });
+
+  // ─── Prev / Next ──────────────────────────────────────────────────────
+  if (prevBtn) prevBtn.addEventListener('click', function() { navigate(-1); });
+  if (nextBtn) nextBtn.addEventListener('click', function() { navigate(1);  });
+
+  // ─── Rating ───────────────────────────────────────────────────────────
+  if (ratingBlock) {
+    var stars = ratingBlock.querySelectorAll('.prot-lb-star');
+    // Hover preview
+    stars.forEach(function(star) {
+      star.addEventListener('mouseenter', function() {
+        var val = Number(star.dataset.val);
+        stars.forEach(function(s) { s.classList.toggle('hover-preview', Number(s.dataset.val) <= val); });
+      });
+    });
+    ratingBlock.addEventListener('mouseleave', function() {
+      stars.forEach(function(s) { s.classList.remove('hover-preview'); });
+    });
+    ratingBlock.addEventListener('click', function(e) {
+      var star = e.target.closest('.prot-lb-star');
+      if (!star || !currentGalleryId) return;
+      var val = Number(star.dataset.val);
+      var cur = Number(ratingBlock.dataset.current) || 0;
+      var newRating = cur === val ? 0 : val;
+      fetch('/galerie/' + currentGalleryId + '/react', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: newRating })
+      }).then(function(r) { return r.json(); }).then(function(r) {
+        if (!r.ok) return;
+        updateStars(newRating);
+        var btn = items[currentIdx];
+        if (btn) btn.dataset.rating = newRating;
+      });
+    });
+  }
+
+  // ─── J'adore ─────────────────────────────────────────────────────────
+  if (favBtn) {
+    favBtn.addEventListener('click', function() {
+      if (!currentGalleryId) return;
+      fetch('/favoris/toggle', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemType: 'gallery', itemId: currentGalleryId })
+      }).then(function(r) { return r.json(); }).then(function(r) {
+        if (!r.ok) return;
+        updateFav(r.active);
+        var btn = items[currentIdx];
+        if (btn) btn.dataset.fav = r.active ? '1' : '0';
+      });
+    });
+  }
+
+  // ─── Masquer ─────────────────────────────────────────────────────────
+  if (hideBtn) {
+    hideBtn.addEventListener('click', function() {
+      if (!currentGalleryId) return;
+      var btn = items[currentIdx];
+      var nowHidden = btn ? btn.dataset.hidden !== '1' : true;
+      fetch('/galerie/' + currentGalleryId + '/react', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden: nowHidden })
+      }).then(function(r) { return r.json(); }).then(function(r) {
+        if (!r.ok) return;
+        updateHide(nowHidden);
+        if (btn) btn.dataset.hidden = nowHidden ? '1' : '0';
+      });
+    });
+  }
+
+  // ─── Collection ───────────────────────────────────────────────────────
+  function renderCollections(collections) {
+    if (!collList) return;
+    collList.innerHTML = '';
+    if (!collections.length) {
+      var p = document.createElement('p');
+      p.style.cssText = 'color:#999;font-size:.85rem;margin:.5rem 0';
+      p.textContent = 'Aucune collection.';
+      collList.appendChild(p);
+      return;
+    }
+    collections.forEach(function(col) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'collection-picker-row' + (col.contains ? ' active' : '');
+      row.dataset.id = col.id;
+      var check = document.createElement('span');
+      check.className = 'collection-picker-check';
+      check.innerHTML = col.contains ? '&#10003;' : '';
+      var label = document.createElement('span');
+      label.textContent = col.title;
+      row.appendChild(check); row.appendChild(label);
+      row.addEventListener('click', function() {
+        var add = !row.classList.contains('active');
+        fetch('/favoris/collections/' + col.id + '/items', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ galleryId: collectionGalleryId, action: add ? 'add' : 'remove' })
+        }).then(function(r) { return r.json(); }).then(function(r) {
+          if (!r.ok) return;
+          row.classList.toggle('active', add);
+          check.innerHTML = add ? '&#10003;' : '';
+        });
+      });
+      collList.appendChild(row);
+    });
+  }
+
+  if (collBtn) {
+    collBtn.addEventListener('click', function() {
+      if (!currentGalleryId || !collModal) return;
+      collectionGalleryId = currentGalleryId;
+      if (collNewForm) collNewForm.hidden = true;
+      fetch('/favoris/collections/for-image/' + currentGalleryId)
+        .then(function(r) { return r.json(); })
+        .then(function(r) { if (r.ok) { renderCollections(r.collections); collModal.hidden = false; } });
+    });
+  }
+
+  if (collNewToggle) collNewToggle.addEventListener('click', function() {
+    if (collNewForm) collNewForm.hidden = !collNewForm.hidden;
+  });
+
+  if (collNewConfirm) collNewConfirm.addEventListener('click', function() {
+    var title = collNewTitle ? collNewTitle.value.trim() : '';
+    if (!title || !collectionGalleryId) return;
+    collNewConfirm.disabled = true;
+    fetch('/favoris/collections', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, galleryId: collectionGalleryId })
+    }).then(function(r) { return r.json(); }).then(function(r) {
+      collNewConfirm.disabled = false;
+      if (!r.ok) return;
+      if (collNewTitle) collNewTitle.value = '';
+      if (collNewForm) collNewForm.hidden = true;
+      fetch('/favoris/collections/for-image/' + collectionGalleryId)
+        .then(function(r2) { return r2.json(); })
+        .then(function(r2) { if (r2.ok) renderCollections(r2.collections); });
+    }).catch(function() { collNewConfirm.disabled = false; });
+  });
+
+  if (collClose) collClose.addEventListener('click', function() { if (collModal) collModal.hidden = true; });
+  if (collModal) collModal.addEventListener('click', function(e) { if (e.target === collModal) collModal.hidden = true; });
 })();
 </script>
 
