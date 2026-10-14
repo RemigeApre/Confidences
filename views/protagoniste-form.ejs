@@ -38,7 +38,7 @@
 
         <%# Bouton retour — centré en haut du volet %>
         <div class="prot-sb-back-wrap">
-          <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="prot-sb-back-btn">&#8592; Retour</a>
+          <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="prot-sb-back-btn">Retour</a>
         </div>
 
         <% if (_isEn) { %>
@@ -241,16 +241,13 @@
           </div>
         </div>
 
-        <%# Supprimer %>
-        <% if (protagoniste) { %>
-        <div class="prot-sb-section prot-sb-section--delete">
-          <button type="submit" form="prot-delete-form" class="prot-sb-delete-btn">
-            &#128465; Supprimer le personnage
-          </button>
-        </div>
-        <% } %>
-
       </div><%# /prot-edit-sidebar-inner %>
+
+      <% if (protagoniste) { %>
+      <div class="prot-sb-footer">
+        <button type="submit" form="prot-delete-form" class="prot-sb-delete-bottom">Supprimer</button>
+      </div>
+      <% } %>
     </aside>
 
     <%# ════════════════════════════════════════════════
