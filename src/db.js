@@ -5027,6 +5027,12 @@ try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_prelim_effet TEXT NOT
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_acte_effet TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN action_finition_effet TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN age INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN prenom TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN nom TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN description_physique TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN description_oeuvre TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+// Migration : mettre le name existant dans prenom pour les entrées déjà créées
+try { db.exec("UPDATE protagonistes SET prenom = name WHERE prenom = '' AND name != ''"); } catch (_) {}
 
 const VALID_SPECIALS = new Set(['', 'ultra', 'irrealiste']);
 const VALID_ORIENTATIONS = new Set(['', 'hetero', 'homo', 'bi', 'pan', 'ace', 'autre']);
@@ -5061,14 +5067,19 @@ function getProtagoniste(id) {
   if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } p.evolutions = parseEvolutions(p.evolutions); }
   return p;
 }
-function createProtagoniste({ name, description, tags, parody, subParody, gender, nature, imagePath, evolutions, special, age, orientation }) {
-  const r = db.prepare(`INSERT INTO protagonistes (name, description, tags, parody, sub_parody, gender, nature, image_path, evolutions, special, age, orientation) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || '', imagePath || '', JSON.stringify(evolutions || []), VALID_SPECIALS.has(special) ? special : '', Math.max(0, parseInt(age || 0) || 0), VALID_ORIENTATIONS.has(orientation) ? orientation : '');
+function computeDisplayName(prenom, nom) {
+  return [prenom, nom].filter(Boolean).join(' ');
+}
+function createProtagoniste({ name, prenom, nom, description, descriptionPhysique, descriptionOeuvre, tags, parody, subParody, gender, nature, imagePath, evolutions, special, age, orientation }) {
+  const displayName = computeDisplayName(prenom, nom) || name || '';
+  const r = db.prepare(`INSERT INTO protagonistes (name, prenom, nom, description, description_physique, description_oeuvre, tags, parody, sub_parody, gender, nature, image_path, evolutions, special, age, orientation) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(displayName, prenom || '', nom || '', description || '', descriptionPhysique || '', descriptionOeuvre || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || '', imagePath || '', JSON.stringify(evolutions || []), VALID_SPECIALS.has(special) ? special : '', Math.max(0, parseInt(age || 0) || 0), VALID_ORIENTATIONS.has(orientation) ? orientation : '');
   return r.lastInsertRowid;
 }
-function updateProtagoniste(id, { name, description, tags, parody, subParody, gender, nature, imagePath, evolutions, special, age, orientation }) {
-  const sets = ['name=?', 'description=?', 'tags=?', 'parody=?', 'sub_parody=?', 'gender=?', 'nature=?', 'evolutions=?', 'special=?', 'age=?', 'orientation=?', 'updated_at=unixepoch()'];
-  const params = [name || '', description || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || '', JSON.stringify(evolutions || []), VALID_SPECIALS.has(special) ? special : '', Math.max(0, parseInt(age || 0) || 0), VALID_ORIENTATIONS.has(orientation) ? orientation : ''];
+function updateProtagoniste(id, { name, prenom, nom, description, descriptionPhysique, descriptionOeuvre, tags, parody, subParody, gender, nature, imagePath, evolutions, special, age, orientation }) {
+  const displayName = computeDisplayName(prenom, nom) || name || '';
+  const sets = ['name=?', 'prenom=?', 'nom=?', 'description=?', 'description_physique=?', 'description_oeuvre=?', 'tags=?', 'parody=?', 'sub_parody=?', 'gender=?', 'nature=?', 'evolutions=?', 'special=?', 'age=?', 'orientation=?', 'updated_at=unixepoch()'];
+  const params = [displayName, prenom || '', nom || '', description || '', descriptionPhysique || '', descriptionOeuvre || '', JSON.stringify(tags || []), parody || '', subParody || '', gender || '', nature || '', JSON.stringify(evolutions || []), VALID_SPECIALS.has(special) ? special : '', Math.max(0, parseInt(age || 0) || 0), VALID_ORIENTATIONS.has(orientation) ? orientation : ''];
   if (imagePath !== undefined) { sets.splice(sets.length - 1, 0, 'image_path=?'); params.push(imagePath || ''); }
   params.push(id);
   db.prepare(`UPDATE protagonistes SET ${sets.join(',')} WHERE id=?`).run(...params);

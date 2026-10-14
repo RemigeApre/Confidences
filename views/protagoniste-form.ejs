@@ -15,6 +15,12 @@
   var currentGender = protagoniste ? (protagoniste.gender || '') : '';
   var _hasParody = protagoniste && (protagoniste.parody || protagoniste.sub_parody);
   var _evoEnInit = evols.map(function(_,i){ return _trans['evo_'+i+'_en'] || ''; });
+  // Valeurs initiales selon la langue d'édition
+  var _vPrenom = _isEn ? (_trans.prenom || '') : (protagoniste ? (protagoniste.prenom || '') : '');
+  var _vNom    = _isEn ? (_trans.nom    || '') : (protagoniste ? (protagoniste.nom    || '') : '');
+  var _vDesc   = _isEn ? (_trans.description || '') : (protagoniste ? (protagoniste.description || '') : '');
+  var _vDescPhys  = _isEn ? (_trans.description_physique || '') : (protagoniste ? (protagoniste.description_physique || '') : '');
+  var _vDescOeuvre = _isEn ? (_trans.description_oeuvre || '') : (protagoniste ? (protagoniste.description_oeuvre || '') : '');
 %>
 <main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste ? protagoniste.name : 'Nouveau personnage', navBack: protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' }) %>
@@ -264,44 +270,64 @@
 
     <div class="nv-form-wrap">
 
-      <%# Nom %>
-      <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
-        data-fr-val="<%= protagoniste ? protagoniste.name : '' %>"
-        data-en-val="<%= _trans.name || '' %>"
-        value="<%= _isEn ? (_trans.name || '') : (protagoniste ? protagoniste.name : '') %>"
-        placeholder="<%= _isEn && protagoniste ? protagoniste.name : 'Nom du personnage\u2026' %>" />
-
-      <%# Image %>
-      <div class="prot-form-img-section prot-form-img-section--centered" id="prot-img-section">
-        <div class="prot-form-field-label">Photo / Illustration</div>
-        <div class="prot-form-img-wrap" id="prot-img-wrap">
-          <% if (protagoniste && protagoniste.image_path) { %>
-            <div class="prot-form-img-holder" id="prot-img-holder">
-              <img src="<%= protagoniste.image_path %>" alt="Image actuelle" class="prot-form-img-thumb" id="prot-img-thumb" />
-              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
-              <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
-            </div>
-          <% } else { %>
-            <div class="prot-form-img-holder" id="prot-img-holder" style="display:none">
-              <img src="" alt="Aper&ccedil;u" class="prot-form-img-thumb" id="prot-img-thumb" />
-              <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
-              <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
-            </div>
-          <% } %>
-          <label class="prot-form-img-pick" id="prot-img-pick-btn">
-            <input type="file" name="character_image" accept="image/*" id="prot-img-input" style="display:none" />
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            <span id="prot-img-pick-label">Choisir une image&hellip;</span>
-          </label>
-        </div>
+      <%# Ligne 1 : Prénom + Nom %>
+      <div class="prot-name-row">
+        <input type="text" name="prenom" class="nv-form-title-input prot-prenom-inp" maxlength="200"
+          data-fr-val="<%= protagoniste ? (protagoniste.prenom || '') : '' %>"
+          data-en-val="<%= _trans.prenom || '' %>"
+          value="<%= _vPrenom %>"
+          placeholder="<%= _isEn ? 'First name\u2026' : 'Pr\u00e9nom\u2026' %>" />
+        <input type="text" name="nom" class="prot-nom-inp" maxlength="200"
+          data-fr-val="<%= protagoniste ? (protagoniste.nom || '') : '' %>"
+          data-en-val="<%= _trans.nom || '' %>"
+          value="<%= _vNom %>"
+          placeholder="<%= _isEn ? 'Last name\u2026' : 'Nom\u2026' %>" />
       </div>
 
-      <%# Description %>
-      <textarea name="description" class="nv-form-content" rows="10"
-        data-fr-val="<%= (protagoniste && protagoniste.description ? protagoniste.description : '').replace(/"/g, '&quot;') %>"
+      <%# Ligne 2 : Image de profil + Description physique %>
+      <div class="prot-img-desc-row">
+        <div class="prot-img-col" id="prot-img-section">
+          <div class="prot-form-img-wrap" id="prot-img-wrap">
+            <% if (protagoniste && protagoniste.image_path) { %>
+              <div class="prot-form-img-holder" id="prot-img-holder">
+                <img src="<%= protagoniste.image_path %>" alt="Image actuelle" class="prot-form-img-thumb" id="prot-img-thumb" />
+                <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
+                <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
+              </div>
+            <% } else { %>
+              <div class="prot-form-img-holder" id="prot-img-holder" style="display:none">
+                <img src="" alt="Aper&ccedil;u" class="prot-form-img-thumb" id="prot-img-thumb" />
+                <button type="button" class="prot-form-img-remove-btn" id="prot-img-remove-btn" title="Supprimer l'image" aria-label="Supprimer l'image">&times;</button>
+                <input type="hidden" name="remove_image" id="prot-remove-hidden" value="" />
+              </div>
+            <% } %>
+            <label class="prot-form-img-pick" id="prot-img-pick-btn">
+              <input type="file" name="character_image" accept="image/*" id="prot-img-input" style="display:none" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span id="prot-img-pick-label">Image&hellip;</span>
+            </label>
+          </div>
+        </div>
+        <textarea name="description_physique" class="prot-desc-field"
+          data-fr-val="<%= (protagoniste ? (protagoniste.description_physique || '') : '').replace(/"/g, '&quot;') %>"
+          data-en-val="<%= (_trans.description_physique || '').replace(/"/g, '&quot;') %>"
+          placeholder="<%= _isEn ? 'Physical description\u2026' : 'Description physique, apparence\u2026' %>"
+          rows="6" style="resize:vertical"><%= _vDescPhys %></textarea>
+      </div>
+
+      <%# Ligne 3 : Description générale %>
+      <textarea name="description" class="prot-desc-field nv-form-content"
+        data-fr-val="<%= (protagoniste ? (protagoniste.description || '') : '').replace(/"/g, '&quot;') %>"
         data-en-val="<%= (_trans.description || '').replace(/"/g, '&quot;') %>"
-        placeholder="<%= _isEn ? 'English description\u2026' : 'Description, traits de caract\u00e8re, apparence\u2026' %>"
-        style="resize:vertical"><%= _isEn ? (_trans.description || '') : (protagoniste ? protagoniste.description : '') %></textarea>
+        placeholder="<%= _isEn ? 'General description, personality\u2026' : 'Description g\u00e9n\u00e9rale, personnalit\u00e9, traits de caract\u00e8re\u2026' %>"
+        rows="6" style="resize:vertical"><%= _vDesc %></textarea>
+
+      <%# Ligne 4 : Oeuvre et apparitions %>
+      <textarea name="description_oeuvre" class="prot-desc-field"
+        data-fr-val="<%= (protagoniste ? (protagoniste.description_oeuvre || '') : '').replace(/"/g, '&quot;') %>"
+        data-en-val="<%= (_trans.description_oeuvre || '').replace(/"/g, '&quot;') %>"
+        placeholder="<%= _isEn ? 'Original work, appearances, role\u2026' : 'Oeuvre d\u2019origine, apparitions, r\u00f4le dans le r\u00e9cit\u2026' %>"
+        rows="5" style="resize:vertical"><%= _vDescOeuvre %></textarea>
 
       <div class="wiki-form-actions wf-mobile-actions">
         <button type="submit">Enregistrer</button>
@@ -319,25 +345,14 @@
       var isEn = lang === 'en';
       var prevIsEn = _editLangHid ? _editLangHid.value === 'en' : false;
 
-      // Sauvegarder les valeurs en cours avant de switcher
-      var nameInp = document.querySelector('input[name="name"]');
-      var descTa  = document.querySelector('textarea[name="description"]');
-      if (nameInp) {
-        if (prevIsEn) nameInp.dataset.enVal = nameInp.value;
-        else          nameInp.dataset.frVal = nameInp.value;
-        nameInp.value = isEn ? (nameInp.dataset.enVal || '') : (nameInp.dataset.frVal || '');
-        nameInp.placeholder = isEn
-          ? (nameInp.dataset.frVal || 'Nom du personnage\u2026')
-          : 'Nom du personnage\u2026';
-      }
-      if (descTa) {
-        if (prevIsEn) descTa.dataset.enVal = descTa.value;
-        else          descTa.dataset.frVal = descTa.value;
-        descTa.value = isEn ? (descTa.dataset.enVal || '') : (descTa.dataset.frVal || '');
-        descTa.placeholder = isEn
-          ? 'English description\u2026'
-          : 'Description, traits de caract\u00e8re, apparence\u2026';
-      }
+      // Sauvegarder + permuter toutes les valeurs taggées data-fr-val / data-en-val
+      document.querySelectorAll('[data-fr-val]').forEach(function(el) {
+        // Sauvegarder la valeur actuelle dans l'attribut de la langue courante
+        if (prevIsEn) el.dataset.enVal = el.value;
+        else          el.dataset.frVal = el.value;
+        // Charger la valeur de la nouvelle langue
+        el.value = isEn ? (el.dataset.enVal || '') : (el.dataset.frVal || '');
+      });
 
       // Mettre à jour le champ caché _editLang
       if (_editLangHid) _editLangHid.value = isEn ? 'en' : '';

@@ -66,8 +66,9 @@ function buildProtagonistesRouter(config) {
     res.render("protagoniste-form", { config, protagoniste: null, allTags, allParodies: db.listAllParodies(), races });
   });
   router.post("/new", requireAdmin, upload.single("character_image"), (req, res) => {
-    const name = String(req.body.name || "").slice(0, 200).trim();
-    if (!name) return res.redirect("/protagonistes/new");
+    const prenom = String(req.body.prenom || "").slice(0, 200).trim();
+    const nom    = String(req.body.nom    || "").slice(0, 200).trim();
+    if (!prenom && !nom) return res.redirect("/protagonistes/new");
     const tags = String(req.body.tags || "").split(",").map(t => t.trim()).filter(Boolean);
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
@@ -78,7 +79,13 @@ function buildProtagonistesRouter(config) {
     const ageVal = age > 0 ? Math.max(18, age) : 0;
     const imagePath = req.file ? `/uploads/personnages/${req.file.filename}` : "";
     const special = req.body.special || "";
-    const id = db.createProtagoniste({ name, description: String(req.body.description || ""), tags, parody, subParody, gender, nature, imagePath, special, age: ageVal, orientation });
+    const id = db.createProtagoniste({
+      prenom, nom,
+      description: String(req.body.description || ""),
+      descriptionPhysique: String(req.body.description_physique || ""),
+      descriptionOeuvre: String(req.body.description_oeuvre || ""),
+      tags, parody, subParody, gender, nature, imagePath, special, age: ageVal, orientation,
+    });
     const raceId = req.body.race_id ? Number(req.body.race_id) : null;
     const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
     if (raceId) setProtagonisteRace(id, raceId, clanId);
@@ -122,7 +129,7 @@ function buildProtagonistesRouter(config) {
     const protagoniste = db.getProtagoniste(req.params.id);
     if (!protagoniste) return res.redirect("/protagonistes");
 
-    // Extraire les champs partagés (communs FR/EN) — toujours sauvegardés
+    // Champs partagés FR/EN — toujours sauvegardés
     const tags = String(req.body.tags || "").split(",").map(t => t.trim()).filter(Boolean);
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
@@ -145,9 +152,15 @@ function buildProtagonistesRouter(config) {
     const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
 
     if (req.body._editLang === "en") {
-      // Sauvegarder les traductions EN
-      db.setTranslation("protagoniste", protagoniste.id, "name", "en", String(req.body.name || "").slice(0, 200).trim());
+      const prenomEn = String(req.body.prenom || "").slice(0, 200).trim();
+      const nomEn    = String(req.body.nom    || "").slice(0, 200).trim();
+      db.setTranslation("protagoniste", protagoniste.id, "prenom", "en", prenomEn);
+      db.setTranslation("protagoniste", protagoniste.id, "nom", "en", nomEn);
+      const nameEn = [prenomEn, nomEn].filter(Boolean).join(" ") || protagoniste.name;
+      db.setTranslation("protagoniste", protagoniste.id, "name", "en", nameEn);
       db.setTranslation("protagoniste", protagoniste.id, "description", "en", String(req.body.description || ""));
+      db.setTranslation("protagoniste", protagoniste.id, "description_physique", "en", String(req.body.description_physique || ""));
+      db.setTranslation("protagoniste", protagoniste.id, "description_oeuvre", "en", String(req.body.description_oeuvre || ""));
       db.setTranslation("protagoniste", protagoniste.id, "published_en", "en", req.body.published_en === "1" ? "1" : "");
       let evoEnArr = [];
       try { evoEnArr = JSON.parse(req.body.evolutions_en || "[]"); } catch (_) {}
@@ -156,9 +169,12 @@ function buildProtagonistesRouter(config) {
           db.setTranslation("protagoniste", protagoniste.id, `evo_${i}_en`, "en", String(name || "").trim());
         });
       }
-      // Sauvegarder aussi les champs partagés (le volet gauche est commun FR/EN)
+      // Sauvegarder aussi les champs partagés
       db.updateProtagoniste(protagoniste.id, {
-        name: protagoniste.name, description: protagoniste.description,
+        prenom: protagoniste.prenom, nom: protagoniste.nom,
+        description: protagoniste.description,
+        descriptionPhysique: protagoniste.description_physique,
+        descriptionOeuvre: protagoniste.description_oeuvre,
         tags, parody, subParody, gender, nature, imagePath, evolutions,
         special: req.body.special || "", age: ageVal, orientation,
       });
@@ -166,19 +182,16 @@ function buildProtagonistesRouter(config) {
       return res.redirect(`/protagonistes/${protagoniste.id}/edit?editLang=en`);
     }
 
+    const prenom = String(req.body.prenom || "").slice(0, 200).trim();
+    const nom    = String(req.body.nom    || "").slice(0, 200).trim();
     db.updateProtagoniste(protagoniste.id, {
-      name:        String(req.body.name || "").slice(0, 200).trim() || protagoniste.name,
+      prenom: prenom || protagoniste.prenom,
+      nom,
       description: String(req.body.description || ""),
-      tags,
-      parody,
-      subParody,
-      gender,
-      nature,
-      imagePath,
-      evolutions,
-      special: req.body.special || "",
-      age: ageVal,
-      orientation,
+      descriptionPhysique: String(req.body.description_physique || ""),
+      descriptionOeuvre: String(req.body.description_oeuvre || ""),
+      tags, parody, subParody, gender, nature, imagePath, evolutions,
+      special: req.body.special || "", age: ageVal, orientation,
     });
     setProtagonisteRace(protagoniste.id, raceId, clanId);
     res.redirect(`/protagonistes/${protagoniste.id}`);
