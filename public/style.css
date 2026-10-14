@@ -10,6 +10,58 @@
 .prot-sb-include-btn:hover{background:hsl(220,55%,40%)}
 .prot-sb-detach-btn{background:hsl(38,60%,30%);color:#f5e0c7}
 .prot-sb-detach-btn:hover{background:hsl(38,60%,38%)}
+
+/* ── Page détail personnage : nouveau layout ─────────────────────────── */
+.prot-detail-layout{display:flex;gap:2rem;align-items:flex-start;margin-top:.5rem}
+.prot-detail-main{flex:1;min-width:0}
+.prot-detail-hd-text{flex:1;min-width:0}
+
+/* En-tête : image + nom */
+.prot-detail-header{display:flex;gap:1.25rem;align-items:flex-start;margin-bottom:1.25rem}
+.prot-detail-img-wrap{flex-shrink:0;width:150px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.prot-detail-img{width:100%;display:block}
+.prot-detail-name{font-size:1.7rem;font-weight:800;margin:0 0 .45rem}
+.prot-detail-evo-chain{display:flex;align-items:center;flex-wrap:wrap;gap:.25rem .4rem;margin-bottom:.4rem}
+.prot-detail-evo-stage{font-size:.8rem;font-weight:600;background:#ffffff12;border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:.18rem .65rem;color:#ffffffa6}
+.prot-detail-evo-stage--final{background:#ffffff24;border-color:#ffffff4d;color:#fff}
+.prot-detail-evo-arrow{font-size:.8rem;opacity:.4}
+
+/* Sections description rétractables */
+.prot-desc-section{border:1px solid rgba(255,255,255,.09);border-radius:8px;margin-bottom:.6rem;overflow:hidden}
+.prot-desc-summary{display:flex;align-items:center;justify-content:space-between;padding:.6rem .9rem;font-size:.8rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:hsl(340,40%,68%);cursor:pointer;list-style:none;user-select:none;gap:.5rem}
+.prot-desc-summary::-webkit-details-marker{display:none}
+.prot-desc-summary::after{content:'›';font-size:1rem;opacity:.5;transition:transform .2s;flex-shrink:0;transform:rotate(90deg)}
+.prot-desc-section:not([open]) .prot-desc-summary::after{transform:rotate(0deg)}
+.prot-desc-body{padding:.15rem .9rem .85rem;font-size:.88rem;line-height:1.72;color:#b0bec5}
+.prot-desc-body p{margin:.45rem 0}
+.prot-desc-body p:first-child{margin-top:0}
+
+/* Volet droit paramètres */
+.prot-detail-sidebar{width:190px;flex-shrink:0;position:sticky;top:calc(var(--topnav-height) + .75rem);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:.75rem .8rem;display:flex;flex-direction:column;gap:.7rem}
+.prot-ds-row{display:flex;align-items:center;gap:.5rem;font-size:.8rem}
+.prot-ds-row--col{flex-direction:column;align-items:flex-start;gap:.15rem}
+.prot-ds-label{font-size:.67rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.prot-ds-value{color:#e2e8f0;font-size:.82rem;font-weight:500}
+.prot-ds-gender{gap:.6rem}
+.prot-ds-gender-icon{display:flex;align-items:center;justify-content:center;width:2rem;height:2rem;flex-shrink:0}
+.prot-ds-gender-icon svg{width:1.5rem;height:1.5rem}
+.prot-ds-gender-icon--femme svg{stroke:hsl(340,70%,62%)}
+.prot-ds-gender-icon--homme svg{stroke:hsl(210,70%,62%)}
+.prot-ds-gender-icon--autre svg{stroke:hsl(270,60%,65%)}
+.prot-ds-gender-label{font-size:.88rem;font-weight:700}
+.prot-ds-gender-label--femme{color:hsl(340,70%,65%)}
+.prot-ds-gender-label--homme{color:hsl(210,70%,65%)}
+.prot-ds-gender-label--autre{color:hsl(270,60%,68%)}
+.prot-ds-univers{display:inline-flex;align-items:center;gap:.35rem;font-size:.78rem;color:#94a3b8;text-decoration:none;margin-top:.2rem;line-height:1.4}
+.prot-ds-univers:hover{color:#e2e8f0}
+.prot-ds-univers svg{width:.8rem;height:.8rem;flex-shrink:0}
+.prot-ds-tags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.25rem}
+
+@media(max-width:680px){
+  .prot-detail-layout{flex-direction:column}
+  .prot-detail-sidebar{width:100%;position:static;flex-direction:row;flex-wrap:wrap;gap:.5rem .9rem}
+  .prot-ds-gender{flex:0 0 100%}
+}
 .prot-include-dialog{background:#1a1f2e;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:0;width:min(92vw,480px);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;color:#f1f5f9}
 .prot-include-dialog::backdrop{background:rgba(0,0,0,.55)}
 .pid-header{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.1)}
