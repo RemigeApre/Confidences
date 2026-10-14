@@ -2,10 +2,10 @@
 <%
   var _isFemme = protagoniste.gender === 'femme';
   var _orientationLabel = {
-    hetero: 'Hétéro',
-    homo:   _isFemme ? 'Lesbienne' : 'Gay',
-    bi:     _isFemme ? 'Bi & curieuse' : 'Bi & curieux',
-    autre:  'Autre'
+    hetero: { fr: 'Hétéro',                         en: 'Hetero' },
+    homo:   { fr: _isFemme ? 'Lesbienne' : 'Gay',   en: _isFemme ? 'Lesbian' : 'Gay' },
+    bi:     { fr: _isFemme ? 'Bi & curieuse' : 'Bi & curieux', en: 'Bi & curious' },
+    autre:  { fr: 'Autre',                           en: 'Other' }
   };
   var _protDesc     = t(protagoniste.description,         'protagoniste', protagoniste.id, 'description');
   var _protDescPhys = t(protagoniste.description_physique,'protagoniste', protagoniste.id, 'description_physique');
@@ -19,20 +19,19 @@
 <main class="container wide prot-detail-page" style="--ch-hue:340">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste.name, navBack: '/protagonistes' }) %>
 
-  <a href="/protagonistes" class="prot-back-link">&#8592; Personnages</a>
-
   <div class="prot-3col-layout">
 
-    <%# ── Colonne gauche : upload admin ── %>
+    <%# ── Colonne gauche : retour + upload admin ── %>
     <% if (currentUser && currentUser.isAdmin) { %>
     <aside class="prot-left-panel">
-      <div class="prot-left-panel-title">Galerie</div>
+      <a href="/protagonistes" class="prot-back-link-panel" data-fr="&#8592; Personnages" data-en="&#8592; Characters">&#8592; Personnages</a>
+      <div class="prot-left-panel-title" data-fr="Galerie" data-en="Gallery">Galerie</div>
       <form method="POST" action="/protagonistes/<%= protagoniste.id %>/gallery-upload"
         enctype="multipart/form-data" class="prot-upload-form">
         <label class="prot-upload-dropzone" id="prot-gal-drop">
           <input type="file" name="images" accept="image/*" multiple id="prot-gal-input" style="display:none" />
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          <span id="prot-gal-label">Ajouter&hellip;</span>
+          <span id="prot-gal-label" data-fr="Ajouter&hellip;" data-en="Add&hellip;">Ajouter&hellip;</span>
         </label>
         <div class="prot-upload-previews" id="prot-gal-previews"></div>
         <button type="submit" class="wf-save-btn" id="prot-gal-submit" disabled style="width:100%;margin-top:.4rem">Envoyer</button>
@@ -43,7 +42,8 @@
             prev=document.getElementById("prot-gal-previews"),btn=document.getElementById("prot-gal-submit"),
             drop=document.getElementById("prot-gal-drop");
         function update(files){
-          lbl.textContent=files.length?files.length+" image(s)":"Ajouter\u2026";
+          var _isEn=localStorage.getItem('slang')==='en';
+          lbl.textContent=files.length?files.length+" image(s)":(_isEn?"Add\u2026":"Ajouter\u2026");
           btn.disabled=!files.length; prev.innerHTML="";
           Array.from(files).forEach(function(f){var i=document.createElement("img");i.src=URL.createObjectURL(f);i.className="prot-upload-preview-img";prev.appendChild(i);});
         }
@@ -59,7 +59,9 @@
       </script>
     </aside>
     <% } else { %>
-    <div class="prot-left-panel prot-left-panel--empty"></div>
+    <div class="prot-left-panel prot-left-panel--empty">
+      <a href="/protagonistes" class="prot-back-link-panel" data-fr="&#8592; Personnages" data-en="&#8592; Characters">&#8592; Personnages</a>
+    </div>
     <% } %>
 
     <%# ── Colonne centrale : contenu ── %>
@@ -241,9 +243,10 @@
       <% } %>
 
       <% if (protagoniste.orientation) { %>
+        <% var _oriLbl = _orientationLabel[protagoniste.orientation] || { fr: protagoniste.orientation, en: protagoniste.orientation }; %>
         <div class="prot-ds-row">
-          <span class="prot-ds-label">Orientation</span>
-          <span class="prot-ds-value"><%= _orientationLabel[protagoniste.orientation] || protagoniste.orientation %></span>
+          <span class="prot-ds-label" data-fr="Orientation" data-en="Orientation">Orientation</span>
+          <span class="prot-ds-value" data-fr="<%= _oriLbl.fr %>" data-en="<%= _oriLbl.en %>"><%= _oriLbl.fr %></span>
         </div>
       <% } %>
 
