@@ -252,20 +252,21 @@
     <%# ── CONTENU CENTRAL ── %>
     <div class="wf-actions-right">
       <% if (protagoniste) { %>
-      <div class="prot-publish-wrap">
-        <%# Toujours dans le DOM — affiché/masqué par JS %>
-        <span id="prot-publish-inner"<% if (!_isEn) { %> hidden<% } %>>
-          <button type="button" id="prot-publish-btn"
-            class="prot-publish-btn<%= _trans.published_en === '1' ? ' prot-publish-btn--on' : '' %>">
-            <%= _trans.published_en === '1' ? 'Publi&eacute;' : '&Agrave; publier' %>
-          </button>
-          <input type="hidden" name="published_en" id="prot-publish-hidden"
-            value="<%= _trans.published_en === '1' ? '1' : '' %>" />
-        </span>
-        <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/protagonistes/' + protagoniste.id + '/edit' }) %>
+      <div class="prot-publish-row">
+        <button type="button" id="prot-publish-btn"
+          class="prot-publish-btn<%= _trans.published_en === '1' ? ' prot-publish-btn--on' : '' %>">
+          <%- _trans.published_en === '1' ? 'Publi&eacute;' : '&Agrave; publier' %>
+        </button>
+        <input type="hidden" name="published_en" id="prot-publish-hidden"
+          value="<%= _trans.published_en === '1' ? '1' : '' %>" />
       </div>
       <% } %>
-      <button type="submit" class="wf-save-btn">Enregistrer</button>
+      <div class="prot-save-row">
+        <% if (protagoniste) { %>
+        <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/protagonistes/' + protagoniste.id + '/edit' }) %>
+        <% } %>
+        <button type="submit" class="wf-save-btn">Enregistrer</button>
+      </div>
     </div>
 
     <div class="nv-form-wrap">
@@ -356,10 +357,6 @@
 
       // Mettre à jour le champ caché _editLang
       if (_editLangHid) _editLangHid.value = isEn ? 'en' : '';
-
-      // Bouton publier
-      var publishInner = document.getElementById('prot-publish-inner');
-      if (publishInner) publishInner.hidden = !isEn;
 
       // Badge EN
       var enBadge = document.getElementById('prot-sb-en-badge');
