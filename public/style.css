@@ -67,7 +67,10 @@
 .prot-sb-detach-btn:hover{background:hsl(38,60%,38%)}
 
 /* ── Page détail personnage : layout 3 colonnes ──────────────────────── */
-.prot-3col-layout{display:grid;grid-template-columns:180px 1fr 200px;gap:1.5rem;align-items:start;margin-top:.75rem}
+/* prot-detail-page remplace container wide — prend toute la largeur, gère son propre padding */
+.prot-detail-page{padding:.75rem 1.25rem 4rem;max-width:none}
+/* Le grid sort du flux container : max-width propre, centré */
+.prot-3col-layout{display:grid;grid-template-columns:200px minmax(0,1fr) 220px;gap:2rem;align-items:start;max-width:1280px;margin:.75rem auto 0}
 .prot-detail-main{min-width:0}
 
 /* Colonne gauche : upload admin */
@@ -130,11 +133,11 @@
 .prot-ds-univers svg{width:.85rem;height:.85rem;flex-shrink:0;margin-top:.1rem;stroke:hsl(340,50%,55%)}
 .prot-ds-tags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem}
 
-@media(max-width:860px){
-  .prot-3col-layout{grid-template-columns:1fr 200px}
+@media(max-width:1100px){
+  .prot-3col-layout{grid-template-columns:1fr 220px;max-width:900px}
   .prot-left-panel{display:none}
 }
-@media(max-width:600px){
+@media(max-width:700px){
   .prot-3col-layout{grid-template-columns:1fr}
   .prot-detail-sidebar{position:static}
 }

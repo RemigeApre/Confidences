@@ -92,6 +92,8 @@ const {
   recordLoginFailure,
   getLoginFailureCount,
   resetLoginFailures,
+  getVisitorProfile,
+  getAnonVisitorList,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -1396,6 +1398,16 @@ function buildAdminRouter(config) {
     const days = parseInt(req.query.days) || 7;
     const pathQ = String(req.query.path || '').trim();
     res.json(getAnonStats(days, pathQ));
+  });
+
+  router.get("/log/visitor/:visitorId", requireAdmin, (req, res) => {
+    const profile = getVisitorProfile(req.params.visitorId);
+    res.json(profile || { error: 'not found' });
+  });
+
+  router.get("/log/visitors", requireAdmin, (req, res) => {
+    const days = Math.min(365, parseInt(req.query.days) || 30);
+    res.json({ visitors: getAnonVisitorList(days) });
   });
 
   return router;

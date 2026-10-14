@@ -837,11 +837,17 @@
     <%# ── Panneau visiteurs anonymes ── %>
     <div class="log-panel" id="log-panel-anonymes" hidden>
 
+      <div class="log-anon-toolbar">
+        <input type="search" class="log-anon-path-filter" id="log-anon-path-filter" placeholder="Filtrer par page&hellip;" autocomplete="off" />
+        <button class="log-anon-profiles-btn" id="log-anon-profiles-btn" type="button">Profils visiteurs</button>
+      </div>
+
       <div class="log-anon-table-wrap" id="log-anon-table-wrap">
         <table class="admin-table log-anon-table" id="log-anon-table">
           <thead>
             <tr>
               <th>Page</th>
+              <th>Types</th>
               <th>Visiteurs</th>
               <th style="text-align:right">Vues</th>
               <th style="white-space:nowrap">Derni&egrave;re visite</th>
@@ -854,6 +860,15 @@
                 <% if (r.isScan) { %><span class="log-anon-scan-badge" title="Chemin suspect (bot/scanner)">&#9888;</span> <% } %>
                 <span class="log-anon-label" title="<%= r.path %>"><%= r.label %></span>
                 <span class="log-anon-rawpath"><%= r.path %></span>
+              </td>
+              <td class="log-anon-types">
+                <% var t = r.types || {}; %>
+                <% if (t.human > 0) { %><span class="log-anon-type-badge log-anon-type-human" title="Humain (<%= t.human %>)">&#129489; <%= t.human %></span><% } %>
+                <% if (t.bot_seo > 0) { %><span class="log-anon-type-badge log-anon-type-seo" title="SEO bot (<%= t.bot_seo %>)">&#129302; <%= t.bot_seo %></span><% } %>
+                <% if (t.bot_ai > 0) { %><span class="log-anon-type-badge log-anon-type-ai" title="IA bot (<%= t.bot_ai %>)">&#129504; <%= t.bot_ai %></span><% } %>
+                <% if (t.bot_sdk > 0) { %><span class="log-anon-type-badge log-anon-type-sdk" title="SDK/prog (<%= t.bot_sdk %>)">&#128230; <%= t.bot_sdk %></span><% } %>
+                <% if (t.bot_monitor > 0) { %><span class="log-anon-type-badge log-anon-type-monitor" title="Monitor (<%= t.bot_monitor %>)">&#128270; <%= t.bot_monitor %></span><% } %>
+                <% if (t.bot_unknown > 0) { %><span class="log-anon-type-badge log-anon-type-unknown" title="Inconnu (<%= t.bot_unknown %>)">&#10067; <%= t.bot_unknown %></span><% } %>
               </td>
               <td class="log-anon-visitors">
                 <% (r.visitor_ids || []).forEach(function(vid) { %>
@@ -884,6 +899,23 @@
         </div>
       </div>
 
+    </div>
+
+    <%# ── Drawer profils visiteurs ── %>
+    <div class="log-visitor-drawer" id="log-visitor-drawer" hidden>
+      <div class="log-visitor-drawer-header">
+        <span class="log-visitor-drawer-title">Profils visiteurs</span>
+        <button class="log-visitor-drawer-close" id="log-visitor-drawer-close" type="button" aria-label="Fermer">&#10005;</button>
+      </div>
+      <div class="log-visitor-drawer-body" id="log-visitor-drawer-body">
+        <div class="log-visitor-list" id="log-visitor-list">
+          <div style="color:var(--muted);font-size:.8rem">Chargement&hellip;</div>
+        </div>
+        <div class="log-visitor-profile" id="log-visitor-profile" hidden>
+          <button class="log-visitor-back" id="log-visitor-back" type="button">&#8592; Retour</button>
+          <div id="log-visitor-profile-content"></div>
+        </div>
+      </div>
     </div>
 
     </div><%# /log-main %>
@@ -951,52 +983,323 @@
       return new Date(iso).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     }
 
-    function visitorBadges(row) {
+    var pathFilter    = document.getElementById('log-anon-path-filter');
+    var profilesBtn   = document.getElementById('log-anon-profiles-btn');
+    var drawer        = document.getElementById('log-visitor-drawer');
+    var drawerClose   = document.getElementById('log-visitor-drawer-close');
+    var visitorList   = document.getElementById('log-visitor-list');
+    var visitorProfile = document.getElementById('log-visitor-profile');
+    var visitorBack   = document.getElementById('log-visitor-back');
+    var profileContent = document.getElementById('log-visitor-profile-content');
+
+    // -- Type badges helpers --
+    var TYPE_INFO = {
+      human:       { icon: '\u{1F9D1}', label: 'Humain',   cls: 'log-anon-type-human'   },
+      bot_seo:     { icon: '\u{1F916}', label: 'SEO',      cls: 'log-anon-type-seo'     },
+      bot_ai:      { icon: '\u{1F9E0}', label: 'IA',       cls: 'log-anon-type-ai'      },
+      bot_sdk:     { icon: '\u{1F4E6}', label: 'SDK',      cls: 'log-anon-type-sdk'     },
+      bot_monitor: { icon: '\u{1F50D}', label: 'Monitor',  cls: 'log-anon-type-monitor' },
+      bot_unknown: { icon: '?',         label: 'Inconnu',  cls: 'log-anon-type-unknown' },
+    };
+
+    function makeTypeBadges(types) {
+      var frag = document.createDocumentFragment();
+      var order = ['human', 'bot_seo', 'bot_ai', 'bot_sdk', 'bot_monitor', 'bot_unknown'];
+      order.forEach(function(k) {
+        var n = (types && types[k]) || 0;
+        if (!n) return;
+        var info = TYPE_INFO[k] || { icon: '?', label: k, cls: 'log-anon-type-unknown' };
+        var sp = document.createElement('span');
+        sp.className = 'log-anon-type-badge ' + info.cls;
+        sp.title = info.label + ' (' + n + ')';
+        sp.textContent = info.icon + ' ' + n;
+        frag.appendChild(sp);
+      });
+      return frag;
+    }
+
+    function visitorBadgesNode(row) {
+      var frag = document.createDocumentFragment();
       var ids = row.visitor_ids || [];
-      var html = '';
       ids.forEach(function(vid) {
-        html += '<span class="log-anon-vid" style="background:#' + vid.slice(0,6) + '" title="Visiteur ' + vid + '"></span>';
+        var sp = document.createElement('span');
+        sp.className = 'log-anon-vid';
+        sp.style.background = '#' + vid.slice(0, 6);
+        sp.title = 'Visiteur ' + vid;
+        frag.appendChild(sp);
       });
       var extra = (row.unique_visitors || 0) - ids.length;
-      if (extra > 0) html += '<span class="log-anon-vid-more">+' + extra + '</span>';
-      return html;
+      if (extra > 0) {
+        var sp2 = document.createElement('span');
+        sp2.className = 'log-anon-vid-more';
+        sp2.textContent = '+' + extra;
+        frag.appendChild(sp2);
+      }
+      return frag;
     }
 
     function loadAnon() {
       var q = searchInp ? searchInp.value.trim() : '';
-      fetch('/admin/log/anon?days=' + currentDays + '&path=' + encodeURIComponent(q))
+      var pathQ = pathFilter ? pathFilter.value.trim() : '';
+      var combined = q || pathQ;
+      fetch('/admin/log/anon?days=' + currentDays + '&path=' + encodeURIComponent(combined))
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          // Table
-          var html = '';
-          (data.rows || []).forEach(function(r) {
-            var scanCls = r.isScan ? ' log-anon-row--scan' : '';
-            var scanBadge = r.isScan ? '<span class="log-anon-scan-badge" title="Chemin suspect">⚠</span> ' : '';
-            html += '<tr class="' + scanCls + '">' +
-              '<td class="log-anon-path">' + scanBadge +
-                '<span class="log-anon-label" title="' + r.path + '">' + r.label + '</span>' +
-                '<span class="log-anon-rawpath">' + r.path + '</span>' +
-              '</td>' +
-              '<td class="log-anon-visitors">' + visitorBadges(r) + '</td>' +
-              '<td style="text-align:right;font-variant-numeric:tabular-nums">' + r.views + '</td>' +
-              '<td style="white-space:nowrap;color:var(--muted)">' + formatAnonTime(r.last_seen) + '</td></tr>';
+          // Table (safe DOM, no innerHTML with data)
+          tbody.textContent = '';
+          var rows = data.rows || [];
+          if (!rows.length) {
+            var tr = document.createElement('tr');
+            var td = document.createElement('td');
+            td.colSpan = 5;
+            td.style.cssText = 'color:var(--muted);text-align:center';
+            td.textContent = 'Aucune donnée';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+          }
+          rows.forEach(function(r) {
+            var tr = document.createElement('tr');
+            if (r.isScan) tr.className = 'log-anon-row--scan';
+            // Path cell
+            var tdPath = document.createElement('td');
+            tdPath.className = 'log-anon-path';
+            if (r.isScan) {
+              var badge = document.createElement('span');
+              badge.className = 'log-anon-scan-badge';
+              badge.title = 'Chemin suspect';
+              badge.textContent = '\u26A0';
+              tdPath.appendChild(badge);
+              tdPath.appendChild(document.createTextNode(' '));
+            }
+            var lbl = document.createElement('span');
+            lbl.className = 'log-anon-label';
+            lbl.title = r.path;
+            lbl.textContent = r.label;
+            tdPath.appendChild(lbl);
+            var raw = document.createElement('span');
+            raw.className = 'log-anon-rawpath';
+            raw.textContent = r.path;
+            tdPath.appendChild(raw);
+            tr.appendChild(tdPath);
+            // Types cell
+            var tdTypes = document.createElement('td');
+            tdTypes.className = 'log-anon-types';
+            tdTypes.appendChild(makeTypeBadges(r.types));
+            tr.appendChild(tdTypes);
+            // Visitors cell
+            var tdVis = document.createElement('td');
+            tdVis.className = 'log-anon-visitors';
+            tdVis.appendChild(visitorBadgesNode(r));
+            tr.appendChild(tdVis);
+            // Views cell
+            var tdViews = document.createElement('td');
+            tdViews.style.cssText = 'text-align:right;font-variant-numeric:tabular-nums';
+            tdViews.textContent = r.views;
+            tr.appendChild(tdViews);
+            // Last seen cell
+            var tdLast = document.createElement('td');
+            tdLast.style.cssText = 'white-space:nowrap;color:var(--muted)';
+            tdLast.textContent = formatAnonTime(r.last_seen);
+            tr.appendChild(tdLast);
+            tbody.appendChild(tr);
           });
-          tbody.innerHTML = html || '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucune donnée</td></tr>';
           // Daily
-          var dhtml = '';
-          (data.daily || []).forEach(function(d) {
-            dhtml += '<div class="log-anon-day-row"><span class="log-anon-day-label">' + d.day + '</span>' +
-              '<span class="log-anon-day-val">' + d.views + ' vues</span>' +
-              '<span class="log-anon-day-uniq">' + d.unique_ips + ' ip</span></div>';
+          dailyRows.textContent = '';
+          var drows = data.daily || [];
+          if (!drows.length) {
+            var div0 = document.createElement('div');
+            div0.style.cssText = 'color:var(--muted);font-size:.8rem';
+            div0.textContent = 'Aucune donnée';
+            dailyRows.appendChild(div0);
+          }
+          drows.forEach(function(d) {
+            var div = document.createElement('div');
+            div.className = 'log-anon-day-row';
+            var s1 = document.createElement('span'); s1.className = 'log-anon-day-label'; s1.textContent = d.day;
+            var s2 = document.createElement('span'); s2.className = 'log-anon-day-val';   s2.textContent = d.views + ' vues';
+            var s3 = document.createElement('span'); s3.className = 'log-anon-day-uniq';  s3.textContent = d.unique_ips + ' ip';
+            div.appendChild(s1); div.appendChild(s2); div.appendChild(s3);
+            dailyRows.appendChild(div);
           });
-          dailyRows.innerHTML = dhtml || '<div style="color:var(--muted);font-size:.8rem">Aucune donnée</div>';
           // Summary
-          var totalViews = (data.rows || []).reduce(function(s, r) { return s + r.views; }, 0);
-          var maxUniq = (data.rows || []).reduce(function(s, r) { return Math.max(s, r.unique_ips); }, 0);
-          summary.innerHTML = '<span class="log-anon-kpi"><strong>' + totalViews + '</strong> vues</span>' +
-            '<span class="log-anon-kpi"><strong>' + (data.rows || []).length + '</strong> pages</span>' +
-            '<span class="log-anon-kpi"><strong>' + maxUniq + '</strong> IP max/page</span>';
+          var totalViews = rows.reduce(function(s, r) { return s + r.views; }, 0);
+          var maxUniq = rows.reduce(function(s, r) { return Math.max(s, r.unique_ips); }, 0);
+          summary.textContent = '';
+          var kpis = [
+            [totalViews, 'vues'],
+            [rows.length, 'pages'],
+            [maxUniq, 'IP max/page'],
+          ];
+          kpis.forEach(function(k) {
+            var sp = document.createElement('span'); sp.className = 'log-anon-kpi';
+            var strong = document.createElement('strong'); strong.textContent = k[0];
+            sp.appendChild(strong);
+            sp.appendChild(document.createTextNode(' ' + k[1]));
+            summary.appendChild(sp);
+          });
+        }).catch(function() {});
+    }
+
+    // -- Drawer: visitor profiles --
+    function typeLabel(t) {
+      return (TYPE_INFO[t] || { icon: '?', label: t || 'inconnu' }).icon + ' ' + ((TYPE_INFO[t] || {}).label || t || 'inconnu');
+    }
+
+    function loadVisitorList() {
+      visitorList.textContent = '';
+      var loading = document.createElement('div');
+      loading.style.cssText = 'color:var(--muted);font-size:.8rem';
+      loading.textContent = 'Chargement\u2026';
+      visitorList.appendChild(loading);
+      fetch('/admin/log/visitors?days=30')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          visitorList.textContent = '';
+          var visitors = (data && data.visitors) || [];
+          if (!visitors.length) {
+            var empty = document.createElement('div');
+            empty.style.cssText = 'color:var(--muted);font-size:.8rem';
+            empty.textContent = 'Aucun visiteur';
+            visitorList.appendChild(empty);
+            return;
+          }
+          visitors.forEach(function(v) {
+            var row = document.createElement('div');
+            row.className = 'log-visitor-row';
+            row.setAttribute('role', 'button');
+            row.tabIndex = 0;
+            // Visitor ID (truncated)
+            var idSpan = document.createElement('span');
+            idSpan.className = 'log-visitor-id';
+            idSpan.textContent = (v.visitorId || '').slice(0, 8);
+            row.appendChild(idSpan);
+            // Type badge
+            var typSpan = document.createElement('span');
+            typSpan.className = 'log-anon-type-badge ' + ((TYPE_INFO[v.visitorType] || {}).cls || 'log-anon-type-unknown');
+            typSpan.textContent = typeLabel(v.visitorType);
+            row.appendChild(typSpan);
+            // Pages count
+            var pagesSpan = document.createElement('span');
+            pagesSpan.className = 'log-visitor-pages';
+            pagesSpan.textContent = v.totalPages + ' p.';
+            row.appendChild(pagesSpan);
+            // Last seen
+            var lastSpan = document.createElement('span');
+            lastSpan.className = 'log-visitor-last';
+            lastSpan.textContent = formatAnonTime(v.lastSeen);
+            row.appendChild(lastSpan);
+            function openProfile() { loadVisitorProfile(v.visitorId); }
+            row.addEventListener('click', openProfile);
+            row.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') openProfile(); });
+            visitorList.appendChild(row);
+          });
+        }).catch(function() {
+          visitorList.textContent = '';
+          var err = document.createElement('div');
+          err.style.cssText = 'color:var(--muted);font-size:.8rem';
+          err.textContent = 'Erreur de chargement';
+          visitorList.appendChild(err);
         });
+    }
+
+    function loadVisitorProfile(visitorId) {
+      visitorList.hidden = true;
+      visitorProfile.hidden = false;
+      profileContent.textContent = '';
+      var loading = document.createElement('div');
+      loading.style.cssText = 'color:var(--muted);font-size:.8rem';
+      loading.textContent = 'Chargement\u2026';
+      profileContent.appendChild(loading);
+      fetch('/admin/log/visitor/' + encodeURIComponent(visitorId))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          profileContent.textContent = '';
+          if (data.error) {
+            var err = document.createElement('div');
+            err.style.cssText = 'color:var(--muted);font-size:.8rem';
+            err.textContent = 'Visiteur introuvable';
+            profileContent.appendChild(err);
+            return;
+          }
+          // Header
+          var h = document.createElement('div');
+          h.className = 'log-visitor-profile-header';
+          var idEl = document.createElement('span');
+          idEl.className = 'log-visitor-profile-id';
+          idEl.textContent = 'ID: ' + data.visitorId;
+          h.appendChild(idEl);
+          var meta = document.createElement('div');
+          meta.className = 'log-visitor-profile-meta';
+          meta.textContent = data.totalPages + ' pages, ' + data.uniquePages + ' uniques';
+          h.appendChild(meta);
+          if (data.userAgent) {
+            var ua = document.createElement('div');
+            ua.className = 'log-visitor-profile-ua';
+            ua.textContent = data.userAgent;
+            h.appendChild(ua);
+          }
+          profileContent.appendChild(h);
+          // Timeline
+          var tl = document.createElement('div');
+          tl.className = 'log-visitor-timeline';
+          (data.visits || []).forEach(function(v) {
+            var item = document.createElement('div');
+            item.className = 'log-visitor-tl-item';
+            var time = document.createElement('span');
+            time.className = 'log-visitor-tl-time';
+            time.textContent = formatAnonTime(v.created_at);
+            var pg = document.createElement('span');
+            pg.className = 'log-visitor-tl-path';
+            pg.textContent = v.path;
+            var typBadge = document.createElement('span');
+            typBadge.className = 'log-anon-type-badge ' + ((TYPE_INFO[v.visitor_type] || {}).cls || 'log-anon-type-unknown');
+            typBadge.textContent = (TYPE_INFO[v.visitor_type] || { icon: '?' }).icon;
+            item.appendChild(time);
+            item.appendChild(pg);
+            item.appendChild(typBadge);
+            tl.appendChild(item);
+          });
+          profileContent.appendChild(tl);
+        }).catch(function() {
+          profileContent.textContent = '';
+          var err = document.createElement('div');
+          err.style.cssText = 'color:var(--muted);font-size:.8rem';
+          err.textContent = 'Erreur de chargement';
+          profileContent.appendChild(err);
+        });
+    }
+
+    if (profilesBtn) {
+      profilesBtn.addEventListener('click', function() {
+        if (drawer) {
+          drawer.hidden = false;
+          visitorList.hidden = false;
+          visitorProfile.hidden = true;
+          loadVisitorList();
+        }
+      });
+    }
+    if (drawerClose) {
+      drawerClose.addEventListener('click', function() { if (drawer) drawer.hidden = true; });
+    }
+    if (visitorBack) {
+      visitorBack.addEventListener('click', function() {
+        visitorList.hidden = false;
+        visitorProfile.hidden = true;
+      });
+    }
+
+    // Path filter (client-side, live filtering of existing rows)
+    if (pathFilter) {
+      pathFilter.addEventListener('input', function() {
+        var val = pathFilter.value.trim().toLowerCase();
+        var rows = tbody.querySelectorAll('tr');
+        rows.forEach(function(tr) {
+          var rawPath = tr.querySelector('.log-anon-rawpath');
+          if (!rawPath) { tr.hidden = false; return; }
+          tr.hidden = val !== '' && rawPath.textContent.toLowerCase().indexOf(val) === -1;
+        });
+      });
     }
 
     periodBtns.forEach(function(btn) {

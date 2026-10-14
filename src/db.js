@@ -611,6 +611,7 @@ db.exec(`CREATE INDEX IF NOT EXISTS idx_user_personnage_cards_user ON user_perso
 // Visites de pages par des visiteurs non connectés
 try { db.exec("ALTER TABLE anon_page_visits ADD COLUMN path TEXT NOT NULL DEFAULT ''"); } catch(_) {}
 try { db.exec("ALTER TABLE anon_page_visits ADD COLUMN visitor_id TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE anon_page_visits ADD COLUMN visitor_type TEXT NOT NULL DEFAULT 'unknown'"); } catch(_) {}
 db.exec(`
   CREATE TABLE IF NOT EXISTS anon_page_visits (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2763,6 +2764,23 @@ function anonVisitorId(ip, userAgent) {
   return crypto.createHash('md5').update((ip || '') + '|' + (userAgent || '')).digest('hex').slice(0, 8);
 }
 
+// Classifie un user-agent en catégorie de visiteur.
+function classifyUA(ua) {
+  if (!ua) return 'bot_unknown';
+  // AI crawlers
+  if (/GPTBot|ChatGPT-User|Claude-Web|ClaudeBot|Anthropic|PerplexityBot|YouBot|cohere-ai|Bytespider/i.test(ua)) return 'bot_ai';
+  // SEO/indexing bots
+  if (/Googlebot|Bingbot|DuckDuckBot|AhrefsBot|SemrushBot|MJ12bot|Sogou|YandexBot|Baiduspider|facebookexternalhit/i.test(ua)) return 'bot_seo';
+  // Monitoring/uptime bots
+  if (/UptimeRobot|Pingdom|StatusCake|Site24x7|Datadog/i.test(ua)) return 'bot_monitor';
+  // SDK/programmatic
+  if (/python-requests|axios|Go-http-client|Java\/|curl\/|wget\/|SDK|WebLanguage|okhttp|Dart\//i.test(ua)) return 'bot_sdk';
+  // Modern browsers
+  if (/Chrome\/|Firefox\/|Safari\/|Edg\/|OPR\/|Opera/i.test(ua)) return 'human';
+  // Anything else automated-looking
+  return 'bot_unknown';
+}
+
 // Chemins suspects typiques des bots/scanners de vulnérabilités
 const SCAN_PATH_PATTERNS = [
   /^\/(\.env|\.git|\.DS_Store|\.vscode|\.htaccess|wp-|phpmy|adminer|\.well-known)/i,
@@ -2776,15 +2794,16 @@ function isScanPath(p) {
 
 function recordAnonVisit(path, ip, userAgent) {
   const visitorId = anonVisitorId(ip, userAgent);
+  const visitorType = classifyUA(userAgent);
   // Throttle : 1 enregistrement max par IP+path toutes les 10 minutes
   db.prepare(
-    `INSERT INTO anon_page_visits (path, ip, user_agent, visitor_id, created_at)
-     SELECT ?, ?, ?, ?, ?
+    `INSERT INTO anon_page_visits (path, ip, user_agent, visitor_id, visitor_type, created_at)
+     SELECT ?, ?, ?, ?, ?, ?
      WHERE NOT EXISTS (
        SELECT 1 FROM anon_page_visits
        WHERE path = ? AND ip = ? AND created_at > datetime('now', '-10 minutes')
      )`
-  ).run(path, ip || '', userAgent || '', visitorId, new Date().toISOString(), path, ip || '');
+  ).run(path, ip || '', userAgent || '', visitorId, visitorType, new Date().toISOString(), path, ip || '');
 }
 
 function getAnonStats(days, pathQ) {
@@ -2796,7 +2815,13 @@ function getAnonStats(days, pathQ) {
             COUNT(DISTINCT ip) as unique_ips,
             COUNT(DISTINCT visitor_id) as unique_visitors,
             GROUP_CONCAT(DISTINCT visitor_id) as visitor_ids_raw,
-            MAX(created_at) as last_seen
+            MAX(created_at) as last_seen,
+            SUM(CASE WHEN visitor_type = 'human' THEN 1 ELSE 0 END) as cnt_human,
+            SUM(CASE WHEN visitor_type = 'bot_ai' THEN 1 ELSE 0 END) as cnt_bot_ai,
+            SUM(CASE WHEN visitor_type = 'bot_seo' THEN 1 ELSE 0 END) as cnt_bot_seo,
+            SUM(CASE WHEN visitor_type = 'bot_sdk' THEN 1 ELSE 0 END) as cnt_bot_sdk,
+            SUM(CASE WHEN visitor_type = 'bot_monitor' THEN 1 ELSE 0 END) as cnt_bot_monitor,
+            SUM(CASE WHEN visitor_type = 'bot_unknown' OR visitor_type = 'unknown' THEN 1 ELSE 0 END) as cnt_bot_unknown
      FROM anon_page_visits
      WHERE created_at >= datetime('now', '-' || ? || ' days')
        AND (? IS NULL OR path LIKE ?)
@@ -2816,6 +2841,14 @@ function getAnonStats(days, pathQ) {
       unique_visitors: r.unique_visitors,
       visitor_ids: visitorIds,
       last_seen: r.last_seen,
+      types: {
+        human: r.cnt_human || 0,
+        bot_ai: r.cnt_bot_ai || 0,
+        bot_seo: r.cnt_bot_seo || 0,
+        bot_sdk: r.cnt_bot_sdk || 0,
+        bot_monitor: r.cnt_bot_monitor || 0,
+        bot_unknown: r.cnt_bot_unknown || 0,
+      },
     };
   });
   const daily = db.prepare(
@@ -2826,6 +2859,50 @@ function getAnonStats(days, pathQ) {
      ORDER BY day DESC`
   ).all(d);
   return { rows, daily };
+}
+
+function getVisitorProfile(visitorId) {
+  if (!visitorId) return null;
+  const visits = db.prepare(
+    `SELECT id, path, created_at, visitor_type
+     FROM anon_page_visits
+     WHERE visitor_id = ?
+     ORDER BY created_at ASC
+     LIMIT 500`
+  ).all(visitorId);
+  if (!visits.length) return null;
+  const uaRow = db.prepare(
+    `SELECT user_agent FROM anon_page_visits WHERE visitor_id = ? AND user_agent != '' LIMIT 1`
+  ).get(visitorId);
+  const paths = visits.map(function(v) { return v.path; });
+  const uniquePaths = new Set(paths);
+  return {
+    visitorId: visitorId,
+    visits: visits,
+    firstSeen: visits[0].created_at,
+    lastSeen: visits[visits.length - 1].created_at,
+    totalPages: visits.length,
+    uniquePages: uniquePaths.size,
+    userAgent: uaRow ? uaRow.user_agent : '',
+  };
+}
+
+function getAnonVisitorList(days) {
+  const d = Math.max(1, Math.min(365, parseInt(days) || 30));
+  return db.prepare(
+    `SELECT visitor_id as visitorId,
+            COUNT(*) as totalPages,
+            COUNT(DISTINCT path) as uniquePages,
+            MIN(created_at) as firstSeen,
+            MAX(created_at) as lastSeen,
+            MAX(visitor_type) as visitorType,
+            MAX(user_agent) as userAgent
+     FROM anon_page_visits
+     WHERE created_at >= datetime('now', '-' || ? || ' days')
+     GROUP BY visitor_id
+     ORDER BY lastSeen DESC
+     LIMIT 100`
+  ).all(d);
 }
 
 // connection_logs ne trace que les connexions explicites (saisie du mot de
@@ -4903,8 +4980,11 @@ module.exports = {
   buyTheme,
   setThemeRarity,
   THEME_DEFINITIONS,
+  classifyUA,
   recordAnonVisit,
   getAnonStats,
+  getVisitorProfile,
+  getAnonVisitorList,
   isScanPath,
   recordLoginFailure,
   getLoginFailureCount,

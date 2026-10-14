@@ -305,6 +305,40 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Sliding-window rate limiter (anti-DDoS) ──────────────────────────────────
+// Fenêtre de 60s, max 120 requêtes par IP. Exclut les assets statiques.
+// Les IPs localhost sont toujours exemptées.
+const _RL_WINDOW_MS = 60 * 1000;
+const _RL_MAX = 120;
+const _RL_STATIC = ['/uploads', '/css', '/js', '/favicon'];
+const _RL_EXEMPT = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const _rlMap = new Map(); // ip -> { count, windowStart }
+setInterval(() => {
+  const cutoff = Date.now() - _RL_WINDOW_MS;
+  for (const [ip, entry] of _rlMap) {
+    if (entry.windowStart < cutoff) _rlMap.delete(ip);
+  }
+}, 5 * 60 * 1000).unref();
+
+app.use((req, res, next) => {
+  if (_RL_STATIC.some(p => req.path.startsWith(p))) return next();
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (_RL_EXEMPT.has(ip)) return next();
+  const now = Date.now();
+  let entry = _rlMap.get(ip);
+  if (!entry || now - entry.windowStart >= _RL_WINDOW_MS) {
+    entry = { count: 1, windowStart: now };
+    _rlMap.set(ip, entry);
+  } else {
+    entry.count += 1;
+  }
+  if (entry.count > _RL_MAX) {
+    console.warn('[rate-limit] 429 pour IP', ip, '—', entry.count, 'req/60s');
+    return res.status(429).end('Too Many Requests');
+  }
+  next();
+});
+
 // Suivi des visites anonymes (non connectés) — throttlé à 1/IP/path/10min
 const ANON_SKIP = ['/uploads', '/css', '/js', '/favicon', '/api', '/admin', '/login', '/logout'];
 app.use((req, res, next) => {
