@@ -81,15 +81,6 @@
           <% if (protagoniste.prenom) { %><div class="prot-detail-prenom"><%= protagoniste.prenom %></div><% } %>
           <% if (protagoniste.nom) { %><div class="prot-detail-nom"><%= protagoniste.nom %></div>
           <% } else { %><div class="prot-detail-nom"><%= protagoniste.name %></div><% } %>
-          <% if (_liteEvos.length) { %>
-            <div class="prot-detail-evo-chain">
-              <% _liteEvos.forEach(function(evo) { %>
-                <span class="prot-detail-evo-stage"><%= evo.name %></span>
-                <span class="prot-detail-evo-arrow" aria-hidden="true">→</span>
-              <% }) %>
-              <span class="prot-detail-evo-stage prot-detail-evo-stage--final"><%= protagoniste.name %></span>
-            </div>
-          <% } %>
         </div>
       </div>
 
