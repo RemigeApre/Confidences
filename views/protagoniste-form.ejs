@@ -46,9 +46,6 @@
           <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="prot-sb-back-btn">Retour</a>
         </div>
 
-        <%# Badge EN — toujours dans le DOM, affiché/masqué par JS %>
-        <div class="prot-sb-en-badge" id="prot-sb-en-badge"<% if (!_isEn) { %> hidden<% } %>>Commun FR/EN</div>
-
         <%# Genre %>
         <div class="prot-sb-section">
           <div class="prot-gender-btns prot-gender-btns--icon">
@@ -358,9 +355,7 @@
       // Mettre à jour le champ caché _editLang
       if (_editLangHid) _editLangHid.value = isEn ? 'en' : '';
 
-      // Badge EN
-      var enBadge = document.getElementById('prot-sb-en-badge');
-      if (enBadge) enBadge.hidden = !isEn;
+
 
       // Évolution : basculer contrôles FR ↔ EN
       document.querySelectorAll('.prot-evo-fr-ctl').forEach(function(el) { el.hidden = isEn; });
