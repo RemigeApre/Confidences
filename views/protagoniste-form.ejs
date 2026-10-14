@@ -7,6 +7,7 @@
   var _curClanId    = protagoniste ? (protagoniste.clan_id || '') : '';
   var _curRaceClans = _races.find(function(r){ return String(r.id) === String(_curRaceId); });
   var evols   = (protagoniste && protagoniste.evolutions) ? protagoniste.evolutions : [];
+  // evols est maintenant [{name, linked_id}] grâce à parseEvolutions
   var genderOpts = [
     { value: 'femme', label: 'Femme' },
     { value: 'homme', label: 'Homme' },
@@ -178,19 +179,28 @@
           <summary class="prot-sb-details-summary" data-fr-label="Évolution" data-en-label="Evolution"><%= _isEn ? 'Evolution' : '\u00c9volution' %></summary>
           <div class="prot-sb-details-body">
             <input type="hidden" name="evolutions" id="prot-evo-hidden"
-              value="<%= protagoniste && protagoniste.evolutions ? JSON.stringify(protagoniste.evolutions) : '[]' %>" />
+              value="<%- JSON.stringify(evols) %>" />
             <div class="prot-evo-chain" id="prot-evo-chain">
               <% evols.forEach(function(evo, i) { %>
-                <div class="prot-evo-entry" data-idx="<%= i %>">
-                  <input type="text" class="prot-evo-inp lbep-input" value="<%= evo %>"
-                    placeholder="Forme pr&eacute;c&eacute;dente&hellip;" maxlength="100"<% if (_isEn) { %> disabled<% } %> />
+                <div class="prot-evo-entry" data-idx="<%= i %>" data-linked="<%= evo.linked_id || '' %>">
+                  <input type="text" class="prot-evo-inp lbep-input" value="<%= evo.name %>"
+                    placeholder="Nom\u2026" maxlength="100"
+                    <% if (_isEn || evo.linked_id) { %> disabled<% } %> />
                   <span class="prot-evo-fr-ctl"<% if (_isEn) { %> hidden<% } %>>
+                    <% if (evo.linked_id && protagoniste) { %>
+                      <button type="button" class="prot-evo-btn prot-evo-edit-sheet" title="Éditer la fiche" data-child-id="<%= evo.linked_id %>" data-parent-id="<%= protagoniste.id %>">&#9998;</button>
+                    <% } else { %>
+                      <button type="button" class="prot-evo-btn prot-evo-link-sheet" title="Créer une fiche complète">&#9783;</button>
+                    <% } %>
                     <button type="button" class="prot-evo-btn prot-evo-up" title="Monter">&uarr;</button>
                     <button type="button" class="prot-evo-btn prot-evo-down" title="Descendre">&darr;</button>
                     <button type="button" class="prot-evo-btn prot-evo-remove" title="Supprimer">&times;</button>
                   </span>
+                  <% if (evo.linked_id) { %>
+                    <span class="prot-evo-linked-badge">fiche</span>
+                  <% } %>
                   <input type="text" class="prot-evo-en-inp lbep-input"
-                    value="<%= _trans['evo_' + i + '_en'] || '' %>" placeholder="English name&hellip;" maxlength="100"<% if (!_isEn) { %> hidden<% } %> />
+                    value="<%= _trans['evo_' + i + '_en'] || '' %>" placeholder="English name\u2026" maxlength="100"<% if (!_isEn) { %> hidden<% } %> />
                 </div>
               <% }) %>
             </div>
@@ -465,6 +475,257 @@
     }
 
     // ── Évolutions ──────────────────────────────────────────────────────────
+    var _syncEvoHidden = null;
+
+    // ── Évolution : créer une fiche complète ────────────────────────────────
+    function createLinkedSheet(row, parentId, name) {
+      if (!parentId) return;
+      var inp = row.querySelector('.prot-evo-inp');
+      var sheetName = (name || (inp ? inp.value.trim() : '')) || 'Évolution';
+      fetch('/protagonistes/' + parentId + '/evo-sheet/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: sheetName }),
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (!d.ok) { alert('Erreur : ' + (d.error || 'inconnue')); return; }
+        row.dataset.linked = d.id;
+        if (inp) { inp.value = d.name; inp.disabled = true; }
+        // Remplace le bouton link par le bouton edit
+        var frCtl = row.querySelector('.prot-evo-fr-ctl');
+        var linkBtn = frCtl ? frCtl.querySelector('.prot-evo-link-sheet') : null;
+        if (linkBtn && frCtl) {
+          var editBtn = document.createElement('button');
+          editBtn.type = 'button'; editBtn.className = 'prot-evo-btn prot-evo-edit-sheet';
+          editBtn.title = 'Éditer la fiche'; editBtn.innerHTML = '&#9998;';
+          editBtn.dataset.childId = d.id;
+          editBtn.dataset.parentId = parentId;
+          editBtn.addEventListener('click', function() { openEvoSheet(parentId, d.id, row); });
+          frCtl.replaceChild(editBtn, linkBtn);
+          var badge = document.createElement('span');
+          badge.className = 'prot-evo-linked-badge'; badge.textContent = 'fiche';
+          frCtl.appendChild(badge);
+        }
+        if (_syncEvoHidden) _syncEvoHidden();
+        openEvoSheet(parentId, d.id, row);
+      });
+    }
+
+    // ── Évolution : ouvrir la dialog fiche ──────────────────────────────────
+    var _evoSheetDialog = document.getElementById('evo-sheet-dialog');
+    var _evoSheetRow = null;
+    var _evoSheetChildId = null;
+    var _evoSheetParentId = null;
+    var _evoSdLang = 'fr';
+    var _evoSdData = null;
+
+    function openEvoSheet(parentId, childId, row) {
+      if (!_evoSheetDialog) return;
+      _evoSheetRow = row;
+      _evoSheetChildId = childId;
+      _evoSheetParentId = parentId;
+      _evoSdLang = 'fr';
+      var frBtn = document.getElementById('evo-sd-btn-fr');
+      var enBtn = document.getElementById('evo-sd-btn-en');
+      if (frBtn) { frBtn.classList.add('active'); }
+      if (enBtn) { enBtn.classList.remove('active'); }
+      fetch('/protagonistes/' + parentId + '/evo-sheet/' + childId)
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (!d.ok) { alert('Erreur chargement'); return; }
+        _evoSdData = d;
+        populateEvoDialog(d.child, d.translations, 'fr');
+        _evoSheetDialog.showModal();
+      });
+    }
+
+    function populateEvoDialog(child, trans, lang) {
+      var isEn = lang === 'en';
+      var t = trans || {};
+      var titleEl = document.getElementById('evo-sd-title');
+      if (titleEl) titleEl.textContent = child.name || 'Évolution';
+      var prenom = isEn ? (t.prenom || '') : (child.prenom || '');
+      var nom    = isEn ? (t.nom    || '') : (child.nom    || '');
+      var prenomEl = document.getElementById('evo-sd-prenom');
+      var nomEl    = document.getElementById('evo-sd-nom');
+      if (prenomEl) { prenomEl.value = prenom; prenomEl.dataset.frVal = child.prenom || ''; prenomEl.dataset.enVal = t.prenom || ''; }
+      if (nomEl)    { nomEl.value    = nom;    nomEl.dataset.frVal    = child.nom    || ''; nomEl.dataset.enVal    = t.nom    || ''; }
+      var descEl      = document.getElementById('evo-sd-desc');
+      var descPhysEl  = document.getElementById('evo-sd-desc-phys');
+      var descOeuvEl  = document.getElementById('evo-sd-desc-oeuvre');
+      if (descEl)     { descEl.value     = isEn ? (t.description || '') : (child.description || ''); descEl.dataset.frVal = child.description || ''; descEl.dataset.enVal = t.description || ''; }
+      if (descPhysEl) { descPhysEl.value = isEn ? (t.description_physique || '') : (child.description_physique || ''); descPhysEl.dataset.frVal = child.description_physique || ''; descPhysEl.dataset.enVal = t.description_physique || ''; }
+      if (descOeuvEl) { descOeuvEl.value = isEn ? (t.description_oeuvre || '') : (child.description_oeuvre || ''); descOeuvEl.dataset.frVal = child.description_oeuvre || ''; descOeuvEl.dataset.enVal = t.description_oeuvre || ''; }
+      document.querySelectorAll('#evo-sheet-dialog .prot-gender-btn').forEach(function(lbl) {
+        var radio = lbl.querySelector('.evo-sd-gender-radio');
+        var isActive = radio && radio.value === (child.gender || '');
+        lbl.classList.toggle('active', isActive);
+      });
+      var genderHid = document.getElementById('evo-sd-gender-hid');
+      if (genderHid) genderHid.value = child.gender || '';
+      var specialHid = document.getElementById('evo-sd-special-hid');
+      if (specialHid) specialHid.value = child.special || '';
+      document.querySelectorAll('#evo-sheet-dialog .prot-special-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.val === (child.special || ''));
+      });
+      var natureEl = document.getElementById('evo-sd-nature');
+      if (natureEl) natureEl.value = child.nature || '';
+      var ageEl = document.getElementById('evo-sd-age');
+      if (ageEl) ageEl.value = child.age || '';
+      var oriEl = document.getElementById('evo-sd-orientation');
+      if (oriEl) oriEl.value = child.orientation || '';
+      var holder = document.getElementById('evo-sd-img-holder');
+      var thumb  = document.getElementById('evo-sd-img-thumb');
+      if (holder && thumb) {
+        if (child.image_path) {
+          thumb.src = child.image_path;
+          holder.style.display = '';
+          var pickBtn = document.getElementById('evo-sd-img-pick');
+          if (pickBtn) pickBtn.hidden = true;
+        } else {
+          holder.style.display = 'none';
+          thumb.src = '';
+          var pickBtn2 = document.getElementById('evo-sd-img-pick');
+          if (pickBtn2) pickBtn2.hidden = false;
+        }
+      }
+      var removeHid = document.getElementById('evo-sd-remove-img-hid');
+      if (removeHid) removeHid.value = '';
+      var fileInp = document.getElementById('evo-sd-img-input');
+      if (fileInp) fileInp.value = '';
+    }
+
+    // ── Dialog FR/EN ────────────────────────────────────────────────────────
+    var evoSdFrBtn = document.getElementById('evo-sd-btn-fr');
+    var evoSdEnBtn = document.getElementById('evo-sd-btn-en');
+
+    function evoSdSwitchLang(lang) {
+      var isEn = lang === 'en';
+      document.querySelectorAll('#evo-sheet-dialog [data-fr-val]').forEach(function(el) {
+        if (_evoSdLang === 'en') el.dataset.enVal = el.value;
+        else                     el.dataset.frVal = el.value;
+        el.value = isEn ? (el.dataset.enVal || '') : (el.dataset.frVal || '');
+      });
+      _evoSdLang = lang;
+      if (evoSdFrBtn) evoSdFrBtn.classList.toggle('active', !isEn);
+      if (evoSdEnBtn) evoSdEnBtn.classList.toggle('active', isEn);
+    }
+
+    if (evoSdFrBtn) evoSdFrBtn.addEventListener('click', function() { evoSdSwitchLang('fr'); });
+    if (evoSdEnBtn) evoSdEnBtn.addEventListener('click', function() { evoSdSwitchLang('en'); });
+
+    // ── Dialog close ──────────────────────────────────────────────────────
+    var evoSdCloseBtn = document.getElementById('evo-sd-close');
+    if (evoSdCloseBtn) evoSdCloseBtn.addEventListener('click', function() {
+      if (_evoSheetDialog) _evoSheetDialog.close();
+    });
+    if (_evoSheetDialog) {
+      _evoSheetDialog.addEventListener('click', function(e) {
+        if (e.target === _evoSheetDialog) _evoSheetDialog.close();
+      });
+    }
+
+    // ── Dialog image ──────────────────────────────────────────────────────
+    var evoSdImgInput  = document.getElementById('evo-sd-img-input');
+    var evoSdImgHolder = document.getElementById('evo-sd-img-holder');
+    var evoSdImgThumb  = document.getElementById('evo-sd-img-thumb');
+    var evoSdImgRemove = document.getElementById('evo-sd-img-remove');
+    var evoSdImgPick   = document.getElementById('evo-sd-img-pick');
+    var evoSdRemoveHid = document.getElementById('evo-sd-remove-img-hid');
+    if (evoSdImgInput) {
+      evoSdImgInput.addEventListener('change', function() {
+        var file = evoSdImgInput.files[0]; if (!file) return;
+        evoSdImgThumb.src = URL.createObjectURL(file);
+        evoSdImgHolder.style.display = '';
+        if (evoSdImgPick) evoSdImgPick.hidden = true;
+        if (evoSdRemoveHid) evoSdRemoveHid.value = '';
+      });
+    }
+    if (evoSdImgRemove) {
+      evoSdImgRemove.addEventListener('click', function() {
+        evoSdImgHolder.style.display = 'none';
+        evoSdImgThumb.src = '';
+        if (evoSdRemoveHid) evoSdRemoveHid.value = '1';
+        if (evoSdImgInput) evoSdImgInput.value = '';
+        if (evoSdImgPick) evoSdImgPick.hidden = false;
+      });
+    }
+
+    // ── Dialog gender ────────────────────────────────────────────────────
+    document.querySelectorAll('#evo-sheet-dialog .prot-gender-btn').forEach(function(lbl) {
+      lbl.addEventListener('click', function() {
+        document.querySelectorAll('#evo-sheet-dialog .prot-gender-btn').forEach(function(b) { b.classList.remove('active'); });
+        lbl.classList.add('active');
+        var radio = lbl.querySelector('.evo-sd-gender-radio');
+        var genderHid = document.getElementById('evo-sd-gender-hid');
+        if (genderHid && radio) genderHid.value = radio.value;
+      });
+    });
+
+    // ── Dialog special ───────────────────────────────────────────────────
+    document.querySelectorAll('#evo-sheet-dialog .prot-special-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var wasActive = btn.classList.contains('active');
+        document.querySelectorAll('#evo-sheet-dialog .prot-special-btn').forEach(function(b) { b.classList.remove('active'); });
+        if (!wasActive) btn.classList.add('active');
+        var specialHid = document.getElementById('evo-sd-special-hid');
+        if (specialHid) specialHid.value = wasActive ? '' : (btn.dataset.val || '');
+      });
+    });
+
+    // ── Dialog save ──────────────────────────────────────────────────────
+    var evoSdSaveBtn = document.getElementById('evo-sd-save');
+    var evoSdStatus  = document.getElementById('evo-sd-status');
+    if (evoSdSaveBtn) {
+      evoSdSaveBtn.addEventListener('click', function() {
+        if (!_evoSheetChildId || !_evoSheetParentId) return;
+        if (_evoSdLang === 'en') {
+          document.querySelectorAll('#evo-sheet-dialog [data-fr-val]').forEach(function(el) { el.dataset.enVal = el.value; });
+        } else {
+          document.querySelectorAll('#evo-sheet-dialog [data-fr-val]').forEach(function(el) { el.dataset.frVal = el.value; });
+        }
+
+        var fd = new FormData();
+        fd.append('_editLang', _evoSdLang);
+        fd.append('prenom',   _evoSdLang === 'en' ? (document.getElementById('evo-sd-prenom').dataset.enVal || '') : (document.getElementById('evo-sd-prenom').dataset.frVal || document.getElementById('evo-sd-prenom').value || ''));
+        fd.append('nom',      _evoSdLang === 'en' ? (document.getElementById('evo-sd-nom').dataset.enVal    || '') : (document.getElementById('evo-sd-nom').dataset.frVal    || document.getElementById('evo-sd-nom').value    || ''));
+        fd.append('description',          _evoSdLang === 'en' ? (document.getElementById('evo-sd-desc').dataset.enVal       || '') : (document.getElementById('evo-sd-desc').dataset.frVal       || ''));
+        fd.append('description_physique', _evoSdLang === 'en' ? (document.getElementById('evo-sd-desc-phys').dataset.enVal  || '') : (document.getElementById('evo-sd-desc-phys').dataset.frVal  || ''));
+        fd.append('description_oeuvre',   _evoSdLang === 'en' ? (document.getElementById('evo-sd-desc-oeuvre').dataset.enVal|| '') : (document.getElementById('evo-sd-desc-oeuvre').dataset.frVal|| ''));
+        fd.append('gender',      document.getElementById('evo-sd-gender-hid').value || '');
+        fd.append('special',     document.getElementById('evo-sd-special-hid').value || '');
+        fd.append('nature',      document.getElementById('evo-sd-nature').value || '');
+        fd.append('age',         document.getElementById('evo-sd-age').value || '');
+        fd.append('orientation', document.getElementById('evo-sd-orientation').value || '');
+        fd.append('remove_image', document.getElementById('evo-sd-remove-img-hid').value || '');
+        var fileInp = document.getElementById('evo-sd-img-input');
+        if (fileInp && fileInp.files[0]) fd.append('character_image', fileInp.files[0]);
+
+        evoSdSaveBtn.disabled = true;
+        if (evoSdStatus) evoSdStatus.textContent = '…';
+
+        fetch('/protagonistes/' + _evoSheetParentId + '/evo-sheet/' + _evoSheetChildId + '/save', {
+          method: 'POST',
+          body: fd,
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(d) {
+          evoSdSaveBtn.disabled = false;
+          if (!d.ok) { if (evoSdStatus) evoSdStatus.textContent = 'Erreur'; return; }
+          if (evoSdStatus) { evoSdStatus.textContent = 'Enregistré'; setTimeout(function(){ evoSdStatus.textContent=''; }, 2000); }
+          if (d.lang === 'fr' && _evoSheetRow) {
+            var inp = _evoSheetRow.querySelector('.prot-evo-inp');
+            if (inp) inp.value = d.name;
+            var titleEl = document.getElementById('evo-sd-title');
+            if (titleEl) titleEl.textContent = d.name;
+            if (_syncEvoHidden) _syncEvoHidden();
+          }
+        })
+        .catch(function() { evoSdSaveBtn.disabled = false; if (evoSdStatus) evoSdStatus.textContent = 'Erreur réseau'; });
+      });
+    }
+
     (function() {
       var chain    = document.getElementById('prot-evo-chain');
       var hidden   = document.getElementById('prot-evo-hidden');
@@ -474,10 +735,16 @@
       function isEnMode() { return _editLangHid ? _editLangHid.value === 'en' : false; }
 
       function syncHidden() {
-        hidden.value = JSON.stringify(
-          Array.from(chain.querySelectorAll('.prot-evo-inp')).map(function(i){ return i.value.trim(); }).filter(Boolean)
-        );
+        var items = Array.from(chain.querySelectorAll('.prot-evo-entry')).map(function(row) {
+          var inp = row.querySelector('.prot-evo-inp');
+          var name = inp ? inp.value.trim() : '';
+          var linkedId = row.dataset.linked ? Number(row.dataset.linked) : null;
+          return { name: linkedId ? (inp ? inp.value.trim() : '') : name, linked_id: linkedId || null };
+        }).filter(function(o) { return o.name || o.linked_id; });
+        hidden.value = JSON.stringify(items);
       }
+      _syncEvoHidden = syncHidden;
+
       function syncEnHidden() {
         if (!hiddenEn) return;
         hiddenEn.value = JSON.stringify(
@@ -497,19 +764,59 @@
         if (upBtn) upBtn.addEventListener('click', function(){ var p=row.previousElementSibling; if(p&&p.classList.contains('prot-evo-entry')){chain.insertBefore(row,p);syncHidden();} });
         if (dnBtn) dnBtn.addEventListener('click', function(){ var n=row.nextElementSibling; if(n&&n.classList.contains('prot-evo-entry')){chain.insertBefore(n,row);syncHidden();} });
         if (rmBtn) rmBtn.addEventListener('click', function(){ row.remove(); syncHidden(); });
+        var editBtn = row.querySelector('.prot-evo-edit-sheet');
+        if (editBtn) editBtn.addEventListener('click', function() {
+          var parentId = Number(editBtn.dataset.parentId);
+          var childId = Number(editBtn.dataset.childId);
+          openEvoSheet(parentId, childId, row);
+        });
+        var linkBtn = row.querySelector('.prot-evo-link-sheet');
+        if (linkBtn) {
+          var linkedRow = row;
+          linkBtn.addEventListener('click', function() {
+            var parentId = <%- protagoniste ? protagoniste.id : 'null' %>;
+            var inp2 = linkedRow.querySelector('.prot-evo-inp');
+            createLinkedSheet(linkedRow, parentId, inp2 ? inp2.value.trim() : '');
+          });
+        }
       });
 
-      function makeEntry(val) {
+      function makeEntry(item) {
+        var name = (item && item.name) || '';
+        var linkedId = (item && item.linked_id) || null;
         var enMode = isEnMode();
-        var row = document.createElement('div'); row.className = 'prot-evo-entry';
+        var parentId = <%- protagoniste ? protagoniste.id : 'null' %>;
 
-        var inp = document.createElement('input'); inp.type='text'; inp.className='prot-evo-inp lbep-input';
-        inp.value=val||''; inp.placeholder='Forme pr\u00e9c\u00e9dente\u2026'; inp.maxLength=100;
-        if (enMode) inp.disabled = true;
+        var row = document.createElement('div');
+        row.className = 'prot-evo-entry';
+        if (linkedId) row.dataset.linked = linkedId;
+
+        var inp = document.createElement('input');
+        inp.type='text'; inp.className='prot-evo-inp lbep-input';
+        inp.value = name; inp.placeholder = 'Nom\u2026'; inp.maxLength = 100;
+        if (enMode || linkedId) inp.disabled = true;
         inp.addEventListener('input', syncHidden);
 
-        var frCtl = document.createElement('span'); frCtl.className = 'prot-evo-fr-ctl';
+        var frCtl = document.createElement('span');
+        frCtl.className = 'prot-evo-fr-ctl';
         if (enMode) frCtl.hidden = true;
+
+        if (linkedId && parentId) {
+          var editBtn = document.createElement('button');
+          editBtn.type='button'; editBtn.className='prot-evo-btn prot-evo-edit-sheet';
+          editBtn.title='Éditer la fiche'; editBtn.innerHTML='&#9998;';
+          editBtn.dataset.childId = linkedId;
+          editBtn.dataset.parentId = parentId;
+          editBtn.addEventListener('click', function() { openEvoSheet(parentId, linkedId, row); });
+          frCtl.appendChild(editBtn);
+        } else {
+          var linkBtn = document.createElement('button');
+          linkBtn.type='button'; linkBtn.className='prot-evo-btn prot-evo-link-sheet';
+          linkBtn.title='Créer une fiche complète'; linkBtn.innerHTML='&#9783;';
+          linkBtn.addEventListener('click', function() { createLinkedSheet(row, parentId, name); });
+          frCtl.appendChild(linkBtn);
+        }
+
         var upBtn = document.createElement('button'); upBtn.type='button'; upBtn.className='prot-evo-btn prot-evo-up'; upBtn.title='Monter'; upBtn.textContent='\u2191';
         var dnBtn = document.createElement('button'); dnBtn.type='button'; dnBtn.className='prot-evo-btn prot-evo-down'; dnBtn.title='Descendre'; dnBtn.textContent='\u2193';
         var rmBtn = document.createElement('button'); rmBtn.type='button'; rmBtn.className='prot-evo-btn prot-evo-remove'; rmBtn.title='Supprimer'; rmBtn.textContent='\xd7';
@@ -517,6 +824,13 @@
         dnBtn.addEventListener('click', function(){ var n=row.nextElementSibling; if(n&&n.classList.contains('prot-evo-entry')){chain.insertBefore(n,row);syncHidden();} });
         rmBtn.addEventListener('click', function(){ row.remove(); syncHidden(); });
         frCtl.appendChild(upBtn); frCtl.appendChild(dnBtn); frCtl.appendChild(rmBtn);
+
+        if (linkedId) {
+          var badge = document.createElement('span');
+          badge.className = 'prot-evo-linked-badge';
+          badge.textContent = 'fiche';
+          frCtl.appendChild(badge);
+        }
 
         var enInp = document.createElement('input'); enInp.type='text'; enInp.className='prot-evo-en-inp lbep-input';
         enInp.value=''; enInp.placeholder='English name\u2026'; enInp.maxLength=100;
@@ -529,7 +843,7 @@
 
       var addBtn = document.getElementById('prot-evo-add');
       if (addBtn) addBtn.addEventListener('click', function(){
-        chain.appendChild(makeEntry(''));
+        chain.appendChild(makeEntry(null));
         var ni = chain.lastElementChild.querySelector('.prot-evo-inp');
         if (ni) ni.focus();
       });
@@ -626,4 +940,107 @@
   </script>
 
 </main>
+<%# ── Dialog fiche évolution ─────────────────────────────────────────── %>
+<% if (protagoniste) { %>
+<dialog id="evo-sheet-dialog" class="evo-sheet-dialog">
+  <div class="evo-sd-header">
+    <span class="evo-sd-title" id="evo-sd-title">Évolution</span>
+    <div class="evo-sd-header-btns">
+      <div class="wf-lang-toggle">
+        <button type="button" class="wf-lang-btn active" id="evo-sd-btn-fr">FR</button>
+        <button type="button" class="wf-lang-btn" id="evo-sd-btn-en">EN</button>
+      </div>
+      <button type="button" class="evo-sd-close-btn" id="evo-sd-close">&times;</button>
+    </div>
+  </div>
+
+  <div class="evo-sd-body">
+    <%# Sidebar %>
+    <aside class="evo-sd-sidebar">
+      <%# Genre %>
+      <div class="prot-sb-section">
+        <input type="hidden" id="evo-sd-gender-hid" value="" />
+        <div class="prot-gender-btns prot-gender-btns--icon" id="evo-sd-gender-btns">
+          <% genderOpts.forEach(function(opt) { %>
+          <label class="prot-gender-btn prot-gender-btn--<%= opt.value %>" title="<%= opt.label %>">
+            <input type="radio" name="evo_sd_gender" value="<%= opt.value %>" style="display:none" class="evo-sd-gender-radio" />
+            <% if (opt.value === 'femme') { %>
+            <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+            <% } else if (opt.value === 'homme') { %>
+            <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+            <% } else { %>
+            <svg class="prot-gender-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+            <% } %>
+          </label>
+          <% }) %>
+        </div>
+      </div>
+      <%# Classification %>
+      <div class="prot-sb-section">
+        <input type="hidden" id="evo-sd-special-hid" value="" />
+        <div class="prot-special-btns prot-special-btns--center" id="evo-sd-special-btns">
+          <button type="button" class="prot-special-btn prot-special-btn--ultra" data-val="ultra">Ultra</button>
+          <button type="button" class="prot-special-btn prot-special-btn--irrealiste" data-val="irrealiste">Irr&eacute;aliste</button>
+        </div>
+      </div>
+      <%# Nature + Orientation %>
+      <div class="prot-sb-section prot-sb-section--row">
+        <select id="evo-sd-nature" class="prot-form-select-elegant prot-form-select-elegant--sm">
+          <option value="">Nature</option>
+          <option value="humain"  data-fr-label="Humain"  data-en-label="Human">Humain</option>
+          <option value="monstre" data-fr-label="Monstre" data-en-label="Monster">Monstre</option>
+          <option value="animal"  data-fr-label="Animal"  data-en-label="Animal">Animal</option>
+          <option value="autre"   data-fr-label="Autre"   data-en-label="Other">Autre</option>
+        </select>
+        <input type="number" id="evo-sd-age" class="prot-form-select-elegant prot-form-select-elegant--sm"
+          min="18" max="999" step="1" placeholder="Âge" />
+      </div>
+      <div class="prot-sb-section prot-sb-section--row">
+        <select id="evo-sd-orientation" class="prot-form-select-elegant prot-form-select-elegant--sm">
+          <option value="">Orientation</option>
+          <option value="hetero">Hétéro</option>
+          <option value="homo">Gay</option>
+          <option value="bi">Bi &amp; curieux</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+    </aside>
+
+    <%# Contenu principal %>
+    <div class="evo-sd-main">
+      <div class="prot-name-row">
+        <input type="text" id="evo-sd-prenom" class="nv-form-title-input prot-prenom-inp"
+          maxlength="200" placeholder="Prénom…" />
+        <input type="text" id="evo-sd-nom" class="prot-nom-inp"
+          maxlength="200" placeholder="Nom…" />
+      </div>
+      <div class="prot-img-desc-row">
+        <div class="prot-img-col">
+          <div class="prot-form-img-holder" id="evo-sd-img-holder" style="display:none">
+            <img src="" alt="Aperçu" class="prot-form-img-thumb" id="evo-sd-img-thumb" />
+            <button type="button" class="prot-form-img-remove-btn" id="evo-sd-img-remove">&times;</button>
+            <input type="hidden" id="evo-sd-remove-img-hid" value="" />
+          </div>
+          <label class="prot-form-img-pick" id="evo-sd-img-pick">
+            <input type="file" id="evo-sd-img-input" accept="image/*" style="display:none" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span>Image…</span>
+          </label>
+        </div>
+        <textarea id="evo-sd-desc-phys" class="prot-desc-field" rows="6" style="resize:vertical"
+          placeholder="Description physique…"></textarea>
+      </div>
+      <textarea id="evo-sd-desc" class="prot-desc-field nv-form-content" rows="6" style="resize:vertical"
+        placeholder="Description générale…"></textarea>
+      <textarea id="evo-sd-desc-oeuvre" class="prot-desc-field" rows="5" style="resize:vertical"
+        placeholder="Oeuvre d'origine…"></textarea>
+    </div>
+  </div>
+
+  <div class="evo-sd-footer">
+    <span class="evo-sd-status" id="evo-sd-status"></span>
+    <button type="button" id="evo-sd-save" class="wf-save-btn">Enregistrer</button>
+  </div>
+</dialog>
+<% } %>
 <%- include('partials/foot') %>

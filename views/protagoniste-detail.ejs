@@ -30,11 +30,12 @@
         <h1 class="prot-detail-name"><%= t(protagoniste.name, 'protagoniste', protagoniste.id, 'name') %></h1>
       </div>
 
-      <%# ── Chaîne d'évolution ── %>
-      <% if (protagoniste.evolutions && protagoniste.evolutions.length) { %>
+      <%# ── Chaîne d'évolution (type lite) ── %>
+      <% var _liteEvos = (protagoniste.evolutions || []).filter(function(e){ return !e.linked_id; }); %>
+      <% if (_liteEvos.length) { %>
         <div class="prot-detail-evo-chain">
-          <% protagoniste.evolutions.forEach(function(evo) { %>
-            <span class="prot-detail-evo-stage"><%= evo %></span>
+          <% _liteEvos.forEach(function(evo) { %>
+            <span class="prot-detail-evo-stage"><%= evo.name %></span>
             <span class="prot-detail-evo-arrow" aria-hidden="true">→</span>
           <% }) %>
           <span class="prot-detail-evo-stage prot-detail-evo-stage--final"><%= protagoniste.name %></span>
@@ -85,6 +86,25 @@
 
     </div>
   </div>
+
+  <%# ── Versions / Évolutions fiches complètes ── %>
+  <% if (childEvolutions && childEvolutions.length) { %>
+    <section class="prot-section prot-section--versions">
+      <h2 class="nv-strip-title" data-fr="Versions" data-en="Versions">Versions</h2>
+      <div class="prot-versions-grid">
+        <% childEvolutions.forEach(function(child) { %>
+          <a href="/protagonistes/<%= child.id %>" class="prot-version-card">
+            <% if (child.image_path) { %>
+              <img src="<%= child.image_path %>" alt="<%= child.name %>" class="prot-version-card-img" loading="lazy" />
+            <% } else { %>
+              <div class="prot-version-card-placeholder"></div>
+            <% } %>
+            <div class="prot-version-card-name"><%= child.name %></div>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
 
   <%# ── Carrousel galerie ── %>
   <% if (galleryImages && galleryImages.length) { %>

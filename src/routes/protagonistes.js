@@ -4,7 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
-const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace } = db;
+const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes } = db;
 const { insertGalleryImage } = db;
 const { generateThumb } = require("../thumbs");
 
@@ -48,7 +48,7 @@ function buildProtagonistesRouter(config) {
   router.use(requireUser);
 
   router.get("/", (req, res) => {
-    const all = db.listProtagonistes();
+    const all = db.listProtagonistes({ includeChildren: true });
     const parodies = [...new Set(all.map(p => p.parody).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
     const races = listRaces();
     res.render("protagonistes", { config, protagonistes: all, parodies, races });
@@ -112,7 +112,8 @@ function buildProtagonistesRouter(config) {
     const galleryImages = db.listGalleryImagesByProtagoniste(protagoniste.id);
     const codexPages = protagoniste.name ? db.listWikiPagesByTag(protagoniste.name) : [];
     const tagMeta = db.getAllTagMeta();
-    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, codexPages, tagMeta });
+    const childEvolutions = listChildProtagonistes(protagoniste.id);
+    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, codexPages, tagMeta, childEvolutions });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
@@ -147,7 +148,10 @@ function buildProtagonistesRouter(config) {
     let evolutions = [];
     try { evolutions = JSON.parse(req.body.evolutions || "[]"); } catch (_) {}
     if (!Array.isArray(evolutions)) evolutions = [];
-    evolutions = evolutions.map(e => String(e).trim()).filter(Boolean).slice(0, 20);
+    evolutions = evolutions.map(e => {
+      if (typeof e === 'string') return { name: e.trim(), linked_id: null };
+      return { name: String(e.name || '').trim(), linked_id: e.linked_id ? Number(e.linked_id) : null };
+    }).filter(e => e.name || e.linked_id).slice(0, 20);
     const raceId = req.body.race_id ? Number(req.body.race_id) : null;
     const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
 
@@ -227,6 +231,91 @@ function buildProtagonistesRouter(config) {
       });
     });
     res.redirect(`/protagonistes/${protagoniste.id}`);
+  });
+
+  // ── Évolutions : créer une fiche enfant ────────────────────────────────
+  router.post("/:id/evo-sheet/create", requireAdmin, express.json(), (req, res) => {
+    const parent = db.getProtagoniste(req.params.id);
+    if (!parent) return res.json({ ok: false, error: "Parent not found" });
+    const name = String(req.body.name || "").slice(0, 200).trim();
+    if (!name) return res.json({ ok: false, error: "Nom vide" });
+    const childId = db.createProtagoniste({
+      prenom: name, nom: '', description: '', descriptionPhysique: '', descriptionOeuvre: '',
+      tags: [], parody: parent.parody || '', subParody: parent.sub_parody || '',
+      gender: '', nature: '', imagePath: '', evolutions: [], special: '', age: 0, orientation: '',
+      parentId: parent.id,
+    });
+    res.json({ ok: true, id: childId, name });
+  });
+
+  // ── Évolutions : charger une fiche enfant (JSON) ───────────────────────
+  router.get("/:id/evo-sheet/:childId", requireAdmin, (req, res) => {
+    const parent = db.getProtagoniste(req.params.id);
+    const child  = db.getProtagoniste(req.params.childId);
+    if (!child || !parent || Number(child.parent_id) !== Number(parent.id))
+      return res.json({ ok: false, error: "Not found" });
+    const translations = db.getTranslationsForEntity("protagoniste", child.id, "en");
+    const races = listRaces();
+    res.json({ ok: true, child, translations, races });
+  });
+
+  // ── Évolutions : sauvegarder une fiche enfant ─────────────────────────
+  router.post("/:id/evo-sheet/:childId/save", requireAdmin, upload.single("character_image"), (req, res) => {
+    const parent = db.getProtagoniste(req.params.id);
+    const child  = db.getProtagoniste(req.params.childId);
+    if (!child || !parent || Number(child.parent_id) !== Number(parent.id))
+      return res.json({ ok: false, error: "Not found" });
+
+    const prenom = String(req.body.prenom || "").slice(0, 200).trim();
+    const nom    = String(req.body.nom    || "").slice(0, 200).trim();
+    const gender = VALID_GENDERS.has(req.body.gender) ? req.body.gender : "";
+    const nature = VALID_NATURES.has(req.body.nature) ? req.body.nature : "";
+    const orientation = VALID_ORIENTATIONS.has(req.body.orientation) ? req.body.orientation : "";
+    const age  = Math.max(0, parseInt(req.body.age || "0", 10) || 0);
+    const ageVal = age > 0 ? Math.max(18, age) : 0;
+    const special = req.body.special || "";
+    const imagePath = req.file
+      ? `/uploads/personnages/${req.file.filename}`
+      : (req.body.remove_image === "1" ? "" : undefined);
+    if (req.file && child.image_path) {
+      try { fs.unlinkSync(path.join(uploadsDir, path.basename(child.image_path))); } catch (_) {}
+    }
+    const raceId = req.body.race_id ? Number(req.body.race_id) : null;
+    const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
+
+    if (req.body._editLang === "en") {
+      const prenomEn = String(req.body.prenom || "").slice(0, 200).trim();
+      const nomEn    = String(req.body.nom    || "").slice(0, 200).trim();
+      db.setTranslation("protagoniste", child.id, "prenom", "en", prenomEn);
+      db.setTranslation("protagoniste", child.id, "nom", "en", nomEn);
+      db.setTranslation("protagoniste", child.id, "name", "en", [prenomEn, nomEn].filter(Boolean).join(" ") || child.name);
+      db.setTranslation("protagoniste", child.id, "description", "en", String(req.body.description || ""));
+      db.setTranslation("protagoniste", child.id, "description_physique", "en", String(req.body.description_physique || ""));
+      db.setTranslation("protagoniste", child.id, "description_oeuvre", "en", String(req.body.description_oeuvre || ""));
+      db.setTranslation("protagoniste", child.id, "published_en", "en", req.body.published_en === "1" ? "1" : "");
+      db.updateProtagoniste(child.id, {
+        prenom: child.prenom, nom: child.nom,
+        description: child.description, descriptionPhysique: child.description_physique,
+        descriptionOeuvre: child.description_oeuvre,
+        tags: child.tags || [], parody: child.parody || '', subParody: child.sub_parody || '',
+        gender, nature, imagePath, evolutions: [], special, age: ageVal, orientation,
+      });
+      setProtagonisteRace(child.id, raceId, clanId);
+      return res.json({ ok: true, lang: "en", name: child.name });
+    }
+
+    db.updateProtagoniste(child.id, {
+      prenom: prenom || child.prenom,
+      nom,
+      description: String(req.body.description || ""),
+      descriptionPhysique: String(req.body.description_physique || ""),
+      descriptionOeuvre: String(req.body.description_oeuvre || ""),
+      tags: child.tags || [], parody: child.parody || '', subParody: child.sub_parody || '',
+      gender, nature, imagePath, evolutions: [], special, age: ageVal, orientation,
+    });
+    setProtagonisteRace(child.id, raceId, clanId);
+    const updated = db.getProtagoniste(child.id);
+    res.json({ ok: true, lang: "fr", name: updated ? updated.name : (prenom || child.name) });
   });
 
   return router;

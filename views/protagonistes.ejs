@@ -73,6 +73,14 @@
           </div>
         </div>
 
+        <%# Versions liées %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label" data-fr="Versions" data-en="Versions">Versions</span>
+          <div class="links-filter">
+            <button type="button" class="wiki-ultra-btn" id="prot-children-toggle" data-fr="Afficher versions" data-en="Show versions">Afficher versions</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </aside>
@@ -89,7 +97,8 @@
           data-nature="<%= p.nature || '' %>"
           data-parody="<%= p.parody || '' %>"
           data-race="<%= p.race_id || '' %>"
-          data-special="<%= _pSpecial %>">
+          data-special="<%= _pSpecial %>"
+          data-is-child="<%= p.parent_id ? '1' : '' %>">
 
           <% if (p.image_path) { %>
             <div class="prot-card-img-wrap">
@@ -165,6 +174,7 @@
   var activeRace   = saved.race   || '';
   var hideUltra      = localStorage.getItem('gallery-hide-ultra') !== '0';
   var hideIrrealiste = localStorage.getItem('gallery-hide-irrealiste') === '1';
+  var hideChildren   = localStorage.getItem('prot-hide-children') !== '0';
 
   function saveFilters() {
     try { sessionStorage.setItem(SS_KEY, JSON.stringify({ gender: activeGender, nature: activeNature, parody: activeParody, race: activeRace })); } catch(_) {}
@@ -181,6 +191,7 @@
       var sp = c.dataset.special || '';
       if (hideUltra && sp === 'ultra') ok = false;
       if (hideIrrealiste && sp === 'irrealiste') ok = false;
+      if (hideChildren && c.dataset.isChild === '1') ok = false;
       c.hidden = !ok;
       if (ok) shown++;
     });
@@ -199,9 +210,11 @@
 
   var ultraToggle      = document.getElementById('prot-ultra-toggle');
   var irrealisteToggle = document.getElementById('prot-irrealiste-toggle');
+  var childrenToggle   = document.getElementById('prot-children-toggle');
 
   syncToggle(ultraToggle,      hideUltra,      'Masquer Ultra',       'Afficher Ultra',       'Hide Ultra',        'Show Ultra');
   syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste',  'Afficher Irréaliste',  'Hide Unrealistic',  'Show Unrealistic');
+  syncToggle(childrenToggle,   hideChildren,   'Masquer versions',    'Afficher versions',    'Hide versions',     'Show versions');
 
   if (ultraToggle) {
     ultraToggle.addEventListener('click', function() {
@@ -216,6 +229,14 @@
       hideIrrealiste = !hideIrrealiste;
       localStorage.setItem('gallery-hide-irrealiste', hideIrrealiste ? '1' : '0');
       syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste', 'Afficher Irréaliste', 'Hide Unrealistic', 'Show Unrealistic');
+      applyFilters();
+    });
+  }
+  if (childrenToggle) {
+    childrenToggle.addEventListener('click', function() {
+      hideChildren = !hideChildren;
+      localStorage.setItem('prot-hide-children', hideChildren ? '1' : '0');
+      syncToggle(childrenToggle, hideChildren, 'Masquer versions', 'Afficher versions', 'Hide versions', 'Show versions');
       applyFilters();
     });
   }
