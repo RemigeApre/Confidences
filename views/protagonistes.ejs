@@ -1,12 +1,12 @@
 <%- include('partials/head', { title: 'Personnages' }) %>
 <main class="container wide gallery-has-sidebar" style="--ch-hue: 340">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Personnages', navBack: '/' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: 'Personnages', navTitleEn: 'Characters', navBack: '/' }) %>
   <%- include('partials/mobile-filter-toggle') %>
 
   <%# ── Volet gauche ──────────────────────────────────────────────────── %>
   <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
     <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
-    <%- include('partials/sidebar-hero', { title: 'Personnages', hue: 340, count: protagonistes.length, countId: 'prot-count-hero' }) %>
+    <%- include('partials/sidebar-hero', { title: 'Personnages', titleEn: 'Characters', hue: 340, count: protagonistes.length, countId: 'prot-count-hero' }) %>
 
     <div class="wiki-sidebar-body">
       <div class="wiki-sidebar-filters">
@@ -79,7 +79,7 @@
 
   <%# ── Grille principale ─────────────────────────────────────────────── %>
   <% if (!protagonistes.length) { %>
-    <p class="nv-empty">Aucun personnage pour le moment.</p>
+    <p class="nv-empty" data-fr="Aucun personnage pour le moment." data-en="No characters yet.">Aucun personnage pour le moment.</p>
   <% } else { %>
     <div class="prot-grid" id="prot-grid">
       <% protagonistes.forEach(function(p) { %>
@@ -140,7 +140,7 @@
         </a>
       <% }) %>
     </div>
-    <p class="nv-empty" id="prot-no-results" hidden>Aucun personnage ne correspond aux filtres.</p>
+    <p class="nv-empty" id="prot-no-results" hidden data-fr="Aucun personnage ne correspond aux filtres." data-en="No characters match the filters.">Aucun personnage ne correspond aux filtres.</p>
   <% } %>
 
   <% if (currentUser && currentUser.isAdmin) { %>
@@ -188,23 +188,26 @@
     if (countEl) countEl.textContent = shown;
   }
 
-  function syncToggle(btn, hidden, labelHide, labelShow) {
+  function syncToggle(btn, hidden, labelHideFr, labelShowFr, labelHideEn, labelShowEn) {
     if (!btn) return;
-    btn.textContent = hidden ? labelShow : labelHide;
+    var isEn = localStorage.getItem('slang') === 'en';
+    btn.dataset.fr = hidden ? labelShowFr : labelHideFr;
+    btn.dataset.en = hidden ? labelShowEn : labelHideEn;
+    btn.textContent = hidden ? (isEn ? labelShowEn : labelShowFr) : (isEn ? labelHideEn : labelHideFr);
     btn.classList.toggle('active', hidden);
   }
 
   var ultraToggle      = document.getElementById('prot-ultra-toggle');
   var irrealisteToggle = document.getElementById('prot-irrealiste-toggle');
 
-  syncToggle(ultraToggle,      hideUltra,      'Masquer Ultra',       'Afficher Ultra');
-  syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste',  'Afficher Irréaliste');
+  syncToggle(ultraToggle,      hideUltra,      'Masquer Ultra',       'Afficher Ultra',       'Hide Ultra',        'Show Ultra');
+  syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste',  'Afficher Irréaliste',  'Hide Unrealistic',  'Show Unrealistic');
 
   if (ultraToggle) {
     ultraToggle.addEventListener('click', function() {
       hideUltra = !hideUltra;
       localStorage.setItem('gallery-hide-ultra', hideUltra ? '1' : '0');
-      syncToggle(ultraToggle, hideUltra, 'Masquer Ultra', 'Afficher Ultra');
+      syncToggle(ultraToggle, hideUltra, 'Masquer Ultra', 'Afficher Ultra', 'Hide Ultra', 'Show Ultra');
       applyFilters();
     });
   }
@@ -212,7 +215,7 @@
     irrealisteToggle.addEventListener('click', function() {
       hideIrrealiste = !hideIrrealiste;
       localStorage.setItem('gallery-hide-irrealiste', hideIrrealiste ? '1' : '0');
-      syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste', 'Afficher Irréaliste');
+      syncToggle(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste', 'Afficher Irréaliste', 'Hide Unrealistic', 'Show Unrealistic');
       applyFilters();
     });
   }

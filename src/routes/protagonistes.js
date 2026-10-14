@@ -121,6 +121,14 @@ function buildProtagonistesRouter(config) {
     if (req.body._editLang === "en") {
       db.setTranslation("protagoniste", protagoniste.id, "name", "en", String(req.body.name || "").slice(0, 200).trim());
       db.setTranslation("protagoniste", protagoniste.id, "description", "en", String(req.body.description || ""));
+      db.setTranslation("protagoniste", protagoniste.id, "published_en", "en", req.body.published_en === "1" ? "1" : "");
+      let evoEnArr = [];
+      try { evoEnArr = JSON.parse(req.body.evolutions_en || "[]"); } catch (_) {}
+      if (Array.isArray(evoEnArr)) {
+        evoEnArr.forEach((name, i) => {
+          db.setTranslation("protagoniste", protagoniste.id, `evo_${i}_en`, "en", String(name || "").trim());
+        });
+      }
       return res.redirect(`/protagonistes/${protagoniste.id}/edit?editLang=en`);
     }
 

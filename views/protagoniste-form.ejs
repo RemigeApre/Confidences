@@ -18,13 +18,22 @@
     <form method="POST" action="<%= protagoniste ? '/protagonistes/' + protagoniste.id + '/update' : '/protagonistes/new' %>"
       class="nv-form" id="prot-form" data-no-enter-submit enctype="multipart/form-data">
       <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
+      <% if (locals.editLang === 'en') { %>
+      <div class="prot-form-en-notice">
+        <label class="prot-publish-en-label">
+          <input type="checkbox" name="published_en" value="1" <%= (locals.translations || {}).published_en === '1' ? 'checked' : '' %> />
+          <span>Publier en anglais</span>
+        </label>
+        <span class="prot-shared-notice">Champs partagés FR/EN verrouillés</span>
+      </div>
+      <% } %>
       <% var _ptName = (locals.editLang === 'en') ? ((locals.translations || {}).name || '') : (protagoniste ? protagoniste.name : ''); %>
 
       <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
         value="<%= _ptName %>" placeholder="<%= locals.editLang === 'en' && protagoniste ? protagoniste.name : 'Nom du personnage\u2026' %>" />
 
       <%# ── Image du personnage ── %>
-      <div class="prot-form-img-section prot-form-img-section--centered">
+      <div class="prot-form-img-section prot-form-img-section--centered<% if (locals.editLang === 'en') { %> prot-form-field-group--locked<% } %>">
         <div class="prot-form-field-label">Photo / Illustration</div>
         <div class="prot-form-img-wrap" id="prot-img-wrap">
           <% if (protagoniste && protagoniste.image_path) { %>
@@ -49,7 +58,7 @@
       </div>
 
       <%# ── Genre — boutons radio ── %>
-      <div class="prot-form-field-group">
+      <div class="prot-form-field-group<% if (locals.editLang === 'en') { %> prot-form-field-group--locked<% } %>">
         <div class="prot-form-field-label">Genre</div>
         <div class="prot-gender-btns">
           <%
@@ -77,7 +86,7 @@
       </div>
 
       <%# ── Classification Ultra / Irréaliste ── %>
-      <div class="prot-form-field-group">
+      <div class="prot-form-field-group<% if (locals.editLang === 'en') { %> prot-form-field-group--locked<% } %>">
         <div class="prot-form-field-label">Classification <span style="font-weight:400;font-size:.75rem;opacity:.6">(détermine la visibilité selon préférences)</span></div>
         <input type="hidden" name="special" id="prot-special-hidden" value="<%= protagoniste ? (protagoniste.special || '') : '' %>" />
         <div class="prot-special-btns">
@@ -88,7 +97,7 @@
       </div>
 
       <%# ── Nature — select élégant ── %>
-      <div class="prot-form-field-group">
+      <div class="prot-form-field-group<% if (locals.editLang === 'en') { %> prot-form-field-group--locked<% } %>">
         <label class="prot-form-field-label" for="prot-nature">Nature</label>
         <select name="nature" id="prot-nature" class="prot-form-select-elegant">
           <option value="">— non définie —</option>
@@ -107,7 +116,7 @@
         var _curClanId = protagoniste ? (protagoniste.clan_id || '') : '';
         var _curRaceClans = _races.find(function(r){ return String(r.id) === String(_curRaceId); });
       %>
-      <div class="prot-form-field-group">
+      <div class="prot-form-field-group<% if (locals.editLang === 'en') { %> prot-form-field-group--locked<% } %>">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
           <label class="prot-form-field-label" for="prot-race" style="margin:0">Race / Esp&egrave;ce</label>
           <button type="button" id="prot-race-manage-btn"
@@ -126,7 +135,7 @@
       </div>
 
       <%# ── Clan (dépend de la race) ── %>
-      <div class="prot-form-field-group" id="prot-clan-group" style="<%= (!_curRaceId || !_curRaceClans || !_curRaceClans.clans || !_curRaceClans.clans.length) ? 'display:none' : '' %>">
+      <div class="prot-form-field-group<% if (locals.editLang === 'en') { %> prot-form-field-group--locked<% } %>" id="prot-clan-group" style="<%= (!_curRaceId || !_curRaceClans || !_curRaceClans.clans || !_curRaceClans.clans.length) ? 'display:none' : '' %>">
         <label class="prot-form-field-label" for="prot-clan">Clan</label>
         <select name="clan_id" id="prot-clan" class="prot-form-select-elegant">
           <option value="">— aucun clan —</option>
@@ -203,20 +212,28 @@
       </div>
 
       <%# ── Évolutions (Pokémon / nature évolutive) ── %>
-      <div class="prot-form-field-group prot-evo-section" id="prot-evo-section">
+      <div class="prot-form-field-group prot-evo-section<% if (locals.editLang === 'en') { %> prot-form-field-group--locked-soft<% } %>" id="prot-evo-section">
         <div class="prot-form-field-label">Chaîne d'évolution <span style="font-weight:400;font-size:.75rem;opacity:.6">(formes précédentes, dans l'ordre)</span></div>
         <input type="hidden" name="evolutions" id="prot-evo-hidden"
           value="<%= protagoniste && protagoniste.evolutions ? JSON.stringify(protagoniste.evolutions) : '[]' %>" />
+        <% if (locals.editLang === 'en') { %>
+        <input type="hidden" name="evolutions_en" id="prot-evo-en-hidden" value="[]" />
+        <% } %>
         <div class="prot-evo-chain" id="prot-evo-chain">
           <%
             var evols = (protagoniste && protagoniste.evolutions) ? protagoniste.evolutions : [];
+            var _evoTrans = locals.translations || {};
             evols.forEach(function(evo, i) {
           %>
-            <div class="prot-evo-entry" data-idx="<%= i %>">
-              <input type="text" class="prot-evo-inp lbep-input" value="<%= evo %>" placeholder="Forme précédente…" maxlength="100" />
+            <div class="prot-evo-entry<% if (locals.editLang === 'en') { %> prot-evo-entry--en<% } %>" data-idx="<%= i %>">
+              <input type="text" class="prot-evo-inp lbep-input" value="<%= evo %>" placeholder="Forme précédente…" maxlength="100"<% if (locals.editLang === 'en') { %> disabled<% } %> />
+              <% if (locals.editLang === 'en') { %>
+              <input type="text" class="prot-evo-en-inp lbep-input" value="<%= _evoTrans['evo_' + i + '_en'] || '' %>" placeholder="English name…" maxlength="100" />
+              <% } else { %>
               <button type="button" class="prot-evo-btn prot-evo-up" title="Monter">↑</button>
               <button type="button" class="prot-evo-btn prot-evo-down" title="Descendre">↓</button>
               <button type="button" class="prot-evo-btn prot-evo-remove" title="Supprimer">×</button>
+              <% } %>
             </div>
           <% }) %>
         </div>
@@ -225,7 +242,9 @@
           <span class="prot-evo-final-name"><%= protagoniste ? protagoniste.name : '(forme finale)' %></span>
           <span style="font-size:.7rem;opacity:.5;margin-left:.4rem">forme principale</span>
         </div>
+        <% if (locals.editLang !== 'en') { %>
         <button type="button" class="prot-evo-add-btn" id="prot-evo-add">+ Ajouter une forme précédente</button>
+        <% } %>
       </div>
 
       <% var _ptDesc = (locals.editLang === 'en') ? ((locals.translations || {}).description || '') : (protagoniste ? protagoniste.description : ''); %>
@@ -234,18 +253,20 @@
         style="resize:vertical"><%= _ptDesc %></textarea>
 
       <%# ── Parodie / Univers ── %>
+      <div class="<% if (locals.editLang === 'en') { %>prot-form-field-group--locked<% } %>">
       <%- include('partials/parody-input', {
             idPrefix:  'protf',
             mainValue: protagoniste ? protagoniste.parody    : '',
             subValue:  protagoniste ? protagoniste.sub_parody : '',
             mainPh:    'Univers (ex\u00a0: Pok\u00e9mon)\u2026'
           }) %>
+      </div>
 
       <%# ── Tags ── %>
       <% if (allTags && allTags.length) { %>
         <script id="prot-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
       <% } %>
-      <div class="wiki-tags-widget">
+      <div class="wiki-tags-widget<% if (locals.editLang === 'en') { %> prot-form-field-group--locked<% } %>">
         <div class="wiki-tags-board">
           <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag…" autocomplete="off" />
         </div>
@@ -390,14 +411,32 @@
   (function() {
     var chain   = document.getElementById('prot-evo-chain');
     var hidden  = document.getElementById('prot-evo-hidden');
+    var hiddenEn = document.getElementById('prot-evo-en-hidden');
     var addBtn  = document.getElementById('prot-evo-add');
-    if (!chain || !hidden || !addBtn) return;
+    if (!chain || !hidden) return;
+
+    var isEnMode = !!hiddenEn;
 
     function syncHidden() {
       var vals = Array.from(chain.querySelectorAll('.prot-evo-inp')).map(function(i) { return i.value.trim(); }).filter(Boolean);
       hidden.value = JSON.stringify(vals);
     }
+    function syncEnHidden() {
+      if (!hiddenEn) return;
+      var vals = Array.from(chain.querySelectorAll('.prot-evo-en-inp')).map(function(i) { return i.value.trim(); });
+      hiddenEn.value = JSON.stringify(vals);
+    }
 
+    if (isEnMode) {
+      // EN mode : wire EN name inputs only
+      chain.querySelectorAll('.prot-evo-en-inp').forEach(function(inp) {
+        inp.addEventListener('input', syncEnHidden);
+      });
+      syncEnHidden();
+      return;
+    }
+
+    // FR mode below
     function makeEntry(val) {
       var row = document.createElement('div');
       row.className = 'prot-evo-entry';
@@ -427,7 +466,7 @@
       if (rmBtn) rmBtn.addEventListener('click', function() { row.remove(); syncHidden(); });
     });
 
-    addBtn.addEventListener('click', function() {
+    if (addBtn) addBtn.addEventListener('click', function() {
       chain.appendChild(makeEntry(''));
       var newInp = chain.lastElementChild.querySelector('.prot-evo-inp');
       if (newInp) newInp.focus();
