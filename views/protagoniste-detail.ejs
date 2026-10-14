@@ -1,7 +1,11 @@
 <%- include('partials/head', { title: protagoniste.name }) %>
 <%
+  var _isFemme = protagoniste.gender === 'femme';
   var _orientationLabel = {
-    hetero: 'Hétéro', homo: 'Gay', bi: 'Bi & curieux', autre: 'Autre'
+    hetero: 'Hétéro',
+    homo:   _isFemme ? 'Lesbienne' : 'Gay',
+    bi:     _isFemme ? 'Bi & curieuse' : 'Bi & curieux',
+    autre:  'Autre'
   };
   var _protDesc     = t(protagoniste.description,         'protagoniste', protagoniste.id, 'description');
   var _protDescPhys = t(protagoniste.description_physique,'protagoniste', protagoniste.id, 'description_physique');
@@ -69,7 +73,10 @@
       <%# ── Versions / Évolutions fiches complètes ── %>
       <% if (childEvolutions && childEvolutions.length) { %>
         <section class="prot-section prot-section--versions">
-          <h2 class="nv-strip-title" data-fr="Versions" data-en="Versions">Versions</h2>
+          <h2 class="prot-versions-title">
+            <%= childEvolutions.length === 1 ? 'Version' : 'Versions' %>
+            <span class="prot-versions-count"><%= childEvolutions.length %></span>
+          </h2>
           <div class="prot-versions-grid">
             <% childEvolutions.forEach(function(child) { %>
               <a href="/protagonistes/<%= child.id %>" class="prot-version-card">

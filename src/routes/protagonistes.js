@@ -255,7 +255,21 @@ function buildProtagonistesRouter(config) {
     const parent = db.getProtagoniste(parentId);
     if (!parent) return res.json({ ok: false, error: "Fiche parente introuvable" });
     if (parentId === child.id) return res.json({ ok: false, error: "Une fiche ne peut pas s'inclure elle-même" });
+    // Si l'enfant était déjà dans une autre arborescence, le retirer de l'ancien parent
+    if (child.parent_id && child.parent_id !== parentId) {
+      const oldParent = db.getProtagoniste(child.parent_id);
+      if (oldParent) {
+        const oldEvols = (oldParent.evolutions || []).filter(e => e.linked_id !== child.id);
+        db.updateProtagoniste(oldParent.id, { ...oldParent, evolutions: oldEvols });
+      }
+    }
     db.setProtagonisteParent(child.id, parentId);
+    // Ajouter l'entrée dans les évolutions du parent si elle n'y est pas déjà
+    const evols = parent.evolutions || [];
+    if (!evols.some(e => e.linked_id === child.id)) {
+      evols.push({ name: child.name, linked_id: child.id });
+      db.updateProtagoniste(parent.id, { ...parent, evolutions: evols });
+    }
     res.json({ ok: true });
   });
 
@@ -263,6 +277,13 @@ function buildProtagonistesRouter(config) {
   router.post("/:id/detach", requireAdmin, (req, res) => {
     const child = db.getProtagoniste(req.params.id);
     if (!child) return res.json({ ok: false, error: "Personnage introuvable" });
+    if (child.parent_id) {
+      const parent = db.getProtagoniste(child.parent_id);
+      if (parent) {
+        const evols = (parent.evolutions || []).filter(e => e.linked_id !== child.id);
+        db.updateProtagoniste(parent.id, { ...parent, evolutions: evols });
+      }
+    }
     db.setProtagonisteParent(child.id, null);
     res.json({ ok: true });
   });
