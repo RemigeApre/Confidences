@@ -14,39 +14,37 @@
   ];
   var currentGender = protagoniste ? (protagoniste.gender || '') : '';
   var _hasParody = protagoniste && (protagoniste.parody || protagoniste.sub_parody);
+  var _evoEnInit = evols.map(function(_,i){ return _trans['evo_'+i+'_en'] || ''; });
 %>
 <main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste ? protagoniste.name : 'Nouveau personnage', navBack: protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' }) %>
 
-  <%# ── Formulaire de suppression (vide, référencé via form=) ── %>
   <% if (protagoniste) { %>
   <form method="POST" action="/protagonistes/<%= protagoniste.id %>/delete" id="prot-delete-form"
     onsubmit="return confirm('Supprimer ce personnage d\u00e9finitivement ?')"></form>
   <% } %>
 
-  <%# ── Formulaire principal (englobe le volet latéral fixe) ── %>
   <form method="POST" action="<%= protagoniste ? '/protagonistes/' + protagoniste.id + '/update' : '/protagonistes/new' %>"
     class="nv-form" id="prot-form" data-no-enter-submit enctype="multipart/form-data">
-    <% if (_isEn) { %><input type="hidden" name="_editLang" value="en" /><% } %>
-    <% if (_isEn) { %><input type="hidden" name="evolutions_en" id="prot-evo-en-hidden" value="[]" /><% } %>
 
-    <%# ════════════════════════════════════════════════════════
-        VOLET GAUCHE FIXE — paramètres partagés FR/EN
-        ════════════════════════════════════════════════════════ %>
+    <%# Toujours présents — valeurs gérées par JS pour le switch FR/EN sans rechargement %>
+    <input type="hidden" name="_editLang" id="prot-editlang-hidden" value="<%= _isEn ? 'en' : '' %>" />
+    <input type="hidden" name="evolutions_en" id="prot-evo-en-hidden"
+      value="<%- JSON.stringify(_evoEnInit) %>" />
+
+    <%# ── VOLET GAUCHE FIXE ── %>
     <aside class="prot-edit-sidebar" id="prot-edit-sidebar">
       <div class="prot-edit-sidebar-inner">
 
-        <%# Bouton retour — centré en haut du volet %>
         <div class="prot-sb-back-wrap">
           <a href="<%= protagoniste ? '/protagonistes/' + protagoniste.id : '/protagonistes' %>" class="prot-sb-back-btn">Retour</a>
         </div>
 
-        <% if (_isEn) { %>
-        <div class="prot-sb-en-badge">Commun FR/EN</div>
-        <% } %>
+        <%# Badge EN — toujours dans le DOM, affiché/masqué par JS %>
+        <div class="prot-sb-en-badge" id="prot-sb-en-badge"<% if (!_isEn) { %> hidden<% } %>>Commun FR/EN</div>
 
-        <%# Genre — pastilles icônes uniquement, centrées, sans titre %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
+        <%# Genre %>
+        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
           <div class="prot-gender-btns prot-gender-btns--icon">
             <% genderOpts.forEach(function(opt) { %>
             <label class="prot-gender-btn prot-gender-btn--<%= opt.value %><%= currentGender === opt.value ? ' active' : '' %>" title="<%= opt.label %>">
@@ -63,8 +61,8 @@
           </div>
         </div>
 
-        <%# Classification — Ultra + Irréaliste uniquement, centrés, sans titre %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
+        <%# Classification %>
+        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
           <input type="hidden" name="special" id="prot-special-hidden" value="<%= protagoniste ? (protagoniste.special || '') : '' %>" />
           <div class="prot-special-btns prot-special-btns--center">
             <button type="button" class="prot-special-btn prot-special-btn--ultra<%= (protagoniste && protagoniste.special === 'ultra') ? ' active' : '' %>" data-val="ultra">Ultra</button>
@@ -72,8 +70,8 @@
           </div>
         </div>
 
-        <%# Nature + Race/Espèce — sur la même ligne, sans titre %>
-        <div class="prot-sb-section prot-sb-section--row<% if (_isEn) { %> prot-sb-locked<% } %>">
+        <%# Nature + Race — même ligne %>
+        <div class="prot-sb-section prot-sb-section--row<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
           <select name="nature" id="prot-nature" class="prot-form-select-elegant prot-form-select-elegant--sm">
             <option value="">Nature</option>
             <option value="humain"  <%= protagoniste && protagoniste.nature === 'humain'  ? 'selected' : '' %>>Humain</option>
@@ -92,8 +90,8 @@
             style="background:none;border:1px solid rgba(255,255,255,.14);color:#64748b;font-size:.6rem;padding:.15rem .4rem;border-radius:4px;cursor:pointer;flex-shrink:0;white-space:nowrap">+</button>
         </div>
 
-        <%# Âge + Orientation — sur la même ligne %>
-        <div class="prot-sb-section prot-sb-section--row<% if (_isEn) { %> prot-sb-locked<% } %>">
+        <%# Âge + Orientation — même ligne %>
+        <div class="prot-sb-section prot-sb-section--row<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
           <input type="number" name="age" id="prot-age"
             class="prot-form-select-elegant prot-form-select-elegant--sm"
             min="18" max="999" step="1"
@@ -110,8 +108,8 @@
           </select>
         </div>
 
-        <%# Clan — apparaît si une race est sélectionnée %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" id="prot-clan-group"
+        <%# Clan %>
+        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" id="prot-clan-group" data-lockable="hard"
           style="<%= (!_curRaceId || !_curRaceClans || !_curRaceClans.clans || !_curRaceClans.clans.length) ? 'display:none' : '' %>">
           <select name="clan_id" id="prot-clan" class="prot-form-select-elegant prot-form-select-elegant--sm">
             <option value="">Clan</option>
@@ -121,7 +119,7 @@
           </select>
         </div>
 
-        <%# Panneau gestion des races (s'ouvre inline) %>
+        <%# Panneau gestion des races %>
         <div id="prot-race-panel" style="display:none" class="prot-race-panel">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem">
             <span style="font-size:.62rem;font-weight:700;color:#a5b4fc;text-transform:uppercase;letter-spacing:.06em">Races</span>
@@ -175,25 +173,24 @@
           </div>
         </div>
 
-        <%# Évolution — section repliable %>
-        <details class="prot-sb-details<% if (_isEn) { %> prot-sb-locked-soft<% } %>"<% if (evols.length) { %> open<% } %>>
+        <%# Évolution — section repliable, data-lockable=soft %>
+        <details class="prot-sb-details<% if (_isEn) { %> prot-sb-locked-soft<% } %>" data-lockable="soft"<% if (evols.length) { %> open<% } %>>
           <summary class="prot-sb-details-summary">&Eacute;volution</summary>
           <div class="prot-sb-details-body">
             <input type="hidden" name="evolutions" id="prot-evo-hidden"
               value="<%= protagoniste && protagoniste.evolutions ? JSON.stringify(protagoniste.evolutions) : '[]' %>" />
             <div class="prot-evo-chain" id="prot-evo-chain">
               <% evols.forEach(function(evo, i) { %>
-                <div class="prot-evo-entry<% if (_isEn) { %> prot-evo-entry--en<% } %>" data-idx="<%= i %>">
+                <div class="prot-evo-entry" data-idx="<%= i %>">
                   <input type="text" class="prot-evo-inp lbep-input" value="<%= evo %>"
                     placeholder="Forme pr&eacute;c&eacute;dente&hellip;" maxlength="100"<% if (_isEn) { %> disabled<% } %> />
-                  <% if (_isEn) { %>
+                  <span class="prot-evo-fr-ctl"<% if (_isEn) { %> hidden<% } %>>
+                    <button type="button" class="prot-evo-btn prot-evo-up" title="Monter">&uarr;</button>
+                    <button type="button" class="prot-evo-btn prot-evo-down" title="Descendre">&darr;</button>
+                    <button type="button" class="prot-evo-btn prot-evo-remove" title="Supprimer">&times;</button>
+                  </span>
                   <input type="text" class="prot-evo-en-inp lbep-input"
-                    value="<%= _trans['evo_' + i + '_en'] || '' %>" placeholder="English name&hellip;" maxlength="100" />
-                  <% } else { %>
-                  <button type="button" class="prot-evo-btn prot-evo-up" title="Monter">&uarr;</button>
-                  <button type="button" class="prot-evo-btn prot-evo-down" title="Descendre">&darr;</button>
-                  <button type="button" class="prot-evo-btn prot-evo-remove" title="Supprimer">&times;</button>
-                  <% } %>
+                    value="<%= _trans['evo_' + i + '_en'] || '' %>" placeholder="English name&hellip;" maxlength="100"<% if (!_isEn) { %> hidden<% } %> />
                 </div>
               <% }) %>
             </div>
@@ -201,14 +198,12 @@
               <span class="prot-evo-arrow">&rarr;</span>
               <span class="prot-evo-final-name"><%= protagoniste ? protagoniste.name : '(forme finale)' %></span>
             </div>
-            <% if (!_isEn) { %>
-            <button type="button" class="prot-evo-add-btn" id="prot-evo-add">+ Ajouter</button>
-            <% } %>
+            <button type="button" class="prot-evo-add-btn" id="prot-evo-add"<% if (_isEn) { %> hidden<% } %>>+ Ajouter</button>
           </div>
         </details>
 
         <%# Parodies — section repliable %>
-        <details class="prot-sb-details<% if (_isEn) { %> prot-sb-locked<% } %>"<% if (_hasParody) { %> open<% } %>>
+        <details class="prot-sb-details<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard"<% if (_hasParody) { %> open<% } %>>
           <summary class="prot-sb-details-summary">Parodies</summary>
           <div class="prot-sb-details-body">
             <%- include('partials/parody-input', {
@@ -221,7 +216,7 @@
         </details>
 
         <%# Tags %>
-        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>">
+        <div class="prot-sb-section<% if (_isEn) { %> prot-sb-locked<% } %>" data-lockable="hard">
           <% if (allTags && allTags.length) { %>
             <script id="prot-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
           <% } %>
@@ -250,21 +245,19 @@
       <% } %>
     </aside>
 
-    <%# ════════════════════════════════════════════════
-        CONTENU CENTRAL — dans le flux normal du container
-        ════════════════════════════════════════════════ %>
-
+    <%# ── CONTENU CENTRAL ── %>
     <div class="wf-actions-right">
       <% if (protagoniste) { %>
       <div class="prot-publish-wrap">
-        <% if (_isEn) { %>
-        <button type="button" id="prot-publish-btn"
-          class="prot-publish-btn<%= _trans.published_en === '1' ? ' prot-publish-btn--on' : '' %>">
-          <%= _trans.published_en === '1' ? 'Publi&eacute;' : '&Agrave; publier' %>
-        </button>
-        <input type="hidden" name="published_en" id="prot-publish-hidden"
-          value="<%= _trans.published_en === '1' ? '1' : '' %>" />
-        <% } %>
+        <%# Toujours dans le DOM — affiché/masqué par JS %>
+        <span id="prot-publish-inner"<% if (!_isEn) { %> hidden<% } %>>
+          <button type="button" id="prot-publish-btn"
+            class="prot-publish-btn<%= _trans.published_en === '1' ? ' prot-publish-btn--on' : '' %>">
+            <%= _trans.published_en === '1' ? 'Publi&eacute;' : '&Agrave; publier' %>
+          </button>
+          <input type="hidden" name="published_en" id="prot-publish-hidden"
+            value="<%= _trans.published_en === '1' ? '1' : '' %>" />
+        </span>
         <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/protagonistes/' + protagoniste.id + '/edit' }) %>
       </div>
       <% } %>
@@ -274,13 +267,14 @@
     <div class="nv-form-wrap">
 
       <%# Nom %>
-      <% var _ptName = _isEn ? (_trans.name || '') : (protagoniste ? protagoniste.name : ''); %>
       <input type="text" name="name" class="nv-form-title-input" required maxlength="200"
-        value="<%= _ptName %>"
+        data-fr-val="<%= protagoniste ? protagoniste.name : '' %>"
+        data-en-val="<%= _trans.name || '' %>"
+        value="<%= _isEn ? (_trans.name || '') : (protagoniste ? protagoniste.name : '') %>"
         placeholder="<%= _isEn && protagoniste ? protagoniste.name : 'Nom du personnage\u2026' %>" />
 
       <%# Image %>
-      <div class="prot-form-img-section prot-form-img-section--centered<% if (_isEn) { %> prot-sb-locked<% } %>">
+      <div class="prot-form-img-section prot-form-img-section--centered<% if (_isEn) { %> prot-sb-locked<% } %>" id="prot-img-section" data-lockable="hard">
         <div class="prot-form-field-label">Photo / Illustration</div>
         <div class="prot-form-img-wrap" id="prot-img-wrap">
           <% if (protagoniste && protagoniste.image_path) { %>
@@ -305,10 +299,11 @@
       </div>
 
       <%# Description %>
-      <% var _ptDesc = _isEn ? (_trans.description || '') : (protagoniste ? protagoniste.description : ''); %>
       <textarea name="description" class="nv-form-content" rows="10"
+        data-fr-val="<%= (protagoniste && protagoniste.description ? protagoniste.description : '').replace(/"/g, '&quot;') %>"
+        data-en-val="<%= (_trans.description || '').replace(/"/g, '&quot;') %>"
         placeholder="<%= _isEn ? 'English description\u2026' : 'Description, traits de caract\u00e8re, apparence\u2026' %>"
-        style="resize:vertical"><%= _ptDesc %></textarea>
+        style="resize:vertical"><%= _isEn ? (_trans.description || '') : (protagoniste ? protagoniste.description : '') %></textarea>
 
       <div class="wiki-form-actions wf-mobile-actions">
         <button type="submit">Enregistrer</button>
@@ -319,7 +314,82 @@
 
   <script nonce="<%= nonce %>">
   (function() {
-    // ── Publish toggle ──
+    // ── Switch FR/EN sans rechargement ──────────────────────────────────────
+    var _editLangHid = document.getElementById('prot-editlang-hidden');
+
+    function switchLang(lang) {
+      var isEn = lang === 'en';
+      var prevIsEn = _editLangHid ? _editLangHid.value === 'en' : false;
+
+      // Sauvegarder les valeurs en cours avant de switcher
+      var nameInp = document.querySelector('input[name="name"]');
+      var descTa  = document.querySelector('textarea[name="description"]');
+      if (nameInp) {
+        if (prevIsEn) nameInp.dataset.enVal = nameInp.value;
+        else          nameInp.dataset.frVal = nameInp.value;
+        nameInp.value = isEn ? (nameInp.dataset.enVal || '') : (nameInp.dataset.frVal || '');
+        nameInp.placeholder = isEn
+          ? (nameInp.dataset.frVal || 'Nom du personnage\u2026')
+          : 'Nom du personnage\u2026';
+      }
+      if (descTa) {
+        if (prevIsEn) descTa.dataset.enVal = descTa.value;
+        else          descTa.dataset.frVal = descTa.value;
+        descTa.value = isEn ? (descTa.dataset.enVal || '') : (descTa.dataset.frVal || '');
+        descTa.placeholder = isEn
+          ? 'English description\u2026'
+          : 'Description, traits de caract\u00e8re, apparence\u2026';
+      }
+
+      // Mettre à jour le champ caché _editLang
+      if (_editLangHid) _editLangHid.value = isEn ? 'en' : '';
+
+      // Bouton publier
+      var publishInner = document.getElementById('prot-publish-inner');
+      if (publishInner) publishInner.hidden = !isEn;
+
+      // Badge EN
+      var enBadge = document.getElementById('prot-sb-en-badge');
+      if (enBadge) enBadge.hidden = !isEn;
+
+      // Sections verrouillables
+      document.querySelectorAll('[data-lockable]').forEach(function(el) {
+        if (el.dataset.lockable === 'hard') el.classList.toggle('prot-sb-locked', isEn);
+        else if (el.dataset.lockable === 'soft') el.classList.toggle('prot-sb-locked-soft', isEn);
+      });
+
+      // Évolution : basculer contrôles FR ↔ EN
+      document.querySelectorAll('.prot-evo-fr-ctl').forEach(function(el) { el.hidden = isEn; });
+      document.querySelectorAll('.prot-evo-en-inp').forEach(function(el) { el.hidden = !isEn; });
+      document.querySelectorAll('.prot-evo-inp').forEach(function(el) { el.disabled = isEn; });
+      var addEvoBtn = document.getElementById('prot-evo-add');
+      if (addEvoBtn) addEvoBtn.hidden = isEn;
+
+      // Sync evolutions_en caché
+      var hiddenEn = document.getElementById('prot-evo-en-hidden');
+      if (hiddenEn) hiddenEn.value = JSON.stringify(
+        Array.from(document.querySelectorAll('.prot-evo-en-inp')).map(function(i){ return i.value.trim(); })
+      );
+
+      // Mettre à jour le toggle actif
+      document.querySelectorAll('.wf-lang-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.textContent.trim().toLowerCase() === lang);
+      });
+
+      // URL sans rechargement
+      var url = window.location.pathname;
+      history.replaceState({ lang: lang }, '', isEn ? url + '?editLang=en' : url);
+    }
+
+    // Intercepter les clics sur le lang-toggle
+    document.querySelectorAll('.wf-lang-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        switchLang(btn.textContent.trim().toLowerCase());
+      });
+    });
+
+    // ── Publish toggle ──────────────────────────────────────────────────────
     var publishBtn = document.getElementById('prot-publish-btn');
     var publishHid = document.getElementById('prot-publish-hidden');
     if (publishBtn && publishHid) {
@@ -331,7 +401,7 @@
       });
     }
 
-    // ── Image : preview + croix ──
+    // ── Image : preview + croix ──────────────────────────────────────────────
     var imgInput  = document.getElementById('prot-img-input');
     var imgThumb  = document.getElementById('prot-img-thumb');
     var imgHolder = document.getElementById('prot-img-holder');
@@ -353,7 +423,7 @@
       });
     }
 
-    // ── Genre ──
+    // ── Genre ───────────────────────────────────────────────────────────────
     document.querySelectorAll('.prot-gender-btns .prot-gender-btn').forEach(function(lbl) {
       lbl.addEventListener('click', function() {
         document.querySelectorAll('.prot-gender-btns .prot-gender-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -361,7 +431,7 @@
       });
     });
 
-    // ── Classification — toggle (Ultra / Irréaliste) ──
+    // ── Classification — toggle ─────────────────────────────────────────────
     var specialHidden = document.getElementById('prot-special-hidden');
     document.querySelectorAll('.prot-special-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
@@ -372,7 +442,7 @@
       });
     });
 
-    // ── Âge : interdire < 18 ──
+    // ── Âge : min 18 ────────────────────────────────────────────────────────
     var ageInput = document.getElementById('prot-age');
     if (ageInput) {
       ageInput.addEventListener('blur', function() {
@@ -381,48 +451,80 @@
       });
     }
 
-    // ── Évolutions ──
+    // ── Évolutions ──────────────────────────────────────────────────────────
     (function() {
       var chain    = document.getElementById('prot-evo-chain');
       var hidden   = document.getElementById('prot-evo-hidden');
       var hiddenEn = document.getElementById('prot-evo-en-hidden');
       if (!chain || !hidden) return;
-      var isEnMode = !!hiddenEn;
+
+      function isEnMode() { return _editLangHid ? _editLangHid.value === 'en' : false; }
+
       function syncHidden() {
-        var vals = Array.from(chain.querySelectorAll('.prot-evo-inp')).map(function(i){ return i.value.trim(); }).filter(Boolean);
-        hidden.value = JSON.stringify(vals);
+        hidden.value = JSON.stringify(
+          Array.from(chain.querySelectorAll('.prot-evo-inp')).map(function(i){ return i.value.trim(); }).filter(Boolean)
+        );
       }
       function syncEnHidden() {
         if (!hiddenEn) return;
-        hiddenEn.value = JSON.stringify(Array.from(chain.querySelectorAll('.prot-evo-en-inp')).map(function(i){ return i.value.trim(); }));
+        hiddenEn.value = JSON.stringify(
+          Array.from(chain.querySelectorAll('.prot-evo-en-inp')).map(function(i){ return i.value.trim(); })
+        );
       }
-      if (isEnMode) {
-        chain.querySelectorAll('.prot-evo-en-inp').forEach(function(inp){ inp.addEventListener('input', syncEnHidden); });
-        syncEnHidden(); return;
-      }
-      var addBtn = document.getElementById('prot-evo-add');
+
+      // Wiring sur les entrées existantes
+      chain.querySelectorAll('.prot-evo-entry').forEach(function(row) {
+        var inp   = row.querySelector('.prot-evo-inp');
+        var enInp = row.querySelector('.prot-evo-en-inp');
+        var upBtn = row.querySelector('.prot-evo-up');
+        var dnBtn = row.querySelector('.prot-evo-down');
+        var rmBtn = row.querySelector('.prot-evo-remove');
+        if (inp)   inp.addEventListener('input', syncHidden);
+        if (enInp) enInp.addEventListener('input', syncEnHidden);
+        if (upBtn) upBtn.addEventListener('click', function(){ var p=row.previousElementSibling; if(p&&p.classList.contains('prot-evo-entry')){chain.insertBefore(row,p);syncHidden();} });
+        if (dnBtn) dnBtn.addEventListener('click', function(){ var n=row.nextElementSibling; if(n&&n.classList.contains('prot-evo-entry')){chain.insertBefore(n,row);syncHidden();} });
+        if (rmBtn) rmBtn.addEventListener('click', function(){ row.remove(); syncHidden(); });
+      });
+
       function makeEntry(val) {
+        var enMode = isEnMode();
         var row = document.createElement('div'); row.className = 'prot-evo-entry';
-        var inp = document.createElement('input'); inp.type='text'; inp.className='prot-evo-inp lbep-input'; inp.value=val||''; inp.placeholder='Forme pr\u00e9c\u00e9dente\u2026'; inp.maxLength=100; inp.addEventListener('input', syncHidden);
+
+        var inp = document.createElement('input'); inp.type='text'; inp.className='prot-evo-inp lbep-input';
+        inp.value=val||''; inp.placeholder='Forme pr\u00e9c\u00e9dente\u2026'; inp.maxLength=100;
+        if (enMode) inp.disabled = true;
+        inp.addEventListener('input', syncHidden);
+
+        var frCtl = document.createElement('span'); frCtl.className = 'prot-evo-fr-ctl';
+        if (enMode) frCtl.hidden = true;
         var upBtn = document.createElement('button'); upBtn.type='button'; upBtn.className='prot-evo-btn prot-evo-up'; upBtn.title='Monter'; upBtn.textContent='\u2191';
         var dnBtn = document.createElement('button'); dnBtn.type='button'; dnBtn.className='prot-evo-btn prot-evo-down'; dnBtn.title='Descendre'; dnBtn.textContent='\u2193';
         var rmBtn = document.createElement('button'); rmBtn.type='button'; rmBtn.className='prot-evo-btn prot-evo-remove'; rmBtn.title='Supprimer'; rmBtn.textContent='\xd7';
         upBtn.addEventListener('click', function(){ var p=row.previousElementSibling; if(p&&p.classList.contains('prot-evo-entry')){chain.insertBefore(row,p);syncHidden();} });
         dnBtn.addEventListener('click', function(){ var n=row.nextElementSibling; if(n&&n.classList.contains('prot-evo-entry')){chain.insertBefore(n,row);syncHidden();} });
         rmBtn.addEventListener('click', function(){ row.remove(); syncHidden(); });
-        row.appendChild(inp); row.appendChild(upBtn); row.appendChild(dnBtn); row.appendChild(rmBtn); return row;
+        frCtl.appendChild(upBtn); frCtl.appendChild(dnBtn); frCtl.appendChild(rmBtn);
+
+        var enInp = document.createElement('input'); enInp.type='text'; enInp.className='prot-evo-en-inp lbep-input';
+        enInp.value=''; enInp.placeholder='English name\u2026'; enInp.maxLength=100;
+        if (!enMode) enInp.hidden = true;
+        enInp.addEventListener('input', syncEnHidden);
+
+        row.appendChild(inp); row.appendChild(frCtl); row.appendChild(enInp);
+        return row;
       }
-      chain.querySelectorAll('.prot-evo-entry').forEach(function(row){
-        var inp=row.querySelector('.prot-evo-inp'), upBtn=row.querySelector('.prot-evo-up'), dnBtn=row.querySelector('.prot-evo-down'), rmBtn=row.querySelector('.prot-evo-remove');
-        if(inp) inp.addEventListener('input',syncHidden);
-        if(upBtn) upBtn.addEventListener('click',function(){ var p=row.previousElementSibling; if(p&&p.classList.contains('prot-evo-entry')){chain.insertBefore(row,p);syncHidden();} });
-        if(dnBtn) dnBtn.addEventListener('click',function(){ var n=row.nextElementSibling; if(n&&n.classList.contains('prot-evo-entry')){chain.insertBefore(n,row);syncHidden();} });
-        if(rmBtn) rmBtn.addEventListener('click',function(){ row.remove(); syncHidden(); });
+
+      var addBtn = document.getElementById('prot-evo-add');
+      if (addBtn) addBtn.addEventListener('click', function(){
+        chain.appendChild(makeEntry(''));
+        var ni = chain.lastElementChild.querySelector('.prot-evo-inp');
+        if (ni) ni.focus();
       });
-      if(addBtn) addBtn.addEventListener('click',function(){ chain.appendChild(makeEntry('')); var ni=chain.lastElementChild.querySelector('.prot-evo-inp'); if(ni) ni.focus(); });
+
+      syncHidden(); syncEnHidden();
     })();
 
-    // ── Tags widget ──
+    // ── Tags widget ──────────────────────────────────────────────────────────
     document.querySelectorAll('.wiki-tags-widget').forEach(function(widget) {
       var board=widget.querySelector('.wiki-tags-board'), typer=widget.querySelector('.wiki-tags-typing'), hidden=widget.querySelector('.wiki-tags-hidden'), suggestBox=widget.querySelector('.wiki-tag-suggestions');
       if(!board||!typer||!hidden) return;
@@ -432,11 +534,7 @@
       function syncSuggest(){if(!suggestBox)return;suggestBox.querySelectorAll('.wiki-tag-suggest-chip').forEach(function(c){var s=findTag(c.dataset.tag);c.classList.toggle('active',s);c.hidden=s;});}
       var chipsArea=widget.querySelector('.wiki-tags-chips');
       if(!chipsArea){chipsArea=document.createElement('div');chipsArea.className='wiki-tags-chips';board.parentNode.insertBefore(chipsArea,board);}
-      function renderBoard(){
-        chipsArea.querySelectorAll('.wiki-chip').forEach(function(c){c.remove();});
-        tags.forEach(function(t){var chip=document.createElement('span');chip.className='link-tag-pill wiki-chip';chip.style.cssText='background:hsl(340,50%,38%);color:#fff;cursor:pointer;margin:2px 3px 2px 0;display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.75rem';chip.textContent=t;chip.title='Cliquer pour retirer';chip.addEventListener('click',function(){tags=tags.filter(function(x){return x!==t;});syncHidden();renderBoard();syncSuggest();});chipsArea.appendChild(chip);});
-        syncHidden();syncSuggest();
-      }
+      function renderBoard(){chipsArea.querySelectorAll('.wiki-chip').forEach(function(c){c.remove();});tags.forEach(function(t){var chip=document.createElement('span');chip.className='link-tag-pill wiki-chip';chip.style.cssText='background:hsl(340,50%,38%);color:#fff;cursor:pointer;margin:2px 3px 2px 0;display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.75rem';chip.textContent=t;chip.title='Cliquer pour retirer';chip.addEventListener('click',function(){tags=tags.filter(function(x){return x!==t;});syncHidden();renderBoard();syncSuggest();});chipsArea.appendChild(chip);});syncHidden();syncSuggest();}
       function addTag(t){t=t.trim();if(t&&!findTag(t)){tags.push(t);renderBoard();}}
       function removeTag(t){tags=tags.filter(function(x){return x!==t;});syncHidden();renderBoard();syncSuggest();}
       typer.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===','||e.key===';'){e.preventDefault();if(typer.value.trim()){addTag(typer.value.trim());typer.value='';closeAc();}}else if(e.key==='Backspace'&&!typer.value&&tags.length)removeTag(tags[tags.length-1]);});
@@ -454,7 +552,7 @@
       renderBoard();
     });
 
-    // ── Panneau gestion des races ──
+    // ── Panneau gestion des races ────────────────────────────────────────────
     var raceManageBtn=document.getElementById('prot-race-manage-btn'), racePanel=document.getElementById('prot-race-panel'), racePanelClose=document.getElementById('prot-race-panel-close'), raceSelect=document.getElementById('prot-race');
     if(raceManageBtn&&racePanel){
       raceManageBtn.addEventListener('click',function(){racePanel.style.display=racePanel.style.display==='none'?'block':'none';});
@@ -470,36 +568,14 @@
         });
       });
       document.getElementById('rp-race-list').addEventListener('click',function(e){
-        if(e.target.closest('.rp-delete-race-btn')){
-          var item=e.target.closest('.rp-race-item'),raceId=item.dataset.raceId,raceName=item.querySelector('span[style*="font-weight"]').textContent.trim();
-          if(!confirm('Supprimer "'+raceName+'" ?'))return;
-          fetch('/admin/races/'+raceId,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(!d.ok)return;item.remove();var opt=raceSelect.querySelector('option[value="'+raceId+'"]');if(opt)opt.remove();if(raceSelect.value===raceId){raceSelect.value='';raceSelect.dispatchEvent(new Event('change'));}});return;
-        }
-        if(e.target.closest('.rp-delete-clan-btn')){
-          var tag=e.target.closest('.rp-clan-tag'),clanId=tag.dataset.clanId;if(!confirm('Supprimer ce clan ?'))return;
-          fetch('/admin/clans/'+clanId,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(d.ok){tag.remove();var cs=document.getElementById('prot-clan');if(cs){var co=cs.querySelector('option[value="'+clanId+'"]');if(co)co.remove();}}});return;
-        }
-        if(e.target.closest('.rp-add-clan-btn')){
-          var item2=e.target.closest('.rp-race-item'),raceId2=item2.dataset.raceId,inp2=item2.querySelector('.rp-new-clan-name'),clanName=inp2.value.trim();
-          if(!clanName){inp2.focus();return;}
-          fetch('/admin/races/'+raceId2+'/clans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:clanName})}).then(function(r){return r.json();}).then(function(d){
-            if(!d.ok)return;var cl=item2.querySelector('.rp-clan-list');var no=cl.querySelector('span[style*="italic"]');if(no)no.remove();
-            var t2=document.createElement('span');t2.className='rp-clan-tag';t2.dataset.clanId=d.id;t2.style.cssText='display:inline-flex;align-items:center;gap:.18rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:.08rem .4rem;font-size:.65rem;color:#cbd5e1';
-            var lb=document.createTextNode(clanName+' ');var db=document.createElement('button');db.type='button';db.className='rp-delete-clan-btn';db.style.cssText='background:none;border:none;color:#f87171;cursor:pointer;padding:0;font-size:.75rem;line-height:1';db.textContent='\xd7';
-            t2.appendChild(lb);t2.appendChild(db);cl.insertBefore(t2,null);inp2.value='';
-            if(raceSelect.value===raceId2){var cs2=document.getElementById('prot-clan');if(cs2){var no2=document.createElement('option');no2.value=d.id;no2.textContent=clanName;cs2.appendChild(no2);document.getElementById('prot-clan-group').style.display='';}}
-          });
-        }
+        if(e.target.closest('.rp-delete-race-btn')){var item=e.target.closest('.rp-race-item'),raceId=item.dataset.raceId,raceName=item.querySelector('span[style*="font-weight"]').textContent.trim();if(!confirm('Supprimer "'+raceName+'" ?'))return;fetch('/admin/races/'+raceId,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(!d.ok)return;item.remove();var opt=raceSelect.querySelector('option[value="'+raceId+'"]');if(opt)opt.remove();if(raceSelect.value===raceId){raceSelect.value='';raceSelect.dispatchEvent(new Event('change'));}});return;}
+        if(e.target.closest('.rp-delete-clan-btn')){var tag=e.target.closest('.rp-clan-tag'),clanId=tag.dataset.clanId;if(!confirm('Supprimer ce clan ?'))return;fetch('/admin/clans/'+clanId,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(d.ok){tag.remove();var cs=document.getElementById('prot-clan');if(cs){var co=cs.querySelector('option[value="'+clanId+'"]');if(co)co.remove();}}});return;}
+        if(e.target.closest('.rp-add-clan-btn')){var item2=e.target.closest('.rp-race-item'),raceId2=item2.dataset.raceId,inp2=item2.querySelector('.rp-new-clan-name'),clanName=inp2.value.trim();if(!clanName){inp2.focus();return;}fetch('/admin/races/'+raceId2+'/clans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:clanName})}).then(function(r){return r.json();}).then(function(d){if(!d.ok)return;var cl=item2.querySelector('.rp-clan-list');var no=cl.querySelector('span[style*="italic"]');if(no)no.remove();var t2=document.createElement('span');t2.className='rp-clan-tag';t2.dataset.clanId=d.id;t2.style.cssText='display:inline-flex;align-items:center;gap:.18rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:.08rem .4rem;font-size:.65rem;color:#cbd5e1';var lb=document.createTextNode(clanName+' ');var db=document.createElement('button');db.type='button';db.className='rp-delete-clan-btn';db.style.cssText='background:none;border:none;color:#f87171;cursor:pointer;padding:0;font-size:.75rem;line-height:1';db.textContent='\xd7';t2.appendChild(lb);t2.appendChild(db);cl.insertBefore(t2,null);inp2.value='';if(raceSelect.value===raceId2){var cs2=document.getElementById('prot-clan');if(cs2){var no2=document.createElement('option');no2.value=d.id;no2.textContent=clanName;cs2.appendChild(no2);document.getElementById('prot-clan-group').style.display='';}}});}
       });
     }
-    function appendRpRaceItem(id,name,icon,color){
-      var list=document.getElementById('rp-race-list');var empty=list.querySelector('p[style*="italic"]');if(empty)empty.remove();
-      var div=document.createElement('div');div.className='rp-race-item';div.dataset.raceId=id;div.style.cssText='background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:6px;padding:.4rem .5rem';
-      div.innerHTML='<div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.3rem"><span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0"></span><span style="font-size:.75rem;font-weight:700;color:#e2e8f0;flex:1">'+(icon?icon+' ':'')+name+'</span><button type="button" class="rp-delete-race-btn" style="background:none;border:none;color:#ef4444;font-size:.7rem;cursor:pointer;padding:0" title="Supprimer">&#128465;</button></div><div class="rp-clan-list" style="display:flex;flex-wrap:wrap;gap:.2rem;margin-bottom:.3rem"><span style="font-size:.62rem;color:#475569;font-style:italic">Aucun clan</span></div><div style="display:flex;gap:.25rem;align-items:center"><input type="text" class="rp-new-clan-name" placeholder="+ Clan" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.15rem .35rem;font-size:.68rem;outline:none;font-family:inherit"><button type="button" class="rp-add-clan-btn" style="background:none;border:1px solid rgba(255,255,255,.14);color:#94a3b8;font-size:.62rem;padding:.15rem .35rem;border-radius:4px;cursor:pointer;white-space:nowrap">+ Clan</button></div>';
-      list.appendChild(div);
-    }
+    function appendRpRaceItem(id,name,icon,color){var list=document.getElementById('rp-race-list');var empty=list.querySelector('p[style*="italic"]');if(empty)empty.remove();var div=document.createElement('div');div.className='rp-race-item';div.dataset.raceId=id;div.style.cssText='background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:6px;padding:.4rem .5rem';div.innerHTML='<div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.3rem"><span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0"></span><span style="font-size:.75rem;font-weight:700;color:#e2e8f0;flex:1">'+(icon?icon+' ':'')+name+'</span><button type="button" class="rp-delete-race-btn" style="background:none;border:none;color:#ef4444;font-size:.7rem;cursor:pointer;padding:0" title="Supprimer">&#128465;</button></div><div class="rp-clan-list" style="display:flex;flex-wrap:wrap;gap:.2rem;margin-bottom:.3rem"><span style="font-size:.62rem;color:#475569;font-style:italic">Aucun clan</span></div><div style="display:flex;gap:.25rem;align-items:center"><input type="text" class="rp-new-clan-name" placeholder="+ Clan" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.15rem .35rem;font-size:.68rem;outline:none;font-family:inherit"><button type="button" class="rp-add-clan-btn" style="background:none;border:1px solid rgba(255,255,255,.14);color:#94a3b8;font-size:.62rem;padding:.15rem .35rem;border-radius:4px;cursor:pointer;white-space:nowrap">+ Clan</button></div>';list.appendChild(div);}
 
-    // ── Race → clans dynamiques ──
+    // ── Race → clans dynamiques ─────────────────────────────────────────────
     var clanGroup=document.getElementById('prot-clan-group'),clanSelect=document.getElementById('prot-clan');
     if(raceSelect){
       raceSelect.addEventListener('change',function(){

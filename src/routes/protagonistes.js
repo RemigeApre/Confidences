@@ -115,7 +115,7 @@ function buildProtagonistesRouter(config) {
     const allTags = db.listAllSiteTags();
     const races = listRaces();
     const editLang = req.query.editLang === "en" ? "en" : "fr";
-    const translations = editLang === "en" ? db.getTranslationsForEntity("protagoniste", id, "en") : {};
+    const translations = db.getTranslationsForEntity("protagoniste", id, "en");
     res.render("protagoniste-form", { config, protagoniste, allTags, allParodies: db.listAllParodies(), races, editLang, translations });
   });
   router.post("/:id/update", requireAdmin, upload.single("character_image"), (req, res) => {
