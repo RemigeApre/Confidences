@@ -16,18 +16,57 @@
     return str.replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>').replace(/^/,'<p>').replace(/$/,'</p>');
   }
 %>
-<main class="container wide" style="--ch-hue:340">
+<main class="container wide prot-detail-page" style="--ch-hue:340">
   <%- include('partials/top-nav', { config: config, navTitle: protagoniste.name, navBack: '/protagonistes' }) %>
 
-  <a href="/protagonistes" class="prot-back-link" aria-label="Retour aux personnages">&#8592; Personnages</a>
+  <a href="/protagonistes" class="prot-back-link">&#8592; Personnages</a>
 
-  <div class="prot-detail-layout">
+  <div class="prot-3col-layout">
 
-    <%# ── Colonne principale ── %>
+    <%# ── Colonne gauche : upload admin ── %>
+    <% if (currentUser && currentUser.isAdmin) { %>
+    <aside class="prot-left-panel">
+      <div class="prot-left-panel-title">Galerie</div>
+      <form method="POST" action="/protagonistes/<%= protagoniste.id %>/gallery-upload"
+        enctype="multipart/form-data" class="prot-upload-form">
+        <label class="prot-upload-dropzone" id="prot-gal-drop">
+          <input type="file" name="images" accept="image/*" multiple id="prot-gal-input" style="display:none" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <span id="prot-gal-label">Ajouter&hellip;</span>
+        </label>
+        <div class="prot-upload-previews" id="prot-gal-previews"></div>
+        <button type="submit" class="wf-save-btn" id="prot-gal-submit" disabled style="width:100%;margin-top:.4rem">Envoyer</button>
+      </form>
+      <script nonce="<%= nonce %>">
+      (function() {
+        var inp=document.getElementById("prot-gal-input"),lbl=document.getElementById("prot-gal-label"),
+            prev=document.getElementById("prot-gal-previews"),btn=document.getElementById("prot-gal-submit"),
+            drop=document.getElementById("prot-gal-drop");
+        function update(files){
+          lbl.textContent=files.length?files.length+" image(s)":"Ajouter\u2026";
+          btn.disabled=!files.length; prev.innerHTML="";
+          Array.from(files).forEach(function(f){var i=document.createElement("img");i.src=URL.createObjectURL(f);i.className="prot-upload-preview-img";prev.appendChild(i);});
+        }
+        if(inp)inp.addEventListener("change",function(){update(inp.files);});
+        ["dragover","dragenter"].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add("drag-over");});});
+        ["dragleave","dragend"].forEach(function(ev){drop.addEventListener(ev,function(){drop.classList.remove("drag-over");});});
+        drop.addEventListener("drop",function(e){
+          e.preventDefault();drop.classList.remove("drag-over");
+          try{var dt=new DataTransfer();Array.from(e.dataTransfer.files).forEach(function(f){dt.items.add(f);});inp.files=dt.files;}catch(_){}
+          update(e.dataTransfer.files);
+        });
+      })();
+      </script>
+    </aside>
+    <% } else { %>
+    <div class="prot-left-panel prot-left-panel--empty"></div>
+    <% } %>
+
+    <%# ── Colonne centrale : contenu ── %>
     <div class="prot-detail-main">
 
-      <%# En-tête : image + nom + chaîne d'évolution %>
-      <div class="prot-detail-header">
+      <%# En-tête : image + nom %>
+      <div class="prot-detail-hero">
         <% if (protagoniste.image_path) { %>
           <div class="prot-detail-img-wrap">
             <img src="<%= protagoniste.image_path %>" alt="<%= protagoniste.name %>"
@@ -36,8 +75,10 @@
               style="cursor:zoom-in" />
           </div>
         <% } %>
-        <div class="prot-detail-hd-text">
-          <h1 class="prot-detail-name"><%= t(protagoniste.name, 'protagoniste', protagoniste.id, 'name') %></h1>
+        <div class="prot-detail-hero-text">
+          <% if (protagoniste.prenom) { %><div class="prot-detail-prenom"><%= protagoniste.prenom %></div><% } %>
+          <% if (protagoniste.nom) { %><div class="prot-detail-nom"><%= protagoniste.nom %></div>
+          <% } else { %><div class="prot-detail-nom"><%= protagoniste.name %></div><% } %>
           <% if (_liteEvos.length) { %>
             <div class="prot-detail-evo-chain">
               <% _liteEvos.forEach(function(evo) { %>
@@ -50,7 +91,7 @@
         </div>
       </div>
 
-      <%# Descriptions rétractables (si remplies) %>
+      <%# Descriptions rétractables %>
       <% if (_protDesc) { %>
         <details class="prot-desc-section" open>
           <summary class="prot-desc-summary" data-fr="Description" data-en="Description">Description</summary>
@@ -70,7 +111,7 @@
         </details>
       <% } %>
 
-      <%# ── Versions / Évolutions fiches complètes ── %>
+      <%# Versions %>
       <% if (childEvolutions && childEvolutions.length) { %>
         <section class="prot-section prot-section--versions">
           <h2 class="prot-versions-title">
@@ -92,7 +133,7 @@
         </section>
       <% } %>
 
-      <%# ── Carrousel galerie ── %>
+      <%# Images (galerie) %>
       <% if (galleryImages && galleryImages.length) { %>
         <%
           var IRREALISTE_TAGS = ['irréaliste', 'fantaisie'];
@@ -108,7 +149,7 @@
         %>
         <section class="prot-section">
           <div class="prot-section-header">
-            <h2 class="nv-strip-title">Appara&icirc;t dans <span class="prot-section-count" id="prot-gallery-count">(<%= galleryImages.length %>)</span></h2>
+            <h2 class="nv-strip-title nv-strip-title--center">Images <span class="prot-section-count" id="prot-gallery-count">(<%= galleryImages.length %>)</span></h2>
             <div class="prot-gallery-toggles">
               <% if (hasUltra) { %><button type="button" class="wiki-ultra-btn" id="prot-ultra-toggle">Masquer Ultra</button><% } %>
               <% if (hasIrrealiste) { %><button type="button" class="wiki-ultra-btn" id="prot-irrealiste-toggle">Masquer Irr&eacute;aliste</button><% } %>
@@ -136,25 +177,25 @@
         </section>
       <% } %>
 
-      <%# ── Nouvelles ── %>
+      <%# Nouvelles %>
       <% if (nouvelles && nouvelles.length) { %>
         <section class="prot-section">
-          <h2 class="nv-strip-title">Nouvelles <span class="prot-section-count">(<%= nouvelles.length %>)</span></h2>
+          <h2 class="nv-strip-title nv-strip-title--center">Nouvelles <span class="prot-section-count">(<%= nouvelles.length %>)</span></h2>
           <div class="prot-nouvelles-list">
             <% nouvelles.forEach(function(n) { %>
               <a href="/nouvelles/<%= n.id %>" class="prot-nouvelle-row">
                 <span class="prot-nouvelle-title"><%= n.title %></span>
-                <% if (n.summary) { %><span class="prot-nouvelle-summary"><%= n.summary.slice(0,80) %><%= n.summary.length>80?'…':'' %></span><% } %>
+                <% if (n.summary) { %><span class="prot-nouvelle-summary"><%= n.summary.slice(0,120) %><%= n.summary.length>120?'…':'' %></span><% } %>
               </a>
             <% }) %>
           </div>
         </section>
       <% } %>
 
-      <%# ── Codex ── %>
+      <%# Codex %>
       <% if (codexPages && codexPages.length) { %>
         <section class="prot-section">
-          <h2 class="nv-strip-title">Codex <span class="prot-section-count">(<%= codexPages.length %>)</span></h2>
+          <h2 class="nv-strip-title nv-strip-title--center">Codex <span class="prot-section-count">(<%= codexPages.length %>)</span></h2>
           <div class="prot-nouvelles-list">
             <% codexPages.forEach(function(pg) { %>
               <a href="/wiki/<%= pg.id %>" class="prot-nouvelle-row">
@@ -170,104 +211,52 @@
         <p class="nv-empty" style="margin-top:2rem">Ce personnage n&rsquo;appara&icirc;t dans aucun contenu pour le moment.</p>
       <% } %>
 
-      <%# ── Upload images galerie (admin) ── %>
-      <% if (currentUser && currentUser.isAdmin) { %>
-        <section class="prot-section prot-section--upload">
-          <h2 class="nv-strip-title">Ajouter des images &agrave; la galerie</h2>
-          <form method="POST" action="/protagonistes/<%= protagoniste.id %>/gallery-upload"
-            enctype="multipart/form-data" class="prot-upload-form">
-            <label class="prot-upload-dropzone" id="prot-gal-drop">
-              <input type="file" name="images" accept="image/*" multiple id="prot-gal-input" style="display:none" />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:2rem;height:2rem;opacity:.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-              <span id="prot-gal-label">Choisir des images&hellip;</span>
-            </label>
-            <div class="prot-upload-previews" id="prot-gal-previews"></div>
-            <button type="submit" class="wf-save-btn" id="prot-gal-submit" disabled>Envoyer</button>
-          </form>
-        </section>
-        <script nonce="<%= nonce %>">
-        (function() {
-          var inp = document.getElementById("prot-gal-input");
-          var lbl = document.getElementById("prot-gal-label");
-          var prev = document.getElementById("prot-gal-previews");
-          var btn = document.getElementById("prot-gal-submit");
-          var drop = document.getElementById("prot-gal-drop");
-          function update(files) {
-            lbl.textContent = files.length ? files.length + " image(s) sélectionnée(s)" : "Choisir des images…";
-            btn.disabled = !files.length;
-            prev.innerHTML = "";
-            Array.from(files).forEach(function(f) {
-              var img = document.createElement("img");
-              img.src = URL.createObjectURL(f);
-              img.className = "prot-upload-preview-img";
-              prev.appendChild(img);
-            });
-          }
-          if (inp) inp.addEventListener("change", function() { update(inp.files); });
-          ["dragover","dragenter"].forEach(function(ev) { drop.addEventListener(ev, function(e) { e.preventDefault(); drop.classList.add("drag-over"); }); });
-          ["dragleave","dragend"].forEach(function(ev) { drop.addEventListener(ev, function() { drop.classList.remove("drag-over"); }); });
-          drop.addEventListener("drop", function(e) {
-            e.preventDefault(); drop.classList.remove("drag-over");
-            try { var dt = new DataTransfer(); Array.from(e.dataTransfer.files).forEach(function(f) { dt.items.add(f); }); inp.files = dt.files; } catch(_) {}
-            update(e.dataTransfer.files);
-          });
-        })();
-        </script>
-      <% } %>
-
     </div><%# /prot-detail-main %>
 
-    <%# ── Volet droit : paramètres ── %>
+    <%# ── Colonne droite : paramètres ── %>
     <aside class="prot-detail-sidebar">
 
-      <%# Genre %>
       <% if (protagoniste.gender) { %>
-        <div class="prot-ds-row prot-ds-gender">
+        <div class="prot-ds-gender">
           <span class="prot-ds-gender-icon prot-ds-gender-icon--<%= protagoniste.gender %>">
             <% if (protagoniste.gender === 'femme') { %>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
             <% } else if (protagoniste.gender === 'homme') { %>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
             <% } else { %>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
             <% } %>
           </span>
-          <span class="prot-ds-gender-label prot-ds-gender-label--<%= protagoniste.gender %>"
-            data-fr="<%= protagoniste.gender === 'femme' ? 'Femme' : protagoniste.gender === 'homme' ? 'Homme' : 'Autre' %>"
-            data-en="<%= protagoniste.gender === 'femme' ? 'Female' : protagoniste.gender === 'homme' ? 'Male' : 'Other' %>">
+          <span class="prot-ds-gender-label prot-ds-gender-label--<%= protagoniste.gender %>">
             <%= protagoniste.gender === 'femme' ? 'Femme' : protagoniste.gender === 'homme' ? 'Homme' : 'Autre' %>
           </span>
         </div>
       <% } %>
 
-      <%# Âge %>
       <% if (protagoniste.age && protagoniste.age > 0) { %>
         <div class="prot-ds-row">
-          <span class="prot-ds-label" data-fr="Âge" data-en="Age">&#194;ge</span>
+          <span class="prot-ds-label">&#194;ge</span>
           <span class="prot-ds-value"><%= protagoniste.age %> ans</span>
         </div>
       <% } %>
 
-      <%# Orientation %>
       <% if (protagoniste.orientation) { %>
         <div class="prot-ds-row">
-          <span class="prot-ds-label" data-fr="Orientation" data-en="Orientation">Orientation</span>
+          <span class="prot-ds-label">Orientation</span>
           <span class="prot-ds-value"><%= _orientationLabel[protagoniste.orientation] || protagoniste.orientation %></span>
         </div>
       <% } %>
 
-      <%# Nature (si pas humain) %>
       <% if (protagoniste.nature && protagoniste.nature !== 'humain') { %>
         <div class="prot-ds-row">
-          <span class="prot-ds-label" data-fr="Nature" data-en="Nature">Nature</span>
+          <span class="prot-ds-label">Nature</span>
           <span class="prot-badge prot-badge--nature"><%= protagoniste.nature === 'pokemon' ? 'Pokémon' : protagoniste.nature %></span>
         </div>
       <% } %>
 
-      <%# Race / Clan %>
       <% if (protagoniste.race_name) { %>
         <div class="prot-ds-row prot-ds-row--col">
-          <span class="prot-ds-label" data-fr="Espèce" data-en="Species">Esp&egrave;ce</span>
+          <span class="prot-ds-label">Esp&egrave;ce</span>
           <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.25rem">
             <span class="prot-badge prot-badge--race" style="<%= protagoniste.race_color ? 'background:' + protagoniste.race_color + '22;border-color:' + protagoniste.race_color + '55;color:' + protagoniste.race_color : '' %>">
               <%= protagoniste.race_icon ? protagoniste.race_icon + ' ' : '' %><%= protagoniste.race_name %>
@@ -281,21 +270,19 @@
         </div>
       <% } %>
 
-      <%# Univers (parodie) %>
       <% if (protagoniste.parody) { %>
         <div class="prot-ds-row prot-ds-row--col">
-          <span class="prot-ds-label" data-fr="Univers" data-en="Universe">Univers</span>
+          <span class="prot-ds-label">Univers</span>
           <a href="/parodies/<%= encodeURIComponent(protagoniste.parody) %><% if (protagoniste.sub_parody) { %>/<%= encodeURIComponent(protagoniste.sub_parody) %><% } %>" class="prot-ds-univers">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 0 0 18"/><path d="M12 3a14.5 14.5 0 0 1 0 18"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 0 0 18"/><path d="M12 3a14.5 14.5 0 0 1 0 18"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
             <span><%= protagoniste.parody %><% if (protagoniste.sub_parody) { %><span class="prot-detail-univers-sub"> &rsaquo; <%= protagoniste.sub_parody %></span><% } %></span>
           </a>
         </div>
       <% } %>
 
-      <%# Tags %>
       <% if (protagoniste.tags && protagoniste.tags.length) { %>
         <div class="prot-ds-row prot-ds-row--col">
-          <span class="prot-ds-label" data-fr="Tags" data-en="Tags">Tags</span>
+          <span class="prot-ds-label">Tags</span>
           <div class="prot-ds-tags">
             <% protagoniste.tags.forEach(function(tg) { %><span class="tag-badge tag-badge--<%= (tagMeta && tagMeta[tg]) || 'normal' %>"><%= tg %></span><% }) %>
           </div>
@@ -304,12 +291,11 @@
 
     </aside>
 
-  </div><%# /prot-detail-layout %>
+  </div><%# /prot-3col-layout %>
 
-  <%# ── Bouton modifier (bas-droite fixe, admin) ── %>
   <% if (currentUser && currentUser.isAdmin) { %>
     <a href="/protagonistes/<%= protagoniste.id %>/edit" class="prot-edit-fab" title="Modifier le personnage" aria-label="Modifier le personnage">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     </a>
   <% } %>
 
@@ -367,47 +353,27 @@
   syncBtn(ultraToggle,      hideUltra,      'Masquer Ultra',       'Afficher Ultra');
   syncBtn(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste',  'Afficher Irréaliste');
 
-  if (ultraToggle) {
-    ultraToggle.addEventListener('click', function() {
-      hideUltra = !hideUltra;
-      localStorage.setItem('gallery-hide-ultra', hideUltra ? '1' : '0');
-      syncBtn(ultraToggle, hideUltra, 'Masquer Ultra', 'Afficher Ultra');
-      applyFilters();
-    });
-  }
-  if (irrealisteToggle) {
-    irrealisteToggle.addEventListener('click', function() {
-      hideIrrealiste = !hideIrrealiste;
-      localStorage.setItem('gallery-hide-irrealiste', hideIrrealiste ? '1' : '0');
-      syncBtn(irrealisteToggle, hideIrrealiste, 'Masquer Irréaliste', 'Afficher Irréaliste');
-      applyFilters();
-    });
-  }
+  if (ultraToggle) { ultraToggle.addEventListener('click', function() { hideUltra=!hideUltra; localStorage.setItem('gallery-hide-ultra',hideUltra?'1':'0'); syncBtn(ultraToggle,hideUltra,'Masquer Ultra','Afficher Ultra'); applyFilters(); }); }
+  if (irrealisteToggle) { irrealisteToggle.addEventListener('click', function() { hideIrrealiste=!hideIrrealiste; localStorage.setItem('gallery-hide-irrealiste',hideIrrealiste?'1':'0'); syncBtn(irrealisteToggle,hideIrrealiste,'Masquer Irréaliste','Afficher Irréaliste'); applyFilters(); }); }
   applyFilters();
 })();
 </script>
 
-<%# ── Lightbox ── %>
 <div id="prot-lightbox" role="dialog" aria-modal="true" aria-label="Image agrandie" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);cursor:zoom-out;align-items:center;justify-content:center">
-  <img id="prot-lightbox-img" src="" alt="" style="max-width:92vw;max-height:92vh;object-fit:contain;border-radius:6px;pointer-events:none;box-shadow:0 8px 48px rgba(0,0,0,.7)" />
+  <img id="prot-lightbox-img" src="" alt="" style="max-width:92vw;max-height:92vh;object-fit:contain;border-radius:6px;pointer-events:none" />
   <button type="button" id="prot-lightbox-close" aria-label="Fermer" style="position:absolute;top:1rem;right:1.25rem;background:none;border:none;color:#fff;font-size:2rem;line-height:1;cursor:pointer;opacity:.7;padding:.2rem .4rem">&times;</button>
 </div>
 <script nonce="<%= nonce %>">
 (function() {
-  var lb=document.getElementById('prot-lightbox');
-  var lbImg=document.getElementById('prot-lightbox-img');
-  var lbClose=document.getElementById('prot-lightbox-close');
-  if (!lb||!lbImg) return;
-  function open(src,alt) { lbImg.src=src; lbImg.alt=alt||''; lb.style.display='flex'; document.body.style.overflow='hidden'; }
-  function close() { lb.style.display='none'; lbImg.src=''; document.body.style.overflow=''; }
-  document.querySelectorAll('.prot-lightbox-trigger').forEach(function(el) { el.addEventListener('click',function(){ open(el.dataset.lightbox,el.alt); }); });
-  document.querySelectorAll('.prot-carousel-item[data-lightbox]').forEach(function(btn) {
-    btn.style.cursor='zoom-in';
-    btn.addEventListener('click',function(){ var img=btn.querySelector('img'); open(btn.dataset.lightbox,img?img.alt:''); });
-  });
-  lb.addEventListener('click',function(e){ if(e.target===lb)close(); });
-  if (lbClose) lbClose.addEventListener('click',close);
-  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&lb.style.display!=='none')close(); });
+  var lb=document.getElementById('prot-lightbox'),lbImg=document.getElementById('prot-lightbox-img'),lbClose=document.getElementById('prot-lightbox-close');
+  if(!lb||!lbImg)return;
+  function open(src,alt){lbImg.src=src;lbImg.alt=alt||'';lb.style.display='flex';document.body.style.overflow='hidden';}
+  function close(){lb.style.display='none';lbImg.src='';document.body.style.overflow='';}
+  document.querySelectorAll('.prot-lightbox-trigger').forEach(function(el){el.addEventListener('click',function(){open(el.dataset.lightbox,el.alt);});});
+  document.querySelectorAll('.prot-carousel-item[data-lightbox]').forEach(function(btn){btn.style.cursor='zoom-in';btn.addEventListener('click',function(){var img=btn.querySelector('img');open(btn.dataset.lightbox,img?img.alt:'');});});
+  lb.addEventListener('click',function(e){if(e.target===lb)close();});
+  if(lbClose)lbClose.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.style.display!=='none')close();});
 })();
 </script>
 
