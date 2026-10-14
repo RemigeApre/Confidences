@@ -96,6 +96,23 @@
         </details>
       <% } %>
 
+      <%# Lien vers le personnage parent (page enfant) %>
+      <% if (parentProtagoniste) { %>
+        <section class="prot-section prot-section--versions">
+          <h2 class="prot-versions-title">Version de</h2>
+          <div class="prot-versions-grid">
+            <a href="/protagonistes/<%= parentProtagoniste.id %>" class="prot-version-card">
+              <% if (parentProtagoniste.image_path) { %>
+                <img src="<%= parentProtagoniste.image_path %>" alt="<%= parentProtagoniste.name %>" class="prot-version-card-img" loading="lazy" />
+              <% } else { %>
+                <div class="prot-version-card-placeholder"></div>
+              <% } %>
+              <div class="prot-version-card-name"><%= parentProtagoniste.name %></div>
+            </a>
+          </div>
+        </section>
+      <% } %>
+
       <%# Versions %>
       <% if (childEvolutions && childEvolutions.length) { %>
         <section class="prot-section prot-section--versions">

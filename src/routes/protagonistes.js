@@ -129,7 +129,8 @@ function buildProtagonistesRouter(config) {
     const codexPages = protagoniste.name ? db.listWikiPagesByTag(protagoniste.name) : [];
     const tagMeta = db.getAllTagMeta();
     const childEvolutions = listChildProtagonistes(protagoniste.id);
-    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, favoriteGalleryIds, codexPages, tagMeta, childEvolutions });
+    const parentProtagoniste = protagoniste.parent_id ? db.getProtagoniste(protagoniste.parent_id) : null;
+    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, favoriteGalleryIds, codexPages, tagMeta, childEvolutions, parentProtagoniste });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
