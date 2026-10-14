@@ -71,7 +71,7 @@
       <div class="prot-detail-hero">
         <div class="prot-detail-hero-text">
           <div class="prot-detail-fullname">
-            <% if (protagoniste.prenom) { %><span class="prot-detail-prenom"><%= protagoniste.prenom %></span> <% } %><span class="prot-detail-nom"><% if (protagoniste.nom) { %><%= protagoniste.nom %><% } else { %><%= protagoniste.name %><% } %></span>
+            <% if (protagoniste.prenom) { %><span class="prot-detail-prenom"><%= protagoniste.prenom %></span> <% } %><% if (protagoniste.nom) { %><span class="prot-detail-nom"><%= protagoniste.nom %></span><% } else if (!protagoniste.prenom) { %><span class="prot-detail-nom"><%= protagoniste.name %></span><% } %>
           </div>
         </div>
       </div>
@@ -99,7 +99,7 @@
       <%# Lien vers le personnage parent (page enfant) %>
       <% if (parentProtagoniste) { %>
         <section class="prot-section prot-section--versions">
-          <h2 class="prot-versions-title">Version de</h2>
+          <h2 class="prot-versions-title">Version</h2>
           <div class="prot-versions-grid">
             <a href="/protagonistes/<%= parentProtagoniste.id %>" class="prot-version-card">
               <% if (parentProtagoniste.image_path) { %>
