@@ -1679,7 +1679,6 @@
 
   function syncUltraBtn() {
     if (!ultraToggle) return;
-    ultraToggle.textContent = "Ultra";
     ultraToggle.classList.toggle("active", hideUltra);
   }
   if (ultraToggle) {
@@ -1707,7 +1706,6 @@
 
   function syncIrralisteBtn() {
     if (!irrealisteToggle) return;
-    irrealisteToggle.textContent = "Irr\u00e9aliste";
     irrealisteToggle.classList.toggle("active", hideIrrealiste);
   }
   if (irrealisteToggle) {

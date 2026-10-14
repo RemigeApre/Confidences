@@ -11,6 +11,7 @@
  *    countId    {string}   id du span .wiki-chapter-hero-count (optionnel)
  */
   var _title    = title;
+  var _titleEn  = (typeof titleEn   !== 'undefined') ? titleEn   : null;
   var _hue      = (typeof hue       !== 'undefined') ? hue       : null;
   var _backHref = (typeof backHref  !== 'undefined') ? backHref  : null;
   var _backLbl  = (typeof backLabel !== 'undefined') ? backLabel : 'Retour';
@@ -25,7 +26,7 @@
     <% } else { %>
       <span class="wiki-chapter-hero-back" aria-hidden="true"></span>
     <% } %>
-    <h1 class="wiki-chapter-hero-title"><%= _title %></h1>
+    <h1 class="wiki-chapter-hero-title"<% if (_titleEn) { %> data-fr="<%= _title %>" data-en="<%= _titleEn %>"<% } %>><%= _title %></h1>
     <% if (_count !== null) { %>
       <span class="wiki-chapter-hero-count"<% if (_cntId) { %> id="<%= _cntId %>"<% } %>><%= _count %></span>
     <% } else { %>

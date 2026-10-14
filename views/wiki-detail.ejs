@@ -525,7 +525,7 @@
                   <div class="wiki-stats-donut" style="--pct:<%= stPctF %>;--clr:hsl(340,65%,62%)">
                     <span class="wiki-stats-donut-val" style="color:hsl(340,75%,78%)"><%= stPctF %><span class="wiki-stats-donut-sym">%</span></span>
                   </div>
-                  <span class="wiki-stats-donut-lbl" data-fr="Femmes" data-en="Women">Femmes<% if (stDirF) { %><br><span class="wiki-stats-dir-badge" data-fr="<%= stDirF %>" data-en="<%= stDirF_En %>"><%= stDirF %></span><% } %></span>
+                  <span class="wiki-stats-donut-lbl"><span data-fr="Femmes" data-en="Women">Femmes</span><% if (stDirF) { %><br><span class="wiki-stats-dir-badge" data-fr="<%= stDirF %>" data-en="<%= stDirF_En %>"><%= stDirF %></span><% } %></span>
                 </div>
               <% } %>
               <% if (stPctH !== null) { %>
@@ -537,7 +537,7 @@
                   <div class="wiki-stats-donut" style="--pct:<%= stPctH %>;--clr:hsl(200,70%,56%)">
                     <span class="wiki-stats-donut-val" style="color:hsl(200,80%,74%)"><%= stPctH %><span class="wiki-stats-donut-sym">%</span></span>
                   </div>
-                  <span class="wiki-stats-donut-lbl" data-fr="Hommes" data-en="Men">Hommes<% if (stDirH) { %><br><span class="wiki-stats-dir-badge" data-fr="<%= stDirH %>" data-en="<%= stDirH_En %>"><%= stDirH %></span><% } %></span>
+                  <span class="wiki-stats-donut-lbl"><span data-fr="Hommes" data-en="Men">Hommes</span><% if (stDirH) { %><br><span class="wiki-stats-dir-badge" data-fr="<%= stDirH %>" data-en="<%= stDirH_En %>"><%= stDirH %></span><% } %></span>
                 </div>
               <% } %>
             </div>
@@ -774,9 +774,7 @@
                 <span class="wiki-react-icon">&#9989;</span><span class="wiki-react-label" data-fr="Déjà pratiqué" data-en="Already tried">D&eacute;j&agrave; pratiqu&eacute;</span>
               </button>
             </div>
-            <button type="button" class="wiki-react-btn wiki-react-hidden wiki-react-standalone<%= page.hidden ? ' active' : '' %>" data-key="hidden" title="<%= page.hidden ? 'Réafficher cette page' : 'Masquer cette page' %>"
-              data-label-fr="<%= page.hidden ? 'Masqu\u00e9e' : 'Masquer' %>" data-label-en="<%= page.hidden ? 'Hidden' : 'Hide' %>"
-              data-title-fr="<%= page.hidden ? 'R\u00e9afficher cette page' : 'Masquer cette page' %>" data-title-en="<%= page.hidden ? 'Show this page again' : 'Hide this page' %>">
+            <button type="button" class="wiki-react-btn wiki-react-hidden wiki-react-standalone<%= page.hidden ? ' active' : '' %>" data-key="hidden" title="<%= page.hidden ? 'Réafficher cette page' : 'Masquer cette page' %>">
               <span class="wiki-react-icon">&#128065;</span><span class="wiki-react-label" data-fr="<%= page.hidden ? 'Masqu\u00e9e' : 'Masquer' %>" data-en="<%= page.hidden ? 'Hidden' : 'Hide' %>"><%= page.hidden ? 'Masquée' : 'Masquer' %></span>
             </button>
           </div>
@@ -817,7 +815,7 @@
               <% if (s.imagePaths && s.imagePaths.length && currentUser) { %>
                 <div class="wiki-sugg-img-wrap"><img src="<%= thumbUrl(s.imagePaths[0]) %>" alt="" class="wiki-sugg-img" loading="lazy" /></div>
               <% } %>
-              <span class="wiki-sugg-badge" style="background: hsl(<%= scat ? scat.hue : 220 %>, 55%, 45%)"><%= scat ? scat.label : s.category %></span>
+              <span class="wiki-sugg-badge" style="background: hsl(<%= scat ? scat.hue : 220 %>, 55%, 45%)" data-fr="<%= scat ? scat.label : s.category %>" data-en="<%= scat ? (WD_CAT_EN[scat.key] || scat.label) : s.category %>"><%= scat ? scat.label : s.category %></span>
               <span class="wiki-sugg-title"><%= s.title %></span>
               <% if (s.rating) { %><span class="wiki-sugg-stars"><% for (var si2=1;si2<=s.rating;si2++){ %>&#9733;<% } %></span><% } %>
             </a>

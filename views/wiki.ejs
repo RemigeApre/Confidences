@@ -1,6 +1,18 @@
 <%- include('partials/head', { title: lockedCategory ? ('Codex : ' + lockedCategory.label) : 'Codex : Recherche' }) %>
+<%
+  var WK_CAT_EN = {
+    partenaires: 'Partners', position: 'Position', fantasmes: 'Fantasies',
+    pratique: 'Practice', objets: 'Objects', lieux: 'Places',
+    classique: 'Classic', hardcore: 'Hardcore', bdsm: 'BDSM',
+    jeux_role: 'Role-play', fantaisie: 'Fantasy'
+  };
+  var WK_OBJSUB_EN = {
+    substance: 'Substance', gode: 'Dildo', bdsm: 'BDSM',
+    fantaisie: 'Fantasy', tatouage: 'Tattoo', autre: 'Other'
+  };
+%>
 <main class="container wide<%= lockedCategory ? ' wiki-locked' : '' %>"<% if (lockedCategory) { %> style="--ch-hue: <%= lockedCategory.hue %>"<% } %>>
-  <%- include('partials/top-nav', { config: config, navTitle: lockedCategory ? lockedCategory.label : 'Codex', navBack: lockedCategory ? '/wiki' : '/' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: lockedCategory ? lockedCategory.label : 'Codex', navTitleEn: lockedCategory ? (WK_CAT_EN[lockedCategory.key] || lockedCategory.label) : 'Codex', navBack: lockedCategory ? '/wiki' : '/' }) %>
 
   <% if (lockedCategory) { %>
 
@@ -15,6 +27,7 @@
       <%# ─ En-tête : flèche retour + nom + nombre ─ %>
       <%- include('partials/sidebar-hero', {
             title:     lockedCategory.label,
+            titleEn:   WK_CAT_EN[lockedCategory.key] || lockedCategory.label,
             backHref:  '/wiki',
             backLabel: 'Retour au sommaire',
             count:     pages.length
@@ -69,7 +82,7 @@
               <span class="wiki-filter-label" data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</span>
               <div class="wiki-sous-cat-filter" id="wiki-sous-cat-filter">
                 <% objetsSubs.forEach(function(s) { %>
-                  <button type="button" class="tag-chip wiki-sous-cat-chip" data-sous-cat="<%= s.key %>"><%= s.label %></button>
+                  <button type="button" class="tag-chip wiki-sous-cat-chip" data-sous-cat="<%= s.key %>" data-fr="<%= s.label %>" data-en="<%= WK_OBJSUB_EN[s.key] || s.label %>"><%= s.label %></button>
                 <% }); %>
               </div>
             </div>
@@ -80,7 +93,7 @@
               <span class="wiki-filter-label" data-fr="Catégories liées" data-en="Related categories">Cat&eacute;gories li&eacute;es</span>
 <div class="wiki-extra-cat-filter" id="wiki-extra-cat-filter">
                 <% availExtraCatObjs.forEach(function(ec) { %>
-                  <button type="button" class="tag-chip wiki-extra-cat-chip" data-cat="<%= ec.key %>" style="--ec-hue: <%= ec.hue %>"><%= ec.label %></button>
+                  <button type="button" class="tag-chip wiki-extra-cat-chip" data-cat="<%= ec.key %>" style="--ec-hue: <%= ec.hue %>" data-fr="<%= ec.label %>" data-en="<%= WK_CAT_EN[ec.key] || ec.label %>"><%= ec.label %></button>
                 <% }); %>
               </div>
             </div>
@@ -92,8 +105,8 @@
           <div class="wiki-filter-section">
             <span class="wiki-filter-label" data-fr="Maturité" data-en="Maturity">Maturit&eacute;</span>
             <div class="wiki-maturity-filter" id="wiki-maturity-filter">
-              <button type="button" class="wiki-maturity-filter-btn" data-level="0">0&nbsp;Brouillon</button>
-              <button type="button" class="wiki-maturity-filter-btn" data-level="1">1&nbsp;&Eacute;crite</button>
+              <button type="button" class="wiki-maturity-filter-btn" data-level="0" data-fr="0 Brouillon" data-en="0 Draft">0&nbsp;Brouillon</button>
+              <button type="button" class="wiki-maturity-filter-btn" data-level="1" data-fr="1 Écrite" data-en="1 Written">1&nbsp;&Eacute;crite</button>
               <button type="button" class="wiki-maturity-filter-btn" data-level="2">2</button>
               <button type="button" class="wiki-maturity-filter-btn" data-level="3">3</button>
               <button type="button" class="wiki-maturity-filter-btn" data-level="4">4</button>
@@ -146,8 +159,8 @@
 
     <%# ─── EN-TÊTE "TOUTES LES PAGES" ───────────────────────────────────── %>
     <div class="wiki-page-header">
-      <a href="/wiki" class="link-button">&larr; Sommaire</a>
-      <h1 class="section-title-h1">Toutes les pages</h1>
+      <a href="/wiki" class="link-button" data-fr="← Sommaire" data-en="← Index">&larr; Sommaire</a>
+      <h1 class="section-title-h1" data-fr="Toutes les pages" data-en="All pages">Toutes les pages</h1>
     </div>
 
     <%# ─── RECHERCHE : toujours visible ──────────────────────────────────── %>
@@ -178,7 +191,7 @@
         <div class="wiki-controls">
           <div class="links-filter" id="wiki-category-filter">
             <% categories.forEach(function (c) { %>
-              <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"<% if (c.desc) { %> data-desc="<%= c.desc %>"<% } %>><%= c.label %></button>
+              <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"<% if (c.desc) { %> data-desc="<%= c.desc %>"<% } %> data-fr="<%= c.label %>" data-en="<%= WK_CAT_EN[c.key] || c.label %>"><%= c.label %></button>
             <% }) %>
             <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
               <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets" data-fr="Nos objets" data-en="Our items">Nos objets</button>
@@ -241,7 +254,7 @@
   <div class="wiki-pagination" id="wiki-pagination-top" hidden></div>
   <div class="wiki-grid" id="wiki-list">
     <% if (!pages.length) { %>
-      <p class="intro">Aucune page pour l&apos;instant.</p>
+      <p class="intro" data-fr="Aucune page pour l'instant." data-en="No pages yet.">Aucune page pour l&apos;instant.</p>
     <% } %>
     <% pages.forEach(function (page) { %>
       <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: !lockedCategory }) %>

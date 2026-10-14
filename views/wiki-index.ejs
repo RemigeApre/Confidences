@@ -1,4 +1,12 @@
 <%- include('partials/head', { title: 'Codex' }) %>
+<%
+  var WI_CAT_EN = {
+    partenaires: 'Partners', position: 'Position', fantasmes: 'Fantasies',
+    pratique: 'Practice', objets: 'Objects', lieux: 'Places',
+    classique: 'Classic', hardcore: 'Hardcore', bdsm: 'BDSM',
+    jeux_role: 'Role-play', fantaisie: 'Fantasy'
+  };
+%>
 <main class="container wide wiki-locked" style="--ch-hue: 250">
   <%- include('partials/top-nav', { config: config, navTitle: 'Codex', navBack: '/' }) %>
 
@@ -52,7 +60,7 @@
           <summary class="wiki-subpanel-summary" data-fr="Catégorie" data-en="Category">Cat&eacute;gorie</summary>
           <div class="links-filter wiki-index-cat-filter" id="wiki-category-filter">
             <% categories.forEach(function (c) { %>
-              <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>"><%= c.label %></button>
+              <button type="button" class="tag-chip" data-category="<%= c.key %>" data-label="<%= c.label %>" data-fr="<%= c.label %>" data-en="<%= WI_CAT_EN[c.key] || c.label %>"><%= c.label %></button>
             <% }) %>
           </div>
         </details>
@@ -102,7 +110,7 @@
           var chCount = chData ? chData.count : 0;
         %>
         <a href="/wiki/categorie/<%= ch.key %>" class="wiki-index-cat-card" style="--ch-hue: <%= ch.hue %>">
-          <span class="wiki-index-cat-label"><%= ch.label %></span>
+          <span class="wiki-index-cat-label" data-fr="<%= ch.label %>" data-en="<%= WI_CAT_EN[ch.key] || ch.label %>"><%= ch.label %></span>
           <span class="wiki-index-cat-count"><%= chCount %></span>
         </a>
       <% }) %>

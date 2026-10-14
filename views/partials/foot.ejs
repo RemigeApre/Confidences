@@ -6,6 +6,8 @@
 
   function applyLang(lang) {
     document.querySelectorAll('[data-fr]').forEach(function(el) {
+      // Ne jamais écraser un élément qui a des enfants HTML (SVG, spans…)
+      if (el.children.length) return;
       el.textContent = lang === 'en' ? el.dataset.en : el.dataset.fr;
     });
     document.querySelectorAll('[data-placeholder-fr]').forEach(function(el) {

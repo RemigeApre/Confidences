@@ -6,7 +6,7 @@
   <% } else { %>
     <span class="nav-back-placeholder"></span>
   <% } %>
-  <span class="top-nav-page-title"><%= locals.navTitle || config.title %></span>
+  <span class="top-nav-page-title"<% if (locals.navTitleEn) { %> data-fr="<%= locals.navTitle %>" data-en="<%= locals.navTitleEn %>"<% } %>><%= locals.navTitle || config.title %></span>
   <div class="nav-mobile-utils">
     <% if (currentUser) { %>
       <button type="button" class="nav-mobile-util-btn nav-mobile-discreet-btn" id="nav-mobile-discreet-btn" aria-pressed="false" title="Masquer les images" aria-label="Masquer les images"><%- include('eye-icon') %></button>
