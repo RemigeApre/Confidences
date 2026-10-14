@@ -5,12 +5,12 @@
   <% if (locals.completed && !stepData) { %>
     <%# ── Écran de fin ───────────────────────────────────────────────── %>
     <div class="quiz-done-wrap">
-      <p class="quiz-done-thanks">Merci d&rsquo;avoir terminé <strong><%= quiz._title || quiz.title %></strong>&nbsp;!</p>
-      <p class="quiz-done-hint">Pensez à faire les autres quizz disponibles.</p>
+      <p class="quiz-done-thanks"><span data-fr="Merci d&rsquo;avoir terminé" data-en="Thank you for completing">Merci d&rsquo;avoir terminé</span> <strong><%= quiz._title || quiz.title %></strong>&nbsp;!</p>
+      <p class="quiz-done-hint" data-fr="Pensez à faire les autres quizz disponibles." data-en="Check out the other available quizzes.">Pensez à faire les autres quizz disponibles.</p>
       <% if (locals.firstCompletion) { %>
-        <p class="quiz-done-lootbox">&#127381; C&rsquo;est votre premi&egrave;re compl&eacute;tion&nbsp;&mdash; un coffre vous attend dans votre profil&nbsp;!</p>
+        <p class="quiz-done-lootbox" data-fr="&#127381; C&rsquo;est votre premi&egrave;re compl&eacute;tion&nbsp;: un coffre vous attend dans votre profil&nbsp;!" data-en="&#127381; This is your first completion: a chest awaits you in your profile&nbsp;!">&#127381; C&rsquo;est votre premi&egrave;re compl&eacute;tion&nbsp;: un coffre vous attend dans votre profil&nbsp;!</p>
       <% } %>
-      <a href="/quizz" class="quiz-done-back">Voir les quizz</a>
+      <a href="/quizz" class="quiz-done-back" data-fr="Voir les quizz" data-en="See the quizzes">Voir les quizz</a>
     </div>
 
   <% } else if (!steps.length || !stepData) { %>
@@ -18,7 +18,7 @@
     <div class="quiz-detail-wrap">
       <h1 class="quiz-detail-title"><%= quiz._title || quiz.title %></h1>
       <% if (quiz._description || quiz.description) { %><p class="quiz-detail-desc"><%= quiz._description || quiz.description %></p><% } %>
-      <p class="quiz-hub-empty">Ce quizz n'a pas encore de questions.</p>
+      <p class="quiz-hub-empty" data-fr="Ce quizz n'a pas encore de questions." data-en="This quiz has no questions yet.">Ce quizz n'a pas encore de questions.</p>
     </div>
 
   <% } else { %>
@@ -34,32 +34,32 @@
 
       var GRAD_LEVELS_MAP = {
         'default': [
-          { k: '1', l: 'Pas du tout',  col: 'hsl(0,72%,55%)'   },
-          { k: '2', l: 'Un peu',       col: 'hsl(25,80%,55%)'  },
-          { k: '3', l: 'Neutre',       col: 'hsl(50,78%,52%)'  },
-          { k: '4', l: 'Beaucoup',     col: 'hsl(90,60%,48%)'  },
-          { k: '5', l: 'Énormément',   col: 'hsl(140,55%,46%)' }
+          { k: '1', l: 'Pas du tout',  le: 'Not at all',    col: 'hsl(0,72%,55%)'   },
+          { k: '2', l: 'Un peu',       le: 'A little',      col: 'hsl(25,80%,55%)'  },
+          { k: '3', l: 'Neutre',       le: 'Neutral',       col: 'hsl(50,78%,52%)'  },
+          { k: '4', l: 'Beaucoup',     le: 'A lot',         col: 'hsl(90,60%,48%)'  },
+          { k: '5', l: 'Énormément',   le: 'Enormously',    col: 'hsl(140,55%,46%)' }
         ],
         'gout': [
-          { k: '1', l: 'Déteste',   col: 'hsl(0,72%,55%)'   },
-          { k: '2', l: 'Aime pas',  col: 'hsl(25,80%,55%)'  },
-          { k: '3', l: 'Neutre',    col: 'hsl(50,78%,52%)'  },
-          { k: '4', l: 'Aime',      col: 'hsl(90,60%,48%)'  },
-          { k: '5', l: 'Adore',     col: 'hsl(140,55%,46%)' }
+          { k: '1', l: 'Déteste',   le: 'Hate',      col: 'hsl(0,72%,55%)'   },
+          { k: '2', l: 'Aime pas',  le: "Don't like", col: 'hsl(25,80%,55%)'  },
+          { k: '3', l: 'Neutre',    le: 'Neutral',   col: 'hsl(50,78%,52%)'  },
+          { k: '4', l: 'Aime',      le: 'Like',      col: 'hsl(90,60%,48%)'  },
+          { k: '5', l: 'Adore',     le: 'Love',      col: 'hsl(140,55%,46%)' }
         ],
         'pratique': [
-          { k: '1', l: 'Jamais',       col: 'hsl(0,72%,55%)'   },
-          { k: '2', l: 'Une fois',     col: 'hsl(25,80%,55%)'  },
-          { k: '3', l: 'Rarement',     col: 'hsl(50,78%,52%)'  },
-          { k: '4', l: 'Occasionnel',  col: 'hsl(90,60%,48%)'  },
-          { k: '5', l: 'Souvent',      col: 'hsl(140,55%,46%)' }
+          { k: '1', l: 'Jamais',       le: 'Never',       col: 'hsl(0,72%,55%)'   },
+          { k: '2', l: 'Une fois',     le: 'Once',        col: 'hsl(25,80%,55%)'  },
+          { k: '3', l: 'Rarement',     le: 'Rarely',      col: 'hsl(50,78%,52%)'  },
+          { k: '4', l: 'Occasionnel',  le: 'Occasional',  col: 'hsl(90,60%,48%)'  },
+          { k: '5', l: 'Souvent',      le: 'Often',       col: 'hsl(140,55%,46%)' }
         ],
         'excitation': [
-          { k: '1', l: 'Jamais pensé', col: 'hsl(0,72%,55%)'   },
-          { k: '2', l: 'Non',          col: 'hsl(25,80%,55%)'  },
-          { k: '3', l: 'À réfléchir',  col: 'hsl(50,78%,52%)'  },
-          { k: '4', l: 'Excitant',     col: 'hsl(90,60%,48%)'  },
-          { k: '5', l: 'Très excitant',col: 'hsl(140,55%,46%)' }
+          { k: '1', l: 'Jamais pensé', le: 'Never thought', col: 'hsl(0,72%,55%)'   },
+          { k: '2', l: 'Non',          le: 'No',            col: 'hsl(25,80%,55%)'  },
+          { k: '3', l: 'À réfléchir',  le: 'Worth thinking',col: 'hsl(50,78%,52%)'  },
+          { k: '4', l: 'Excitant',     le: 'Exciting',      col: 'hsl(90,60%,48%)'  },
+          { k: '5', l: 'Très excitant',le: 'Very exciting', col: 'hsl(140,55%,46%)' }
         ]
       };
       var GRAD_LEVELS = GRAD_LEVELS_MAP['default']; // fallback, overridden per question
@@ -113,32 +113,32 @@
       <%# ── Encart d'usage (collapsible, fermé en localStorage) ──────── %>
       <details class="quiz-usage-panel" id="quiz-usage-panel">
         <summary class="quiz-usage-summary">
-          <span class="quiz-usage-title">Comment répondre&nbsp;?</span>
+          <span class="quiz-usage-title" data-fr="Comment répondre&nbsp;?" data-en="How to answer&nbsp;?">Comment répondre&nbsp;?</span>
           <span class="quiz-usage-toggle-icon" aria-hidden="true">&#9660;</span>
         </summary>
         <div class="quiz-usage-body">
           <div class="quiz-usage-row">
             <span class="quiz-q-tendency quiz-q-tendency--positive" aria-hidden="true">&#9650;</span>
-            <span><strong>Triangle vert</strong> : question positive : ce que vous aimez / fantasmez.</span>
+            <span><strong>Triangle vert</strong><span data-fr=" : question positive : ce que vous aimez / fantasmez." data-en=" : positive question: what you like / fantasize about."> : question positive : ce que vous aimez / fantasmez.</span></span>
           </div>
           <div class="quiz-usage-row">
             <span class="quiz-q-tendency quiz-q-tendency--negative" aria-hidden="true">&#9660;</span>
-            <span><strong>Triangle rouge</strong> : question négative : ce que vous n'aimez pas.</span>
+            <span><strong>Triangle rouge</strong><span data-fr=" : question négative : ce que vous n'aimez pas." data-en=" : negative question: what you dislike."> : question négative : ce que vous n'aimez pas.</span></span>
           </div>
           <div class="quiz-usage-row">
             <span class="quiz-usage-demo-btn quiz-usage-demo-btn--practiced" aria-hidden="true">&#10003;</span>
-            <span><strong>Pratiqué</strong> : vous l&rsquo;avez déjà vécu dans la réalité.</span>
+            <span><strong><span data-fr="Pratiqué" data-en="Practiced">Pratiqué</span></strong><span data-fr=" : vous l&rsquo;avez déjà vécu dans la réalité." data-en=" : you have already experienced it in real life."> : vous l&rsquo;avez déjà vécu dans la réalité.</span></span>
           </div>
           <div class="quiz-usage-row">
             <span class="quiz-usage-demo-btn quiz-usage-demo-btn--interested" aria-hidden="true">&#10024;</span>
-            <span><strong>Intéressé</strong> : met cet élément en avant et permet de voir du contenu lié suggéré.</span>
+            <span><strong><span data-fr="Intéressé" data-en="Interested">Intéressé</span></strong><span data-fr=" : met cet élément en avant et permet de voir du contenu lié suggéré." data-en=" : highlights this element and shows related suggested content."> : met cet élément en avant et permet de voir du contenu lié suggéré.</span></span>
           </div>
         </div>
       </details>
 
       <%# ── Questions de l'étape ──────────────────────────────────────── %>
       <% if (!currentUser) { %>
-      <p class="quiz-anon-notice">Vos réponses sont sauvegardées sur cet appareil. <a href="/admin/login?next=/quizz/<%= quiz.id %>">Connectez-vous</a> pour les conserver dans votre profil.</p>
+      <p class="quiz-anon-notice"><span data-fr="Vos réponses sont sauvegardées sur cet appareil." data-en="Your answers are saved on this device.">Vos réponses sont sauvegardées sur cet appareil.</span> <a href="/admin/login?next=/quizz/<%= quiz.id %>" data-fr="Connectez-vous" data-en="Log in">Connectez-vous</a><span data-fr=" pour les conserver dans votre profil." data-en=" to save them to your profile."> pour les conserver dans votre profil.</span></p>
       <% } %>
       <form method="POST" action="/quizz/<%= quiz.id %>/answer" class="quiz-answer-form">
         <input type="hidden" name="_step" value="<%= stepIdx %>" />
@@ -174,7 +174,7 @@
               html += '<label class="quiz-grad-jal' + (active ? ' quiz-grad-jal--active' : '') + '" style="--jcol:' + lvl.col + '">'
                 + '<input type="radio" name="' + name + '" value="' + lvl.k + '"' + (savedVal == lvl.k ? ' checked' : '') + ' />'
                 + '<span class="quiz-grad-jal-dot"></span>'
-                + '<span class="quiz-grad-jal-lbl">' + lvl.l + '</span>'
+                + '<span class="quiz-grad-jal-lbl" data-fr="' + lvl.l + '" data-en="' + (lvl.le || lvl.l) + '">' + lvl.l + '</span>'
                 + '</label>';
             });
             html += '</div></div>';
@@ -201,7 +201,7 @@
               var total = parseInt(q.subtype, 10) || 10;
               var savedObj = (savedVal && typeof savedVal === 'object') ? savedVal : {};
               var suffix2 = suffix ? '-' + suffix : '';
-              html += '<p class="quiz-points-total">Répartir <span class="quiz-points-remaining" id="qpoints-remaining-' + q.id + suffix2 + '">' + total + '</span> / ' + total + ' points</p>';
+              html += '<p class="quiz-points-total"><span data-fr="Répartir" data-en="Distribute">Répartir</span> <span class="quiz-points-remaining" id="qpoints-remaining-' + q.id + suffix2 + '">' + total + '</span> / ' + total + ' points</p>';
               html += '<div class="quiz-points-list">';
               qOpts.forEach(function(opt, oi) {
                 var v = parseInt(savedObj[String(oi)], 10) || 0;
@@ -262,10 +262,10 @@
 
             <% if (q.has_sides) { %>
               <div class="quiz-sides-picker<%= savedSide ? ' quiz-sides-picker--hidden' : '' %>" id="qsidespicker-<%= q.id %>">
-                <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="give">Donner</button>
-                <button type="button" class="quiz-sides-btn quiz-sides-btn--both" data-qid="<%= q.id %>" data-side="both">Les deux</button>
-                <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="receive">Recevoir</button>
-                <button type="button" class="quiz-sides-btn quiz-sides-btn--observe" data-qid="<%= q.id %>" data-side="observe">Observer</button>
+                <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="give" data-fr="Donner" data-en="Give">Donner</button>
+                <button type="button" class="quiz-sides-btn quiz-sides-btn--both" data-qid="<%= q.id %>" data-side="both" data-fr="Les deux" data-en="Both">Les deux</button>
+                <button type="button" class="quiz-sides-btn" data-qid="<%= q.id %>" data-side="receive" data-fr="Recevoir" data-en="Receive">Recevoir</button>
+                <button type="button" class="quiz-sides-btn quiz-sides-btn--observe" data-qid="<%= q.id %>" data-side="observe" data-fr="Observer" data-en="Watch">Observer</button>
               </div>
               <input type="hidden" name="q_<%= q.id %>_side" id="qside-input-<%= q.id %>" value="<%= savedSide || '' %>" />
             <% } %>
@@ -274,11 +274,11 @@
               <%- renderInputs(null, savedAns) %>
             <% } else { %>
               <div class="quiz-side-row quiz-side-row--give<%= (!savedSide || savedSide === 'receive' || savedSide === 'observe') ? ' quiz-side-row--hidden' : '' %>" id="qside-give-<%= q.id %>">
-                <span class="quiz-side-label">Donner</span>
+                <span class="quiz-side-label" data-fr="Donner" data-en="Give">Donner</span>
                 <%- renderInputs('give', savedGive) %>
               </div>
               <div class="quiz-side-row quiz-side-row--receive<%= (!savedSide || savedSide === 'give' || savedSide === 'observe') ? ' quiz-side-row--hidden' : '' %>" id="qside-receive-<%= q.id %>">
-                <span class="quiz-side-label">Recevoir</span>
+                <span class="quiz-side-label" data-fr="Recevoir" data-en="Receive">Recevoir</span>
                 <%- renderInputs('receive', savedReceive) %>
               </div>
             <% } %>
@@ -287,7 +287,7 @@
             <button type="button"
               class="quiz-dont-know-btn<%= savedAns === '?' ? ' quiz-dont-know-btn--active' : '' %>"
               id="qdontknow-<%= q.id %>" data-qid="<%= q.id %>">
-              ? Je ne sais pas
+              <span data-fr="? Je ne sais pas" data-en="? I don't know">? Je ne sais pas</span>
             </button>
             <% if (savedAns === '?') { %>
             <input type="hidden" name="q_<%= q.id %>" id="qdontknow-input-<%= q.id %>" value="?" />
@@ -300,13 +300,13 @@
                 class="quiz-flag-btn quiz-flag-btn--practiced<%= (flags && flags.practiced && flags.practiced[q.id]) ? ' quiz-flag-btn--on' : '' %>"
                 data-qid="<%= q.id %>" data-flag="practiced"
                 title="Marquer comme déjà pratiqué">
-                <span class="quiz-flag-icon">&#10003;</span> Pratiqué
+                <span class="quiz-flag-icon">&#10003;</span><span data-fr=" Pratiqué" data-en=" Practiced"> Pratiqué</span>
               </button>
               <button type="button"
                 class="quiz-flag-btn quiz-flag-btn--interested<%= (flags && flags.interested && flags.interested[q.id]) ? ' quiz-flag-btn--on' : '' %>"
                 data-qid="<%= q.id %>" data-flag="interested"
                 title="Marquer comme intéressant">
-                <span class="quiz-flag-icon">&#10024;</span> Intéressé
+                <span class="quiz-flag-icon">&#10024;</span><span data-fr=" Intéressé" data-en=" Interested"> Intéressé</span>
               </button>
             </div>
             <% } %>
@@ -316,12 +316,12 @@
 
         <div class="quiz-step-actions">
           <% if (stepIdx > 0) { %>
-            <a href="/quizz/<%= quiz.id %>?step=<%= stepIdx - 1 %>" class="quiz-step-prev">&#8592; Précédent</a>
+            <a href="/quizz/<%= quiz.id %>?step=<%= stepIdx - 1 %>" class="quiz-step-prev" data-fr="&#8592; Précédent" data-en="&#8592; Previous">&#8592; Précédent</a>
           <% } %>
           <% if (isLastStep) { %>
-            <button type="submit" name="complete" value="1" class="wf-save-btn" style="position:static">Terminer le quizz</button>
+            <button type="submit" name="complete" value="1" class="wf-save-btn" style="position:static" data-fr="Terminer le quizz" data-en="Finish the quiz">Terminer le quizz</button>
           <% } else { %>
-            <button type="submit" name="complete" value="0" class="quiz-step-next">Suivant &#8594;</button>
+            <button type="submit" name="complete" value="0" class="quiz-step-next" data-fr="Suivant &#8594;" data-en="Next &#8594;">Suivant &#8594;</button>
           <% } %>
         </div>
       </form>

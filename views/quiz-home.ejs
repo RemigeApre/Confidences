@@ -108,16 +108,16 @@
         out += '</button>';
         return out;
       }
-      function quizStrip(title, list, viewAllUrl) {
+      function quizStrip(titleFr, titleEn, list, viewAllUrl) {
         if (!list.length) return '';
         var visible = list.slice(0, 10);
         var hasMore = list.length > 10;
         var out = '<section class="quiz-hub-strip">';
-        out += '<h2 class="quiz-hub-strip-title">' + title + '</h2>';
+        out += '<h2 class="quiz-hub-strip-title" data-fr="' + titleFr + '" data-en="' + titleEn + '">' + titleFr + '</h2>';
         out += '<div class="quiz-hub-cards">';
         visible.forEach(function(q) { out += quizCard(q); });
         if (hasMore && viewAllUrl) {
-          out += '<a href="' + viewAllUrl + '" class="qhc-see-all">Tout voir<br><span>' + list.length + '</span></a>';
+          out += '<a href="' + viewAllUrl + '" class="qhc-see-all"><span data-fr="Tout voir" data-en="See all">Tout voir</span><br><span>' + list.length + '</span></a>';
         }
         out += '</div>';
         out += '<div class="quiz-hub-strip-sep"></div>';
@@ -125,16 +125,16 @@
         return out;
       }
     %>
-    <%- quizStrip('Mis en avant', featured) %>
-    <%- quizStrip('Nouveaux quizz', newest) %>
-    <%- quizStrip('Non encore complétés', notDone) %>
-    <%- quizStrip('Quizz terminés', done) %>
+    <%- quizStrip('Mis en avant', 'Featured', featured) %>
+    <%- quizStrip('Nouveaux quizz', 'New quizzes', newest) %>
+    <%- quizStrip('Non encore complétés', 'Not yet completed', notDone) %>
+    <%- quizStrip('Quizz terminés', 'Completed quizzes', done) %>
 
     <% if (!featured.length && !newest.length && !notDone.length && !done.length) { %>
-      <p class="quiz-hub-empty">Aucun quizz disponible pour le moment.</p>
+      <p class="quiz-hub-empty" data-fr="Aucun quizz disponible pour le moment." data-en="No quizzes available yet.">Aucun quizz disponible pour le moment.</p>
     <% } else if (all.length > 0) { %>
       <div class="quiz-hub-all-wrap">
-        <a href="/quizz/tous" class="quiz-hub-all-btn">Tous les quizz</a>
+        <a href="/quizz/tous" class="quiz-hub-all-btn" data-fr="Tous les quizz" data-en="All quizzes">Tous les quizz</a>
       </div>
     <% } %>
 
@@ -154,7 +154,7 @@
         <span class="qhp-progress-label" id="qhp-progress-label"></span>
       </div>
       <div class="qhp-actions">
-        <a class="qhp-start-btn" id="qhp-start-btn" href="#">Commencer</a>
+        <a class="qhp-start-btn" id="qhp-start-btn" href="#" data-fr="Commencer" data-en="Start">Commencer</a>
       </div>
     </div>
   </div>
@@ -197,6 +197,7 @@
       var pct  = parseInt(btn.dataset.pct, 10) || 0;
       var done = btn.dataset.done === '1';
       var completedAt = btn.dataset.completedAt;
+      var isEn = localStorage.getItem('slang') === 'en';
 
       titleEl.textContent = title;
       descEl.textContent = desc;
@@ -204,7 +205,7 @@
 
       // Stats
       var statsHTML = '<span class="qhp-stat">' + questions + ' question' + (questions != 1 ? 's' : '') + '</span>';
-      if (parseInt(parts) > 0) statsHTML += '<span class="qhp-stat">' + parts + ' partie' + (parts != 1 ? 's' : '') + '</span>';
+      if (parseInt(parts) > 0) statsHTML += '<span class="qhp-stat">' + parts + (isEn ? ' part' + (parts != 1 ? 's' : '') : ' partie' + (parts != 1 ? 's' : '')) + '</span>';
       if (duration) statsHTML += '<span class="qhp-stat">~' + duration + ' min</span>';
       statsEl.innerHTML = statsHTML;
 
@@ -214,19 +215,25 @@
         progressFill.style.width = '100%';
         if (completedAt) {
           var d = new Date(parseInt(completedAt) * 1000);
-          progressLabel.textContent = 'Terminé le ' + d.toLocaleDateString('fr-FR');
+          progressLabel.textContent = isEn ? 'Completed on ' + d.toLocaleDateString('en-US') : 'Terminé le ' + d.toLocaleDateString('fr-FR');
         } else {
-          progressLabel.textContent = 'Terminé ✓';
+          progressLabel.textContent = isEn ? 'Completed ✓' : 'Terminé ✓';
         }
-        startBtn.textContent = 'Reprendre / Voir les résultats';
+        startBtn.dataset.fr = 'Reprendre / Voir les résultats';
+        startBtn.dataset.en = 'Resume / View results';
+        startBtn.textContent = isEn ? 'Resume / View results' : 'Reprendre / Voir les résultats';
       } else if (pct > 0) {
         progressWrap.hidden = false;
         progressFill.style.width = pct + '%';
-        progressLabel.textContent = pct + '% complété';
-        startBtn.textContent = 'Continuer';
+        progressLabel.textContent = pct + (isEn ? '% complete' : '% complété');
+        startBtn.dataset.fr = 'Continuer';
+        startBtn.dataset.en = 'Continue';
+        startBtn.textContent = isEn ? 'Continue' : 'Continuer';
       } else {
         progressWrap.hidden = true;
-        startBtn.textContent = 'Commencer';
+        startBtn.dataset.fr = 'Commencer';
+        startBtn.dataset.en = 'Start';
+        startBtn.textContent = isEn ? 'Start' : 'Commencer';
       }
 
       startBtn.href = '/quizz/' + qid;
@@ -380,7 +387,7 @@
       if (!items.length) {
         var empty = document.createElement('p');
         empty.className = 'qtodo-empty';
-        empty.textContent = 'Aucun quizz prévu pour l\'instant.';
+        empty.textContent = localStorage.getItem('slang') === 'en' ? 'No quizzes planned yet.' : 'Aucun quizz prévu pour l\'instant.';
         bodyEl.appendChild(empty);
         return;
       }

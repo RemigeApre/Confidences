@@ -75,7 +75,7 @@
         <span class="qhp-progress-label" id="qhp-progress-label"></span>
       </div>
       <div class="qhp-actions">
-        <a class="qhp-start-btn" id="qhp-start-btn" href="#">Commencer</a>
+        <a class="qhp-start-btn" id="qhp-start-btn" href="#" data-fr="Commencer" data-en="Start">Commencer</a>
       </div>
     </div>
   </div>
@@ -103,23 +103,30 @@
       var pct  = parseInt(btn.dataset.pct, 10) || 0;
       var done = btn.dataset.done === '1';
       var completedAt = btn.dataset.completedAt;
+      var isEn = localStorage.getItem('slang') === 'en';
       var statsHTML = '<span class="qhp-stat">' + questions + ' question' + (questions != 1 ? 's' : '') + '</span>';
-      if (parseInt(parts) > 0) statsHTML += '<span class="qhp-stat">' + parts + ' partie' + (parts != 1 ? 's' : '') + '</span>';
+      if (parseInt(parts) > 0) statsHTML += '<span class="qhp-stat">' + parts + (isEn ? ' part' + (parts != 1 ? 's' : '') : ' partie' + (parts != 1 ? 's' : '')) + '</span>';
       if (duration) statsHTML += '<span class="qhp-stat">~' + duration + ' min</span>';
       statsEl.innerHTML = statsHTML;
       if (done) {
         progressWrap.hidden = false;
         progressFill.style.width = '100%';
-        progressLabel.textContent = completedAt ? 'Terminé le ' + new Date(parseInt(completedAt)*1000).toLocaleDateString('fr-FR') : 'Terminé ✓';
-        startBtn.textContent = 'Reprendre / Voir les résultats';
+        progressLabel.textContent = completedAt ? (isEn ? 'Completed on ' + new Date(parseInt(completedAt)*1000).toLocaleDateString('en-US') : 'Terminé le ' + new Date(parseInt(completedAt)*1000).toLocaleDateString('fr-FR')) : (isEn ? 'Completed ✓' : 'Terminé ✓');
+        startBtn.dataset.fr = 'Reprendre / Voir les résultats';
+        startBtn.dataset.en = 'Resume / View results';
+        startBtn.textContent = isEn ? 'Resume / View results' : 'Reprendre / Voir les résultats';
       } else if (pct > 0) {
         progressWrap.hidden = false;
         progressFill.style.width = pct + '%';
-        progressLabel.textContent = pct + '% complété';
-        startBtn.textContent = 'Continuer';
+        progressLabel.textContent = pct + (isEn ? '% complete' : '% complété');
+        startBtn.dataset.fr = 'Continuer';
+        startBtn.dataset.en = 'Continue';
+        startBtn.textContent = isEn ? 'Continue' : 'Continuer';
       } else {
         progressWrap.hidden = true;
-        startBtn.textContent = 'Commencer';
+        startBtn.dataset.fr = 'Commencer';
+        startBtn.dataset.en = 'Start';
+        startBtn.textContent = isEn ? 'Start' : 'Commencer';
       }
       startBtn.href = '/quizz/' + qid;
       imgWrap.innerHTML = '';
