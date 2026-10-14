@@ -4821,6 +4821,7 @@ module.exports = {
   deleteNouvelle,
   listProtagonistes,
   listChildProtagonistes,
+  setProtagonisteParent,
   getProtagoniste,
   createProtagoniste,
   updateProtagoniste,
@@ -5080,6 +5081,10 @@ function getProtagoniste(id) {
   if (p) { try { p.tags = JSON.parse(p.tags); } catch { p.tags = []; } p.evolutions = parseEvolutions(p.evolutions); }
   return p;
 }
+function setProtagonisteParent(id, parentId) {
+  db.prepare("UPDATE protagonistes SET parent_id = ? WHERE id = ?").run(parentId || null, id);
+}
+
 function listChildProtagonistes(parentId) {
   return db.prepare(`
     SELECT p.id, p.name, p.prenom, p.nom, p.image_path, p.description

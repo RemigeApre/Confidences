@@ -251,6 +251,11 @@
       <% if (protagoniste) { %>
       <div class="prot-sb-footer">
         <button type="submit" form="prot-delete-form" class="prot-sb-delete-bottom">Supprimer</button>
+        <% if (protagoniste.parent_id) { %>
+          <button type="button" class="prot-sb-detach-btn" id="prot-detach-btn">Diviser</button>
+        <% } else { %>
+          <button type="button" class="prot-sb-include-btn" id="prot-include-btn">Inclure</button>
+        <% } %>
       </div>
       <% } %>
     </aside>
@@ -1043,4 +1048,118 @@
   </div>
 </dialog>
 <% } %>
+
+<%# ── Dialog inclure dans une fiche ────────────────────────────────── %>
+<% if (protagoniste && !protagoniste.parent_id) { %>
+<dialog id="prot-include-dialog" class="prot-include-dialog">
+  <div class="pid-header">
+    <span class="pid-title">Inclure dans une fiche</span>
+    <button type="button" class="pid-close" id="pid-close">&times;</button>
+  </div>
+  <div class="pid-body">
+    <input type="text" class="pid-search lbep-input" id="pid-search" placeholder="Rechercher un personnage…" autocomplete="off" />
+    <div class="pid-results" id="pid-results"></div>
+  </div>
+</dialog>
+<script nonce="<%= nonce %>">
+(function() {
+  var btn = document.getElementById('prot-include-btn');
+  if (!btn) return;
+  var dialog = document.getElementById('prot-include-dialog');
+  var closeBtn = document.getElementById('pid-close');
+  var searchInp = document.getElementById('pid-search');
+  var resultsEl = document.getElementById('pid-results');
+  var currentId = <%- protagoniste.id %>;
+  var _allProts = null;
+
+  btn.addEventListener('click', function() {
+    dialog.showModal();
+    searchInp.value = '';
+    resultsEl.innerHTML = '';
+    if (!_allProts) {
+      fetch('/protagonistes/list-all')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          _allProts = (d.list || []).filter(function(p) { return p.id !== currentId; });
+          renderResults('');
+        });
+    } else {
+      renderResults('');
+    }
+    setTimeout(function() { searchInp.focus(); }, 50);
+  });
+
+  closeBtn.addEventListener('click', function() { dialog.close(); });
+  dialog.addEventListener('click', function(e) { if (e.target === dialog) dialog.close(); });
+
+  searchInp.addEventListener('input', function() {
+    if (_allProts) renderResults(searchInp.value.trim().toLowerCase());
+  });
+
+  function renderResults(q) {
+    if (!_allProts) return;
+    var list = q ? _allProts.filter(function(p) {
+      return p.name.toLowerCase().includes(q);
+    }) : _allProts;
+    if (!list.length) {
+      resultsEl.innerHTML = '<p class="pid-empty">Aucun personnage trouvé.</p>';
+      return;
+    }
+    resultsEl.innerHTML = '';
+    list.slice(0, 40).forEach(function(p) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'pid-row';
+      if (p.image_path) {
+        var img = document.createElement('img');
+        img.src = p.image_path; img.alt = ''; img.className = 'pid-row-img';
+        row.appendChild(img);
+      } else {
+        var ph = document.createElement('span');
+        ph.className = 'pid-row-img pid-row-img--ph';
+        row.appendChild(ph);
+      }
+      var name = document.createElement('span');
+      name.className = 'pid-row-name';
+      name.textContent = p.name;
+      row.appendChild(name);
+      row.addEventListener('click', function() {
+        if (!confirm('Inclure "' + document.title.replace('Modifier : ','') + '" dans la fiche de "' + p.name + '" ?')) return;
+        fetch('/protagonistes/' + currentId + '/include', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parent_id: p.id })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.ok) { location.href = '/protagonistes/' + p.id + '/edit'; }
+          else { alert(d.error || 'Erreur'); }
+        });
+      });
+      resultsEl.appendChild(row);
+    });
+  }
+})();
+</script>
+<% } %>
+
+<%# ── Bouton diviser ────────────────────────────────────────────────── %>
+<% if (protagoniste && protagoniste.parent_id) { %>
+<script nonce="<%= nonce %>">
+(function() {
+  var btn = document.getElementById('prot-detach-btn');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    if (!confirm('Sortir ce personnage de son arborescence et lui donner son indépendance ?')) return;
+    fetch('/protagonistes/<%- protagoniste.id %>/detach', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) { location.reload(); }
+        else { alert(d.error || 'Erreur'); }
+      });
+  });
+})();
+</script>
+<% } %>
+
 <%- include('partials/foot') %>

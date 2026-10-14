@@ -4,7 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
-const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes } = db;
+const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes, setProtagonisteParent } = db;
 const { insertGalleryImage } = db;
 const { generateThumb } = require("../thumbs");
 
@@ -52,6 +52,14 @@ function buildProtagonistesRouter(config) {
     const parodies = [...new Set(all.map(p => p.parody).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
     const races = listRaces();
     res.render("protagonistes", { config, protagonistes: all, parodies, races });
+  });
+
+  // API : liste tous les personnages (pour la popup "inclure")
+  router.get("/list-all", requireAdmin, (req, res) => {
+    const list = db.listProtagonistes({ includeChildren: true }).map(p => ({
+      id: p.id, name: p.name, image_path: p.image_path || null
+    }));
+    res.json({ ok: true, list });
   });
 
   // API : clans d'une race (pour le formulaire dynamique)
@@ -231,6 +239,27 @@ function buildProtagonistesRouter(config) {
       });
     });
     res.redirect(`/protagonistes/${protagoniste.id}`);
+  });
+
+  // ── Inclure dans une fiche parente ─────────────────────────────────────
+  router.post("/:id/include", requireAdmin, express.json(), (req, res) => {
+    const child = db.getProtagoniste(req.params.id);
+    if (!child) return res.json({ ok: false, error: "Personnage introuvable" });
+    const parentId = Number(req.body.parent_id);
+    if (!parentId) return res.json({ ok: false, error: "parent_id manquant" });
+    const parent = db.getProtagoniste(parentId);
+    if (!parent) return res.json({ ok: false, error: "Fiche parente introuvable" });
+    if (parentId === child.id) return res.json({ ok: false, error: "Une fiche ne peut pas s'inclure elle-même" });
+    db.setProtagonisteParent(child.id, parentId);
+    res.json({ ok: true });
+  });
+
+  // ── Sortir d'une arborescence (diviser) ─────────────────────────────────
+  router.post("/:id/detach", requireAdmin, (req, res) => {
+    const child = db.getProtagoniste(req.params.id);
+    if (!child) return res.json({ ok: false, error: "Personnage introuvable" });
+    db.setProtagonisteParent(child.id, null);
+    res.json({ ok: true });
   });
 
   // ── Évolutions : créer une fiche enfant ────────────────────────────────
