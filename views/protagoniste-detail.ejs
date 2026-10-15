@@ -87,25 +87,19 @@
       <% if (_protDesc) { %>
         <details class="prot-desc-section" open>
           <summary class="prot-desc-summary" data-fr="Description" data-en="Description">Description</summary>
-          <div class="prot-desc-body"
-            data-html-fr="<%- fmtDesc(_protDesc).replace(/"/g,'&quot;') %>"
-            <% if (_enDesc) { %>data-html-en="<%- fmtDesc(_enDesc).replace(/"/g,'&quot;') %>"<% } %>><%- fmtDesc(_protDesc) %></div>
+          <div class="prot-desc-body" data-field="description"><%- fmtDesc(_protDesc) %></div>
         </details>
       <% } %>
       <% if (_protDescPhys) { %>
         <details class="prot-desc-section" open>
           <summary class="prot-desc-summary" data-fr="Apparence physique" data-en="Physical appearance">Apparence physique</summary>
-          <div class="prot-desc-body"
-            data-html-fr="<%- fmtDesc(_protDescPhys).replace(/"/g,'&quot;') %>"
-            <% if (_enDescPhys) { %>data-html-en="<%- fmtDesc(_enDescPhys).replace(/"/g,'&quot;') %>"<% } %>><%- fmtDesc(_protDescPhys) %></div>
+          <div class="prot-desc-body" data-field="description_physique"><%- fmtDesc(_protDescPhys) %></div>
         </details>
       <% } %>
       <% if (_protDescOeuv) { %>
         <details class="prot-desc-section" open>
           <summary class="prot-desc-summary" data-fr="Rôle dans l'œuvre" data-en="Role in the work">R&ocirc;le dans l&rsquo;&oelig;uvre</summary>
-          <div class="prot-desc-body"
-            data-html-fr="<%- fmtDesc(_protDescOeuv).replace(/"/g,'&quot;') %>"
-            <% if (_enDescOeuv) { %>data-html-en="<%- fmtDesc(_enDescOeuv).replace(/"/g,'&quot;') %>"<% } %>><%- fmtDesc(_protDescOeuv) %></div>
+          <div class="prot-desc-body" data-field="description_oeuvre"><%- fmtDesc(_protDescOeuv) %></div>
         </details>
       <% } %>
 
@@ -707,11 +701,28 @@
 </script>
 
 <script nonce="<%= nonce %>">
+window.PROT_DESC = <%- JSON.stringify({
+  description:          { fr: protagoniste.description || '', en: (translationsEn && translationsEn.description) || '' },
+  description_physique: { fr: protagoniste.description_physique || '', en: (translationsEn && translationsEn.description_physique) || '' },
+  description_oeuvre:   { fr: protagoniste.description_oeuvre || '', en: (translationsEn && translationsEn.description_oeuvre) || '' }
+}) %>;
+</script>
+
+<script nonce="<%= nonce %>">
 (function() {
+  function fmtDesc(str) {
+    var esc = str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return '<p>' + esc.replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>') + '</p>';
+  }
   function applyDescLang(lang) {
-    document.querySelectorAll('.prot-desc-body[data-html-fr]').forEach(function(el) {
-      var html = lang === 'en' ? (el.dataset.htmlEn || el.dataset.htmlFr) : el.dataset.htmlFr;
-      el.innerHTML = html;
+    var data = window.PROT_DESC;
+    if (!data) return;
+    document.querySelectorAll('.prot-desc-body[data-field]').forEach(function(el) {
+      var field = el.getAttribute('data-field');
+      var texts = data[field];
+      if (!texts) return;
+      var raw = (lang === 'en' && texts.en) ? texts.en : texts.fr;
+      if (raw) el.innerHTML = fmtDesc(raw);
     });
   }
   // Appliquer immédiatement si déjà en anglais
@@ -721,9 +732,8 @@
   var langBtn = document.getElementById('pc-lang-btn');
   if (langBtn) {
     langBtn.addEventListener('click', function() {
-      // La langue sera toggleée par foot.ejs — on lit l'état ACTUEL avant le toggle
-      var current = localStorage.getItem('slang') === 'en' ? 'en' : 'fr';
-      var next = current === 'en' ? 'fr' : 'en';
+      // foot.ejs va toggler localStorage — on lit l'état ACTUEL avant le toggle
+      var next = localStorage.getItem('slang') === 'en' ? 'fr' : 'en';
       applyDescLang(next);
     });
   }

@@ -4,7 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const { requireUser, requireAdmin } = require("../auth");
 const db = require("../db");
-const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes, setProtagonisteParent, mergeUserReactions, listFavoriteIdsByType } = db;
+const { normalizeParody, listRaces, listClansForRace, setProtagonisteRace, listChildProtagonistes, setProtagonisteParent, mergeUserReactions, listFavoriteIdsByType, getFieldTranslationsByEntity } = db;
 const { insertGalleryImage } = db;
 const { generateThumb } = require("../thumbs");
 
@@ -56,7 +56,8 @@ function buildProtagonistesRouter(config) {
       .sort((a, b) => b[1] - a[1])
       .map(([name, count]) => ({ name, count }));
     const races = listRaces();
-    res.render("protagonistes", { config, protagonistes: all, parodies, races });
+    const descEn = getFieldTranslationsByEntity("protagoniste", "description", "en");
+    res.render("protagonistes", { config, protagonistes: all, parodies, races, descEn });
   });
 
   // API : liste tous les personnages (pour la popup "inclure")
@@ -201,7 +202,7 @@ function buildProtagonistesRouter(config) {
         special: req.body.special || "", age: ageVal, orientation,
       });
       setProtagonisteRace(protagoniste.id, raceId, clanId);
-      return res.redirect(`/protagonistes/${protagoniste.id}/edit?editLang=en`);
+      return res.redirect(`/protagonistes/${protagoniste.id}`);
     }
 
     const prenom = String(req.body.prenom || "").slice(0, 200).trim();

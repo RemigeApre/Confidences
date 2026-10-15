@@ -4728,6 +4728,16 @@ function getTranslationsForEntity(entity, id, lang) {
   return out;
 }
 
+// Retourne { [entity_id]: value } pour un champ donné — utile pour enrichir des listes
+function getFieldTranslationsByEntity(entity, field, lang) {
+  const rows = db.prepare(
+    "SELECT entity_id, value FROM translations WHERE entity=? AND field=? AND lang=?"
+  ).all(entity, field, lang);
+  const out = {};
+  rows.forEach((r) => { out[r.entity_id] = r.value; });
+  return out;
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -4998,6 +5008,7 @@ module.exports = {
   getTranslation,
   setTranslation,
   getTranslationsForEntity,
+  getFieldTranslationsByEntity,
   getUserCards,
   setWikiCardRarity,
   updateWikiCardSummary,

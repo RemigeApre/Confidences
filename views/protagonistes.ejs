@@ -129,8 +129,11 @@
               <% } %>
               <div class="prot-card-name<% if (p.gender) { %> prot-card-name--<%= p.gender %><% } %>"><%= p.name %></div>
             </div>
-            <% if (p.description) { %>
-              <p class="prot-card-desc"><%= p.description.slice(0, 80) %><%= p.description.length > 80 ? '\u2026' : '' %></p>
+            <% var _dFr = p.description || ''; var _dEn = (descEn && descEn[p.id]) || ''; %>
+            <% if (_dFr || _dEn) { %>
+              <p class="prot-card-desc"
+                data-fr="<%= _dFr.slice(0,80) %><%= _dFr.length > 80 ? '\u2026' : '' %>"
+                <% if (_dEn) { %>data-en="<%= _dEn.slice(0,80) %><%= _dEn.length > 80 ? '\u2026' : '' %>"<% } %>><%= _dFr.slice(0,80) %><%= _dFr.length > 80 ? '\u2026' : '' %></p>
             <% } %>
           </div>
 
