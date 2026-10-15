@@ -986,6 +986,42 @@ window.IRREALISTE_MODE = 'visible';
 <% } %>
 
 <script nonce="<%= nonce %>">
+// ── Fix : note + réactions perdues quand l'utilisateur clique sur Éditer ──
+(function() {
+  // 1) Réactions : patch fetch pour ajouter keepalive sur /react
+  //    → le navigateur complète la requête même si la page se décharge
+  var _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && /\/wiki\/\d+\/react$/.test(url)) {
+      return _origFetch(url, Object.assign({}, opts || {}, { keepalive: true }));
+    }
+    return _origFetch.apply(this, arguments);
+  };
+
+  // 2) Note : sur le clic des boutons "Éditer", flush immédiat avec keepalive
+  //    (contourne le debounce 1.2s de wiki.js sans bloquer la navigation)
+  function flushNote() {
+    var noteEl = document.querySelector('.wiki-user-note');
+    var ta  = noteEl && noteEl.querySelector('.wiki-user-note-area');
+    var pid = noteEl && noteEl.dataset.pageId;
+    if (!ta || !pid) return;
+    fetch('/wiki/' + pid + '/note', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({ content: ta.value })
+    });
+  }
+
+  document.querySelectorAll('a.wiki-edit-icon-btn').forEach(function(link) {
+    if (link.href && link.href.indexOf('/edit') !== -1) {
+      link.addEventListener('click', flushNote);
+    }
+  });
+})();
+</script>
+
+<script nonce="<%= nonce %>">
 window.WIKI_CONTENT = <%- JSON.stringify({
   content:           { fr: page.content || '', en: (translationsEn && translationsEn.content) || '' },
   meta_scenario:     { fr: (page.meta && page.meta.scenario) || '', en: (translationsEn && translationsEn.meta_scenario) || '' },
