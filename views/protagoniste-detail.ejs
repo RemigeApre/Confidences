@@ -79,22 +79,33 @@
       </div>
 
       <%# Descriptions rétractables %>
+      <%
+        var _enDesc     = (translationsEn && translationsEn.description)          || '';
+        var _enDescPhys = (translationsEn && translationsEn.description_physique)  || '';
+        var _enDescOeuv = (translationsEn && translationsEn.description_oeuvre)    || '';
+      %>
       <% if (_protDesc) { %>
         <details class="prot-desc-section" open>
           <summary class="prot-desc-summary" data-fr="Description" data-en="Description">Description</summary>
-          <div class="prot-desc-body"><%- fmtDesc(_protDesc) %></div>
+          <div class="prot-desc-body"
+            data-html-fr="<%- fmtDesc(_protDesc).replace(/"/g,'&quot;') %>"
+            <% if (_enDesc) { %>data-html-en="<%- fmtDesc(_enDesc).replace(/"/g,'&quot;') %>"<% } %>><%- fmtDesc(_protDesc) %></div>
         </details>
       <% } %>
       <% if (_protDescPhys) { %>
         <details class="prot-desc-section" open>
           <summary class="prot-desc-summary" data-fr="Apparence physique" data-en="Physical appearance">Apparence physique</summary>
-          <div class="prot-desc-body"><%- fmtDesc(_protDescPhys) %></div>
+          <div class="prot-desc-body"
+            data-html-fr="<%- fmtDesc(_protDescPhys).replace(/"/g,'&quot;') %>"
+            <% if (_enDescPhys) { %>data-html-en="<%- fmtDesc(_enDescPhys).replace(/"/g,'&quot;') %>"<% } %>><%- fmtDesc(_protDescPhys) %></div>
         </details>
       <% } %>
       <% if (_protDescOeuv) { %>
         <details class="prot-desc-section" open>
           <summary class="prot-desc-summary" data-fr="Rôle dans l'œuvre" data-en="Role in the work">R&ocirc;le dans l&rsquo;&oelig;uvre</summary>
-          <div class="prot-desc-body"><%- fmtDesc(_protDescOeuv) %></div>
+          <div class="prot-desc-body"
+            data-html-fr="<%- fmtDesc(_protDescOeuv).replace(/"/g,'&quot;') %>"
+            <% if (_enDescOeuv) { %>data-html-en="<%- fmtDesc(_enDescOeuv).replace(/"/g,'&quot;') %>"<% } %>><%- fmtDesc(_protDescOeuv) %></div>
         </details>
       <% } %>
 
@@ -692,6 +703,30 @@
 
   if (collClose) collClose.addEventListener('click', function() { if (collModal) collModal.hidden = true; });
   if (collModal) collModal.addEventListener('click', function(e) { if (e.target === collModal) collModal.hidden = true; });
+})();
+</script>
+
+<script nonce="<%= nonce %>">
+(function() {
+  function applyDescLang(lang) {
+    document.querySelectorAll('.prot-desc-body[data-html-fr]').forEach(function(el) {
+      var html = lang === 'en' ? (el.dataset.htmlEn || el.dataset.htmlFr) : el.dataset.htmlFr;
+      el.innerHTML = html;
+    });
+  }
+  // Appliquer immédiatement si déjà en anglais
+  if (localStorage.getItem('slang') === 'en') applyDescLang('en');
+
+  // Écouter le clic sur le bouton langue (avant que foot.ejs ne le capture aussi)
+  var langBtn = document.getElementById('pc-lang-btn');
+  if (langBtn) {
+    langBtn.addEventListener('click', function() {
+      // La langue sera toggleée par foot.ejs — on lit l'état ACTUEL avant le toggle
+      var current = localStorage.getItem('slang') === 'en' ? 'en' : 'fr';
+      var next = current === 'en' ? 'fr' : 'en';
+      applyDescLang(next);
+    });
+  }
 })();
 </script>
 

@@ -130,7 +130,8 @@ function buildProtagonistesRouter(config) {
     const tagMeta = db.getAllTagMeta();
     const childEvolutions = listChildProtagonistes(protagoniste.id);
     const parentProtagoniste = protagoniste.parent_id ? db.getProtagoniste(protagoniste.parent_id) : null;
-    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, favoriteGalleryIds, codexPages, tagMeta, childEvolutions, parentProtagoniste });
+    const translationsEn = db.getTranslationsForEntity("protagoniste", protagoniste.id, "en");
+    res.render("protagoniste-detail", { config, protagoniste, nouvelles, galleryImages, favoriteGalleryIds, codexPages, tagMeta, childEvolutions, parentProtagoniste, translationsEn });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
