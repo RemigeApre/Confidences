@@ -228,42 +228,47 @@
     <%# ── Colonne droite : paramètres ── %>
     <aside class="prot-detail-sidebar">
 
+      <%
+        var _genderSvg = {
+          femme:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>',
+          homme:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>',
+          autre:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>'
+        };
+        var _genderLabel = { femme: { fr:'Femme', en:'Female' }, homme: { fr:'Homme', en:'Male' }, autre: { fr:'Autre', en:'Other' } };
+        var _gKey = protagoniste.gender || '';
+      %>
       <% if (protagoniste.image_path) { %>
         <div class="prot-ds-img-wrap">
           <img src="<%= protagoniste.image_path %>" alt="<%= protagoniste.name %>"
             class="prot-ds-img prot-lightbox-trigger"
             data-lightbox="<%= protagoniste.image_path %>"
             style="cursor:zoom-in" />
+          <% if (_gKey && _genderSvg[_gKey]) { %>
+            <span class="prot-ds-gender-icon--overlay prot-ds-gender-icon--<%= _gKey %>" aria-hidden="true"><%- _genderSvg[_gKey] %></span>
+          <% } %>
+        </div>
+      <% } else if (_gKey && _genderSvg[_gKey]) { %>
+        <div class="prot-ds-gender">
+          <span class="prot-ds-gender-icon prot-ds-gender-icon--<%= _gKey %>" aria-hidden="true"><%- _genderSvg[_gKey] %></span>
         </div>
       <% } %>
-
-      <% if (protagoniste.gender) { %>
-        <div class="prot-ds-gender">
-          <span class="prot-ds-gender-icon prot-ds-gender-icon--<%= protagoniste.gender %>">
-            <% if (protagoniste.gender === 'femme') { %>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
-            <% } else if (protagoniste.gender === 'homme') { %>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="14.35" y1="9.65" x2="21" y2="3"/><polyline points="16 3 21 3 21 8"/></svg>
-            <% } else { %>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="19" y1="5" x2="16" y2="8"/><polyline points="17 4 20 4 20 7"/></svg>
-            <% } %>
-          </span>
-          <span class="prot-ds-gender-label prot-ds-gender-label--<%= protagoniste.gender %>">
-            <%= protagoniste.gender === 'femme' ? 'Femme' : protagoniste.gender === 'homme' ? 'Homme' : 'Autre' %>
-          </span>
+      <% if (_gKey && _genderLabel[_gKey]) { %>
+        <div class="prot-ds-gender-label-wrap">
+          <span class="prot-ds-gender-label prot-ds-gender-label--<%= _gKey %>"
+            data-fr="<%= _genderLabel[_gKey].fr %>" data-en="<%= _genderLabel[_gKey].en %>"><%= _genderLabel[_gKey].fr %></span>
         </div>
       <% } %>
 
       <% if (protagoniste.age && protagoniste.age > 0) { %>
-        <div class="prot-ds-row">
-          <span class="prot-ds-label">&#194;ge</span>
-          <span class="prot-ds-value"><%= protagoniste.age %> ans</span>
+        <div class="prot-ds-row prot-ds-row--center">
+          <span class="prot-ds-label" data-fr="&#194;ge" data-en="Age">&#194;ge</span>
+          <span class="prot-ds-value"><%= protagoniste.age %> <span data-fr="ans" data-en="y.o.">ans</span></span>
         </div>
       <% } %>
 
       <% if (protagoniste.orientation) { %>
         <% var _oriLbl = _orientationLabel[protagoniste.orientation] || { fr: protagoniste.orientation, en: protagoniste.orientation }; %>
-        <div class="prot-ds-row">
+        <div class="prot-ds-row prot-ds-row--center">
           <span class="prot-ds-label" data-fr="Orientation" data-en="Orientation">Orientation</span>
           <span class="prot-ds-value" data-fr="<%= _oriLbl.fr %>" data-en="<%= _oriLbl.en %>"><%= _oriLbl.fr %></span>
         </div>
@@ -295,8 +300,8 @@
       <% } %>
 
       <% if (protagoniste.parody) { %>
-        <div class="prot-ds-row prot-ds-row--col">
-          <span class="prot-ds-label">Univers</span>
+        <div class="prot-ds-row prot-ds-row--center">
+          <span class="prot-ds-label" data-fr="Univers" data-en="Universe">Univers</span>
           <a href="/parodies/<%= encodeURIComponent(protagoniste.parody) %><% if (protagoniste.sub_parody) { %>/<%= encodeURIComponent(protagoniste.sub_parody) %><% } %>" class="prot-ds-univers">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 0 0 18"/><path d="M12 3a14.5 14.5 0 0 1 0 18"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
             <span><%= protagoniste.parody %><% if (protagoniste.sub_parody) { %><span class="prot-detail-univers-sub"> &rsaquo; <%= protagoniste.sub_parody %></span><% } %></span>
