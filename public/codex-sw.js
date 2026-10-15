@@ -1,16 +1,17 @@
-// Cache "stale-while-revalidate" du Codex uniquement (texte + structure),
-// pour qu'une page déjà ouverte reste lisible même avec une connexion
-// faible ou coupée. Ne touche jamais aux images (voir la garde
-// `mode !== "navigate"` ci-dessous), ni à la Galerie, au Quizz, aux Liens ou
-// à la BD (voir isCodexPage) : ce service worker n'intercepte STRICTEMENT
-// que les navigations GET vers les pages Codex listées.
+// Cache "network-first" du Codex : toujours chercher le réseau pour garantir
+// des données utilisateur fraîches (réactions, notes, maturité…) ; le cache
+// ne sert que de fallback hors-ligne si le réseau est indisponible.
+// Ne touche jamais aux images (voir la garde `mode !== "navigate"` ci-dessous),
+// ni à la Galerie, au Quizz, aux Liens ou à la BD (voir isCodexPage) :
+// ce service worker n'intercepte STRICTEMENT que les navigations GET
+// vers les pages Codex listées.
 //
 // Enregistré uniquement depuis partials/codex-offline.ejs (inclus sur
 // wiki-index/wiki/wiki-detail seulement) avec scope "/wiki".
 //
 // Changer CACHE_NAME purge automatiquement l'ancien cache au prochain
 // déploiement (voir "activate") : à incrémenter si cette logique change.
-const CACHE_NAME = "codex-cache-v1";
+const CACHE_NAME = "codex-cache-v2";
 const MAX_ENTRIES = 10; // pages en cache max : courante + adjacentes + récentes
 
 function isCodexPage(url) {
@@ -50,9 +51,12 @@ async function notifyClients(ok) {
 
 async function handleCodexNavigation(request) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
 
-  const networkFetch = fetch(request).then(async (response) => {
+  // Stratégie network-first : toujours essayer le réseau pour garantir
+  // des données utilisateur fraîches (réactions, notes, maturité…).
+  // Le cache ne sert que de fallback hors-ligne.
+  try {
+    const response = await fetch(request);
     if (response && response.ok) {
       await cache.put(request, response.clone());
       await trimCache(cache);
@@ -61,23 +65,13 @@ async function handleCodexNavigation(request) {
       notifyClients(false);
     }
     return response;
-  }).catch(() => {
+  } catch (_) {
+    // Réseau indisponible : fallback sur le cache hors-ligne
+    const cached = await cache.match(request);
     notifyClients(false);
-    return null;
-  });
-
-  if (cached) {
-    // Sert le cache tout de suite (rapide, fonctionne hors-ligne) ; la
-    // requête réseau continue en tâche de fond pour rafraîchir la prochaine
-    // visite — jamais pour ré-afficher la page déjà rendue.
-    networkFetch.catch(() => {});
-    return cached;
+    if (cached) return cached;
+    return Response.error();
   }
-  const fresh = await networkFetch;
-  if (fresh) return fresh;
-  // Ni cache ni réseau : rien à servir, comportement hors-ligne normal du
-  // navigateur.
-  return Response.error();
 }
 
 self.addEventListener("fetch", (event) => {
