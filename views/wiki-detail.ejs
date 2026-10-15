@@ -99,7 +99,7 @@
     <%# ─ Bandeau : retour + titre (mobile / fallback) ─ %>
     <div class="wiki-detail-banner">
       <a href="<%= backHref %>" class="wiki-detail-banner-back" title="<%= backLabel %>" aria-label="<%= backLabel %>">&#8592;</a>
-      <h1 class="wiki-detail-banner-title"><%= t(page.title, 'wiki', page.id, 'title') %></h1>
+      <h1 class="wiki-detail-banner-title" data-fr="<%= page.title %>" data-en="<%= (translationsEn && translationsEn.title) || page.title %>"><%= t(page.title, 'wiki', page.id, 'title') %></h1>
       <% if ((page.extraCategories && page.extraCategories.length) || (wdCanSeeOwned && page.owned)) { %>
         <div class="wiki-detail-banner-sub">
           <% if (wdCanSeeOwned && page.owned) { %><span data-fr="★ Possédé" data-en="★ Owned">&#9733; Poss&eacute;d&eacute;</span><% } %>
@@ -415,7 +415,7 @@
         <%# Description markdown ─ %>
         <% var _wdContent = t(page.content, 'wiki', page.id, 'content'); %>
         <% if (_wdContent) { %>
-          <div class="wiki-md"><span class="wiki-md-raw" hidden><%= _wdContent %></span></div>
+          <div class="wiki-md" data-wiki-field="content"><span class="wiki-md-raw" hidden><%= _wdContent %></span></div>
         <% } %>
 
         <%# Image principale — mobile uniquement, glissée par JS avant le 1er h2 ─ %>
@@ -473,7 +473,7 @@
             <% if (pm.scenario_image) { %>
               <img src="<%= thumbUrl(pm.scenario_image) %>" data-src="<%= pm.scenario_image %>" alt="" class="wiki-scenario-img" loading="lazy" />
             <% } %>
-            <div class="wiki-pos-nouvelles-text"><%= _pmScenario %></div>
+            <div class="wiki-pos-nouvelles-text" data-wiki-field="meta_scenario"><%= _pmScenario %></div>
           </details>
         <% } %>
 
@@ -486,7 +486,7 @@
             </summary>
             <p class="wiki-orce-pastille" data-fr="Orce est un univers de fiction, de dark fantasy. Les créatures listées ont leurs pendants, avec des noms légèrement différents, et des caractéristiques différentes. Nous intégrons ici alors le contenu descriptif lié." data-en="Orce is a fictional dark fantasy universe. The creatures listed here have counterparts with slightly different names and characteristics. We include the related descriptive content here.">Orce est un univers de fiction, de dark fantasy. Les cr&eacute;atures list&eacute;es ont leurs pendants, avec des noms l&eacute;g&egrave;rement diff&eacute;rents, et des caract&eacute;ristiques diff&eacute;rentes. Nous int&eacute;grons ici alors le contenu descriptif li&eacute;.</p>
             <% if (pm.orce_name) { %><p class="wiki-orce-name"><span data-fr="Nom en Orce\u00a0:" data-en="Name in Orce:">Nom en Orce&nbsp;:</span> <strong><%= pm.orce_name %></strong></p><% } %>
-            <div class="wiki-md wiki-orce-content"><span class="wiki-md-raw" hidden><%= _pmOrce %></span></div>
+            <div class="wiki-md wiki-orce-content" data-wiki-field="meta_orce_content"><span class="wiki-md-raw" hidden><%= _pmOrce %></span></div>
           </details>
         <% } %>
 
@@ -557,7 +557,7 @@
         <% if (page.category === 'position' && _pmInfos) { %>
           <div class="wiki-pos-section wiki-pos-infos">
             <h3 class="wiki-pos-section-heading" data-fr="Informations utiles" data-en="Useful information">Informations utiles</h3>
-            <div class="wiki-md"><span class="wiki-md-raw" hidden><%= _pmInfos %></span></div>
+            <div class="wiki-md" data-wiki-field="meta_infos_utiles"><span class="wiki-md-raw" hidden><%= _pmInfos %></span></div>
           </div>
         <% } %>
 
@@ -646,7 +646,7 @@
         <%# ─ Navigation PC : titre encadré par prev/next ─ %>
         <div class="wiki-right-nav">
           <a href="<%= prevPage ? '/wiki/' + prevPage.id : '#' %>" class="wiki-right-nav-btn<%= prevPage ? '' : ' disabled' %>" title="<%= _prevTitle %>">&#8249;</a>
-          <span class="wiki-right-nav-title"><%= t(page.title, 'wiki', page.id, 'title') %></span>
+          <span class="wiki-right-nav-title" data-fr="<%= page.title %>" data-en="<%= (translationsEn && translationsEn.title) || page.title %>"><%= t(page.title, 'wiki', page.id, 'title') %></span>
           <a href="<%= nextPage ? '/wiki/' + nextPage.id : '#' %>" class="wiki-right-nav-btn<%= nextPage ? '' : ' disabled' %>" title="<%= _nextTitle %>">&#8250;</a>
         </div>
 
@@ -985,6 +985,74 @@ window.IRREALISTE_MODE = 'visible';
 <script nonce="<%= nonce %>" src="/gallery.js?v=<%= assetVersion %>"></script>
 <% } %>
 
+<script nonce="<%= nonce %>">
+window.WIKI_CONTENT = <%- JSON.stringify({
+  content:           { fr: page.content || '', en: (translationsEn && translationsEn.content) || '' },
+  meta_scenario:     { fr: (page.meta && page.meta.scenario) || '', en: (translationsEn && translationsEn.meta_scenario) || '' },
+  meta_orce_content: { fr: (page.meta && page.meta.orce_content) || '', en: (translationsEn && translationsEn.meta_orce_content) || '' },
+  meta_infos_utiles: { fr: (page.meta && page.meta.infos_utiles) || '', en: (translationsEn && translationsEn.meta_infos_utiles) || '' }
+}) %>;
+</script>
 <script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>">
+(function() {
+  function wikiRenderMd(text) {
+    if (!text) return '';
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    var pagesEl = document.getElementById('wiki-existing-pages');
+    var pm = {};
+    if (pagesEl) { try { JSON.parse(pagesEl.textContent).forEach(function(p){ pm[String(p.title).toLowerCase().trim()] = p.id; }); } catch(e){} }
+    function inl(s) {
+      return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+              .replace(/\*(.+?)\*/g,'<em>$1</em>')
+              .replace(/`(.+?)`/g,'<code>$1</code>')
+              .replace(/\[\[(.+?)\]\]/g,function(m,t){ var id=pm[t.toLowerCase().trim()]; return id?'<a class="wiki-inline-link" href="/wiki/'+id+'">'+t+'</a>':t; });
+    }
+    function renderLines(arr) {
+      var out=[], ul=false;
+      function cu(){if(ul){out.push('</ul>');ul=false;}}
+      arr.forEach(function(l){
+        if(/^### /.test(l)){cu();out.push('<h3>'+inl(l.slice(4))+'</h3>');}
+        else if(/^---+\s*$/.test(l)){cu();out.push('<hr />');}
+        else if(/^- /.test(l)){if(!ul){out.push('<ul>');ul=true;}out.push('<li>'+inl(l.slice(2))+'</li>');}
+        else if(l.trim()===''){cu();}
+        else{cu();out.push('<p>'+inl(l)+'</p>');}
+      });
+      cu(); return out.join('\n');
+    }
+    if(/^\s*<[a-zA-Z]/.test(text)||/<(?:h[1-6]|p|div|ul|ol|li|strong|em|a\s|hr|br)\b/i.test(text)) return text;
+    var ls=text.split('\n'), sects=[{h:null,ls:[]}];
+    ls.forEach(function(l){ var el=esc(l); if(/^## /.test(el)){sects.push({h:inl(el.slice(3)),ls:[]});}else{sects[sects.length-1].ls.push(el);} });
+    return sects.map(function(s,i){ var b=renderLines(s.ls); return i===0?b:'<details class="wiki-section"><summary class="wiki-section-summary">'+s.h+'</summary><div class="wiki-section-body">'+b+'</div></details>'; }).join('\n');
+  }
+
+  function applyWikiLang(lang) {
+    var data = window.WIKI_CONTENT;
+    if (!data) return;
+    document.querySelectorAll('[data-wiki-field]').forEach(function(el) {
+      var field = el.getAttribute('data-wiki-field');
+      var texts = data[field];
+      if (!texts) return;
+      var raw = (lang === 'en' && texts.en) ? texts.en : texts.fr;
+      if (el.classList.contains('wiki-md')) {
+        el.innerHTML = wikiRenderMd(raw);
+        el.querySelectorAll('details.wiki-section').forEach(function(d){ d.open = false; });
+      } else {
+        el.textContent = raw;
+      }
+    });
+  }
+
+  if (localStorage.getItem('slang') === 'en') applyWikiLang('en');
+
+  var langBtn = document.getElementById('pc-lang-btn');
+  if (langBtn) {
+    langBtn.addEventListener('click', function() {
+      var next = localStorage.getItem('slang') === 'en' ? 'fr' : 'en';
+      applyWikiLang(next);
+    });
+  }
+})();
+</script>
 <%- include('partials/codex-offline') %>
 <%- include('partials/foot') %>

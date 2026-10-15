@@ -841,7 +841,8 @@ function buildWikiRouter(config) {
     const exploreMode = req.query.explore === "1";
     const varianteGenreId = page.meta && page.meta.variante_genre_id ? Number(page.meta.variante_genre_id) : null;
     const variantePage = varianteGenreId ? getWikiPage(varianteGenreId) : null;
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, exploreMode, variantePage: variantePage || null, ...CTX });
+    const translationsEn = getTranslationsForEntity("wiki", id, "en");
+    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, exploreMode, variantePage: variantePage || null, translationsEn, ...CTX });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
