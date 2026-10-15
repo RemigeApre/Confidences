@@ -48,7 +48,7 @@
         <%# ── Race / Espèce : tristate chips ── %>
         <div class="prot-sf-section" id="prot-race-filter">
           <% races.forEach(function(r) { %>
-            <button type="button" class="prot-sf-chip" data-race="<%= r.id %>" data-state="0"
+            <button type="button" class="prot-sf-chip" data-race="<%= r.id %>" data-nature="<%= r.nature || '' %>" data-state="0"
               style="<%= r.color ? '--chip-accent:' + r.color : '' %>">
               <%= r.icon ? r.icon + ' ' : '' %><%= r.name %>
             </button>
@@ -248,7 +248,7 @@
   wireTristateGroup(
     document.getElementById('prot-nature-filter'), 'nature',
     function() { return natureState; },
-    function(s) { natureState = s; }
+    function(s) { natureState = s; syncRaceChipsToNature(); }
   );
 
   // Race
@@ -257,6 +257,29 @@
     function() { return raceState; },
     function(s) { raceState = s; }
   );
+
+  // Masque les chips de race dont la nature ne correspond pas au filtre nature actif
+  function syncRaceChipsToNature() {
+    var raceSection = document.getElementById('prot-race-filter');
+    if (!raceSection) return;
+    var included = Object.keys(natureState).filter(function(k) { return natureState[k] === 1; });
+    raceSection.querySelectorAll('[data-race]').forEach(function(btn) {
+      var chipNature = btn.dataset.nature || '';
+      // Toujours visible si : aucun filtre nature actif, OU chip sans nature associée, OU nature correspond
+      var visible = !included.length || !chipNature || included.indexOf(chipNature) !== -1;
+      btn.hidden = !visible;
+      // Réinitialiser l'état du chip s'il devient invisible (évite les filtres fantômes)
+      if (!visible && (raceState[btn.dataset.race] || 0) !== 0) {
+        raceState[btn.dataset.race] = 0;
+        applyBtnState(btn, 0, 'race');
+        saveFilters();
+        applyFilters();
+      }
+    });
+  }
+
+  // Appliquer au chargement si un filtre nature était sauvegardé
+  syncRaceChipsToNature();
 
   // Univers (parody) — champ de recherche + top 5
   var parodyFilter = document.getElementById('prot-parody-filter');
