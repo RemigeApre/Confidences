@@ -87,7 +87,7 @@
             <option value="__add__">+ G&eacute;rer les esp&egrave;ces</option>
             <option value="">— aucune —</option>
             <% _races.forEach(function(r) { %>
-              <option value="<%= r.id %>" <%= String(_curRaceId) === String(r.id) ? 'selected' : '' %>><%= r.icon ? r.icon + ' ' : '' %><%= r.name %></option>
+              <option value="<%= r.id %>" data-nature="<%= r.nature || '' %>" <%= String(_curRaceId) === String(r.id) ? 'selected' : '' %>><%= r.icon ? r.icon + ' ' : '' %><%= r.name %></option>
             <% }) %>
           </select>
         </div>
@@ -905,6 +905,31 @@
       });
     }
     function appendRpRaceItem(id,name,icon,color){var list=document.getElementById('rp-race-list');var empty=list.querySelector('p[style*="italic"]');if(empty)empty.remove();var div=document.createElement('div');div.className='rp-race-item';div.dataset.raceId=id;div.style.cssText='background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:6px;padding:.4rem .5rem';div.innerHTML='<div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.3rem"><span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0"></span><span style="font-size:.75rem;font-weight:700;color:#e2e8f0;flex:1">'+(icon?icon+' ':'')+name+'</span><button type="button" class="rp-delete-race-btn" style="background:none;border:none;color:#ef4444;font-size:.7rem;cursor:pointer;padding:0" title="Supprimer">&#128465;</button></div><div class="rp-clan-list" style="display:flex;flex-wrap:wrap;gap:.2rem;margin-bottom:.3rem"><span style="font-size:.62rem;color:#475569;font-style:italic">Aucun clan</span></div><div style="display:flex;gap:.25rem;align-items:center"><input type="text" class="rp-new-clan-name" placeholder="+ Clan" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#f1f5f9;border-radius:4px;padding:.15rem .35rem;font-size:.68rem;outline:none;font-family:inherit"><button type="button" class="rp-add-clan-btn" style="background:none;border:1px solid rgba(255,255,255,.14);color:#94a3b8;font-size:.62rem;padding:.15rem .35rem;border-radius:4px;cursor:pointer;white-space:nowrap">+ Clan</button></div>';list.appendChild(div);}
+
+    // ── Nature → filtre le dropdown espèces ─────────────────────────────────
+    var natureSelect = document.getElementById('prot-nature');
+    function syncRaceToNature() {
+      if (!raceSelect || !natureSelect) return;
+      var nat = natureSelect.value;
+      var curVal = raceSelect.value;
+      var curStillVisible = false;
+      Array.from(raceSelect.options).forEach(function(opt) {
+        var optNat = opt.getAttribute('data-nature');
+        // Toujours montrer : les options spéciales (vide, __add__), les espèces sans nature
+        var show = !optNat || optNat === '' || !nat || optNat === nat;
+        opt.hidden = !show;
+        if (show && opt.value === curVal) curStillVisible = true;
+      });
+      // Si l'espèce sélectionnée est masquée, réinitialiser
+      if (!curStillVisible && curVal && curVal !== '__add__') {
+        raceSelect.value = '';
+        raceSelect.dispatchEvent(new Event('change'));
+      }
+    }
+    if (natureSelect) {
+      natureSelect.addEventListener('change', syncRaceToNature);
+      syncRaceToNature(); // appliquer au chargement
+    }
 
     // ── Race → clans dynamiques + "+" option ────────────────────────────────
     var clanGroup=document.getElementById('prot-clan-group'),clanSelect=document.getElementById('prot-clan');

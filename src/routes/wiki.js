@@ -868,7 +868,7 @@ function buildWikiRouter(config) {
       setTranslation("wiki", id, "meta_scenario", "en", String(req.body.meta_scenario || "").trim());
       setTranslation("wiki", id, "meta_orce_content", "en", String(req.body.meta_orce_content || "").trim());
       setTranslation("wiki", id, "meta_infos_utiles", "en", String(req.body.meta_infos_utiles || "").trim());
-      return res.redirect(`/wiki/${id}/edit?editLang=en`);
+      return res.redirect(`/wiki/${id}`);
     }
 
     const title    = String(req.body.title || "").trim() || existing.title;

@@ -1,754 +1,762 @@
 <%- include('partials/head', { title: page.id ? 'Codex : Modifier ' + page.title : 'Codex : Nouvelle page' }) %>
-<main class="container">
+<%
+  var pm = page.meta || {};
+  var SPECIAL_TAGS = ["ultra", "irréaliste"];
+  var allTagsNormal = allTags.filter(function(t){ return SPECIAL_TAGS.indexOf(t) === -1; });
+
+  var pmDerivedValue = (pm.termes_derives || []).map(function(t) {
+    if (typeof t === 'string') return t;
+    return t.term + (t.en ? '::en' : '');
+  }).join(', ');
+
+  function psel(field, val) { return pm[field] === val ? 'checked' : ''; }
+  function pmany(field, val) { return (Array.isArray(pm[field]) && pm[field].indexOf(val) !== -1) ? 'checked' : ''; }
+  function pval(field) { return pm[field] || ''; }
+
+  var pmCanal = Array.isArray(pm.canal) ? pm.canal : (pm.canal ? [pm.canal] : []);
+  var pmOri   = Array.isArray(pm.orientation) ? pm.orientation : (pm.orientation ? [pm.orientation] : []);
+  var pmSup   = Array.isArray(pm.supports) ? pm.supports : (pm.supports ? [pm.supports] : []);
+  function ck(arr, v) { return arr.indexOf(v) !== -1 ? 'checked' : ''; }
+  function ra(val, v)  { return val === v ? 'checked' : ''; }
+
+  var stType = pm.stats_type || '';
+  var stPctG = pm.stats_pct_general != null ? pm.stats_pct_general : '';
+  var stPctH = pm.stats_pct_hommes  != null ? pm.stats_pct_hommes  : '';
+  var stPctF = pm.stats_pct_femmes  != null ? pm.stats_pct_femmes  : '';
+  var stSrc  = pm.stats_source || '';
+%>
+
+<main class="container wide">
   <%- include('partials/top-nav', { config: config }) %>
 
-  <%# Bouton retour (fixe gauche) %>
-  <a href="<%= returnTo || (page.id ? '/wiki/' + page.id : '/wiki') %>" class="wf-back-btn">&#8592; Retour</a>
-
-  <%# Boutons Save + Cancel (fixe droite) %>
-  <div class="wf-actions-right">
-    <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
-    <button type="submit" form="wiki-edit-form" class="wf-save-btn">Enregistrer</button>
-  </div>
-
-  <%# Bouton suppression (fixe gauche, sous le retour) %>
   <% if (page.id) { %>
-  <form method="POST" action="/wiki/<%= page.id %>/delete" class="wf-delete-form-fixed">
-    <button type="submit" class="wf-delete-btn-fixed" title="Supprimer la page">&#128465;</button>
-  </form>
+  <form method="POST" action="/wiki/<%= page.id %>/delete" id="wiki-delete-form"
+    onsubmit="return confirm('Supprimer cette page d\u00e9finitivement ?')"></form>
   <% } %>
 
   <script id="wiki-existing-pages" type="application/json"><%- JSON.stringify(pages.map(function(p){ return { id: p.id, title: p.title }; })) %></script>
 
-  <%
-    var pm = page.meta || {};
-    var SPECIAL_TAGS = ["ultra", "irréaliste"];
-    var allTagsNormal = allTags.filter(function(t){ return SPECIAL_TAGS.indexOf(t) === -1; });
-  %>
+  <form method="POST" action="<%= page.id ? '/wiki/' + page.id : '/wiki/' %>"
+    enctype="multipart/form-data"
+    class="wiki-form wiki-form--3col"
+    id="wiki-edit-form"
+    data-no-enter-submit>
 
-  <form method="POST" action="<%= page.id ? '/wiki/' + page.id : '/wiki/' %>" enctype="multipart/form-data" class="wiki-form" id="wiki-edit-form" data-no-enter-submit>
     <input type="hidden" name="_returnTo" value="<%= returnTo || '' %>" />
     <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
 
-    <%# ── 1. Titre + Catégorie ── %>
-    <div class="wf-title-row">
-      <% var _trTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : page.title; %>
-      <input type="text" name="title" class="wiki-title-input" required value="<%= _trTitle %>"
-             placeholder="<%= locals.editLang === 'en' ? page.title : 'Titre\u2026' %>"
-             <% if (locals.editLang === 'en') { %>data-fr-placeholder="<%= page.title %>"<% } %> />
-      <select name="category" id="wiki-category-select" class="wiki-cat-inline-select">
-        <% categories.forEach(function(c) { %>
-          <option value="<%= c.key %>" data-hue="<%= c.hue %>" <%= c.key === page.category ? 'selected' : '' %>><%= c.label %></option>
-        <% }) %>
-      </select>
-    </div>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <%# SIDEBAR GAUCHE : Parodie / Synonymes / Catégories / Tags %>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <aside class="wf-sidebar-left" id="wf-sidebar-left">
+      <div class="wf-sidebar-inner">
 
-    <%# On possède (objets / tenues) %>
-    <label class="chip-option wiki-owned-chip" id="wiki-owned-field" <%= (page.category === 'objets' || page.category === 'tenues') ? '' : 'hidden' %>>
-      <input type="checkbox" name="owned" <%= page.owned ? 'checked' : '' %> />
-      <span>On poss&egrave;de</span>
-    </label>
-
-    <%# ── Synonymes (sans titre de section) ── %>
-    <%
-      var pmDerivedValue = (pm.termes_derives || []).map(function (t) {
-        if (typeof t === 'string') return t;
-        return t.term + (t.en ? '::en' : '');
-      }).join(', ');
-    %>
-    <div class="wiki-derived-row">
-      <div class="wiki-tags-widget wiki-derived-widget">
-        <div class="wiki-tags-board">
-          <input type="text" class="wiki-tags-typing" placeholder="Synonymes, termes d&eacute;riv&eacute;s&hellip;" autocomplete="off" />
+        <%# ── Retour ── %>
+        <div class="prot-sb-back-wrap">
+          <a href="<%= returnTo || (page.id ? '/wiki/' + page.id : '/wiki') %>" class="prot-sb-back-btn">&#8592; Retour</a>
         </div>
-        <input type="hidden" name="meta_termes_derives" class="wiki-tags-hidden" value="<%= pmDerivedValue %>" />
-      </div>
-    </div>
 
-    <%# ── Parodie ── %>
-    <%- include('partials/parody-input', {
-          idPrefix:  'wkf',
-          mainValue: page.parody    || '',
-          subValue:  page.subParody || '',
-          mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
-        }) %>
+        <%# ── Parodie ── %>
+        <details class="prot-sb-details"<%= (page.parody || page.subParody) ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">Parodie</summary>
+          <div class="prot-sb-details-body">
+            <%- include('partials/parody-input', {
+                  idPrefix:  'wkf',
+                  mainValue: page.parody    || '',
+                  subValue:  page.subParody || '',
+                  mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
+                }) %>
+          </div>
+        </details>
 
-    <%# ── Sous-catégorie partenaires (avant extra-cats) ── %>
-    <%
-      var pmP = page.meta || {};
-      function psel(field, val) { return pmP[field] === val ? 'checked' : ''; }
-      function pmany(field, val) { return (Array.isArray(pmP[field]) && pmP[field].indexOf(val) !== -1) ? 'checked' : ''; }
-      function pval(field) { return pmP[field] || ''; }
-    %>
-    <div id="wf-partenaires-sous-cat" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
-      <div class="wf-partenaires-type-chips">
-        <label class="chip-option chip-opt--nombre"><input type="radio" name="meta_sous_cat" value="nombre"    <%= psel('sous_cat','nombre')    %>><span>Nombre</span></label>
-        <label class="chip-option chip-opt--humain"><input type="radio" name="meta_sous_cat" value="humain"    <%= psel('sous_cat','humain')    %>><span>Humain</span></label>
-        <label class="chip-option chip-opt--monstre"><input type="radio" name="meta_sous_cat" value="monstre"   <%= psel('sous_cat','monstre')   %>><span>Monstre</span></label>
-        <label class="chip-option chip-opt--animaux"><input type="radio" name="meta_sous_cat" value="animaux"   <%= psel('sous_cat','animaux')   %>><span>Animal</span></label>
-        <label class="chip-option chip-opt--fetichisme"><input type="radio" name="meta_sous_cat" value="fetichisme"<%= psel('sous_cat','fetichisme')%>><span>Fétichisme</span></label>
-        <label class="chip-option chip-opt--autre"><input type="radio" name="meta_sous_cat" value="autre"     <%= psel('sous_cat','autre')     %>><span>Autre</span></label>
-      </div>
-    </div>
+        <%# ── Synonymes ── %>
+        <details class="prot-sb-details"<%= pmDerivedValue ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">Synonymes &amp; termes d&eacute;riv&eacute;s</summary>
+          <div class="prot-sb-details-body">
+            <div class="wiki-tags-widget wiki-derived-widget">
+              <div class="wiki-tags-board">
+                <input type="text" class="wiki-tags-typing" placeholder="Synonymes, termes d&eacute;riv&eacute;s&hellip;" autocomplete="off" />
+              </div>
+              <input type="hidden" name="meta_termes_derives" class="wiki-tags-hidden" value="<%= pmDerivedValue %>" />
+            </div>
+          </div>
+        </details>
 
-    <%# ── Sous-catégories : fantasmes / objets / lieux ── %>
-    <div class="wiki-fantasmes-meta" <%= page.category === 'fantasmes' ? '' : 'hidden' %>>
-      <div class="wf-section-title">Cat&eacute;gorie</div>
-      <div class="wiki-meta-group">
-        <div class="wiki-meta-options">
-          <% fantasmesSubs.forEach(function(s) { %>
-            <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
-          <% }) %>
-        </div>
-      </div>
-    </div>
-
-    <div class="wiki-pratiques-meta" <%= page.category === 'pratique' ? '' : 'hidden' %>>
-      <div class="wf-section-title">Cat&eacute;gorie</div>
-      <div class="wiki-meta-group">
-        <div class="wiki-meta-options">
-          <% pratiquesSubs.forEach(function(s) { %>
-            <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
-          <% }) %>
-        </div>
-      </div>
-    </div>
-
-    <div class="wiki-objets-meta" <%= page.category === 'objets' ? '' : 'hidden' %>>
-      <div class="wf-section-title">Cat&eacute;gorie</div>
-      <div class="wiki-meta-group">
-        <div class="wiki-meta-options">
-          <% objetsSubs.forEach(function(s) { %>
-            <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
-          <% }) %>
-        </div>
-      </div>
-    </div>
-
-    <div class="wiki-lieux-meta" <%= page.category === 'lieux' ? '' : 'hidden' %>>
-      <div class="wf-section-title">Type de lieu</div>
-      <div class="wiki-meta-group">
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="radio" name="meta_type_lieu" value="prive"  <%= pm.type_lieu === 'prive'  ? 'checked' : '' %>><span>Priv&eacute;</span></label>
-          <label class="chip-option"><input type="radio" name="meta_type_lieu" value="public" <%= pm.type_lieu === 'public' ? 'checked' : '' %>><span>Public</span></label>
-          <label class="chip-option"><input type="radio" name="meta_type_lieu" value="cache"  <%= pm.type_lieu === 'cache'  ? 'checked' : '' %>><span>Cach&eacute;</span></label>
-        </div>
-      </div>
-    </div>
-
-    <%# ── Séparateur sous-catégories / catégories ── %>
-    <div class="wf-subcats-separator"></div>
-
-    <%# ── Aussi dans ── %>
-    <div class="wiki-extra-cats-field" id="wiki-edit-extra-cats">
-      <div class="wiki-meta-options">
-        <% categories.forEach(function(c) { %>
-          <label class="chip-option wiki-extra-cat-option" data-cat="<%= c.key %>">
-            <input type="checkbox" name="extra_categories" value="<%= c.key %>"
-              <%= (page.extraCategories || []).indexOf(c.key) !== -1 ? 'checked' : '' %> />
-            <span><%= c.label %></span>
+        <%# ── Catégorie principale ── %>
+        <div class="prot-sb-section">
+          <span class="prot-sb-label">Cat&eacute;gorie</span>
+          <select name="category" id="wiki-category-select" class="prot-form-select-elegant prot-form-select-elegant--sm" style="width:100%">
+            <% categories.forEach(function(c) { %>
+              <option value="<%= c.key %>" data-hue="<%= c.hue %>" <%= c.key === page.category ? 'selected' : '' %>><%= c.label %></option>
+            <% }) %>
+          </select>
+          <label class="chip-option wiki-owned-chip wf-owned-mt" id="wiki-owned-field" <%= (page.category === 'objets' || page.category === 'tenues') ? '' : 'hidden' %>>
+            <input type="checkbox" name="owned" <%= page.owned ? 'checked' : '' %> />
+            <span>On poss&egrave;de</span>
           </label>
-        <% }) %>
-      </div>
-    </div>
+        </div>
 
-    <%# ── Description ── %>
-    <div class="wf-section-title">Description</div>
-    <div class="wiki-editor" data-rich>
-      <div class="md-toolbar">
-        <button type="button" class="md-btn" data-cmd="bold" title="Gras (Ctrl+B)"><strong>B</strong></button>
-        <button type="button" class="md-btn md-btn-italic" data-cmd="italic" title="Italique (Ctrl+I)"><em>I</em></button>
-        <span class="md-sep"></span>
-        <button type="button" class="md-btn" data-cmd="h2">H2</button>
-        <button type="button" class="md-btn" data-cmd="h3">H3</button>
-        <span class="md-sep"></span>
-        <button type="button" class="md-btn" data-cmd="list">&#8226;&nbsp;Liste</button>
-        <button type="button" class="md-btn" data-cmd="hr">&mdash;</button>
-        <span class="md-sep"></span>
-        <span class="md-colors">
-          <button type="button" class="md-color-btn" data-cmd="color" data-val="#e05c5c" style="background:#e05c5c" title="Rouge"></button>
-          <button type="button" class="md-color-btn" data-cmd="color" data-val="#5cb8e0" style="background:#5cb8e0" title="Bleu"></button>
-          <button type="button" class="md-color-btn" data-cmd="color" data-val="#6dd68a" style="background:#6dd68a" title="Vert"></button>
-          <button type="button" class="md-color-btn" data-cmd="color" data-val="#e0b85c" style="background:#e0b85c" title="Or"></button>
-          <button type="button" class="md-color-btn" data-cmd="color" data-val="#c45ce0" style="background:#c45ce0" title="Violet"></button>
-          <button type="button" class="md-color-btn md-color-clear" data-cmd="color" data-val="" title="Effacer couleur">&#215;</button>
-        </span>
-        <span class="md-sep"></span>
-        <button type="button" class="md-btn" data-cmd="wikilink" title="Lier une page codex">&#9679;&nbsp;Codex</button>
-        <button type="button" class="md-btn" data-cmd="extlink" title="Lien externe">&#128279;</button>
-      </div>
-      <div class="wiki-richtext" contenteditable="true" spellcheck="true"></div>
-      <input type="hidden" name="content" class="wiki-richtext-hidden" value="" />
-    </div>
+        <%# ── Aussi dans (extra-catégories) ── %>
+        <details class="prot-sb-details"<%= (page.extraCategories && page.extraCategories.length) ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">Aussi dans&hellip;</summary>
+          <div class="prot-sb-details-body">
+            <div class="wiki-extra-cats-field" id="wiki-edit-extra-cats">
+              <div class="wiki-meta-options">
+                <% categories.forEach(function(c) { %>
+                  <label class="chip-option wiki-extra-cat-option" data-cat="<%= c.key %>">
+                    <input type="checkbox" name="extra_categories" value="<%= c.key %>"
+                      <%= (page.extraCategories || []).indexOf(c.key) !== -1 ? 'checked' : '' %> />
+                    <span><%= c.label %></span>
+                  </label>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+        </details>
 
-    <%# ── Scénario (partenaires seulement) ── %>
-    <div id="wf-scenario-field" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
-      <div class="wf-section-title">
-        Sc&eacute;nario
-        <span class="wiki-scenario-info" data-tooltip="Les sc&#233;narios sont &#233;crits en premier jet par une IA, corrig&#233;s et am&#233;lior&#233;s &#224; la main. Le choix de l&#8217;IA est pour illustrer litt&#233;rairement chaque page du wiki.&#10;&#10;Pour du contenu original parfaitement humain, cela se passera dans une future page d&#233;di&#233;e.">!</span>
+        <%# ── Sous-catégorie (dynamique selon la catégorie) ── %>
+        <div class="prot-sb-section" id="wf-sb-subcat-wrap">
+          <span class="prot-sb-label">Sous-cat&eacute;gorie</span>
+
+          <div id="wf-partenaires-sous-cat" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
+            <div class="wf-partenaires-type-chips">
+              <label class="chip-option chip-opt--nombre"><input type="radio" name="meta_sous_cat" value="nombre"     <%= psel('sous_cat','nombre')     %>><span>Nombre</span></label>
+              <label class="chip-option chip-opt--humain"><input type="radio" name="meta_sous_cat" value="humain"     <%= psel('sous_cat','humain')     %>><span>Humain</span></label>
+              <label class="chip-option chip-opt--monstre"><input type="radio" name="meta_sous_cat" value="monstre"    <%= psel('sous_cat','monstre')    %>><span>Monstre</span></label>
+              <label class="chip-option chip-opt--animaux"><input type="radio" name="meta_sous_cat" value="animaux"    <%= psel('sous_cat','animaux')    %>><span>Animal</span></label>
+              <label class="chip-option chip-opt--fetichisme"><input type="radio" name="meta_sous_cat" value="fetichisme" <%= psel('sous_cat','fetichisme') %>><span>F&eacute;tichisme</span></label>
+              <label class="chip-option chip-opt--autre"><input type="radio" name="meta_sous_cat" value="autre"      <%= psel('sous_cat','autre')      %>><span>Autre</span></label>
+            </div>
+          </div>
+
+          <div class="wiki-fantasmes-meta" <%= page.category === 'fantasmes' ? '' : 'hidden' %>>
+            <div class="wiki-meta-options">
+              <% fantasmesSubs.forEach(function(s) { %>
+                <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
+              <% }) %>
+            </div>
+          </div>
+
+          <div class="wiki-pratiques-meta" <%= page.category === 'pratique' ? '' : 'hidden' %>>
+            <div class="wiki-meta-options">
+              <% pratiquesSubs.forEach(function(s) { %>
+                <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
+              <% }) %>
+            </div>
+          </div>
+
+          <div class="wiki-objets-meta" <%= page.category === 'objets' ? '' : 'hidden' %>>
+            <div class="wiki-meta-options">
+              <% objetsSubs.forEach(function(s) { %>
+                <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
+              <% }) %>
+            </div>
+          </div>
+
+          <div class="wiki-lieux-meta" <%= page.category === 'lieux' ? '' : 'hidden' %>>
+            <div class="wiki-meta-options">
+              <label class="chip-option"><input type="radio" name="meta_type_lieu" value="prive"  <%= pm.type_lieu === 'prive'  ? 'checked' : '' %>><span>Priv&eacute;</span></label>
+              <label class="chip-option"><input type="radio" name="meta_type_lieu" value="public" <%= pm.type_lieu === 'public' ? 'checked' : '' %>><span>Public</span></label>
+              <label class="chip-option"><input type="radio" name="meta_type_lieu" value="cache"  <%= pm.type_lieu === 'cache'  ? 'checked' : '' %>><span>Cach&eacute;</span></label>
+            </div>
+          </div>
+
+        </div>
+
+        <%# ── Tags ── %>
+        <div class="prot-sb-section">
+          <span class="prot-sb-label">Tags</span>
+          <div class="wf-tags-unified">
+            <div class="wf-tags-special-row">
+              <% SPECIAL_TAGS.forEach(function(t) { %>
+                <button type="button" class="wiki-tag-suggest-chip wiki-tag-suggest-chip--special wf-tag-special" data-tag="<%= t %>"><%= t %></button>
+              <% }) %>
+            </div>
+            <div class="wiki-tags-widget">
+              <div class="wiki-tags-board">
+                <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag&hellip;" autocomplete="off" />
+              </div>
+              <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= page.tags.join(', ') %>" />
+              <% if (allTagsNormal.length) { %>
+              <div class="wiki-tag-suggestions">
+                <% allTagsNormal.forEach(function(t) { %>
+                  <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
+                <% }) %>
+              </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+      </div><%# /wf-sidebar-inner %>
+
+      <% if (page.id) { %>
+      <div class="prot-sb-footer">
+        <button type="submit" form="wiki-delete-form" class="prot-sb-delete-bottom">&#128465; Supprimer la page</button>
       </div>
-      <div class="wiki-editor">
+      <% } %>
+    </aside><%# /wf-sidebar-left %>
+
+    <%# ═══════════════════════════════════════ %>
+    <%# CONTENU PRINCIPAL                        %>
+    <%# ═══════════════════════════════════════ %>
+    <div class="wf-main-content">
+
+      <%# ── Titre ── %>
+      <div class="wf-title-row wf-title-row--solo">
+        <% var _trTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : page.title; %>
+        <input type="text" name="title" class="wiki-title-input" required value="<%= _trTitle %>"
+               placeholder="<%= locals.editLang === 'en' ? page.title : 'Titre\u2026' %>"
+               <% if (locals.editLang === 'en') { %>data-fr-placeholder="<%= page.title %>"<% } %> />
+      </div>
+
+      <%# ── Description ── %>
+      <div class="wf-section-title">Description</div>
+      <div class="wiki-editor" data-rich>
         <div class="md-toolbar">
-          <button type="button" class="md-btn" data-md="bold"><strong>B</strong></button>
-          <button type="button" class="md-btn md-btn-italic" data-md="italic"><em>I</em></button>
+          <button type="button" class="md-btn" data-cmd="bold" title="Gras (Ctrl+B)"><strong>B</strong></button>
+          <button type="button" class="md-btn md-btn-italic" data-cmd="italic" title="Italique (Ctrl+I)"><em>I</em></button>
           <span class="md-sep"></span>
-          <button type="button" class="md-btn" data-md="h2">H2</button>
-          <button type="button" class="md-btn" data-md="h3">H3</button>
+          <button type="button" class="md-btn" data-cmd="h2">H2</button>
+          <button type="button" class="md-btn" data-cmd="h3">H3</button>
           <span class="md-sep"></span>
-          <button type="button" class="md-btn" data-md="list">&#8226;&nbsp;Liste</button>
-          <button type="button" class="md-btn" data-md="hr">&mdash;</button>
-          <div class="md-toolbar-spacer"></div>
-          <button type="button" class="md-btn md-preview-btn">Aper&ccedil;u</button>
+          <button type="button" class="md-btn" data-cmd="list">&#8226;&nbsp;Liste</button>
+          <button type="button" class="md-btn" data-cmd="hr">&mdash;</button>
+          <span class="md-sep"></span>
+          <span class="md-colors">
+            <button type="button" class="md-color-btn" data-cmd="color" data-val="#e05c5c" style="background:#e05c5c" title="Rouge"></button>
+            <button type="button" class="md-color-btn" data-cmd="color" data-val="#5cb8e0" style="background:#5cb8e0" title="Bleu"></button>
+            <button type="button" class="md-color-btn" data-cmd="color" data-val="#6dd68a" style="background:#6dd68a" title="Vert"></button>
+            <button type="button" class="md-color-btn" data-cmd="color" data-val="#e0b85c" style="background:#e0b85c" title="Or"></button>
+            <button type="button" class="md-color-btn" data-cmd="color" data-val="#c45ce0" style="background:#c45ce0" title="Violet"></button>
+            <button type="button" class="md-color-btn md-color-clear" data-cmd="color" data-val="" title="Effacer couleur">&#215;</button>
+          </span>
+          <span class="md-sep"></span>
+          <button type="button" class="md-btn" data-cmd="wikilink" title="Lier une page codex">&#9679;&nbsp;Codex</button>
+          <button type="button" class="md-btn" data-cmd="extlink" title="Lien externe">&#128279;</button>
         </div>
-        <% var _trScenario = (locals.editLang === 'en') ? ((locals.translations || {}).meta_scenario || '') : (pm.scenario || ''); %>
-        <textarea name="meta_scenario" class="wiki-textarea wiki-pos-textarea" rows="6"
-          placeholder="<%= locals.editLang === 'en' ? (pm.scenario || 'Scénario EN\u2026') : 'Une courte histoire, un contexte\u2026' %>"><%= _trScenario %></textarea>
-        <div class="wiki-md-preview wiki-md" hidden></div>
+        <div class="wiki-richtext" contenteditable="true" spellcheck="true"></div>
+        <input type="hidden" name="content" class="wiki-richtext-hidden" value="" />
       </div>
-      <label class="wf-scenario-human-label">
-        <input type="checkbox" name="meta_scenario_human" value="on" <%= pm.scenario_human ? 'checked' : '' %> />
-        <span class="wf-scenario-human-check">&#9998;</span>
-        Sc&eacute;nario 100&nbsp;% humain <span class="wf-scenario-human-hint">(aucune IA impliqu&eacute;e)</span>
-      </label>
 
-      <%# ── Image d'illustration du scénario ── %>
-      <div class="wf-scenario-img-section">
-        <% if (pm.scenario_image) { %>
-          <div class="wf-scenario-img-preview" id="wf-scenario-img-preview">
-            <img src="<%= thumbUrl(pm.scenario_image) %>" alt="Illustration sc&eacute;nario" class="wf-scenario-thumb" loading="lazy" />
-            <button type="button" class="wf-scenario-img-remove" id="wf-scenario-img-remove" title="Retirer l&rsquo;image">&#215;</button>
+      <%# ── Scénario (partenaires uniquement) ── %>
+      <div id="wf-scenario-field" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
+        <div class="wf-section-title">
+          Sc&eacute;nario
+          <span class="wiki-scenario-info" data-tooltip="Les sc&#233;narios sont &#233;crits en premier jet par une IA, corrig&#233;s et am&#233;lior&#233;s &#224; la main. Le choix de l&#8217;IA est pour illustrer litt&#233;rairement chaque page du wiki.&#10;&#10;Pour du contenu original parfaitement humain, cela se passera dans une future page d&#233;di&#233;e.">!</span>
+        </div>
+        <div class="wiki-editor">
+          <div class="md-toolbar">
+            <button type="button" class="md-btn" data-md="bold"><strong>B</strong></button>
+            <button type="button" class="md-btn md-btn-italic" data-md="italic"><em>I</em></button>
+            <span class="md-sep"></span>
+            <button type="button" class="md-btn" data-md="h2">H2</button>
+            <button type="button" class="md-btn" data-md="h3">H3</button>
+            <span class="md-sep"></span>
+            <button type="button" class="md-btn" data-md="list">&#8226;&nbsp;Liste</button>
+            <button type="button" class="md-btn" data-md="hr">&mdash;</button>
+            <div class="md-toolbar-spacer"></div>
+            <button type="button" class="md-btn md-preview-btn">Aper&ccedil;u</button>
           </div>
-        <% } else { %>
-          <div class="wf-scenario-img-preview" id="wf-scenario-img-preview" hidden></div>
-        <% } %>
-        <input type="hidden" name="meta_scenario_image" id="wf-scenario-img-path" value="<%= pm.scenario_image || '' %>" />
-        <label class="wf-scenario-img-label">
-          <input type="file" name="scenario_image" id="wf-scenario-img-input" accept="image/*" style="display:none" />
-          <span class="wf-scenario-img-btn">&#128444; Ajouter une image d&rsquo;illustration</span>
+          <% var _trScenario = (locals.editLang === 'en') ? ((locals.translations || {}).meta_scenario || '') : (pm.scenario || ''); %>
+          <textarea name="meta_scenario" class="wiki-textarea wiki-pos-textarea" rows="6"
+            placeholder="<%= locals.editLang === 'en' ? (pm.scenario || 'Scénario EN\u2026') : 'Une courte histoire, un contexte\u2026' %>"><%= _trScenario %></textarea>
+          <div class="wiki-md-preview wiki-md" hidden></div>
+        </div>
+        <label class="wf-scenario-human-label">
+          <input type="checkbox" name="meta_scenario_human" value="on" <%= pm.scenario_human ? 'checked' : '' %> />
+          <span class="wf-scenario-human-check">&#9998;</span>
+          Sc&eacute;nario 100&nbsp;% humain <span class="wf-scenario-human-hint">(aucune IA impliqu&eacute;e)</span>
         </label>
-      </div>
-    </div>
-
-    <%# ── Orce ── %>
-    <%# ── Statistiques pratique / fantasme (transversal) ── %>
-    <%
-      var stType = pm.stats_type || '';
-      var stPctG = pm.stats_pct_general != null ? pm.stats_pct_general : '';
-      var stPctH = pm.stats_pct_hommes  != null ? pm.stats_pct_hommes  : '';
-      var stPctF = pm.stats_pct_femmes  != null ? pm.stats_pct_femmes  : '';
-      var stSrc  = pm.stats_source || '';
-    %>
-    <div class="wf-stats-block">
-      <p class="wiki-meta-label">Statistiques</p>
-
-      <div class="wf-stats-toggle-wrap">
-        <button type="button" class="wf-stats-pill<%= stType === 'pratique'  ? ' active' : '' %>" id="wf-stat-pratique">Pratiqué</button>
-        <button type="button" class="wf-stats-pill wf-stats-pill--f<%= stType === 'fantasme' ? ' active' : '' %>" id="wf-stat-fantasme">Fantasmé</button>
-        <input type="hidden" name="meta_stats_type" id="wf-stats-type" value="<%= stType %>" />
-      </div>
-
-      <div class="wf-stats-fields" id="wf-stats-fields" <%= stType ? '' : 'hidden' %>>
-        <div class="wf-stats-pct-row">
-          <label class="wf-stats-pct-label">Général</label>
-          <input type="number" name="meta_stats_pct_general" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctG %>" placeholder="—" />
-          <span class="wf-stats-pct-unit">%</span>
+        <div class="wf-scenario-img-section">
+          <% if (pm.scenario_image) { %>
+            <div class="wf-scenario-img-preview" id="wf-scenario-img-preview">
+              <img src="<%= thumbUrl(pm.scenario_image) %>" alt="Illustration sc&eacute;nario" class="wf-scenario-thumb" loading="lazy" />
+              <button type="button" class="wf-scenario-img-remove" id="wf-scenario-img-remove" title="Retirer l&rsquo;image">&#215;</button>
+            </div>
+          <% } else { %>
+            <div class="wf-scenario-img-preview" id="wf-scenario-img-preview" hidden></div>
+          <% } %>
+          <input type="hidden" name="meta_scenario_image" id="wf-scenario-img-path" value="<%= pm.scenario_image || '' %>" />
+          <label class="wf-scenario-img-label">
+            <input type="file" name="scenario_image" id="wf-scenario-img-input" accept="image/*" style="display:none" />
+            <span class="wf-scenario-img-btn">&#128444; Ajouter une image d&rsquo;illustration</span>
+          </label>
         </div>
-        <div class="wf-stats-pct-row">
-          <label class="wf-stats-pct-label">Femmes</label>
-          <input type="number" name="meta_stats_pct_femmes"  class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctF %>" placeholder="—" />
-          <span class="wf-stats-pct-unit">%</span>
-          <button type="button" class="wf-stats-dir-btn<%= pm.stats_dir_femmes === 'donne' ? ' donne' : '' %> wf-stats-dir-pratique" data-inp="wf-dir-femmes"><%= pm.stats_dir_femmes === 'donne' ? 'Donné' : 'Reçu' %></button>
-          <input type="hidden" name="meta_stats_dir_femmes" id="wf-dir-femmes" value="<%= pm.stats_dir_femmes || '' %>" />
-        </div>
-        <div class="wf-stats-pct-row">
-          <label class="wf-stats-pct-label">Hommes</label>
-          <input type="number" name="meta_stats_pct_hommes"  class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctH %>" placeholder="—" />
-          <span class="wf-stats-pct-unit">%</span>
-          <button type="button" class="wf-stats-dir-btn<%= pm.stats_dir_hommes === 'donne' ? ' donne' : '' %> wf-stats-dir-pratique" data-inp="wf-dir-hommes"><%= pm.stats_dir_hommes === 'donne' ? 'Donné' : 'Reçu' %></button>
-          <input type="hidden" name="meta_stats_dir_hommes" id="wf-dir-hommes" value="<%= pm.stats_dir_hommes || '' %>" />
-        </div>
-        <input type="url" name="meta_stats_source" class="wf-stats-source-input" value="<%= stSrc %>" placeholder="Lien source (optionnel)&hellip;" />
-        <textarea name="meta_stats_note" class="wf-stats-note-input" rows="2" placeholder="Note contextuelle (optionnelle)&hellip;"><%= pm.stats_note || '' %></textarea>
-      </div>
-    </div>
+      </div><%# /wf-scenario-field %>
 
-    <div class="wf-section-title wf-orce-title">Orce <span class="wf-orce-badge">univers</span></div>
-    <div class="wf-orce-section">
-      <input type="text"
-             name="meta_orce_name"
-             class="wf-orce-name-input"
-             placeholder="Nom en Orce (ajout&eacute; automatiquement en tag)&hellip;"
-             value="<%= pm.orce_name || '' %>"
-             maxlength="200" />
-      <% var _trOrce = (locals.editLang === 'en') ? ((locals.translations || {}).meta_orce_content || '') : (pm.orce_content || ''); %>
-      <textarea name="meta_orce_content"
-                class="wf-orce-content-input wf-md-input"
-                rows="6"
-                placeholder="<%= locals.editLang === 'en' ? (pm.orce_content || 'Orce description EN\u2026') : 'Description Orce (laisser vide si non applicable)\u2026' %>"><%= _trOrce %></textarea>
-    </div>
-
-    <%# ── Tags ── %>
-    <div class="ef-block">
-    <div class="ef-block-label">Tags</div>
-    <div class="wf-tags-unified">
-      <%# Boutons ultra / irréaliste centrés %>
-      <div class="wf-tags-special-row">
-        <% SPECIAL_TAGS.forEach(function(t) { %>
-          <button type="button" class="wiki-tag-suggest-chip wiki-tag-suggest-chip--special wf-tag-special" data-tag="<%= t %>"><%= t %></button>
-        <% }) %>
-      </div>
-      <%# Widget principal : chips actifs + saisie + suggestions %>
-      <div class="wiki-tags-widget">
-        <div class="wiki-tags-board">
-          <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag\u2026" autocomplete="off" />
-        </div>
-        <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= page.tags.join(', ') %>" />
-        <% if (allTags.length) { %>
-        <div class="wiki-tag-suggestions">
-          <% allTags.forEach(function(t) { %>
-            <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
+      <%# ── Images ── %>
+      <div class="wf-section-title">Images</div>
+      <div class="wf-img-zone">
+        <div class="wf-img-carousel" id="wf-img-carousel">
+          <% page.imagePaths.forEach(function(src, idx) {
+            var isCover     = idx === 0;
+            var isSecondary = pm.secondary_configured
+              ? !!(pm.secondary_image_paths && pm.secondary_image_paths.indexOf(src) !== -1)
+              : !isCover;
+            var posEntry    = (pm.positional_images || []).filter(function(pi) { return pi.path === src; })[0];
+            var section     = posEntry ? (posEntry.section || '') : '';
+          %>
+            <div class="wf-img-card"
+                 data-path="<%= src %>"
+                 data-cover="<%= isCover ? '1' : '0' %>"
+                 data-secondary="<%= isSecondary ? '1' : '0' %>"
+                 data-section="<%= section %>">
+              <div class="wf-img-card-photo">
+                <img src="<%= thumbUrl(src) %>" class="wf-img-thumb" alt="" loading="lazy" />
+                <button type="button" class="wf-img-rm" title="Supprimer">&#215;</button>
+              </div>
+              <div class="wf-img-card-controls">
+                <button type="button" class="wf-img-ctrl wf-img-ctrl--star<%= isCover ? ' on' : '' %>" data-action="cover" title="Image principale">&#9733;</button>
+                <button type="button" class="wf-img-ctrl wf-img-ctrl--heart<%= isSecondary ? ' on' : '' %>" data-action="secondary" title="Images secondaires">&#10084;</button>
+                <select class="wf-img-ctrl wf-img-ctrl--section<%= section ? ' on' : '' %>" data-action="section" title="Int&eacute;grer dans une section">
+                  <option value="">&#9657;&nbsp;Section</option>
+                  <% if (section) { %><option value="<%= section %>" selected><%= section.length > 16 ? section.slice(0,14)+'\u2026' : section %></option><% } %>
+                </select>
+              </div>
+            </div>
           <% }) %>
+          <label class="wf-img-add-card">
+            <span class="wf-img-add-icon">+</span>
+            <input type="file" name="images" accept="image/*" multiple hidden class="wiki-image-input" />
+          </label>
         </div>
+      </div>
+      <input type="hidden" name="images_meta" id="wf-images-meta" value="{}" />
+
+      <%# ── Résumé carte Codex ── %>
+      <div class="wf-section-title">Carte Codex <span style="font-size:.73rem;color:#64748b;font-weight:400;text-transform:none;letter-spacing:0">(optionnel)</span></div>
+      <textarea name="card_summary" class="wiki-textarea wiki-pos-textarea" rows="3"
+        placeholder="Texte affiché au dos de la carte lootbox (2-4 lignes courtes)&hellip;"><%= page.cardSummary || '' %></textarea>
+
+      <%# ── Actions mobile ── %>
+      <div class="wiki-form-actions wf-mobile-actions">
+        <button type="submit">Enregistrer</button>
+      </div>
+
+    </div><%# /wf-main-content %>
+
+    <%# ═══════════════════════════════════════════════ %>
+    <%# SIDEBAR DROITE : Save / Stats / Orce / Détails  %>
+    <%# ═══════════════════════════════════════════════ %>
+    <aside class="wf-sidebar-right" id="wf-sidebar-right">
+
+      <%# ── En-tête sticky : lang toggle + save ── %>
+      <div class="wf-sidebar-header">
+        <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
+        <button type="submit" class="wf-sidebar-save">Enregistrer</button>
+      </div>
+
+      <div class="wf-sidebar-inner">
+
+        <%# ── Statistiques ── %>
+        <details class="prot-sb-details"<%= stType ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">Statistiques</summary>
+          <div class="prot-sb-details-body wf-sb-stats">
+            <div class="wf-stats-toggle-wrap">
+              <button type="button" class="wf-stats-pill<%= stType === 'pratique'  ? ' active' : '' %>" id="wf-stat-pratique">Pratiqu&eacute;</button>
+              <button type="button" class="wf-stats-pill wf-stats-pill--f<%= stType === 'fantasme' ? ' active' : '' %>" id="wf-stat-fantasme">Fantasm&eacute;</button>
+              <input type="hidden" name="meta_stats_type" id="wf-stats-type" value="<%= stType %>" />
+            </div>
+            <div class="wf-stats-fields" id="wf-stats-fields" <%= stType ? '' : 'hidden' %>>
+              <div class="wf-stats-pct-row">
+                <label class="wf-stats-pct-label">G&eacute;n&eacute;ral</label>
+                <input type="number" name="meta_stats_pct_general" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctG %>" placeholder="&mdash;" />
+                <span class="wf-stats-pct-unit">%</span>
+              </div>
+              <div class="wf-stats-pct-row">
+                <label class="wf-stats-pct-label">Femmes</label>
+                <input type="number" name="meta_stats_pct_femmes"  class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctF %>" placeholder="&mdash;" />
+                <span class="wf-stats-pct-unit">%</span>
+                <button type="button" class="wf-stats-dir-btn<%= pm.stats_dir_femmes === 'donne' ? ' donne' : '' %> wf-stats-dir-pratique" data-inp="wf-dir-femmes"><%= pm.stats_dir_femmes === 'donne' ? 'Donn\u00e9' : 'Re\u00e7u' %></button>
+                <input type="hidden" name="meta_stats_dir_femmes" id="wf-dir-femmes" value="<%= pm.stats_dir_femmes || '' %>" />
+              </div>
+              <div class="wf-stats-pct-row">
+                <label class="wf-stats-pct-label">Hommes</label>
+                <input type="number" name="meta_stats_pct_hommes"  class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctH %>" placeholder="&mdash;" />
+                <span class="wf-stats-pct-unit">%</span>
+                <button type="button" class="wf-stats-dir-btn<%= pm.stats_dir_hommes === 'donne' ? ' donne' : '' %> wf-stats-dir-pratique" data-inp="wf-dir-hommes"><%= pm.stats_dir_hommes === 'donne' ? 'Donn\u00e9' : 'Re\u00e7u' %></button>
+                <input type="hidden" name="meta_stats_dir_hommes" id="wf-dir-hommes" value="<%= pm.stats_dir_hommes || '' %>" />
+              </div>
+              <input type="url" name="meta_stats_source" class="wf-stats-source-input" value="<%= stSrc %>" placeholder="Lien source (optionnel)&hellip;" />
+              <textarea name="meta_stats_note" class="wf-stats-note-input" rows="2" placeholder="Note contextuelle (optionnelle)&hellip;"><%= pm.stats_note || '' %></textarea>
+            </div>
+          </div>
+        </details>
+
+        <%# ── Orce ── %>
+        <details class="prot-sb-details"<%= (pm.orce_name || pm.orce_content) ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">Orce <span class="wf-orce-badge">univers</span></summary>
+          <div class="prot-sb-details-body">
+            <input type="text"
+                   name="meta_orce_name"
+                   class="wf-sb-input"
+                   placeholder="Nom en Orce (ajout&eacute; en tag)&hellip;"
+                   value="<%= pm.orce_name || '' %>"
+                   maxlength="200" />
+            <% var _trOrce = (locals.editLang === 'en') ? ((locals.translations || {}).meta_orce_content || '') : (pm.orce_content || ''); %>
+            <textarea name="meta_orce_content"
+                      class="wiki-textarea wf-md-input"
+                      rows="5"
+                      placeholder="<%= locals.editLang === 'en' ? (pm.orce_content || 'Orce description EN\u2026') : 'Description Orce\u2026' %>"><%= _trOrce %></textarea>
+          </div>
+        </details>
+
+        <%# ── Paramètres partenaires ── %>
+        <div id="wf-partenaires-params" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
+
+          <div class="prot-sb-section">
+            <span class="prot-sb-label">Genre du partenaire</span>
+            <div class="wiki-meta-options">
+              <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="male"     <%= psel('genre_partenaire','male')     %>><span>&#9794; M&acirc;le</span></label>
+              <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="female"   <%= psel('genre_partenaire','female')   %>><span>&#9792; Femelle</span></label>
+              <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="neutre"   <%= psel('genre_partenaire','neutre')   %>><span>Neutre</span></label>
+              <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="les_deux" <%= psel('genre_partenaire','les_deux') %>><span>&#9893; Les deux</span></label>
+            </div>
+            <div id="wf-variante-genre-wrap" style="margin-top:.55rem">
+              <p class="prot-sb-label" style="margin-bottom:.3rem">Variante de genre (page li&eacute;e)</p>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <input type="text" id="wf-variante-search" placeholder="Chercher une page partenaire&hellip;" autocomplete="off"
+                  style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none"
+                  value="<%= pm.variante_genre_id ? (pages.find(function(p){ return p.id === pm.variante_genre_id; }) || {title:''}).title : '' %>">
+                <button type="button" id="wf-variante-clear" style="background:none;border:none;color:#f87171;font-size:1rem;cursor:pointer;padding:.2rem" title="Retirer le lien">&#215;</button>
+              </div>
+              <ul id="wf-variante-results" style="list-style:none;margin:.25rem 0 0;padding:0;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;max-height:140px;overflow-y:auto;display:none"></ul>
+              <p id="wf-variante-current" style="font-size:.75rem;color:#4ade80;margin:.25rem 0 0;min-height:1em">
+                <% if (pm.variante_genre_id) { var vp = pages.find(function(p){ return p.id === pm.variante_genre_id; }); %>
+                  <% if (vp) { %>Li&eacute; &agrave;&nbsp;: <strong><%= vp.title %></strong><% } %>
+                <% } %>
+              </p>
+              <input type="hidden" name="meta_variante_genre_id" id="wf-variante-genre-id" value="<%= pm.variante_genre_id || '' %>">
+            </div>
+          </div>
+
+          <details class="prot-sb-details wf-part-details" open>
+            <summary class="prot-sb-details-summary">Param&egrave;tres communs</summary>
+            <div class="prot-sb-details-body">
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Nature de l'acte</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_nature_acte" value="possible"   <%= psel('nature_acte','possible')   %>><span>Possible</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nature_acte" value="improbable" <%= psel('nature_acte','improbable') %>><span>Improbable</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nature_acte" value="impossible" <%= psel('nature_acte','impossible') %>><span>Impossible</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nature_acte" value="fictif"     <%= psel('nature_acte','fictif')     %>><span>Fictif</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nature_acte" value="inconnu"    <%= psel('nature_acte','inconnu')    %>><span>Inconnu</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Cadre l&eacute;gal</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_cadre_legal" value="legal"   <%= psel('cadre_legal','legal')   %>><span>L&eacute;gal</span></label>
+                <label class="chip-option"><input type="radio" name="meta_cadre_legal" value="flou"    <%= psel('cadre_legal','flou')    %>><span>Flou</span></label>
+                <label class="chip-option"><input type="radio" name="meta_cadre_legal" value="illegal" <%= psel('cadre_legal','illegal') %>><span>Ill&eacute;gal</span></label>
+                <label class="chip-option"><input type="radio" name="meta_cadre_legal" value="inconnu" <%= psel('cadre_legal','inconnu') %>><span>Inconnu</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Risque physique</p><div class="wiki-meta-options">
+                <% ['inconnu','nul','faible','modere','eleve','extreme'].forEach(function(v) { var lbl = {inconnu:'Inconnu',nul:'Nul',faible:'Faible',modere:'Mod\u00e9r\u00e9',eleve:'\u00c9lev\u00e9',extreme:'Extr\u00eame'}[v]; %>
+                  <label class="chip-option"><input type="radio" name="meta_risque_physique" value="<%= v %>" <%= psel('risque_physique',v) %>><span><%= lbl %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Risque MST / IST</p><div class="wiki-meta-options">
+                <% ['inconnu','nul','faible','modere','eleve','extreme'].forEach(function(v) { var lbl = {inconnu:'Inconnu',nul:'Nul',faible:'Faible',modere:'Mod\u00e9r\u00e9',eleve:'\u00c9lev\u00e9',extreme:'Extr\u00eame'}[v]; %>
+                  <label class="chip-option"><input type="radio" name="meta_risque_mst" value="<%= v %>" <%= psel('risque_mst',v) %>><span><%= lbl %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Accessibilit&eacute;</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_accessibilite" value="tres_rare"   <%= psel('accessibilite','tres_rare')   %>><span>Tr&egrave;s rare</span></label>
+                <label class="chip-option"><input type="radio" name="meta_accessibilite" value="rare"        <%= psel('accessibilite','rare')        %>><span>Rare</span></label>
+                <label class="chip-option"><input type="radio" name="meta_accessibilite" value="occasionnel" <%= psel('accessibilite','occasionnel') %>><span>Occasionnel</span></label>
+                <label class="chip-option"><input type="radio" name="meta_accessibilite" value="frequent"    <%= psel('accessibilite','frequent')    %>><span>Fr&eacute;quent</span></label>
+                <label class="chip-option"><input type="radio" name="meta_accessibilite" value="inconnu"     <%= psel('accessibilite','inconnu')     %>><span>Inconnu</span></label>
+              </div></div>
+            </div>
+          </details>
+
+          <details class="prot-sb-details wf-part-details wf-part-sub wf-part-sub--nombre" hidden>
+            <summary class="prot-sb-details-summary">Nombre</summary>
+            <div class="prot-sb-details-body">
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Nombre total</p><div class="wiki-meta-options">
+                <% ['2','3','4','5plus'].forEach(function(v) { %>
+                  <label class="chip-option"><input type="radio" name="meta_nb_total" value="<%= v %>" <%= psel('nb_total',v) %>><span><%= v==='5plus'?'5+':v %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Nombre de femmes</p><div class="wiki-meta-options">
+                <% ['0','1','2','3plus'].forEach(function(v) { %>
+                  <label class="chip-option"><input type="radio" name="meta_nb_feminin" value="<%= v %>" <%= psel('nb_feminin',v) %>><span><%= v==='3plus'?'3+':v %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Nombre d'hommes</p><div class="wiki-meta-options">
+                <% ['0','1','2','3plus'].forEach(function(v) { %>
+                  <label class="chip-option"><input type="radio" name="meta_nb_masculin" value="<%= v %>" <%= psel('nb_masculin',v) %>><span><%= v==='3plus'?'3+':v %></span></label>
+                <% }) %>
+              </div></div>
+            </div>
+          </details>
+
+          <details class="prot-sb-details wf-part-details wf-part-sub wf-part-sub--monstre" hidden>
+            <summary class="prot-sb-details-summary">Monstre</summary>
+            <div class="prot-sb-details-body">
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Type de cr&eacute;ature</p><div class="wiki-meta-options">
+                <% [['machine','Machine'],['sang_froid','Sang froid'],['mammifere','Mammif\u00e8re'],['insectoide','Insecto\u00efde'],['amorphe','Amorphe'],['elementaire','\u00c9l\u00e9mentaire'],['autre','Autre']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="radio" name="meta_type_creature" value="<%= o[0] %>" <%= psel('type_creature',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Type(s) d'acte(s) sexuel(s)</p><div class="wiki-meta-options">
+                <% [['penetration','P\u00e9n\u00e9tration'],['absorption','Absorption'],['constriction','Constriction'],['pondaison','Pondaison'],['investation','Investation'],['possession','Possession'],['fusion','Fusion'],['parasitage','Parasitage'],['transformation','Transformation'],['insemination','Ins\u00e9mination'],['aucun_variable','Aucun/variable'],['autre','Autre']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="checkbox" name="meta_type_acte_sexuel" value="<%= o[0] %>" <%= pmany('type_acte_sexuel',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Intelligence</p><div class="wiki-meta-options">
+                <% [['bestiale','Bestiale'],['faible','Faible'],['correcte','Correcte'],['forte','Forte'],['inconnu','Inconnu']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="radio" name="meta_niveau_intelligence" value="<%= o[0] %>" <%= psel('niveau_intelligence',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Capacit&eacute; de parole</p><div class="wiki-meta-options">
+                <% [['impossible','Impossible'],['possible','Possible'],['oui','Oui'],['frequente','Fr\u00e9quente']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="radio" name="meta_capacite_parole" value="<%= o[0] %>" <%= psel('capacite_parole',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Compatibilit&eacute; anatomique</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_compat_anatomique" value="oui"       <%= psel('compat_anatomique','oui') %>><span>Oui</span></label>
+                <label class="chip-option"><input type="radio" name="meta_compat_anatomique" value="non"       <%= psel('compat_anatomique','non') %>><span>Non</span></label>
+                <label class="chip-option"><input type="radio" name="meta_compat_anatomique" value="partielle" <%= psel('compat_anatomique','partielle') %>><span>Partielle</span></label>
+                <label class="chip-option"><input type="radio" name="meta_compat_anatomique" value="inconnu"   <%= psel('compat_anatomique','inconnu') %>><span>Inconnu</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Origine conceptuelle</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_origine_conceptuelle" value="fantaisie"       <%= psel('origine_conceptuelle','fantaisie') %>><span>Fantaisie</span></label>
+                <label class="chip-option"><input type="radio" name="meta_origine_conceptuelle" value="science_fiction" <%= psel('origine_conceptuelle','science_fiction') %>><span>Science-fiction</span></label>
+                <label class="chip-option"><input type="radio" name="meta_origine_conceptuelle" value="imaginaire"      <%= psel('origine_conceptuelle','imaginaire') %>><span>Imaginaire</span></label>
+                <label class="chip-option"><input type="radio" name="meta_origine_conceptuelle" value="autre"           <%= psel('origine_conceptuelle','autre') %>><span>Autre</span></label>
+              </div></div>
+            </div>
+          </details>
+
+          <details class="prot-sb-details wf-part-details wf-part-sub wf-part-sub--animaux" hidden>
+            <summary class="prot-sb-details-summary">Animal</summary>
+            <div class="prot-sb-details-body">
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Famille zoologique</p><div class="wiki-meta-options">
+                <% [['canide','Canid\u00e9'],['equide','\u00c9quid\u00e9'],['felin','F\u00e9lin'],['bovin','Bovin'],['reptile','Reptile'],['aviaire','Aviaire'],['cetace','C\u00e9tac\u00e9'],['autre','Autre']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="radio" name="meta_famille_zoologique" value="<%= o[0] %>" <%= psel('famille_zoologique',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Taille par rapport &agrave; une femme</p><div class="wiki-meta-options">
+                <% [['petit','Petit'],['egal','\u00c9gal'],['grand','Grand'],['tres_grand','Tr\u00e8s grand']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="radio" name="meta_taille_animal" value="<%= o[0] %>" <%= psel('taille_animal',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+            </div>
+          </details>
+
+          <details class="prot-sb-details wf-part-details wf-part-sub wf-part-sub--biodetail" hidden>
+            <summary class="prot-sb-details-summary">Biologie</summary>
+            <div class="prot-sb-details-body">
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Nature de l'esp&egrave;ce</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_nature_espece" value="domestique" <%= psel('nature_espece','domestique') %>><span>Domestique</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nature_espece" value="sauvage"    <%= psel('nature_espece','sauvage') %>><span>Sauvage</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nature_espece" value="inconnu"    <%= psel('nature_espece','inconnu') %>><span>Inconnu</span></label>
+              </div></div>
+              <div class="wiki-meta-group wf-measure-group">
+                <div class="wf-measure-header"><p class="wiki-meta-label">Taille du p&eacute;nis</p>
+                  <button type="button" class="wf-measure-toggle" data-target="taille-penis"><%= pval('taille_penis_qual') ? 'Valeurs exactes' : 'Qualitatif' %></button>
+                </div>
+                <div class="wf-measure-field" id="wf-taille-penis-field" data-mode="<%= pval('taille_penis_qual') ? 'qual' : 'exact' %>">
+                  <div class="wf-measure-exact wf-range-row">
+                    <label>De&nbsp;<input type="number" name="meta_taille_penis_min" class="wf-range-input" min="0" step="0.1" value="<%= pval('taille_penis_min') %>" placeholder="0" /></label>
+                    <label>&Agrave;&nbsp;<input type="number" name="meta_taille_penis_max" class="wf-range-input" min="0" step="0.1" value="<%= pval('taille_penis_max') %>" placeholder="0" /></label>
+                    <span class="wf-range-unit">cm</span>
+                  </div>
+                  <div class="wf-measure-qual wiki-meta-options">
+                    <% [['faible','Faible'],['modere','Mod\u00e9r\u00e9'],['grand','Grand'],['tres_grand','Tr\u00e8s grand']].forEach(function(o){ %>
+                      <label class="chip-option"><input type="radio" name="meta_taille_penis_qual" value="<%= o[0] %>" <%= pval('taille_penis_qual') === o[0] ? 'checked' : '' %>><span><%= o[1] %></span></label>
+                    <% }) %>
+                  </div>
+                </div>
+              </div>
+              <div class="wiki-meta-group wf-measure-group">
+                <div class="wf-measure-header"><p class="wiki-meta-label">Circonf&eacute;rence du p&eacute;nis</p>
+                  <button type="button" class="wf-measure-toggle" data-target="circ-penis"><%= pval('circ_penis_qual') ? 'Valeurs exactes' : 'Qualitatif' %></button>
+                </div>
+                <div class="wf-measure-field" id="wf-circ-penis-field" data-mode="<%= pval('circ_penis_qual') ? 'qual' : 'exact' %>">
+                  <div class="wf-measure-exact wf-range-row">
+                    <label>De&nbsp;<input type="number" name="meta_circ_penis_min" class="wf-range-input" min="0" step="0.1" value="<%= pval('circ_penis_min') %>" placeholder="0" /></label>
+                    <label>&Agrave;&nbsp;<input type="number" name="meta_circ_penis_max" class="wf-range-input" min="0" step="0.1" value="<%= pval('circ_penis_max') %>" placeholder="0" /></label>
+                    <span class="wf-range-unit">cm</span>
+                  </div>
+                  <div class="wf-measure-qual wiki-meta-options">
+                    <% [['faible','Faible'],['modere','Mod\u00e9r\u00e9(e)'],['grand','Grand(e)'],['tres_grand','Tr\u00e8s grand(e)']].forEach(function(o){ %>
+                      <label class="chip-option"><input type="radio" name="meta_circ_penis_qual" value="<%= o[0] %>" <%= pval('circ_penis_qual') === o[0] ? 'checked' : '' %>><span><%= o[1] %></span></label>
+                    <% }) %>
+                  </div>
+                </div>
+              </div>
+              <div class="wiki-meta-group wf-measure-group">
+                <div class="wf-measure-header"><p class="wiki-meta-label">Volume d'&eacute;jaculation</p>
+                  <button type="button" class="wf-measure-toggle" data-target="vol-ejac"><%= pval('vol_ejac_qual') ? 'Valeurs exactes' : 'Qualitatif' %></button>
+                </div>
+                <div class="wf-measure-field" id="wf-vol-ejac-field" data-mode="<%= pval('vol_ejac_qual') ? 'qual' : 'exact' %>">
+                  <div class="wf-measure-exact wf-range-row">
+                    <label>De&nbsp;<input type="number" name="meta_vol_ejac_min" class="wf-range-input" min="0" step="1" value="<%= pval('vol_ejac_min') %>" placeholder="0" /></label>
+                    <label>&Agrave;&nbsp;<input type="number" name="meta_vol_ejac_max" class="wf-range-input" min="0" step="1" value="<%= pval('vol_ejac_max') %>" placeholder="0" /></label>
+                    <span class="wf-range-unit">ml</span>
+                  </div>
+                  <div class="wf-measure-qual wiki-meta-options">
+                    <% [['faible','Faible'],['modere','Mod\u00e9r\u00e9'],['grand','Important'],['tres_grand','Tr\u00e8s important']].forEach(function(o){ %>
+                      <label class="chip-option"><input type="radio" name="meta_vol_ejac_qual" value="<%= o[0] %>" <%= pval('vol_ejac_qual') === o[0] ? 'checked' : '' %>><span><%= o[1] %></span></label>
+                    <% }) %>
+                  </div>
+                </div>
+              </div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Caract&eacute;ristiques du sperme</p>
+                <div class="wf-sperme-fields">
+                  <label>Texture&nbsp;<input type="text" name="meta_sperme_texture" class="wf-text-sm" value="<%= pval('sperme_texture') %>" placeholder="Aqueux, &Eacute;pais&hellip;" /></label>
+                  <label>Odeur&nbsp;<input type="text" name="meta_sperme_odeur"   class="wf-text-sm" value="<%= pval('sperme_odeur') %>"   placeholder="Nulle, M&eacute;tallique&hellip;" /></label>
+                  <label>Go&ucirc;t&nbsp;<input type="text" name="meta_sperme_gout"  class="wf-text-sm" value="<%= pval('sperme_gout') %>"   placeholder="Sal&eacute;, Amer&hellip;" /></label>
+                </div>
+              </div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Verrouillage copulatoire</p><div class="wiki-meta-options">
+                <% [['aucun','Aucun'],['noeud','N\u0153ud'],['epines','\u00c9pines'],['ventouses','Ventouses'],['partiel','Partiel'],['autre','Autre'],['inconnu','Inconnu']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="radio" name="meta_type_verrouillage" value="<%= o[0] %>" <%= psel('type_verrouillage',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Sensations principales</p><div class="wiki-meta-options">
+                <% [['pression','Pression'],['remplissage','Remplissage'],['frottement','Frottement'],['elongation','\u00c9longation'],['vibration','Vibration'],['chaleur','Chaleur'],['secousse','Secousse'],['autre','Autre']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="checkbox" name="meta_sensations" value="<%= o[0] %>" <%= pmany('sensations',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Milieu de vie</p><div class="wiki-meta-options">
+                <% [['terrestre','Terrestre'],['aerien','A\u00e9rien'],['aquatique_mer','Aquatique (mer)'],['dulcaquicole','Dul\u00e7aquicole'],['semi_aquatique','Semi-aquatique'],['souterrain','Souterrain'],['inconnu','Inconnu']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="radio" name="meta_milieu_vie" value="<%= o[0] %>" <%= psel('milieu_vie',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Structure sociale</p><div class="wiki-meta-options">
+                <% [['monogame','Monogame'],['polygame','Polygame'],['polyandrie','Polyandrie'],['promiscuite','Promiscuit\u00e9'],['sans_lien','Sans lien'],['harem','Harem'],['coloniale','Coloniale'],['saisonniere','Saisonni\u00e8re'],['variable','Variable'],['inconnu','Inconnu']].forEach(function(o) { %>
+                  <label class="chip-option"><input type="radio" name="meta_structure_sociale" value="<%= o[0] %>" <%= psel('structure_sociale',o[0]) %>><span><%= o[1] %></span></label>
+                <% }) %>
+              </div></div>
+            </div>
+          </details>
+
+        </div><%# /wf-partenaires-params %>
+
+        <%# ── Paramètres position ── %>
+        <div class="wiki-position-meta" <%= page.category === 'position' ? '' : 'hidden' %>>
+
+          <details class="prot-sb-details" open>
+            <summary class="prot-sb-details-summary">D&eacute;tails position</summary>
+            <div class="prot-sb-details-body">
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Cat&eacute;gorie</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_categorie" value="penetration"           <%= ra(pm.categorie,'penetration') %>><span>P&eacute;n&eacute;tration</span></label>
+                <label class="chip-option"><input type="radio" name="meta_categorie" value="fellation_cunnilingus" <%= ra(pm.categorie,'fellation_cunnilingus') %>><span>Fellation&nbsp;/ Cunnilingus</span></label>
+                <label class="chip-option"><input type="radio" name="meta_categorie" value="anilingus"             <%= ra(pm.categorie,'anilingus') %>><span>Anilingus</span></label>
+                <label class="chip-option"><input type="radio" name="meta_categorie" value="stimulation_manuelle" <%= ra(pm.categorie,'stimulation_manuelle') %>><span>Stimulation manuelle</span></label>
+                <label class="chip-option"><input type="radio" name="meta_categorie" value="double_penetration"   <%= ra(pm.categorie,'double_penetration') %>><span>Double p&eacute;n&eacute;tration</span></label>
+                <label class="chip-option"><input type="radio" name="meta_categorie" value="position_69"          <%= ra(pm.categorie,'position_69') %>><span>Position 69</span></label>
+                <label class="chip-option"><input type="radio" name="meta_categorie" value="autre"                <%= ra(pm.categorie,'autre') %>><span>Autre</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Au-dessus</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_qui_dessus" value="femme"    <%= ra(pm.qui_dessus,'femme') %>><span>Femme</span></label>
+                <label class="chip-option"><input type="radio" name="meta_qui_dessus" value="homme"    <%= ra(pm.qui_dessus,'homme') %>><span>Homme</span></label>
+                <label class="chip-option"><input type="radio" name="meta_qui_dessus" value="variable" <%= ra(pm.qui_dessus,'variable') %>><span>Variable</span></label>
+                <label class="chip-option"><input type="radio" name="meta_qui_dessus" value="aucun"    <%= ra(pm.qui_dessus,'aucun') %>><span>Debout&nbsp;/ aucun</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Canal(aux)</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="checkbox" name="meta_canal" value="vagin"  <%= ck(pmCanal,'vagin') %>><span>Vagin</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_canal" value="anus"   <%= ck(pmCanal,'anus') %>><span>Anus</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_canal" value="bouche" <%= ck(pmCanal,'bouche') %>><span>Bouche</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_canal" value="mains"  <%= ck(pmCanal,'mains') %>><span>Mains</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_canal" value="autre"  <%= ck(pmCanal,'autre') %>><span>Autre</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Orientation</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="checkbox" name="meta_orientation" value="face_a_face"     <%= ck(pmOri,'face_a_face') %>><span>Face &agrave; face</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_orientation" value="face_contre_dos" <%= ck(pmOri,'face_contre_dos') %>><span>Face contre dos</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_orientation" value="cote_a_cote"     <%= ck(pmOri,'cote_a_cote') %>><span>C&ocirc;te &agrave; c&ocirc;te</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_orientation" value="acrobatique"     <%= ck(pmOri,'acrobatique') %>><span>Acrobatique</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_orientation" value="autre"           <%= ck(pmOri,'autre') %>><span>Autre</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Nombre de partenaires</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_nb_partenaires" value="2"        <%= ra(pm.nb_partenaires,'2') %>><span>2</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nb_partenaires" value="3"        <%= ra(pm.nb_partenaires,'3') %>><span>3</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nb_partenaires" value="4plus"    <%= ra(pm.nb_partenaires,'4plus') %>><span>4+</span></label>
+                <label class="chip-option"><input type="radio" name="meta_nb_partenaires" value="variable" <%= ra(pm.nb_partenaires,'variable') %>><span>Variable</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Partenaire actif</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="radio" name="meta_partenaire_actif" value="femme"    <%= ra(pm.partenaire_actif,'femme') %>><span>Femme</span></label>
+                <label class="chip-option"><input type="radio" name="meta_partenaire_actif" value="homme"    <%= ra(pm.partenaire_actif,'homme') %>><span>Homme</span></label>
+                <label class="chip-option"><input type="radio" name="meta_partenaire_actif" value="les_deux" <%= ra(pm.partenaire_actif,'les_deux') %>><span>Les deux</span></label>
+                <label class="chip-option"><input type="radio" name="meta_partenaire_actif" value="variable" <%= ra(pm.partenaire_actif,'variable') %>><span>Variable</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Supports possibles</p><div class="wiki-meta-options">
+                <label class="chip-option"><input type="checkbox" name="meta_supports" value="lit"    <%= ck(pmSup,'lit') %>><span>Lit</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_supports" value="sol"    <%= ck(pmSup,'sol') %>><span>Sol</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_supports" value="chaise" <%= ck(pmSup,'chaise') %>><span>Chaise</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_supports" value="canape" <%= ck(pmSup,'canape') %>><span>Canap&eacute;&nbsp;/ Bord de lit</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_supports" value="mur"    <%= ck(pmSup,'mur') %>><span>Contre un mur</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_supports" value="table"  <%= ck(pmSup,'table') %>><span>Table&nbsp;/ Plan</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_supports" value="bain"   <%= ck(pmSup,'bain') %>><span>Bain&nbsp;/ Douche</span></label>
+                <label class="chip-option"><input type="checkbox" name="meta_supports" value="autre"  <%= ck(pmSup,'autre') %>><span>Autre</span></label>
+              </div></div>
+              <div class="wiki-meta-group"><p class="wiki-meta-label">Variantes</p>
+                <div class="wiki-var-editor" id="wiki-variante-editor">
+                  <div class="wiki-var-list"></div>
+                  <button type="button" class="wiki-var-add-btn">+ Ajouter une variante</button>
+                </div>
+                <input type="hidden" name="meta_variantes" id="wiki-variantes-hidden" value="<%= JSON.stringify(pm.variantes || []) %>" />
+              </div>
+              <div class="wiki-meta-group">
+                <p class="wiki-meta-label">Informations utiles</p>
+                <% var _trInfos = (locals.editLang === 'en') ? ((locals.translations || {}).meta_infos_utiles || '') : (pm.infos_utiles || ''); %>
+                <textarea name="meta_infos_utiles" class="wiki-textarea wiki-pos-textarea" rows="4"
+                  placeholder="<%= locals.editLang === 'en' ? (pm.infos_utiles || 'Useful information EN\u2026') : 'Conditions, pr\u00e9requis\u2026' %>"><%= _trInfos %></textarea>
+              </div>
+              <div class="wiki-meta-group">
+                <p class="wiki-meta-label">Nouvelles</p>
+                <textarea name="meta_nouvelles" class="wiki-textarea wiki-pos-textarea" rows="4" placeholder="Une courte histoire&hellip;"><%= pm.nouvelles || '' %></textarea>
+              </div>
+            </div>
+          </details>
+
+        </div><%# /wiki-position-meta %>
+
+        <%# ── Pages liées ── %>
+        <% if (page.id) { %>
+        <details class="prot-sb-details" open>
+          <summary class="prot-sb-details-summary">Pages li&eacute;es</summary>
+          <div class="prot-sb-details-body">
+            <div class="wiki-page-links" data-page-id="<%= page.id %>">
+              <div class="wiki-pl-body">
+                <div class="wiki-pl-section">
+                  <div class="wiki-pl-cards" data-role="links"></div>
+                </div>
+                <div class="wiki-pl-section wiki-pl-backlinks-section" hidden>
+                  <p class="wiki-pl-back-label">R&eacute;f&eacute;renc&eacute;e par</p>
+                  <div class="wiki-pl-cards" data-role="backlinks"></div>
+                </div>
+              </div>
+              <div class="wiki-pl-add">
+                <input type="text" class="wiki-pl-search" placeholder="Lier une autre page&hellip;" autocomplete="off" />
+                <ul class="wiki-pl-results"></ul>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <%# ── Questions liées ── %>
+        <details class="prot-sb-details">
+          <summary class="prot-sb-details-summary">Questions associ&eacute;es</summary>
+          <div class="prot-sb-details-body">
+            <div class="wiki-question-links" data-page-id="<%= page.id %>">
+              <ul class="wiki-ql-list"></ul>
+              <div class="wiki-ql-add">
+                <input type="text" class="wiki-ql-search" placeholder="Associer une question&hellip;" autocomplete="off" />
+                <ul class="wiki-ql-results"></ul>
+              </div>
+            </div>
+          </div>
+        </details>
         <% } %>
-      </div>
-    </div>
 
-    </div><%# /ef-block tags %>
+      </div><%# /wf-sidebar-inner %>
+    </aside><%# /wf-sidebar-right %>
 
-    <%# ── Images (zone unifiée) ── %>
-    <div class="wf-section-title">Images</div>
-    <div class="wf-img-zone">
-      <div class="wf-img-carousel" id="wf-img-carousel">
-
-        <%# Cartes existantes ─ %>
-        <% page.imagePaths.forEach(function(src, idx) {
-          var isCover     = idx === 0;
-          var isSecondary = pm.secondary_configured
-            ? !!(pm.secondary_image_paths && pm.secondary_image_paths.indexOf(src) !== -1)
-            : !isCover;
-          var posEntry    = (pm.positional_images || []).filter(function(pi) { return pi.path === src; })[0];
-          var section     = posEntry ? (posEntry.section || '') : '';
-        %>
-          <div class="wf-img-card"
-               data-path="<%= src %>"
-               data-cover="<%= isCover ? '1' : '0' %>"
-               data-secondary="<%= isSecondary ? '1' : '0' %>"
-               data-section="<%= section %>">
-            <div class="wf-img-card-photo">
-              <img src="<%= thumbUrl(src) %>" class="wf-img-thumb" alt="" loading="lazy" />
-              <button type="button" class="wf-img-rm" title="Supprimer">&#215;</button>
-            </div>
-            <div class="wf-img-card-controls">
-              <button type="button" class="wf-img-ctrl wf-img-ctrl--star<%= isCover ? ' on' : '' %>" data-action="cover" title="Image principale (couverture)">&#9733;</button>
-              <button type="button" class="wf-img-ctrl wf-img-ctrl--heart<%= isSecondary ? ' on' : '' %>" data-action="secondary" title="Afficher dans les images secondaires">&#10084;</button>
-              <select class="wf-img-ctrl wf-img-ctrl--section<%= section ? ' on' : '' %>" data-action="section" title="Int&eacute;grer dans une section du texte">
-                <option value="">&#9657;&nbsp;Section</option>
-                <% if (section) { %><option value="<%= section %>" selected><%= section.length > 16 ? section.slice(0,14)+'\u2026' : section %></option><% } %>
-              </select>
-            </div>
-          </div>
-        <% }) %>
-
-        <%# Carte &laquo;+&raquo; ─ %>
-        <label class="wf-img-add-card">
-          <span class="wf-img-add-icon">+</span>
-          <input type="file" name="images" accept="image/*" multiple hidden class="wiki-image-input" />
-        </label>
-
-      </div>
-    </div>
-    <%# Champ s&eacute;rialis&eacute; envoy&eacute; au serveur ─ %>
-    <input type="hidden" name="images_meta" id="wf-images-meta" value="{}" />
-
-    <%# ── Paramètres partenaires (après images) ── %>
-    <div id="wf-partenaires-params" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
-
-      <%# ── Genre du partenaire ── %>
-      <div class="wf-part-genre-block">
-        <p class="wiki-meta-label" style="margin:0 0 .4rem">Genre du partenaire</p>
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="male"    <%= psel('genre_partenaire','male')    %>><span>&#9794; M&acirc;le</span></label>
-          <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="female"  <%= psel('genre_partenaire','female')  %>><span>&#9792; Femelle</span></label>
-          <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="neutre"  <%= psel('genre_partenaire','neutre')  %>><span>Neutre / Autre</span></label>
-          <label class="chip-option"><input type="radio" name="meta_genre_partenaire" value="les_deux"<%= psel('genre_partenaire','les_deux')%>><span>&#9893; Les deux</span></label>
-        </div>
-
-        <%# Lien vers la version de genre opposé %>
-        <div id="wf-variante-genre-wrap" style="margin-top:.55rem">
-          <p style="font-size:.75rem;color:#64748b;margin:0 0 .3rem">Variante de genre (page li&eacute;e)</p>
-          <div style="display:flex;gap:.5rem;align-items:center">
-            <input type="text" id="wf-variante-search" placeholder="Chercher une page partenaire&hellip;" autocomplete="off"
-              style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none"
-              value="<%= pm.variante_genre_id ? (pages.find(function(p){ return p.id === pm.variante_genre_id; }) || {title:''}).title : '' %>">
-            <button type="button" id="wf-variante-clear" style="background:none;border:none;color:#f87171;font-size:1rem;cursor:pointer;padding:.2rem" title="Retirer le lien">&#215;</button>
-          </div>
-          <ul id="wf-variante-results" style="list-style:none;margin:.25rem 0 0;padding:0;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;max-height:160px;overflow-y:auto;display:none"></ul>
-          <p id="wf-variante-current" style="font-size:.75rem;color:#4ade80;margin:.25rem 0 0;min-height:1em">
-            <% if (pm.variante_genre_id) { var vp = pages.find(function(p){ return p.id === pm.variante_genre_id; }); %>
-              <% if (vp) { %>Li&eacute; &agrave; : <strong><%= vp.title %></strong><% } %>
-            <% } %>
-          </p>
-          <input type="hidden" name="meta_variante_genre_id" id="wf-variante-genre-id" value="<%= pm.variante_genre_id || '' %>">
-        </div>
-      </div>
-
-      <%# Communs à tous %>
-      <details class="wf-part-details" open>
-        <summary>Param&egrave;tres communs</summary>
-        <div class="wf-part-details-body">
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Nature de l'acte</p><div class="wiki-meta-options">
-            <label class="chip-option"><input type="radio" name="meta_nature_acte" value="possible"   <%= psel('nature_acte','possible')   %>><span>Possible</span></label>
-            <label class="chip-option"><input type="radio" name="meta_nature_acte" value="improbable" <%= psel('nature_acte','improbable') %>><span>Improbable</span></label>
-            <label class="chip-option"><input type="radio" name="meta_nature_acte" value="impossible" <%= psel('nature_acte','impossible') %>><span>Impossible</span></label>
-            <label class="chip-option"><input type="radio" name="meta_nature_acte" value="fictif"     <%= psel('nature_acte','fictif')     %>><span>Fictif / Fantastique</span></label>
-            <label class="chip-option"><input type="radio" name="meta_nature_acte" value="inconnu"    <%= psel('nature_acte','inconnu')    %>><span>Inconnu</span></label>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Cadre l&eacute;gal</p><div class="wiki-meta-options">
-            <label class="chip-option"><input type="radio" name="meta_cadre_legal" value="legal"   <%= psel('cadre_legal','legal')   %>><span>L&eacute;gal</span></label>
-            <label class="chip-option"><input type="radio" name="meta_cadre_legal" value="flou"    <%= psel('cadre_legal','flou')    %>><span>Flou</span></label>
-            <label class="chip-option"><input type="radio" name="meta_cadre_legal" value="illegal" <%= psel('cadre_legal','illegal') %>><span>Ill&eacute;gal</span></label>
-            <label class="chip-option"><input type="radio" name="meta_cadre_legal" value="inconnu" <%= psel('cadre_legal','inconnu') %>><span>Inconnu</span></label>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Risque physique</p><div class="wiki-meta-options">
-            <% ['inconnu','nul','faible','modere','eleve','extreme'].forEach(function(v) { var lbl = {inconnu:'Inconnu',nul:'Nul',faible:'Faible',modere:'Mod\u00e9r\u00e9',eleve:'\u00c9lev\u00e9',extreme:'Extr\u00eame'}[v]; %>
-              <label class="chip-option"><input type="radio" name="meta_risque_physique" value="<%= v %>" <%= psel('risque_physique',v) %>><span><%= lbl %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Risque MST / IST / Zoonose</p><div class="wiki-meta-options">
-            <% ['inconnu','nul','faible','modere','eleve','extreme'].forEach(function(v) { var lbl = {inconnu:'Inconnu',nul:'Nul',faible:'Faible',modere:'Mod\u00e9r\u00e9',eleve:'\u00c9lev\u00e9',extreme:'Extr\u00eame'}[v]; %>
-              <label class="chip-option"><input type="radio" name="meta_risque_mst" value="<%= v %>" <%= psel('risque_mst',v) %>><span><%= lbl %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Accessibilit&eacute;</p><div class="wiki-meta-options">
-            <label class="chip-option"><input type="radio" name="meta_accessibilite" value="tres_rare"   <%= psel('accessibilite','tres_rare')   %>><span>Tr&egrave;s rare</span></label>
-            <label class="chip-option"><input type="radio" name="meta_accessibilite" value="rare"        <%= psel('accessibilite','rare')        %>><span>Rare</span></label>
-            <label class="chip-option"><input type="radio" name="meta_accessibilite" value="occasionnel" <%= psel('accessibilite','occasionnel') %>><span>Occasionnel</span></label>
-            <label class="chip-option"><input type="radio" name="meta_accessibilite" value="frequent"    <%= psel('accessibilite','frequent')    %>><span>Fr&eacute;quent</span></label>
-            <label class="chip-option"><input type="radio" name="meta_accessibilite" value="inconnu"     <%= psel('accessibilite','inconnu')     %>><span>Inconnu</span></label>
-          </div></div>
-        </div>
-      </details>
-
-      <%# Nombre %>
-      <details class="wf-part-details wf-part-sub wf-part-sub--nombre" hidden>
-        <summary>Nombre</summary>
-        <div class="wf-part-details-body">
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Nombre total</p><div class="wiki-meta-options">
-            <% ['2','3','4','5plus'].forEach(function(v) { %>
-              <label class="chip-option"><input type="radio" name="meta_nb_total" value="<%= v %>" <%= psel('nb_total',v) %>><span><%= v==='5plus'?'5+':v %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Nombre de femmes</p><div class="wiki-meta-options">
-            <% ['0','1','2','3plus'].forEach(function(v) { %>
-              <label class="chip-option"><input type="radio" name="meta_nb_feminin" value="<%= v %>" <%= psel('nb_feminin',v) %>><span><%= v==='3plus'?'3+':v %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Nombre d'hommes</p><div class="wiki-meta-options">
-            <% ['0','1','2','3plus'].forEach(function(v) { %>
-              <label class="chip-option"><input type="radio" name="meta_nb_masculin" value="<%= v %>" <%= psel('nb_masculin',v) %>><span><%= v==='3plus'?'3+':v %></span></label>
-            <% }) %>
-          </div></div>
-        </div>
-      </details>
-
-      <%# Monstre %>
-      <details class="wf-part-details wf-part-sub wf-part-sub--monstre" hidden>
-        <summary>Monstre</summary>
-        <div class="wf-part-details-body">
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Type de cr&eacute;ature</p><div class="wiki-meta-options">
-            <% [['machine','Machine'],['sang_froid','Sang froid'],['mammifere','Mammif\u00e8re'],['insectoide','Insecto\u00efde'],['amorphe','Amorphe'],['elementaire','\u00c9l\u00e9mentaire'],['autre','Autre']].forEach(function(o) { %>
-              <label class="chip-option"><input type="radio" name="meta_type_creature" value="<%= o[0] %>" <%= psel('type_creature',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Type(s) d'acte(s) sexuel(s)</p><div class="wiki-meta-options">
-            <% [['penetration','P\u00e9n\u00e9tration'],['absorption','Absorption'],['constriction','Constriction'],['pondaison','Pondaison'],['investation','Investation'],['possession','Possession'],['fusion','Fusion'],['parasitage','Parasitage'],['transformation','Transformation'],['insemination','Ins\u00e9mination / reproduction'],['aucun_variable','Aucun / variable'],['autre','Autre']].forEach(function(o) { %>
-              <label class="chip-option"><input type="checkbox" name="meta_type_acte_sexuel" value="<%= o[0] %>" <%= pmany('type_acte_sexuel',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Intelligence</p><div class="wiki-meta-options">
-            <% [['bestiale','Bestiale'],['faible','Faible'],['correcte','Correcte'],['forte','Forte'],['inconnu','Inconnu']].forEach(function(o) { %>
-              <label class="chip-option"><input type="radio" name="meta_niveau_intelligence" value="<%= o[0] %>" <%= psel('niveau_intelligence',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Capacit&eacute; de parole</p><div class="wiki-meta-options">
-            <% [['impossible','Impossible'],['possible','Possible'],['oui','Oui'],['frequente','Fr\u00e9quente']].forEach(function(o) { %>
-              <label class="chip-option"><input type="radio" name="meta_capacite_parole" value="<%= o[0] %>" <%= psel('capacite_parole',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Compatibilit&eacute; anatomique</p><div class="wiki-meta-options">
-            <label class="chip-option"><input type="radio" name="meta_compat_anatomique" value="oui"      <%= psel('compat_anatomique','oui') %>><span>Oui</span></label>
-            <label class="chip-option"><input type="radio" name="meta_compat_anatomique" value="non"      <%= psel('compat_anatomique','non') %>><span>Non</span></label>
-            <label class="chip-option"><input type="radio" name="meta_compat_anatomique" value="partielle"<%= psel('compat_anatomique','partielle') %>><span>Partielle</span></label>
-            <label class="chip-option"><input type="radio" name="meta_compat_anatomique" value="inconnu"  <%= psel('compat_anatomique','inconnu') %>><span>Inconnu</span></label>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Origine conceptuelle</p><div class="wiki-meta-options">
-            <label class="chip-option"><input type="radio" name="meta_origine_conceptuelle" value="fantaisie"       <%= psel('origine_conceptuelle','fantaisie') %>><span>Fantaisie</span></label>
-            <label class="chip-option"><input type="radio" name="meta_origine_conceptuelle" value="science_fiction" <%= psel('origine_conceptuelle','science_fiction') %>><span>Science-fiction</span></label>
-            <label class="chip-option"><input type="radio" name="meta_origine_conceptuelle" value="imaginaire"      <%= psel('origine_conceptuelle','imaginaire') %>><span>Imaginaire</span></label>
-            <label class="chip-option"><input type="radio" name="meta_origine_conceptuelle" value="autre"           <%= psel('origine_conceptuelle','autre') %>><span>Autre</span></label>
-          </div></div>
-        </div>
-      </details>
-
-      <%# Animal %>
-      <details class="wf-part-details wf-part-sub wf-part-sub--animaux" hidden>
-        <summary>Animal</summary>
-        <div class="wf-part-details-body">
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Famille zoologique</p><div class="wiki-meta-options">
-            <% [['canide','Canid\u00e9'],['equide','\u00c9quid\u00e9'],['felin','F\u00e9lin'],['bovin','Bovin'],['reptile','Reptile'],['aviaire','Aviaire'],['cetace','C\u00e9tac\u00e9'],['autre','Autre']].forEach(function(o) { %>
-              <label class="chip-option"><input type="radio" name="meta_famille_zoologique" value="<%= o[0] %>" <%= psel('famille_zoologique',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Taille par rapport &agrave; une femme</p><div class="wiki-meta-options">
-            <% [['petit','Petit'],['egal','\u00c9gal'],['grand','Grand'],['tres_grand','Tr\u00e8s grand']].forEach(function(o) { %>
-              <label class="chip-option"><input type="radio" name="meta_taille_animal" value="<%= o[0] %>" <%= psel('taille_animal',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-        </div>
-      </details>
-
-      <%# Biologie (Monstre + Animal) %>
-      <details class="wf-part-details wf-part-sub wf-part-sub--biodetail" hidden>
-        <summary>Biologie</summary>
-        <div class="wf-part-details-body">
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Nature de l'esp&egrave;ce</p><div class="wiki-meta-options">
-            <label class="chip-option"><input type="radio" name="meta_nature_espece" value="domestique" <%= psel('nature_espece','domestique') %>><span>Domestique</span></label>
-            <label class="chip-option"><input type="radio" name="meta_nature_espece" value="sauvage"    <%= psel('nature_espece','sauvage') %>><span>Sauvage</span></label>
-            <label class="chip-option"><input type="radio" name="meta_nature_espece" value="inconnu"    <%= psel('nature_espece','inconnu') %>><span>Inconnu</span></label>
-          </div></div>
-          <div class="wiki-meta-group wf-measure-group">
-            <div class="wf-measure-header">
-              <p class="wiki-meta-label">Taille du p&eacute;nis</p>
-              <button type="button" class="wf-measure-toggle" data-target="taille-penis">
-                <%= pval('taille_penis_qual') ? 'Valeurs exactes' : 'Qualitatif' %>
-              </button>
-            </div>
-            <div class="wf-measure-field" id="wf-taille-penis-field" data-mode="<%= pval('taille_penis_qual') ? 'qual' : 'exact' %>">
-              <div class="wf-measure-exact wf-range-row">
-                <label>De&nbsp;<input type="number" name="meta_taille_penis_min" class="wf-range-input" min="0" step="0.1" value="<%= pval('taille_penis_min') %>" placeholder="0" /></label>
-                <label>&Agrave;&nbsp;<input type="number" name="meta_taille_penis_max" class="wf-range-input" min="0" step="0.1" value="<%= pval('taille_penis_max') %>" placeholder="0" /></label>
-                <span class="wf-range-unit">cm</span>
-              </div>
-              <div class="wf-measure-qual wiki-meta-options">
-                <% [['faible','Faible'],['modere','Mod\u00e9r\u00e9'],['grand','Grand'],['tres_grand','Tr\u00e8s grand']].forEach(function(o){ %>
-                  <label class="chip-option"><input type="radio" name="meta_taille_penis_qual" value="<%= o[0] %>" <%= pval('taille_penis_qual') === o[0] ? 'checked' : '' %>><span><%= o[1] %></span></label>
-                <% }) %>
-              </div>
-            </div>
-          </div>
-          <div class="wiki-meta-group wf-measure-group">
-            <div class="wf-measure-header">
-              <p class="wiki-meta-label">Circonf&eacute;rence du p&eacute;nis</p>
-              <button type="button" class="wf-measure-toggle" data-target="circ-penis">
-                <%= pval('circ_penis_qual') ? 'Valeurs exactes' : 'Qualitatif' %>
-              </button>
-            </div>
-            <div class="wf-measure-field" id="wf-circ-penis-field" data-mode="<%= pval('circ_penis_qual') ? 'qual' : 'exact' %>">
-              <div class="wf-measure-exact wf-range-row">
-                <label>De&nbsp;<input type="number" name="meta_circ_penis_min" class="wf-range-input" min="0" step="0.1" value="<%= pval('circ_penis_min') %>" placeholder="0" /></label>
-                <label>&Agrave;&nbsp;<input type="number" name="meta_circ_penis_max" class="wf-range-input" min="0" step="0.1" value="<%= pval('circ_penis_max') %>" placeholder="0" /></label>
-                <span class="wf-range-unit">cm</span>
-              </div>
-              <div class="wf-measure-qual wiki-meta-options">
-                <% [['faible','Faible'],['modere','Mod\u00e9r\u00e9(e)'],['grand','Grand(e)'],['tres_grand','Tr\u00e8s grand(e)']].forEach(function(o){ %>
-                  <label class="chip-option"><input type="radio" name="meta_circ_penis_qual" value="<%= o[0] %>" <%= pval('circ_penis_qual') === o[0] ? 'checked' : '' %>><span><%= o[1] %></span></label>
-                <% }) %>
-              </div>
-            </div>
-          </div>
-          <div class="wiki-meta-group wf-measure-group">
-            <div class="wf-measure-header">
-              <p class="wiki-meta-label">Volume d'&eacute;jaculation</p>
-              <button type="button" class="wf-measure-toggle" data-target="vol-ejac">
-                <%= pval('vol_ejac_qual') ? 'Valeurs exactes' : 'Qualitatif' %>
-              </button>
-            </div>
-            <div class="wf-measure-field" id="wf-vol-ejac-field" data-mode="<%= pval('vol_ejac_qual') ? 'qual' : 'exact' %>">
-              <div class="wf-measure-exact wf-range-row">
-                <label>De&nbsp;<input type="number" name="meta_vol_ejac_min" class="wf-range-input" min="0" step="1" value="<%= pval('vol_ejac_min') %>" placeholder="0" /></label>
-                <label>&Agrave;&nbsp;<input type="number" name="meta_vol_ejac_max" class="wf-range-input" min="0" step="1" value="<%= pval('vol_ejac_max') %>" placeholder="0" /></label>
-                <span class="wf-range-unit">ml</span>
-              </div>
-              <div class="wf-measure-qual wiki-meta-options">
-                <% [['faible','Faible'],['modere','Mod\u00e9r\u00e9'],['grand','Important'],['tres_grand','Tr\u00e8s important']].forEach(function(o){ %>
-                  <label class="chip-option"><input type="radio" name="meta_vol_ejac_qual" value="<%= o[0] %>" <%= pval('vol_ejac_qual') === o[0] ? 'checked' : '' %>><span><%= o[1] %></span></label>
-                <% }) %>
-              </div>
-            </div>
-          </div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Caract&eacute;ristiques du sperme</p>
-            <div class="wf-sperme-fields">
-              <label>Texture&nbsp;<input type="text" name="meta_sperme_texture" class="wf-text-sm" value="<%= pval('sperme_texture') %>" placeholder="Ex: Aqueux, &Eacute;pais&hellip;" /></label>
-              <label>Odeur&nbsp;<input type="text" name="meta_sperme_odeur"   class="wf-text-sm" value="<%= pval('sperme_odeur') %>"   placeholder="Ex: Nulle, M&eacute;tallique&hellip;" /></label>
-              <label>Go&ucirc;t&nbsp;<input type="text" name="meta_sperme_gout"    class="wf-text-sm" value="<%= pval('sperme_gout') %>"    placeholder="Ex: Sal&eacute;, Amer&hellip;" /></label>
-            </div>
-          </div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Verrouillage copulatoire</p><div class="wiki-meta-options">
-            <% [['aucun','Aucun'],['noeud','N\u0153ud'],['epines','\u00c9pines'],['ventouses','Ventouses'],['partiel','Partiel'],['autre','Autre'],['inconnu','Inconnu']].forEach(function(o) { %>
-              <label class="chip-option"><input type="radio" name="meta_type_verrouillage" value="<%= o[0] %>" <%= psel('type_verrouillage',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Sensations principales</p><div class="wiki-meta-options">
-            <% [['pression','Pression'],['remplissage','Remplissage'],['frottement','Frottement'],['elongation','\u00c9longation'],['vibration','Vibration'],['chaleur','Chaleur'],['secousse','Secousse'],['autre','Autre']].forEach(function(o) { %>
-              <label class="chip-option"><input type="checkbox" name="meta_sensations" value="<%= o[0] %>" <%= pmany('sensations',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Milieu de vie</p><div class="wiki-meta-options">
-            <% [['terrestre','Terrestre'],['aerien','A\u00e9rien'],['aquatique_mer','Aquatique (mer)'],['dulcaquicole','Dulçaquicole'],['semi_aquatique','Semi-aquatique'],['souterrain','Souterrain'],['inconnu','Inconnu']].forEach(function(o) { %>
-              <label class="chip-option"><input type="radio" name="meta_milieu_vie" value="<%= o[0] %>" <%= psel('milieu_vie',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-          <div class="wiki-meta-group"><p class="wiki-meta-label">Structure sociale</p><div class="wiki-meta-options">
-            <% [['monogame','Monogame'],['polygame','Polygame'],['polyandrie','Polyandrie'],['promiscuite','Promiscuit\u00e9'],['sans_lien','Sans lien'],['harem','Harem'],['coloniale','Coloniale'],['saisonniere','Saisonni\u00e8re'],['variable','Variable'],['inconnu','Inconnu']].forEach(function(o) { %>
-              <label class="chip-option"><input type="radio" name="meta_structure_sociale" value="<%= o[0] %>" <%= psel('structure_sociale',o[0]) %>><span><%= o[1] %></span></label>
-            <% }) %>
-          </div></div>
-        </div>
-      </details>
-
-    </div>
-
-    <%# Position %>
-    <%
-      var pmCanal = Array.isArray(pm.canal) ? pm.canal : (pm.canal ? [pm.canal] : []);
-      var pmOri   = Array.isArray(pm.orientation) ? pm.orientation : (pm.orientation ? [pm.orientation] : []);
-      var pmSup   = Array.isArray(pm.supports) ? pm.supports : (pm.supports ? [pm.supports] : []);
-      function ck(arr, v) { return arr.indexOf(v) !== -1 ? 'checked' : ''; }
-      function ra(val, v)  { return val === v ? 'checked' : ''; }
-    %>
-    <div class="wiki-position-meta" <%= page.category === 'position' ? '' : 'hidden' %>>
-      <div class="wf-section-title">D&eacute;tails</div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Cat&eacute;gorie</p>
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="radio" name="meta_categorie" value="penetration"           <%= ra(pm.categorie,'penetration') %>><span>P&eacute;n&eacute;tration</span></label>
-          <label class="chip-option"><input type="radio" name="meta_categorie" value="fellation_cunnilingus" <%= ra(pm.categorie,'fellation_cunnilingus') %>><span>Fellation&nbsp;/ Cunnilingus</span></label>
-          <label class="chip-option"><input type="radio" name="meta_categorie" value="anilingus"             <%= ra(pm.categorie,'anilingus') %>><span>Anilingus</span></label>
-          <label class="chip-option"><input type="radio" name="meta_categorie" value="stimulation_manuelle" <%= ra(pm.categorie,'stimulation_manuelle') %>><span>Stimulation manuelle</span></label>
-          <label class="chip-option"><input type="radio" name="meta_categorie" value="double_penetration"   <%= ra(pm.categorie,'double_penetration') %>><span>Double p&eacute;n&eacute;tration</span></label>
-          <label class="chip-option"><input type="radio" name="meta_categorie" value="position_69"          <%= ra(pm.categorie,'position_69') %>><span>Position 69</span></label>
-          <label class="chip-option"><input type="radio" name="meta_categorie" value="autre"                <%= ra(pm.categorie,'autre') %>><span>Autre</span></label>
-        </div>
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Au-dessus</p>
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="radio" name="meta_qui_dessus" value="femme"    <%= ra(pm.qui_dessus,'femme') %>><span>Femme</span></label>
-          <label class="chip-option"><input type="radio" name="meta_qui_dessus" value="homme"    <%= ra(pm.qui_dessus,'homme') %>><span>Homme</span></label>
-          <label class="chip-option"><input type="radio" name="meta_qui_dessus" value="variable" <%= ra(pm.qui_dessus,'variable') %>><span>Variable</span></label>
-          <label class="chip-option"><input type="radio" name="meta_qui_dessus" value="aucun"    <%= ra(pm.qui_dessus,'aucun') %>><span>Debout&nbsp;/ aucun</span></label>
-        </div>
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Canal(aux)</p>
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="checkbox" name="meta_canal" value="vagin"  <%= ck(pmCanal,'vagin') %>><span>Vagin</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_canal" value="anus"   <%= ck(pmCanal,'anus') %>><span>Anus</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_canal" value="bouche" <%= ck(pmCanal,'bouche') %>><span>Bouche</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_canal" value="mains"  <%= ck(pmCanal,'mains') %>><span>Mains</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_canal" value="autre"  <%= ck(pmCanal,'autre') %>><span>Autre</span></label>
-        </div>
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Orientation</p>
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="checkbox" name="meta_orientation" value="face_a_face"     <%= ck(pmOri,'face_a_face') %>><span>Face &agrave; face</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_orientation" value="face_contre_dos" <%= ck(pmOri,'face_contre_dos') %>><span>Face contre dos</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_orientation" value="cote_a_cote"     <%= ck(pmOri,'cote_a_cote') %>><span>C&ocirc;te &agrave; c&ocirc;te</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_orientation" value="acrobatique"     <%= ck(pmOri,'acrobatique') %>><span>Acrobatique</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_orientation" value="autre"           <%= ck(pmOri,'autre') %>><span>Autre</span></label>
-        </div>
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Nombre de partenaires</p>
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="radio" name="meta_nb_partenaires" value="2"        <%= ra(pm.nb_partenaires,'2') %>><span>2</span></label>
-          <label class="chip-option"><input type="radio" name="meta_nb_partenaires" value="3"        <%= ra(pm.nb_partenaires,'3') %>><span>3</span></label>
-          <label class="chip-option"><input type="radio" name="meta_nb_partenaires" value="4plus"    <%= ra(pm.nb_partenaires,'4plus') %>><span>4+</span></label>
-          <label class="chip-option"><input type="radio" name="meta_nb_partenaires" value="variable" <%= ra(pm.nb_partenaires,'variable') %>><span>Variable</span></label>
-        </div>
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Partenaire actif</p>
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="radio" name="meta_partenaire_actif" value="femme"    <%= ra(pm.partenaire_actif,'femme') %>><span>Femme</span></label>
-          <label class="chip-option"><input type="radio" name="meta_partenaire_actif" value="homme"    <%= ra(pm.partenaire_actif,'homme') %>><span>Homme</span></label>
-          <label class="chip-option"><input type="radio" name="meta_partenaire_actif" value="les_deux" <%= ra(pm.partenaire_actif,'les_deux') %>><span>Les deux</span></label>
-          <label class="chip-option"><input type="radio" name="meta_partenaire_actif" value="variable" <%= ra(pm.partenaire_actif,'variable') %>><span>Variable</span></label>
-        </div>
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Supports possibles</p>
-        <div class="wiki-meta-options">
-          <label class="chip-option"><input type="checkbox" name="meta_supports" value="lit"    <%= ck(pmSup,'lit') %>><span>Lit</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_supports" value="sol"    <%= ck(pmSup,'sol') %>><span>Sol</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_supports" value="chaise" <%= ck(pmSup,'chaise') %>><span>Chaise</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_supports" value="canape" <%= ck(pmSup,'canape') %>><span>Canap&eacute;&nbsp;/ Bord de lit</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_supports" value="mur"    <%= ck(pmSup,'mur') %>><span>Contre un mur</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_supports" value="table"  <%= ck(pmSup,'table') %>><span>Table&nbsp;/ Plan</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_supports" value="bain"   <%= ck(pmSup,'bain') %>><span>Bain&nbsp;/ Douche</span></label>
-          <label class="chip-option"><input type="checkbox" name="meta_supports" value="autre"  <%= ck(pmSup,'autre') %>><span>Autre</span></label>
-        </div>
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Variantes</p>
-        <div class="wiki-var-editor" id="wiki-variante-editor">
-          <div class="wiki-var-list"></div>
-          <button type="button" class="wiki-var-add-btn">+ Ajouter une variante</button>
-        </div>
-        <input type="hidden" name="meta_variantes" id="wiki-variantes-hidden" value="<%= JSON.stringify(pm.variantes || []) %>" />
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Informations utiles</p>
-        <% var _trInfos = (locals.editLang === 'en') ? ((locals.translations || {}).meta_infos_utiles || '') : (pm.infos_utiles || ''); %>
-        <textarea name="meta_infos_utiles" class="wiki-textarea wiki-pos-textarea" rows="5"
-          placeholder="<%= locals.editLang === 'en' ? (pm.infos_utiles || 'Useful information EN\u2026') : 'Conditions, pr\u00e9requis\u2026' %>"><%= _trInfos %></textarea>
-      </div>
-      <div class="wiki-meta-group">
-        <p class="wiki-meta-label">Nouvelles</p>
-        <textarea name="meta_nouvelles" class="wiki-textarea wiki-pos-textarea" rows="5" placeholder="Une courte histoire&hellip;"><%= pm.nouvelles || '' %></textarea>
-      </div>
-    </div>
-
-    <%# ── Résumé carte Codex (non-obligatoire, dos de carte) ── %>
-    <div class="wf-section-title">Carte Codex <span style="font-size:.73rem;color:#64748b;font-weight:400;text-transform:none;letter-spacing:0">(optionnel)</span></div>
-    <textarea name="card_summary" class="wiki-textarea wiki-pos-textarea" rows="3"
-      placeholder="Texte affiché au dos de la carte lootbox (2-4 lignes courtes)…"><%= page.cardSummary || '' %></textarea>
-
-    <%# ── Actions mobile uniquement ── %>
-    <div class="wiki-form-actions wf-mobile-actions">
-      <button type="submit">Enregistrer</button>
-    </div>
   </form>
 
-  <% if (page.id) { %>
-  <%# ── Pages liées : champ uniquement ── %>
-  <div class="wiki-page-links" data-page-id="<%= page.id %>">
-    <div class="wiki-pl-body">
-      <div class="wiki-pl-section">
-        <div class="wiki-pl-cards" data-role="links"></div>
-      </div>
-      <div class="wiki-pl-section wiki-pl-backlinks-section" hidden>
-        <p class="wiki-pl-back-label">R&eacute;f&eacute;renc&eacute;e par</p>
-        <div class="wiki-pl-cards" data-role="backlinks"></div>
-      </div>
-    </div>
-    <div class="wiki-pl-add">
-      <input type="text" class="wiki-pl-search" placeholder="Lier une autre page&hellip;" autocomplete="off" />
-      <ul class="wiki-pl-results"></ul>
-    </div>
-  </div>
-
-  <%# ── Questions liées : champ uniquement ── %>
-  <div class="wiki-question-links" data-page-id="<%= page.id %>">
-    <ul class="wiki-ql-list"></ul>
-    <div class="wiki-ql-add">
-      <input type="text" class="wiki-ql-search" placeholder="Associer une question&hellip;" autocomplete="off" />
-      <ul class="wiki-ql-results"></ul>
-    </div>
-  </div>
-  <% } %>
 </main>
+
 <script nonce="<%= nonce %>">
 (function () {
   var inp    = document.getElementById("wf-stats-type");
@@ -782,7 +790,7 @@
       if (!hidden) return;
       var isDonne = hidden.value === "donne";
       hidden.value = isDonne ? "" : "donne";
-      btn.textContent = isDonne ? "Reçu" : "Donné";
+      btn.textContent = isDonne ? "Re\u00e7u" : "Donn\u00e9";
       btn.classList.toggle("donne", !isDonne);
     });
   });

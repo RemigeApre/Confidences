@@ -45,14 +45,63 @@
       <% } %>
     </div>
 
+    <%
+      // Parse user-agent → { os, browser, type }
+      function parseUA(ua) {
+        if (!ua) return { os: 'Inconnu', browser: '?', type: '?' };
+        var type = /Mobile|Android|iPhone|iPad/.test(ua) ? 'mobile' : 'desktop';
+        var os = 'Autre';
+        if (/Windows NT 10/.test(ua))        os = 'Windows 10/11';
+        else if (/Windows NT 6/.test(ua))    os = 'Windows ≤8';
+        else if (/Mac OS X/.test(ua))        os = /iPhone|iPad/.test(ua) ? 'iOS' : 'macOS';
+        else if (/Android/.test(ua))         os = 'Android';
+        else if (/Linux/.test(ua))           os = 'Linux';
+        var browser = 'Autre';
+        if (/Edg\//.test(ua))               browser = 'Edge';
+        else if (/OPR\/|Opera/.test(ua))    browser = 'Opera';
+        else if (/Chrome\//.test(ua))       browser = 'Chrome';
+        else if (/Safari\//.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+        else if (/Firefox\//.test(ua))      browser = 'Firefox';
+        return { os: os, browser: browser, type: type };
+      }
+      // Assigne un indice court à chaque UA unique (A, B, C…)
+      var _uaMap = {};
+      var _uaIdx = 0;
+      var _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      connectionLogs.forEach(function(log) {
+        if (log.userAgent && !_uaMap[log.userAgent]) {
+          _uaMap[log.userAgent] = _letters[_uaIdx % _letters.length];
+          _uaIdx++;
+        }
+      });
+      var _deviceCount = Object.keys(_uaMap).length;
+    %>
     <div class="aud-section">
       <h2 class="aud-section-title">Connexions par mot de passe (<%= connectionLogs.length %> derni&egrave;res)</h2>
+      <% if (_deviceCount > 1) { %>
+        <p class="admin-muted" style="margin:-0.25rem 0 .75rem">
+          <strong style="color:#fbbf24"><%= _deviceCount %> appareils distincts</strong> d&eacute;tect&eacute;s (User-Agent diff&eacute;rent = appareil ou navigateur diff&eacute;rent).
+        </p>
+        <div class="aud-device-legend">
+          <% Object.entries(_uaMap).forEach(function(entry) { var ua=entry[0],letter=entry[1]; var p=parseUA(ua); %>
+            <span class="aud-device-chip aud-device-chip--<%= letter.toLowerCase() %>">
+              <span class="aud-device-letter"><%= letter %></span>
+              <%= p.type === 'mobile' ? '📱' : '🖥' %> <%= p.os %> &bull; <%= p.browser %>
+            </span>
+          <% }); %>
+        </div>
+      <% } %>
       <% if (connectionLogs.length) { %>
         <ul class="aud-activity-list">
           <% connectionLogs.forEach(function(log) { %>
-            <li class="aud-activity-row">
+            <% var _letter = log.userAgent ? _uaMap[log.userAgent] : null; %>
+            <% var _parsed = parseUA(log.userAgent); %>
+            <li class="aud-activity-row" title="<%= log.userAgent || '' %>">
               <span class="aud-activity-date"><%= new Date(log.createdAt).toLocaleString('fr-FR') %></span>
               <span class="admin-muted"><%= log.ip %></span>
+              <% if (_letter) { %>
+                <span class="aud-device-badge aud-device-badge--<%= _letter.toLowerCase() %>" title="<%= log.userAgent %>"><%= _letter %> &bull; <%= _parsed.os %> &bull; <%= _parsed.browser %></span>
+              <% } %>
             </li>
           <% }) %>
         </ul>
