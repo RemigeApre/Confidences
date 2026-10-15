@@ -107,6 +107,7 @@
     <div class="wiki-card-image" data-images="<%= page.imagePaths.join('|') %>">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
+      <% if (currentUser && currentUser.isAdmin && typeof wikiEnIds !== 'undefined' && wikiEnIds && wikiEnIds.has(page.id)) { %><span class="wiki-en-badge">EN</span><% } %>
       <% if (wcStatPctF !== null) { %>
         <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes"></div>
       <% } %>
@@ -134,6 +135,7 @@
     <div class="wiki-card-image">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
+      <% if (currentUser && currentUser.isAdmin && typeof wikiEnIds !== 'undefined' && wikiEnIds && wikiEnIds.has(page.id)) { %><span class="wiki-en-badge">EN</span><% } %>
       <% if (wcStatPctF !== null) { %>
         <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes"></div>
       <% } %>

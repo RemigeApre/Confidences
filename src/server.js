@@ -26,7 +26,7 @@ const {
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
   getUserById, isScanPath,
-  getTranslation, getTranslationsForEntity,
+  getTranslation, getTranslationsForEntity, getFieldTranslationsByEntity,
   getLootboxCount,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
@@ -627,6 +627,23 @@ app.use((req, res, next) => {
     ? listFilterProfiles(req.user.id, "wiki") : [];
   res.locals.galleryFilterProfiles = (req.user && req.path.indexOf("/galerie") === 0)
     ? listFilterProfiles(req.user.id, "gallery") : [];
+  next();
+});
+
+// Badges "EN" pour l'admin : ensembles des IDs ayant une traduction anglaise,
+// exposés en res.locals pour wiki-card.ejs et protagonistes.ejs.
+app.use((req, res, next) => {
+  if (req.user && req.user.isAdmin && req.method === "GET") {
+    try {
+      const wikiEn = getFieldTranslationsByEntity("wiki", "title", "en");
+      res.locals.wikiEnIds = new Set(Object.keys(wikiEn).map(Number));
+      const protEn = getFieldTranslationsByEntity("protagoniste", "description", "en");
+      res.locals.protEnIds = new Set(Object.keys(protEn).map(Number));
+    } catch (_) {
+      res.locals.wikiEnIds = new Set();
+      res.locals.protEnIds = new Set();
+    }
+  }
   next();
 });
 
