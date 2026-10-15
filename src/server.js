@@ -18,6 +18,7 @@ const buildAccountRouter = require("./routes/account");
 const buildCoupleRouter = require("./routes/couple");
 const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
+const buildRacesRouter = require("./routes/races");
 const { attachUser } = require("./auth");
 const {
   db, getAllTagMeta, getAllTagCategories, getAllTagParents, getAllTagSubcategories, setTagType, setTagCategory, setTagParent, setTagSubcategory, createStandaloneTag, renameTagEverywhere,
@@ -1008,6 +1009,7 @@ app.use("/compte", buildAccountRouter(config));
 app.use("/couple", buildCoupleRouter(config));
 app.use("/nouvelles", buildNouvellesRouter(config));
 app.use("/protagonistes", buildProtagonistesRouter(config));
+app.use("/races", buildRacesRouter(config));
 app.use("/parodies", buildParodiesRouter(config));
 app.use("/lootbox", buildLootboxRouter(config));
 app.use("/jeu", buildJeuRouter(config));

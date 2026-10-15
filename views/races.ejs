@@ -1,0 +1,396 @@
+<%- include('partials/head', { title: 'Espèces & Races' }) %>
+<main class="container wide gallery-has-sidebar" style="--ch-hue:270">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Espèces & Races', navTitleEn: 'Species & Races', navBack: '/' }) %>
+
+  <aside class="wiki-cat-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
+    <%- include('partials/sidebar-hero', { title: 'Espèces', titleEn: 'Species', hue: 270, count: races.length, countId: 'races-count' }) %>
+    <div class="wiki-sidebar-body">
+      <div style="padding:.6rem 0">
+        <button type="button" class="races-sidebar-add-btn" id="races-add-btn">+ Nouvelle espèce</button>
+        <p class="races-sidebar-hint">Les espèces regroupent les personnages par nature. Chaque espèce peut avoir des sous-espèces.</p>
+      </div>
+    </div>
+  </aside>
+
+  <div class="races-grid" id="races-grid"></div>
+
+  <%# ── Modal espèce ── %>
+  <div class="races-overlay" id="race-overlay" hidden>
+    <div class="races-modal" id="race-modal" role="dialog" aria-modal="true" aria-labelledby="race-modal-title">
+      <div class="races-modal-header">
+        <h2 class="races-modal-title" id="race-modal-title">Nouvelle espèce</h2>
+        <button type="button" class="races-modal-close" id="race-modal-close" aria-label="Fermer">&#x2715;</button>
+      </div>
+      <form id="race-form" class="races-modal-body" autocomplete="off">
+        <input type="hidden" id="race-id" value="" />
+        <div class="races-form-row">
+          <label class="races-form-label" for="race-name">Nom <span class="races-required">*</span></label>
+          <input type="text" id="race-name" class="races-form-input" required placeholder="Ex: Elfe, Démon…" maxlength="100" />
+        </div>
+        <div class="races-form-row races-form-row--2col">
+          <div>
+            <label class="races-form-label" for="race-icon">Icône (emoji)</label>
+            <input type="text" id="race-icon" class="races-form-input races-form-input--emoji" placeholder="🧝" maxlength="4" />
+          </div>
+          <div>
+            <label class="races-form-label" for="race-color">Couleur</label>
+            <div class="races-color-wrap">
+              <input type="color" id="race-color" class="races-form-color" value="#6366f1" />
+              <span class="races-color-swatch" id="race-color-swatch"></span>
+            </div>
+          </div>
+        </div>
+        <div class="races-form-row">
+          <label class="races-form-label" for="race-desc">Description</label>
+          <textarea id="race-desc" class="races-form-input races-form-textarea" rows="3" placeholder="Description optionnelle…"></textarea>
+        </div>
+        <div class="races-modal-footer">
+          <button type="button" class="races-btn races-btn--ghost" id="race-cancel">Annuler</button>
+          <button type="submit" class="races-btn races-btn--primary" id="race-submit">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <%# ── Modal sous-espèce ── %>
+  <div class="races-overlay" id="clan-overlay" hidden>
+    <div class="races-modal" id="clan-modal" role="dialog" aria-modal="true" aria-labelledby="clan-modal-title">
+      <div class="races-modal-header">
+        <h2 class="races-modal-title" id="clan-modal-title">Nouvelle sous-espèce</h2>
+        <button type="button" class="races-modal-close" id="clan-modal-close" aria-label="Fermer">&#x2715;</button>
+      </div>
+      <form id="clan-form" class="races-modal-body" autocomplete="off">
+        <input type="hidden" id="clan-id" value="" />
+        <input type="hidden" id="clan-race-id" value="" />
+        <div class="races-form-row races-form-row--2col">
+          <div style="flex:2">
+            <label class="races-form-label" for="clan-name">Nom <span class="races-required">*</span></label>
+            <input type="text" id="clan-name" class="races-form-input" required placeholder="Ex: Haut-Elfe" maxlength="100" />
+          </div>
+          <div>
+            <label class="races-form-label" for="clan-color">Couleur</label>
+            <div class="races-color-wrap">
+              <input type="color" id="clan-color" class="races-form-color" value="#9fa3f8" />
+              <span class="races-color-swatch" id="clan-color-swatch"></span>
+            </div>
+          </div>
+        </div>
+        <div class="races-form-row">
+          <label class="races-form-label" for="clan-desc">Description</label>
+          <textarea id="clan-desc" class="races-form-input races-form-textarea" rows="2" placeholder="Description optionnelle…"></textarea>
+        </div>
+        <div class="races-modal-footer">
+          <button type="button" class="races-btn races-btn--ghost" id="clan-cancel">Annuler</button>
+          <button type="submit" class="races-btn races-btn--primary" id="clan-submit">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</main>
+
+<script nonce="<%= nonce %>">window.RACES_INIT = <%- JSON.stringify(races) %>;</script>
+<script nonce="<%= nonce %>">
+(function() {
+  var grid    = document.getElementById('races-grid');
+  var countEl = document.getElementById('races-count');
+
+  // ── Cache ────────────────────────────────────────────────────────────────
+  var _cache = window.RACES_INIT || [];
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function isHex(c) { return /^#[0-9a-fA-F]{6}$/.test(c || ''); }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  function renderGrid(races) {
+    _cache = races;
+    if (countEl) countEl.textContent = races.length;
+    if (!grid) return;
+    var frag = document.createDocumentFragment();
+    races.forEach(function(race) {
+      var col = isHex(race.color) ? race.color : '#6366f1';
+      var card = document.createElement('div');
+      card.className = 'race-card';
+      card.dataset.id = race.id;
+
+      // Header
+      var hdr = document.createElement('div');
+      hdr.className = 'race-card-header';
+      hdr.style.background = col + '1e';
+      hdr.style.borderBottomColor = col + '55';
+
+      var iconEl = document.createElement('span');
+      iconEl.className = 'race-card-icon';
+      iconEl.textContent = race.icon || '';
+      hdr.appendChild(iconEl);
+
+      var nameEl = document.createElement('span');
+      nameEl.className = 'race-card-name';
+      nameEl.textContent = race.name;
+      hdr.appendChild(nameEl);
+
+      if (race.count > 0) {
+        var pcountEl = document.createElement('span');
+        pcountEl.className = 'race-card-pcount';
+        pcountEl.style.color = col;
+        pcountEl.textContent = race.count;
+        hdr.appendChild(pcountEl);
+      }
+
+      var actionsEl = document.createElement('div');
+      actionsEl.className = 'race-card-actions';
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'race-act-btn';
+      editBtn.dataset.editRace = race.id;
+      editBtn.title = 'Modifier l\'espèce';
+      editBtn.setAttribute('aria-label', 'Modifier');
+      editBtn.textContent = '✏';
+      var delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'race-act-btn race-act-btn--del';
+      delBtn.dataset.delRace = race.id;
+      delBtn.title = 'Supprimer l\'espèce';
+      delBtn.setAttribute('aria-label', 'Supprimer');
+      delBtn.textContent = '✕';
+      actionsEl.appendChild(editBtn);
+      actionsEl.appendChild(delBtn);
+      hdr.appendChild(actionsEl);
+      card.appendChild(hdr);
+
+      // Body
+      var body = document.createElement('div');
+      body.className = 'race-card-body';
+      if (race.description) {
+        var desc = document.createElement('p');
+        desc.className = 'race-card-desc';
+        desc.textContent = race.description;
+        body.appendChild(desc);
+      }
+
+      // Clans
+      var clansWrap = document.createElement('div');
+      clansWrap.className = 'race-clans-list';
+      if (race.clans && race.clans.length) {
+        race.clans.forEach(function(clan) {
+          var cc = isHex(clan.color) ? clan.color : col;
+          var chip = document.createElement('span');
+          chip.className = 'race-clan-chip';
+          chip.style.background = cc + '22';
+          chip.style.borderColor = cc + '66';
+          chip.style.color = cc;
+
+          var clanNameEl = document.createElement('span');
+          clanNameEl.className = 'race-clan-name';
+          clanNameEl.textContent = clan.name;
+          chip.appendChild(clanNameEl);
+
+          var clanEdit = document.createElement('button');
+          clanEdit.type = 'button';
+          clanEdit.className = 'race-clan-edit';
+          clanEdit.dataset.clanId = clan.id;
+          clanEdit.dataset.raceId = race.id;
+          clanEdit.title = 'Modifier';
+          clanEdit.setAttribute('aria-label', 'Modifier');
+          clanEdit.textContent = '✏';
+          chip.appendChild(clanEdit);
+
+          var clanDel = document.createElement('button');
+          clanDel.type = 'button';
+          clanDel.className = 'race-clan-del';
+          clanDel.dataset.clanId = clan.id;
+          clanDel.title = 'Supprimer';
+          clanDel.setAttribute('aria-label', 'Supprimer');
+          clanDel.textContent = '✕';
+          chip.appendChild(clanDel);
+
+          clansWrap.appendChild(chip);
+        });
+      } else {
+        var noClans = document.createElement('span');
+        noClans.className = 'race-no-clans';
+        noClans.textContent = 'Aucune sous-espèce';
+        clansWrap.appendChild(noClans);
+      }
+      body.appendChild(clansWrap);
+
+      var addClan = document.createElement('button');
+      addClan.type = 'button';
+      addClan.className = 'race-add-clan-btn';
+      addClan.dataset.raceId = race.id;
+      addClan.style.color = col;
+      addClan.textContent = '+ Sous-espèce';
+      body.appendChild(addClan);
+
+      card.appendChild(body);
+      frag.appendChild(card);
+    });
+    grid.innerHTML = '';
+    grid.appendChild(frag);
+
+    if (!races.length) {
+      var empty = document.createElement('p');
+      empty.className = 'nv-empty';
+      empty.style.cssText = 'grid-column:1/-1;margin-top:2rem';
+      empty.textContent = 'Aucune espèce. Créez-en une !';
+      grid.appendChild(empty);
+    }
+  }
+
+  // ── Event delegation ─────────────────────────────────────────────────────
+  grid.addEventListener('click', function(e) {
+    var t = e.target;
+
+    var editRace = t.closest('[data-edit-race]');
+    if (editRace) { openRaceModal(Number(editRace.dataset.editRace)); return; }
+
+    var delRace = t.closest('[data-del-race]');
+    if (delRace) { confirmDeleteRace(Number(delRace.dataset.delRace)); return; }
+
+    var addClan = t.closest('.race-add-clan-btn');
+    if (addClan) { openClanModal(Number(addClan.dataset.raceId), null); return; }
+
+    var editClan = t.closest('.race-clan-edit');
+    if (editClan) {
+      e.stopPropagation();
+      var race = _cache.find(function(r){ return r.id === Number(editClan.dataset.raceId); });
+      var clan = race && race.clans ? race.clans.find(function(c){ return c.id === Number(editClan.dataset.clanId); }) : null;
+      openClanModal(Number(editClan.dataset.raceId), clan);
+      return;
+    }
+
+    var delClan = t.closest('.race-clan-del');
+    if (delClan) { e.stopPropagation(); confirmDeleteClan(Number(delClan.dataset.clanId)); return; }
+  });
+
+  // ── Refresh ──────────────────────────────────────────────────────────────
+  function refresh() {
+    return fetch('/admin/races').then(function(r){ return r.json(); }).then(function(d){
+      if (d.ok) renderGrid(d.races);
+    });
+  }
+
+  // ── Race modal ───────────────────────────────────────────────────────────
+  var raceOverlay  = document.getElementById('race-overlay');
+  var raceTitle    = document.getElementById('race-modal-title');
+  var raceForm     = document.getElementById('race-form');
+  var raceId       = document.getElementById('race-id');
+  var raceName     = document.getElementById('race-name');
+  var raceIcon     = document.getElementById('race-icon');
+  var raceColor    = document.getElementById('race-color');
+  var raceSwatch   = document.getElementById('race-color-swatch');
+  var raceDesc     = document.getElementById('race-desc');
+  var raceSubmit   = document.getElementById('race-submit');
+
+  raceColor.addEventListener('input', function() { raceSwatch.style.background = raceColor.value; });
+
+  function openRaceModal(id) {
+    var race = id ? _cache.find(function(r){ return r.id === id; }) : null;
+    raceId.value    = id || '';
+    raceName.value  = race ? race.name : '';
+    raceIcon.value  = race ? (race.icon || '') : '';
+    raceColor.value = race ? (race.color || '#6366f1') : '#6366f1';
+    raceDesc.value  = race ? (race.description || '') : '';
+    raceSwatch.style.background = raceColor.value;
+    raceTitle.textContent = race ? 'Modifier l\'espèce' : 'Nouvelle espèce';
+    raceSubmit.textContent = race ? 'Enregistrer' : 'Créer';
+    raceOverlay.hidden = false;
+    raceName.focus();
+  }
+
+  function closeRaceModal() { raceOverlay.hidden = true; }
+
+  document.getElementById('races-add-btn').addEventListener('click', function(){ openRaceModal(null); });
+  document.getElementById('race-modal-close').addEventListener('click', closeRaceModal);
+  document.getElementById('race-cancel').addEventListener('click', closeRaceModal);
+  raceOverlay.addEventListener('click', function(e){ if (e.target === raceOverlay) closeRaceModal(); });
+
+  raceForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var id   = raceId.value;
+    var body = { name: raceName.value.trim(), icon: raceIcon.value.trim(), color: raceColor.value, description: raceDesc.value.trim() };
+    if (!body.name) return;
+    raceSubmit.disabled = true;
+    fetch(id ? '/admin/races/' + id : '/admin/races', {
+      method: id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(r){ return r.json(); }).then(function(d){
+      raceSubmit.disabled = false;
+      if (d.ok) { closeRaceModal(); refresh(); }
+    }).catch(function(){ raceSubmit.disabled = false; });
+  });
+
+  function confirmDeleteRace(id) {
+    var race = _cache.find(function(r){ return r.id === id; });
+    var name = race ? race.name : String(id);
+    if (!confirm('Supprimer l\'espèce "' + name + '" ?\nLes personnages associés perdront leur espèce.')) return;
+    fetch('/admin/races/' + id, { method: 'DELETE' }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.ok) refresh();
+    });
+  }
+
+  // ── Clan modal ───────────────────────────────────────────────────────────
+  var clanOverlay  = document.getElementById('clan-overlay');
+  var clanTitle    = document.getElementById('clan-modal-title');
+  var clanForm     = document.getElementById('clan-form');
+  var clanId       = document.getElementById('clan-id');
+  var clanRaceId   = document.getElementById('clan-race-id');
+  var clanName     = document.getElementById('clan-name');
+  var clanColor    = document.getElementById('clan-color');
+  var clanSwatch   = document.getElementById('clan-color-swatch');
+  var clanDesc     = document.getElementById('clan-desc');
+  var clanSubmit   = document.getElementById('clan-submit');
+
+  clanColor.addEventListener('input', function() { clanSwatch.style.background = clanColor.value; });
+
+  function openClanModal(raceId_, clan) {
+    clanRaceId.value = raceId_;
+    clanId.value     = clan ? clan.id : '';
+    clanName.value   = clan ? clan.name : '';
+    clanColor.value  = clan ? (clan.color || '#9fa3f8') : '#9fa3f8';
+    clanDesc.value   = clan ? (clan.description || '') : '';
+    clanSwatch.style.background = clanColor.value;
+    clanTitle.textContent = clan ? 'Modifier la sous-espèce' : 'Nouvelle sous-espèce';
+    clanSubmit.textContent = clan ? 'Enregistrer' : 'Créer';
+    clanOverlay.hidden = false;
+    clanName.focus();
+  }
+
+  function closeClanModal() { clanOverlay.hidden = true; }
+
+  document.getElementById('clan-modal-close').addEventListener('click', closeClanModal);
+  document.getElementById('clan-cancel').addEventListener('click', closeClanModal);
+  clanOverlay.addEventListener('click', function(e){ if (e.target === clanOverlay) closeClanModal(); });
+
+  clanForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var id     = clanId.value;
+    var raceId_ = clanRaceId.value;
+    var body   = { name: clanName.value.trim(), color: clanColor.value, description: clanDesc.value.trim() };
+    if (!body.name) return;
+    clanSubmit.disabled = true;
+    fetch(id ? '/admin/clans/' + id : '/admin/races/' + raceId_ + '/clans', {
+      method: id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(r){ return r.json(); }).then(function(d){
+      clanSubmit.disabled = false;
+      if (d.ok) { closeClanModal(); refresh(); }
+    }).catch(function(){ clanSubmit.disabled = false; });
+  });
+
+  function confirmDeleteClan(id) {
+    if (!confirm('Supprimer cette sous-espèce ?\nLes personnages associés perdront leur sous-espèce.')) return;
+    fetch('/admin/clans/' + id, { method: 'DELETE' }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.ok) refresh();
+    });
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  renderGrid(_cache);
+})();
+</script>
+
+<%- include('partials/foot') %>
