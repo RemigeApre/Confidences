@@ -6,8 +6,17 @@
     <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
     <%- include('partials/sidebar-hero', { title: 'Espèces', titleEn: 'Species', hue: 270, count: races.length, countId: 'races-count' }) %>
     <div class="wiki-sidebar-body">
-      <div style="padding:.6rem 0">
+      <div style="padding:.6rem 0;display:flex;flex-direction:column;gap:.75rem">
         <button type="button" class="races-sidebar-add-btn" id="races-add-btn">+ Nouvelle espèce</button>
+        <div class="races-nat-filter" id="races-nat-filter">
+          <button type="button" class="races-nat-btn races-nat-btn--active" data-nat="">Toutes</button>
+          <button type="button" class="races-nat-btn races-nat-btn--humain"  data-nat="humain">Humanoïde</button>
+          <button type="button" class="races-nat-btn races-nat-btn--monstre" data-nat="monstre">Monstre</button>
+          <button type="button" class="races-nat-btn races-nat-btn--animal"  data-nat="animal">Animal</button>
+          <button type="button" class="races-nat-btn races-nat-btn--pokemon" data-nat="pokemon">Pokémon</button>
+          <button type="button" class="races-nat-btn races-nat-btn--autre"   data-nat="autre">Autre</button>
+          <button type="button" class="races-nat-btn races-nat-btn--none"    data-nat="__none">Sans nature</button>
+        </div>
         <p class="races-sidebar-hint">Les espèces regroupent les personnages par nature. Chaque espèce peut avoir des sous-espèces.</p>
       </div>
     </div>
@@ -113,6 +122,7 @@
   // ── Helpers ──────────────────────────────────────────────────────────────
   function isHex(c) { return /^#[0-9a-fA-F]{6}$/.test(c || ''); }
   var _natLabels = { humain:'Humanoïde', monstre:'Monstre', animal:'Animal', pokemon:'Pokémon', autre:'Autre' };
+  var _natColors = { humain:'#7db3e8', monstre:'#c966b0', animal:'#7dcf8a', pokemon:'#f5c842', autre:'#b39ddb' };
 
   // ── Render ───────────────────────────────────────────────────────────────
   function renderGrid(races) {
@@ -121,16 +131,19 @@
     if (!grid) return;
     var frag = document.createDocumentFragment();
     races.forEach(function(race) {
-      var col = isHex(race.color) ? race.color : '#6366f1';
+      var nat = race.nature || '';
+      var natCol = _natColors[nat] || (isHex(race.color) ? race.color : '#6366f1');
+      var col = isHex(race.color) ? race.color : natCol;
       var card = document.createElement('div');
-      card.className = 'race-card';
+      card.className = 'race-card race-card--' + (nat || 'none');
       card.dataset.id = race.id;
+      card.dataset.nature = nat;
 
       // Header
       var hdr = document.createElement('div');
       hdr.className = 'race-card-header';
-      hdr.style.background = col + '1e';
-      hdr.style.borderBottomColor = col + '55';
+      hdr.style.background = natCol + '1e';
+      hdr.style.borderBottomColor = natCol + '55';
 
       var iconEl = document.createElement('span');
       iconEl.className = 'race-card-icon';
@@ -405,6 +418,35 @@
     if (!confirm('Supprimer cette sous-espèce ?\nLes personnages associés perdront leur sous-espèce.')) return;
     fetch('/admin/clans/' + id, { method: 'DELETE' }).then(function(r){ return r.json(); }).then(function(d){
       if (d.ok) refresh();
+    });
+  }
+
+  // ── Filtre nature ─────────────────────────────────────────────────────────
+  var _activeNat = '';
+
+  function applyNatFilter() {
+    if (!grid) return;
+    var shown = 0;
+    grid.querySelectorAll('.race-card').forEach(function(card) {
+      var nat = card.dataset.nature || '';
+      var visible = _activeNat === '' ||
+        (_activeNat === '__none' ? nat === '' : nat === _activeNat);
+      card.hidden = !visible;
+      if (visible) shown++;
+    });
+    if (countEl) countEl.textContent = shown;
+  }
+
+  var natFilterEl = document.getElementById('races-nat-filter');
+  if (natFilterEl) {
+    natFilterEl.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-nat]');
+      if (!btn) return;
+      _activeNat = btn.dataset.nat;
+      natFilterEl.querySelectorAll('.races-nat-btn').forEach(function(b) {
+        b.classList.toggle('races-nat-btn--active', b.dataset.nat === _activeNat);
+      });
+      applyNatFilter();
     });
   }
 
