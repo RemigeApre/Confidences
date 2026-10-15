@@ -1,4 +1,57 @@
-<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Connexions', extraCss: ['admin.css'] }) %>
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Activité', extraCss: ['admin.css'] }) %>
+
+<style>
+/* ── Connexions / Activité timeline (acl) ── */
+.acl-wrap{padding:1.25rem 1.5rem 5rem;max-width:820px;margin:0 auto}
+.acl-empty{color:rgba(255,255,255,.3);font-size:.9rem;text-align:center;padding:3rem 0}
+
+/* Résumé rapide */
+.acl-summary{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.75rem}
+.acl-kpi{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.55rem .9rem;display:flex;flex-direction:column;gap:.1rem}
+.acl-kpi-val{font-size:1.25rem;font-weight:700;color:#e2e8f0;line-height:1}
+.acl-kpi-lbl{font-size:.7rem;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.05em}
+
+/* Groupes par jour */
+.acl-day{margin-bottom:1.75rem}
+.acl-day-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem}
+.acl-day-label{font-size:.78rem;font-weight:600;color:rgba(255,255,255,.45);text-transform:capitalize;letter-spacing:.04em;white-space:nowrap}
+.acl-day-line{flex:1;height:1px;background:rgba(255,255,255,.06)}
+.acl-day-count{font-size:.72rem;color:rgba(255,255,255,.25);white-space:nowrap}
+
+/* Événements */
+.acl-event{display:flex;gap:.7rem;padding:.5rem .65rem;border-radius:8px;margin-bottom:.3rem;transition:background .1s}
+.acl-event:hover{background:rgba(255,255,255,.025)}
+.acl-event-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:.48rem}
+.acl-event--session .acl-event-dot{background:rgba(99,179,237,.6)}
+.acl-event--login   .acl-event-dot{background:rgba(251,191,36,.6)}
+.acl-event-body{flex:1;min-width:0}
+
+/* Session */
+.acl-session-row{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem;margin-bottom:.35rem}
+.acl-time{font-size:.82rem;color:rgba(255,255,255,.6);font-variant-numeric:tabular-nums}
+.acl-arrow{color:rgba(255,255,255,.25);font-size:.7rem}
+.acl-dur{font-size:.75rem;font-weight:700;color:#7dd3fc;background:rgba(99,179,237,.1);border-radius:20px;padding:.1rem .55rem}
+.acl-pings{font-size:.7rem;color:rgba(255,255,255,.28)}
+
+/* Pages chips */
+.acl-pages{display:flex;flex-wrap:wrap;gap:.25rem}
+.acl-chip{font-size:.71rem;padding:.12rem .48rem;border-radius:20px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);white-space:nowrap}
+.acl-chip--accueil {background:rgba(148,163,184,.1);border-color:rgba(148,163,184,.15);color:#94a3b8}
+.acl-chip--codex   {background:rgba(99,179,237,.1);border-color:rgba(99,179,237,.15);color:#7dd3fc}
+.acl-chip--perso   {background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.15);color:#c4b5fd}
+.acl-chip--galerie {background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.12);color:#fcd34d}
+.acl-chip--bd      {background:rgba(251,146,60,.08);border-color:rgba(251,146,60,.12);color:#fdba74}
+.acl-chip--recit   {background:rgba(110,231,183,.08);border-color:rgba(110,231,183,.12);color:#6ee7b7}
+.acl-chip--profil  {background:rgba(129,140,248,.1);border-color:rgba(129,140,248,.15);color:#a5b4fc}
+.acl-chip--admin   {background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.12);color:#fca5a5}
+
+/* Login */
+.acl-login-row{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem}
+.acl-login-badge{font-size:.73rem;font-weight:600;color:rgba(251,191,36,.75);letter-spacing:.02em}
+.acl-login-ip{font-size:.73rem;color:rgba(255,255,255,.3);font-family:monospace}
+.acl-login-ua{font-size:.73rem;color:rgba(255,255,255,.38)}
+.acl-login-sep{color:rgba(255,255,255,.15);font-size:.65rem}
+</style>
 
 <div class="admin-topbar">
   <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
@@ -9,107 +62,158 @@
   <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
 
   <main class="aud-content">
-
     <%
-      function fmtDuration(min) {
+      /* ── helpers ── */
+      function fmtTime(d) {
+        return new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      }
+      function fmtDur(min) {
+        if (!min || min < 2) return '< 2 min';
         if (min < 60) return min + ' min';
         var h = Math.floor(min / 60), m = min % 60;
-        return h + 'h' + (m ? ' ' + m + 'min' : '');
+        return h + 'h' + (m ? String(m).padStart(2,'0') : '');
       }
-    %>
-
-    <div class="aud-section">
-      <h2 class="aud-section-title">Pr&eacute;sence sur le site (<%= sessions.length %> derni&egrave;res sessions)</h2>
-      <p class="admin-muted" style="margin:-0.25rem 0 0.75rem">D&eacute;tect&eacute;e &agrave; chaque navigation sur le site, pas seulement &agrave; la connexion. Une session regroupe l'activit&eacute; tant que l'&eacute;cart entre deux passages reste sous 30&nbsp;min.</p>
-      <% if (sessions.length) { %>
-        <ul class="aud-activity-list">
-          <% sessions.forEach(function(s) { %>
-            <li class="aud-activity-row aud-activity-row--block">
-              <div class="aud-activity-header">
-                <span class="aud-activity-date"><%= new Date(s.start).toLocaleString('fr-FR') %></span>
-                <% if (s.end !== s.start) { %>
-                  <span class="admin-muted">&rarr; <%= new Date(s.end).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
-                <% } %>
-                <span class="aud-card-views" style="margin-left:auto">&#8987; <%= fmtDuration(s.durationMinutes) %></span>
-              </div>
-              <% if (s.pages && s.pages.length) { %>
-                <div class="aud-activity-pages">
-                  <% s.pages.forEach(function(p) { %><span class="aud-page-chip"><%= p %></span><% }) %>
-                </div>
-              <% } %>
-            </li>
-          <% }) %>
-        </ul>
-      <% } else { %>
-        <p class="admin-muted">Aucune session enregistr&eacute;e.</p>
-      <% } %>
-    </div>
-
-    <%
-      // Parse user-agent → { os, browser, type }
+      function chipClass(label) {
+        if (!label) return '';
+        var l = label.toLowerCase();
+        if (l === 'accueil' || l === 'accueil codex') return 'acl-chip--accueil';
+        if (l.startsWith('codex')) return 'acl-chip--codex';
+        if (l.startsWith('personnage') || l.startsWith('carte') || l.startsWith('récompenses')) return 'acl-chip--perso';
+        if (l === 'galerie') return 'acl-chip--galerie';
+        if (l.startsWith('bd')) return 'acl-chip--bd';
+        if (l.startsWith('histoire') || l.startsWith('nouvelle') || l === 'histoires' || l === 'nouvelles') return 'acl-chip--recit';
+        if (l === 'profil' || l === 'favoris' || l === 'coffre') return 'acl-chip--profil';
+        if (l === 'admin') return 'acl-chip--admin';
+        return '';
+      }
       function parseUA(ua) {
-        if (!ua) return { os: 'Inconnu', browser: '?', type: '?' };
-        var type = /Mobile|Android|iPhone|iPad/.test(ua) ? 'mobile' : 'desktop';
+        if (!ua) return { device: '?', os: '?', browser: '?' };
+        var device = /Mobile|Android|iPhone|iPad/.test(ua) ? '📱' : '🖥';
         var os = 'Autre';
-        if (/Windows NT 10/.test(ua))        os = 'Windows 10/11';
+        if      (/Windows NT 10/.test(ua))   os = 'Windows 10/11';
         else if (/Windows NT 6/.test(ua))    os = 'Windows ≤8';
         else if (/Mac OS X/.test(ua))        os = /iPhone|iPad/.test(ua) ? 'iOS' : 'macOS';
         else if (/Android/.test(ua))         os = 'Android';
         else if (/Linux/.test(ua))           os = 'Linux';
-        var browser = 'Autre';
-        if (/Edg\//.test(ua))               browser = 'Edge';
-        else if (/OPR\/|Opera/.test(ua))    browser = 'Opera';
-        else if (/Chrome\//.test(ua))       browser = 'Chrome';
-        else if (/Safari\//.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
-        else if (/Firefox\//.test(ua))      browser = 'Firefox';
-        return { os: os, browser: browser, type: type };
+        var br = 'Autre';
+        if      (/Edg\//.test(ua))           br = 'Edge';
+        else if (/OPR\/|Opera/.test(ua))     br = 'Opera';
+        else if (/Chrome\//.test(ua))        br = 'Chrome';
+        else if (/Safari\//.test(ua) && !/Chrome/.test(ua)) br = 'Safari';
+        else if (/Firefox\//.test(ua))       br = 'Firefox';
+        return { device: device, os: os, browser: br };
       }
-      // Assigne un indice court à chaque UA unique (A, B, C…)
-      var _uaMap = {};
-      var _uaIdx = 0;
-      var _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      connectionLogs.forEach(function(log) {
-        if (log.userAgent && !_uaMap[log.userAgent]) {
-          _uaMap[log.userAgent] = _letters[_uaIdx % _letters.length];
-          _uaIdx++;
-        }
+
+      /* ── Fusion sessions + connexions → timeline ── */
+      var _events = [];
+      sessions.forEach(function(s) {
+        _events.push({ type: 'session', at: new Date(s.start).getTime(), s: s });
       });
-      var _deviceCount = Object.keys(_uaMap).length;
+      connectionLogs.forEach(function(log) {
+        _events.push({ type: 'login', at: new Date(log.createdAt).getTime(), log: log });
+      });
+      _events.sort(function(a, b) { return b.at - a.at; }); // plus récent en premier
+
+      /* ── Groupement par jour ── */
+      var _days = [], _dayKeys = {};
+      _events.forEach(function(ev) {
+        var d = new Date(ev.at);
+        var key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+        if (!_dayKeys[key]) {
+          _dayKeys[key] = {
+            label: d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }),
+            events: []
+          };
+          _days.push(_dayKeys[key]);
+        }
+        _dayKeys[key].events.push(ev);
+      });
+
+      /* ── KPIs résumé ── */
+      var _totalSessions = sessions.length;
+      var _totalLogins   = connectionLogs.length;
+      var _totalMins     = sessions.reduce(function(acc, s) { return acc + (s.durationMinutes || 0); }, 0);
+      var _totalH = Math.floor(_totalMins / 60), _totalM = _totalMins % 60;
+      var _durStr = _totalH > 0 ? _totalH + 'h' + (_totalM ? String(_totalM).padStart(2,'0') : '') : _totalMins + ' min';
     %>
-    <div class="aud-section">
-      <h2 class="aud-section-title">Connexions par mot de passe (<%= connectionLogs.length %> derni&egrave;res)</h2>
-      <% if (_deviceCount > 1) { %>
-        <p class="admin-muted" style="margin:-0.25rem 0 .75rem">
-          <strong style="color:#fbbf24"><%= _deviceCount %> appareils distincts</strong> d&eacute;tect&eacute;s (User-Agent diff&eacute;rent = appareil ou navigateur diff&eacute;rent).
-        </p>
-        <div class="aud-device-legend">
-          <% Object.entries(_uaMap).forEach(function(entry) { var ua=entry[0],letter=entry[1]; var p=parseUA(ua); %>
-            <span class="aud-device-chip aud-device-chip--<%= letter.toLowerCase() %>">
-              <span class="aud-device-letter"><%= letter %></span>
-              <%= p.type === 'mobile' ? '📱' : '🖥' %> <%= p.os %> &bull; <%= p.browser %>
-            </span>
+
+    <div class="acl-wrap">
+
+      <%# ── KPIs ── %>
+      <% if (_events.length > 0) { %>
+      <div class="acl-summary">
+        <div class="acl-kpi">
+          <span class="acl-kpi-val"><%= _totalSessions %></span>
+          <span class="acl-kpi-lbl">sessions</span>
+        </div>
+        <div class="acl-kpi">
+          <span class="acl-kpi-val"><%= _durStr %></span>
+          <span class="acl-kpi-lbl">temps total</span>
+        </div>
+        <div class="acl-kpi">
+          <span class="acl-kpi-val"><%= _totalLogins %></span>
+          <span class="acl-kpi-lbl">connexions</span>
+        </div>
+      </div>
+      <% } %>
+
+      <%# ── Timeline ── %>
+      <% if (_days.length === 0) { %>
+        <p class="acl-empty">Aucune activité enregistrée.</p>
+      <% } %>
+
+      <% _days.forEach(function(day) { %>
+        <div class="acl-day">
+          <div class="acl-day-header">
+            <span class="acl-day-label"><%= day.label %></span>
+            <span class="acl-day-line"></span>
+            <% var _sc = day.events.filter(function(e){return e.type==='session';}).length; var _lc = day.events.filter(function(e){return e.type==='login';}).length; %>
+            <span class="acl-day-count"><% if(_sc) { %><%= _sc %> sess.<% } %><% if(_sc && _lc) { %> · <% } %><% if(_lc) { %><%= _lc %> cnx<% } %></span>
+          </div>
+
+          <% day.events.forEach(function(ev) { %>
+            <% if (ev.type === 'session') { var s = ev.s; %>
+
+              <div class="acl-event acl-event--session">
+                <div class="acl-event-dot"></div>
+                <div class="acl-event-body">
+                  <div class="acl-session-row">
+                    <span class="acl-time"><%= fmtTime(new Date(s.start).getTime()) %><% if (s.start !== s.end) { %> <span class="acl-arrow">→</span> <%= fmtTime(new Date(s.end).getTime()) %><% } %></span>
+                    <span class="acl-dur"><%= fmtDur(s.durationMinutes) %></span>
+                    <% if (s.pings > 1) { %><span class="acl-pings"><%= s.pings %> passages</span><% } %>
+                  </div>
+                  <% if (s.pages && s.pages.length) { %>
+                    <div class="acl-pages">
+                      <% s.pages.forEach(function(p) { %>
+                        <span class="acl-chip <%= chipClass(p) %>"><%= p %></span>
+                      <% }); %>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+
+            <% } else { var log = ev.log; var ua = parseUA(log.userAgent); %>
+
+              <div class="acl-event acl-event--login" title="<%= log.userAgent || '' %>">
+                <div class="acl-event-dot"></div>
+                <div class="acl-event-body">
+                  <div class="acl-login-row">
+                    <span class="acl-time"><%= fmtTime(ev.at) %></span>
+                    <span class="acl-login-badge">Connexion</span>
+                    <span class="acl-login-sep">·</span>
+                    <span class="acl-login-ip"><%= log.ip %></span>
+                    <span class="acl-login-sep">·</span>
+                    <span class="acl-login-ua"><%= ua.device %> <%= ua.os %> · <%= ua.browser %></span>
+                  </div>
+                </div>
+              </div>
+
+            <% } %>
           <% }); %>
         </div>
-      <% } %>
-      <% if (connectionLogs.length) { %>
-        <ul class="aud-activity-list">
-          <% connectionLogs.forEach(function(log) { %>
-            <% var _letter = log.userAgent ? _uaMap[log.userAgent] : null; %>
-            <% var _parsed = parseUA(log.userAgent); %>
-            <li class="aud-activity-row" title="<%= log.userAgent || '' %>">
-              <span class="aud-activity-date"><%= new Date(log.createdAt).toLocaleString('fr-FR') %></span>
-              <span class="admin-muted"><%= log.ip %></span>
-              <% if (_letter) { %>
-                <span class="aud-device-badge aud-device-badge--<%= _letter.toLowerCase() %>" title="<%= log.userAgent %>"><%= _letter %> &bull; <%= _parsed.os %> &bull; <%= _parsed.browser %></span>
-              <% } %>
-            </li>
-          <% }) %>
-        </ul>
-      <% } else { %>
-        <p class="admin-muted">Aucune connexion enregistr&eacute;e.</p>
-      <% } %>
-    </div>
+      <% }); %>
 
+    </div>
   </main>
 </div>
 <%- include('partials/foot') %>

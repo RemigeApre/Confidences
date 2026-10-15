@@ -2993,12 +2993,16 @@ function pathToLabel(path) {
 function recordActivityPing(userId, path) {
   if (!userId) return;
   const last = db
-    .prepare("SELECT created_at FROM activity_pings WHERE user_id = ? ORDER BY id DESC LIMIT 1")
+    .prepare("SELECT created_at, page_label FROM activity_pings WHERE user_id = ? ORDER BY id DESC LIMIT 1")
     .get(userId);
   const now = Date.now();
-  if (last && now - new Date(last.created_at).getTime() < ACTIVITY_PING_THROTTLE_MS) return;
-  const iso = new Date(now).toISOString();
   const label = pathToLabel(path);
+  // Throttle uniquement si c'est la même page que la dernière ; un changement
+  // de page est toujours enregistré pour ne pas perdre de transitions.
+  if (last &&
+      last.page_label === label &&
+      now - new Date(last.created_at).getTime() < ACTIVITY_PING_THROTTLE_MS) return;
+  const iso = new Date(now).toISOString();
   db.prepare("INSERT INTO activity_pings (user_id, created_at, page_label) VALUES (?, ?, ?)").run(userId, iso, label);
   db.prepare("UPDATE users SET last_active_at = ?, last_path = ? WHERE id = ?").run(iso, path || null, userId);
 }
