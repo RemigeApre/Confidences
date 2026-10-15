@@ -63,8 +63,11 @@
       .replace(/\n+/g, ' ').trim();
     if (wcExcerpt.length > 110) wcExcerpt = wcExcerpt.slice(0, 110) + '\u2026';
   }
+<%
+  var wcHasEn = !!(typeof wikiEnIds !== 'undefined' && wikiEnIds && wikiEnIds.has(page.id));
+  var wcIsComplete = wcHasEn && (page.maturity || 0) >= 4;
 %>
-<a href="/wiki/<%= page.id %>" class="wiki-card"
+<a href="/wiki/<%= page.id %>" class="wiki-card<% if (wcIsComplete) { %> wiki-card--complete<% } %>"
   style="--card-hue: <%= cat ? cat.hue : 220 %>"
   data-category="<%= page.category %>"
   data-owned="<%= (wcCanSeeOwned && page.owned) ? '1' : '0' %>"
@@ -107,7 +110,7 @@
     <div class="wiki-card-image" data-images="<%= page.imagePaths.join('|') %>">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
-      <% if (currentUser && currentUser.isAdmin && typeof wikiEnIds !== 'undefined' && wikiEnIds && wikiEnIds.has(page.id)) { %><span class="wiki-en-badge">EN</span><% } %>
+      <% if (currentUser && currentUser.isAdmin && wcHasEn && !wcIsComplete) { %><span class="wiki-en-badge">EN</span><% } %>
       <% if (wcStatPctF !== null) { %>
         <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes"></div>
       <% } %>
@@ -135,7 +138,7 @@
     <div class="wiki-card-image">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
-      <% if (currentUser && currentUser.isAdmin && typeof wikiEnIds !== 'undefined' && wikiEnIds && wikiEnIds.has(page.id)) { %><span class="wiki-en-badge">EN</span><% } %>
+      <% if (currentUser && currentUser.isAdmin && wcHasEn && !wcIsComplete) { %><span class="wiki-en-badge">EN</span><% } %>
       <% if (wcStatPctF !== null) { %>
         <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes"></div>
       <% } %>
