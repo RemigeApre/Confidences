@@ -274,10 +274,14 @@
         </div>
       <% } %>
 
-      <% if (protagoniste.nature && protagoniste.nature !== 'humain') { %>
-        <div class="prot-ds-row">
-          <span class="prot-ds-label">Nature</span>
-          <span class="prot-badge prot-badge--nature"><%= protagoniste.nature === 'pokemon' ? 'Pokémon' : protagoniste.nature %></span>
+      <% if (protagoniste.nature) { %>
+        <%
+          var _natLabels = { humain:{fr:'Humanoïde',en:'Humanoid'}, monstre:{fr:'Monstre',en:'Monster'}, animal:{fr:'Animal',en:'Animal'}, pokemon:{fr:'Pokémon',en:'Pokémon'}, autre:{fr:'Autre',en:'Other'} };
+          var _natLbl = _natLabels[protagoniste.nature] || { fr: protagoniste.nature, en: protagoniste.nature };
+        %>
+        <div class="prot-ds-row prot-ds-row--center">
+          <span class="prot-ds-label" data-fr="Nature" data-en="Nature">Nature</span>
+          <span class="prot-badge prot-badge--nature" data-fr="<%= _natLbl.fr %>" data-en="<%= _natLbl.en %>"><%= _natLbl.fr %></span>
         </div>
       <% } %>
 
