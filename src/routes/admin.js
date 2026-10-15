@@ -34,6 +34,7 @@ const {
   listFavoriteRows,
   listConnectionLogsForUser,
   listActivitySessions,
+  listPagePingsForUser,
   getRecentActivity,
   setCouplePartners,
   clearCouplePartner,
@@ -542,9 +543,18 @@ function buildAdminRouter(config) {
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
     if (!detail) return res.redirect("/admin#tab-utilisateurs");
     const feed = [];
-    detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki", title: v.title, id: v.pageId, at: v.createdAt }));
-    detail.recentGalViews.forEach((v) => feed.push({ type: "gallery", title: v.title, id: v.galleryId, at: v.createdAt }));
-    detail.recentBdViews.forEach((v) => feed.push({ type: "bd", title: v.title, id: v.bookId, at: v.createdAt }));
+    detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki",    label: v.title,    at: v.createdAt,  href: "/wiki/"    + v.pageId }));
+    detail.recentGalViews.forEach((v) => feed.push({ type: "gallery",  label: v.title,    at: v.createdAt,  href: "/galerie/" + v.galleryId + "/edit" }));
+    detail.recentBdViews.forEach((v)  => feed.push({ type: "bd",       label: v.title,    at: v.createdAt,  href: "/bd/"      + v.bookId }));
+    // Pings de navigation : personnages, parodies, nouvelles, etc.
+    listPagePingsForUser(id, 200).forEach((p) => {
+      const isKnown = (
+        p.label.startsWith('Codex :') ||
+        p.label.startsWith('BD :') ||
+        p.label.startsWith('Histoire :')
+      );
+      if (!isKnown) feed.push({ type: "nav", label: p.label, at: p.at, href: null });
+    });
     feed.sort((a, b) => new Date(b.at) - new Date(a.at));
     res.render("admin-user-activite", { config, detail, feed, roleHue: roleHue(detail.user) });
   });

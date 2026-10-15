@@ -11,20 +11,28 @@
   <main class="aud-content">
 
     <%
-      var TYPE_LABEL = { wiki: 'Codex', gallery: 'Images', bd: 'BD' };
-      var TYPE_HREF  = { wiki: '/wiki/', gallery: '/galerie/', bd: '/bd/' };
-      var TYPE_ICON  = { wiki: '&#128214;', gallery: '&#128247;', bd: '&#128214;' };
+      var TYPE_META = {
+        wiki:    { label: 'Codex',       icon: '📖', cls: 'aud-type--wiki' },
+        gallery: { label: 'Image',       icon: '🖼',  cls: 'aud-type--gallery' },
+        bd:      { label: 'BD',          icon: '📚', cls: 'aud-type--bd' },
+        nav:     { label: 'Navigation',  icon: '🔍', cls: 'aud-type--nav' }
+      };
     %>
 
     <div class="aud-section">
-      <h2 class="aud-section-title">Activit&eacute; r&eacute;cente (<%= feed.length %> derni&egrave;res consultations)</h2>
+      <h2 class="aud-section-title">Activit&eacute; r&eacute;cente (<%= feed.length %> consultations)</h2>
       <% if (feed.length) { %>
         <ul class="aud-activity-list">
           <% feed.forEach(function(f) { %>
+            <% var meta = TYPE_META[f.type] || TYPE_META.nav; %>
             <li class="aud-activity-row">
-              <span class="aud-activity-icon"><%- TYPE_ICON[f.type] %></span>
-              <span class="aud-activity-type"><%= TYPE_LABEL[f.type] %></span>
-              <a href="<%= TYPE_HREF[f.type] %><%= f.id %><%= f.type === 'gallery' ? '/edit' : '' %>" class="aud-activity-title"><%= f.title || ('#' + f.id) %></a>
+              <span class="aud-activity-icon"><%- meta.icon %></span>
+              <span class="aud-activity-type <%= meta.cls %>"><%= meta.label %></span>
+              <% if (f.href) { %>
+                <a href="<%= f.href %>" class="aud-activity-title"><%= f.label || '—' %></a>
+              <% } else { %>
+                <span class="aud-activity-title"><%= f.label || '—' %></span>
+              <% } %>
               <span class="aud-activity-date"><%= new Date(f.at).toLocaleString('fr-FR') %></span>
             </li>
           <% }) %>

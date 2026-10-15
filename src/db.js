@@ -2963,6 +2963,27 @@ function pathToLabel(path) {
     return row ? 'Histoire : ' + row.title : 'Histoires';
   }
 
+  const protMatch = clean.match(/^\/protagonistes\/(\d+)/);
+  if (protMatch) {
+    const row = db.prepare("SELECT name FROM protagonistes WHERE id = ?").get(Number(protMatch[1]));
+    return row ? 'Personnage : ' + row.name : 'Personnages';
+  }
+  if (clean === '/protagonistes') return 'Personnages';
+
+  const nouvelleMatch = clean.match(/^\/nouvelles\/(\d+)/);
+  if (nouvelleMatch) {
+    const row = db.prepare("SELECT title FROM nouvelles WHERE id = ?").get(Number(nouvelleMatch[1]));
+    return row ? 'Nouvelle : ' + row.title : 'Nouvelles';
+  }
+  if (clean === '/nouvelles') return 'Nouvelles';
+
+  const parodyMatch = clean.match(/^\/parodies\/([^/]+)/);
+  if (parodyMatch) {
+    const name = decodeURIComponent(parodyMatch[1]);
+    return 'Parodie : ' + name;
+  }
+  if (clean === '/parodies') return 'Parodies';
+
   // Fallback : nettoie le chemin pour qu'il soit lisible
   return clean.replace(/^\//, '').split('/').map(function(s) {
     return s.charAt(0).toUpperCase() + s.slice(1);
@@ -3014,6 +3035,23 @@ function listActivitySessions(userId, limit) {
       pages: s.pages,
     };
   });
+}
+
+// Retourne les pings récents d'un utilisateur filtrés par type de page
+function listPagePingsForUser(userId, limit) {
+  const rows = db.prepare(
+    "SELECT created_at, page_label FROM activity_pings WHERE user_id = ? AND page_label != '' ORDER BY id DESC LIMIT ?"
+  ).all(userId, (limit || 200));
+  // Déduplique : garde seulement le ping le plus récent par label
+  const seen = new Set();
+  const out = [];
+  for (const r of rows) {
+    if (!seen.has(r.page_label)) {
+      seen.add(r.page_label);
+      out.push({ label: r.page_label, at: r.created_at });
+    }
+  }
+  return out;
 }
 
 function getRecentActivity(userId) {
@@ -4848,6 +4886,7 @@ module.exports = {
   listConnectionLogsForUser,
   recordActivityPing,
   listActivitySessions,
+  listPagePingsForUser,
   getRecentActivity,
   listBlacklistedTags,
   addBlacklistedTag,
