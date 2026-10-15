@@ -42,6 +42,17 @@
           </div>
         </div>
         <div class="races-form-row">
+          <label class="races-form-label" for="race-nature">Nature associée</label>
+          <select id="race-nature" class="races-form-input">
+            <option value="">Aucune</option>
+            <option value="humain">Humanoïde</option>
+            <option value="monstre">Monstre</option>
+            <option value="animal">Animal</option>
+            <option value="pokemon">Pokémon</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="races-form-row">
           <label class="races-form-label" for="race-desc">Description</label>
           <textarea id="race-desc" class="races-form-input races-form-textarea" rows="3" placeholder="Description optionnelle…"></textarea>
         </div>
@@ -101,6 +112,7 @@
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   function isHex(c) { return /^#[0-9a-fA-F]{6}$/.test(c || ''); }
+  var _natLabels = { humain:'Humanoïde', monstre:'Monstre', animal:'Animal', pokemon:'Pokémon', autre:'Autre' };
 
   // ── Render ───────────────────────────────────────────────────────────────
   function renderGrid(races) {
@@ -130,6 +142,12 @@
       nameEl.textContent = race.name;
       hdr.appendChild(nameEl);
 
+      if (race.nature && _natLabels[race.nature]) {
+        var natBadge = document.createElement('span');
+        natBadge.className = 'race-card-nature';
+        natBadge.textContent = _natLabels[race.nature];
+        hdr.appendChild(natBadge);
+      }
       if (race.count > 0) {
         var pcountEl = document.createElement('span');
         pcountEl.className = 'race-card-pcount';
@@ -280,6 +298,7 @@
   var raceIcon     = document.getElementById('race-icon');
   var raceColor    = document.getElementById('race-color');
   var raceSwatch   = document.getElementById('race-color-swatch');
+  var raceNature   = document.getElementById('race-nature');
   var raceDesc     = document.getElementById('race-desc');
   var raceSubmit   = document.getElementById('race-submit');
 
@@ -287,11 +306,12 @@
 
   function openRaceModal(id) {
     var race = id ? _cache.find(function(r){ return r.id === id; }) : null;
-    raceId.value    = id || '';
-    raceName.value  = race ? race.name : '';
-    raceIcon.value  = race ? (race.icon || '') : '';
-    raceColor.value = race ? (race.color || '#6366f1') : '#6366f1';
-    raceDesc.value  = race ? (race.description || '') : '';
+    raceId.value     = id || '';
+    raceName.value   = race ? race.name : '';
+    raceIcon.value   = race ? (race.icon || '') : '';
+    raceColor.value  = race ? (race.color || '#6366f1') : '#6366f1';
+    raceNature.value = race ? (race.nature || '') : '';
+    raceDesc.value   = race ? (race.description || '') : '';
     raceSwatch.style.background = raceColor.value;
     raceTitle.textContent = race ? 'Modifier l\'espèce' : 'Nouvelle espèce';
     raceSubmit.textContent = race ? 'Enregistrer' : 'Créer';
@@ -309,7 +329,7 @@
   raceForm.addEventListener('submit', function(e) {
     e.preventDefault();
     var id   = raceId.value;
-    var body = { name: raceName.value.trim(), icon: raceIcon.value.trim(), color: raceColor.value, description: raceDesc.value.trim() };
+    var body = { name: raceName.value.trim(), icon: raceIcon.value.trim(), color: raceColor.value, nature: raceNature.value, description: raceDesc.value.trim() };
     if (!body.name) return;
     raceSubmit.disabled = true;
     fetch(id ? '/admin/races/' + id : '/admin/races', {

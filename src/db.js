@@ -4501,6 +4501,7 @@ db.exec(`
     description TEXT    NOT NULL DEFAULT '',
     color       TEXT    NOT NULL DEFAULT '#6366f1',
     icon        TEXT    NOT NULL DEFAULT '',
+    nature      TEXT    NOT NULL DEFAULT '',
     sort_order  INTEGER NOT NULL DEFAULT 0
   )
 `);
@@ -4517,6 +4518,7 @@ db.exec(`
 `);
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN race_id INTEGER REFERENCES races(id)"); } catch(_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN clan_id INTEGER REFERENCES race_clans(id)"); } catch(_) {}
+try { db.exec("ALTER TABLE races ADD COLUMN nature TEXT NOT NULL DEFAULT ''"); } catch(_) {}
 
 function listRaces() {
   const races = db.prepare("SELECT * FROM races ORDER BY sort_order, name").all();
@@ -4534,29 +4536,33 @@ function getRace(id) {
   return r;
 }
 
-function createRace({ name, slug, description, color, icon, sortOrder }) {
+const VALID_NATURES_RACE = new Set(["humain", "monstre", "animal", "pokemon", "autre", ""]);
+
+function createRace({ name, slug, description, color, icon, nature, sortOrder }) {
   const r = db.prepare(
-    "INSERT INTO races (name,slug,description,color,icon,sort_order) VALUES (?,?,?,?,?,?)"
+    "INSERT INTO races (name,slug,description,color,icon,nature,sort_order) VALUES (?,?,?,?,?,?,?)"
   ).run(
     String(name || '').trim(),
     String(slug || name || '').trim().toLowerCase().replace(/\s+/g, '_'),
     String(description || '').trim(),
     String(color || '#6366f1'),
     String(icon || '').trim(),
+    VALID_NATURES_RACE.has(String(nature || '')) ? String(nature || '') : '',
     Number(sortOrder) || 0
   );
   return r.lastInsertRowid;
 }
 
-function updateRace(id, { name, slug, description, color, icon, sortOrder }) {
+function updateRace(id, { name, slug, description, color, icon, nature, sortOrder }) {
   db.prepare(
-    "UPDATE races SET name=?,slug=?,description=?,color=?,icon=?,sort_order=? WHERE id=?"
+    "UPDATE races SET name=?,slug=?,description=?,color=?,icon=?,nature=?,sort_order=? WHERE id=?"
   ).run(
     String(name || '').trim(),
     String(slug || name || '').trim().toLowerCase().replace(/\s+/g, '_'),
     String(description || '').trim(),
     String(color || '#6366f1'),
     String(icon || '').trim(),
+    VALID_NATURES_RACE.has(String(nature || '')) ? String(nature || '') : '',
     Number(sortOrder) || 0,
     id
   );

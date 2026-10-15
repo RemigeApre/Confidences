@@ -824,9 +824,9 @@ function buildAdminRouter(config) {
     res.json({ ok: true, races: listRaces() });
   });
   router.post("/races", requireAdmin, express.json(), (req, res) => {
-    const { name, description, color, icon, sortOrder } = req.body;
+    const { name, description, color, icon, nature, sortOrder } = req.body;
     if (!name) return res.json({ ok: false, error: 'Nom requis' });
-    const id = createRace({ name, description, color, icon, sortOrder });
+    const id = createRace({ name, description, color, icon, nature, sortOrder });
     res.json({ ok: true, id, race: getRace(id) });
   });
   router.put("/races/:id", requireAdmin, express.json(), (req, res) => {

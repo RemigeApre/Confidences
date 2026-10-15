@@ -142,6 +142,9 @@
 .prot-ds-tags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem}
 
 /* ── Page Espèces & Races (admin) ── */
+.prot-sf-chip--tip{position:relative}
+.prot-sf-chip--tip:after{content:attr(data-tooltip);display:none;position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#080814f5;color:#ddd;padding:8px 12px;border-radius:8px;font-size:.75rem;font-weight:400;white-space:pre-wrap;width:220px;z-index:200;pointer-events:none;line-height:1.5;border:1px solid rgba(255,255,255,.12);text-transform:none;letter-spacing:0}
+.prot-sf-chip--tip:hover:after{display:block}
 .races-sidebar-add-btn{display:block;width:100%;padding:.6rem .9rem;background:hsl(270,45%,28%);color:#fff;border:none;border-radius:7px;font-size:.88rem;font-weight:700;cursor:pointer;text-align:center;transition:background .15s}
 .races-sidebar-add-btn:hover{background:hsl(270,45%,36%)}
 .races-sidebar-hint{font-size:.75rem;color:hsl(270,20%,55%);margin:.6rem 0 0;line-height:1.4}
@@ -150,6 +153,7 @@
 .race-card-header{display:flex;align-items:center;gap:.6rem;padding:.7rem .9rem;border-bottom:1px solid transparent}
 .race-card-icon{font-size:1.5rem;line-height:1;flex-shrink:0;min-width:1.6rem;text-align:center}
 .race-card-name{font-weight:800;font-size:.95rem;color:#fff;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.race-card-nature{font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:hsl(270,25%,58%);flex-shrink:0}
 .race-card-pcount{font-size:.72rem;font-weight:700;flex-shrink:0;opacity:.85}
 .race-card-actions{display:flex;gap:.2rem;flex-shrink:0;margin-left:.15rem}
 .race-act-btn{background:none;border:none;color:hsl(270,20%,60%);cursor:pointer;font-size:.9rem;padding:.2rem .3rem;border-radius:4px;line-height:1;transition:color .12s}
@@ -193,7 +197,7 @@
 /* Lien dropdown */
 .pc-drop-link--races{background:hsl(270,35%,22%);font-weight:600}
 .pc-drop-link--races:hover{background:hsl(270,35%,30%)}
-.pc-drop-link--races:before{content:''}
+.pc-drop-link--races:before{content:''!important}
 
 @media(max-width:1100px){
   .prot-3col-layout{grid-template-columns:1fr 280px;max-width:1000px}
