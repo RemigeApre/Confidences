@@ -1311,6 +1311,20 @@ function buildAdminRouter(config) {
     res.redirect("/admin/jeux?success=1");
   });
 
+  // ── IP Logger ──────────────────────────────────────────────────────────────
+  router.get('/ip-logs', requireAdmin, (req, res) => {
+    const hours = Math.min(720, Math.max(1, parseInt(req.query.h) || 48));
+    const logs = getIpSummary(hours);
+    res.render('admin-ip-logs', { config, hours, logs });
+  });
+
+  router.get('/ip-logs/:ip', requireAdmin, (req, res) => {
+    const ip = req.params.ip;
+    const detail = getIpDetail(ip, 300);
+    const user = req.user;
+    res.render('admin-ip-logs-detail', { config, ip, detail, adminUser: user });
+  });
+
   router.get("/:id", requireAdmin, (req, res) => {
     const submission = getSubmission(Number(req.params.id));
     if (!submission) return res.redirect("/admin");
@@ -1420,20 +1434,6 @@ function buildAdminRouter(config) {
   router.get("/log/visitors", requireAdmin, (req, res) => {
     const days = Math.min(365, parseInt(req.query.days) || 30);
     res.json({ visitors: getAnonVisitorList(days) });
-  });
-
-  // ── IP Logger ──────────────────────────────────────────────────────────────
-  router.get('/ip-logs', requireAdmin, (req, res) => {
-    const hours = Math.min(720, Math.max(1, parseInt(req.query.h) || 48));
-    const logs = getIpSummary(hours);
-    res.render('admin-ip-logs', { config, hours, logs });
-  });
-
-  router.get('/ip-logs/:ip', requireAdmin, (req, res) => {
-    const ip = req.params.ip;
-    const detail = getIpDetail(ip, 300);
-    const user = req.user;
-    res.render('admin-ip-logs-detail', { config, ip, detail, adminUser: user });
   });
 
   // Proxy géolocalisation IP (via ip-api.com, cache mémoire 24h)
