@@ -69,6 +69,8 @@ const FANTASMES_SUBCATS = [
   { key: "classique",  label: "Classique" },
 ];
 const PRATIQUES_SUBCATS = [
+  { key: "bdsm",         label: "BDSM" },
+  { key: "posture",      label: "Posture" },
   { key: "stimulations", label: "Stimulations" },
   { key: "sperme",       label: "Sperme" },
   { key: "autre",        label: "Autre" },
