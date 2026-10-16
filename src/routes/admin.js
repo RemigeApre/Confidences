@@ -167,7 +167,7 @@ function buildAdminRouter(config) {
   }
 
   router.get("/login", (req, res) => {
-    if (req.user) return res.redirect(req.user.isAdmin ? "/admin" : "/favoris");
+    if (req.user) return res.redirect(req.user.isAdmin ? "/ponhgup" : "/favoris");
     const csrfToken = ensureCsrf(req);
     res.render("admin-login", { error: null, next: safeNext(req.query.next) || "", csrfToken });
   });
@@ -200,11 +200,11 @@ function buildAdminRouter(config) {
       resetLoginFailures(rawUsername);
       const userId = user.id;
       req.session.regenerate((err) => {
-        if (err) return res.redirect("/admin/login");
+        if (err) return res.redirect("/ponhgup/85zapnte");
         req.session.userId = userId;
         logConnection(userId, req.ip, req.headers["user-agent"] || "");
         touchLastLogin(userId);
-        return res.redirect(next || (user.isAdmin ? "/admin" : "/favoris"));
+        return res.redirect(next || (user.isAdmin ? "/ponhgup" : "/favoris"));
       });
       return;
     }
@@ -230,14 +230,14 @@ function buildAdminRouter(config) {
   });
 
   router.post("/logout", (req, res) => {
-    req.session.destroy(() => res.redirect("/admin/login"));
+    req.session.destroy(() => res.redirect("/ponhgup/85zapnte"));
   });
 
   router.get("/", requireAdmin, (req, res) => renderAdmin(req, res, null));
 
   router.get("/live/:userId", requireAdmin, (req, res) => {
     const user = listUsers().find((u) => u.id === Number(req.params.userId));
-    if (!user) return res.redirect("/admin");
+    if (!user) return res.redirect("/ponhgup");
     const attempt = getAttempt(tokenForUser(user));
     const scores = attempt ? computeScores(config, attempt.data) : computeScores(config, {});
     const submission = {
@@ -365,7 +365,7 @@ function buildAdminRouter(config) {
       if (orientation) updateUserSettings(newId, { orientation });
     }
 
-    res.redirect("/admin#tab-utilisateurs");
+    res.redirect("/ponhgup#tab-utilisateurs");
   });
 
   // Modifie l'identite et les roles (admin/test) d'un profil existant.
@@ -374,7 +374,7 @@ function buildAdminRouter(config) {
   router.post("/profils/:id/edit", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const existing = Number.isInteger(id) ? getUserById(id) : null;
-    if (!existing) return res.redirect("/admin#tab-utilisateurs");
+    if (!existing) return res.redirect("/ponhgup#tab-utilisateurs");
 
     const nom = String(req.body.nom || "").trim();
     const username = nom.toLowerCase();
@@ -410,7 +410,7 @@ function buildAdminRouter(config) {
       clearCouplePartner(id);
     }
 
-    res.redirect("/admin#tab-utilisateurs");
+    res.redirect("/ponhgup#tab-utilisateurs");
   });
 
   router.post("/profils/:id/password", requireAdmin, (req, res) => {
@@ -419,7 +419,7 @@ function buildAdminRouter(config) {
     if (password && Number.isInteger(id)) {
       updateUserPassword(id, hashPassword(password));
     }
-    res.redirect("/admin#tab-utilisateurs");
+    res.redirect("/ponhgup#tab-utilisateurs");
   });
 
   // Attribuer des lootboxes à un utilisateur
@@ -428,13 +428,13 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     const count = Math.min(20, Math.max(1, parseInt(req.body.count, 10) || 1));
     if (Number.isInteger(id)) grantLootbox(id, count);
-    res.redirect(`/admin/utilisateur/${id}`);
+    res.redirect(`/ponhgup/utilisateur/${id}`);
   });
 
   router.post("/profils/:id/reset-progress", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (Number.isInteger(id)) resetUserLootboxProgress(id);
-    res.redirect(`/admin/utilisateur/${id}`);
+    res.redirect(`/ponhgup/utilisateur/${id}`);
   });
 
   router.post("/profils/:id/delete", requireAdmin, (req, res) => {
@@ -442,7 +442,7 @@ function buildAdminRouter(config) {
     if (Number.isInteger(id) && id !== req.session.userId) {
       deleteUser(id);
     }
-    res.redirect("/admin#tab-utilisateurs");
+    res.redirect("/ponhgup#tab-utilisateurs");
   });
 
   router.post("/profils/:id/status", requireAdmin, express.json(), (req, res) => {
@@ -506,7 +506,7 @@ function buildAdminRouter(config) {
   router.get("/utilisateur/:id", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
-    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const attempt = getAttempt(tokenForUser(detail.user));
     const liveScores = attempt ? computeScores(config, attempt.data) : null;
     const matrixSections = config.sections.filter((s) => s.type === "matrix");
@@ -517,7 +517,7 @@ function buildAdminRouter(config) {
   router.get("/utilisateur/:id/codex", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
-    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const items = ratedOrFavorited(id, "wiki", listWikiPages);
     const topViews = withViewCounts(detail.wikiViewCounts, "pageId", id, "wiki", listWikiPages);
     res.render("admin-user-codex", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
@@ -526,7 +526,7 @@ function buildAdminRouter(config) {
   router.get("/utilisateur/:id/images", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
-    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const items = ratedOrFavorited(id, "gallery", listGalleryImages);
     const topViews = withViewCounts(detail.galViewCounts, "galleryId", id, "gallery", listGalleryImages);
     res.render("admin-user-images", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
@@ -535,7 +535,7 @@ function buildAdminRouter(config) {
   router.get("/utilisateur/:id/bd", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
-    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const items = ratedOrFavorited(id, "bd", listBdBooks);
     const topViews = withViewCounts(detail.bdViewCounts, "bookId", id, "bd", listBdBooks);
     res.render("admin-user-bd", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
@@ -544,7 +544,7 @@ function buildAdminRouter(config) {
   router.get("/utilisateur/:id/activite", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
-    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const feed = [];
     detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki",    label: v.title,    at: v.createdAt,  href: "/wiki/"    + v.pageId }));
     detail.recentGalViews.forEach((v) => feed.push({ type: "gallery",  label: v.title,    at: v.createdAt,  href: "/galerie/" + v.galleryId + "/edit" }));
@@ -565,7 +565,7 @@ function buildAdminRouter(config) {
   router.get("/utilisateur/:id/connexions", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
-    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const connectionLogs = listConnectionLogsForUser(id, 30);
     const sessions = listActivitySessions(id, 30);
     res.render("admin-user-connexions", { config, detail, connectionLogs, sessions, roleHue: roleHue(detail.user) });
@@ -576,7 +576,7 @@ function buildAdminRouter(config) {
   router.get("/utilisateur/:id/a-lire-plus-tard", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
-    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const items = mergeUserReactions(listWikiPages(), id, "wiki").filter((p) => p.readLater);
     res.render("admin-user-lire-plus-tard", { config, detail, items, roleHue: roleHue(detail.user) });
   });
@@ -587,7 +587,7 @@ function buildAdminRouter(config) {
   router.get("/utilisateur/:id/collections", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
-    if (!detail) return res.redirect("/admin#tab-utilisateurs");
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const collections = listCollections(id);
     res.render("admin-user-collections", { config, detail, collections, roleHue: roleHue(detail.user) });
   });
@@ -597,7 +597,7 @@ function buildAdminRouter(config) {
     const cid = Number(req.params.cid);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
     const collection = Number.isInteger(cid) ? getCollection(cid) : null;
-    if (!detail || !collection || collection.userId !== id) return res.redirect("/admin/utilisateur/" + id + "/collections");
+    if (!detail || !collection || collection.userId !== id) return res.redirect("/ponhgup/utilisateur/" + id + "/collections");
     const items = getCollectionImages(cid);
     res.render("admin-user-collection-detail", { config, detail, collection, items, roleHue: roleHue(detail.user) });
   });
@@ -633,7 +633,7 @@ function buildAdminRouter(config) {
       if (req.body[`buy_${tier}`]    !== undefined) setLootboxConfigKey(`buy_${tier}`,    req.body[`buy_${tier}`]);
       if (req.body[`sell_${tier}`]   !== undefined) setLootboxConfigKey(`sell_${tier}`,   req.body[`sell_${tier}`]);
     }
-    res.redirect("/admin/recompenses?section=config");
+    res.redirect("/ponhgup/recompenses?section=config");
   });
 
   router.get("/recompenses/images-profil", requireAdmin, (req, res) => {
@@ -1134,7 +1134,7 @@ function buildAdminRouter(config) {
         const msg = uploadErr.code === "LIMIT_FILE_SIZE"
           ? "Fichier trop volumineux (max 600 Mo)"
           : "Erreur upload : " + uploadErr.message;
-        return res.redirect("/admin/jeux?error=" + encodeURIComponent(msg));
+        return res.redirect("/ponhgup/jeux?error=" + encodeURIComponent(msg));
       }
     let title        = String(req.body.title       || "").trim();
     const description= String(req.body.description || "").trim();
@@ -1142,7 +1142,7 @@ function buildAdminRouter(config) {
     const onlineUrl  = String(req.body.online_url  || "").trim();
     const rawSlug    = String(req.body.slug        || "").trim();
 
-    if (!req.file) return res.redirect("/admin/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
+    if (!req.file) return res.redirect("/ponhgup/jeux?error=Aucun+fichier+reçu+ou+format+invalide");
 
     // Extraction d'abord, puis auto-détection moteur + titre RPGM si besoin
     const tmpSlug = rawSlug ? toSlug(rawSlug) : (title ? toSlug(title) : `game-${Date.now()}`);
@@ -1153,10 +1153,10 @@ function buildAdminRouter(config) {
     const extractArgs = ["x", req.file.path, `-o${gameDir}`, "-y", ...(isZip ? ["-mcp=932"] : [])];
     execFile("7z", extractArgs, (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
-      if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
+      if (err) return res.redirect("/ponhgup/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
       const rootResult = findGameRoot(gameDir, entrypoint);
-      if (!rootResult) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
+      if (!rootResult) return res.redirect("/ponhgup/jeux?error=" + encodeURIComponent(
         `Aucun fichier HTML trouvé dans le zip`
       ));
       let rootDir         = rootResult.dir;
@@ -1171,7 +1171,7 @@ function buildAdminRouter(config) {
       }
 
       const slug = rawSlug ? toSlug(rawSlug) : (title ? toSlug(title) : tmpSlug);
-      if (!slug || !title) return res.redirect("/admin/jeux?error=Titre+requis+(non+d%C3%A9tect%C3%A9+automatiquement)");
+      if (!slug || !title) return res.redirect("/ponhgup/jeux?error=Titre+requis+(non+d%C3%A9tect%C3%A9+automatiquement)");
 
       // Renomme le dossier si le slug final diffère du slug temporaire
       const finalGameDir = path.join(GAMES_DIR, slug);
@@ -1192,7 +1192,7 @@ function buildAdminRouter(config) {
       writeGames(games);
 
       const hasErrors = warnings.some(w => w.severity === "error");
-      res.redirect("/admin/jeux?success=1" + (hasErrors ? "&compat_warn=" + slug : ""));
+      res.redirect("/ponhgup/jeux?success=1" + (hasErrors ? "&compat_warn=" + slug : ""));
     });
     }); // fin zipUpload callback
   });
@@ -1204,13 +1204,13 @@ function buildAdminRouter(config) {
         const msg = uploadErr.code === "LIMIT_FILE_SIZE"
           ? "Fichier trop volumineux (max 600 Mo)"
           : "Erreur upload : " + uploadErr.message;
-        return res.redirect("/admin/jeux?error=" + encodeURIComponent(msg));
+        return res.redirect("/ponhgup/jeux?error=" + encodeURIComponent(msg));
       }
     const slug      = toSlug(req.params.slug);
     const games     = readGames();
     const existing  = games.find(g => g.slug === slug);
-    if (!existing) return res.redirect("/admin/jeux?error=Jeu+introuvable");
-    if (!req.file)  return res.redirect("/admin/jeux?error=Aucun+fichier+reçu");
+    if (!existing) return res.redirect("/ponhgup/jeux?error=Jeu+introuvable");
+    if (!req.file)  return res.redirect("/ponhgup/jeux?error=Aucun+fichier+reçu");
 
     const entrypoint = String(req.body.entrypoint || existing.entrypoint || "index.html").trim();
     const gameDir    = path.join(GAMES_DIR, slug);
@@ -1220,10 +1220,10 @@ function buildAdminRouter(config) {
     const extractArgs2 = ["x", req.file.path, `-o${gameDir}`, "-y", ...(isZip2 ? ["-mcp=932"] : [])];
     execFile("7z", extractArgs2, (err) => {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
-      if (err) return res.redirect("/admin/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
+      if (err) return res.redirect("/ponhgup/jeux?error=" + encodeURIComponent("Échec extraction : " + err.message));
 
       const rootResult = findGameRoot(gameDir, entrypoint);
-      if (!rootResult) return res.redirect("/admin/jeux?error=" + encodeURIComponent(
+      if (!rootResult) return res.redirect("/ponhgup/jeux?error=" + encodeURIComponent(
         `Aucun fichier HTML trouvé dans le zip`
       ));
       const rootDir      = rootResult.dir;
@@ -1237,7 +1237,7 @@ function buildAdminRouter(config) {
       writeGames(games);
 
       const hasErrors = warnings.some(w => w.severity === "error");
-      res.redirect("/admin/jeux?success=1" + (hasErrors ? "&compat_warn=" + slug : ""));
+      res.redirect("/ponhgup/jeux?success=1" + (hasErrors ? "&compat_warn=" + slug : ""));
     });
     }); // fin zipUpload callback
   });
@@ -1247,7 +1247,7 @@ function buildAdminRouter(config) {
     const slug      = toSlug(req.params.slug);
     const games     = readGames();
     const idx       = games.findIndex(g => g.slug === slug);
-    if (idx < 0) return res.redirect("/admin/jeux?error=Jeu+introuvable");
+    if (idx < 0) return res.redirect("/ponhgup/jeux?error=Jeu+introuvable");
 
     const title      = String(req.body.title       || "").trim();
     const description= String(req.body.description || "").trim();
@@ -1262,7 +1262,7 @@ function buildAdminRouter(config) {
     const protagonistIds = (Array.isArray(protRaw) ? protRaw : protRaw ? [protRaw] : [])
       .map(Number).filter(n => !isNaN(n) && n > 0);
 
-    if (!title) return res.redirect("/admin/jeux?error=Titre+requis");
+    if (!title) return res.redirect("/ponhgup/jeux?error=Titre+requis");
 
     const updated = { ...games[idx], title, description, entrypoint, disabled, tags, protagonist_ids: protagonistIds };
     if (onlineUrl) updated.online_url = onlineUrl; else delete updated.online_url;
@@ -1270,7 +1270,7 @@ function buildAdminRouter(config) {
     if (subParody) updated.sub_parody = subParody; else delete updated.sub_parody;
     games[idx] = updated;
     writeGames(games);
-    res.redirect("/admin/jeux?success=1");
+    res.redirect("/ponhgup/jeux?success=1");
   });
 
   // ── Changer l'illustration d'un jeu ───────────────────────────────────────
@@ -1278,13 +1278,13 @@ function buildAdminRouter(config) {
     const slug = toSlug(req.params.slug);
     const games = readGames();
     const idx = games.findIndex(g => g.slug === slug);
-    if (idx < 0) return res.redirect("/admin/jeux?error=Jeu+introuvable");
+    if (idx < 0) return res.redirect("/ponhgup/jeux?error=Jeu+introuvable");
 
     coverUpload.single("coverfile")(req, res, (uploadErr) => {
       if (uploadErr) {
-        return res.redirect("/admin/jeux?error=" + encodeURIComponent("Erreur image : " + uploadErr.message));
+        return res.redirect("/ponhgup/jeux?error=" + encodeURIComponent("Erreur image : " + uploadErr.message));
       }
-      if (!req.file) return res.redirect("/admin/jeux?error=Aucune+image+reçue");
+      if (!req.file) return res.redirect("/ponhgup/jeux?error=Aucune+image+reçue");
 
       const coversDir = path.join(GAMES_DIR, "covers");
       const ext = path.extname(req.file.filename);
@@ -1301,7 +1301,7 @@ function buildAdminRouter(config) {
       fs.renameSync(req.file.path, finalPath);
       games[idx] = { ...games[idx], cover: ext.slice(1) };
       writeGames(games);
-      res.redirect("/admin/jeux?success=1");
+      res.redirect("/ponhgup/jeux?success=1");
     });
   });
 
@@ -1309,7 +1309,7 @@ function buildAdminRouter(config) {
   router.post("/jeux/:slug/delete", requireAdmin, (req, res) => {
     const slug = toSlug(req.params.slug);
     writeGames(readGames().filter(g => g.slug !== slug));
-    res.redirect("/admin/jeux?success=1");
+    res.redirect("/ponhgup/jeux?success=1");
   });
 
   // ── IP Logger ──────────────────────────────────────────────────────────────
@@ -1328,7 +1328,7 @@ function buildAdminRouter(config) {
 
   router.get("/:id", requireAdmin, (req, res) => {
     const submission = getSubmission(Number(req.params.id));
-    if (!submission) return res.redirect("/admin");
+    if (!submission) return res.redirect("/ponhgup");
     res.render("admin-detail", { config, submission, slugify, flattenItemsRaw, isLive: false });
   });
 
@@ -1355,7 +1355,7 @@ function buildAdminRouter(config) {
     const sex_details    = String(req.body.sex_details    || "").trim();
     const fantasmes   = [].concat(req.body.fantasmes || []).filter(Boolean);
     if (name) createAiProfile({ name, description, fantasmes, age, sexe, physical_desc, relation_type, sex_fantasmes, sex_practiced, sex_details });
-    res.redirect("/admin#tab-ia");
+    res.redirect("/ponhgup#tab-ia");
   });
 
   router.post("/ia/:id/update", requireAdmin, (req, res) => {
@@ -1381,12 +1381,12 @@ function buildAdminRouter(config) {
     const sex_details    = String(req.body.sex_details    || "").trim();
     const fantasmes   = [].concat(req.body.fantasmes || []).filter(Boolean);
     if (name) updateAiProfile(id, { name, description, fantasmes, age, sexe, physical_desc, relation_type, sex_fantasmes, sex_practiced, sex_details });
-    res.redirect("/admin#tab-ia");
+    res.redirect("/ponhgup#tab-ia");
   });
 
   router.post("/ia/:id/delete", requireAdmin, (req, res) => {
     deleteAiProfile(Number(req.params.id));
-    res.redirect("/admin#tab-ia");
+    res.redirect("/ponhgup#tab-ia");
   });
 
   // ── Checklist Codex ──────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 <%- include('partials/head', { title: 'Checklist Codex', extraCss: ['admin.css'] }) %>
 
 <div class="admin-topbar">
-  <a href="/admin" class="admin-topbar-back">&#8592; Admin</a>
+  <a href="/ponhgup" class="admin-topbar-back">&#8592; Admin</a>
   <span class="admin-topbar-title"><%= config.title %></span>
 </div>
 
@@ -129,7 +129,7 @@
   document.querySelectorAll('.cc-item').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.dataset.id;
-      fetch('/admin/codex-checklist/toggle', {
+      fetch('/ponhgup/codex-checklist/toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: Number(id) })

@@ -18,7 +18,7 @@
 </style>
 
 <div class="admin-topbar">
-  <a href="/admin/ip-logs" class="admin-topbar-back">&#8592; IP Logs</a>
+  <a href="/ponhgup/ip-logs" class="admin-topbar-back">&#8592; IP Logs</a>
   <span class="admin-topbar-title"><%= config.title %></span>
 </div>
 
@@ -71,7 +71,7 @@
     var c = code.toUpperCase();
     return String.fromCodePoint(c.charCodeAt(0)+127397) + String.fromCodePoint(c.charCodeAt(1)+127397);
   }
-  fetch('/admin/ip-geo?ip=' + encodeURIComponent(ip))
+  fetch('/ponhgup/ip-geo?ip=' + encodeURIComponent(ip))
     .then(function(r) { return r.json(); })
     .then(function(d) {
       var f = document.getElementById('ipd-flag');

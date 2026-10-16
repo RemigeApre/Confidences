@@ -28,7 +28,7 @@
 </style>
 
 <div class="admin-topbar">
-  <a href="/admin#tab-log" class="admin-topbar-back">&#8592; Retour</a>
+  <a href="/ponhgup#tab-log" class="admin-topbar-back">&#8592; Retour</a>
   <span class="admin-topbar-title"><%= config.title %></span>
 </div>
 
@@ -36,7 +36,7 @@
   <div class="ipl-toolbar">
     <h1 class="ipl-h1">IP Logger &mdash; <%= logs.length %> adresse<%= logs.length !== 1 ? 's' : '' %></h1>
     <% [6, 24, 48, 168, 336, 720].forEach(function(h) { %>
-      <a href="/admin/ip-logs?h=<%= h %>" class="ipl-range-btn<%= hours === h ? ' active' : '' %>">
+      <a href="/ponhgup/ip-logs?h=<%= h %>" class="ipl-range-btn<%= hours === h ? ' active' : '' %>">
         <%= h < 24 ? h + 'h' : (h < 168 ? (h/24) + 'j' : (h/168) + 'sem') %>
       </a>
     <% }) %>
@@ -71,7 +71,7 @@
       <tr data-ip="<%= row.ip %>">
         <td class="ipl-ip">
           <% if (isRecent) { %><span class="ipl-new" title="Actif r&eacute;cemment"></span><% } %>
-          <a href="/admin/ip-logs/<%= encodeURIComponent(row.ip) %>"><%= row.ip %></a>
+          <a href="/ponhgup/ip-logs/<%= encodeURIComponent(row.ip) %>"><%= row.ip %></a>
         </td>
         <td>
           <div class="ipl-geo">
@@ -107,7 +107,7 @@
   function loadGeo(ip) {
     if (done.has(ip)) return;
     done.add(ip);
-    fetch('/admin/ip-geo?ip=' + encodeURIComponent(ip))
+    fetch('/ponhgup/ip-geo?ip=' + encodeURIComponent(ip))
       .then(function(r) { return r.json(); })
       .then(function(d) {
         var flag = countryCodeToFlag(d.countryCode || '');

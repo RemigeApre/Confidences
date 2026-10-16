@@ -238,7 +238,7 @@ try { db.exec("ALTER TABLE users ADD COLUMN share_notes_with_admin INTEGER NOT N
 // filtre uniquement ce qui s'affiche sur cette page, ne supprime jamais les
 // vues elles-mêmes (utilisées ailleurs par les stats admin).
 try { db.exec("ALTER TABLE users ADD COLUMN history_retention TEXT NOT NULL DEFAULT '1mois'"); } catch (_) {}
-// Mode couple (lié par l'admin uniquement, voir /admin) : relation
+// Mode couple (lié par l'admin uniquement, voir /ponhgup) : relation
 // symétrique 1↔1, stockée en miroir sur les deux comptes pour qu'un simple
 // SELECT suffise à retrouver le/la partenaire de n'importe quel profil, sans
 // jointure OR coûteuse. setCouplePartners()/clearCouplePartner() ci-dessous
@@ -3002,7 +3002,7 @@ function pathToLabel(path) {
   if (clean === '/profil') return 'Profil';
   if (clean === '/favoris') return 'Favoris';
   if (clean === '/favoris/coffre') return 'Coffre';
-  if (clean === '/admin') return 'Admin';
+  if (clean === '/ponhgup') return 'Admin';
 
   const wikiMatch = clean.match(/^\/wiki\/(\d+)/);
   if (wikiMatch) {

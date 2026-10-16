@@ -297,7 +297,7 @@
 
   // ── Refresh ──────────────────────────────────────────────────────────────
   function refresh() {
-    return fetch('/admin/races').then(function(r){ return r.json(); }).then(function(d){
+    return fetch('/ponhgup/races').then(function(r){ return r.json(); }).then(function(d){
       if (d.ok) renderGrid(d.races);
     });
   }
@@ -345,7 +345,7 @@
     var body = { name: raceName.value.trim(), icon: raceIcon.value.trim(), color: raceColor.value, nature: raceNature.value, description: raceDesc.value.trim() };
     if (!body.name) return;
     raceSubmit.disabled = true;
-    fetch(id ? '/admin/races/' + id : '/admin/races', {
+    fetch(id ? '/ponhgup/races/' + id : '/ponhgup/races', {
       method: id ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -359,7 +359,7 @@
     var race = _cache.find(function(r){ return r.id === id; });
     var name = race ? race.name : String(id);
     if (!confirm('Supprimer l\'espèce "' + name + '" ?\nLes personnages associés perdront leur espèce.')) return;
-    fetch('/admin/races/' + id, { method: 'DELETE' }).then(function(r){ return r.json(); }).then(function(d){
+    fetch('/ponhgup/races/' + id, { method: 'DELETE' }).then(function(r){ return r.json(); }).then(function(d){
       if (d.ok) refresh();
     });
   }
@@ -404,7 +404,7 @@
     var body   = { name: clanName.value.trim(), color: clanColor.value, description: clanDesc.value.trim() };
     if (!body.name) return;
     clanSubmit.disabled = true;
-    fetch(id ? '/admin/clans/' + id : '/admin/races/' + raceId_ + '/clans', {
+    fetch(id ? '/ponhgup/clans/' + id : '/ponhgup/races/' + raceId_ + '/clans', {
       method: id ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -416,7 +416,7 @@
 
   function confirmDeleteClan(id) {
     if (!confirm('Supprimer cette sous-espèce ?\nLes personnages associés perdront leur sous-espèce.')) return;
-    fetch('/admin/clans/' + id, { method: 'DELETE' }).then(function(r){ return r.json(); }).then(function(d){
+    fetch('/ponhgup/clans/' + id, { method: 'DELETE' }).then(function(r){ return r.json(); }).then(function(d){
       if (d.ok) refresh();
     });
   }

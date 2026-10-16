@@ -55,7 +55,7 @@
 </style>
 
 <div class="admin-topbar">
-  <a href="/admin/recompenses" class="admin-topbar-back">&#8592; R&eacute;compenses</a>
+  <a href="/ponhgup/recompenses" class="admin-topbar-back">&#8592; R&eacute;compenses</a>
   <span class="admin-topbar-title"><%= config.title %> &mdash; Images de profil</span>
 </div>
 
@@ -247,7 +247,7 @@
       saveStatus.textContent = 'Enregistrement…';
       saveStatus.style.color = '#94a3b8';
       try {
-        const r = await fetch('/admin/recompenses/images-profil/' + d.id + '/rarity', {
+        const r = await fetch('/ponhgup/recompenses/images-profil/' + d.id + '/rarity', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rarity }),

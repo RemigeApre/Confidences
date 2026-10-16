@@ -2,7 +2,7 @@
 <main class="container wide">
   <div class="admin-header">
     <h1>G&eacute;rer les profils</h1>
-    <a href="/admin" class="link-button">&larr; Retour au panneau admin</a>
+    <a href="/ponhgup" class="link-button">&larr; Retour au panneau admin</a>
   </div>
 
   <% if (error) { %><p class="error"><%= error %></p><% } %>
@@ -19,7 +19,7 @@
             <td><%= u.username %></td>
             <td><%= u.isAdmin ? "Admin" : "Profil" %></td>
             <td>
-              <form method="POST" action="/admin/profils/<%= u.id %>/password" class="admin-inline-form">
+              <form method="POST" action="/ponhgup/profils/<%= u.id %>/password" class="admin-inline-form">
                 <input type="password" name="password" placeholder="nouveau mot de passe" required />
                 <button type="submit" class="link-button">R&eacute;initialiser</button>
               </form>
@@ -32,7 +32,7 @@
 
   <div class="result-section">
     <h2>Nouveau profil</h2>
-    <form method="POST" action="/admin/profils" class="admin-new-profile-form">
+    <form method="POST" action="/ponhgup/profils" class="admin-new-profile-form">
       <input type="text" name="display_name" placeholder="Nom affich&eacute; (ex: Manon)" required />
       <input type="text" name="username" placeholder="identifiant de connexion" required autocomplete="off" />
       <input type="password" name="password" placeholder="mot de passe" required />

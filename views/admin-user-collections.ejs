@@ -1,7 +1,7 @@
 <%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Collections', extraCss: ['admin.css'] }) %>
 
 <div class="admin-topbar">
-  <a href="/admin#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
+  <a href="/ponhgup#tab-utilisateurs" class="admin-topbar-back">&#8592; Retour</a>
   <span class="admin-topbar-title"><%= config.title %></span>
 </div>
 
@@ -19,7 +19,7 @@
         <p class="admin-muted">Aucune collection pour l&rsquo;instant.</p>
       <% } %>
       <% collections.forEach(function (c) { %>
-        <a href="/admin/utilisateur/<%= detail.user.id %>/collections/<%= c.id %>" class="collection-card">
+        <a href="/ponhgup/utilisateur/<%= detail.user.id %>/collections/<%= c.id %>" class="collection-card">
           <% if (c.coverImg) { %>
             <img src="<%= thumbUrl(c.coverImg) %>" alt="" class="collection-card-img" loading="lazy" />
           <% } else { %>

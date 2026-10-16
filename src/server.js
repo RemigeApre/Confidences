@@ -309,7 +309,7 @@ app.use((req, res, next) => {
   if (req.user) return next();
   if (_AUTH_PUBLIC.some(re => re.test(req.path))) return next();
   if (req.method === 'GET') {
-    return res.redirect(302, '/admin/login?next=' + encodeURIComponent(req.originalUrl));
+    return res.redirect(302, '/ponhgup/85zapnte?next=' + encodeURIComponent(req.originalUrl));
   }
   return res.status(403).end();
 });
@@ -357,7 +357,7 @@ app.use((req, res, next) => {
 });
 
 // Suivi des visites anonymes (non connectés) — throttlé à 1/IP/path/10min
-const ANON_SKIP = ['/uploads', '/css', '/js', '/favicon', '/api', '/admin', '/login', '/logout'];
+const ANON_SKIP = ['/uploads', '/css', '/js', '/favicon', '/api', '/ponhgup', '/login', '/logout'];
 app.use((req, res, next) => {
   if (!req.user && req.method === 'GET') {
     const skip = ANON_SKIP.some(p => req.path.startsWith(p));
@@ -370,7 +370,7 @@ app.use((req, res, next) => {
 });
 
 // Enforcement du statut de compte.
-// bloqué  → page de blocage sur toutes les routes (sauf /admin et login)
+// bloqué  → page de blocage sur toutes les routes (sauf /ponhgup et login)
 // restreint → bloque galerie, BD, nouvelles, et uploads (contenu adulte/privé)
 // inactif est informatif uniquement (calculé, jamais stocké).
 const RESTRICTED_PREFIXES = ['/galerie', '/bd', '/nouvelles', '/lootbox'];
@@ -380,7 +380,7 @@ app.use((req, res, next) => {
   if (status === 'bloque') {
     // Les admins ne peuvent pas se bloquer eux-mêmes
     if (req.user.isAdmin) return next();
-    if (req.path.startsWith('/admin') || req.path === '/login' || req.path === '/logout') return next();
+    if (req.path.startsWith('/ponhgup') || req.path === '/login' || req.path === '/logout') return next();
     return res.status(403).render('blocked', { user: req.user });
   }
   if (status === 'restreint') {
@@ -591,7 +591,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Mode couple (lié par l'admin, voir /admin) : expose le/la partenaire pour
+// Mode couple (lié par l'admin, voir /ponhgup) : expose le/la partenaire pour
 // le lien dans le menu profil (voir partials/top-nav.ejs). Toujours
 // calculé (une seule lecture par PK, négligeable) plutôt que scopé à
 // certaines pages, pour que le lien apparaisse dans le header partout.
@@ -992,7 +992,7 @@ app.delete("/api/tags/blacklist", function (req, res) {
 // ── Sous-page dédiée : gérer la blacklist (retrait uniquement, l'ajout se
 // fait depuis la popup tag partagée, voir partials/tag-popup.ejs) ──────────
 app.get("/tags/masques", function (req, res) {
-  if (!req.user) return res.redirect("/admin/login?next=" + encodeURIComponent("/tags/masques"));
+  if (!req.user) return res.redirect("/ponhgup/85zapnte?next=" + encodeURIComponent("/tags/masques"));
   res.render("tags-masques", { config, blacklist: listBlacklistedTags(req.user.id) });
 });
 
@@ -1032,7 +1032,7 @@ const buildJeuRouter = require("./routes/jeu");
 const buildArcadeRouter = require("./routes/arcade");
 app.use("/quizz", buildCustomQuizRouter(config));
 app.use("/", buildQuizRouter(config));
-app.use("/admin", buildAdminRouter(config));
+app.use("/ponhgup", buildAdminRouter(config));
 app.use("/liens", buildLinksRouter(config));
 app.use("/wiki", buildWikiRouter(config));
 app.use("/galerie", buildGalleryRouter(config));

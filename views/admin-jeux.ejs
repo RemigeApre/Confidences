@@ -1,7 +1,7 @@
 <%- include('partials/head', { title: 'Admin : Jeux', extraCss: ['admin.css'] }) %>
 
 <div class="admin-topbar">
-  <a href="/admin" class="admin-topbar-back">&#8592; Retour</a>
+  <a href="/ponhgup" class="admin-topbar-back">&#8592; Retour</a>
   <span class="admin-topbar-title">Administration &mdash; Jeux</span>
 </div>
 
@@ -147,7 +147,7 @@
     <h2 class="admin-modal-title" id="jeux-edit-modal-title">Configurer</h2>
 
     <%# Métadonnées %>
-    <form method="POST" id="jeux-edit-form" action="/admin/jeux/__SLUG__/edit" class="admin-modal-form">
+    <form method="POST" id="jeux-edit-form" action="/ponhgup/jeux/__SLUG__/edit" class="admin-modal-form">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
         <label class="admin-modal-field">
           <span>Titre *</span>
@@ -233,7 +233,7 @@
     <details class="admin-modal-extra-details" style="margin-top:.5rem;">
       <summary class="admin-modal-extra-summary">Illustration &rsaquo;</summary>
       <div class="admin-modal-extra-body" style="padding-top:.75rem;">
-        <form method="POST" id="jeux-cover-form" action="/admin/jeux/__SLUG__/cover" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:.65rem;">
+        <form method="POST" id="jeux-cover-form" action="/ponhgup/jeux/__SLUG__/cover" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:.65rem;">
           <div class="admin-game-cover-preview" id="edit-cover-preview">
             <span id="edit-cover-preview-text" style="color:#475569;font-size:.8rem;">Aucune illustration</span>
           </div>
@@ -484,7 +484,7 @@
 
       /* Illustration */
       var coverForm = qs('#jeux-cover-form');
-      coverForm.action = '/admin/jeux/' + slug + '/cover';
+      coverForm.action = '/ponhgup/jeux/' + slug + '/cover';
       var coverExt = card.dataset.gameCover || '';
       var prevText = qs('#edit-cover-preview-text');
       var prevEl   = qs('#edit-cover-preview');
@@ -510,7 +510,7 @@
       if (window._editProtsReset) window._editProtsReset(protIds);
 
       var form = qs('#jeux-edit-form');
-      form.action = '/admin/jeux/' + slug + '/edit';
+      form.action = '/ponhgup/jeux/' + slug + '/edit';
 
       // Delete
       qs('#jeux-edit-delete').dataset.slug = slug;
@@ -657,9 +657,9 @@
     fd.append('entrypoint', entry);
     fd.append('online_url', onlineUrl);
     fd.append('zipfile', file);
-    xhrUpload('/admin/jeux/add', fd,
+    xhrUpload('/ponhgup/jeux/add', fd,
       qs('#add-progress-bar'), qs('#add-progress-status'), qs('#add-progress'), addSubmit,
-      function (xhr) { window.location.href = xhr.responseURL || '/admin/jeux'; });
+      function (xhr) { window.location.href = xhr.responseURL || '/ponhgup/jeux'; });
   });
 
   /* ── Submit : re-upload zip jeu existant ── */
@@ -672,9 +672,9 @@
     var fd = new FormData();
     fd.append('entrypoint', entry);
     fd.append('zipfile', file);
-    xhrUpload('/admin/jeux/' + slug + '/upload', fd,
+    xhrUpload('/ponhgup/jeux/' + slug + '/upload', fd,
       qs('#edit-progress-bar'), qs('#edit-progress-status'), qs('#edit-progress'), editUploadBtn,
-      function (xhr) { window.location.href = xhr.responseURL || '/admin/jeux'; });
+      function (xhr) { window.location.href = xhr.responseURL || '/ponhgup/jeux'; });
   });
 
   /* ── Supprimer un jeu ── */
@@ -684,8 +684,8 @@
     if (!confirm('Retirer "' + name + '" de la liste\u00a0? (les fichiers ne sont pas supprim\u00e9s)')) return;
     var fd = new FormData();
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/admin/jeux/' + slug + '/delete');
-    xhr.addEventListener('load', function () { window.location.href = '/admin/jeux'; });
+    xhr.open('POST', '/ponhgup/jeux/' + slug + '/delete');
+    xhr.addEventListener('load', function () { window.location.href = '/ponhgup/jeux'; });
     xhr.send(fd);
   });
 })();

@@ -8,7 +8,7 @@
   <div class="admin-tabs-center">
 
     <button class="admin-tab-btn admin-tab--sys active" data-tab="utilisateurs">Utilisateurs</button>
-    <a href="/admin/recompenses" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">R&eacute;compenses</a>
+    <a href="/ponhgup/recompenses" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">R&eacute;compenses</a>
 
     <span class="admin-tabs-sep" aria-hidden="true"></span>
 
@@ -17,7 +17,7 @@
     <button class="admin-tab-btn admin-tab--content" data-tab="bd">BD</button>
     <button class="admin-tab-btn admin-tab--content" data-tab="histoires">Histoires</button>
     <button class="admin-tab-btn admin-tab--content" data-tab="labels">Labels</button>
-    <a href="/admin/jeux" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Jeux</a>
+    <a href="/ponhgup/jeux" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Jeux</a>
 
     <span class="admin-tabs-sep" aria-hidden="true"></span>
 
@@ -258,7 +258,7 @@
       <div class="admin-modal">
         <button type="button" class="admin-modal-close" id="admin-create-modal-close" aria-label="Fermer">&#215;</button>
         <h2 class="admin-modal-title">Nouvel utilisateur</h2>
-        <form method="POST" action="/admin/profils" class="admin-modal-form">
+        <form method="POST" action="/ponhgup/profils" class="admin-modal-form">
           <label class="admin-modal-field">
             <span>Nom</span>
             <input type="text" name="nom" required autocomplete="off" />
@@ -316,7 +316,7 @@
       <div class="admin-modal">
         <button type="button" class="admin-modal-close" id="admin-edit-modal-close" aria-label="Fermer">&#215;</button>
         <h2 class="admin-modal-title">Modifier</h2>
-        <form method="POST" id="admin-edit-form" action="/admin/profils/__ID__/edit" class="admin-modal-form">
+        <form method="POST" id="admin-edit-form" action="/ponhgup/profils/__ID__/edit" class="admin-modal-form">
           <label class="admin-modal-field">
             <span>Nom</span>
             <input type="text" name="nom" id="edit-nom" required autocomplete="off" />
@@ -383,7 +383,7 @@
       <div class="admin-modal">
         <button type="button" class="admin-modal-close" id="admin-pwd-modal-close" aria-label="Fermer">&#215;</button>
         <h2 class="admin-modal-title" id="admin-pwd-modal-title">R&eacute;init. MDP</h2>
-        <form method="POST" id="admin-pwd-form" action="/admin/profils/__ID__/password" class="admin-modal-form">
+        <form method="POST" id="admin-pwd-form" action="/ponhgup/profils/__ID__/password" class="admin-modal-form">
           <label class="admin-modal-field">
             <span>Nouveau mot de passe</span>
             <input type="password" name="password" required autocomplete="new-password" />
@@ -394,7 +394,7 @@
     </div>
 
     <%# ── Formulaire caché : supprimer ── %>
-    <form method="POST" id="admin-del-form" action="/admin/profils/__ID__/delete" style="display:none"></form>
+    <form method="POST" id="admin-del-form" action="/ponhgup/profils/__ID__/delete" style="display:none"></form>
 
     <%# ── Modal : offrir des lootboxes ── %>
     <div class="admin-modal-overlay" id="admin-grant-modal" hidden>
@@ -713,7 +713,7 @@
       <div class="admin-modal ia-modal">
         <button type="button" class="admin-modal-close" id="ia-create-modal-close">&#215;</button>
         <h2 class="admin-modal-title">Nouveau profil IA</h2>
-        <form method="POST" action="/admin/ia/create" class="admin-modal-form ia-form">
+        <form method="POST" action="/ponhgup/ia/create" class="admin-modal-form ia-form">
           <%- include('partials/ia-profile-fields', { fantasyWikiPages: fantasyWikiPages }) %>
           <button type="submit" class="admin-btn-primary">Cr&eacute;er</button>
         </form>
@@ -725,7 +725,7 @@
       <div class="admin-modal ia-modal">
         <button type="button" class="admin-modal-close" id="ia-edit-modal-close">&#215;</button>
         <h2 class="admin-modal-title">Modifier le profil</h2>
-        <form method="POST" action="/admin/ia/__ID__/update" id="ia-edit-form" class="admin-modal-form ia-form">
+        <form method="POST" action="/ponhgup/ia/__ID__/update" id="ia-edit-form" class="admin-modal-form ia-form">
           <%- include('partials/ia-profile-fields', { fantasyWikiPages: fantasyWikiPages }) %>
           <button type="submit" class="admin-btn-primary">Enregistrer</button>
         </form>
@@ -733,7 +733,7 @@
     </div>
 
     <%# ── Formulaire caché : supprimer IA ── %>
-    <form method="POST" id="ia-del-form" action="/admin/ia/__ID__/delete" style="display:none"></form>
+    <form method="POST" id="ia-del-form" action="/ponhgup/ia/__ID__/delete" style="display:none"></form>
 
   </section>
 
@@ -755,7 +755,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><line x1="18" y1="8" x2="22" y2="8"/><line x1="20" y1="6" x2="20" y2="10"/></svg>
         Visiteurs anonymes
       </button>
-      <a href="/admin/ip-logs" class="log-nav-btn log-nav-btn--link">
+      <a href="/ponhgup/ip-logs" class="log-nav-btn log-nav-btn--link">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         IP Logger
       </a>
@@ -1046,7 +1046,7 @@
       var q = searchInp ? searchInp.value.trim() : '';
       var pathQ = pathFilter ? pathFilter.value.trim() : '';
       var combined = q || pathQ;
-      fetch('/admin/log/anon?days=' + currentDays + '&path=' + encodeURIComponent(combined))
+      fetch('/ponhgup/log/anon?days=' + currentDays + '&path=' + encodeURIComponent(combined))
         .then(function(r) { return r.json(); })
         .then(function(data) {
           // Table (safe DOM, no innerHTML with data)
@@ -1155,7 +1155,7 @@
       loading.style.cssText = 'color:var(--muted);font-size:.8rem';
       loading.textContent = 'Chargement\u2026';
       visitorList.appendChild(loading);
-      fetch('/admin/log/visitors?days=30')
+      fetch('/ponhgup/log/visitors?days=30')
         .then(function(r) { return r.json(); })
         .then(function(data) {
           visitorList.textContent = '';
@@ -1214,7 +1214,7 @@
       loading.style.cssText = 'color:var(--muted);font-size:.8rem';
       loading.textContent = 'Chargement\u2026';
       profileContent.appendChild(loading);
-      fetch('/admin/log/visitor/' + encodeURIComponent(visitorId))
+      fetch('/ponhgup/log/visitor/' + encodeURIComponent(visitorId))
         .then(function(r) { return r.json(); })
         .then(function(data) {
           profileContent.textContent = '';
@@ -1370,7 +1370,7 @@
   document.querySelectorAll("#wiki-featured-list .admin-featured-toggle").forEach(function(btn) {
     btn.addEventListener("click", function() {
       var id = btn.closest("[data-id]").dataset.id;
-      fetch("/admin/wiki-featured/" + id, { method: "POST" })
+      fetch("/ponhgup/wiki-featured/" + id, { method: "POST" })
         .then(function(r) { return r.json(); })
         .then(function(d) {
           if (!d.ok) return;
@@ -1385,7 +1385,7 @@
   document.querySelectorAll("#admin-gallery-grid .admin-gallery-feat-btn").forEach(function(btn) {
     btn.addEventListener("click", function() {
       var id = btn.closest("[data-id]").dataset.id;
-      fetch("/admin/gallery-featured/" + id, { method: "POST" })
+      fetch("/ponhgup/gallery-featured/" + id, { method: "POST" })
         .then(function(r) { return r.json(); })
         .then(function(d) {
           if (!d.ok) return;
@@ -1507,7 +1507,7 @@
       document.getElementById('aqm-activity-line').innerHTML = '<span class="aqm-act-label">…</span>';
 
       // Fetch activité
-      fetch('/admin/profils/' + uid + '/recent-activity')
+      fetch('/ponhgup/profils/' + uid + '/recent-activity')
         .then(function(r) { return r.json(); })
         .then(function(data) {
           var lastMs = data.lastActiveAt ? new Date(data.lastActiveAt).getTime() : 0;
@@ -1532,7 +1532,7 @@
       var name = d.displayName;
 
       var actHtml =
-        '<a href="/admin/utilisateur/' + uid + '" class="aqm-btn aqm-btn--profile' + (hasShare ? ' aqm-btn--green' : ' aqm-btn--red') + '">Voir le profil</a>' +
+        '<a href="/ponhgup/utilisateur/' + uid + '" class="aqm-btn aqm-btn--profile' + (hasShare ? ' aqm-btn--green' : ' aqm-btn--red') + '">Voir le profil</a>' +
         '<button type="button" class="aqm-btn aqm-btn--neutral" id="aqm-reset-pwd-btn" data-uid="' + uid + '">R&eacute;init. MDP</button>' +
         '<button type="button" class="aqm-btn aqm-btn--neutral" data-grant-id="' + uid + '" data-grant-name="' + name + '">Offrir des lootboxes</button>';
       if (!isSelf) {
@@ -1552,7 +1552,7 @@
       var uid = sel.dataset.uid;
       var newStatus = sel.value;
       if (!uid || newStatus === 'inactif') { sel.value = sel.dataset.prev || 'actif'; return; }
-      fetch('/admin/profils/' + uid + '/status', {
+      fetch('/ponhgup/profils/' + uid + '/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -1587,7 +1587,7 @@
       var pwd = '';
       for (var i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
       btn.style.opacity = '0.4';
-      fetch('/admin/profils/' + uid + '/reset-pwd', {
+      fetch('/ponhgup/profils/' + uid + '/reset-pwd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pwd }),
@@ -1648,7 +1648,7 @@
         for (var i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
         btn.textContent = '…';
         btn.disabled = true;
-        fetch('/admin/profils/' + btn.dataset.uid + '/reset-pwd', {
+        fetch('/ponhgup/profils/' + btn.dataset.uid + '/reset-pwd', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: pwd }),
@@ -1743,7 +1743,7 @@
     document.querySelectorAll("[data-edit-id]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.dataset.editId;
-        document.getElementById("admin-edit-form").action = "/admin/profils/" + id + "/edit";
+        document.getElementById("admin-edit-form").action = "/ponhgup/profils/" + id + "/edit";
         document.getElementById("edit-nom").value = btn.dataset.editNom || "";
         var roleSelect = document.getElementById("edit-role");
         roleSelect.value = btn.dataset.editRole || "normal";
@@ -1769,7 +1769,7 @@
     document.querySelectorAll("[data-pwd-id]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.dataset.pwdId;
-        document.getElementById("admin-pwd-form").action = "/admin/profils/" + id + "/password";
+        document.getElementById("admin-pwd-form").action = "/ponhgup/profils/" + id + "/password";
         document.getElementById("admin-pwd-modal-title").textContent = "MDP : " + btn.dataset.pwdName;
         openModal("admin-pwd-modal");
       });
@@ -1780,7 +1780,7 @@
       btn.addEventListener("click", function () {
         var id   = btn.dataset.grantId;
         var name = btn.dataset.grantName;
-        document.getElementById("admin-grant-form").action = "/admin/profils/" + id + "/grant-lootbox";
+        document.getElementById("admin-grant-form").action = "/ponhgup/profils/" + id + "/grant-lootbox";
         document.getElementById("admin-grant-modal-title").textContent = "Offrir des lootboxes";
         document.getElementById("admin-grant-modal-to").textContent = "Destinataire : " + name;
         document.getElementById("admin-grant-count").value = "1";
@@ -1799,7 +1799,7 @@
       btn.addEventListener("click", function () {
         var name = btn.dataset.delName;
         if (!confirm("Supprimer " + name + " ? Cette action est irréversible.")) return;
-        document.getElementById("admin-del-form").action = "/admin/profils/" + btn.dataset.delId + "/delete";
+        document.getElementById("admin-del-form").action = "/ponhgup/profils/" + btn.dataset.delId + "/delete";
         document.getElementById("admin-del-form").submit();
       });
     });
@@ -1807,7 +1807,7 @@
     // Clic sur la carte utilisateur → page dédiée (plus de popup)
     document.querySelectorAll("[data-profile-id]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        window.location.href = "/admin/utilisateur/" + btn.dataset.profileId;
+        window.location.href = "/ponhgup/utilisateur/" + btn.dataset.profileId;
       });
     });
   })();
@@ -2038,7 +2038,7 @@
       var d = getProfileData(card);
 
       card.querySelector('.ia-edit-btn').addEventListener('click', function() {
-        document.getElementById('ia-edit-form').action = '/admin/ia/' + d.id + '/update';
+        document.getElementById('ia-edit-form').action = '/ponhgup/ia/' + d.id + '/update';
         fillForm(editModal, d);
         // Force refresh de la preview avec les données chargées
         editModal.querySelector('.ia-form').dispatchEvent(new Event('input'));
@@ -2047,7 +2047,7 @@
 
       card.querySelector('.ia-del-btn').addEventListener('click', function() {
         if (!confirm('Supprimer le profil \u00ab\u00a0' + d.name + '\u00a0\u00bb ?')) return;
-        document.getElementById('ia-del-form').action = '/admin/ia/' + d.id + '/delete';
+        document.getElementById('ia-del-form').action = '/ponhgup/ia/' + d.id + '/delete';
         document.getElementById('ia-del-form').submit();
       });
 

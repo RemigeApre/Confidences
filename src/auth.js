@@ -33,7 +33,7 @@ function attachUser(req, res, next) {
 
 function requireUser(req, res, next) {
   if (req.user) return next();
-  res.redirect("/admin/login?next=" + encodeURIComponent(req.originalUrl));
+  res.redirect("/ponhgup/85zapnte?next=" + encodeURIComponent(req.originalUrl));
 }
 
 // Variante pour les endpoints JSON/fetch (widgets AJAX) : une redirection
@@ -46,7 +46,7 @@ function requireUserJson(req, res, next) {
 function requireAdmin(req, res, next) {
   if (req.user && req.user.isAdmin) return next();
   if (req.user) return res.redirect("/favoris");
-  res.redirect("/admin/login");
+  res.redirect("/ponhgup/85zapnte");
 }
 
 function tokenForUser(user) {

@@ -257,17 +257,17 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
 <nav class="admin-tabs-nav">
   <div class="admin-tabs-center">
-    <a href="/admin#tab-utilisateurs" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">Utilisateurs</a>
+    <a href="/ponhgup#tab-utilisateurs" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">Utilisateurs</a>
     <span class="admin-tab-btn active admin-tab--sys" style="cursor:default">R&eacute;compenses</span>
     <span class="admin-tabs-sep" aria-hidden="true"></span>
-    <a href="/admin#tab-wiki" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Codex</a>
-    <a href="/admin#tab-galerie" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Galerie</a>
-    <a href="/admin#tab-bd" class="admin-tab-btn admin-tab--content admin-tab-btn--link">BD</a>
-    <a href="/admin#tab-histoires" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Histoires</a>
-    <a href="/admin/jeux" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Jeux</a>
+    <a href="/ponhgup#tab-wiki" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Codex</a>
+    <a href="/ponhgup#tab-galerie" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Galerie</a>
+    <a href="/ponhgup#tab-bd" class="admin-tab-btn admin-tab--content admin-tab-btn--link">BD</a>
+    <a href="/ponhgup#tab-histoires" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Histoires</a>
+    <a href="/ponhgup/jeux" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Jeux</a>
     <span class="admin-tabs-sep" aria-hidden="true"></span>
-    <a href="/admin#tab-ia" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">IA</a>
-    <a href="/admin#tab-log" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">Log</a>
+    <a href="/ponhgup#tab-ia" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">IA</a>
+    <a href="/ponhgup#tab-log" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">Log</a>
   </div>
   <a href="/" class="admin-tab-home">&#8617; Site</a>
 </nav>
@@ -438,7 +438,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
       <%/* Config raretés inline */%>
       <h3 style="font-size:.82rem;font-weight:700;color:#94a3b8;margin:1.5rem 0 .75rem;text-transform:uppercase;letter-spacing:.07em">Configuration des raretés</h3>
-      <form method="POST" action="/admin/recompenses/config">
+      <form method="POST" action="/ponhgup/recompenses/config">
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:.88rem">
             <thead>
@@ -1216,7 +1216,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       var status = document.getElementById('race-create-status');
       if (!name) { document.getElementById('race-create-name').focus(); return; }
       createBtn.disabled = true;
-      fetch('/admin/races', {
+      fetch('/ponhgup/races', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, description: desc, color: color, icon: icon })
       }).then(function(r) { return r.json(); }).then(function(d) {
@@ -1325,7 +1325,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       if (!name) return;
       var btn = e.target.closest('.race-save-btn');
       btn.textContent = '…'; btn.disabled = true;
-      fetch('/admin/races/' + raceId, {
+      fetch('/ponhgup/races/' + raceId, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, description: desc, color: color, icon: icon })
       }).then(function(r) { return r.json(); }).then(function(d) {
@@ -1339,7 +1339,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     if (e.target.closest('.race-delete-btn')) {
       var name = card.querySelector('.race-inp-name').value.trim() || 'cette race';
       if (!confirm('Supprimer "' + name + '" ? Les personnages associés perdront leur race et leur clan.')) return;
-      fetch('/admin/races/' + raceId, { method: 'DELETE' })
+      fetch('/ponhgup/races/' + raceId, { method: 'DELETE' })
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.ok) card.remove(); });
       return;
@@ -1354,7 +1354,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       if (!clanName) return;
       var btn2 = e.target.closest('.clan-save-btn');
       btn2.textContent = '…'; btn2.disabled = true;
-      fetch('/admin/clans/' + clanId, {
+      fetch('/ponhgup/clans/' + clanId, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: clanName, color: clanColor })
       }).then(function() {
@@ -1369,7 +1369,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       var clanRow2 = e.target.closest('.clan-row');
       var clanName2 = clanRow2.querySelector('.clan-inp-name').value.trim() || 'ce clan';
       if (!confirm('Supprimer "' + clanName2 + '" ?')) return;
-      fetch('/admin/clans/' + clanRow2.dataset.clanId, { method: 'DELETE' })
+      fetch('/ponhgup/clans/' + clanRow2.dataset.clanId, { method: 'DELETE' })
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.ok) clanRow2.remove(); });
       return;
@@ -1382,7 +1382,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       if (!newName) { inp.focus(); return; }
       var addBtn = e.target.closest('.clan-add-btn');
       addBtn.disabled = true;
-      fetch('/admin/races/' + raceId + '/clans', {
+      fetch('/ponhgup/races/' + raceId + '/clans', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName })
       }).then(function(r) { return r.json(); }).then(function(d) {
@@ -1525,7 +1525,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       const d = data[dataIdx]; const rarity = btn.dataset.rarity;
       saveStatus.textContent = 'Enregistrement…'; saveStatus.style.color = '#94a3b8';
       try {
-        const r = await fetch('/admin/recompenses/images-profil/' + d.id + '/rarity', {
+        const r = await fetch('/ponhgup/recompenses/images-profil/' + d.id + '/rarity', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rarity }),
         });
         const json = await r.json();
@@ -1555,7 +1555,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       const d = data[dataIdx];
       const newTitle = titleInput.value.trim();
       try {
-        const r = await fetch('/admin/recompenses/images-profil/' + d.id + '/title', {
+        const r = await fetch('/ponhgup/recompenses/images-profil/' + d.id + '/title', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: newTitle }),
         });
         const json = await r.json();
@@ -1613,7 +1613,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       sel.style.color = RARITY_COLORS[rarity] || '#94a3b8';
       sel.style.borderColor = RARITY_COLORS[rarity] || 'rgba(255,255,255,.2)';
       try {
-        const r = await fetch('/admin/recompenses/charms/' + charmId + '/rarity', {
+        const r = await fetch('/ponhgup/recompenses/charms/' + charmId + '/rarity', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rarity }),
         });
         const json = await r.json();
@@ -1674,7 +1674,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       sel.style.borderColor = RARITY_COLORS[rarity] || 'rgba(255,255,255,.2)';
       if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
       try {
-        var r = await fetch('/admin/recompenses/themes/' + key + '/rarity', {
+        var r = await fetch('/ponhgup/recompenses/themes/' + key + '/rarity', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rarity: rarity }),
@@ -1803,8 +1803,8 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       if (!confirm('Supprimer ' + items.length + ' élément(s) ? Cette action est irréversible.')) return;
       var ids = items.map(function(i) { return i.id; });
       var endpoint = _currentSection === 'images'
-        ? '/admin/recompenses/images-profil/bulk-delete'
-        : '/admin/recompenses/charms/bulk-delete';
+        ? '/ponhgup/recompenses/images-profil/bulk-delete'
+        : '/ponhgup/recompenses/charms/bulk-delete';
       try {
         var r = await fetch(endpoint, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1938,7 +1938,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       return;
     }
     _searchTimeout = setTimeout(function() {
-      fetch('/admin/users-for-gift?q=' + encodeURIComponent(q))
+      fetch('/ponhgup/users-for-gift?q=' + encodeURIComponent(q))
         .then(function(r) { return r.json(); })
         .then(function(d) { renderUsers(d.users || []); })
         .catch(function() {});
@@ -1957,7 +1957,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       if (_giftTarget.type === 'image') body.imageId = _giftTarget.id;
       else body.charmId = _giftTarget.id;
     }
-    fetch('/admin/recompenses/gift', {
+    fetch('/ponhgup/recompenses/gift', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }).then(function(r) { return r.json(); }).then(function(d) {
@@ -2019,7 +2019,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       var q = searchInput.value.trim();
       if (q.length < 2) { resultsDiv.style.display = 'none'; return; }
       _debounce = setTimeout(function() {
-        fetch('/admin/users-for-gift?q=' + encodeURIComponent(q))
+        fetch('/ponhgup/users-for-gift?q=' + encodeURIComponent(q))
           .then(function(r) { return r.json(); })
           .then(function(d) { showResults(d.users || []); })
           .catch(function() {});
@@ -2039,7 +2039,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     if (!userId) return;
     jokerBtn.disabled = true;
     try {
-      var r = await fetch('/admin/recompenses/gift-joker', {
+      var r = await fetch('/ponhgup/recompenses/gift-joker', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId: userId, jokerType: type }),
       });
@@ -2070,7 +2070,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     if (!userId || amount <= 0) return;
     coinsBtn.disabled = true;
     try {
-      var r = await fetch('/admin/recompenses/gift-coins', {
+      var r = await fetch('/ponhgup/recompenses/gift-coins', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId: userId, amount: amount }),
       });
@@ -2131,7 +2131,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       sel.style.borderColor = RARITY_COLORS[rarity] || 'rgba(255,255,255,.2)';
       if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
       try {
-        const r = await fetch('/admin/recompenses/cards/' + cardId + '/rarity', {
+        const r = await fetch('/ponhgup/recompenses/cards/' + cardId + '/rarity', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rarity }),
         });
         const json = await r.json();
@@ -2154,7 +2154,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
       _summaryTimers[cardId] = setTimeout(async function() {
         try {
-          const r = await fetch('/admin/recompenses/cards/' + cardId + '/summary', {
+          const r = await fetch('/ponhgup/recompenses/cards/' + cardId + '/summary', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ summary: ta.value }),
           });
           const json = await r.json();
@@ -2198,9 +2198,9 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       if (!title) return;
       statusEl.textContent = '…'; statusEl.style.color = '#94a3b8';
       try {
-        await fetch('/admin/recompenses/card-variants/' + vid + '/title',   { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title }) });
-        await fetch('/admin/recompenses/card-variants/' + vid + '/rarity',  { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ rarity }) });
-        await fetch('/admin/recompenses/card-variants/' + vid + '/summary', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ summary: summary || null }) });
+        await fetch('/ponhgup/recompenses/card-variants/' + vid + '/title',   { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title }) });
+        await fetch('/ponhgup/recompenses/card-variants/' + vid + '/rarity',  { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ rarity }) });
+        await fetch('/ponhgup/recompenses/card-variants/' + vid + '/summary', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ summary: summary || null }) });
         statusEl.textContent = '✓'; statusEl.style.color = '#4ade80';
         setTimeout(function(){ statusEl.textContent = ''; }, 1500);
       } catch(e) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; }
@@ -2209,7 +2209,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     delBtn && delBtn.addEventListener('click', async function() {
       if (!confirm('Supprimer cette déclinaison ?')) return;
       try {
-        const r = await fetch('/admin/recompenses/card-variants/' + vid + '/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: '{}' });
+        const r = await fetch('/ponhgup/recompenses/card-variants/' + vid + '/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: '{}' });
         const d = await r.json();
         if (d.ok) {
           row.remove();
@@ -2233,7 +2233,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       const title = (titleInput ? titleInput.value : '').trim();
       if (!title) { titleInput && titleInput.focus(); return; }
       try {
-        const r = await fetch('/admin/recompenses/cards/' + cardId + '/variants', {
+        const r = await fetch('/ponhgup/recompenses/cards/' + cardId + '/variants', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, rarity: 'rare', summary: null }),
         });
@@ -2461,7 +2461,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     };
     modalStatsStatus.textContent = '…'; modalStatsStatus.style.color = '#94a3b8';
     try {
-      const base = '/admin/recompenses/personnages/' + activePcId;
+      const base = '/ponhgup/recompenses/personnages/' + activePcId;
       const opts = (body) => ({ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
       const collectionId = pcSelCollection ? (pcSelCollection.value || null) : null;
       const [r1, r2, r3, r4] = await Promise.all([
@@ -2569,7 +2569,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   document.querySelectorAll('.js-col-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm('Supprimer la collection "' + btn.dataset.colName + '" ? Les personnages ne seront pas supprimés.')) return;
-      fetch('/admin/recompenses/collections/' + btn.dataset.colId, { method: 'DELETE' })
+      fetch('/ponhgup/recompenses/collections/' + btn.dataset.colId, { method: 'DELETE' })
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.ok) location.reload(); else alert('Erreur'); });
     });
@@ -2587,7 +2587,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     if (!body.name) { statusEl.textContent = 'Nom requis'; statusEl.style.color = '#f87171'; return; }
     statusEl.textContent = '…'; statusEl.style.color = '#94a3b8';
 
-    const url    = id ? '/admin/recompenses/collections/' + id : '/admin/recompenses/collections';
+    const url    = id ? '/ponhgup/recompenses/collections/' + id : '/ponhgup/recompenses/collections';
     const method = id ? 'PUT' : 'POST';
     try {
       const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
