@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
+const geoip = require("geoip-lite");
 const {
   listSubmissions,
   getSubmission,
@@ -1436,34 +1437,23 @@ function buildAdminRouter(config) {
     res.json({ visitors: getAnonVisitorList(days) });
   });
 
-  // Proxy géolocalisation IP (via ip-api.com, cache mémoire 24h)
-  const _geoCache = new Map();
-  router.get('/ip-geo', requireAdmin, async (req, res) => {
+  // Géolocalisation IP locale (geoip-lite, base MaxMind embarquée — aucun appel réseau)
+  router.get('/ip-geo', requireAdmin, (req, res) => {
     const ip = String(req.query.ip || '').trim();
     if (!ip) return res.json({});
     if (/^(::1$|::ffff:127\.|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(ip)
         || ip === 'localhost') {
       return res.json({ country: 'Local', countryCode: '', city: 'Réseau local', isp: '' });
     }
-    if (_geoCache.has(ip)) return res.json(_geoCache.get(ip));
-    try {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 4000);
-      const r = await fetch(
-        `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,countryCode,city,isp`,
-        { signal: ctrl.signal }
-      );
-      clearTimeout(tid);
-      const d = await r.json();
-      const out = d.status === 'success'
-        ? { country: d.country, countryCode: (d.countryCode || '').toLowerCase(), city: d.city, isp: d.isp }
-        : { country: '?', countryCode: '', city: '', isp: '' };
-      _geoCache.set(ip, out);
-      setTimeout(() => _geoCache.delete(ip), 24 * 60 * 60 * 1000);
-      res.json(out);
-    } catch (_) {
-      res.json({ country: '?', countryCode: '', city: '', isp: '' });
-    }
+    const cleanIp = ip.replace(/^::ffff:/, '');
+    const geo = geoip.lookup(cleanIp);
+    if (!geo) return res.json({ country: '?', countryCode: '', city: '', isp: '' });
+    res.json({
+      country: geo.country,
+      countryCode: (geo.country || '').toLowerCase(),
+      city: geo.city || '',
+      isp: ''
+    });
   });
 
   return router;
