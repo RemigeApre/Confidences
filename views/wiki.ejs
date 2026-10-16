@@ -88,6 +88,7 @@
             <div class="wiki-filter-section">
               <span class="wiki-filter-label" data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</span>
               <div class="wiki-sous-cat-filter" id="wiki-sous-cat-filter">
+                <button type="button" class="tag-chip wiki-sous-cat-chip" data-sous-cat="__none__" data-fr="Sans sous-catégorie" data-en="No sub-category">Sans sous-cat&eacute;gorie</button>
                 <% _activeSubs.forEach(function(s) { %>
                   <button type="button" class="tag-chip wiki-sous-cat-chip" data-sous-cat="<%= s.key %>" data-fr="<%= s.label %>" data-en="<%= (lockedCategory.key === 'objets' ? WK_OBJSUB_EN[s.key] : null) || s.label %>"><%= s.label %></button>
                 <% }); %>
@@ -268,6 +269,13 @@
     <% }) %>
   </div>
   <div class="wiki-pagination" id="wiki-pagination" hidden></div>
+  <%# Sous-catégories par catégorie (pour la recherche côté client) %>
+  <script id="wiki-subcats-data" type="application/json"><%- JSON.stringify({
+    pratique:  (pratiquesSubs  || []).map(function(s){ return { key: s.key, label: s.label }; }),
+    objets:    (objetsSubs     || []).map(function(s){ return { key: s.key, label: s.label }; }),
+    fantasmes: (fantasmesSubs  || []).map(function(s){ return { key: s.key, label: s.label }; })
+  }) %></script>
+
   <% if (currentUser && currentUser.isAdmin && lockedCategory) { %>
     <script id="wiki-existing-pages" type="application/json"><%- JSON.stringify(allPagesMin) %></script>
 
