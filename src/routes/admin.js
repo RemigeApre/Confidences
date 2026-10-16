@@ -95,6 +95,8 @@ const {
   resetLoginFailures,
   getVisitorProfile,
   getAnonVisitorList,
+  getIpSummary,
+  getIpDetail,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -1418,6 +1420,50 @@ function buildAdminRouter(config) {
   router.get("/log/visitors", requireAdmin, (req, res) => {
     const days = Math.min(365, parseInt(req.query.days) || 30);
     res.json({ visitors: getAnonVisitorList(days) });
+  });
+
+  // ── IP Logger ──────────────────────────────────────────────────────────────
+  router.get('/ip-logs', requireAdmin, (req, res) => {
+    const hours = Math.min(720, Math.max(1, parseInt(req.query.h) || 48));
+    const logs = getIpSummary(hours);
+    res.render('admin-ip-logs', { config, hours, logs });
+  });
+
+  router.get('/ip-logs/:ip', requireAdmin, (req, res) => {
+    const ip = req.params.ip;
+    const detail = getIpDetail(ip, 300);
+    const user = req.user;
+    res.render('admin-ip-logs-detail', { config, ip, detail, adminUser: user });
+  });
+
+  // Proxy géolocalisation IP (via ip-api.com, cache mémoire 24h)
+  const _geoCache = new Map();
+  router.get('/ip-geo', requireAdmin, async (req, res) => {
+    const ip = String(req.query.ip || '').trim();
+    if (!ip) return res.json({});
+    if (/^(::1$|::ffff:127\.|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(ip)
+        || ip === 'localhost') {
+      return res.json({ country: 'Local', countryCode: '', city: 'Réseau local', isp: '' });
+    }
+    if (_geoCache.has(ip)) return res.json(_geoCache.get(ip));
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 4000);
+      const r = await fetch(
+        `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,countryCode,city,isp`,
+        { signal: ctrl.signal }
+      );
+      clearTimeout(tid);
+      const d = await r.json();
+      const out = d.status === 'success'
+        ? { country: d.country, countryCode: (d.countryCode || '').toLowerCase(), city: d.city, isp: d.isp }
+        : { country: '?', countryCode: '', city: '', isp: '' };
+      _geoCache.set(ip, out);
+      setTimeout(() => _geoCache.delete(ip), 24 * 60 * 60 * 1000);
+      res.json(out);
+    } catch (_) {
+      res.json({ country: '?', countryCode: '', city: '', isp: '' });
+    }
   });
 
   return router;

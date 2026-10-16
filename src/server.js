@@ -27,6 +27,7 @@ const {
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
   getUserById, isScanPath,
   getTranslation, getTranslationsForEntity, getFieldTranslationsByEntity,
+  recordIpLog,
   getLootboxCount,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
@@ -258,6 +259,21 @@ app.use((req, res, next) => {
 });
 
 app.use(attachUser);
+
+// ── IP Logger : enregistre chaque requête GET non-statique ───────────────────
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    const p = req.path;
+    const skip = /\.(js|css|ico|png|jpg|jpeg|webp|svg|woff2?|ttf|map|gz|br)$/.test(p)
+      || p.startsWith('/uploads/')
+      || isScanPath(p);
+    if (!skip) {
+      const ip = (req.ip || '').replace(/^::ffff:/, '');
+      recordIpLog(ip, p, req.headers['user-agent'] || '', req.user ? req.user.id : null);
+    }
+  }
+  next();
+});
 
 // Compte les lootboxes en attente une seule fois par requête GET et l'injecte
 // dans res.locals pour que head.ejs puisse écrire window.PENDING_LOOTBOXES.

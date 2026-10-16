@@ -2797,6 +2797,72 @@ function isScanPath(p) {
   return SCAN_PATH_PATTERNS.some(function(re) { return re.test(p); });
 }
 
+// ── IP Logger ────────────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS ip_logs (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip         TEXT NOT NULL,
+    path       TEXT NOT NULL,
+    user_agent TEXT NOT NULL DEFAULT '',
+    user_id    INTEGER,
+    created_at TEXT NOT NULL
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_ip_logs_ip   ON ip_logs (ip)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_ip_logs_date ON ip_logs (created_at)`);
+
+function recordIpLog(ip, path, userAgent, userId) {
+  if (!ip) return;
+  // Throttle : 1 log max par IP+path toutes les 5 minutes
+  db.prepare(
+    `INSERT INTO ip_logs (ip, path, user_agent, user_id, created_at)
+     SELECT ?, ?, ?, ?, ?
+     WHERE NOT EXISTS (
+       SELECT 1 FROM ip_logs
+       WHERE ip = ? AND path = ? AND created_at > datetime('now', '-5 minutes')
+     )`
+  ).run(ip, path, userAgent || '', userId || null, new Date().toISOString(), ip, path);
+}
+
+function getIpSummary(hours) {
+  const h = Math.min(720, Math.max(1, parseInt(hours) || 48));
+  return db.prepare(
+    `SELECT ip,
+            COUNT(*) AS hits,
+            MIN(created_at) AS first_seen,
+            MAX(created_at) AS last_seen,
+            MAX(user_agent) AS user_agent,
+            MAX(user_id)    AS user_id,
+            COUNT(DISTINCT path) AS path_count,
+            GROUP_CONCAT(DISTINCT path) AS paths_raw
+     FROM ip_logs
+     WHERE created_at >= datetime('now', '-' || ? || ' hours')
+     GROUP BY ip
+     ORDER BY last_seen DESC
+     LIMIT 500`
+  ).all(h).map(r => ({
+    ip: r.ip,
+    hits: r.hits,
+    first_seen: r.first_seen,
+    last_seen: r.last_seen,
+    user_agent: r.user_agent,
+    user_id: r.user_id,
+    path_count: r.path_count,
+    paths: r.paths_raw ? r.paths_raw.split(',').filter(Boolean).slice(0, 30) : []
+  }));
+}
+
+function getIpDetail(ip, limit) {
+  const lim = Math.min(500, Math.max(1, parseInt(limit) || 300));
+  return db.prepare(
+    `SELECT path, user_agent, user_id, created_at
+     FROM ip_logs
+     WHERE ip = ?
+     ORDER BY created_at DESC
+     LIMIT ?`
+  ).all(ip, lim);
+}
+
 function recordAnonVisit(path, ip, userAgent) {
   const visitorId = anonVisitorId(ip, userAgent);
   const visitorType = classifyUA(userAgent);
@@ -5051,6 +5117,9 @@ module.exports = {
   getVisitorProfile,
   getAnonVisitorList,
   isScanPath,
+  recordIpLog,
+  getIpSummary,
+  getIpDetail,
   recordLoginFailure,
   getLoginFailureCount,
   resetLoginFailures,

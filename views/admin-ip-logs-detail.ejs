@@ -1,0 +1,93 @@
+<%- include('partials/head', { title: 'Admin : IP ' + ip, extraCss: ['admin.css'] }) %>
+
+<style>
+.ipd-wrap{padding:1.25rem 1.5rem 5rem;max-width:820px;margin:0 auto}
+.ipd-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.ipd-ip{font-family:monospace;font-size:1.25rem;font-weight:700;color:#7dd3fc}
+.ipd-geo{display:flex;align-items:center;gap:.4rem;font-size:.85rem;color:rgba(255,255,255,.5)}
+.ipd-flag{font-size:1.4rem}
+.ipd-empty{color:rgba(255,255,255,.3);font-size:.9rem;text-align:center;padding:3rem 0}
+.ipd-list{display:flex;flex-direction:column;gap:.25rem}
+.ipd-entry{display:flex;align-items:baseline;gap:.65rem;padding:.4rem .6rem;border-radius:7px;transition:background .1s}
+.ipd-entry:hover{background:rgba(255,255,255,.025)}
+.ipd-time{font-size:.75rem;color:rgba(255,255,255,.35);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:8rem}
+.ipd-path{font-size:.82rem;color:#e2e8f0;font-family:monospace}
+.ipd-user{font-size:.68rem;padding:.1rem .35rem;border-radius:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.2);color:#c4b5fd;margin-left:auto;white-space:nowrap}
+.ipd-day{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.35);text-transform:capitalize;letter-spacing:.04em;padding:.6rem .6rem .2rem;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:.2rem}
+.ipd-isp{font-size:.75rem;color:rgba(255,255,255,.3)}
+</style>
+
+<div class="admin-topbar">
+  <a href="/admin/ip-logs" class="admin-topbar-back">&#8592; IP Logs</a>
+  <span class="admin-topbar-title"><%= config.title %></span>
+</div>
+
+<div class="ipd-wrap">
+  <div class="ipd-header">
+    <span class="ipd-ip"><%= ip %></span>
+    <div class="ipd-geo">
+      <span class="ipd-flag" id="ipd-flag">…</span>
+      <span id="ipd-country">…</span>
+      <span id="ipd-city" style="color:rgba(255,255,255,.3)"></span>
+      <span id="ipd-isp" class="ipd-isp"></span>
+    </div>
+  </div>
+
+  <% if (!detail.length) { %>
+    <p class="ipd-empty">Aucun log pour cette IP.</p>
+  <% } else { %>
+    <%
+      var _days2 = [], _dkeys2 = {};
+      detail.forEach(function(r) {
+        var d = new Date(r.created_at);
+        var key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+        if (!_dkeys2[key]) {
+          _dkeys2[key] = { label: d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }), rows: [] };
+          _days2.push(_dkeys2[key]);
+        }
+        _dkeys2[key].rows.push(r);
+      });
+    %>
+    <div class="ipd-list">
+      <% _days2.forEach(function(day) { %>
+        <div class="ipd-day"><%= day.label %></div>
+        <% day.rows.forEach(function(r) { %>
+          <div class="ipd-entry">
+            <span class="ipd-time"><%= new Date(r.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) %></span>
+            <span class="ipd-path"><%= r.path %></span>
+            <% if (r.user_id) { %><span class="ipd-user">Connect&eacute; #<%= r.user_id %></span><% } %>
+          </div>
+        <% }) %>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<script nonce="<%= nonce %>">
+(function() {
+  var ip = '<%= ip.replace(/\\/g, "\\\\").replace(/'/g, "\\'") %>';
+  function flag(code) {
+    if (!code || code.length !== 2) return '';
+    var c = code.toUpperCase();
+    return String.fromCodePoint(c.charCodeAt(0)+127397) + String.fromCodePoint(c.charCodeAt(1)+127397);
+  }
+  fetch('/admin/ip-geo?ip=' + encodeURIComponent(ip))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var f = document.getElementById('ipd-flag');
+      var c = document.getElementById('ipd-country');
+      var ci = document.getElementById('ipd-city');
+      var isp = document.getElementById('ipd-isp');
+      if (f) f.textContent = flag(d.countryCode || '') || '🌍';
+      if (c) c.textContent = d.country || '?';
+      if (ci) ci.textContent = d.city || '';
+      if (isp) isp.textContent = d.isp ? '· ' + d.isp : '';
+    })
+    .catch(function() {
+      var f = document.getElementById('ipd-flag'); if (f) f.textContent = '🌍';
+      var c = document.getElementById('ipd-country'); if (c) c.textContent = '?';
+    });
+})();
+</script>
+
+<%- include('partials/foot') %>

@@ -126,12 +126,10 @@
         </span><% } %>
       </div>
     </div>
-    <div class="wiki-card-body">
+    <div class="wiki-card-accent" style="background: <%= wcAccent %>">
       <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
-    </div>
-    <span class="wiki-card-accent" style="background: <%= wcAccent %>">
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
-    </span>
+    </div>
 
   <% } else { %>
     <%# ── Carte SANS image : placeholder géométrique ────────────────── %>
@@ -168,11 +166,9 @@
         </span><% } %>
       </div>
     </div>
-    <div class="wiki-card-body">
+    <div class="wiki-card-accent" style="background: <%= wcAccent %>">
       <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
-    </div>
-    <span class="wiki-card-accent" style="background: <%= wcAccent %>">
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
-    </span>
+    </div>
   <% } %>
 </a>
