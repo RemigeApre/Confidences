@@ -62,6 +62,8 @@
           <div class="wiki-filter-section wiki-filter-toggles">
             <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn" data-fr="Ultra" data-en="Ultra">Ultra</button>
             <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
+            <button type="button" id="wiki-complete-toggle" class="wiki-ultra-btn wiki-complete-btn" data-fr="Mise en avant" data-en="Highlight">Mise en avant</button>
+            <button type="button" id="wiki-empty-toggle" class="wiki-ultra-btn wiki-empty-btn" data-fr="Griser les vides" data-en="Grey empty">Griser les vides</button>
           </div>
 
           <%
@@ -77,12 +79,17 @@
               return categories.find(function(c) { return c.key === ec; });
             }).filter(Boolean);
           %>
-          <% if (lockedCategory.key === 'objets' && objetsSubs && objetsSubs.length) { %>
+          <%
+            var _activeSubs = lockedCategory.key === 'objets' ? objetsSubs
+              : lockedCategory.key === 'pratique' ? pratiquesSubs
+              : null;
+          %>
+          <% if (_activeSubs && _activeSubs.length) { %>
             <div class="wiki-filter-section">
               <span class="wiki-filter-label" data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</span>
               <div class="wiki-sous-cat-filter" id="wiki-sous-cat-filter">
-                <% objetsSubs.forEach(function(s) { %>
-                  <button type="button" class="tag-chip wiki-sous-cat-chip" data-sous-cat="<%= s.key %>" data-fr="<%= s.label %>" data-en="<%= WK_OBJSUB_EN[s.key] || s.label %>"><%= s.label %></button>
+                <% _activeSubs.forEach(function(s) { %>
+                  <button type="button" class="tag-chip wiki-sous-cat-chip" data-sous-cat="<%= s.key %>" data-fr="<%= s.label %>" data-en="<%= (lockedCategory.key === 'objets' ? WK_OBJSUB_EN[s.key] : null) || s.label %>"><%= s.label %></button>
                 <% }); %>
               </div>
             </div>

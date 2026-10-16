@@ -67,9 +67,14 @@
 <%
   var wcHasEn = !!(typeof wikiEnIds !== 'undefined' && wikiEnIds && wikiEnIds.has(page.id));
   var wcIsComplete = wcHasEn && (page.maturity || 0) >= 4;
+  var wcContentTxt = (page.content || '')
+    .replace(/^#+\s+/gm, '').replace(/\*\*?|__?/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\n+/g, ' ').trim();
+  var wcIsEmpty = wcContentTxt.length < 100;
 %>
-<a href="/wiki/<%= page.id %>" class="wiki-card<% if (wcIsComplete) { %> wiki-card--complete<% } %>"
-  style="--card-hue: <%= cat ? cat.hue : 220 %>"
+<a href="/wiki/<%= page.id %>" class="wiki-card<% if (wcIsComplete) { %> wiki-card--complete<% } %><% if (wcIsEmpty) { %> wiki-card--empty<% } %>"
+  style="--card-hue: <%= cat ? cat.hue : 220 %>; --card-accent: <%= wcAccent %>"
   data-category="<%= page.category %>"
   data-owned="<%= (wcCanSeeOwned && page.owned) ? '1' : '0' %>"
   data-tags="<%= page.tags.join('|').toLowerCase() %>"
@@ -104,7 +109,8 @@
   %>
   data-extra-cats="<%= (page.extraCategories || []).join('|') %>"
   data-maturity="<%= page.maturity || 0 %>"
-  data-sous-cat="<%= (page.meta && page.meta.sous_cat) || '' %>">
+  data-sous-cat="<%= (page.meta && page.meta.sous_cat) || '' %>"
+  data-empty="<%= wcIsEmpty ? '1' : '0' %>">
 
   <% if (page.imagePaths && page.imagePaths.length && currentUser) { %>
     <%# ── Carte AVEC image ───────────────────────────────────────────── %>
@@ -126,7 +132,7 @@
         </span><% } %>
       </div>
     </div>
-    <div class="wiki-card-accent" style="background: <%= wcAccent %>">
+    <div class="wiki-card-accent">
       <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </div>
@@ -166,7 +172,7 @@
         </span><% } %>
       </div>
     </div>
-    <div class="wiki-card-accent" style="background: <%= wcAccent %>">
+    <div class="wiki-card-accent">
       <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </div>
