@@ -98,6 +98,8 @@ const {
   getAnonVisitorList,
   getIpSummary,
   getIpDetail,
+  getIpMeta,
+  setIpMeta,
   getIpDevices,
   getIpNotes,
   addIpNote,
@@ -1328,7 +1330,17 @@ function buildAdminRouter(config) {
     const detail  = getIpDetail(ip, 300);
     const devices = getIpDevices(ip);
     const notes   = getIpNotes(ip);
-    res.render('admin-ip-logs-detail', { config, ip, detail, devices, notes });
+    const meta    = getIpMeta(ip);
+    res.render('admin-ip-logs-detail', { config, ip, detail, devices, notes, meta });
+  });
+
+  router.post('/ip-logs/:ip/meta', requireAdmin, (req, res) => {
+    const ip         = req.params.ip;
+    const manualType = ['strange','scraper','legit','human','confirmed'].includes(req.body.manual_type)
+      ? req.body.manual_type : null;
+    const analysed   = req.body.analysed === '1';
+    setIpMeta(ip, { manualType, analysed });
+    res.redirect('/ponhgup/ip-logs/' + encodeURIComponent(ip));
   });
 
   router.post('/ip-logs/:ip/notes', requireAdmin, (req, res) => {

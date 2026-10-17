@@ -2811,6 +2811,31 @@ db.exec(`
     created_at TEXT NOT NULL
   )
 `);
+// Métadonnées manuelles par IP : type forcé + statut "analysé"
+db.exec(`
+  CREATE TABLE IF NOT EXISTS ip_meta (
+    ip           TEXT PRIMARY KEY,
+    manual_type  TEXT,
+    analysed     INTEGER NOT NULL DEFAULT 0,
+    updated_at   TEXT NOT NULL
+  )
+`);
+
+function getIpMeta(ip) {
+  return db.prepare(`SELECT manual_type, analysed FROM ip_meta WHERE ip = ?`).get(ip) || {};
+}
+
+function setIpMeta(ip, { manualType, analysed }) {
+  db.prepare(`
+    INSERT INTO ip_meta (ip, manual_type, analysed, updated_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(ip) DO UPDATE SET
+      manual_type = excluded.manual_type,
+      analysed    = excluded.analysed,
+      updated_at  = excluded.updated_at
+  `).run(ip, manualType || null, analysed ? 1 : 0, new Date().toISOString());
+}
+
 // Notes manuelles sur une IP (ou un appareil spécifique via device_key)
 db.exec(`
   CREATE TABLE IF NOT EXISTS ip_notes (
@@ -2859,21 +2884,24 @@ function recordIpLog(ip, path, userAgent, userId, referer, acceptLanguage, secCh
 function getIpSummary(hours) {
   const h = Math.min(720, Math.max(1, parseInt(hours) || 48));
   const rows = db.prepare(
-    `SELECT ip,
+    `SELECT l.ip,
             COUNT(*) AS hits,
-            MIN(created_at) AS first_seen,
-            MAX(created_at) AS last_seen,
-            MAX(user_agent) AS user_agent,
-            MAX(user_id)    AS user_id,
-            COUNT(DISTINCT path) AS path_count,
-            GROUP_CONCAT(DISTINCT path) AS paths_raw,
-            MAX(referer)         AS referer,
-            MAX(accept_language) AS accept_language,
-            MAX(sec_ch_ua)       AS sec_ch_ua,
-            MAX(sec_ch_ua_platform) AS sec_ch_ua_platform
-     FROM ip_logs
-     WHERE created_at >= datetime('now', '-' || ? || ' hours')
-     GROUP BY ip
+            MIN(l.created_at) AS first_seen,
+            MAX(l.created_at) AS last_seen,
+            MAX(l.user_agent) AS user_agent,
+            MAX(l.user_id)    AS user_id,
+            COUNT(DISTINCT l.path) AS path_count,
+            GROUP_CONCAT(DISTINCT l.path) AS paths_raw,
+            MAX(l.referer)         AS referer,
+            MAX(l.accept_language) AS accept_language,
+            MAX(l.sec_ch_ua)       AS sec_ch_ua,
+            MAX(l.sec_ch_ua_platform) AS sec_ch_ua_platform,
+            m.manual_type AS manual_type,
+            COALESCE(m.analysed, 0) AS analysed
+     FROM ip_logs l
+     LEFT JOIN ip_meta m ON m.ip = l.ip
+     WHERE l.created_at >= datetime('now', '-' || ? || ' hours')
+     GROUP BY l.ip
      ORDER BY last_seen DESC
      LIMIT 500`
   ).all(h);
@@ -2901,6 +2929,8 @@ function getIpSummary(hours) {
     accept_language: r.accept_language || '',
     sec_ch_ua: r.sec_ch_ua || '',
     sec_ch_ua_platform: r.sec_ch_ua_platform || '',
+    manual_type: r.manual_type || null,
+    analysed: !!r.analysed,
   }));
 }
 
@@ -5208,6 +5238,8 @@ module.exports = {
   recordIpLog,
   getIpSummary,
   getIpDetail,
+  getIpMeta,
+  setIpMeta,
   getIpDevices,
   getIpNotes,
   addIpNote,

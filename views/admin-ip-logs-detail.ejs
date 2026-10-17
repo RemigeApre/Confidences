@@ -55,9 +55,16 @@
 .ipd-note-textarea:focus{outline:none;border-color:rgba(167,139,250,.4)}
 .ipd-note-submit{align-self:flex-end;font-size:.75rem;padding:.3rem .8rem;border-radius:6px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.1);color:#c4b5fd;cursor:pointer;transition:background .1s}
 .ipd-note-submit:hover{background:rgba(167,139,250,.2)}
-.ipd-copy-profile{font-size:.75rem;padding:.3rem .75rem;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;transition:background .1s,color .1s;margin-left:auto}
+.ipd-copy-profile{font-size:.75rem;padding:.3rem .75rem;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;transition:background .1s,color .1s}
 .ipd-copy-profile:hover{background:rgba(255,255,255,.09);color:#e2e8f0}
 .ipd-copy-profile.copied{border-color:rgba(74,222,128,.3);color:#4ade80}
+.ipd-meta-bar{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;padding:.65rem .85rem;border-radius:8px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07)}
+.ipd-meta-label{font-size:.68rem;color:rgba(255,255,255,.35);white-space:nowrap}
+.ipd-type-select{font-size:.75rem;padding:.25rem .5rem;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:#1e1e2e;color:#e2e8f0;cursor:pointer;outline:none}
+.ipd-analysed-label{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:rgba(255,255,255,.5);cursor:pointer;user-select:none}
+.ipd-analysed-label input{accent-color:#4ade80;width:14px;height:14px;cursor:pointer}
+.ipd-meta-save{font-size:.75rem;padding:.28rem .7rem;border-radius:6px;border:1px solid rgba(99,179,237,.25);background:rgba(99,179,237,.08);color:#7dd3fc;cursor:pointer;transition:background .1s}
+.ipd-meta-save:hover{background:rgba(99,179,237,.18)}
 </style>
 
 <div class="admin-topbar">
@@ -85,8 +92,25 @@
   <div class="ipd-header">
     <span class="ipd-ip"><%= ip %></span>
     <span id="ipd-geo-summary" style="font-size:.85rem;color:rgba(255,255,255,.4)">…</span>
-    <button class="ipd-copy-profile" id="ipd-copy-profile">&#10697; Copier le profil</button>
+    <button class="ipd-copy-profile" id="ipd-copy-profile" style="margin-left:auto">&#10697; Copier le profil</button>
   </div>
+
+  <form method="POST" action="/ponhgup/ip-logs/<%= encodeURIComponent(ip) %>/meta" class="ipd-meta-bar">
+    <span class="ipd-meta-label">Classification</span>
+    <select name="manual_type" class="ipd-type-select">
+      <option value="">Auto (détection UA)</option>
+      <option value="confirmed"  <%= (meta.manual_type === 'confirmed')  ? 'selected' : '' %>>★ Utilisateur confirmé</option>
+      <option value="human"      <%= (meta.manual_type === 'human')      ? 'selected' : '' %>>● Visiteur humain</option>
+      <option value="legit"      <%= (meta.manual_type === 'legit')      ? 'selected' : '' %>>✓ Bot légitime</option>
+      <option value="scraper"    <%= (meta.manual_type === 'scraper')    ? 'selected' : '' %>>⚡ Scraper</option>
+      <option value="strange"    <%= (meta.manual_type === 'strange')    ? 'selected' : '' %>>⚠ IP étrange</option>
+    </select>
+    <label class="ipd-analysed-label">
+      <input type="checkbox" name="analysed" value="1" <%= meta.analysed ? 'checked' : '' %>>
+      Analysé
+    </label>
+    <button type="submit" class="ipd-meta-save">Enregistrer</button>
+  </form>
 
   <div class="ipd-cards">
 

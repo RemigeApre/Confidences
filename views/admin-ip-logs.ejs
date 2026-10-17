@@ -60,6 +60,9 @@
 .ipl-new{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-right:.3rem;vertical-align:middle}
 .ipl-origin{font-size:.7rem;color:rgba(255,255,255,.45);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ipl-lang{font-size:.72rem;color:rgba(255,255,255,.5);font-variant:small-caps;letter-spacing:.04em}
+.ipl-type--manual{outline:2px solid rgba(255,255,255,.3);outline-offset:1px}
+.ipl-analysed-badge{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:#4ade80;margin-left:.35rem;vertical-align:middle;flex-shrink:0}
+.ipl-row--analysed td{opacity:.6}
 </style>
 
 <div class="admin-topbar">
@@ -134,7 +137,7 @@
              return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
            };
       %>
-      <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>" data-username="<%= (row.user_display_name || '').replace(/"/g,'&quot;') %>" data-lastseen="<%= row.last_seen %>">
+      <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>" data-username="<%= (row.user_display_name || '').replace(/"/g,'&quot;') %>" data-lastseen="<%= row.last_seen %>" data-manualtype="<%= row.manual_type || '' %>" data-analysed="<%= row.analysed ? '1' : '' %>">
         <td class="ipl-ip">
           <a href="/ponhgup/ip-logs/<%= encodeURIComponent(row.ip) %>"><%= row.ip %></a>
         </td>
@@ -337,17 +340,29 @@
   var rows = Array.from(document.querySelectorAll('.ipl-row'));
 
   rows.forEach(function(row) {
-    var ua        = row.dataset.ua || '';
-    var ip        = row.dataset.ip || '';
-    var hits      = parseInt(row.dataset.hits) || 0;
-    var hasUserId = !!row.dataset.userid;
+    var ua         = row.dataset.ua || '';
+    var ip         = row.dataset.ip || '';
+    var hits       = parseInt(row.dataset.hits) || 0;
+    var hasUserId  = !!row.dataset.userid;
+    var manualType = row.dataset.manualtype || '';
+    var analysed   = !!row.dataset.analysed;
 
-    var type = classifyUA(ua, hits, IPL_HOURS, hasUserId);
+    var type    = manualType || classifyUA(ua, hits, IPL_HOURS, hasUserId);
+    var isManual = !!manualType;
     row.classList.add('ipl-row--' + type);
+    if (analysed) row.classList.add('ipl-row--analysed');
     row.dataset.type      = type;
     row.dataset.typeOrder = typeOrder(type);
 
-    row.querySelector('.ipl-type-cell').innerHTML  = typeLabel(type);
+    var typeCell = row.querySelector('.ipl-type-cell');
+    typeCell.innerHTML = typeLabel(type);
+    if (isManual) typeCell.querySelector('.ipl-type').classList.add('ipl-type--manual');
+    if (analysed) {
+      var dot = document.createElement('span');
+      dot.className = 'ipl-analysed-badge';
+      dot.title = 'Analysé';
+      typeCell.appendChild(dot);
+    }
     row.querySelector('.ipl-model-cell').textContent = parseDevice(ua);
     row.querySelector('.ipl-isp-cell').textContent  = estimateISP(ip);
   });
