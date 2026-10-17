@@ -1,35 +1,48 @@
 <%- include('partials/head', { title: 'Admin : IP Logs', extraCss: ['admin.css'] }) %>
 
 <style>
-.ipl-wrap{padding:1.25rem 1.5rem 5rem;max-width:1200px;margin:0 auto}
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.ipl-sidebar{position:fixed;left:0;top:var(--topnav-height);bottom:0;width:calc((100vw - 1060px)/2);min-width:210px;max-width:320px;display:flex;flex-direction:column;background:linear-gradient(180deg,#1a1a2e 0%,#141420 100%);border-right:1px solid rgba(255,255,255,.07);overflow-y:auto;z-index:5;padding:1.25rem 1rem 3rem}
+.ipl-wrap{padding:1.25rem 1.5rem 5rem;max-width:1060px;margin:0 auto}
+/* ── Sidebar content ─────────────────────────────────────────────────────── */
+.ipl-sb-title{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin:0 0 .6rem}
+.ipl-sb-section{margin-bottom:1.4rem}
+.ipl-range-btn{display:block;width:100%;text-align:left;font-size:.78rem;padding:.35rem .6rem;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;text-decoration:none;transition:background .1s,color .1s;margin-bottom:.3rem}
+.ipl-range-btn:hover,.ipl-range-btn.active{background:rgba(255,255,255,.1);color:#e2e8f0;border-color:rgba(255,255,255,.18)}
+.ipl-filter-btn{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;font-size:.78rem;padding:.35rem .6rem;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;transition:background .1s,color .1s;margin-bottom:.3rem}
+.ipl-filter-btn:hover{background:rgba(255,255,255,.08);color:#e2e8f0}
+.ipl-filter-btn.active{background:rgba(99,179,237,.12);border-color:rgba(99,179,237,.3);color:#7dd3fc}
+.ipl-filter-btn .ipl-type{font-size:.6rem;padding:.1rem .4rem}
+.ipl-country-select{width:100%;font-size:.78rem;padding:.35rem .5rem;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:#1e1e2e;color:#e2e8f0;cursor:pointer;outline:none}
+.ipl-sb-count{font-size:.68rem;color:rgba(255,255,255,.3);margin-top:.5rem}
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
 .ipl-toolbar{display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap}
 .ipl-h1{font-size:1rem;font-weight:700;color:#e2e8f0;margin:0;flex:1}
-.ipl-range-btn{font-size:.72rem;padding:.25rem .6rem;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(255,255,255,.55);cursor:pointer;text-decoration:none;transition:background .1s,color .1s}
-.ipl-range-btn:hover,.ipl-range-btn.active{background:rgba(255,255,255,.1);color:#e2e8f0}
+/* ── Table ───────────────────────────────────────────────────────────────── */
 .ipl-empty{color:rgba(255,255,255,.3);font-size:.9rem;text-align:center;padding:3rem 0}
 .ipl-table{width:100%;border-collapse:collapse}
-.ipl-table th{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.07);padding:.4rem .6rem;text-align:left;white-space:nowrap}
-.ipl-table td{padding:.42rem .6rem;border-bottom:1px solid rgba(255,255,255,.04);font-size:.78rem;color:rgba(255,255,255,.65);vertical-align:middle}
+.ipl-table th{border-bottom:1px solid rgba(255,255,255,.07);padding:.45rem .6rem;text-align:center;white-space:nowrap}
+.ipl-sort-btn{background:none;border:none;cursor:pointer;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.45);padding:0;display:inline-flex;align-items:center;gap:.3rem;transition:color .1s}
+.ipl-sort-btn:hover{color:#e2e8f0}
+.ipl-sort-btn.active{color:#7dd3fc}
+.ipl-sort-arrow{font-size:.6rem;opacity:.5}
+.ipl-sort-btn.active .ipl-sort-arrow{opacity:1}
+.ipl-table th.no-sort{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.35)}
+.ipl-table td{padding:.42rem .6rem;border-bottom:1px solid rgba(255,255,255,.04);font-size:.78rem;color:rgba(255,255,255,.65);vertical-align:middle;text-align:center}
+.ipl-table td.ipl-ip,.ipl-table td.ipl-model-cell,.ipl-table td.ipl-isp-cell,.ipl-table td.ipl-ua{text-align:left}
 .ipl-table tr:hover td{background:rgba(255,255,255,.025)}
-/* type badges */
+/* ── Type badges ─────────────────────────────────────────────────────────── */
 .ipl-type{display:inline-flex;align-items:center;gap:.28rem;font-size:.66rem;font-weight:700;padding:.15rem .5rem;border-radius:10px;white-space:nowrap}
 .ipl-type--strange{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#fca5a5}
 .ipl-type--scraper{background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.3);color:#fdba74}
 .ipl-type--legit{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:#86efac}
 .ipl-type--human{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.25);color:#7dd3fc}
 .ipl-type--confirmed{background:rgba(167,139,250,.13);border:1px solid rgba(167,139,250,.3);color:#c4b5fd}
-/* row tinting */
+/* ── Row tinting ─────────────────────────────────────────────────────────── */
 .ipl-row--strange td{background:rgba(239,68,68,.03)}
 .ipl-row--scraper td{background:rgba(251,146,60,.025)}
-/* tri/filtre */
-.ipl-controls{display:flex;align-items:center;gap:1.25rem;margin-bottom:1rem;flex-wrap:wrap}
-.ipl-ctrl-group{display:flex;align-items:center;gap:.35rem;font-size:.7rem;color:rgba(255,255,255,.35)}
-.ipl-ctrl-group label{white-space:nowrap}
-.ipl-ctrl-btn{font-size:.7rem;padding:.2rem .55rem;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.45);cursor:pointer;transition:background .1s,color .1s;white-space:nowrap}
-.ipl-ctrl-btn:hover{background:rgba(255,255,255,.08);color:#e2e8f0}
-.ipl-ctrl-btn.active{background:rgba(99,179,237,.15);border-color:rgba(99,179,237,.35);color:#7dd3fc}
 .ipl-row--hidden{display:none}
-/* other cells */
+/* ── Cells ───────────────────────────────────────────────────────────────── */
 .ipl-ip{font-family:monospace;font-size:.8rem;color:#7dd3fc;font-weight:600;white-space:nowrap}
 .ipl-ip a{color:inherit;text-decoration:none}
 .ipl-ip a:hover{text-decoration:underline}
@@ -41,11 +54,10 @@
 .ipl-user-badge{font-size:.66rem;padding:.1rem .38rem;border-radius:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.2);color:#c4b5fd;white-space:nowrap}
 .ipl-anon{font-size:.68rem;color:rgba(255,255,255,.22)}
 .ipl-time{font-size:.7rem;color:rgba(255,255,255,.35);white-space:nowrap}
-.ipl-ua{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem;color:rgba(255,255,255,.28)}
+.ipl-ua{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem;color:rgba(255,255,255,.28)}
 .ipl-model{font-size:.72rem;color:rgba(255,255,255,.5);white-space:nowrap}
 .ipl-isp{font-size:.7rem;color:rgba(255,255,255,.4);white-space:nowrap}
 .ipl-new{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-right:.3rem;vertical-align:middle}
-.ipl-legend{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.72rem;color:rgba(255,255,255,.4)}
 </style>
 
 <div class="admin-topbar">
@@ -53,9 +65,10 @@
   <span class="admin-topbar-title"><%= config.title %></span>
 </div>
 
-<div class="ipl-wrap">
-  <div class="ipl-toolbar">
-    <h1 class="ipl-h1">IP Logger &mdash; <span id="ipl-count"><%= logs.length %></span> adresse<%= logs.length !== 1 ? 's' : '' %></h1>
+<!-- Sidebar gauche : filtres -->
+<aside class="ipl-sidebar">
+  <div class="ipl-sb-section">
+    <p class="ipl-sb-title">P&eacute;riode</p>
     <% [6, 24, 48, 168, 336, 720].forEach(function(h) { %>
       <a href="/ponhgup/ip-logs?h=<%= h %>" class="ipl-range-btn<%= hours === h ? ' active' : '' %>">
         <%= h < 24 ? h + 'h' : (h < 168 ? (h/24) + 'j' : (h/168).toFixed(2).replace(/\.?0+$/,'') + 'sem') %>
@@ -63,37 +76,29 @@
     <% }) %>
   </div>
 
-  <div class="ipl-legend">
-    <span><span class="ipl-type ipl-type--strange">⚠ IP Étrange</span> UA falsifié / suspect</span>
-    <span><span class="ipl-type ipl-type--scraper">⚡ Scraper</span> Script / crawl agressif</span>
-    <span><span class="ipl-type ipl-type--legit">✓ Bot Légitime</span> Scanner déclaré</span>
-    <span><span class="ipl-type ipl-type--human">● Visiteur</span> Navigateur réel</span>
-    <span><span class="ipl-type ipl-type--confirmed">★ Utilisateur</span> Profil connecté</span>
+  <div class="ipl-sb-section">
+    <p class="ipl-sb-title">Type</p>
+    <button class="ipl-filter-btn active" data-filter="all">Tous</button>
+    <button class="ipl-filter-btn" data-filter="confirmed"><span class="ipl-type ipl-type--confirmed">★ Utilisateur</span></button>
+    <button class="ipl-filter-btn" data-filter="human"><span class="ipl-type ipl-type--human">● Visiteur</span></button>
+    <button class="ipl-filter-btn" data-filter="legit"><span class="ipl-type ipl-type--legit">✓ Bot l&eacute;gitime</span></button>
+    <button class="ipl-filter-btn" data-filter="scraper"><span class="ipl-type ipl-type--scraper">⚡ Scraper</span></button>
+    <button class="ipl-filter-btn" data-filter="strange"><span class="ipl-type ipl-type--strange">⚠ IP &Eacute;trange</span></button>
   </div>
 
-  <div class="ipl-controls">
-    <div class="ipl-ctrl-group">
-      <label>Tri :</label>
-      <button class="ipl-ctrl-btn active" data-sort="recent">Plus récent</button>
-      <button class="ipl-ctrl-btn" data-sort="ip">IP</button>
-      <button class="ipl-ctrl-btn" data-sort="type">Type</button>
-      <button class="ipl-ctrl-btn" data-sort="hits">Visites</button>
-    </div>
-    <div class="ipl-ctrl-group">
-      <label>Filtre :</label>
-      <button class="ipl-ctrl-btn active" data-filter="all">Tous</button>
-      <button class="ipl-ctrl-btn" data-filter="confirmed">★ Utilisateur</button>
-      <button class="ipl-ctrl-btn" data-filter="human">Visiteur</button>
-      <button class="ipl-ctrl-btn" data-filter="legit">Bot légitime</button>
-      <button class="ipl-ctrl-btn" data-filter="scraper">Scraper</button>
-      <button class="ipl-ctrl-btn" data-filter="strange">Étrange</button>
-    </div>
-    <div class="ipl-ctrl-group" id="ipl-country-group" style="display:none">
-      <label>Pays :</label>
-      <select id="ipl-country-select" class="ipl-ctrl-btn" style="padding:.2rem .4rem">
-        <option value="">Tous</option>
-      </select>
-    </div>
+  <div class="ipl-sb-section" id="ipl-country-group" style="display:none">
+    <p class="ipl-sb-title">Pays</p>
+    <select id="ipl-country-select" class="ipl-country-select">
+      <option value="">Tous les pays</option>
+    </select>
+  </div>
+
+  <p class="ipl-sb-count"><span id="ipl-count"><%= logs.length %></span> adresse<%= logs.length !== 1 ? 's' : '' %></p>
+</aside>
+
+<div class="ipl-wrap">
+  <div class="ipl-toolbar">
+    <h1 class="ipl-h1">IP Logger</h1>
   </div>
 
   <% if (!logs.length) { %>
@@ -102,16 +107,16 @@
   <table class="ipl-table" id="ipl-table">
     <thead>
       <tr>
-        <th>IP</th>
-        <th>Type</th>
-        <th>Appareil / Mod&egrave;le</th>
-        <th>FAI estim&eacute;</th>
-        <th>Pays / R&eacute;gion</th>
-        <th>Visites</th>
-        <th>Pages</th>
-        <th>Profil</th>
-        <th>Derni&egrave;re activit&eacute;</th>
-        <th>UA</th>
+        <th><button class="ipl-sort-btn" data-sort="ip">IP <span class="ipl-sort-arrow"></span></button></th>
+        <th><button class="ipl-sort-btn" data-sort="type">Type <span class="ipl-sort-arrow"></span></button></th>
+        <th class="no-sort">Appareil</th>
+        <th class="no-sort">FAI</th>
+        <th><button class="ipl-sort-btn" data-sort="country">Pays <span class="ipl-sort-arrow"></span></button></th>
+        <th><button class="ipl-sort-btn" data-sort="hits">Visites <span class="ipl-sort-arrow"></span></button></th>
+        <th><button class="ipl-sort-btn" data-sort="pages">Pages <span class="ipl-sort-arrow"></span></button></th>
+        <th class="no-sort">Profil</th>
+        <th><button class="ipl-sort-btn active" data-sort="recent">Vu le <span class="ipl-sort-arrow">▼</span></button></th>
+        <th class="no-sort">UA</th>
       </tr>
     </thead>
     <tbody id="ipl-tbody">
@@ -333,51 +338,77 @@
 
   // ── 5. Tri & filtre ──────────────────────────────────────────────────────
 
-  var tbody    = document.getElementById('ipl-tbody');
+  var tbody         = document.getElementById('ipl-tbody');
   var currentSort   = 'recent';
+  var currentDir    = -1; // -1 = desc (défaut : plus récent en haut)
   var currentFilter = 'all';
+  var currentCountry = '';
 
-  function applySort(key) {
+  function applySort(key, dir) {
     if (!tbody) return;
     var sorted = rows.slice().sort(function(a, b) {
-      if (key === 'ip')     return a.dataset.ip.localeCompare(b.dataset.ip);
-      if (key === 'type')   return parseInt(a.dataset.typeOrder) - parseInt(b.dataset.typeOrder);
-      if (key === 'hits')   return parseInt(b.dataset.hits) - parseInt(a.dataset.hits);
-      // recent (défaut) : conserver l'ordre serveur (last_seen DESC)
-      return (b.dataset.lastseen || '').localeCompare(a.dataset.lastseen || '');
+      var va, vb;
+      if (key === 'ip')      { va = a.dataset.ip;                       vb = b.dataset.ip; }
+      else if (key === 'type')    { va = parseInt(a.dataset.typeOrder);  vb = parseInt(b.dataset.typeOrder); }
+      else if (key === 'hits')    { va = parseInt(a.dataset.hits);       vb = parseInt(b.dataset.hits); }
+      else if (key === 'pages')   { va = parseInt(a.querySelector('.ipl-paths') ? a.querySelector('.ipl-paths').textContent : 0); vb = parseInt(b.querySelector('.ipl-paths') ? b.querySelector('.ipl-paths').textContent : 0); }
+      else if (key === 'country') { va = a.dataset.country || '';        vb = b.dataset.country || ''; }
+      else                        { va = a.dataset.lastseen || '';       vb = b.dataset.lastseen || ''; }
+      if (va < vb) return -dir;
+      if (va > vb) return  dir;
+      return 0;
     });
     sorted.forEach(function(r) { tbody.appendChild(r); });
   }
 
-  function applyFilter(filter) {
+  function updateSortIndicators(activeKey, dir) {
+    document.querySelectorAll('.ipl-sort-btn').forEach(function(btn) {
+      var isActive = btn.dataset.sort === activeKey;
+      btn.classList.toggle('active', isActive);
+      var arrow = btn.querySelector('.ipl-sort-arrow');
+      if (arrow) arrow.textContent = isActive ? (dir > 0 ? '▲' : '▼') : '';
+    });
+  }
+
+  function applyVisibility() {
     rows.forEach(function(r) {
-      var match = filter === 'all' || r.dataset.type === filter;
-      r.classList.toggle('ipl-row--hidden', !match);
+      var typeOk    = currentFilter === 'all' || r.dataset.type === currentFilter;
+      var countryOk = !currentCountry || r.dataset.country === currentCountry;
+      r.classList.toggle('ipl-row--hidden', !(typeOk && countryOk));
     });
     var visible = rows.filter(function(r) { return !r.classList.contains('ipl-row--hidden'); }).length;
     var counter = document.getElementById('ipl-count');
     if (counter) counter.textContent = visible;
   }
 
-  applySort(currentSort);
-
-  document.querySelectorAll('[data-sort]').forEach(function(btn) {
+  // Tri par clic sur header
+  document.querySelectorAll('.ipl-sort-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      currentSort = btn.dataset.sort;
-      document.querySelectorAll('[data-sort]').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      applySort(currentSort);
+      var key = btn.dataset.sort;
+      if (key === currentSort) {
+        currentDir = -currentDir; // inverser
+      } else {
+        currentSort = key;
+        currentDir  = key === 'recent' || key === 'hits' || key === 'pages' ? -1 : 1;
+      }
+      applySort(currentSort, currentDir);
+      updateSortIndicators(currentSort, currentDir);
     });
   });
 
+  // Filtre par type (sidebar)
   document.querySelectorAll('[data-filter]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       currentFilter = btn.dataset.filter;
       document.querySelectorAll('[data-filter]').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
-      applyFilter(currentFilter);
+      applyVisibility();
     });
   });
+
+  // Appliquer tri initial
+  applySort(currentSort, currentDir);
+  updateSortIndicators(currentSort, currentDir);
 
   // ── 6. Géolocalisation ───────────────────────────────────────────────────
 
@@ -481,28 +512,11 @@
     if (countryGroup && sorted.length > 1) countryGroup.style.display = '';
   }
 
-  function applyCountryFilter() {
-    rows.forEach(function(r) {
-      var typeMatch    = currentFilter === 'all' || r.dataset.type === currentFilter;
-      var countryMatch = !currentCountry || r.dataset.country === currentCountry;
-      r.classList.toggle('ipl-row--hidden', !(typeMatch && countryMatch));
-    });
-    var visible = rows.filter(function(r) { return !r.classList.contains('ipl-row--hidden'); }).length;
-    var counter = document.getElementById('ipl-count');
-    if (counter) counter.textContent = visible;
-  }
-
   if (countrySelect) {
     countrySelect.addEventListener('change', function() {
       currentCountry = countrySelect.value;
-      applyCountryFilter();
+      applyVisibility();
     });
-  }
-
-  // Remplacer applyFilter pour aussi tenir compte du pays
-  function applyFilter(filter) {
-    currentFilter = filter;
-    applyCountryFilter();
   }
 
   var idx = 0;
