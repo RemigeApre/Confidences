@@ -63,6 +63,9 @@
 .ipl-type--manual{outline:2px solid rgba(255,255,255,.3);outline-offset:1px}
 .ipl-analysed-badge{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:#4ade80;margin-left:.35rem;vertical-align:middle;flex-shrink:0}
 .ipl-row--analysed td{opacity:.6}
+.ipl-analysed-col{width:1.6rem;text-align:center;padding:.42rem .2rem}
+.ipl-analysed-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80}
+.ipl-not-analysed-dot{display:inline-block;width:8px;height:8px;border-radius:50%;border:1px solid rgba(255,255,255,.15)}
 </style>
 
 <div class="admin-topbar">
@@ -112,6 +115,7 @@
   <table class="ipl-table" id="ipl-table">
     <thead>
       <tr>
+        <th class="ipl-analysed-col"><button class="ipl-sort-btn" data-sort="analysed" title="Trier par statut analysé"><span class="ipl-sort-arrow"></span></button></th>
         <th><button class="ipl-sort-btn" data-sort="ip">IP <span class="ipl-sort-arrow"></span></button></th>
         <th><button class="ipl-sort-btn" data-sort="type">Type <span class="ipl-sort-arrow"></span></button></th>
         <th class="no-sort">Appareil</th>
@@ -138,6 +142,13 @@
            };
       %>
       <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>" data-username="<%= (row.user_display_name || '').replace(/"/g,'&quot;') %>" data-lastseen="<%= row.last_seen %>" data-manualtype="<%= row.manual_type || '' %>" data-analysed="<%= row.analysed ? '1' : '' %>">
+        <td class="ipl-analysed-col">
+          <% if (row.analysed) { %>
+            <span class="ipl-analysed-dot" title="Analysé"></span>
+          <% } else { %>
+            <span class="ipl-not-analysed-dot" title="Non analysé"></span>
+          <% } %>
+        </td>
         <td class="ipl-ip">
           <a href="/ponhgup/ip-logs/<%= encodeURIComponent(row.ip) %>"><%= row.ip %></a>
         </td>
@@ -379,7 +390,8 @@
     if (!tbody) return;
     var sorted = rows.slice().sort(function(a, b) {
       var va, vb;
-      if (key === 'ip')      { va = a.dataset.ip;                       vb = b.dataset.ip; }
+      if (key === 'analysed') { va = a.dataset.analysed ? 1 : 0;         vb = b.dataset.analysed ? 1 : 0; }
+      else if (key === 'ip') { va = a.dataset.ip;                       vb = b.dataset.ip; }
       else if (key === 'type')    { va = parseInt(a.dataset.typeOrder);  vb = parseInt(b.dataset.typeOrder); }
       else if (key === 'hits')    { va = parseInt(a.dataset.hits);       vb = parseInt(b.dataset.hits); }
       else if (key === 'pages')   { va = parseInt(a.querySelector('.ipl-paths') ? a.querySelector('.ipl-paths').textContent : 0); vb = parseInt(b.querySelector('.ipl-paths') ? b.querySelector('.ipl-paths').textContent : 0); }
