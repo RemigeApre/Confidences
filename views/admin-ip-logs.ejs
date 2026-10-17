@@ -115,7 +115,7 @@
         <th><button class="ipl-sort-btn" data-sort="hits">Visites <span class="ipl-sort-arrow"></span></button></th>
         <th><button class="ipl-sort-btn" data-sort="pages">Pages <span class="ipl-sort-arrow"></span></button></th>
         <th class="no-sort">Profil</th>
-        <th><button class="ipl-sort-btn active" data-sort="recent">Vu le <span class="ipl-sort-arrow">▼</span></button></th>
+        <th><button class="ipl-sort-btn active" data-sort="recent">Activit&eacute; <span class="ipl-sort-arrow">▼</span></button></th>
         <th class="no-sort">UA</th>
       </tr>
     </thead>
@@ -132,7 +132,6 @@
       %>
       <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>" data-username="<%= (row.user_display_name || '').replace(/"/g,'&quot;') %>" data-lastseen="<%= row.last_seen %>">
         <td class="ipl-ip">
-          <% if (isRecent) { %><span class="ipl-new" title="Actif r&eacute;cemment"></span><% } %>
           <a href="/ponhgup/ip-logs/<%= encodeURIComponent(row.ip) %>"><%= row.ip %></a>
         </td>
         <td class="ipl-type-cell">…</td>
@@ -150,7 +149,7 @@
             <span class="ipl-anon">Anonyme</span>
           <% } %>
         </td>
-        <td class="ipl-time"><%= fmtTime(row.last_seen) %></td>
+        <td class="ipl-time"><% if (isRecent) { %><span class="ipl-new" title="Actif r&eacute;cemment"></span><% } %><%= fmtTime(row.last_seen) %></td>
         <td class="ipl-ua" title="<%= row.user_agent %>"><%= row.user_agent %></td>
       </tr>
       <% }) %>
@@ -415,12 +414,6 @@
   var _dispNames = null;
   try { _dispNames = new Intl.DisplayNames(['fr'], { type: 'region' }); } catch(_) {}
 
-  function codeToFlag(code) {
-    if (!code || code.length !== 2) return '';
-    var c = code.toUpperCase();
-    return String.fromCodePoint(c.charCodeAt(0) + 127397) + String.fromCodePoint(c.charCodeAt(1) + 127397);
-  }
-
   function countryName(code) {
     if (!code) return '';
     try { return _dispNames ? _dispNames.of(code.toUpperCase()) : code.toUpperCase(); } catch(_) { return code.toUpperCase(); }
@@ -458,20 +451,25 @@
         }
 
         var code  = (d.countryCode || '').toUpperCase();
-        var flag  = codeToFlag(code);
         var name  = countryName(code);
         var parts = [name, d.region, d.city].filter(Boolean);
         var tip   = parts.join(' · ') || code;
 
-        var span = document.createElement('span');
-        span.title = tip || 'Inconnu';
-        if (flag) {
-          span.className = 'ipl-flag';
-          span.textContent = flag;
+        if (code && code.length === 2) {
+          var img = document.createElement('img');
+          img.src    = 'https://flagcdn.com/24x18/' + code.toLowerCase() + '.png';
+          img.width  = 24;
+          img.height = 18;
+          img.alt    = code;
+          img.title  = tip;
+          img.style.cssText = 'display:block;border-radius:2px';
+          geo.appendChild(img);
         } else {
-          span.className = 'ipl-dot-unknown';
+          var dot = document.createElement('span');
+          dot.className = 'ipl-dot-unknown';
+          dot.title = tip || 'Inconnu';
+          geo.appendChild(dot);
         }
-        geo.appendChild(span);
 
         if (row) {
           row.dataset.country = code;
@@ -505,7 +503,7 @@
       var parts = entry.split('|');
       var opt   = document.createElement('option');
       opt.value = parts[0];
-      opt.textContent = codeToFlag(parts[0]) + ' ' + parts[1];
+      opt.textContent = parts[0] + ' – ' + parts[1];
       if (parts[0] === current) opt.selected = true;
       countrySelect.appendChild(opt);
     });

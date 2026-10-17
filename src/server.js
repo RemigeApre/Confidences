@@ -216,7 +216,7 @@ app.use((req, res, next) => {
     `default-src 'self'; ` +
     `script-src 'nonce-${n}' 'strict-dynamic'; ` +
     `style-src 'self' 'unsafe-inline'; ` +
-    `img-src 'self' data: blob:; ` +
+    `img-src 'self' data: blob: https://flagcdn.com; ` +
     `font-src 'self'; ` +
     `connect-src 'self'; ` +
     `media-src 'self'; ` +
@@ -520,7 +520,7 @@ function serveGameHtml(req, res, next, game, filePath) {
     `default-src 'self'; ` +
     `script-src 'nonce-${gameNonce}' 'unsafe-inline' 'self'; ` +
     `style-src 'self' 'unsafe-inline'; ` +
-    `img-src 'self' data: blob:; ` +
+    `img-src 'self' data: blob: https://flagcdn.com; ` +
     `connect-src 'self'; ` +
     `media-src 'self'; ` +
     `object-src 'none'; ` +
