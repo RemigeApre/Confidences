@@ -347,11 +347,12 @@ app.use((req, res, next) => {
 });
 
 // ── Sliding-window rate limiter (anti-DDoS) ──────────────────────────────────
-// Fenêtre de 60s, max 120 requêtes par IP. Exclut les assets statiques.
+// Fenêtre de 60s, max 300 requêtes par IP (utilisateur actif + assets).
+// Les assets statiques et les routes internes admin sont exemptés.
 // Les IPs localhost sont toujours exemptées.
 const _RL_WINDOW_MS = 60 * 1000;
-const _RL_MAX = 120;
-const _RL_STATIC = ['/uploads', '/css', '/js', '/favicon'];
+const _RL_MAX = 300;
+const _RL_STATIC_EXT = /\.(js|css|ico|png|jpg|jpeg|webp|svg|woff2?|ttf|map|gz|br)$/i;
 const _RL_EXEMPT = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const _rlMap = new Map(); // ip -> { count, windowStart }
 setInterval(() => {
@@ -362,7 +363,8 @@ setInterval(() => {
 }, 5 * 60 * 1000).unref();
 
 app.use((req, res, next) => {
-  if (_RL_STATIC.some(p => req.path.startsWith(p))) return next();
+  // Exclure assets statiques (extensions) et uploads
+  if (_RL_STATIC_EXT.test(req.path) || req.path.startsWith('/uploads/')) return next();
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
   if (_RL_EXEMPT.has(ip)) return next();
   const now = Date.now();
