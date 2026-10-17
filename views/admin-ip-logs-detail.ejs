@@ -28,6 +28,12 @@
 .ipd-ref{font-size:.65rem;color:rgba(255,255,255,.25);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
 .ipd-user{font-size:.68rem;padding:.1rem .35rem;border-radius:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.2);color:#c4b5fd;margin-left:auto;white-space:nowrap}
 .ipd-day{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.35);text-transform:capitalize;letter-spacing:.04em;padding:.6rem .6rem .2rem;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:.2rem}
+.ipd-copy-row{margin-left:auto;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.2);font-size:.72rem;padding:.1rem .3rem;border-radius:4px;transition:color .1s,background .1s;flex-shrink:0}
+.ipd-copy-row:hover{color:#7dd3fc;background:rgba(99,179,237,.1)}
+.ipd-copy-row.copied{color:#4ade80}
+.ipd-export-bar{display:flex;align-items:center;gap:.75rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.07)}
+.ipd-export-btn{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;padding:.35rem .8rem;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);cursor:pointer;transition:background .1s,color .1s;text-decoration:none}
+.ipd-export-btn:hover{background:rgba(255,255,255,.09);color:#e2e8f0}
 </style>
 
 <div class="admin-topbar">
@@ -144,14 +150,26 @@
           var _rRefLabel = '';
           if (_rRef) { try { _rRefLabel = new URL(_rRef).hostname.replace(/^www\./, ''); } catch(e) { _rRefLabel = _rRef.slice(0,30); } }
         %>
-          <div class="ipd-entry">
+          <div class="ipd-entry"
+            data-log-time="<%= r.created_at %>"
+            data-log-path="<%= r.path %>"
+            data-log-ref="<%= r.referer || '' %>"
+            data-log-ua="<%= (r.user_agent || '').replace(/"/g, '&quot;') %>"
+            data-log-user="<%= r.user_id || '' %>">
             <span class="ipd-time"><%= new Date(r.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) %></span>
             <span class="ipd-path"><%= r.path %></span>
             <% if (_rRefLabel) { %><span class="ipd-ref" title="<%= _rRef %>">&larr; <%= _rRefLabel %></span><% } %>
             <% if (r.user_id) { %><span class="ipd-user">Connect&eacute; #<%= r.user_id %></span><% } %>
+            <button class="ipd-copy-row" title="Copier cette ligne">&#10697;</button>
           </div>
         <% }) %>
       <% }) %>
+    </div>
+
+    <div class="ipd-export-bar">
+      <button class="ipd-export-btn" id="ipd-export-csv">&#8595; CSV</button>
+      <button class="ipd-export-btn" id="ipd-export-json">&#8595; JSON</button>
+      <button class="ipd-export-btn" id="ipd-export-txt">&#8595; Texte brut</button>
     </div>
   <% } %>
 </div>
@@ -213,6 +231,89 @@
       var s = document.getElementById('ipd-geo-summary');
       if (s) s.textContent = 'Localisation indisponible';
     });
+})();
+</script>
+
+<script nonce="<%= nonce %>">
+(function() {
+  var IP = <%- JSON.stringify(ip) %>;
+
+  // ── Copie d'une ligne ─────────────────────────────────────────────────────
+  function entryToText(el) {
+    var t   = el.dataset.logTime  || '';
+    var p   = el.dataset.logPath  || '';
+    var ref = el.dataset.logRef   || '';
+    var ua  = el.dataset.logUa    || '';
+    var usr = el.dataset.logUser  || '';
+    var parts = [t, IP, p];
+    if (ref) parts.push('← ' + ref);
+    if (usr) parts.push('user#' + usr);
+    if (ua)  parts.push('[' + ua + ']');
+    return parts.join('  ');
+  }
+
+  document.querySelectorAll('.ipd-copy-row').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var entry = btn.closest('.ipd-entry');
+      if (!entry) return;
+      navigator.clipboard.writeText(entryToText(entry)).then(function() {
+        btn.textContent = '✓';
+        btn.classList.add('copied');
+        setTimeout(function() { btn.textContent = '⎘'; btn.classList.remove('copied'); }, 1500);
+      });
+    });
+  });
+
+  // ── Export ────────────────────────────────────────────────────────────────
+  function collectEntries() {
+    return Array.from(document.querySelectorAll('.ipd-entry[data-log-time]')).map(function(el) {
+      return {
+        time:    el.dataset.logTime,
+        ip:      IP,
+        path:    el.dataset.logPath,
+        referer: el.dataset.logRef,
+        user_id: el.dataset.logUser || null,
+        ua:      el.dataset.logUa,
+      };
+    });
+  }
+
+  function download(filename, content, mime) {
+    var blob = new Blob([content], { type: mime });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  var slug = IP.replace(/[^a-z0-9]/gi, '-');
+
+  var btnCsv = document.getElementById('ipd-export-csv');
+  if (btnCsv) btnCsv.addEventListener('click', function() {
+    var rows = collectEntries();
+    var header = 'time,ip,path,referer,user_id,user_agent\n';
+    var lines  = rows.map(function(r) {
+      return [r.time, r.ip, r.path, r.referer, r.user_id || '', r.ua]
+        .map(function(v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; })
+        .join(',');
+    });
+    download('ip-logs-' + slug + '.csv', header + lines.join('\n'), 'text/csv;charset=utf-8');
+  });
+
+  var btnJson = document.getElementById('ipd-export-json');
+  if (btnJson) btnJson.addEventListener('click', function() {
+    download('ip-logs-' + slug + '.json', JSON.stringify(collectEntries(), null, 2), 'application/json');
+  });
+
+  var btnTxt = document.getElementById('ipd-export-txt');
+  if (btnTxt) btnTxt.addEventListener('click', function() {
+    var lines = Array.from(document.querySelectorAll('.ipd-entry[data-log-time]')).map(entryToText);
+    download('ip-logs-' + slug + '.txt', lines.join('\n'), 'text/plain;charset=utf-8');
+  });
 })();
 </script>
 
