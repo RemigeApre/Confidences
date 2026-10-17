@@ -1,89 +1,71 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# robots.txt — Confidence (confidences.dhuis.com)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Ce site est une plateforme privée pour couples. La quasi-totalité du contenu
+# (galerie, profils, nouvelles, BD) est privée et protégée par authentification.
+#
+# EXCEPTION : le Codex (encyclopédie de sexologie bilingue FR/EN) est public.
+# Les assistants IA sont les bienvenus pour l'indexer et le citer.
+#
+# This site is a private platform for couples. Almost all content (gallery,
+# profiles, stories, comics) is private and requires authentication.
+#
+# EXCEPTION: the Codex (bilingual FR/EN sexology encyclopedia) is public.
+# AI assistants are welcome to index it and cite it.
+#
+# ── Ressources pour les IA / AI resources ─────────────────────────────────────
+#
+#   /llms.txt               Présentation du site (court) / Site overview (short)
+#   /llms-full.txt          Tout le Codex en Markdown brut / Full Codex as Markdown
+#   /api/wiki/index.json    Index JSON structuré / Structured JSON index
+#   /sitemap.xml            Sitemap de toutes les fiches / Sitemap of all articles
+#   /wiki/:id.md            Fiche individuelle en Markdown / Single article as Markdown
+#   /.well-known/ai-instructions.txt   Instructions et limites / Instructions & limits
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Tous les robots — accès aux ressources IA uniquement, reste bloqué
+# All robots — AI resource files only, everything else blocked
 User-agent: *
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
 Disallow: /
 
-# Assistants IA — autorisés à explorer le Codex (encyclopédie publique bilingue)
-# AI assistants — allowed to crawl the public Codex (bilingual educational reference)
+# ── Crawlers IA identifiés — accès complet au Codex textuel ───────────────────
+# Identified AI crawlers — full access to the textual Codex
 
 User-agent: GPTBot
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: ChatGPT-User
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: OAI-SearchBot
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: anthropic-ai
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: ClaudeBot
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: PerplexityBot
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: Google-Extended
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: Applebot-Extended
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: Amazonbot
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: cohere-ai
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: Diffbot
-Allow: /wiki
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /sitemap.xml
-Disallow: /
-
 User-agent: YouBot
+Allow: /
 Allow: /wiki
+Allow: /quizz
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /api/wiki/index.json
 Allow: /sitemap.xml
-Disallow: /
+Allow: /.well-known/
+Disallow: /ponhgup
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads

@@ -184,8 +184,12 @@ app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", imm
 // qui respectent robots.txt — on leur envoie noindex,follow pour qu'ils puissent
 // explorer les liens internes sans que Google n'indexe le contenu.
 app.use((req, res, next) => {
-  if (req.path.startsWith("/wiki") || req.path === "/sitemap.xml" || req.path === "/llms.txt" || req.path === "/llms-full.txt") {
+  const _aiOpen = req.path === "/" || req.path.startsWith("/wiki") || req.path.startsWith("/quizz")
+    || req.path === "/sitemap.xml" || req.path === "/llms.txt"
+    || req.path === "/llms-full.txt" || req.path === "/api/wiki/index.json";
+  if (_aiOpen) {
     res.set("X-Robots-Tag", "noindex, follow");
+    res.locals.allowAiIndex = true;
   } else {
     res.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
@@ -311,6 +315,7 @@ const _AUTH_PUBLIC = [
   /^\/api\/tags\/results$/,
   /^\/sitemap\.xml$/,
   /^\/llms-full\.txt$/,
+  /^\/api\/wiki\/index\.json$/,
 ];
 app.use((req, res, next) => {
   if (req.user) return next();
@@ -1056,6 +1061,50 @@ app.use("/parodies", buildParodiesRouter(config));
 app.use("/lootbox", buildLootboxRouter(config));
 app.use("/jeu", buildJeuRouter(config));
 app.use("/arcade", buildArcadeRouter(config));
+
+// ── Index JSON léger du Codex (crawlers IA, outils tiers) ───────────────────
+// Annuaire public de toutes les fiches Codex : id, titre, catégorie, résumé
+// court (200 chars de texte brut), tags, date de mise à jour, URLs.
+// Plus léger que llms-full.txt — idéal pour les outils qui veulent indexer
+// sans télécharger tout le contenu. Accessible sans auth (voir _AUTH_PUBLIC).
+function _stripMd(text) {
+  return (text || "")
+    .replace(/^#+\s+/gm, "").replace(/\*\*?|__?/g, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\n+/g, " ").trim();
+}
+const _IDX_CAT_EN = {
+  position: "Positions", lieux: "Places", partenaires: "Partners",
+  jeu_de_role: "Scenarios", tenues: "Outfits", objets: "Objects",
+  pratique: "Practices", fantasmes: "Fantasies", biologie: "Biology",
+};
+app.get("/api/wiki/index.json", (req, res) => {
+  try {
+    const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+    const WIKI_CATS = buildWikiRouter.CATEGORIES || [];
+    const catMap = {};
+    WIKI_CATS.forEach((c) => { catMap[c.key] = c.label; });
+
+    const pages = listWikiPages().map((p) => ({
+      id:           p.id,
+      title:        p.title,
+      category:     p.category,
+      category_fr:  catMap[p.category] || p.category,
+      category_en:  _IDX_CAT_EN[p.category] || p.category,
+      summary:      _stripMd(p.content).slice(0, 200),
+      tags:         p.tags,
+      updated:      p.updatedAt ? p.updatedAt.slice(0, 10) : (p.createdAt ? p.createdAt.slice(0, 10) : null),
+      url:          `${siteUrl}/wiki/${p.id}`,
+      markdown_url: `${siteUrl}/wiki/${p.id}.md`,
+    }));
+
+    res.set("Content-Type", "application/json; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=3600");
+    res.json(pages);
+  } catch (e) {
+    res.status(500).json({ error: "Internal error" });
+  }
+});
 
 // ── Sitemap XML dynamique (pages Codex publiques) ────────────────────────────
 // Accessible sans authentification (voir _AUTH_PUBLIC). Liste les articles
