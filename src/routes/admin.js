@@ -1326,7 +1326,7 @@ function buildAdminRouter(config) {
     res.render('admin-ip-logs-detail', { config, ip, detail, adminUser: user });
   });
 
-  router.get("/:id", requireAdmin, (req, res) => {
+  router.get("/:id(\\d+)", requireAdmin, (req, res) => {
     const submission = getSubmission(Number(req.params.id));
     if (!submission) return res.redirect("/ponhgup");
     res.render("admin-detail", { config, submission, slugify, flattenItemsRaw, isLive: false });
