@@ -55,6 +55,9 @@
 .ipd-note-textarea:focus{outline:none;border-color:rgba(167,139,250,.4)}
 .ipd-note-submit{align-self:flex-end;font-size:.75rem;padding:.3rem .8rem;border-radius:6px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.1);color:#c4b5fd;cursor:pointer;transition:background .1s}
 .ipd-note-submit:hover{background:rgba(167,139,250,.2)}
+.ipd-copy-profile{font-size:.75rem;padding:.3rem .75rem;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;transition:background .1s,color .1s;margin-left:auto}
+.ipd-copy-profile:hover{background:rgba(255,255,255,.09);color:#e2e8f0}
+.ipd-copy-profile.copied{border-color:rgba(74,222,128,.3);color:#4ade80}
 </style>
 
 <div class="admin-topbar">
@@ -82,6 +85,7 @@
   <div class="ipd-header">
     <span class="ipd-ip"><%= ip %></span>
     <span id="ipd-geo-summary" style="font-size:.85rem;color:rgba(255,255,255,.4)">…</span>
+    <button class="ipd-copy-profile" id="ipd-copy-profile">&#10697; Copier le profil</button>
   </div>
 
   <div class="ipd-cards">
@@ -253,6 +257,7 @@
     .then(function(d) {
       var code = (d.countryCode || '').toUpperCase();
       var name = countryName(code);
+      _geoData = Object.assign({}, d, { country: name });
 
       // Résumé header
       var summary = document.getElementById('ipd-geo-summary');
@@ -299,6 +304,92 @@
 <script nonce="<%= nonce %>">
 (function() {
   var IP = <%- JSON.stringify(ip) %>;
+
+  // ── Données statiques (côté serveur) pour la copie profil ────────────────
+  var _profileData = {
+    ip:          IP,
+    ua:          <%- JSON.stringify((_first.user_agent || '')) %>,
+    secChUa:     <%- JSON.stringify((_first.sec_ch_ua || '')) %>,
+    secPlatform: <%- JSON.stringify(((_first.sec_ch_ua_platform || '').replace(/^"|"$/g, ''))) %>,
+    lang:        <%- JSON.stringify(_lang) %>,
+    topRef:      <%- JSON.stringify(_topRefLabel) %>,
+    topRefUrl:   <%- JSON.stringify(_topRef) %>,
+    pageCount:   <%= detail.length %>,
+    userId:      <%- JSON.stringify(String(_first.user_id || '')) %>,
+    devices: <%- JSON.stringify((devices || []).map(function(d) { return { key: d.device_key, ua: d.user_agent, hits: d.hits }; })) %>,
+    notes:   <%- JSON.stringify((notes || []).map(function(n) { return { dk: n.device_key, text: n.note, at: n.created_at }; })) %>,
+  };
+  var _geoData = {}; // rempli par le fetch
+
+  function buildProfileText() {
+    var g = _geoData;
+    var d = _profileData;
+    var lines = [];
+
+    lines.push('═══ Profil IP : ' + d.ip + ' ═══');
+    lines.push('');
+
+    lines.push('── Localisation');
+    if (g.unknown) {
+      lines.push('  Inconnue');
+    } else {
+      if (g.country) lines.push('  Pays     : ' + g.country + (g.countryCodeUpper ? ' (' + g.countryCodeUpper + ')' : ''));
+      if (g.region)  lines.push('  Région   : ' + g.region);
+      if (g.city)    lines.push('  Ville    : ' + g.city);
+      if (g.timezone)lines.push('  Fuseau   : ' + g.timezone);
+      if (g.lat != null) lines.push('  Coords   : ' + g.lat + ', ' + g.lon);
+      if (g.range)   lines.push('  Plage IP : ' + g.range);
+    }
+    lines.push('');
+
+    lines.push('── Navigateur / Système');
+    if (d.secChUa)     lines.push('  Navigateur : ' + d.secChUa);
+    if (d.secPlatform) lines.push('  OS         : ' + d.secPlatform);
+    if (d.lang)        lines.push('  Langue     : ' + d.lang);
+    if (d.ua)          lines.push('  User-Agent : ' + d.ua);
+    lines.push('');
+
+    lines.push('── Origine / Trafic');
+    lines.push('  Source        : ' + (d.topRef || 'Accès direct'));
+    if (d.topRefUrl)   lines.push('  URL origine   : ' + d.topRefUrl);
+    lines.push('  Pages visitées: ' + d.pageCount);
+    lines.push('  Profil        : ' + (d.userId ? 'Connecté #' + d.userId : 'Anonyme'));
+    lines.push('');
+
+    if (d.devices.length > 1) {
+      lines.push('── Appareils distincts (' + d.devices.length + ')');
+      d.devices.forEach(function(dev) {
+        lines.push('  #' + dev.key + '  ' + dev.ua + '  (' + dev.hits + ' req.)');
+      });
+      lines.push('');
+    }
+
+    if (d.notes.length) {
+      lines.push('── Notes');
+      d.notes.forEach(function(n) {
+        var prefix = n.dk ? '[#' + n.dk + '] ' : '';
+        lines.push('  ' + prefix + n.text);
+      });
+      lines.push('');
+    }
+
+    lines.push('Exporté le ' + new Date().toLocaleString('fr-FR'));
+    return lines.join('\n');
+  }
+
+  var _copyBtn = document.getElementById('ipd-copy-profile');
+  if (_copyBtn) {
+    _copyBtn.addEventListener('click', function() {
+      navigator.clipboard.writeText(buildProfileText()).then(function() {
+        _copyBtn.textContent = '✓ Copié';
+        _copyBtn.classList.add('copied');
+        setTimeout(function() {
+          _copyBtn.textContent = '⎘ Copier le profil';
+          _copyBtn.classList.remove('copied');
+        }, 2000);
+      });
+    });
+  }
 
   // ── Boutons "Note" sur appareil ─────────────────────────────────────────
   var _noteForm = document.getElementById('ipd-note-form');
