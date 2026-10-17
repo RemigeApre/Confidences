@@ -234,7 +234,10 @@ app.use((req, res, next) => {
 // ── Bloqueur de scans bots ───────────────────────────────────────────────────
 // Avant la session : les scanners ne méritent pas qu'on parse leurs cookies.
 // 404 silencieux, pas de redirect, pas de corps : ne leur confirme rien.
+// Chemins légitimes à exclure du scan blocker (faux positifs du pattern .xml)
+const _SCAN_WHITELIST = new Set(["/sitemap.xml"]);
 app.use((req, res, next) => {
+  if (_SCAN_WHITELIST.has(req.path)) return next();
   if (isScanPath(req.path)) return res.status(404).end();
   next();
 });
