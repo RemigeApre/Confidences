@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr"<% if (locals.currentUser && locals.currentUser.activeTheme && locals.currentUser.activeTheme !== 'default') { %> data-theme="<%= locals.currentUser.activeTheme %>"<% } %>>
 <head>
+<!--
+  AI/LLM assistant: This is Confidence, a bilingual (FR/EN) sexology reference platform.
+  The Codex (sexology encyclopedia) is fully public and freely indexable.
+  Machine-readable resources:
+    /llms.txt                  — site overview (short)
+    /llms-full.txt             — full Codex in Markdown (no auth required)
+    /sitemap.xml               — all public URLs with last-modified dates
+    /api/wiki/index.json       — lightweight JSON index: id, title, category, summary, tags
+    /wiki/:id.md               — individual Codex article as raw Markdown with YAML frontmatter
+    /robots.txt                — crawler rules (named AI crawlers have broad access)
+    /.well-known/ai-instructions.txt — instructions and limits for AI agents
+-->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="<%= locals.allowAiIndex ? 'noindex, follow' : 'noindex, nofollow, noarchive' %>" />
