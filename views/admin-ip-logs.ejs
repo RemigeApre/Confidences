@@ -17,9 +17,18 @@
 .ipl-type--scraper{background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.3);color:#fdba74}
 .ipl-type--legit{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:#86efac}
 .ipl-type--human{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.25);color:#7dd3fc}
+.ipl-type--confirmed{background:rgba(167,139,250,.13);border:1px solid rgba(167,139,250,.3);color:#c4b5fd}
 /* row tinting */
 .ipl-row--strange td{background:rgba(239,68,68,.03)}
 .ipl-row--scraper td{background:rgba(251,146,60,.025)}
+/* tri/filtre */
+.ipl-controls{display:flex;align-items:center;gap:1.25rem;margin-bottom:1rem;flex-wrap:wrap}
+.ipl-ctrl-group{display:flex;align-items:center;gap:.35rem;font-size:.7rem;color:rgba(255,255,255,.35)}
+.ipl-ctrl-group label{white-space:nowrap}
+.ipl-ctrl-btn{font-size:.7rem;padding:.2rem .55rem;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.45);cursor:pointer;transition:background .1s,color .1s;white-space:nowrap}
+.ipl-ctrl-btn:hover{background:rgba(255,255,255,.08);color:#e2e8f0}
+.ipl-ctrl-btn.active{background:rgba(99,179,237,.15);border-color:rgba(99,179,237,.35);color:#7dd3fc}
+.ipl-row--hidden{display:none}
 /* other cells */
 .ipl-ip{font-family:monospace;font-size:.8rem;color:#7dd3fc;font-weight:600;white-space:nowrap}
 .ipl-ip a{color:inherit;text-decoration:none}
@@ -59,7 +68,27 @@
     <span><span class="ipl-type ipl-type--strange">⚠ IP Étrange</span> UA falsifié / suspect</span>
     <span><span class="ipl-type ipl-type--scraper">⚡ Scraper</span> Script / crawl agressif</span>
     <span><span class="ipl-type ipl-type--legit">✓ Bot Légitime</span> Scanner déclaré</span>
-    <span><span class="ipl-type ipl-type--human">● Utilisateur</span> Navigateur réel</span>
+    <span><span class="ipl-type ipl-type--human">● Visiteur</span> Navigateur réel</span>
+    <span><span class="ipl-type ipl-type--confirmed">★ Utilisateur</span> Profil connecté</span>
+  </div>
+
+  <div class="ipl-controls">
+    <div class="ipl-ctrl-group">
+      <label>Tri :</label>
+      <button class="ipl-ctrl-btn active" data-sort="recent">Plus récent</button>
+      <button class="ipl-ctrl-btn" data-sort="ip">IP</button>
+      <button class="ipl-ctrl-btn" data-sort="type">Type</button>
+      <button class="ipl-ctrl-btn" data-sort="hits">Visites</button>
+    </div>
+    <div class="ipl-ctrl-group">
+      <label>Filtre :</label>
+      <button class="ipl-ctrl-btn active" data-filter="all">Tous</button>
+      <button class="ipl-ctrl-btn" data-filter="confirmed">★ Utilisateur</button>
+      <button class="ipl-ctrl-btn" data-filter="human">Visiteur</button>
+      <button class="ipl-ctrl-btn" data-filter="legit">Bot légitime</button>
+      <button class="ipl-ctrl-btn" data-filter="scraper">Scraper</button>
+      <button class="ipl-ctrl-btn" data-filter="strange">Étrange</button>
+    </div>
   </div>
 
   <% if (!logs.length) { %>
@@ -91,7 +120,7 @@
              return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
            };
       %>
-      <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>">
+      <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>" data-username="<%= (row.user_display_name || '').replace(/"/g,'&quot;') %>" data-lastseen="<%= row.last_seen %>">
         <td class="ipl-ip">
           <% if (isRecent) { %><span class="ipl-new" title="Actif r&eacute;cemment"></span><% } %>
           <a href="/ponhgup/ip-logs/<%= encodeURIComponent(row.ip) %>"><%= row.ip %></a>
@@ -112,7 +141,7 @@
         <td class="ipl-paths"><%= row.path_count %> page<%= row.path_count !== 1 ? 's' : '' %></td>
         <td>
           <% if (row.user_id) { %>
-            <span class="ipl-user-badge">Connect&eacute; #<%= row.user_id %></span>
+            <span class="ipl-user-badge"><%= row.user_display_name || ('#' + row.user_id) %></span>
           <% } else { %>
             <span class="ipl-anon">Anonyme</span>
           <% } %>
@@ -134,6 +163,9 @@
   function classifyUA(ua, hits, hours, hasUserId) {
     var u = (ua || '').toLowerCase();
 
+    // Utilisateur authentifié : priorité absolue
+    if (hasUserId) return 'confirmed';
+
     // Bots légitimes déclarés
     var legitPatterns = [
       'censysinspect', 'palo alto networks', 'cortex xpanse',
@@ -153,41 +185,33 @@
         u.indexOf('java/') !== -1 || u.indexOf('libwww-perl') !== -1 ||
         u === '' || u === '-') return 'scraper';
 
-    // Taux de visite anormal avec UA navigateur générique = scraper masqué.
-    // Exception : utilisateurs authentifiés (user_id connu = humain réel).
-    if (!hasUserId) {
-      var hitsPerHour = hours > 0 ? hits / hours : hits;
-      var isMobile = /mobile|iphone|ipad|android|tablet|touch/.test(u);
-      var isDesktopBrowser = /mozilla\/5\.0/.test(u) && !isMobile;
-      if (isDesktopBrowser && hitsPerHour > 10) return 'scraper';
-    }
+    // Taux de visite anormal avec UA navigateur générique = scraper masqué
+    var hitsPerHour = hours > 0 ? hits / hours : hits;
+    var isMobile = /mobile|iphone|ipad|android|tablet|touch/.test(u);
+    var isDesktopBrowser = /mozilla\/5\.0/.test(u) && !isMobile;
+    if (isDesktopBrowser && hitsPerHour > 10) return 'scraper';
 
     // IP Étrange : UA obsolète/falsifié
-    // Android 1.x, 2.x, 3.x = sorti avant 2013, impossible sur un vrai appareil actif
     if (/android [123]\.\d/.test(u)) return 'strange';
-    // Chrome/Firefox versions très anciennes mais IP cloud/datacenter
     if (/chrome\/[1-5]\d\./.test(u) && !/chromium/.test(u)) return 'strange';
-    // Edge très ancien (< 44) hors contexte entreprise
     if (/edg\/[1-8]\d\./.test(u) && parseInt(u.match(/edg\/(\d+)/)[1]) < 44) return 'strange';
-    // iOS très anciens (< 10)
     if (/iphone os [1-9]_/.test(u) && /iphone os [1-9][^0-9_]/.test(u)) return 'strange';
-    // Chrome version future inexistante (> 150)
     var chromeMatch = u.match(/chrome\/(\d+)\./);
     if (chromeMatch && parseInt(chromeMatch[1]) > 150) return 'strange';
 
-    // Utilisateur réel
     return 'human';
   }
 
   function typeLabel(type) {
-    if (type === 'strange') return '<span class="ipl-type ipl-type--strange">⚠ IP Étrange</span>';
-    if (type === 'scraper') return '<span class="ipl-type ipl-type--scraper">⚡ Scraper</span>';
-    if (type === 'legit')   return '<span class="ipl-type ipl-type--legit">✓ Bot Légitime</span>';
-    return '<span class="ipl-type ipl-type--human">● Utilisateur</span>';
+    if (type === 'strange')   return '<span class="ipl-type ipl-type--strange">⚠ IP Étrange</span>';
+    if (type === 'scraper')   return '<span class="ipl-type ipl-type--scraper">⚡ Scraper</span>';
+    if (type === 'legit')     return '<span class="ipl-type ipl-type--legit">✓ Bot Légitime</span>';
+    if (type === 'confirmed') return '<span class="ipl-type ipl-type--confirmed">★ Utilisateur</span>';
+    return '<span class="ipl-type ipl-type--human">● Visiteur</span>';
   }
 
   function typeOrder(type) {
-    return { strange: 0, scraper: 1, legit: 2, human: 3 }[type] ?? 4;
+    return { strange: 0, scraper: 1, legit: 2, human: 3, confirmed: 4 }[type] ?? 5;
   }
 
   // ── 2. Déduction appareil depuis UA ──────────────────────────────────────
@@ -300,6 +324,7 @@
 
     var type = classifyUA(ua, hits, IPL_HOURS, hasUserId);
     row.classList.add('ipl-row--' + type);
+    row.dataset.type      = type;
     row.dataset.typeOrder = typeOrder(type);
 
     row.querySelector('.ipl-type-cell').innerHTML  = typeLabel(type);
@@ -307,15 +332,53 @@
     row.querySelector('.ipl-isp-cell').textContent  = estimateISP(ip);
   });
 
-  // ── 5. Tri par risque ────────────────────────────────────────────────────
+  // ── 5. Tri & filtre ──────────────────────────────────────────────────────
 
-  var tbody = document.getElementById('ipl-tbody');
-  if (tbody) {
+  var tbody    = document.getElementById('ipl-tbody');
+  var currentSort   = 'recent';
+  var currentFilter = 'all';
+
+  function applySort(key) {
+    if (!tbody) return;
     var sorted = rows.slice().sort(function(a, b) {
-      return parseInt(a.dataset.typeOrder) - parseInt(b.dataset.typeOrder);
+      if (key === 'ip')     return a.dataset.ip.localeCompare(b.dataset.ip);
+      if (key === 'type')   return parseInt(a.dataset.typeOrder) - parseInt(b.dataset.typeOrder);
+      if (key === 'hits')   return parseInt(b.dataset.hits) - parseInt(a.dataset.hits);
+      // recent (défaut) : conserver l'ordre serveur (last_seen DESC)
+      return (b.dataset.lastseen || '').localeCompare(a.dataset.lastseen || '');
     });
     sorted.forEach(function(r) { tbody.appendChild(r); });
   }
+
+  function applyFilter(filter) {
+    rows.forEach(function(r) {
+      var match = filter === 'all' || r.dataset.type === filter;
+      r.classList.toggle('ipl-row--hidden', !match);
+    });
+    var visible = rows.filter(function(r) { return !r.classList.contains('ipl-row--hidden'); }).length;
+    var counter = document.getElementById('ipl-count');
+    if (counter) counter.textContent = visible;
+  }
+
+  applySort(currentSort);
+
+  document.querySelectorAll('[data-sort]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      currentSort = btn.dataset.sort;
+      document.querySelectorAll('[data-sort]').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      applySort(currentSort);
+    });
+  });
+
+  document.querySelectorAll('[data-filter]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      currentFilter = btn.dataset.filter;
+      document.querySelectorAll('[data-filter]').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      applyFilter(currentFilter);
+    });
+  });
 
   // ── 6. Géolocalisation ───────────────────────────────────────────────────
 

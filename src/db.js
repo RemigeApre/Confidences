@@ -2829,7 +2829,7 @@ function recordIpLog(ip, path, userAgent, userId) {
 
 function getIpSummary(hours) {
   const h = Math.min(720, Math.max(1, parseInt(hours) || 48));
-  return db.prepare(
+  const rows = db.prepare(
     `SELECT ip,
             COUNT(*) AS hits,
             MIN(created_at) AS first_seen,
@@ -2843,13 +2843,25 @@ function getIpSummary(hours) {
      GROUP BY ip
      ORDER BY last_seen DESC
      LIMIT 500`
-  ).all(h).map(r => ({
+  ).all(h);
+  // Résoudre les noms de profil en une seule passe
+  const userIds = [...new Set(rows.map(r => r.user_id).filter(Boolean))];
+  const userMap = {};
+  if (userIds.length) {
+    const stmt = db.prepare("SELECT id, display_name FROM users WHERE id = ?");
+    for (const id of userIds) {
+      const u = stmt.get(id);
+      if (u) userMap[id] = u.display_name;
+    }
+  }
+  return rows.map(r => ({
     ip: r.ip,
     hits: r.hits,
     first_seen: r.first_seen,
     last_seen: r.last_seen,
     user_agent: r.user_agent,
     user_id: r.user_id,
+    user_display_name: r.user_id ? (userMap[r.user_id] || null) : null,
     path_count: r.path_count,
     paths: r.paths_raw ? r.paths_raw.split(',').filter(Boolean).slice(0, 30) : []
   }));
