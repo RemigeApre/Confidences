@@ -98,6 +98,10 @@ const {
   getAnonVisitorList,
   getIpSummary,
   getIpDetail,
+  getIpDevices,
+  getIpNotes,
+  addIpNote,
+  deleteIpNote,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -1320,10 +1324,24 @@ function buildAdminRouter(config) {
   });
 
   router.get('/ip-logs/:ip', requireAdmin, (req, res) => {
-    const ip = req.params.ip;
-    const detail = getIpDetail(ip, 300);
-    const user = req.user;
-    res.render('admin-ip-logs-detail', { config, ip, detail, adminUser: user });
+    const ip     = req.params.ip;
+    const detail  = getIpDetail(ip, 300);
+    const devices = getIpDevices(ip);
+    const notes   = getIpNotes(ip);
+    res.render('admin-ip-logs-detail', { config, ip, detail, devices, notes });
+  });
+
+  router.post('/ip-logs/:ip/notes', requireAdmin, (req, res) => {
+    const ip        = req.params.ip;
+    const note      = String(req.body.note || '').trim().slice(0, 1000);
+    const deviceKey = String(req.body.device_key || '').trim().slice(0, 8);
+    if (note) addIpNote(ip, deviceKey, note);
+    res.redirect('/ponhgup/ip-logs/' + encodeURIComponent(ip));
+  });
+
+  router.post('/ip-logs/:ip/notes/:id/delete', requireAdmin, (req, res) => {
+    deleteIpNote(Number(req.params.id));
+    res.redirect('/ponhgup/ip-logs/' + encodeURIComponent(req.params.ip));
   });
 
   router.get("/:id(\\d+)", requireAdmin, (req, res) => {

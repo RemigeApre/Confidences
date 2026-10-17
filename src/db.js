@@ -2811,26 +2811,47 @@ db.exec(`
     created_at TEXT NOT NULL
   )
 `);
+// Notes manuelles sur une IP (ou un appareil spécifique via device_key)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS ip_notes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip         TEXT NOT NULL,
+    device_key TEXT NOT NULL DEFAULT '',
+    note       TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_ip_notes_ip ON ip_notes (ip)`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_ip_logs_ip   ON ip_logs (ip)`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_ip_logs_date ON ip_logs (created_at)`);
-try { db.exec("ALTER TABLE ip_logs ADD COLUMN referer          TEXT NOT NULL DEFAULT ''"); } catch(_) {}
-try { db.exec("ALTER TABLE ip_logs ADD COLUMN accept_language  TEXT NOT NULL DEFAULT ''"); } catch(_) {}
-try { db.exec("ALTER TABLE ip_logs ADD COLUMN sec_ch_ua        TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE ip_logs ADD COLUMN referer            TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE ip_logs ADD COLUMN accept_language    TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE ip_logs ADD COLUMN sec_ch_ua          TEXT NOT NULL DEFAULT ''"); } catch(_) {}
 try { db.exec("ALTER TABLE ip_logs ADD COLUMN sec_ch_ua_platform TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE ip_logs ADD COLUMN device_key         TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+
+// Hash court (8 chars) dérivé du User-Agent pour distinguer les appareils
+// d'une même IP. Pas cryptographique — juste un discriminant stable.
+const _crypto = require('crypto');
+function _deviceKey(ua) {
+  if (!ua) return '';
+  return _crypto.createHash('sha1').update(ua).digest('hex').slice(0, 8);
+}
 
 function recordIpLog(ip, path, userAgent, userId, referer, acceptLanguage, secChUa, secChUaPlatform) {
   if (!ip) return;
   // Throttle : 1 log max par IP+path toutes les 5 minutes
+  const dk = _deviceKey(userAgent);
   db.prepare(
-    `INSERT INTO ip_logs (ip, path, user_agent, user_id, created_at, referer, accept_language, sec_ch_ua, sec_ch_ua_platform)
-     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+    `INSERT INTO ip_logs (ip, path, user_agent, user_id, created_at, referer, accept_language, sec_ch_ua, sec_ch_ua_platform, device_key)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
      WHERE NOT EXISTS (
        SELECT 1 FROM ip_logs
        WHERE ip = ? AND path = ? AND created_at > datetime('now', '-5 minutes')
      )`
   ).run(
     ip, path, userAgent || '', userId || null, new Date().toISOString(),
-    referer || '', acceptLanguage || '', secChUa || '', secChUaPlatform || '',
+    referer || '', acceptLanguage || '', secChUa || '', secChUaPlatform || '', dk,
     ip, path
   );
 }
@@ -2887,12 +2908,47 @@ function getIpDetail(ip, limit) {
   const lim = Math.min(500, Math.max(1, parseInt(limit) || 300));
   return db.prepare(
     `SELECT path, user_agent, user_id, created_at,
-            referer, accept_language, sec_ch_ua, sec_ch_ua_platform
+            referer, accept_language, sec_ch_ua, sec_ch_ua_platform, device_key
      FROM ip_logs
      WHERE ip = ?
      ORDER BY created_at DESC
      LIMIT ?`
   ).all(ip, lim);
+}
+
+// Appareils distincts vus pour une IP (groupé par device_key)
+function getIpDevices(ip) {
+  return db.prepare(
+    `SELECT device_key,
+            MAX(user_agent) AS user_agent,
+            MAX(sec_ch_ua)  AS sec_ch_ua,
+            MAX(sec_ch_ua_platform) AS sec_ch_ua_platform,
+            MAX(user_id)    AS user_id,
+            COUNT(*)        AS hits,
+            MIN(created_at) AS first_seen,
+            MAX(created_at) AS last_seen
+     FROM ip_logs
+     WHERE ip = ? AND device_key != ''
+     GROUP BY device_key
+     ORDER BY last_seen DESC`
+  ).all(ip);
+}
+
+// Notes sur une IP
+function getIpNotes(ip) {
+  return db.prepare(
+    `SELECT id, device_key, note, created_at FROM ip_notes WHERE ip = ? ORDER BY created_at DESC`
+  ).all(ip);
+}
+
+function addIpNote(ip, deviceKey, note) {
+  db.prepare(
+    `INSERT INTO ip_notes (ip, device_key, note, created_at) VALUES (?, ?, ?, ?)`
+  ).run(ip, deviceKey || '', note.trim(), new Date().toISOString());
+}
+
+function deleteIpNote(id) {
+  db.prepare(`DELETE FROM ip_notes WHERE id = ?`).run(id);
 }
 
 function recordAnonVisit(path, ip, userAgent) {
@@ -5152,6 +5208,10 @@ module.exports = {
   recordIpLog,
   getIpSummary,
   getIpDetail,
+  getIpDevices,
+  getIpNotes,
+  addIpNote,
+  deleteIpNote,
   recordLoginFailure,
   getLoginFailureCount,
   resetLoginFailures,
