@@ -91,7 +91,7 @@
              return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
            };
       %>
-      <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>">
+      <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>">
         <td class="ipl-ip">
           <% if (isRecent) { %><span class="ipl-new" title="Actif r&eacute;cemment"></span><% } %>
           <a href="/ponhgup/ip-logs/<%= encodeURIComponent(row.ip) %>"><%= row.ip %></a>
@@ -131,7 +131,7 @@
 
   // ── 1. Classification UA ──────────────────────────────────────────────────
 
-  function classifyUA(ua, hits) {
+  function classifyUA(ua, hits, hours, hasUserId) {
     var u = (ua || '').toLowerCase();
 
     // Bots légitimes déclarés
@@ -146,17 +146,20 @@
       if (u.indexOf(legitPatterns[i]) !== -1) return 'legit';
     }
 
-    // Scrapers / scripts évidents
+    // Scrapers / scripts évidents (UA déclaré)
     if (/^curl\//.test(u) || /^wget\//.test(u) || /^python\//.test(u) ||
         u.indexOf('aiohttp') !== -1 || u.indexOf('httpx') !== -1 ||
         u.indexOf('scrapy') !== -1 || u.indexOf('go-http-client') !== -1 ||
         u.indexOf('java/') !== -1 || u.indexOf('libwww-perl') !== -1 ||
         u === '' || u === '-') return 'scraper';
 
-    // Volume anormal (> 20 pages) avec UA générique = scraper masqué
-    if (hits > 20) {
-      var isGenericBrowser = /mozilla\/5\.0/.test(u) && !/mobile|iphone|android [89]|android 1[0-9]/.test(u);
-      if (isGenericBrowser) return 'scraper';
+    // Taux de visite anormal avec UA navigateur générique = scraper masqué.
+    // Exception : utilisateurs authentifiés (user_id connu = humain réel).
+    if (!hasUserId) {
+      var hitsPerHour = hours > 0 ? hits / hours : hits;
+      var isMobile = /mobile|iphone|ipad|android|tablet|touch/.test(u);
+      var isDesktopBrowser = /mozilla\/5\.0/.test(u) && !isMobile;
+      if (isDesktopBrowser && hitsPerHour > 10) return 'scraper';
     }
 
     // IP Étrange : UA obsolète/falsifié
@@ -286,14 +289,16 @@
 
   // ── 4. Populate rows ─────────────────────────────────────────────────────
 
+  var IPL_HOURS = <%= hours %>;
   var rows = Array.from(document.querySelectorAll('.ipl-row'));
 
   rows.forEach(function(row) {
-    var ua   = row.dataset.ua || '';
-    var ip   = row.dataset.ip || '';
-    var hits = parseInt(row.dataset.hits) || 0;
+    var ua        = row.dataset.ua || '';
+    var ip        = row.dataset.ip || '';
+    var hits      = parseInt(row.dataset.hits) || 0;
+    var hasUserId = !!row.dataset.userid;
 
-    var type = classifyUA(ua, hits);
+    var type = classifyUA(ua, hits, IPL_HOURS, hasUserId);
     row.classList.add('ipl-row--' + type);
     row.dataset.typeOrder = typeOrder(type);
 

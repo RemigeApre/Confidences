@@ -278,6 +278,7 @@ app.use((req, res, next) => {
     const p = req.path;
     const skip = /\.(js|css|ico|png|jpg|jpeg|webp|svg|woff2?|ttf|map|gz|br)$/.test(p)
       || p.startsWith('/uploads/')
+      || p.startsWith('/api/')
       || isScanPath(p);
     if (!skip) {
       const ip = (req.ip || '').replace(/^::ffff:/, '');
