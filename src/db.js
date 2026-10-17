@@ -2813,18 +2813,26 @@ db.exec(`
 `);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_ip_logs_ip   ON ip_logs (ip)`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_ip_logs_date ON ip_logs (created_at)`);
+try { db.exec("ALTER TABLE ip_logs ADD COLUMN referer          TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE ip_logs ADD COLUMN accept_language  TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE ip_logs ADD COLUMN sec_ch_ua        TEXT NOT NULL DEFAULT ''"); } catch(_) {}
+try { db.exec("ALTER TABLE ip_logs ADD COLUMN sec_ch_ua_platform TEXT NOT NULL DEFAULT ''"); } catch(_) {}
 
-function recordIpLog(ip, path, userAgent, userId) {
+function recordIpLog(ip, path, userAgent, userId, referer, acceptLanguage, secChUa, secChUaPlatform) {
   if (!ip) return;
   // Throttle : 1 log max par IP+path toutes les 5 minutes
   db.prepare(
-    `INSERT INTO ip_logs (ip, path, user_agent, user_id, created_at)
-     SELECT ?, ?, ?, ?, ?
+    `INSERT INTO ip_logs (ip, path, user_agent, user_id, created_at, referer, accept_language, sec_ch_ua, sec_ch_ua_platform)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
      WHERE NOT EXISTS (
        SELECT 1 FROM ip_logs
        WHERE ip = ? AND path = ? AND created_at > datetime('now', '-5 minutes')
      )`
-  ).run(ip, path, userAgent || '', userId || null, new Date().toISOString(), ip, path);
+  ).run(
+    ip, path, userAgent || '', userId || null, new Date().toISOString(),
+    referer || '', acceptLanguage || '', secChUa || '', secChUaPlatform || '',
+    ip, path
+  );
 }
 
 function getIpSummary(hours) {
@@ -2837,7 +2845,11 @@ function getIpSummary(hours) {
             MAX(user_agent) AS user_agent,
             MAX(user_id)    AS user_id,
             COUNT(DISTINCT path) AS path_count,
-            GROUP_CONCAT(DISTINCT path) AS paths_raw
+            GROUP_CONCAT(DISTINCT path) AS paths_raw,
+            MAX(referer)         AS referer,
+            MAX(accept_language) AS accept_language,
+            MAX(sec_ch_ua)       AS sec_ch_ua,
+            MAX(sec_ch_ua_platform) AS sec_ch_ua_platform
      FROM ip_logs
      WHERE created_at >= datetime('now', '-' || ? || ' hours')
      GROUP BY ip
@@ -2863,14 +2875,19 @@ function getIpSummary(hours) {
     user_id: r.user_id,
     user_display_name: r.user_id ? (userMap[r.user_id] || null) : null,
     path_count: r.path_count,
-    paths: r.paths_raw ? r.paths_raw.split(',').filter(Boolean).slice(0, 30) : []
+    paths: r.paths_raw ? r.paths_raw.split(',').filter(Boolean).slice(0, 30) : [],
+    referer: r.referer || '',
+    accept_language: r.accept_language || '',
+    sec_ch_ua: r.sec_ch_ua || '',
+    sec_ch_ua_platform: r.sec_ch_ua_platform || '',
   }));
 }
 
 function getIpDetail(ip, limit) {
   const lim = Math.min(500, Math.max(1, parseInt(limit) || 300));
   return db.prepare(
-    `SELECT path, user_agent, user_id, created_at
+    `SELECT path, user_agent, user_id, created_at,
+            referer, accept_language, sec_ch_ua, sec_ch_ua_platform
      FROM ip_logs
      WHERE ip = ?
      ORDER BY created_at DESC

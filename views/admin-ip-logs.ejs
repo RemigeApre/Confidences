@@ -58,6 +58,8 @@
 .ipl-model{font-size:.72rem;color:rgba(255,255,255,.5);white-space:nowrap}
 .ipl-isp{font-size:.7rem;color:rgba(255,255,255,.4);white-space:nowrap}
 .ipl-new{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-right:.3rem;vertical-align:middle}
+.ipl-origin{font-size:.7rem;color:rgba(255,255,255,.45);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ipl-lang{font-size:.72rem;color:rgba(255,255,255,.5);font-variant:small-caps;letter-spacing:.04em}
 </style>
 
 <div class="admin-topbar">
@@ -111,6 +113,8 @@
         <th><button class="ipl-sort-btn" data-sort="type">Type <span class="ipl-sort-arrow"></span></button></th>
         <th class="no-sort">Appareil</th>
         <th class="no-sort">FAI</th>
+        <th class="no-sort">Origine</th>
+        <th class="no-sort">Langue</th>
         <th><button class="ipl-sort-btn" data-sort="country">Pays <span class="ipl-sort-arrow"></span></button></th>
         <th><button class="ipl-sort-btn" data-sort="hits">Visites <span class="ipl-sort-arrow"></span></button></th>
         <th><button class="ipl-sort-btn" data-sort="pages">Pages <span class="ipl-sort-arrow"></span></button></th>
@@ -137,6 +141,19 @@
         <td class="ipl-type-cell">…</td>
         <td class="ipl-model-cell ipl-model">…</td>
         <td class="ipl-isp-cell ipl-isp" data-geo-isp="<%= row.ip %>">…</td>
+        <%
+          var _ref = row.referer || '';
+          var _refLabel = '';
+          if (_ref) {
+            try {
+              var _u = new URL(_ref);
+              _refLabel = _u.hostname.replace(/^www\./, '');
+            } catch(e) { _refLabel = _ref.slice(0, 30); }
+          }
+          var _lang = (row.accept_language || '').split(',')[0].split(';')[0].trim().slice(0, 5);
+        %>
+        <td class="ipl-origin" title="<%= _ref %>"><%= _refLabel || '<span class="ipl-anon">direct</span>' %></td>
+        <td class="ipl-lang"><%= _lang || '' %></td>
         <td class="ipl-geo-cell" data-geo-ip="<%= row.ip %>">
           <div class="ipl-geo"><span style="color:rgba(255,255,255,.15);font-size:.65rem">…</span></div>
         </td>

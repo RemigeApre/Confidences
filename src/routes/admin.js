@@ -1450,8 +1450,13 @@ function buildAdminRouter(config) {
     if (!geo) return res.json({ unknown: true });
     res.json({
       countryCode: (geo.country || '').toLowerCase(),
+      countryCodeUpper: geo.country || '',
       region: geo.region || '',
       city: geo.city || '',
+      timezone: geo.timezone || '',
+      lat: geo.ll ? geo.ll[0] : null,
+      lon: geo.ll ? geo.ll[1] : null,
+      range: geo.range ? geo.range.join(' – ') : '',
     });
   });
 

@@ -282,7 +282,15 @@ app.use((req, res, next) => {
       || isScanPath(p);
     if (!skip) {
       const ip = (req.ip || '').replace(/^::ffff:/, '');
-      recordIpLog(ip, p, req.headers['user-agent'] || '', req.user ? req.user.id : null);
+      recordIpLog(
+        ip, p,
+        req.headers['user-agent'] || '',
+        req.user ? req.user.id : null,
+        req.headers['referer'] || req.headers['origin'] || '',
+        req.headers['accept-language'] || '',
+        req.headers['sec-ch-ua'] || '',
+        req.headers['sec-ch-ua-platform'] || ''
+      );
     }
   }
   next();
