@@ -179,11 +179,16 @@ app.get("/codex-sw.js", (req, res) => {
 
 app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", immutable: true }));
 
-// Le contenu est personnel : jamais d'indexation, meme sur les pages
-// publiques (wiki texte). Complete la balise <meta name="robots"> et
-// public/robots.txt (ceinture et bretelles).
+// Le contenu est personnel : jamais d'indexation pour les moteurs de recherche.
+// Exception : les pages /wiki sont accessibles aux crawlers IA (GPTBot, ClaudeBot…)
+// qui respectent robots.txt — on leur envoie noindex,follow pour qu'ils puissent
+// explorer les liens internes sans que Google n'indexe le contenu.
 app.use((req, res, next) => {
-  res.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  if (req.path.startsWith("/wiki") || req.path === "/sitemap.xml" || req.path === "/llms.txt") {
+    res.set("X-Robots-Tag", "noindex, follow");
+  } else {
+    res.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  }
   next();
 });
 
@@ -304,6 +309,7 @@ const _AUTH_PUBLIC = [
   /^\/$/,
   /^\/api\/search$/,
   /^\/api\/tags\/results$/,
+  /^\/sitemap\.xml$/,
 ];
 app.use((req, res, next) => {
   if (req.user) return next();
@@ -393,9 +399,11 @@ app.use((req, res, next) => {
 // Expose le chemin courant pour que le lien "Se connecter" dans la nav
 // puisse y revenir après connexion (paramètre ?next=).
 // Expose aussi les catégories wiki pour le menu déroulant desktop.
+// siteUrl : URL absolue du site, utilisée par les JSON-LD des pages wiki.
 app.use((req, res, next) => {
   res.locals.currentPath = req.originalUrl;
   res.locals.wikiCategories = buildWikiRouter.CATEGORIES || [];
+  res.locals.siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
   next();
 });
 
@@ -1047,6 +1055,35 @@ app.use("/parodies", buildParodiesRouter(config));
 app.use("/lootbox", buildLootboxRouter(config));
 app.use("/jeu", buildJeuRouter(config));
 app.use("/arcade", buildArcadeRouter(config));
+
+// ── Sitemap XML dynamique (pages Codex publiques) ────────────────────────────
+// Accessible sans authentification (voir _AUTH_PUBLIC). Ne liste que les
+// pages wiki dont le texte est public. Mis en cache 1h côté client/proxy.
+app.get("/sitemap.xml", (req, res) => {
+  const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+  try {
+    const pages = listWikiPages();
+    const urls = pages.map((p) => {
+      const lastmod = p.updatedAt ? p.updatedAt.slice(0, 10) : (p.createdAt ? p.createdAt.slice(0, 10) : "");
+      return (
+        "  <url>\n" +
+        `    <loc>${siteUrl}/wiki/${p.id}</loc>\n` +
+        (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : "") +
+        "    <changefreq>monthly</changefreq>\n" +
+        "  </url>"
+      );
+    }).join("\n");
+    const xml =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+      urls + "\n</urlset>";
+    res.set("Content-Type", "application/xml; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=3600");
+    res.send(xml);
+  } catch (e) {
+    res.status(500).end();
+  }
+});
 
 if (usingHttps) {
   https

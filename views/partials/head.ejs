@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="robots" content="<%= locals.allowAiIndex ? 'noindex, follow' : 'noindex, nofollow, noarchive' %>" />
   <meta name="color-scheme" content="dark" />
+  <% if (locals.metaDescription) { %><meta name="description" content="<%= metaDescription %>" /><% } %>
   <title><%= typeof title !== "undefined" ? title : "Quiz" %></title>
   <script nonce="<%= nonce %>">
     // Mode discret (masquer les images, voir bouton dans le header) : appliqué

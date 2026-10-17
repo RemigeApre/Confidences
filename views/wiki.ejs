@@ -80,8 +80,9 @@
             }).filter(Boolean);
           %>
           <%
-            var _activeSubs = lockedCategory.key === 'objets' ? objetsSubs
+            var _activeSubs = lockedCategory.key === 'objets'   ? objetsSubs
               : lockedCategory.key === 'pratique' ? pratiquesSubs
+              : lockedCategory.key === 'tenues'   ? tenuesSubs
               : null;
           %>
           <% if (_activeSubs && _activeSubs.length) { %>
@@ -273,7 +274,8 @@
   <script id="wiki-subcats-data" type="application/json"><%- JSON.stringify({
     pratique:  (pratiquesSubs  || []).map(function(s){ return { key: s.key, label: s.label }; }),
     objets:    (objetsSubs     || []).map(function(s){ return { key: s.key, label: s.label }; }),
-    fantasmes: (fantasmesSubs  || []).map(function(s){ return { key: s.key, label: s.label }; })
+    fantasmes: (fantasmesSubs  || []).map(function(s){ return { key: s.key, label: s.label }; }),
+    tenues:    (tenuesSubs     || []).map(function(s){ return { key: s.key, label: s.label }; })
   }) %></script>
 
   <% if (currentUser && currentUser.isAdmin && lockedCategory) { %>

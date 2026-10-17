@@ -75,6 +75,10 @@ const PRATIQUES_SUBCATS = [
   { key: "sperme",       label: "Sperme" },
   { key: "autre",        label: "Autre" },
 ];
+const TENUES_SUBCATS = [
+  { key: "accessoire", label: "Accessoire" },
+  { key: "autre",      label: "Autre" },
+];
 const OBJETS_SUBCATS = [
   { key: "substance", label: "Substance" },
   { key: "gode",      label: "Gode" },
@@ -364,6 +368,10 @@ function parseMeta(category, body) {
     const validSubs = OBJETS_SUBCATS.map((s) => s.key);
     const sub = body.meta_sous_cat;
     specific = { sous_cat: validSubs.includes(sub) ? sub : "" };
+  } else if (category === "tenues") {
+    const validSubs = TENUES_SUBCATS.map((s) => s.key);
+    const sub = body.meta_sous_cat;
+    specific = { sous_cat: validSubs.includes(sub) ? sub : "" };
   }
 
   return { ...base, ...specific };
@@ -515,7 +523,7 @@ function buildWikiRouter(config) {
   const router = express.Router();
   const ALL_QUESTIONS = buildQuestionIndex(config);
 
-  const CTX = { categories: CATEGORIES, fantasmesSubs: FANTASMES_SUBCATS, pratiquesSubs: PRATIQUES_SUBCATS, objetsSubs: OBJETS_SUBCATS };
+  const CTX = { categories: CATEGORIES, fantasmesSubs: FANTASMES_SUBCATS, pratiquesSubs: PRATIQUES_SUBCATS, objetsSubs: OBJETS_SUBCATS, tenuesSubs: TENUES_SUBCATS };
 
   function sortedPages() {
     return listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));

@@ -1,4 +1,11 @@
-<%- include('partials/head', { title: 'Codex : ' + page.title, preloadImage: preloadImage }) %>
+<%
+  var _wdRawDesc = ((page.content || '')
+    .replace(/^#+\s+/gm, '').replace(/\*\*?|__?/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\n+/g, ' ').trim()).slice(0, 160);
+  var _wdMetaDesc = _wdRawDesc || (page.title + ' — Codex Confidence');
+%>
+<%- include('partials/head', { title: 'Codex : ' + page.title, preloadImage: preloadImage, metaDescription: _wdMetaDesc, allowAiIndex: true }) %>
 <main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: 'Wiki', navBack: '/wiki/categorie/' + page.category }) %>
 
@@ -14,6 +21,8 @@
     var FSUBS_EN = { jeux_role: 'Role-play & behaviour', hardcore: 'Hardcore', bdsm: 'BDSM', classique: 'Classic', fantaisie: 'Fantasy' };
     var PRATIQUES_SOUS    = { bdsm: 'BDSM', posture: 'Posture', stimulations: 'Stimulations', sperme: 'Sperme', autre: 'Autre' };
     var PRATIQUES_SOUS_EN = { bdsm: 'BDSM', posture: 'Posture', stimulations: 'Stimulations', sperme: 'Cum', autre: 'Other' };
+    var TENUES_SOUS    = { accessoire: 'Accessoire', autre: 'Autre' };
+    var TENUES_SOUS_EN = { accessoire: 'Accessory', autre: 'Other' };
     var nbTotal   = pm.nb_total    || '';
     var nbFem     = pm.nb_feminin  || pm.nb_femmes || '';
     var nbMasc    = pm.nb_masculin || pm.nb_hommes || '';
@@ -144,7 +153,8 @@
           || (page.category === 'objets'    && pm.sous_cat  && OBJETS_SOUS[pm.sous_cat])
           || (page.category === 'lieux'     && pm.type_lieu && LIEU[pm.type_lieu])
           || (page.category === 'fantasmes' && pm.sous_cat  && FSUBS[pm.sous_cat])
-          || (page.category === 'pratique'  && pm.sous_cat  && PRATIQUES_SOUS[pm.sous_cat]);
+          || (page.category === 'pratique'  && pm.sous_cat  && PRATIQUES_SOUS[pm.sous_cat])
+          || (page.category === 'tenues'    && pm.sous_cat  && TENUES_SOUS[pm.sous_cat]);
       %>
 
       <%# ─ VOLET GAUCHE : métadonnées page (PC) ─ %>
@@ -339,6 +349,9 @@
           <dl class="wiki-left-meta">
             <% if (page.category === 'pratique' && pm.sous_cat && PRATIQUES_SOUS[pm.sous_cat]) { %>
               <div class="wiki-left-meta-row"><dt data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</dt><dd data-fr="<%= PRATIQUES_SOUS[pm.sous_cat] %>" data-en="<%= PRATIQUES_SOUS_EN[pm.sous_cat] || PRATIQUES_SOUS[pm.sous_cat] %>"><%= PRATIQUES_SOUS[pm.sous_cat] %></dd></div>
+            <% } %>
+            <% if (page.category === 'tenues' && pm.sous_cat && TENUES_SOUS[pm.sous_cat]) { %>
+              <div class="wiki-left-meta-row"><dt data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</dt><dd data-fr="<%= TENUES_SOUS[pm.sous_cat] %>" data-en="<%= TENUES_SOUS_EN[pm.sous_cat] || TENUES_SOUS[pm.sous_cat] %>"><%= TENUES_SOUS[pm.sous_cat] %></dd></div>
             <% } %>
             <% if (page.category === 'fantasmes' && pm.sous_cat && FSUBS[pm.sous_cat]) { %>
               <div class="wiki-left-meta-row"><dt data-fr="Sous-catégorie" data-en="Sub-category">Sous-cat&eacute;gorie</dt><dd data-fr="<%= FSUBS[pm.sous_cat] %>" data-en="<%= FSUBS_EN[pm.sous_cat] || FSUBS[pm.sous_cat] %>"><%= FSUBS[pm.sous_cat] %></dd></div>
@@ -1091,4 +1104,31 @@ window.WIKI_CONTENT = <%- JSON.stringify({
 })();
 </script>
 <%- include('partials/codex-offline') %>
+<%
+  var _wdCatEN = {
+    position:'Positions', lieux:'Places', partenaires:'Partners',
+    jeu_de_role:'Scenarios', tenues:'Outfits', objets:'Objects',
+    pratique:'Practices', fantasmes:'Fantasies'
+  };
+  var _wdJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTerm',
+    'name': page.title,
+    'description': _wdMetaDesc,
+    'inDefinedTermSet': {
+      '@type': 'DefinedTermSet',
+      'name': 'Codex Confidence',
+      'url': (locals.siteUrl || '') + '/wiki'
+    },
+    'url': (locals.siteUrl || '') + '/wiki/' + page.id
+  };
+  if (cat) {
+    _wdJsonLd.termCode = page.category;
+    _wdJsonLd.additionalType = 'https://schema.org/Thing';
+  }
+  if (page.tags && page.tags.length) {
+    _wdJsonLd.keywords = page.tags.join(', ');
+  }
+%>
+<script type="application/ld+json"><%- JSON.stringify(_wdJsonLd) %></script>
 <%- include('partials/foot') %>
