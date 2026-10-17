@@ -33,10 +33,9 @@
 .ipl-ip{font-family:monospace;font-size:.8rem;color:#7dd3fc;font-weight:600;white-space:nowrap}
 .ipl-ip a{color:inherit;text-decoration:none}
 .ipl-ip a:hover{text-decoration:underline}
-.ipl-geo{display:flex;align-items:center;gap:.3rem;white-space:nowrap}
-.ipl-flag{font-size:.95rem;line-height:1}
-.ipl-country{font-size:.72rem;color:rgba(255,255,255,.5)}
-.ipl-city{font-size:.65rem;color:rgba(255,255,255,.3)}
+.ipl-geo{display:flex;align-items:center;justify-content:center;white-space:nowrap;cursor:default}
+.ipl-flag{font-size:1.1rem;line-height:1}
+.ipl-dot-unknown{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;cursor:default}
 .ipl-hits{font-weight:700;color:#e2e8f0}
 .ipl-paths{font-size:.7rem;color:rgba(255,255,255,.35)}
 .ipl-user-badge{font-size:.66rem;padding:.1rem .38rem;border-radius:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.2);color:#c4b5fd;white-space:nowrap}
@@ -89,6 +88,12 @@
       <button class="ipl-ctrl-btn" data-filter="scraper">Scraper</button>
       <button class="ipl-ctrl-btn" data-filter="strange">Étrange</button>
     </div>
+    <div class="ipl-ctrl-group" id="ipl-country-group" style="display:none">
+      <label>Pays :</label>
+      <select id="ipl-country-select" class="ipl-ctrl-btn" style="padding:.2rem .4rem">
+        <option value="">Tous</option>
+      </select>
+    </div>
   </div>
 
   <% if (!logs.length) { %>
@@ -128,14 +133,8 @@
         <td class="ipl-type-cell">…</td>
         <td class="ipl-model-cell ipl-model">…</td>
         <td class="ipl-isp-cell ipl-isp" data-geo-isp="<%= row.ip %>">…</td>
-        <td>
-          <div class="ipl-geo">
-            <span class="ipl-flag" data-geo-flag="<%= row.ip %>">…</span>
-            <div>
-              <div class="ipl-country" data-geo-country="<%= row.ip %>">…</div>
-              <div class="ipl-city" data-geo-city="<%= row.ip %>"></div>
-            </div>
-          </div>
+        <td class="ipl-geo-cell" data-geo-ip="<%= row.ip %>">
+          <div class="ipl-geo"><span style="color:rgba(255,255,255,.15);font-size:.65rem">…</span></div>
         </td>
         <td class="ipl-hits"><%= row.hits %></td>
         <td class="ipl-paths"><%= row.path_count %> page<%= row.path_count !== 1 ? 's' : '' %></td>
@@ -382,11 +381,27 @@
 
   // ── 6. Géolocalisation ───────────────────────────────────────────────────
 
-  function countryCodeToFlag(code) {
+  var _dispNames = null;
+  try { _dispNames = new Intl.DisplayNames(['fr'], { type: 'region' }); } catch(_) {}
+
+  function codeToFlag(code) {
     if (!code || code.length !== 2) return '';
     var c = code.toUpperCase();
     return String.fromCodePoint(c.charCodeAt(0) + 127397) + String.fromCodePoint(c.charCodeAt(1) + 127397);
   }
+
+  function countryName(code) {
+    if (!code) return '';
+    try { return _dispNames ? _dispNames.of(code.toUpperCase()) : code.toUpperCase(); } catch(_) { return code.toUpperCase(); }
+  }
+
+  // Index ip → cellule geo pour mise à jour rapide
+  var geoCells = {};
+  document.querySelectorAll('.ipl-geo-cell').forEach(function(cell) {
+    geoCells[cell.dataset.geoIp] = cell;
+  });
+
+  var countriesSet = new Set();
 
   var done = new Set();
   function loadGeo(ip) {
@@ -395,15 +410,99 @@
     fetch('/ponhgup/ip-geo?ip=' + encodeURIComponent(ip))
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        var flag = countryCodeToFlag(d.countryCode || '');
-        document.querySelectorAll('[data-geo-flag="'    + CSS.escape(ip) + '"]').forEach(function(el) { el.textContent = flag || '🌍'; });
-        document.querySelectorAll('[data-geo-country="' + CSS.escape(ip) + '"]').forEach(function(el) { el.textContent = d.country || '?'; });
-        document.querySelectorAll('[data-geo-city="'    + CSS.escape(ip) + '"]').forEach(function(el) { el.textContent = d.city || ''; });
+        var cell = geoCells[ip];
+        var row  = cell ? cell.closest('tr') : null;
+        if (!cell) return;
+
+        var geo = cell.querySelector('.ipl-geo');
+        geo.innerHTML = '';
+
+        if (d.unknown) {
+          var dot = document.createElement('span');
+          dot.className = 'ipl-dot-unknown';
+          dot.title = 'Inconnu';
+          geo.appendChild(dot);
+          if (row) row.dataset.country = '';
+          return;
+        }
+
+        var code  = (d.countryCode || '').toUpperCase();
+        var flag  = codeToFlag(code);
+        var name  = countryName(code);
+        var parts = [name, d.region, d.city].filter(Boolean);
+        var tip   = parts.join(' · ') || code;
+
+        var span = document.createElement('span');
+        span.title = tip || 'Inconnu';
+        if (flag) {
+          span.className = 'ipl-flag';
+          span.textContent = flag;
+        } else {
+          span.className = 'ipl-dot-unknown';
+        }
+        geo.appendChild(span);
+
+        if (row) {
+          row.dataset.country = code;
+          if (code) {
+            countriesSet.add(code + '|' + name);
+            rebuildCountrySelect();
+          }
+        }
       })
       .catch(function() {
-        document.querySelectorAll('[data-geo-flag="'    + CSS.escape(ip) + '"]').forEach(function(el) { el.textContent = '🌍'; });
-        document.querySelectorAll('[data-geo-country="' + CSS.escape(ip) + '"]').forEach(function(el) { el.textContent = '?'; });
+        var cell = geoCells[ip];
+        if (cell) cell.querySelector('.ipl-geo').innerHTML = '<span class="ipl-dot-unknown" title="Inconnu"></span>';
       });
+  }
+
+  // Filtre pays
+  var countrySelect = document.getElementById('ipl-country-select');
+  var countryGroup  = document.getElementById('ipl-country-group');
+  var currentCountry = '';
+
+  function rebuildCountrySelect() {
+    if (!countrySelect) return;
+    var current = countrySelect.value;
+    var sorted  = Array.from(countriesSet).sort(function(a,b){ return a.split('|')[1].localeCompare(b.split('|')[1],'fr'); });
+    while (countrySelect.firstChild) countrySelect.removeChild(countrySelect.firstChild);
+    var allOpt = document.createElement('option');
+    allOpt.value = '';
+    allOpt.textContent = 'Tous';
+    countrySelect.appendChild(allOpt);
+    sorted.forEach(function(entry) {
+      var parts = entry.split('|');
+      var opt   = document.createElement('option');
+      opt.value = parts[0];
+      opt.textContent = codeToFlag(parts[0]) + ' ' + parts[1];
+      if (parts[0] === current) opt.selected = true;
+      countrySelect.appendChild(opt);
+    });
+    if (countryGroup && sorted.length > 1) countryGroup.style.display = '';
+  }
+
+  function applyCountryFilter() {
+    rows.forEach(function(r) {
+      var typeMatch    = currentFilter === 'all' || r.dataset.type === currentFilter;
+      var countryMatch = !currentCountry || r.dataset.country === currentCountry;
+      r.classList.toggle('ipl-row--hidden', !(typeMatch && countryMatch));
+    });
+    var visible = rows.filter(function(r) { return !r.classList.contains('ipl-row--hidden'); }).length;
+    var counter = document.getElementById('ipl-count');
+    if (counter) counter.textContent = visible;
+  }
+
+  if (countrySelect) {
+    countrySelect.addEventListener('change', function() {
+      currentCountry = countrySelect.value;
+      applyCountryFilter();
+    });
+  }
+
+  // Remplacer applyFilter pour aussi tenir compte du pays
+  function applyFilter(filter) {
+    currentFilter = filter;
+    applyCountryFilter();
   }
 
   var idx = 0;

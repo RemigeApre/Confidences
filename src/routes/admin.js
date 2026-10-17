@@ -1447,12 +1447,11 @@ function buildAdminRouter(config) {
     }
     const cleanIp = ip.replace(/^::ffff:/, '');
     const geo = geoip.lookup(cleanIp);
-    if (!geo) return res.json({ country: '?', countryCode: '', city: '', isp: '' });
+    if (!geo) return res.json({ unknown: true });
     res.json({
-      country: geo.country,
       countryCode: (geo.country || '').toLowerCase(),
+      region: geo.region || '',
       city: geo.city || '',
-      isp: ''
     });
   });
 
