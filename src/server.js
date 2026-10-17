@@ -251,24 +251,16 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      // Ne jamais figer le flag "secure" au démarrage : si les fichiers cert
-      // existent mais que Node sert finalement en HTTP (redémarrage PM2 après
-      // erreur TLS, changement de config, etc.), le cookie secure:true n'est
-      // jamais envoyé par le navigateur HTTP → boucle de redirection infinie.
-      // On laisse false ici et on l'ajuste par requête ci-dessous via req.secure.
-      secure: false,
+      // Statique : en prod le proxy (Nginx PM) termine toujours le TLS,
+      // donc secure:true quand TRUST_PROXY=1, false sinon.
+      // NE PAS muter ce flag par requête : une valeur oscillante entre true/false
+      // (proxy qui n'envoie pas toujours X-Forwarded-Proto) fait disparaître le
+      // cookie côté navigateur → boucle de redirection infinie sur mobile.
+      secure: process.env.TRUST_PROXY === "1",
       maxAge: 1000 * 60 * 60 * 24 * 90,
     },
   })
 );
-
-// Ajustement dynamique du flag "secure" : true si TLS direct OU si le proxy
-// a transmis X-Forwarded-Proto: https (Nginx Proxy Manager, etc.).
-// Avec trust proxy actif, req.secure tient déjà compte de X-Forwarded-Proto.
-app.use((req, res, next) => {
-  if (req.session) req.session.cookie.secure = req.secure;
-  next();
-});
 
 app.use(attachUser);
 
@@ -319,7 +311,7 @@ app.use((req, res, next) => {
 // Tout le reste → redirect vers login pour les humains (GET),
 //                 403 pour les appels API/POST sans session.
 const _AUTH_PUBLIC = [
-  /^\/admin\/(login|logout)(\/.*)?$/,
+  /^\/ponhgup\/(login|logout|85zapnte)(\/.*)?$/,
   /^\/wiki(\/.*)?$/,
   /^\/quizz(\/.*)?$/,
   /^\/$/,
