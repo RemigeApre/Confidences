@@ -184,7 +184,7 @@ app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", imm
 // qui respectent robots.txt — on leur envoie noindex,follow pour qu'ils puissent
 // explorer les liens internes sans que Google n'indexe le contenu.
 app.use((req, res, next) => {
-  if (req.path.startsWith("/wiki") || req.path === "/sitemap.xml" || req.path === "/llms.txt") {
+  if (req.path.startsWith("/wiki") || req.path === "/sitemap.xml" || req.path === "/llms.txt" || req.path === "/llms-full.txt") {
     res.set("X-Robots-Tag", "noindex, follow");
   } else {
     res.set("X-Robots-Tag", "noindex, nofollow, noarchive");
@@ -310,6 +310,7 @@ const _AUTH_PUBLIC = [
   /^\/api\/search$/,
   /^\/api\/tags\/results$/,
   /^\/sitemap\.xml$/,
+  /^\/llms-full\.txt$/,
 ];
 app.use((req, res, next) => {
   if (req.user) return next();
@@ -1057,29 +1058,107 @@ app.use("/jeu", buildJeuRouter(config));
 app.use("/arcade", buildArcadeRouter(config));
 
 // ── Sitemap XML dynamique (pages Codex publiques) ────────────────────────────
-// Accessible sans authentification (voir _AUTH_PUBLIC). Ne liste que les
-// pages wiki dont le texte est public. Mis en cache 1h côté client/proxy.
+// Accessible sans authentification (voir _AUTH_PUBLIC). Liste les articles
+// individuels ET les pages de catégories pour faciliter la découverte par
+// les crawlers IA. Mis en cache 1h côté client/proxy.
 app.get("/sitemap.xml", (req, res) => {
   const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
   try {
     const pages = listWikiPages();
-    const urls = pages.map((p) => {
+    const WIKI_CATS = buildWikiRouter.CATEGORIES || [];
+
+    // Pages de catégories (1 URL par catégorie)
+    const catUrls = WIKI_CATS.map((c) =>
+      "  <url>\n" +
+      `    <loc>${siteUrl}/wiki/categorie/${c.key}</loc>\n` +
+      "    <changefreq>weekly</changefreq>\n" +
+      "    <priority>0.8</priority>\n" +
+      "  </url>"
+    );
+
+    // Articles individuels
+    const pageUrls = pages.map((p) => {
       const lastmod = p.updatedAt ? p.updatedAt.slice(0, 10) : (p.createdAt ? p.createdAt.slice(0, 10) : "");
       return (
         "  <url>\n" +
         `    <loc>${siteUrl}/wiki/${p.id}</loc>\n` +
         (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : "") +
         "    <changefreq>monthly</changefreq>\n" +
+        "    <priority>0.6</priority>\n" +
         "  </url>"
       );
-    }).join("\n");
+    });
+
+    const allUrls = [
+      // Index du Codex
+      `  <url>\n    <loc>${siteUrl}/wiki</loc>\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>`,
+      ...catUrls,
+      ...pageUrls,
+    ].join("\n");
+
     const xml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-      urls + "\n</urlset>";
+      allUrls + "\n</urlset>";
     res.set("Content-Type", "application/xml; charset=utf-8");
     res.set("Cache-Control", "public, max-age=3600");
     res.send(xml);
+  } catch (e) {
+    res.status(500).end();
+  }
+});
+
+// ── llms-full.txt — contenu complet du Codex en markdown ─────────────────────
+// Version longue de llms.txt : chaque article du Codex en markdown brut.
+// Destinée aux modèles de langage capables d'ingérer de grands contextes.
+// Accessible sans authentification (voir _AUTH_PUBLIC).
+const _LLMS_CAT_EN = {
+  position: "Positions", lieux: "Places", partenaires: "Partners",
+  jeu_de_role: "Scenarios", tenues: "Outfits", objets: "Objects",
+  pratique: "Practices", fantasmes: "Fantasies", biologie: "Biology",
+};
+app.get("/llms-full.txt", (req, res) => {
+  const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+  try {
+    const pages = listWikiPages();
+    const WIKI_CATS = buildWikiRouter.CATEGORIES || [];
+    const catMap = {};
+    WIKI_CATS.forEach((c) => { catMap[c.key] = c.label; });
+
+    const header = [
+      "# Confidence — Codex (full content / contenu complet)",
+      "",
+      `> Index: ${siteUrl}/llms.txt`,
+      `> Date: ${new Date().toISOString().slice(0, 10)}`,
+      `> Articles: ${pages.length}`,
+      "",
+      "---",
+      "",
+    ].join("\n");
+
+    const body = pages.map((p) => {
+      const catFr = catMap[p.category] || p.category;
+      const catEn = _LLMS_CAT_EN[p.category] || p.category;
+      const tagLine = p.tags.length ? `Tags: ${p.tags.join(", ")}` : "";
+      return [
+        `## ${p.title}`,
+        "",
+        `- URL: ${siteUrl}/wiki/${p.id}`,
+        `- Markdown: ${siteUrl}/wiki/${p.id}.md`,
+        `- Catégorie / Category: ${catFr} / ${catEn}`,
+        tagLine || null,
+        p.updatedAt ? `- Mise à jour / Updated: ${p.updatedAt.slice(0, 10)}` : null,
+        "",
+        p.content || "",
+        "",
+        "---",
+        "",
+      ].filter((l) => l !== null).join("\n");
+    }).join("\n");
+
+    res.type("text/plain; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=3600");
+    res.send(header + body);
   } catch (e) {
     res.status(500).end();
   }

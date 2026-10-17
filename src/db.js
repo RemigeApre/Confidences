@@ -549,6 +549,9 @@ db.exec(`CREATE INDEX IF NOT EXISTS idx_connection_logs_user ON connection_logs 
 // ── Cartes Codex — items collectibles liés aux pages wiki ──────────────────
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN card_summary TEXT"); } catch(_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN card_rarity TEXT NOT NULL DEFAULT 'rare'"); } catch(_) {}
+// Sources citables (liens, études, références) — pas encore exposé en UI,
+// prévu pour future interface admin. Format JSON : [{url, label}]
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sources TEXT NOT NULL DEFAULT '[]'"); } catch(_) {}
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_cards (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

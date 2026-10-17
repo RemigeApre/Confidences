@@ -811,6 +811,14 @@
           </div>
         <% } %>
 
+        <%# Bouton "Copier pour une IA" — discret, disponible à tous ─ %>
+        <button type="button" class="wiki-copy-ai-btn" id="wiki-copy-ai-btn"
+                data-fr="Copier pour une IA" data-en="Copy for AI"
+                title="Copier un résumé textuel de cette fiche pour le coller dans une IA">
+          <span class="wiki-copy-ai-icon">&#128203;</span>
+          <span class="wiki-copy-ai-label" data-fr="Copier pour une IA" data-en="Copy for AI">Copier pour une IA</span>
+        </button>
+
         </div><%# /wiki-right-body %>
 
       </aside><%# /wiki-detail-right %>
@@ -846,10 +854,11 @@
       </div>
     <% } %>
 
-    <%# Actions mobile (fav + edit) — masquées sur PC où elles sont dans la sidebar droite ─ %>
+    <%# Actions mobile (fav + edit + copy AI) — masquées sur PC où elles sont dans la sidebar droite ─ %>
     <% if (currentUser) { %>
       <div class="wiki-detail-actions wiki-detail-actions-mobile">
         <button type="button" class="wiki-edit-icon-btn wiki-fav-icon-btn<%= isFavorite ? ' active' : '' %>" id="wiki-fav-btn-mobile" data-item-id="<%= page.id %>" title="Favori" aria-label="Favori">&#128278;</button>
+        <button type="button" class="wiki-edit-icon-btn wiki-copy-ai-btn-mobile" id="wiki-copy-ai-btn-mobile" title="Copier pour une IA">&#128203;</button>
         <% if (currentUser.isAdmin) { %>
           <a href="/wiki/<%= page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
         <% } %>
@@ -1043,6 +1052,80 @@ window.WIKI_CONTENT = <%- JSON.stringify({
 }) %>;
 </script>
 <script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>">
+(function () {
+  var PAGE_ID   = <%= page.id %>;
+  var PAGE_TITLE = <%- JSON.stringify(page.title) %>;
+  var PAGE_CAT  = <%- JSON.stringify((cat && cat.label) || page.category) %>;
+  var PAGE_TAGS = <%- JSON.stringify(page.tags || []) %>;
+  var PAGE_URL  = window.location.origin + '/wiki/' + PAGE_ID;
+  var PAGE_MD_URL = window.location.origin + '/wiki/' + PAGE_ID + '.md';
+
+  function buildCopyText() {
+    var wc = window.WIKI_CONTENT || {};
+    var lang = (typeof localStorage !== 'undefined' && localStorage.getItem('slang') === 'en') ? 'en' : 'fr';
+    var content = (wc.content && (wc.content[lang] || wc.content.fr)) || '';
+    // Texte brut sans markdown
+    var plain = content
+      .replace(/^#+\s+/gm, '').replace(/\*\*?|__?/g, '')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/\n{3,}/g, '\n\n').trim()
+      .slice(0, 1500);
+
+    var lines = [
+      'Fiche Codex Confidence — ' + PAGE_TITLE,
+      'Catégorie : ' + PAGE_CAT,
+      PAGE_TAGS.length ? 'Tags : ' + PAGE_TAGS.join(', ') : null,
+      '',
+      plain,
+      '',
+      'Source : ' + PAGE_URL,
+      'Version Markdown : ' + PAGE_MD_URL,
+    ].filter(function(l){ return l !== null; });
+
+    return lines.join('\n');
+  }
+
+  function flashBtn(btn, labelFr, labelEn) {
+    var lbl = btn.querySelector('.wiki-copy-ai-label');
+    var origFr = 'Copier pour une IA', origEn = 'Copy for AI';
+    btn.disabled = true;
+    if (lbl) { lbl.dataset.fr = labelFr; lbl.dataset.en = labelEn; lbl.textContent = labelFr; }
+    else { btn.title = labelFr; }
+    setTimeout(function () {
+      btn.disabled = false;
+      if (lbl) { lbl.dataset.fr = origFr; lbl.dataset.en = origEn; lbl.textContent = origFr; }
+      else { btn.title = 'Copier pour une IA'; }
+    }, 2000);
+  }
+
+  function doCopy(btn) {
+    var text = buildCopyText();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        flashBtn(btn, 'Copié !', 'Copied!');
+      }).catch(function () {
+        flashBtn(btn, 'Erreur', 'Error');
+      });
+    } else {
+      // Fallback ancien navigateur
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;left:-9999px';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        flashBtn(btn, 'Copié !', 'Copied!');
+      } catch(_) { flashBtn(btn, 'Erreur', 'Error'); }
+    }
+  }
+
+  var btn = document.getElementById('wiki-copy-ai-btn');
+  if (btn) btn.addEventListener('click', function () { doCopy(this); });
+  var btnM = document.getElementById('wiki-copy-ai-btn-mobile');
+  if (btnM) btnM.addEventListener('click', function () { doCopy(this); });
+})();
+</script>
 <script nonce="<%= nonce %>">
 (function() {
   function wikiRenderMd(text) {

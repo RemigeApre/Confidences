@@ -817,6 +817,45 @@ function buildWikiRouter(config) {
     res.render("wiki-form", { config, page: blankPage, pages, allTags: getAllTags(pages), returnTo, ...CTX });
   });
 
+  // ── Route markdown publique (crawlers IA, clients texte) ────────────────────
+  // Retourne le contenu complet de l'article en Markdown brut avec un
+  // frontmatter YAML. Aucune auth requise — le texte du Codex est public.
+  // Accessible via /wiki/:id.md (ex: /wiki/42.md).
+  const CAT_EN_MD = {
+    position: "Positions", lieux: "Places", partenaires: "Partners",
+    jeu_de_role: "Scenarios", tenues: "Outfits", objets: "Objects",
+    pratique: "Practices", fantasmes: "Fantasies", biologie: "Biology",
+  };
+  router.get("/:id.md", (req, res) => {
+    const id = Number(req.params.id);
+    const page = Number.isInteger(id) ? getWikiPage(id) : null;
+    if (!page) return res.status(404).type("text/plain").send("Not found");
+    const cat = CATEGORIES.find((c) => c.key === page.category);
+    const tagLine = page.tags.length
+      ? `tags: [${page.tags.map((t) => `"${t}"`).join(", ")}]`
+      : "tags: []";
+    const md = [
+      "---",
+      `id: ${page.id}`,
+      `title: "${page.title.replace(/"/g, '\\"')}"`,
+      `category: ${page.category}`,
+      cat ? `category_fr: "${cat.label}"` : null,
+      `category_en: "${CAT_EN_MD[page.category] || page.category}"`,
+      tagLine,
+      page.updatedAt ? `updated: "${page.updatedAt.slice(0, 10)}"` : null,
+      `url: /wiki/${page.id}`,
+      "---",
+      "",
+      `# ${page.title}`,
+      "",
+      page.content || "",
+    ].filter((l) => l !== null).join("\n");
+    res.type("text/markdown; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=3600");
+    res.set("X-Robots-Tag", "noindex, follow");
+    res.send(md);
+  });
+
   router.get("/:id", (req, res) => {
     const id = Number(req.params.id);
     const page = Number.isInteger(id) ? getWikiPage(id) : null;
