@@ -172,13 +172,13 @@ function buildAdminRouter(config) {
     return req.session.csrfToken;
   }
 
-  router.get("/login", (req, res) => {
+  router.get("/85zapnte", (req, res) => {
     if (req.user) return res.redirect(req.user.isAdmin ? "/ponhgup" : "/favoris");
     const csrfToken = ensureCsrf(req);
     res.render("admin-login", { error: null, next: safeNext(req.query.next) || "", csrfToken });
   });
 
-  router.post("/login", (req, res) => {
+  router.post("/85zapnte", (req, res) => {
     const next = safeNext(req.body.next);
 
     // ── CSRF ──────────────────────────────────────────────────────────────
