@@ -8,15 +8,6 @@
   <% } %>
   <span class="top-nav-page-title"<% if (locals.navTitleEn) { %> data-fr="<%= locals.navTitle %>" data-en="<%= locals.navTitleEn %>"<% } %>><%= locals.navTitle || config.title %></span>
   <div class="nav-mobile-utils">
-    <%# Bouton filtre — affiché via JS uniquement sur les pages avec sidebar filtre %>
-    <button type="button" class="nav-mobile-util-btn" id="mobile-filter-toggle-header" aria-label="Ouvrir les filtres" aria-expanded="false" aria-controls="mobile-filter-sidebar" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
-    </button>
-    <%# Bouton langue — toujours présent sur mobile %>
-    <button type="button" class="nav-mobile-util-btn mobile-lang-btn" id="mobile-lang-btn" title="Switch language" aria-label="Changer de langue">
-      <svg class="flag-fr" width="20" height="14" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="7" height="15" fill="#002395"/><rect x="7" width="8" height="15" fill="#fff"/><rect x="15" width="7" height="15" fill="#ED2939"/></svg>
-      <svg class="flag-en" width="20" height="14" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="22" height="15" fill="#012169"/><path d="M0,0 L22,15 M22,0 L0,15" stroke="#fff" stroke-width="3.2"/><rect x="9.5" width="3" height="15" fill="#fff"/><rect y="6" width="22" height="3" fill="#fff"/><rect x="10" width="2" height="15" fill="#C8102E"/><rect y="6.5" width="22" height="2" fill="#C8102E"/></svg>
-    </button>
     <% if (currentUser) { %>
       <button type="button" class="nav-mobile-util-btn nav-mobile-discreet-btn" id="nav-mobile-discreet-btn" aria-pressed="false" title="Masquer les images" aria-label="Masquer les images"><%- include('eye-icon') %></button>
     <% } %>
@@ -130,19 +121,71 @@
   </div>
 </div>
 
-<%# ─── Surcharges CSS mobile ──────────────────────────────────────────── %>
+<%# ─── Header mobile séparé : [filtre | titre | langue] ──────────────── %>
+<%# Complètement indépendant du .top-nav PC. Affiché uniquement sur mobile. %>
+<div class="mobile-topbar">
+  <%# Gauche : burger filtre (caché par défaut, activé via JS si la page a un sidebar) %>
+  <div class="mobile-topbar-side mobile-topbar-side--left">
+    <button type="button" class="mobile-topbar-btn" id="mobile-filter-toggle-header"
+            aria-label="Filtres" aria-expanded="false" aria-controls="mobile-filter-sidebar" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <%# Centre : titre de page %>
+  <span class="mobile-topbar-title"<% if (locals.navTitleEn) { %> data-fr="<%= locals.navTitle %>" data-en="<%= locals.navTitleEn %>"<% } %>><%= locals.navTitle || config.title %></span>
+  <%# Droite : drapeau langue %>
+  <div class="mobile-topbar-side mobile-topbar-side--right">
+    <button type="button" class="mobile-topbar-btn mobile-topbar-lang-btn" id="mobile-lang-btn"
+            title="Switch language" aria-label="Changer de langue">
+      <svg class="flag-fr" width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="7" height="15" fill="#002395"/><rect x="7" width="8" height="15" fill="#fff"/><rect x="15" width="7" height="15" fill="#ED2939"/>
+      </svg>
+      <svg class="flag-en" width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="22" height="15" fill="#012169"/>
+        <path d="M0,0 L22,15 M22,0 L0,15" stroke="#fff" stroke-width="3.2"/>
+        <rect x="9.5" width="3" height="15" fill="#fff"/><rect y="6" width="22" height="3" fill="#fff"/>
+        <rect x="10" width="2" height="15" fill="#C8102E"/><rect y="6.5" width="22" height="2" fill="#C8102E"/>
+      </svg>
+    </button>
+  </div>
+</div>
 <style>
-@media(max-width:640px){
-  /* Afficher le header sur mobile (style.css le cache par défaut) */
-  .top-nav { display: flex; }
-  /* Cacher la nav desktop dans ce même header */
-  .pc-nav { display: none; }
-  /* Le bouton Filtres standalone dans le contenu est remplacé par celui du header */
+/* ── Header mobile séparé — masqué sur desktop ────────────────── */
+.mobile-topbar { display: none; }
+@media(max-width:640px) {
+  .mobile-topbar {
+    display: flex; align-items: center;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    height: var(--topnav-height); padding: 0 .75rem;
+    background-color: #18181b;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAA8klEQVR42i3RQXFrQQxE0eNvl1daGIIgBIKgDIRAeBAMYSAEgiAYgiAEwl9kVqqSqm63uu2o6BAZGTvECpHR0ZGxIuOR2rJsrSxbKVxI6ZZRyoWxXMYotDHGo7TUWtkK+xC3Uf61S+pzYkljHUq77VhG20ZLS55JKo99tNi2NtIYS6I8UhqttEu5jDq8gb+PJzrEiowVE3UyyRC3inFZUlkuddB/Jrn3cx3ljy8vy+Xt1zK+vdx/ns5jpI/28vYx3r58ewzq2CxOyH0kNismxMSOjIw+Jjt2ZHRMPJZSFkZJg3W6Kek+z7fx8nOWTm1tbJf/dbhyfchyg7EAAAAASUVORK5CYII=);
+    background-repeat: repeat;
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-topbar-side {
+    width: 2.75rem; flex-shrink: 0; display: flex; align-items: center;
+  }
+  .mobile-topbar-side--right { justify-content: flex-end; }
+  .mobile-topbar-title {
+    flex: 1; text-align: center; font-weight: 600; font-size: 1rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 .25rem;
+    color: var(--fg);
+  }
+  .mobile-topbar-btn {
+    width: 2.4rem; height: 2.4rem; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: var(--card); color: var(--fg); cursor: pointer;
+  }
+  .mobile-topbar-btn svg { width: 1.1rem; height: 1.1rem; }
+  /* Cache le bouton filtre standalone dans le contenu (remplacé par celui du header) */
   .mobile-filter-toggle { display: none; }
 }
-/* Drapeau langue pour le bouton mobile (même logique que pc-lang-btn) */
-[data-lang=en] .mobile-lang-btn .flag-fr { display: none; }
-[data-lang=en] .mobile-lang-btn .flag-en { display: block; }
+/* Langue : affiche le bon drapeau selon data-lang */
+[data-lang=en] #mobile-lang-btn .flag-fr { display: none; }
+[data-lang=en] #mobile-lang-btn .flag-en { display: block; }
 </style>
 
 <%# ─── Barre de navigation mobile (bas d'écran, façon TikTok/Instagram) ──
