@@ -123,7 +123,7 @@
 
 <%# ─── Header mobile séparé : [filtre | titre | langue] ──────────────── %>
 <%# Complètement indépendant du .top-nav PC. Affiché uniquement sur mobile. %>
-<div class="mobile-topbar">
+<div class="mobile-topbar<% if (locals.navHideMobileTopbar) { %> mobile-topbar--hidden<% } %>">
   <%# Gauche : burger filtre (caché par défaut, activé via JS si la page a un sidebar)
                + bouton About optionnel (passé via navAbout: true) %>
   <div class="mobile-topbar-side mobile-topbar-side--left">

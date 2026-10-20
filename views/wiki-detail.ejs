@@ -10,7 +10,7 @@
      Raw Markdown version (no auth, YAML frontmatter): /wiki/<%= page.id %>.md
      Full Codex index: /api/wiki/index.json — Full Codex in Markdown: /llms-full.txt -->
 <main class="container wide">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Wiki', navBack: '/wiki/categorie/' + page.category }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: 'Wiki', navBack: '/wiki/categorie/' + page.category, navHideMobileTopbar: true }) %>
 
   <% var cat = categories.find(function (c) { return c.key === page.category; }); %>
   <%
@@ -112,6 +112,12 @@
     <div class="wiki-detail-banner">
       <a href="<%= backHref %>" class="wiki-detail-banner-back" title="<%= backLabel %>" aria-label="<%= backLabel %>">&#8592;</a>
       <h1 class="wiki-detail-banner-title" data-fr="<%= page.title %>" data-en="<%= (translationsEn && translationsEn.title) || page.title %>"><%= t(page.title, 'wiki', page.id, 'title') %></h1>
+      <%# Drapeau langue — affiché uniquement sur mobile via CSS %>
+      <button type="button" class="wiki-detail-banner-lang mobile-topbar-btn" id="mobile-lang-btn"
+              title="Switch language" aria-label="Changer de langue">
+        <svg class="flag-fr" width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="7" height="15" fill="#002395"/><rect x="7" width="8" height="15" fill="#fff"/><rect x="15" width="7" height="15" fill="#ED2939"/></svg>
+        <svg class="flag-en" width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="22" height="15" fill="#012169"/><path d="M0,0 L22,15 M22,0 L0,15" stroke="#fff" stroke-width="3.2"/><rect x="9.5" width="3" height="15" fill="#fff"/><rect y="6" width="22" height="3" fill="#fff"/><rect x="10" width="2" height="15" fill="#C8102E"/><rect y="6.5" width="22" height="2" fill="#C8102E"/></svg>
+      </button>
       <% if ((page.extraCategories && page.extraCategories.length) || (wdCanSeeOwned && page.owned)) { %>
         <div class="wiki-detail-banner-sub">
           <% if (wdCanSeeOwned && page.owned) { %><span data-fr="★ Possédé" data-en="★ Owned">&#9733; Poss&eacute;d&eacute;</span><% } %>
@@ -121,6 +127,36 @@
         </div>
       <% } %>
     </div>
+    <style>
+    @media(max-width:640px) {
+      /* Masquer le mobile-topbar générique sur cette page */
+      .mobile-topbar--hidden { display: none !important; }
+      /* Banner devient le header fixe coloré */
+      .wiki-detail-banner {
+        display: grid;
+        position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+        height: var(--topnav-height);
+        grid-template-columns: 2.5rem 1fr 2.5rem;
+        align-items: center; gap: .5rem;
+        padding: 0 .75rem;
+        margin: 0;
+        border-radius: 0;
+        border-top: none;
+        border-bottom: 2px solid color-mix(in srgb, var(--wiki-gold) 55%, transparent);
+      }
+      .wiki-detail-banner-title { font-size: 1rem; }
+      /* Drapeau dans le banner — visible seulement sur mobile */
+      .wiki-detail-banner-lang {
+        display: flex; align-items: center; justify-content: flex-end;
+        background: none; border: none; padding: 0; cursor: pointer; color: #fff;
+      }
+      /* Compenser le header fixe sur le contenu */
+      .wiki-detail { padding-top: calc(var(--topnav-height) + .5rem); }
+    }
+    @media(min-width:641px) {
+      .wiki-detail-banner-lang { display: none; }
+    }
+    </style>
 
     <%# ─ Bandeau "Explorer l'inconnu" (voir wiki.js) : uniquement quand on
         arrive ici via le bouton du volet filtre codex (?explore=1). ─ %>
