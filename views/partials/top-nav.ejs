@@ -124,7 +124,8 @@
 <%# ─── Header mobile séparé : [filtre | titre | langue] ──────────────── %>
 <%# Complètement indépendant du .top-nav PC. Affiché uniquement sur mobile. %>
 <div class="mobile-topbar">
-  <%# Gauche : burger filtre (caché par défaut, activé via JS si la page a un sidebar) %>
+  <%# Gauche : burger filtre (caché par défaut, activé via JS si la page a un sidebar)
+               + bouton About optionnel (passé via navAbout: true) %>
   <div class="mobile-topbar-side mobile-topbar-side--left">
     <button type="button" class="mobile-topbar-btn" id="mobile-filter-toggle-header"
             aria-label="Filtres" aria-expanded="false" aria-controls="mobile-filter-sidebar" hidden>
@@ -132,6 +133,14 @@
         <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
       </svg>
     </button>
+    <% if (locals.navAbout) { %>
+    <button type="button" class="mobile-topbar-btn" id="mobile-about-btn"
+            aria-label="À propos" aria-expanded="false" aria-controls="wiki-intro-details-mobile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+    </button>
+    <% } %>
   </div>
   <%# Centre : titre de page %>
   <span class="mobile-topbar-title"<% if (locals.navTitleEn) { %> data-fr="<%= locals.navTitle %>" data-en="<%= locals.navTitleEn %>"<% } %>><%= locals.navTitle || config.title %></span>

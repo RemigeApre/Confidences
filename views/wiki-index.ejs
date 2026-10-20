@@ -8,7 +8,7 @@
   };
 %>
 <main class="container wide wiki-locked" style="--ch-hue: 250">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Codex', navBack: '/' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: 'Codex', navBack: '/', navAbout: true }) %>
 
   <%- include('partials/mobile-filter-toggle') %>
 
@@ -102,7 +102,7 @@
   <%# Native : intro + catégories + strips (masqué si filtre actif) %>
   <div id="wiki-index-native">
 
-    <details class="wiki-intro-details">
+    <details class="wiki-intro-details" id="wiki-intro-details-mobile">
       <summary class="wiki-intro-summary" data-fr="! À propos !" data-en="! About !">! &Agrave; propos !</summary>
       <div class="wiki-index-intro">
         <p data-fr="Le codex de Confidence est un espace d'encyclopédie agrémenté par les administrateurs du site. Il vise à être exhaustif sur tout ce qui touche à la sexualité, des pratiques aux fantasmes en passant par les objets et les scénarios. Vous pouvez noter, mettre en favoris et explorer à votre rythme." data-en="The Confidence codex is an encyclopedia curated by the site administrators. It aims to be exhaustive on everything related to sexuality — from practices to fantasies, objects and scenarios. You can rate, bookmark and explore at your own pace.">Le codex de Confidence est un espace d&rsquo;encyclop&eacute;die agr&eacute;ment&eacute; par les administrateurs du site. Il vise &agrave; &ecirc;tre exhaustif sur tout ce qui touche &agrave; la sexualit&eacute;, des pratiques aux fantasmes en passant par les objets et les sc&eacute;narios. Vous pouvez noter, mettre en favoris et explorer &agrave; votre rythme.</p>
@@ -111,18 +111,22 @@
     </details>
 
     <%# ─ Grille des catégories ─ %>
-    <div class="wiki-index-cats">
-      <% categories.forEach(function (ch) { %>
-        <%
-          var chData = chapters.find(function(c) { return c.key === ch.key; });
-          var chCount = chData ? chData.count : 0;
-        %>
-        <a href="/wiki/categorie/<%= ch.key %>" class="wiki-index-cat-card" style="--ch-hue: <%= ch.hue %>">
-          <span class="wiki-index-cat-label" data-fr="<%= ch.label %>" data-en="<%= WI_CAT_EN[ch.key] || ch.label %>"><%= ch.label %></span>
-          <span class="wiki-index-cat-count"><%= chCount %></span>
-        </a>
-      <% }) %>
-    </div>
+    <%# Sur mobile : volet rétractable. Sur desktop : grille toujours visible. %>
+    <details class="wiki-cats-collapsible">
+      <summary class="wiki-cats-collapsible-summary" data-fr="Catégories" data-en="Categories">Cat&eacute;gories</summary>
+      <div class="wiki-index-cats">
+        <% categories.forEach(function (ch) { %>
+          <%
+            var chData = chapters.find(function(c) { return c.key === ch.key; });
+            var chCount = chData ? chData.count : 0;
+          %>
+          <a href="/wiki/categorie/<%= ch.key %>" class="wiki-index-cat-card" style="--ch-hue: <%= ch.hue %>">
+            <span class="wiki-index-cat-label" data-fr="<%= ch.label %>" data-en="<%= WI_CAT_EN[ch.key] || ch.label %>"><%= ch.label %></span>
+            <span class="wiki-index-cat-count"><%= chCount %></span>
+          </a>
+        <% }) %>
+      </div>
+    </details>
 
     <%# ─ Strips ─ %>
     <% if (recentAdded.length) { %>
@@ -219,4 +223,41 @@
 </main>
 <script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
 <%- include('partials/codex-offline') %>
+<style>
+/* ── Catégories : volet rétractable sur mobile, grille fixe sur desktop ── */
+.wiki-cats-collapsible > summary { display: none; } /* masqué sur desktop */
+.wiki-cats-collapsible { display: contents; }        /* transparent sur desktop */
+@media(max-width:640px) {
+  .wiki-cats-collapsible { display: block; margin-bottom: .75rem; }
+  .wiki-cats-collapsible > summary {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .6rem .9rem; border-radius: 10px;
+    background: var(--card); border: 1px solid var(--border);
+    font-size: .9rem; font-weight: 600; color: var(--fg);
+    cursor: pointer; list-style: none; user-select: none;
+  }
+  .wiki-cats-collapsible > summary::-webkit-details-marker { display: none; }
+  .wiki-cats-collapsible > summary::after {
+    content: "›"; font-size: 1.2rem; color: var(--muted);
+    transition: transform .2s; display: inline-block;
+  }
+  .wiki-cats-collapsible[open] > summary::after { transform: rotate(90deg); }
+  /* Bouton À propos (summary) masqué sur mobile — remplacé par le ? du header */
+  .wiki-intro-details > summary.wiki-intro-summary { display: none; }
+  /* Le contenu About reste accessible via le bouton header (open/close JS) */
+  .wiki-intro-details { margin-bottom: .5rem; }
+}
+</style>
+<script nonce="<%= nonce %>">
+(function() {
+  var aboutBtn = document.getElementById('mobile-about-btn');
+  var aboutDetails = document.getElementById('wiki-intro-details-mobile');
+  if (!aboutBtn || !aboutDetails) return;
+  aboutBtn.addEventListener('click', function() {
+    var open = aboutDetails.open;
+    aboutDetails.open = !open;
+    aboutBtn.setAttribute('aria-expanded', !open ? 'true' : 'false');
+  });
+})();
+</script>
 <%- include('partials/foot') %>
