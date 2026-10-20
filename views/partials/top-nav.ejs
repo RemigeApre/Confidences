@@ -8,6 +8,15 @@
   <% } %>
   <span class="top-nav-page-title"<% if (locals.navTitleEn) { %> data-fr="<%= locals.navTitle %>" data-en="<%= locals.navTitleEn %>"<% } %>><%= locals.navTitle || config.title %></span>
   <div class="nav-mobile-utils">
+    <%# Bouton filtre — affiché via JS uniquement sur les pages avec sidebar filtre %>
+    <button type="button" class="nav-mobile-util-btn" id="mobile-filter-toggle-header" aria-label="Ouvrir les filtres" aria-expanded="false" aria-controls="mobile-filter-sidebar" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+    </button>
+    <%# Bouton langue — toujours présent sur mobile %>
+    <button type="button" class="nav-mobile-util-btn mobile-lang-btn" id="mobile-lang-btn" title="Switch language" aria-label="Changer de langue">
+      <svg class="flag-fr" width="20" height="14" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="7" height="15" fill="#002395"/><rect x="7" width="8" height="15" fill="#fff"/><rect x="15" width="7" height="15" fill="#ED2939"/></svg>
+      <svg class="flag-en" width="20" height="14" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="22" height="15" fill="#012169"/><path d="M0,0 L22,15 M22,0 L0,15" stroke="#fff" stroke-width="3.2"/><rect x="9.5" width="3" height="15" fill="#fff"/><rect y="6" width="22" height="3" fill="#fff"/><rect x="10" width="2" height="15" fill="#C8102E"/><rect y="6.5" width="22" height="2" fill="#C8102E"/></svg>
+    </button>
     <% if (currentUser) { %>
       <button type="button" class="nav-mobile-util-btn nav-mobile-discreet-btn" id="nav-mobile-discreet-btn" aria-pressed="false" title="Masquer les images" aria-label="Masquer les images"><%- include('eye-icon') %></button>
     <% } %>
@@ -120,6 +129,21 @@
 
   </div>
 </div>
+
+<%# ─── Surcharges CSS mobile ──────────────────────────────────────────── %>
+<style>
+@media(max-width:640px){
+  /* Afficher le header sur mobile (style.css le cache par défaut) */
+  .top-nav { display: flex; }
+  /* Cacher la nav desktop dans ce même header */
+  .pc-nav { display: none; }
+  /* Le bouton Filtres standalone dans le contenu est remplacé par celui du header */
+  .mobile-filter-toggle { display: none; }
+}
+/* Drapeau langue pour le bouton mobile (même logique que pc-lang-btn) */
+[data-lang=en] .mobile-lang-btn .flag-fr { display: none; }
+[data-lang=en] .mobile-lang-btn .flag-en { display: block; }
+</style>
 
 <%# ─── Barre de navigation mobile (bas d'écran, façon TikTok/Instagram) ──
     5 icônes : Codex | Images | Profil (centre) | Quizz | Menu burger

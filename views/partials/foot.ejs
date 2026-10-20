@@ -18,17 +18,31 @@
 
   applyLang(getLang());
 
+  function toggleLang() {
+    var next = getLang() === 'en' ? 'fr' : 'en';
+    localStorage.setItem('slang', next);
+    applyLang(next);
+    fetch('/set-lang', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: 'lang=' + next
+    });
+  }
+
   var btn = document.getElementById('pc-lang-btn');
-  if (btn) {
-    btn.addEventListener('click', function() {
-      var next = getLang() === 'en' ? 'fr' : 'en';
-      localStorage.setItem('slang', next);
-      applyLang(next);
-      fetch('/set-lang', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'lang=' + next
-      });
+  if (btn) btn.addEventListener('click', toggleLang);
+
+  var mLangBtn = document.getElementById('mobile-lang-btn');
+  if (mLangBtn) mLangBtn.addEventListener('click', toggleLang);
+
+  // Bouton filtre dans le header mobile : actif uniquement si la page a un sidebar filtre
+  var mFilterHeader = document.getElementById('mobile-filter-toggle-header');
+  if (mFilterHeader && document.getElementById('mobile-filter-sidebar')) {
+    mFilterHeader.removeAttribute('hidden');
+    // Délègue au bouton filtre original (déjà câblé dans nav.js)
+    var origToggle = document.getElementById('mobile-filter-toggle');
+    mFilterHeader.addEventListener('click', function() {
+      if (origToggle) origToggle.click();
     });
   }
 })();
