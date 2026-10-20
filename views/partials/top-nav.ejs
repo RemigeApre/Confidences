@@ -158,34 +158,35 @@
   .mobile-topbar {
     display: flex; align-items: center;
     position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-    height: var(--topnav-height); padding: 0 .75rem;
+    height: var(--topnav-height); padding: 0 1rem;
     background-color: #18181b;
     background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAA8klEQVR42i3RQXFrQQxE0eNvl1daGIIgBIKgDIRAeBAMYSAEgiAYgiAEwl9kVqqSqm63uu2o6BAZGTvECpHR0ZGxIuOR2rJsrSxbKVxI6ZZRyoWxXMYotDHGo7TUWtkK+xC3Uf61S+pzYkljHUq77VhG20ZLS55JKo99tNi2NtIYS6I8UhqttEu5jDq8gb+PJzrEiowVE3UyyRC3inFZUlkuddB/Jrn3cx3ljy8vy+Xt1zK+vdx/ns5jpI/28vYx3r58ewzq2CxOyH0kNismxMSOjIw+Jjt2ZHRMPJZSFkZJg3W6Kek+z7fx8nOWTm1tbJf/dbhyfchyg7EAAAAASUVORK5CYII=);
     background-repeat: repeat;
     border-bottom: 1px solid var(--border);
   }
   .mobile-topbar-side {
-    width: 2.75rem; flex-shrink: 0; display: flex; align-items: center;
+    min-width: 2.5rem; flex-shrink: 0; display: flex; align-items: center;
   }
   .mobile-topbar-side--right { justify-content: flex-end; }
-  .mobile-topbar-title {
-    flex: 1; text-align: center; font-weight: 600; font-size: 1rem;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 .25rem;
-    color: var(--fg);
-  }
+  /* Titre caché sur mobile */
+  .mobile-topbar-title { display: none; }
+  /* Boutons : pas de cercle, juste l'icône */
   .mobile-topbar-btn {
-    width: 2.4rem; height: 2.4rem; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    border: 1px solid var(--border); border-radius: 999px;
-    background: var(--card); color: var(--fg); cursor: pointer;
+    background: none; border: none; padding: .4rem; color: var(--fg);
+    cursor: pointer; opacity: .85;
   }
-  .mobile-topbar-btn svg { width: 1.1rem; height: 1.1rem; }
+  .mobile-topbar-btn:active { opacity: 1; }
+  .mobile-topbar-btn svg { width: 1.35rem; height: 1.35rem; display: block; }
+  .mobile-topbar-btn .flag-fr,
+  .mobile-topbar-btn .flag-en { display: block; width: 26px; height: auto; }
   /* Cache le bouton filtre standalone dans le contenu (remplacé par celui du header) */
   .mobile-filter-toggle { display: none; }
 }
-/* Langue : affiche le bon drapeau selon data-lang */
-[data-lang=en] #mobile-lang-btn .flag-fr { display: none; }
-[data-lang=en] #mobile-lang-btn .flag-en { display: block; }
+/* Langue : affiche le bon drapeau */
+.mobile-topbar-btn .flag-en { display: none; }
+[data-lang=en] .mobile-topbar-btn .flag-fr { display: none; }
+[data-lang=en] .mobile-topbar-btn .flag-en { display: block !important; }
 </style>
 
 <%# ─── Barre de navigation mobile (bas d'écran, façon TikTok/Instagram) ──
