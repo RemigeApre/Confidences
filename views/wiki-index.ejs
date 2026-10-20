@@ -279,6 +279,12 @@
 </style>
 <script nonce="<%= nonce %>">
 (function() {
+  // Sur desktop : ouvrir le volet catégories (toujours visible)
+  if (window.innerWidth > 640) {
+    var catDetails = document.querySelector('.wiki-cats-collapsible');
+    if (catDetails) catDetails.open = true;
+  }
+
   var aboutBtn = document.getElementById('mobile-about-btn');
   var aboutDetails = document.getElementById('wiki-intro-details-mobile');
   if (!aboutBtn || !aboutDetails) return;
