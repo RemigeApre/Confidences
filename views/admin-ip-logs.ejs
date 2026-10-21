@@ -141,7 +141,7 @@
              return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
            };
       %>
-      <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>" data-username="<%= (row.user_display_name || '').replace(/"/g,'&quot;') %>" data-lastseen="<%= row.last_seen %>" data-manualtype="<%= row.manual_type || '' %>" data-analysed="<%= row.analysed ? '1' : '' %>">
+      <tr class="ipl-row" data-ip="<%= row.ip %>" data-ua="<%= (row.user_agent || '').replace(/"/g,'&quot;') %>" data-hits="<%= row.hits %>" data-userid="<%= row.user_id || '' %>" data-username="<%= (row.user_display_name || '').replace(/"/g,'&quot;') %>" data-lastseen="<%= row.last_seen %>" data-manualtype="<%= row.manual_type || '' %>" data-analysed="<%= row.analysed ? '1' : '' %>" data-referer="<%= (row.referer || '').replace(/"/g,'&quot;').slice(0,200) %>">
         <td class="ipl-analysed-col">
           <% if (row.analysed) { %>
             <span class="ipl-analysed-dot" title="Analysé"></span>
@@ -194,11 +194,17 @@
 
   // ── 1. Classification UA ──────────────────────────────────────────────────
 
-  function classifyUA(ua, hits, hours, hasUserId) {
+  function classifyUA(ua, hits, hours, hasUserId, referer) {
     var u = (ua || '').toLowerCase();
+    var r = (referer || '');
 
     // Utilisateur authentifié : priorité absolue
     if (hasUserId) return 'confirmed';
+
+    // Referer contenant du HTML = scraper qui parse du markup
+    if (r && (/<[a-z]|class=["']|&lt;/i.test(r))) return 'scraper';
+    // Referer invalide (pas une URL, pas vide) = suspect
+    if (r && !/^https?:\/\//i.test(r)) return 'strange';
 
     // Bots légitimes déclarés
     var legitPatterns = [
@@ -357,8 +363,9 @@
     var hasUserId  = !!row.dataset.userid;
     var manualType = row.dataset.manualtype || '';
     var analysed   = !!row.dataset.analysed;
+    var referer    = row.dataset.referer || '';
 
-    var type    = manualType || classifyUA(ua, hits, IPL_HOURS, hasUserId);
+    var type    = manualType || classifyUA(ua, hits, IPL_HOURS, hasUserId, referer);
     var isManual = !!manualType;
     row.classList.add('ipl-row--' + type);
     if (analysed) row.classList.add('ipl-row--analysed');
