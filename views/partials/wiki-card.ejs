@@ -71,7 +71,8 @@
     .replace(/^#+\s+/gm, '').replace(/\*\*?|__?/g, '')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\n+/g, ' ').trim();
-  var wcIsEmpty = wcContentTxt.length < 100;
+  // hasContent est fourni par listWikiPagesLight() (sans content) pour éviter de charger tout le texte
+  var wcIsEmpty = (typeof page.hasContent !== 'undefined') ? !page.hasContent : wcContentTxt.length < 100;
 %>
 <a href="/wiki/<%= page.id %>" class="wiki-card<% if (wcIsComplete) { %> wiki-card--complete<% } %><% if (wcIsEmpty) { %> wiki-card--empty<% } %>"
   style="--card-hue: <%= cat ? cat.hue : 220 %>; --card-accent: <%= wcAccent %>"

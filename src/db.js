@@ -1679,7 +1679,8 @@ function listWikiPages() {
 const _listWikiPagesLightStmt = db.prepare(`
   SELECT id, title, category, tags, extra_categories, meta, views,
          owned, maturity, maturity_set_at, created_at, updated_at, parody, sub_parody,
-         image_path, image_paths, featured
+         image_path, image_paths, featured,
+         CASE WHEN LENGTH(content) >= 100 THEN 1 ELSE 0 END AS has_content
   FROM wiki_pages ORDER BY title ASC
 `);
 function listWikiPagesLight() {
@@ -1705,6 +1706,7 @@ function listWikiPagesLight() {
       views: row.views || 0,
       owned: !!row.owned,
       featured: !!row.featured,
+      hasContent: !!row.has_content,
       maturity,
       parody: row.parody || "",
       subParody: row.sub_parody || "",
