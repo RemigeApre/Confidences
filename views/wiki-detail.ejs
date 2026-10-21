@@ -1256,8 +1256,9 @@ window.WIKI_CONTENT = <%- JSON.stringify({
     return sects.map(function(s,i){ var b=renderLines(s.ls); return i===0?b:'<details class="wiki-section"><summary class="wiki-section-summary">'+s.h+'</summary><div class="wiki-section-body">'+b+'</div></details>'; }).join('\n');
   }
 
-  function reinsertHero(container) {
-    var hero = document.getElementById('wiki-mobile-hero');
+  function reinsertHero(container, heroEl) {
+    // heroEl passé directement car un élément détaché du DOM n'est pas trouvable par getElementById
+    var hero = heroEl || document.getElementById('wiki-mobile-hero');
     if (!hero || !container) return;
     var firstSection = container.querySelector(':scope > details.wiki-section');
     if (firstSection) {
@@ -1279,13 +1280,13 @@ window.WIKI_CONTENT = <%- JSON.stringify({
       if (!texts) return;
       var raw = (lang === 'en' && texts.en) ? texts.en : texts.fr;
       if (el.classList.contains('wiki-md')) {
-        // Sauvegarder le hero avant que innerHTML ne le détache
+        // Sauvegarder le hero avant que innerHTML ne le détache du DOM
         var hero = el.querySelector('#wiki-mobile-hero');
         if (hero) el.removeChild(hero);
         el.innerHTML = wikiRenderMd(raw);
         el.querySelectorAll('details.wiki-section').forEach(function(d){ d.open = false; });
-        // Réinsérer le hero avant la première section (entre intro et 1er H2)
-        if (hero) reinsertHero(el);
+        // Passer hero directement : getElementById ne trouve pas les éléments détachés
+        reinsertHero(el, hero);
       } else {
         el.textContent = raw;
       }
