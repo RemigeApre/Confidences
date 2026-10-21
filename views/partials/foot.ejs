@@ -32,8 +32,9 @@
   var btn = document.getElementById('pc-lang-btn');
   if (btn) btn.addEventListener('click', toggleLang);
 
-  var mLangBtn = document.getElementById('mobile-lang-btn');
-  if (mLangBtn) mLangBtn.addEventListener('click', toggleLang);
+  document.querySelectorAll('[data-lang-toggle]').forEach(function(b) {
+    b.addEventListener('click', toggleLang);
+  });
 
   // Bouton filtre dans le header mobile : actif uniquement si la page a un sidebar filtre
   var mFilterHeader = document.getElementById('mobile-filter-toggle-header');

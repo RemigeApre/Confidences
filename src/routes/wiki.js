@@ -43,6 +43,7 @@ const {
   checkAndGrantActionLootbox,
   countUserRatingsTotal,
   getTranslationsForEntity,
+  getFieldTranslationsByEntity,
   setTranslation,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
@@ -596,6 +597,7 @@ function buildWikiRouter(config) {
       .filter((p) => p.rating > 0)
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 30);
+    const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
     res.render("wiki-index", {
       config, chapters, pages,
       allTags: getAllTags(pages),
@@ -603,6 +605,7 @@ function buildWikiRouter(config) {
       totalCount: pages.length,
       recentAdded, recentUpdated, popular,
       hasOwnedItems: pages.some((p) => p.owned),
+      wikiTitlesEn,
       ...CTX
     });
   });
@@ -610,7 +613,8 @@ function buildWikiRouter(config) {
   // ── Vue "tout" : toutes les pages, toutes categories melangees ──
   router.get("/tous", (req, res) => {
     const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki")), req.user), req.user ? req.user.partnerId : null, "wiki");
-    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, hasOwnedItems: pages.some((p) => p.owned), ...CTX });
+    const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
+    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, ...CTX });
   });
 
   // ── Vue par categorie : un "chapitre" du livre ──
@@ -620,7 +624,8 @@ function buildWikiRouter(config) {
     const all = sortedPages();
     const pages = mergePartnerReaction(pagesForCategory(filterOff(excludeHidden(mergeUserReactions(all, req.user ? req.user.id : null, "wiki")), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
     const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
-    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), ...CTX });
+    const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
+    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, ...CTX });
   });
 
   // ── Extraction "Mes goûts" : synthèse .txt des pages notées par le

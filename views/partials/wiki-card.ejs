@@ -133,7 +133,8 @@
       </div>
     </div>
     <div class="wiki-card-accent">
-      <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
+      <% var _wcTitleFr = t(page.title, 'wiki', page.id, 'title'); var _wcTitleEn = (typeof wikiTitlesEn !== 'undefined' && wikiTitlesEn && wikiTitlesEn[page.id]) || _wcTitleFr; %>
+      <p class="wiki-card-title" data-fr="<%= _wcTitleFr %>" data-en="<%= _wcTitleEn %>"><%= _wcTitleFr %></p>
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </div>
 
@@ -173,7 +174,8 @@
       </div>
     </div>
     <div class="wiki-card-accent">
-      <p class="wiki-card-title"><%= t(page.title, 'wiki', page.id, 'title') %></p>
+      <% var _wcTitleFr = t(page.title, 'wiki', page.id, 'title'); var _wcTitleEn = (typeof wikiTitlesEn !== 'undefined' && wikiTitlesEn && wikiTitlesEn[page.id]) || _wcTitleFr; %>
+      <p class="wiki-card-title" data-fr="<%= _wcTitleFr %>" data-en="<%= _wcTitleEn %>"><%= _wcTitleFr %></p>
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </div>
   <% } %>
