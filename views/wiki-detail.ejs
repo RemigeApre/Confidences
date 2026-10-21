@@ -207,6 +207,24 @@
       .wiki-detail-banner-lang { display: none; }
       .wiki-wave-nav { display: none; }
     }
+    @media(max-width:640px) {
+      .wiki-detail .wiki-section-summary {
+        justify-content: center;
+        text-align: center;
+        padding: .55rem .5rem;
+      }
+      .wiki-detail .wiki-section-summary:before { display: none; }
+      .wiki-detail .wiki-section-summary:after {
+        content: '▾';
+        font-size: .75em;
+        color: hsl(var(--ch-hue, 220), 55%, 55%);
+        transition: transform .2s ease;
+        margin-left: .35rem;
+      }
+      .wiki-detail .wiki-section[open] > .wiki-section-summary:after {
+        transform: rotate(-180deg);
+      }
+    }
     </style>
 
     <%# ─ Bandeau "Explorer l'inconnu" (voir wiki.js) : uniquement quand on
