@@ -1275,13 +1275,13 @@ window.WIKI_CONTENT = <%- JSON.stringify({
 
   if (localStorage.getItem('slang') === 'en') applyWikiLang('en');
 
-  var langBtn = document.getElementById('pc-lang-btn');
-  if (langBtn) {
-    langBtn.addEventListener('click', function() {
-      var next = localStorage.getItem('slang') === 'en' ? 'fr' : 'en';
-      applyWikiLang(next);
+  new MutationObserver(function(mutations) {
+    mutations.forEach(function(m) {
+      if (m.attributeName === 'data-lang') {
+        applyWikiLang(document.documentElement.getAttribute('data-lang') || 'fr');
+      }
     });
-  }
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-lang'] });
 })();
 </script>
 <%- include('partials/codex-offline') %>
