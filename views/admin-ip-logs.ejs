@@ -66,6 +66,12 @@
 .ipl-analysed-col{width:1.6rem;text-align:center;padding:.42rem .2rem}
 .ipl-analysed-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80}
 .ipl-not-analysed-dot{display:inline-block;width:8px;height:8px;border-radius:50%;border:1px solid rgba(255,255,255,.15)}
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.ipl-pagination{display:flex;align-items:center;justify-content:center;gap:1rem;margin:1.5rem 0 3rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06)}
+.ipl-pg-btn{font-size:.78rem;padding:.35rem .9rem;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#7dd3fc;text-decoration:none;transition:background .1s}
+.ipl-pg-btn:hover{background:rgba(255,255,255,.1)}
+.ipl-pg-btn--disabled{color:rgba(255,255,255,.2);border-color:rgba(255,255,255,.05);cursor:default;pointer-events:none}
+.ipl-pg-info{font-size:.75rem;color:rgba(255,255,255,.4)}
 </style>
 
 <div class="admin-topbar">
@@ -101,7 +107,7 @@
     </select>
   </div>
 
-  <p class="ipl-sb-count"><span id="ipl-count"><%= logs.length %></span> adresse<%= logs.length !== 1 ? 's' : '' %></p>
+  <p class="ipl-sb-count"><%= total %> adresse<%= total !== 1 ? 's' : '' %> &middot; p.<%= page %>/<%= pages %></p>
 </aside>
 
 <div class="ipl-wrap">
@@ -186,6 +192,15 @@
       <% }) %>
     </tbody>
   </table>
+  <% } %>
+
+  <% if (pages > 1) { %>
+  <nav class="ipl-pagination" aria-label="Pages">
+    <% var baseQ = '?h=' + hours; %>
+    <% if (page > 1) { %><a href="<%= baseQ %>&page=<%= page - 1 %>" class="ipl-pg-btn">&#8592; Préc.</a><% } else { %><span class="ipl-pg-btn ipl-pg-btn--disabled">&#8592; Préc.</span><% } %>
+    <span class="ipl-pg-info">Page <%= page %> / <%= pages %></span>
+    <% if (page < pages) { %><a href="<%= baseQ %>&page=<%= page + 1 %>" class="ipl-pg-btn">Suiv. &#8594;</a><% } else { %><span class="ipl-pg-btn ipl-pg-btn--disabled">Suiv. &#8594;</span><% } %>
+  </nav>
   <% } %>
 </div>
 
@@ -365,7 +380,7 @@
     var analysed   = !!row.dataset.analysed;
     var referer    = row.dataset.referer || '';
 
-    var type    = manualType || classifyUA(ua, hits, IPL_HOURS, hasUserId, referer);
+    var type     = classifyUA(ua, hits, IPL_HOURS, hasUserId, referer);
     var isManual = !!manualType;
     row.classList.add('ipl-row--' + type);
     if (analysed) row.classList.add('ipl-row--analysed');
@@ -568,15 +583,11 @@
     });
   }
 
-  var idx = 0;
-  function nextBatch() {
-    var batch = rows.slice(idx, idx + 8);
-    if (!batch.length) return;
-    idx += 8;
-    batch.forEach(function(r) { loadGeo(r.dataset.ip); });
-    if (idx < rows.length) setTimeout(nextBatch, 400);
-  }
-  nextBatch();
+  // 25 lignes max par page : on charge tout en 2 batches rapides
+  rows.slice(0, 12).forEach(function(r) { loadGeo(r.dataset.ip); });
+  if (rows.length > 12) setTimeout(function() {
+    rows.slice(12).forEach(function(r) { loadGeo(r.dataset.ip); });
+  }, 300);
 
 })();
 </script>

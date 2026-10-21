@@ -2881,8 +2881,21 @@ function recordIpLog(ip, path, userAgent, userId, referer, acceptLanguage, secCh
   );
 }
 
-function getIpSummary(hours) {
-  const h = Math.min(720, Math.max(1, parseInt(hours) || 48));
+const IP_SUMMARY_PAGE_SIZE = 25;
+
+function getIpSummary(hours, page) {
+  const h  = Math.min(720, Math.max(1, parseInt(hours) || 48));
+  const pg = Math.max(1, parseInt(page) || 1);
+  const offset = (pg - 1) * IP_SUMMARY_PAGE_SIZE;
+
+  const { total } = db.prepare(
+    `SELECT COUNT(*) AS total FROM (
+       SELECT ip FROM ip_logs
+       WHERE created_at >= datetime('now', '-' || ? || ' hours')
+       GROUP BY ip
+     )`
+  ).get(h);
+
   const rows = db.prepare(
     `SELECT l.ip,
             COUNT(*) AS hits,
@@ -2903,8 +2916,9 @@ function getIpSummary(hours) {
      WHERE l.created_at >= datetime('now', '-' || ? || ' hours')
      GROUP BY l.ip
      ORDER BY last_seen DESC
-     LIMIT 500`
-  ).all(h);
+     LIMIT ? OFFSET ?`
+  ).all(h, IP_SUMMARY_PAGE_SIZE, offset);
+
   // Résoudre les noms de profil en une seule passe
   const userIds = [...new Set(rows.map(r => r.user_id).filter(Boolean))];
   const userMap = {};
@@ -2915,23 +2929,28 @@ function getIpSummary(hours) {
       if (u) userMap[id] = u.display_name;
     }
   }
-  return rows.map(r => ({
-    ip: r.ip,
-    hits: r.hits,
-    first_seen: r.first_seen,
-    last_seen: r.last_seen,
-    user_agent: r.user_agent,
-    user_id: r.user_id,
-    user_display_name: r.user_id ? (userMap[r.user_id] || null) : null,
-    path_count: r.path_count,
-    paths: r.paths_raw ? r.paths_raw.split(',').filter(Boolean).slice(0, 30) : [],
-    referer: r.referer || '',
-    accept_language: r.accept_language || '',
-    sec_ch_ua: r.sec_ch_ua || '',
-    sec_ch_ua_platform: r.sec_ch_ua_platform || '',
-    manual_type: r.manual_type || null,
-    analysed: !!r.analysed,
-  }));
+  return {
+    rows: rows.map(r => ({
+      ip: r.ip,
+      hits: r.hits,
+      first_seen: r.first_seen,
+      last_seen: r.last_seen,
+      user_agent: r.user_agent,
+      user_id: r.user_id,
+      user_display_name: r.user_id ? (userMap[r.user_id] || null) : null,
+      path_count: r.path_count,
+      paths: r.paths_raw ? r.paths_raw.split(',').filter(Boolean).slice(0, 30) : [],
+      referer: r.referer || '',
+      accept_language: r.accept_language || '',
+      sec_ch_ua: r.sec_ch_ua || '',
+      sec_ch_ua_platform: r.sec_ch_ua_platform || '',
+      manual_type: r.manual_type || null,
+      analysed: !!r.analysed,
+    })),
+    total,
+    page: pg,
+    pages: Math.max(1, Math.ceil(total / IP_SUMMARY_PAGE_SIZE)),
+  };
 }
 
 function getIpDetail(ip, limit) {

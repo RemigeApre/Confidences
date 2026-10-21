@@ -1321,8 +1321,9 @@ function buildAdminRouter(config) {
   // ── IP Logger ──────────────────────────────────────────────────────────────
   router.get('/ip-logs', requireAdmin, (req, res) => {
     const hours = Math.min(720, Math.max(1, parseInt(req.query.h) || 48));
-    const logs = getIpSummary(hours);
-    res.render('admin-ip-logs', { config, hours, logs });
+    const page  = Math.max(1, parseInt(req.query.page) || 1);
+    const { rows: logs, total, pages } = getIpSummary(hours, page);
+    res.render('admin-ip-logs', { config, hours, logs, total, page, pages });
   });
 
   router.get('/ip-logs/:ip', requireAdmin, (req, res) => {
