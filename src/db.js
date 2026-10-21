@@ -9,6 +9,9 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(path.join(dataDir, "quizz.db"));
 db.pragma("journal_mode = WAL");
+db.pragma("cache_size = -32000");   // 32 Mo de cache pages SQLite
+db.pragma("mmap_size = 134217728"); // 128 Mo mmap (lecture zero-copy)
+db.pragma("synchronous = NORMAL");  // Moins de fsync, sûr avec WAL
 
 // Normalise une parodie : Title Case + suppression des accents pour éviter
 // les doublons "Evangelion" / "Évangélion" et "reine des neiges" / "Reine Des Neiges".
@@ -1667,6 +1670,44 @@ function insertWikiPage({ title, category, content, tags, imagePaths, owned, met
 function listWikiPages() {
   const rows = db.prepare("SELECT * FROM wiki_pages ORDER BY id DESC").all();
   return rows.map(rowToWikiPage);
+}
+
+// Version légère : seulement les champs nécessaires au tri/filtrage/nav/suggestions.
+// N'inclut PAS content (souvent >1 Ko par page) — 10-20× plus léger que listWikiPages().
+const _listWikiPagesLightStmt = db.prepare(`
+  SELECT id, title, category, tags, extra_categories, meta, views, flame, interested,
+         rating, hidden, owned, maturity, updated_at
+  FROM wiki_pages ORDER BY title ASC
+`);
+function listWikiPagesLight() {
+  return _listWikiPagesLightStmt.all().map((row) => ({
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    tags: row.tags ? JSON.parse(row.tags) : [],
+    extraCategories: row.extra_categories ? JSON.parse(row.extra_categories) : [],
+    meta: row.meta ? JSON.parse(row.meta) : {},
+    views: row.views || 0,
+    rating: row.rating || 0,
+    flame: !!row.flame,
+    interested: !!row.interested,
+    hidden: !!row.hidden,
+    owned: !!row.owned,
+    maturity: row.maturity || 0,
+    updatedAt: row.updated_at,
+  }));
+}
+
+// Comptage des tags dans les images galerie sans charger toutes les images.
+const _tagImageCountsStmt = db.prepare("SELECT tags FROM gallery_images WHERE tags IS NOT NULL AND tags != '[]'");
+function getTagImageCounts() {
+  const counts = {};
+  _tagImageCountsStmt.all().forEach((row) => {
+    let tags;
+    try { tags = JSON.parse(row.tags); } catch { return; }
+    tags.forEach((t) => { counts[t] = (counts[t] || 0) + 1; });
+  });
+  return counts;
 }
 
 // Pool de pages codex "encore à explorer" pour un profil : jamais notées
@@ -5004,6 +5045,8 @@ module.exports = {
   deleteLink,
   insertWikiPage,
   listWikiPages,
+  listWikiPagesLight,
+  getTagImageCounts,
   reactWikiPage,
   getWikiPage,
   updateWikiPage,

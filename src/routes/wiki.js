@@ -37,6 +37,8 @@ const {
   deleteGalleryImage,
   setGalleryImageWikiSynced,
   listGalleryImages,
+  listWikiPagesLight,
+  getTagImageCounts,
   listUnexploredWikiPages,
   listBlacklistedTags,
   normalizeParody,
@@ -871,7 +873,7 @@ function buildWikiRouter(config) {
     Object.assign(page, getUserReaction(userId, "wiki", id));
     mergePartnerReaction([page], req.user ? req.user.partnerId : null, "wiki");
     const allPages = filterOff(mergeUserReactions(
-      listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" })),
+      listWikiPagesLight(),
       userId, "wiki"
     ), req.user);
     const idx = allPages.findIndex((p) => p.id === id);
@@ -885,8 +887,7 @@ function buildWikiRouter(config) {
     // Compteurs X|Y par tag (pages wiki | images galerie)
     const tagPageCounts = {};
     allPages.forEach((p) => p.tags.forEach((t) => { tagPageCounts[t] = (tagPageCounts[t] || 0) + 1; }));
-    const tagImageCounts = {};
-    listGalleryImages().forEach((img) => img.tags.forEach((t) => { tagImageCounts[t] = (tagImageCounts[t] || 0) + 1; }));
+    const tagImageCounts = getTagImageCounts();
     // Precharge l'image principale (meme condition que le hero cote vue) :
     // demarre son telechargement des le <head>, avant meme que le CSS/JS
     // n'aient fini de charger, au lieu d'attendre que le navigateur
