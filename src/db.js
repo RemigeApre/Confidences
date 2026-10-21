@@ -1678,7 +1678,7 @@ function listWikiPages() {
 // content_reactions et sont fusionnés ensuite par mergeUserReactions().
 const _listWikiPagesLightStmt = db.prepare(`
   SELECT id, title, category, tags, extra_categories, meta, views,
-         owned, maturity, maturity_set_at, updated_at, parody, sub_parody
+         owned, maturity, maturity_set_at, created_at, updated_at, parody, sub_parody
   FROM wiki_pages ORDER BY title ASC
 `);
 function listWikiPagesLight() {
@@ -1703,6 +1703,7 @@ function listWikiPagesLight() {
       maturity,
       parody: row.parody || "",
       subParody: row.sub_parody || "",
+      createdAt: row.created_at,
       updatedAt: row.updated_at,
       // Valeurs par défaut fusionnées par mergeUserReactions()
       rating: 0, flame: false, interested: false, hidden: false, readLater: false, practiced: false,

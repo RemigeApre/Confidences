@@ -208,18 +208,26 @@
       .wiki-wave-nav { display: none; }
     }
     @media(max-width:640px) {
+      .wiki-detail .wiki-section {
+        border-top: 1px solid rgba(255,255,255,.1);
+        margin-top: .9rem;
+        padding-top: 0;
+      }
       .wiki-detail .wiki-section-summary {
-        justify-content: center;
+        display: block;
         text-align: center;
-        padding: .55rem .5rem;
+        padding: .6rem .5rem;
+        font-size: 1.1rem;
+        position: relative;
       }
       .wiki-detail .wiki-section-summary:before { display: none; }
       .wiki-detail .wiki-section-summary:after {
-        content: '▾';
-        font-size: .75em;
+        content: ' ▾';
+        font-size: .7em;
         color: hsl(var(--ch-hue, 220), 55%, 55%);
+        display: inline-block;
         transition: transform .2s ease;
-        margin-left: .35rem;
+        transform-origin: center .4em;
       }
       .wiki-detail .wiki-section[open] > .wiki-section-summary:after {
         transform: rotate(-180deg);

@@ -529,7 +529,7 @@ function buildWikiRouter(config) {
   const CTX = { categories: CATEGORIES, fantasmesSubs: FANTASMES_SUBCATS, pratiquesSubs: PRATIQUES_SUBCATS, objetsSubs: OBJETS_SUBCATS, tenuesSubs: TENUES_SUBCATS };
 
   function sortedPages() {
-    return listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
+    return listWikiPagesLight().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
   }
 
   // Une page appartient a une categorie si c'est sa categorie principale
@@ -588,14 +588,13 @@ function buildWikiRouter(config) {
       const primaryCount = pages.filter((p) => p.category === cat.key).length;
       return { ...cat, pages: allCatPages, count: primaryCount, preview: allCatPages.slice(0, 6) };
     });
-    const allPages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(listWikiPages(), userId, "wiki")), req.user), partnerId, "wiki");
-    const recentAdded = [...allPages]
+    const recentAdded = [...pages]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 30);
-    const recentUpdated = [...allPages]
+    const recentUpdated = [...pages]
       .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
       .slice(0, 30);
-    const popular = allPages
+    const popular = pages
       .filter((p) => p.rating > 0)
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 30);
