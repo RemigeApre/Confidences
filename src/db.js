@@ -1674,28 +1674,40 @@ function listWikiPages() {
 
 // Version légère : seulement les champs nécessaires au tri/filtrage/nav/suggestions.
 // N'inclut PAS content (souvent >1 Ko par page) — 10-20× plus léger que listWikiPages().
+// rating/flame/interested/hidden/owned ne sont PAS dans wiki_pages, ils viennent de
+// content_reactions et sont fusionnés ensuite par mergeUserReactions().
 const _listWikiPagesLightStmt = db.prepare(`
-  SELECT id, title, category, tags, extra_categories, meta, views, flame, interested,
-         rating, hidden, owned, maturity, updated_at
+  SELECT id, title, category, tags, extra_categories, meta, views,
+         owned, maturity, maturity_set_at, updated_at, parody, sub_parody
   FROM wiki_pages ORDER BY title ASC
 `);
 function listWikiPagesLight() {
-  return _listWikiPagesLightStmt.all().map((row) => ({
-    id: row.id,
-    title: row.title,
-    category: row.category,
-    tags: row.tags ? JSON.parse(row.tags) : [],
-    extraCategories: row.extra_categories ? JSON.parse(row.extra_categories) : [],
-    meta: row.meta ? JSON.parse(row.meta) : {},
-    views: row.views || 0,
-    rating: row.rating || 0,
-    flame: !!row.flame,
-    interested: !!row.interested,
-    hidden: !!row.hidden,
-    owned: !!row.owned,
-    maturity: row.maturity || 0,
-    updatedAt: row.updated_at,
-  }));
+  return _listWikiPagesLightStmt.all().map((row) => {
+    let maturity = row.maturity || 0;
+    if (maturity === 5 && row.maturity_set_at) {
+      const THREE_MONTHS_MS = 3 * 30 * 24 * 60 * 60 * 1000;
+      if (Date.now() - new Date(row.maturity_set_at).getTime() > THREE_MONTHS_MS) {
+        db.prepare("UPDATE wiki_pages SET maturity = 4, maturity_set_at = NULL WHERE id = ?").run(row.id);
+        maturity = 4;
+      }
+    }
+    return {
+      id: row.id,
+      title: row.title,
+      category: row.category,
+      tags: row.tags ? JSON.parse(row.tags) : [],
+      extraCategories: (() => { try { return JSON.parse(row.extra_categories || "[]"); } catch (_) { return []; } })(),
+      meta: (() => { try { return JSON.parse(row.meta || "{}"); } catch (_) { return {}; } })(),
+      views: row.views || 0,
+      owned: !!row.owned,
+      maturity,
+      parody: row.parody || "",
+      subParody: row.sub_parody || "",
+      updatedAt: row.updated_at,
+      // Valeurs par défaut fusionnées par mergeUserReactions()
+      rating: 0, flame: false, interested: false, hidden: false, readLater: false, practiced: false,
+    };
+  });
 }
 
 // Comptage des tags dans les images galerie sans charger toutes les images.
