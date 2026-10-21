@@ -152,9 +152,60 @@
       }
       /* Compenser le header fixe sur le contenu */
       .wiki-detail { padding-top: calc(var(--topnav-height) + .5rem); }
+
+      /* ── Vagues de navigation ── */
+      .wiki-wave-nav { pointer-events: none; }
+      .wiki-wave {
+        position: fixed;
+        top: var(--topnav-height);
+        bottom: 0;
+        z-index: 8;
+        border: none;
+        background: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        pointer-events: auto;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
+      }
+      .wiki-wave svg {
+        height: 100%;
+        width: 28px;
+        display: block;
+      }
+      .wiki-wave svg path {
+        fill: hsl(var(--ch-hue, 220), 42%, 62%);
+        transition: opacity .35s ease;
+      }
+      .wiki-wave--left  { left: 0; }
+      .wiki-wave--right { right: 0; }
+      .wiki-wave--left svg {
+        transform-origin: left center;
+        transform: scaleX(.1);
+        opacity: .22;
+        transition: transform .5s cubic-bezier(.34,1.1,.64,1), opacity .4s ease;
+      }
+      .wiki-wave--right svg {
+        transform-origin: right center;
+        transform: scaleX(.1);
+        opacity: .22;
+        transition: transform .5s cubic-bezier(.34,1.1,.64,1), opacity .4s ease;
+      }
+      .wiki-wave--active.wiki-wave--left svg,
+      .wiki-wave--active.wiki-wave--right svg {
+        transform: scaleX(1);
+        opacity: .5;
+      }
+      .wiki-wave--ready.wiki-wave--left svg,
+      .wiki-wave--ready.wiki-wave--right svg {
+        opacity: .72;
+      }
     }
     @media(min-width:641px) {
       .wiki-detail-banner-lang { display: none; }
+      .wiki-wave-nav { display: none; }
     }
     </style>
 
@@ -171,19 +222,27 @@
       </div>
     <% } %>
 
-    <%# ─ Navigation prev/next (mobile — cachée sur PC, remplacée par celle du volet droit) ─ %>
-    <nav class="wiki-page-nav wiki-page-nav--mobile" aria-label="Navigation entre pages">
-      <% var _prevTitle = prevPage ? t(prevPage.title, 'wiki', prevPage.id, 'title') : ''; %>
-      <% var _nextTitle = nextPage ? t(nextPage.title, 'wiki', nextPage.id, 'title') : ''; %>
-      <a href="<%= prevPage ? '/wiki/' + prevPage.id : '#' %>" class="wiki-page-nav-btn wiki-page-nav-prev<%= prevPage ? '' : ' wiki-page-nav-disabled' %>" title="<%= _prevTitle %>">
-        <span class="wiki-page-nav-arrow">&#8592;</span>
-        <span class="wiki-page-nav-label"><%= _prevTitle %></span>
-      </a>
-      <a href="<%= nextPage ? '/wiki/' + nextPage.id : '#' %>" class="wiki-page-nav-btn wiki-page-nav-next<%= nextPage ? '' : ' wiki-page-nav-disabled' %>" title="<%= _nextTitle %>">
-        <span class="wiki-page-nav-label"><%= _nextTitle %></span>
-        <span class="wiki-page-nav-arrow">&#8594;</span>
-      </a>
-    </nav>
+    <%# ─ Navigation prev/next (mobile) : vagues de bord ─ %>
+    <% var _prevTitle = prevPage ? t(prevPage.title, 'wiki', prevPage.id, 'title') : ''; %>
+    <% var _nextTitle = nextPage ? t(nextPage.title, 'wiki', nextPage.id, 'title') : ''; %>
+    <div class="wiki-wave-nav">
+      <% if (prevPage) { %>
+      <button class="wiki-wave wiki-wave--left" data-href="/wiki/<%= prevPage.id %>"
+              aria-label="Page précédente : <%= _prevTitle %>" type="button">
+        <svg viewBox="0 0 28 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M 0 0 C 0 80, 28 120, 28 150 C 28 180, 0 220, 0 300 Z"/>
+        </svg>
+      </button>
+      <% } %>
+      <% if (nextPage) { %>
+      <button class="wiki-wave wiki-wave--right" data-href="/wiki/<%= nextPage.id %>"
+              aria-label="Page suivante : <%= _nextTitle %>" type="button">
+        <svg viewBox="0 0 28 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M 28 0 C 28 80, 0 120, 0 150 C 0 180, 28 220, 28 300 Z"/>
+        </svg>
+      </button>
+      <% } %>
+    </div>
 
     <%# ═══ LAYOUT 2 COLONNES (PC) ══════════════════════════════════════════ %>
     <div class="wiki-detail-layout">
@@ -1253,4 +1312,53 @@ window.WIKI_CONTENT = <%- JSON.stringify({
   }
 %>
 <script type="application/ld+json"><%- JSON.stringify(_wdJsonLd) %></script>
+
+<script nonce="<%= nonce %>">
+(function () {
+  if (window.innerWidth > 640) return; // mobile uniquement
+  var MIN_HOLD = 320; // ms de maintien pour déclencher la navigation
+
+  document.querySelectorAll('.wiki-wave').forEach(function (wave) {
+    var holdStart = 0;
+    var readyTimer = null;
+
+    function reset(navigate) {
+      clearTimeout(readyTimer);
+      wave.classList.remove('wiki-wave--active', 'wiki-wave--ready');
+      if (navigate) {
+        var href = wave.dataset.href;
+        if (href) window.location.href = href;
+      }
+    }
+
+    wave.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      wave.setPointerCapture(e.pointerId);
+      holdStart = Date.now();
+      wave.classList.add('wiki-wave--active');
+      readyTimer = setTimeout(function () {
+        wave.classList.add('wiki-wave--ready');
+      }, MIN_HOLD);
+    });
+
+    wave.addEventListener('pointerup', function () {
+      reset(Date.now() - holdStart >= MIN_HOLD);
+    });
+
+    wave.addEventListener('pointercancel', function () {
+      reset(false);
+    });
+
+    // Accessibilité clavier
+    wave.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        var href = wave.dataset.href;
+        if (href) window.location.href = href;
+      }
+    });
+  });
+})();
+</script>
+
 <%- include('partials/foot') %>
