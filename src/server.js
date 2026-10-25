@@ -199,10 +199,16 @@ app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", imm
 // aussi des endpoints dédiés (/llms-full.txt, /api/wiki/index.json, /wiki/:id.md).
 app.use((req, res, next) => {
   const isWikiPublic = req.path === "/wiki" || req.path.startsWith("/wiki/");
+  // Fichiers de vérification Google/Bing/moteurs : aucun X-Robots-Tag, servis bruts
+  const isVerification = /^\/google[a-f0-9]+\.html$/.test(req.path)
+    || /^\/bing[a-zA-Z0-9_-]+\.xml$/.test(req.path);
   const _aiOpen = req.path === "/" || isWikiPublic || req.path.startsWith("/quizz")
     || req.path === "/sitemap.xml" || req.path === "/llms.txt"
     || req.path === "/llms-full.txt" || req.path === "/api/wiki/index.json";
-  if (isWikiPublic) {
+  if (isVerification) {
+    // Pas de X-Robots-Tag : Google doit lire ce fichier librement
+    return next();
+  } else if (isWikiPublic) {
     res.set("X-Robots-Tag", "index, follow");
     res.locals.allowAiIndex = true;
     res.locals.allowIndex = true;
