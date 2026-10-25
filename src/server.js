@@ -177,17 +177,36 @@ app.get("/codex-sw.js", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "codex-sw.js"));
 });
 
+// robots.txt servi dynamiquement pour injecter l'URL absolue du Sitemap
+// (les directives Sitemap: nécessitent une URL absolue).
+app.get("/robots.txt", (req, res) => {
+  const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+  const fs = require("fs");
+  const base = fs.readFileSync(path.join(__dirname, "..", "public", "robots.txt"), "utf8");
+  const withSitemap = base.trimEnd() + `\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
+  res.set("Content-Type", "text/plain");
+  res.set("Cache-Control", "public, max-age=3600");
+  res.send(withSitemap);
+});
+
 app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", immutable: true }));
 
-// Le contenu est personnel : jamais d'indexation pour les moteurs de recherche.
-// Exception : les pages /wiki sont accessibles aux crawlers IA (GPTBot, ClaudeBot…)
-// qui respectent robots.txt — on leur envoie noindex,follow pour qu'ils puissent
-// explorer les liens internes sans que Google n'indexe le contenu.
+// Indexation moteurs de recherche :
+//   /wiki/*  → index, follow  (Codex public — Google, Bing, Ecosia l'indexent)
+//   /        → noindex, follow  (homepage quiz privée)
+//   autres   → noindex, nofollow, noarchive  (contenu privé)
+// Les crawlers IA (GPTBot, ClaudeBot…) ont accès via robots.txt et bénéficient
+// aussi des endpoints dédiés (/llms-full.txt, /api/wiki/index.json, /wiki/:id.md).
 app.use((req, res, next) => {
-  const _aiOpen = req.path === "/" || req.path.startsWith("/wiki") || req.path.startsWith("/quizz")
+  const isWikiPublic = req.path === "/wiki" || req.path.startsWith("/wiki/");
+  const _aiOpen = req.path === "/" || isWikiPublic || req.path.startsWith("/quizz")
     || req.path === "/sitemap.xml" || req.path === "/llms.txt"
     || req.path === "/llms-full.txt" || req.path === "/api/wiki/index.json";
-  if (_aiOpen) {
+  if (isWikiPublic) {
+    res.set("X-Robots-Tag", "index, follow");
+    res.locals.allowAiIndex = true;
+    res.locals.allowIndex = true;
+  } else if (_aiOpen) {
     res.set("X-Robots-Tag", "noindex, follow");
     res.locals.allowAiIndex = true;
   } else {

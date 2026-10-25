@@ -558,7 +558,7 @@
         <%# Image principale — mobile uniquement, glissée par JS avant le 1er h2 ─ %>
         <% if (hasImages && currentUser) { %>
           <div class="wiki-mobile-hero" id="wiki-mobile-hero" aria-hidden="true">
-            <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="" class="wiki-mobile-hero-img" loading="lazy" data-lb-bound="1" style="cursor:zoom-in" />
+            <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="<%= page.title %>" class="wiki-mobile-hero-img" loading="lazy" data-lb-bound="1" style="cursor:zoom-in" />
           </div>
         <% } %>
 
@@ -790,7 +790,7 @@
         <%# c) Image principale ─ %>
         <% if (hasImages && currentUser) { %>
           <div class="wiki-right-img-wrap">
-            <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="" class="wiki-right-img" data-lb-bound="1" style="cursor:zoom-in" />
+            <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="<%= page.title %>" class="wiki-right-img" data-lb-bound="1" style="cursor:zoom-in" />
           </div>
         <% } %>
 
@@ -1369,6 +1369,7 @@ window.WIKI_CONTENT = <%- JSON.stringify({
     jeu_de_role:'Scenarios', tenues:'Outfits', objets:'Objects',
     pratique:'Practices', fantasmes:'Fantasies'
   };
+  var _wdSiteUrl = locals.siteUrl || '';
   var _wdJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'DefinedTerm',
@@ -1377,10 +1378,16 @@ window.WIKI_CONTENT = <%- JSON.stringify({
     'inDefinedTermSet': {
       '@type': 'DefinedTermSet',
       'name': 'Codex Confidence',
-      'url': (locals.siteUrl || '') + '/wiki'
+      'url': _wdSiteUrl + '/wiki'
     },
-    'url': (locals.siteUrl || '') + '/wiki/' + page.id
+    'url': _wdSiteUrl + '/wiki/' + page.id,
+    'author': { '@type': 'Organization', 'name': 'Codex Confidence', 'url': _wdSiteUrl },
+    'publisher': { '@type': 'Organization', 'name': 'Codex Confidence', 'url': _wdSiteUrl },
+    'inLanguage': 'fr',
+    'isAccessibleForFree': true
   };
+  if (page.createdAt) _wdJsonLd.datePublished = new Date(page.createdAt).toISOString().slice(0, 10);
+  if (page.updatedAt) _wdJsonLd.dateModified = new Date(page.updatedAt).toISOString().slice(0, 10);
   if (cat) {
     _wdJsonLd.termCode = page.category;
     _wdJsonLd.additionalType = 'https://schema.org/Thing';
@@ -1388,8 +1395,19 @@ window.WIKI_CONTENT = <%- JSON.stringify({
   if (page.tags && page.tags.length) {
     _wdJsonLd.keywords = page.tags.join(', ');
   }
+  // BreadcrumbList pour Google (fil d'Ariane dans les résultats)
+  var _wdBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Codex', 'item': _wdSiteUrl + '/wiki' },
+      { '@type': 'ListItem', 'position': 2, 'name': cat ? cat.label : page.category, 'item': _wdSiteUrl + '/wiki/categorie/' + page.category },
+      { '@type': 'ListItem', 'position': 3, 'name': page.title, 'item': _wdSiteUrl + '/wiki/' + page.id }
+    ]
+  };
 %>
 <script type="application/ld+json"><%- JSON.stringify(_wdJsonLd) %></script>
+<script type="application/ld+json"><%- JSON.stringify(_wdBreadcrumb) %></script>
 
 <script nonce="<%= nonce %>">
 (function () {

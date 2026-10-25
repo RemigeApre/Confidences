@@ -15,10 +15,38 @@
 -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="<%= locals.allowAiIndex ? 'noindex, follow' : 'noindex, nofollow, noarchive' %>" />
+  <meta name="robots" content="<%= locals.allowIndex ? 'index, follow' : (locals.allowAiIndex ? 'noindex, follow' : 'noindex, nofollow, noarchive') %>" />
   <meta name="color-scheme" content="dark" />
-  <% if (locals.metaDescription) { %><meta name="description" content="<%= metaDescription %>" /><% } %>
-  <title><%= typeof title !== "undefined" ? title : "Quiz" %></title>
+  <%
+    var _metaDesc = locals.metaDescription || (typeof title !== 'undefined' ? title + ' — Codex Confidence, encyclopédie de sexologie.' : 'Codex Confidence — encyclopédie de sexologie bilingue FR/EN.');
+    var _pageTitle = typeof title !== 'undefined' ? title : 'Codex Confidence';
+    var _canonicalUrl = (locals.siteUrl || '') + (locals.currentPath || '/');
+    var _ogImage = locals.ogImage || (locals.preloadImage ? (locals.siteUrl || '') + locals.preloadImage : null);
+  %>
+  <meta name="description" content="<%= _metaDesc %>" />
+  <title><%= _pageTitle %></title>
+  <%# ── Canonical ── %>
+  <link rel="canonical" href="<%= _canonicalUrl %>" />
+  <%# ── Open Graph (partage social, prévisualisation Discord/Reddit/WhatsApp) ── %>
+  <meta property="og:type" content="<%= locals.allowIndex ? 'article' : 'website' %>" />
+  <meta property="og:title" content="<%= _pageTitle %>" />
+  <meta property="og:description" content="<%= _metaDesc %>" />
+  <meta property="og:url" content="<%= _canonicalUrl %>" />
+  <meta property="og:site_name" content="Codex Confidence" />
+  <meta property="og:locale" content="fr_FR" />
+  <% if (_ogImage) { %>
+  <meta property="og:image" content="<%= _ogImage %>" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <% } %>
+  <%# ── Twitter / X Card ── %>
+  <meta name="twitter:card" content="<%= _ogImage ? 'summary_large_image' : 'summary' %>" />
+  <meta name="twitter:title" content="<%= _pageTitle %>" />
+  <meta name="twitter:description" content="<%= _metaDesc %>" />
+  <% if (_ogImage) { %><meta name="twitter:image" content="<%= _ogImage %>" /><% } %>
+  <%# ── RTA label contenu adulte (SafeSearch, contrôle parental) ── %>
+  <meta name="rating" content="adult" />
+  <meta http-equiv="pics-label" content='(pics-1.1 "http://www.rsac.org/ratingsv01.html" l gen true r (n 4 s 4 v 0 l 0))' />
   <script nonce="<%= nonce %>">
     // Mode discret (masquer les images, voir bouton dans le header) : appliqué
     // ici, synchrone et avant tout rendu, pour ne jamais laisser flasher une

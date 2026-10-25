@@ -607,6 +607,7 @@ function buildWikiRouter(config) {
       recentAdded, recentUpdated, popular,
       hasOwnedItems: pages.some((p) => p.owned),
       wikiTitlesEn,
+      metaDescription: `Codex Confidence — encyclopédie de sexologie bilingue FR/EN. ${pages.length} fiches : positions, pratiques, fantasmes, partenaires, tenues, objets et plus.`,
       ...CTX
     });
   });
@@ -626,7 +627,7 @@ function buildWikiRouter(config) {
     const pages = mergePartnerReaction(pagesForCategory(filterOff(excludeHidden(mergeUserReactions(all, req.user ? req.user.id : null, "wiki")), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
     const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
     const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
-    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, ...CTX });
+    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, metaDescription: `${cat.label} — Codex Confidence. ${pages.length} fiches de sexologie sur la catégorie ${cat.label}.`, ...CTX });
   });
 
   // ── Extraction "Mes goûts" : synthèse .txt des pages notées par le
@@ -897,7 +898,7 @@ function buildWikiRouter(config) {
     const varianteGenreId = page.meta && page.meta.variante_genre_id ? Number(page.meta.variante_genre_id) : null;
     const variantePage = varianteGenreId ? getWikiPage(varianteGenreId) : null;
     const translationsEn = getTranslationsForEntity("wiki", id, "en");
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, exploreMode, variantePage: variantePage || null, translationsEn, ...CTX });
+    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, ...CTX });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
