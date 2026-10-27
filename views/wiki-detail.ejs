@@ -801,6 +801,10 @@
           var secImages = pm.secondary_configured
             ? (pm.secondary_image_paths || [])
             : page.imagePaths.slice(1);
+          if (!currentUser) {
+            var _sfwSet = new Set(visibleImagePaths);
+            secImages = secImages.filter(function(p) { return _sfwSet.has(p); });
+          }
           // Ajoute les images positionnelles (intégrées dans le texte) si pas déjà présentes
           var posPaths = (pm.positional_images || []).map(function(pi){ return pi.path; });
           posPaths.forEach(function(p) {
@@ -811,7 +815,7 @@
           var hasMoreSec = secImages.length > 16;    // galerie si > 16
           var galleryTag = encodeURIComponent(page.title.toLowerCase());
         %>
-        <% if (hasImages && secDisplay.length && currentUser) { %>
+        <% if (hasImages && secDisplay.length) { %>
           <div class="wiki-secondary-section">
             <div class="wiki-secondary-header">
               <span class="wiki-secondary-title" data-fr="Images" data-en="Images">Images</span>
