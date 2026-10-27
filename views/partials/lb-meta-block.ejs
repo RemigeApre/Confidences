@@ -1,6 +1,10 @@
 <%# ── Bloc méta du volet image (titre, parodies, auteur, protagonistes, tags) ── %>
 <div class="lb-meta-block">
   <%# Bouton édition inline — affiché uniquement pour les admins sur desktop (géré par gallery.js) %>
+  <% if (locals.currentUser && locals.currentUser.isAdmin) { %>
+  <button type="button" class="lb-sfw-toggle-btn" id="gallery-lb-sfw-btn"
+          title="Visible sans compte (SFW)" aria-label="SFW" hidden>&#9728;</button>
+  <% } %>
   <button type="button" class="lb-inline-edit-btn" id="gallery-lb-inline-edit-btn"
           title="Modifier les métadonnées" aria-label="Modifier" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"

@@ -1206,6 +1206,41 @@ window.IRREALISTE_MODE = 'visible';
       });
   }
 
+  // Bouton SFW dans la lightbox (admin uniquement)
+  var sfwBtn = document.getElementById('gallery-lb-sfw-btn');
+  if (sfwBtn) {
+    var _wikiMeta = null;
+    try { _wikiMeta = JSON.parse(document.getElementById('wiki-current-page-meta').textContent); } catch(_) {}
+    var _wikiId = _wikiMeta && _wikiMeta.id;
+    var _sfwSet = new Set(<%- JSON.stringify(page.sfwImagePaths || []) %>);
+    // Met à jour l'état du bouton quand la lightbox change d'image
+    var _lbImg = document.querySelector('.gallery-lb-img');
+    function _updateSfwBtn() {
+      var src = _lbImg && (_lbImg.dataset.targetSrc || _lbImg.getAttribute('src'));
+      if (!src) { sfwBtn.setAttribute('hidden', ''); return; }
+      sfwBtn._currentSrc = src;
+      sfwBtn.classList.toggle('on', _sfwSet.has(src));
+      sfwBtn.removeAttribute('hidden');
+    }
+    if (_lbImg) {
+      new MutationObserver(_updateSfwBtn).observe(_lbImg, { attributes: true, attributeFilter: ['src', 'data-target-src'] });
+    }
+    document.addEventListener('gallery:closed', function() { sfwBtn.setAttribute('hidden', ''); });
+    sfwBtn.addEventListener('click', function() {
+      var src = sfwBtn._currentSrc;
+      if (!src || !_wikiId) return;
+      fetch('/wiki/' + _wikiId + '/sfw-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ src: src })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) return;
+        if (d.sfw) _sfwSet.add(src); else _sfwSet.delete(src);
+        sfwBtn.classList.toggle('on', d.sfw);
+      });
+    });
+  }
+
   // Clic sur une image secondaire, l'image hero mobile ou l'image principale PC.
   document.addEventListener('click', function (e) {
     // Image hero mobile

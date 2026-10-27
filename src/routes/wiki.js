@@ -981,8 +981,9 @@ function buildWikiRouter(config) {
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
-    const id = Number(req.params.id);
-    const page = Number.isInteger(id) ? getWikiPage(id) : null;
+    const { page: pageByParam } = findPageByParam(req.params.id);
+    const page = pageByParam;
+    const id = page ? page.id : null;
     if (!page) return res.redirect("/wiki");
     const pages = sortedPages();
     const allTags = getAllTags(pages);
@@ -996,9 +997,9 @@ function buildWikiRouter(config) {
   });
 
   router.post("/:id", requireAdmin, upload.any(), (req, res) => {
-    const id = Number(req.params.id);
-    const existing = Number.isInteger(id) ? getWikiPage(id) : null;
+    const { page: existing } = findPageByParam(req.params.id);
     if (!existing) return res.redirect("/wiki");
+    const id = existing.id;
 
     // Mode traduction EN : sauvegarde uniquement les champs traduits.
     if (req.body._editLang === "en") {
@@ -1128,6 +1129,20 @@ function buildWikiRouter(config) {
       checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsTotal(req.user.id), 5);
     }
     res.json({ ok: true });
+  });
+
+  // Toggle SFW sur une image : ajoute/retire le chemin de sfw_image_paths
+  router.post("/:id/sfw-image", requireAdmin, express.json(), (req, res) => {
+    const { page } = findPageByParam(req.params.id);
+    if (!page) return res.status(404).json({ ok: false });
+    const src = String(req.body.src || "").trim();
+    if (!src || !page.imagePaths.includes(src)) return res.status(400).json({ ok: false });
+    const sfw = new Set(page.sfwImagePaths || []);
+    const isSfw = sfw.has(src);
+    if (isSfw) sfw.delete(src); else sfw.add(src);
+    updateWikiPage(page.id, { title: page.title, category: page.category, content: page.content, tags: page.tags, imagePaths: page.imagePaths, sfwImagePaths: Array.from(sfw), owned: page.owned, meta: page.meta, extraCategories: page.extraCategories, parody: page.parody, subParody: page.subParody });
+    invalidateSfwSet();
+    res.json({ ok: true, sfw: !isSfw });
   });
 
   router.post("/:id/maturity", requireAdmin, express.json(), (req, res) => {
