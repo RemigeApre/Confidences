@@ -49,6 +49,8 @@ const {
   setTranslation,
   listCodexAuthors,
   getCodexAuthorBySlug,
+  getWikiPageBySlug,
+  updateWikiPageSlug,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
@@ -580,6 +582,17 @@ function buildWikiRouter(config) {
     return listWikiPagesLight().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
   }
 
+  // Lookup a page by numeric ID or slug. Returns { page, redirectSlug }.
+  // redirectSlug is set when the param was a numeric ID and the page has a slug (caller should 301).
+  function findPageByParam(param) {
+    const numericId = Number(param);
+    if (Number.isInteger(numericId) && numericId > 0) {
+      const page = getWikiPage(numericId);
+      return { page, redirectSlug: (page && page.slug) ? page.slug : null };
+    }
+    return { page: getWikiPageBySlug(param), redirectSlug: null };
+  }
+
   // Une page appartient a une categorie si c'est sa categorie principale
   // OU une de ses categories supplementaires : une carte "aussi dans..."
   // doit apparaitre dans chaque chapitre concerne, pas seulement le sien.
@@ -779,9 +792,9 @@ function buildWikiRouter(config) {
     const parody = normalizeParody(String(req.body.parody || ""));
     const subParody = normalizeParody(String(req.body.sub_parody || ""));
 
-    const newId = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody });
+    const { id: newId, slug: newSlug } = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody, slug: req.body.meta_slug || '' });
     syncPageGalleryImages(newId, title, imagePaths, meta);
-    res.redirect(`/wiki/${newId}`);
+    res.redirect(`/wiki/${newSlug || newId}`);
   });
 
   // ── Associations image ─────────────────────────────
@@ -884,9 +897,9 @@ function buildWikiRouter(config) {
     jeu_de_role: "Scenarios", tenues: "Outfits", objets: "Objects",
     pratique: "Practices", fantasmes: "Fantasies", biologie: "Biology",
   };
-  router.get("/:id.md", (req, res) => {
-    const id = Number(req.params.id);
-    const page = Number.isInteger(id) ? getWikiPage(id) : null;
+  router.get("/:slug.md", (req, res) => {
+    const { page, redirectSlug } = findPageByParam(req.params.slug);
+    if (redirectSlug) return res.redirect(301, `/wiki/${redirectSlug}.md`);
     if (!page) return res.status(404).type("text/plain").send("Not found");
     const cat = CATEGORIES.find((c) => c.key === page.category);
     const tagLine = page.tags.length
@@ -901,7 +914,7 @@ function buildWikiRouter(config) {
       `category_en: "${CAT_EN_MD[page.category] || page.category}"`,
       tagLine,
       page.updatedAt ? `updated: "${page.updatedAt.slice(0, 10)}"` : null,
-      `url: /wiki/${page.id}`,
+      `url: /wiki/${page.slug || page.id}`,
       page.meta && page.meta.wikipedia_url ? `same_as: "${page.meta.wikipedia_url}"` : null,
       "---",
       "",
@@ -915,27 +928,27 @@ function buildWikiRouter(config) {
     res.send(md);
   });
 
-  router.get("/:id", (req, res) => {
-    const id = Number(req.params.id);
-    const page = Number.isInteger(id) ? getWikiPage(id) : null;
-    if (!page) return res.redirect("/wiki");
+  router.get("/:slug", (req, res) => {
+    const { page, redirectSlug } = findPageByParam(req.params.slug);
+    if (redirectSlug) return res.redirect(301, `/wiki/${redirectSlug}`);
+    if (!page) return res.status(404).render("404", { config, ...CTX });
     if (isOffForUser(page.tags, req.user)) return res.redirect("/wiki");
-    incrementWikiViews(id, req.user ? req.user.id : null);
+    incrementWikiViews(page.id, req.user ? req.user.id : null);
     const userId = req.user ? req.user.id : null;
-    Object.assign(page, getUserReaction(userId, "wiki", id));
+    Object.assign(page, getUserReaction(userId, "wiki", page.id));
     mergePartnerReaction([page], req.user ? req.user.partnerId : null, "wiki");
     const allPages = filterOff(mergeUserReactions(
       listWikiPagesLight(),
       userId, "wiki"
     ), req.user);
-    const idx = allPages.findIndex((p) => p.id === id);
-    const prevPage = idx > 0 ? { id: allPages[idx - 1].id, title: allPages[idx - 1].title } : null;
-    const nextPage = idx < allPages.length - 1 ? { id: allPages[idx + 1].id, title: allPages[idx + 1].title } : null;
+    const idx = allPages.findIndex((p) => p.id === page.id);
+    const prevPage = idx > 0 ? { id: allPages[idx - 1].id, slug: allPages[idx - 1].slug, title: allPages[idx - 1].title } : null;
+    const nextPage = idx < allPages.length - 1 ? { id: allPages[idx + 1].id, slug: allPages[idx + 1].slug, title: allPages[idx + 1].title } : null;
     const suggestions = computeSuggestions(page, allPages);
     const back = wikiBackTarget(req);
-    const pageIsFavorite = req.user ? isFavorite(req.user.id, "wiki", id) : false;
+    const pageIsFavorite = req.user ? isFavorite(req.user.id, "wiki", page.id) : false;
     let userNote = "";
-    try { userNote = req.user ? getUserNote(id, req.user.id) : ""; } catch (_) {}
+    try { userNote = req.user ? getUserNote(page.id, req.user.id) : ""; } catch (_) {}
     // Compteurs X|Y par tag (pages wiki | images galerie)
     const tagPageCounts = {};
     allPages.forEach((p) => p.tags.forEach((t) => { tagPageCounts[t] = (tagPageCounts[t] || 0) + 1; }));
@@ -949,7 +962,7 @@ function buildWikiRouter(config) {
     const exploreMode = req.query.explore === "1";
     const varianteGenreId = page.meta && page.meta.variante_genre_id ? Number(page.meta.variante_genre_id) : null;
     const variantePage = varianteGenreId ? getWikiPage(varianteGenreId) : null;
-    const translationsEn = getTranslationsForEntity("wiki", id, "en");
+    const translationsEn = getTranslationsForEntity("wiki", page.id, "en");
     // Résoudre les auteurs pour l'affichage et le JSON-LD
     const pageAuthorMain = (page.meta && page.meta.author_main) ? getCodexAuthorBySlug(page.meta.author_main) : null;
     const pageAuthorsSecondary = (page.meta && Array.isArray(page.meta.authors_secondary))
@@ -958,7 +971,7 @@ function buildWikiRouter(config) {
           return found ? { ...found, role: a.role } : null;
         }).filter(Boolean)
       : [];
-    const aiNavPages = allPages.map((p) => ({ id: p.id, title: p.title }));
+    const aiNavPages = allPages.map((p) => ({ id: p.id, slug: p.slug || p.id, title: p.title }));
     res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, ...CTX });
   });
 
@@ -968,7 +981,7 @@ function buildWikiRouter(config) {
     if (!page) return res.redirect("/wiki");
     const pages = sortedPages();
     const allTags = getAllTags(pages);
-    const returnTo = safeReturnTo(req.get("referer"), `/wiki/${id}`);
+    const returnTo = safeReturnTo(req.get("referer"), `/wiki/${page.slug || id}`);
     const editLang = req.query.editLang === "en" ? "en" : "fr";
     const translations = editLang === "en" ? getTranslationsForEntity("wiki", id, "en") : {};
     const codexAuthors = listCodexAuthors();
@@ -989,7 +1002,7 @@ function buildWikiRouter(config) {
       setTranslation("wiki", id, "meta_scenario", "en", String(req.body.meta_scenario || "").trim());
       setTranslation("wiki", id, "meta_orce_content", "en", String(req.body.meta_orce_content || "").trim());
       setTranslation("wiki", id, "meta_infos_utiles", "en", String(req.body.meta_infos_utiles || "").trim());
-      return res.redirect(`/wiki/${id}`);
+      return res.redirect(`/wiki/${existing.slug || id}`);
     }
 
     const title    = String(req.body.title || "").trim() || existing.title;
@@ -1018,7 +1031,13 @@ function buildWikiRouter(config) {
     const cardSummary = req.body.card_summary !== undefined ? String(req.body.card_summary || '').trim() : undefined;
     updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody, cardSummary: cardSummary || null });
     syncPageGalleryImages(id, title, imagePaths, meta, existing.title.trim().toLowerCase());
-    res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${id}`));
+    // Update slug if provided and different from current
+    let finalSlug = existing.slug;
+    if (req.body.meta_slug && req.body.meta_slug.trim() !== existing.slug) {
+      const newSlug = updateWikiPageSlug(id, req.body.meta_slug.trim());
+      if (newSlug) finalSlug = newSlug;
+    }
+    res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${finalSlug || id}`));
   });
 
   // ── Liens entre pages wiki ─────────────────────────

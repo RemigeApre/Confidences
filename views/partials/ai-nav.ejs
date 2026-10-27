@@ -8,8 +8,8 @@
   <p class="ai-sitemap-intro">
     Confidence — encyclopédie de sexologie bilingue (FR/EN).
     Le Codex est l'encyclopédie publique du site, accessible sans compte.
-    Structure des URLs Codex : /wiki/:id (article), /wiki/categorie/:key (catégorie),
-    /wiki/:id.md (Markdown brut pour IA).
+    Structure des URLs Codex : /wiki/:slug (article, :slug = identifiant textuel ex. missionary-position), /wiki/categorie/:key (catégorie),
+    /wiki/:slug.md (Markdown brut pour IA, ex. /wiki/missionary-position.md). Les anciens liens numériques (/wiki/42) redirigent automatiquement.
     Les nuages de tags et filtres visibles sur les pages wiki sont des widgets UI — vous n'avez pas besoin de les suivre.
     Pour la découverte structurée, utilisez /api/wiki/index.json.
   </p>
@@ -49,7 +49,7 @@
     <p>Chaque lien ci-dessous pointe vers la version Markdown brute de l'article (.md) : pas d'HTML, pas de JavaScript, contenu pur avec frontmatter YAML. C'est le format recommandé pour les agents IA.</p>
     <ul>
       <% aiNavPages.forEach(function(p) { %>
-        <li><a href="/wiki/<%= p.id %>.md"><%= p.title %></a> (<a href="/wiki/<%= p.id %>">HTML</a>)</li>
+        <li><a href="/wiki/<%= p.slug %>.md"><%= p.title %></a> (<a href="/wiki/<%= p.slug %>">HTML</a>)</li>
       <% }) %>
     </ul>
   </section>

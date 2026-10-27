@@ -90,6 +90,38 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity_set_at TEXT"); } catch
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
+// ── Migration slug ──────────────────────────────────────────────────────────
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN slug TEXT"); } catch (_) {}
+
+// Slugify helper
+function slugify(str) {
+  return (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+// One-time migration: generate slugs for articles that don't have one yet
+(function migrateExistingSlugs() {
+  const rows = db.prepare("SELECT id, title FROM wiki_pages WHERE slug IS NULL OR slug = ''").all();
+  const taken = new Set(
+    db.prepare("SELECT slug FROM wiki_pages WHERE slug IS NOT NULL AND slug != ''").all().map(r => r.slug)
+  );
+  const stmt = db.prepare("UPDATE wiki_pages SET slug = ? WHERE id = ?");
+  for (const row of rows) {
+    let base = slugify(row.title);
+    if (!base) base = 'article-' + row.id;
+    let slug = base;
+    let n = 2;
+    while (taken.has(slug)) { slug = base + '-' + n++; }
+    taken.add(slug);
+    stmt.run(slug, row.id);
+  }
+})();
+
 // ── Auteurs Codex (E-E-A-T) ───────────────────────────────────────────────────
 db.exec(`
   CREATE TABLE IF NOT EXISTS codex_authors (
@@ -1628,6 +1660,7 @@ function rowToWikiPage(row) {
   if (!imagePaths.length && row.image_path) imagePaths = [row.image_path];
   return {
     id: row.id,
+    slug: row.slug || null,
     title: row.title,
     category: row.category,
     content: row.content,
@@ -1669,15 +1702,23 @@ function listFeaturedWikiPages() {
   return db.prepare("SELECT * FROM wiki_pages WHERE featured = 1").all().map(rowToWikiPage);
 }
 
-function insertWikiPage({ title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody }) {
+function insertWikiPage({ title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody, slug: rawSlug }) {
   const now = new Date().toISOString();
+  // Generate slug if not provided
+  let base = rawSlug ? slugify(rawSlug) : slugify(title);
+  if (!base) base = 'article';
+  let slug = base;
+  let n = 2;
+  while (db.prepare("SELECT id FROM wiki_pages WHERE slug = ?").get(slug)) {
+    slug = base + '-' + n++;
+  }
   const info = db
     .prepare(
-      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, owned, meta, extra_categories, parody, sub_parody, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, owned, meta, extra_categories, parody, sub_parody, slug, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", now, now);
-  return info.lastInsertRowid;
+    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", slug, now, now);
+  return { id: info.lastInsertRowid, slug };
 }
 
 function listWikiPages() {
@@ -1690,7 +1731,7 @@ function listWikiPages() {
 // rating/flame/interested/hidden/owned ne sont PAS dans wiki_pages, ils viennent de
 // content_reactions et sont fusionnés ensuite par mergeUserReactions().
 const _listWikiPagesLightStmt = db.prepare(`
-  SELECT id, title, category, tags, extra_categories, meta, views,
+  SELECT id, title, slug, category, tags, extra_categories, meta, views,
          owned, maturity, maturity_set_at, created_at, updated_at, parody, sub_parody,
          image_path, image_paths, featured,
          CASE WHEN LENGTH(content) >= 100 THEN 1 ELSE 0 END AS has_content
@@ -1710,6 +1751,7 @@ function listWikiPagesLight() {
     if (!imagePaths.length && row.image_path) imagePaths = [row.image_path];
     return {
       id: row.id,
+      slug: row.slug || null,
       title: row.title,
       category: row.category,
       tags: row.tags ? JSON.parse(row.tags) : [],
@@ -1773,6 +1815,26 @@ function getWikiPage(id) {
   const row = db.prepare("SELECT * FROM wiki_pages WHERE id = ?").get(id);
   if (!row) return null;
   return rowToWikiPage(row);
+}
+
+function getWikiPageBySlug(slug) {
+  const row = db.prepare("SELECT * FROM wiki_pages WHERE slug = ?").get(slug);
+  if (!row) return null;
+  return rowToWikiPage(row);
+}
+
+function updateWikiPageSlug(id, rawSlug) {
+  const base = slugify(rawSlug);
+  if (!base) return false;
+  let slug = base;
+  let n = 2;
+  while (true) {
+    const conflict = db.prepare("SELECT id FROM wiki_pages WHERE slug = ? AND id != ?").get(slug, id);
+    if (!conflict) break;
+    slug = base + '-' + n++;
+  }
+  db.prepare("UPDATE wiki_pages SET slug = ? WHERE id = ?").run(slug, id);
+  return slug;
 }
 
 function updateWikiPage(id, { title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody, cardSummary }) {
@@ -5105,7 +5167,10 @@ module.exports = {
   getTagImageCounts,
   reactWikiPage,
   getWikiPage,
+  getWikiPageBySlug,
   updateWikiPage,
+  updateWikiPageSlug,
+  slugify,
   deleteWikiPage,
   getWikiPageLinks,
   getWikiBacklinks,

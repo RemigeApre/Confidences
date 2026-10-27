@@ -30,13 +30,13 @@
   <%- include('partials/top-nav', { config: config }) %>
 
   <% if (page.id) { %>
-  <form method="POST" action="/wiki/<%= page.id %>/delete" id="wiki-delete-form"
+  <form method="POST" action="/wiki/<%= page.slug || page.id %>/delete" id="wiki-delete-form"
     onsubmit="return confirm('Supprimer cette page d\u00e9finitivement ?')"></form>
   <% } %>
 
   <script id="wiki-existing-pages" type="application/json"><%- JSON.stringify(pages.map(function(p){ return { id: p.id, title: p.title }; })) %></script>
 
-  <form method="POST" action="<%= page.id ? '/wiki/' + page.id : '/wiki/' %>"
+  <form method="POST" action="<%= page.slug ? '/wiki/' + page.id : (page.id ? '/wiki/' + page.id : '/wiki/') %>"
     enctype="multipart/form-data"
     class="wiki-form wiki-form--3col"
     id="wiki-edit-form"
@@ -53,7 +53,7 @@
 
         <%# ── Retour ── %>
         <div class="prot-sb-back-wrap">
-          <a href="<%= returnTo || (page.id ? '/wiki/' + page.id : '/wiki') %>" class="prot-sb-back-btn">&#8592; Retour</a>
+          <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="prot-sb-back-btn">&#8592; Retour</a>
         </div>
 
         <%# ── Parodie ── %>
@@ -209,6 +209,18 @@
                placeholder="<%= locals.editLang === 'en' ? page.title : 'Titre\u2026' %>"
                <% if (locals.editLang === 'en') { %>data-fr-placeholder="<%= page.title %>"<% } %> />
       </div>
+
+      <%# ── Slug URL ── %>
+      <% if (locals.editLang !== 'en') { %>
+      <div class="wf-slug-row">
+        <label class="wf-slug-label" for="wf-slug-input">URL</label>
+        <div class="wf-slug-preview">/wiki/<span id="wf-slug-display"><%= page.slug || '' %></span></div>
+        <input type="text" name="meta_slug" id="wf-slug-input" class="wf-slug-input"
+               value="<%= page.slug || '' %>"
+               pattern="[a-z0-9][a-z0-9\-]*"
+               placeholder="slug-de-larticle" />
+      </div>
+      <% } %>
 
       <%# ── Description ── %>
       <div class="wf-section-title">Description</div>
@@ -373,6 +385,7 @@
       <%# ── En-tête sticky : lang toggle + save ── %>
       <div class="wf-sidebar-header">
         <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
+        <%# Note: edit URL uses numeric ID for the POST route (/:id), slug redirect handles public URLs %>
         <button type="submit" class="wf-sidebar-save">Enregistrer</button>
       </div>
 
@@ -1086,6 +1099,29 @@ initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidd
   });
 
   render();
+})();
+
+// Auto-generate slug from title (only when creating, not editing)
+(function() {
+  var titleInput = document.querySelector('input[name="title"]');
+  var slugInput = document.getElementById('wf-slug-input');
+  var slugDisplay = document.getElementById('wf-slug-display');
+  if (!titleInput || !slugInput) return;
+  var isNew = !slugInput.value;
+  function toSlug(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+  }
+  titleInput.addEventListener('input', function() {
+    if (!isNew) return;
+    var slug = toSlug(titleInput.value);
+    slugInput.value = slug;
+    if (slugDisplay) slugDisplay.textContent = slug;
+  });
+  slugInput.addEventListener('input', function() {
+    isNew = false;
+    if (slugDisplay) slugDisplay.textContent = slugInput.value;
+  });
 })();
 </script>
 <%- include('partials/foot') %>

@@ -74,7 +74,7 @@
   // hasContent est fourni par listWikiPagesLight() (sans content) pour éviter de charger tout le texte
   var wcIsEmpty = (typeof page.hasContent !== 'undefined') ? !page.hasContent : wcContentTxt.length < 100;
 %>
-<a href="/wiki/<%= page.id %>" class="wiki-card<% if (wcIsComplete) { %> wiki-card--complete<% } %><% if (wcIsEmpty) { %> wiki-card--empty<% } %>"
+<a href="/wiki/<%= page.slug || page.id %>" class="wiki-card<% if (wcIsComplete) { %> wiki-card--complete<% } %><% if (wcIsEmpty) { %> wiki-card--empty<% } %>"
   style="--card-hue: <%= cat ? cat.hue : 220 %>; --card-accent: <%= wcAccent %>"
   data-category="<%= page.category %>"
   data-owned="<%= (wcCanSeeOwned && page.owned) ? '1' : '0' %>"
@@ -180,4 +180,4 @@
       <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </div>
   <% } %>
-</a><a href="/wiki/<%= page.id %>.md" class="wiki-card-md-link" aria-hidden="true" tabindex="-1"><%= page.title %> (Markdown)</a>
+</a><a href="/wiki/<%= page.slug || page.id %>.md" class="wiki-card-md-link" aria-hidden="true" tabindex="-1"><%= page.title %> (Markdown)</a>

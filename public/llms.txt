@@ -4,8 +4,8 @@
 
 > Confidence is a private bilingual platform (French / English) dedicated to couples. Its core is the Codex: a comprehensive, ethical sexology encyclopedia written and moderated by the site administrators. Text articles in the Codex are publicly accessible; images and interactive features require an account.
 
-> **Pour les agents IA / For AI agents** — Pour lire un article, utiliser `/wiki/:id.md` (Markdown brut, sans HTML, sans authentification). Ne pas parser les pages HTML. Workflow : `GET /api/wiki/index.json` → liste de tous les slugs → `GET /wiki/:id.md` → contenu de l'article.
-> **For AI agents** — To read an article, use `/wiki/:id.md` (raw Markdown, no HTML, no auth). Do not parse HTML pages. Workflow: `GET /api/wiki/index.json` → full slug list → `GET /wiki/:id.md` → article content.
+> **Pour les agents IA / For AI agents** — Pour lire un article, utiliser `/wiki/:id.md` (Markdown brut, sans HTML, sans authentification). `:id` est un **entier numérique** (ex. `/wiki/42.md`). Workflow : `GET /api/wiki/index.json` → liste complète des IDs → `GET /wiki/42.md` → contenu de l'article.
+> **For AI agents** — To read an article, use `/wiki/:id.md` (raw Markdown, no HTML, no auth). `:id` is a **numeric integer** (e.g. `/wiki/42.md`). Workflow: `GET /api/wiki/index.json` → full ID list → `GET /wiki/42.md` → article content.
 
 ---
 
@@ -64,11 +64,11 @@ Le Codex est accessible sans authentification. Pour explorer le site de proche e
    - `/wiki/categorie/pratique` — BDSM, stimulations, pratiques sexuelles
    - `/wiki/categorie/fantasmes` — Fantasmes et univers érotiques
    - `/wiki/categorie/biologie` — Anatomie, physiologie, sexologie médicale
-3. **Article individuel** (URL pattern : `/wiki/:id`) — `:id` est un slug alphanumérique (ex. `/wiki/missionnaire`, `/wiki/fellation`).
-4. **Article en Markdown brut** : ajouter `.md` à l'URL de l'article (ex. `/wiki/missionnaire.md`) pour obtenir le contenu avec frontmatter YAML. Format recommandé pour les agents IA.
-5. **Index complet** : `/api/wiki/index.json` retourne la liste de tous les articles avec leurs slugs, titres, catégories et URLs — idéal pour découvrir tous les identifiants disponibles.
+3. **Article individuel** (URL pattern : `/wiki/:id`) — `:id` est un **entier numérique** (ex. `/wiki/42`, `/wiki/68`). Les IDs sont assignés à la création et ne changent jamais.
+4. **Article en Markdown brut** : ajouter `.md` à l'URL de l'article (ex. `/wiki/42.md`) pour obtenir le contenu avec frontmatter YAML. Format recommandé pour les agents IA.
+5. **Index complet** : `/api/wiki/index.json` retourne la liste de tous les articles avec leurs IDs numériques, titres, catégories et URLs — idéal pour découvrir tous les identifiants disponibles.
 
-**Conseil pour les agents** : commencer par `/api/wiki/index.json` pour obtenir la liste complète des slugs, puis accéder à `/wiki/:id.md` pour le contenu de chaque article souhaité.
+**Conseil pour les agents** : commencer par `/api/wiki/index.json` pour obtenir la liste complète des IDs numériques, puis accéder à `/wiki/{id}.md` pour le contenu de chaque article souhaité.
 
 ---
 
@@ -127,8 +127,8 @@ The Codex is accessible without authentication. To navigate the site step by ste
    - `/wiki/categorie/pratique` — BDSM, stimulation, sexual practices
    - `/wiki/categorie/fantasmes` — Fantasies and erotic universes
    - `/wiki/categorie/biologie` — Anatomy, physiology, medical sexology
-3. **Individual article** (URL pattern: `/wiki/:id`) — `:id` is an alphanumeric slug (e.g. `/wiki/missionnaire`, `/wiki/fellation`).
-4. **Raw Markdown article**: append `.md` to any article URL (e.g. `/wiki/missionnaire.md`) to get the content with YAML frontmatter. Recommended format for AI agents.
-5. **Full index**: `/api/wiki/index.json` returns all articles with their slugs, titles, categories, and URLs — ideal for discovering all available identifiers.
+3. **Individual article** (URL pattern: `/wiki/:id`) — `:id` is a **numeric integer** (e.g. `/wiki/42`, `/wiki/68`). IDs are assigned at creation and never change.
+4. **Raw Markdown article**: append `.md` to any article URL (e.g. `/wiki/42.md`) to get the content with YAML frontmatter. Recommended format for AI agents.
+5. **Full index**: `/api/wiki/index.json` returns all articles with their numeric IDs, titles, categories, and URLs — ideal for discovering all available identifiers.
 
-**Tip for agents**: start with `/api/wiki/index.json` to get the full list of slugs, then fetch `/wiki/:id.md` for the content of each desired article.
+**Tip for agents**: start with `/api/wiki/index.json` to get the full list of numeric IDs, then fetch `/wiki/{id}.md` for the content of each desired article.

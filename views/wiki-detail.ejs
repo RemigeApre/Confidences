@@ -7,7 +7,7 @@
 %>
 <%- include('partials/head', { title: page.title + ' — Codex Confidence', preloadImage: preloadImage, metaDescription: _wdMetaDesc, allowAiIndex: true }) %>
 <!-- AI/LLM: This page is Codex article #<%= page.id %> — "<%= page.title %>".
-     Raw Markdown version (no auth, YAML frontmatter): /wiki/<%= page.id %>.md
+     Raw Markdown version (no auth, YAML frontmatter): /wiki/<%= page.slug || page.id %>.md
      Full Codex index: /api/wiki/index.json — Full Codex in Markdown: /llms-full.txt -->
 <main class="container wide">
   <%- include('partials/top-nav', { config: config, navTitle: 'Wiki', navBack: '/wiki/categorie/' + page.category, navHideMobileTopbar: true }) %>
@@ -244,7 +244,7 @@
           <button type="button" id="wiki-explore-prev" class="wiki-explore-nav-btn" title="Page pr&eacute;c&eacute;dente" aria-label="Page pr&eacute;c&eacute;dente" disabled data-fr="← Précédent" data-en="← Previous">&#8592; Pr&eacute;c&eacute;dent</button>
           <button type="button" id="wiki-explore-next" class="wiki-explore-nav-btn" title="Page suivante" aria-label="Page suivante" data-fr="Suivant →" data-en="Next →">Suivant &#8594;</button>
         </div>
-        <a href="/wiki/<%= page.id %>" class="wiki-explore-banner-close" title="Quitter le mode exploration" aria-label="Quitter le mode exploration">&times;</a>
+        <a href="/wiki/<%= page.slug || page.id %>" class="wiki-explore-banner-close" title="Quitter le mode exploration" aria-label="Quitter le mode exploration">&times;</a>
       </div>
     <% } %>
 
@@ -253,7 +253,7 @@
     <% var _nextTitle = nextPage ? t(nextPage.title, 'wiki', nextPage.id, 'title') : ''; %>
     <div class="wiki-wave-nav">
       <% if (prevPage) { %>
-      <button class="wiki-wave wiki-wave--left" data-href="/wiki/<%= prevPage.id %>"
+      <button class="wiki-wave wiki-wave--left" data-href="/wiki/<%= prevPage.slug || prevPage.id %>"
               aria-label="Page précédente : <%= _prevTitle %>" type="button">
         <svg viewBox="0 0 28 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M 0 0 C 0 80, 28 120, 28 150 C 28 180, 0 220, 0 300 Z"/>
@@ -261,7 +261,7 @@
       </button>
       <% } %>
       <% if (nextPage) { %>
-      <button class="wiki-wave wiki-wave--right" data-href="/wiki/<%= nextPage.id %>"
+      <button class="wiki-wave wiki-wave--right" data-href="/wiki/<%= nextPage.slug || nextPage.id %>"
               aria-label="Page suivante : <%= _nextTitle %>" type="button">
         <svg viewBox="0 0 28 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M 28 0 C 28 80, 0 120, 0 150 C 0 180, 28 220, 28 300 Z"/>
@@ -871,9 +871,9 @@
 
         <%# ─ Navigation PC : titre encadré par prev/next ─ %>
         <div class="wiki-right-nav">
-          <a href="<%= prevPage ? '/wiki/' + prevPage.id : '#' %>" class="wiki-right-nav-btn<%= prevPage ? '' : ' disabled' %>" title="<%= _prevTitle %>">&#8249;</a>
+          <a href="<%= prevPage ? '/wiki/' + (prevPage.slug || prevPage.id) : '#' %>" class="wiki-right-nav-btn<%= prevPage ? '' : ' disabled' %>" title="<%= _prevTitle %>">&#8249;</a>
           <span class="wiki-right-nav-title" data-fr="<%= page.title %>" data-en="<%= (translationsEn && translationsEn.title) || page.title %>"><%= t(page.title, 'wiki', page.id, 'title') %></span>
-          <a href="<%= nextPage ? '/wiki/' + nextPage.id : '#' %>" class="wiki-right-nav-btn<%= nextPage ? '' : ' disabled' %>" title="<%= _nextTitle %>">&#8250;</a>
+          <a href="<%= nextPage ? '/wiki/' + (nextPage.slug || nextPage.id) : '#' %>" class="wiki-right-nav-btn<%= nextPage ? '' : ' disabled' %>" title="<%= _nextTitle %>">&#8250;</a>
         </div>
 
         <%# c) Image principale ─ %>
@@ -1009,7 +1009,7 @@
         <%# Actions : modifier ─ %>
         <% if (currentUser && currentUser.isAdmin) { %>
           <div class="wiki-right-actions">
-            <a href="/wiki/<%= page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
+            <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
           </div>
           <div class="wiki-maturity-widget" id="wiki-maturity-widget" data-id="<%= page.id %>" data-level="<%= page.maturity || 0 %>">
             <span class="wiki-maturity-label" data-fr="Maturité" data-en="Maturity">Maturit&eacute;</span>
@@ -1045,7 +1045,7 @@
         <div class="wiki-sugg-row">
           <% suggestions.forEach(function (s) { %>
             <% var scat = categories.find(function (c) { return c.key === s.category; }); %>
-            <a href="/wiki/<%= s.id %>" class="wiki-sugg-card">
+            <a href="/wiki/<%= s.slug || s.id %>" class="wiki-sugg-card">
               <% if (s.imagePaths && s.imagePaths.length && currentUser) { %>
                 <div class="wiki-sugg-img-wrap"><img src="<%= thumbUrl(s.imagePaths[0]) %>" alt="" class="wiki-sugg-img" loading="lazy" /></div>
               <% } %>
@@ -1073,7 +1073,7 @@
         <button type="button" class="wiki-edit-icon-btn wiki-fav-icon-btn<%= isFavorite ? ' active' : '' %>" id="wiki-fav-btn-mobile" data-item-id="<%= page.id %>" title="Favori" aria-label="Favori">&#128278;</button>
         <button type="button" class="wiki-edit-icon-btn wiki-copy-ai-btn-mobile" id="wiki-copy-ai-btn-mobile" title="Copier pour une IA">&#128203;</button>
         <% if (currentUser.isAdmin) { %>
-          <a href="/wiki/<%= page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
+          <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
         <% } %>
       </div>
     <% } %>
@@ -1469,7 +1469,7 @@ window.WIKI_CONTENT = <%- JSON.stringify({
       'name': 'Codex Confidence',
       'url': _wdSiteUrl + '/wiki'
     },
-    'url': _wdSiteUrl + '/wiki/' + page.id,
+    'url': _wdSiteUrl + '/wiki/' + (page.slug || page.id),
     'author': locals.pageAuthorMain
       ? {
           '@type': 'Person',
@@ -1506,7 +1506,7 @@ window.WIKI_CONTENT = <%- JSON.stringify({
   // les graphes de connaissances des crawlers IA (ChatGPT Search, Claude Search).
   if (suggestions && suggestions.length) {
     _wdJsonLd.relatedLink = suggestions.map(function(s) {
-      return _wdSiteUrl + '/wiki/' + s.id;
+      return _wdSiteUrl + '/wiki/' + (s.slug || s.id);
     });
   }
   // GEO Primitive IV — sameAs : ancrage sur une ressource d'autorité externe
@@ -1530,7 +1530,7 @@ window.WIKI_CONTENT = <%- JSON.stringify({
     'itemListElement': [
       { '@type': 'ListItem', 'position': 1, 'name': 'Codex', 'item': _wdSiteUrl + '/wiki' },
       { '@type': 'ListItem', 'position': 2, 'name': cat ? cat.label : page.category, 'item': _wdSiteUrl + '/wiki/categorie/' + page.category },
-      { '@type': 'ListItem', 'position': 3, 'name': page.title, 'item': _wdSiteUrl + '/wiki/' + page.id }
+      { '@type': 'ListItem', 'position': 3, 'name': page.title, 'item': _wdSiteUrl + '/wiki/' + (page.slug || page.id) }
     ]
   };
 %>
@@ -1546,7 +1546,7 @@ window.WIKI_CONTENT = <%- JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'MedicalWebPage',
       'name': page.title,
-      'url': _wdSiteUrl + '/wiki/' + page.id,
+      'url': _wdSiteUrl + '/wiki/' + (page.slug || page.id),
       'description': _wdMetaDesc,
       'isAccessibleForFree': true,
       'inLanguage': 'fr',
@@ -1573,14 +1573,14 @@ window.WIKI_CONTENT = <%- JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'QAPage',
     'name': page.title + ' — définition et explication',
-    'url': _wdSiteUrl + '/wiki/' + page.id,
+    'url': _wdSiteUrl + '/wiki/' + (page.slug || page.id),
     'mainEntity': {
       '@type': 'Question',
       'name': 'Qu\u2019est-ce que ' + page.title.toLowerCase() + '\u00a0?',
       'acceptedAnswer': {
         '@type': 'Answer',
         'text': _wdMetaDesc,
-        'url': _wdSiteUrl + '/wiki/' + page.id,
+        'url': _wdSiteUrl + '/wiki/' + (page.slug || page.id),
         'author': locals.pageAuthorMain
           ? { '@type': 'Person', 'name': pageAuthorMain.name }
           : { '@type': 'Organization', 'name': 'Codex Confidence' },

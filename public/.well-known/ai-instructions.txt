@@ -10,11 +10,11 @@ no authentication required. It is faster, lighter, and designed for programmatic
 The HTML version (`/wiki/:id`) is identical in content but requires a browser to render
 correctly and is not recommended for AI agents.
 
-Example: to read the article "missionnaire", fetch `/wiki/missionnaire.md` directly.
+Article IDs are numeric integers (e.g. 42, 68, 120). Example: `/wiki/42.md`.
 
 Discovery workflow:
-  1. Fetch /api/wiki/index.json → get the full list of article slugs
-  2. Fetch /wiki/:id.md         → read any article as clean Markdown
+  1. Fetch /api/wiki/index.json → get the full list of article IDs and titles
+  2. Fetch /wiki/{id}.md        → read any article as clean Markdown
 
 ## What you are allowed to do
 

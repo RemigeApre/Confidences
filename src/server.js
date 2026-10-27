@@ -757,13 +757,13 @@ app.get("/api/search", function (req, res) {
   try {
     var wikiRows = db
       .prepare(
-        "SELECT id, title FROM wiki_pages WHERE (lower(title) LIKE ? OR lower(content) LIKE ? OR lower(tags) LIKE ? OR lower(meta) LIKE ?) " +
+        "SELECT id, title, slug FROM wiki_pages WHERE (lower(title) LIKE ? OR lower(content) LIKE ? OR lower(tags) LIKE ? OR lower(meta) LIKE ?) " +
         "AND id NOT IN (SELECT item_id FROM content_reactions WHERE user_id = ? AND item_type = 'wiki' AND hidden = 1) LIMIT 6"
       )
       .all(pat, pat, pat, pat, uid);
     if (wikiRows.length)
       results.wiki = wikiRows.map(function (r) {
-        return { title: r.title, url: "/wiki/" + r.id };
+        return { title: r.title, url: "/wiki/" + (r.slug || r.id) };
       });
   } catch (_) {}
 
@@ -1143,8 +1143,8 @@ app.get("/api/wiki/index.json", (req, res) => {
       summary:      _stripMd(p.content).slice(0, 200),
       tags:         p.tags,
       updated:      p.updatedAt ? p.updatedAt.slice(0, 10) : (p.createdAt ? p.createdAt.slice(0, 10) : null),
-      url:          `${siteUrl}/wiki/${p.id}`,
-      markdown_url: `${siteUrl}/wiki/${p.id}.md`,
+      url:          `${siteUrl}/wiki/${p.slug || p.id}`,
+      markdown_url: `${siteUrl}/wiki/${p.slug || p.id}.md`,
       same_as:      (p.meta && p.meta.wikipedia_url) || null,
     }));
 
@@ -1180,7 +1180,7 @@ app.get("/sitemap.xml", (req, res) => {
       const lastmod = p.updatedAt ? p.updatedAt.slice(0, 10) : (p.createdAt ? p.createdAt.slice(0, 10) : "");
       return (
         "  <url>\n" +
-        `    <loc>${siteUrl}/wiki/${p.id}</loc>\n` +
+        `    <loc>${siteUrl}/wiki/${p.slug || p.id}</loc>\n` +
         (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : "") +
         "    <changefreq>monthly</changefreq>\n" +
         "    <priority>0.6</priority>\n" +
@@ -1242,8 +1242,8 @@ app.get("/llms-full.txt", (req, res) => {
       return [
         `## ${p.title}`,
         "",
-        `- URL: ${siteUrl}/wiki/${p.id}`,
-        `- Markdown: ${siteUrl}/wiki/${p.id}.md`,
+        `- URL: ${siteUrl}/wiki/${p.slug || p.id}`,
+        `- Markdown: ${siteUrl}/wiki/${p.slug || p.id}.md`,
         `- Catégorie / Category: ${catFr} / ${catEn}`,
         tagLine || null,
         p.updatedAt ? `- Mise à jour / Updated: ${p.updatedAt.slice(0, 10)}` : null,
