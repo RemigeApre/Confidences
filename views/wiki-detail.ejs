@@ -1085,18 +1085,6 @@
 
   </article>
 </main>
-<% if (!currentUser) { %>
-<div class="age-gate" id="age-gate">
-  <div class="age-gate-card">
-    <p class="age-gate-title" data-fr="Contenu pour adultes" data-en="Adult content">Contenu pour adultes</p>
-    <p class="age-gate-msg" data-fr="Cette page contient du contenu pornographique. Souhaitez-vous continuer ?" data-en="This page contains pornographic content. Do you wish to continue?">Cette page contient du contenu pornographique. Souhaitez-vous continuer&nbsp;?</p>
-    <div class="age-gate-actions">
-      <button type="button" class="age-gate-yes" id="age-gate-yes" data-fr="Oui, j'ai plus de 18 ans" data-en="Yes, I am over 18">Oui, j&rsquo;ai plus de 18&nbsp;ans</button>
-      <a href="/wiki" class="age-gate-no" data-fr="Non" data-en="No">Non</a>
-    </div>
-  </div>
-</div>
-<% } %>
 <script nonce="<%= nonce %>">window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;</script>
 <script id="wiki-pos-images-data" type="application/json"><%- JSON.stringify(pm.positional_images || []) %></script>
 <script nonce="<%= nonce %>">

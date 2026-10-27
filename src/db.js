@@ -1739,7 +1739,7 @@ function listWikiPages() {
 const _listWikiPagesLightStmt = db.prepare(`
   SELECT id, title, slug, category, tags, extra_categories, meta, views,
          owned, maturity, maturity_set_at, created_at, updated_at, parody, sub_parody,
-         image_path, image_paths, featured,
+         image_path, image_paths, sfw_image_paths, featured,
          CASE WHEN LENGTH(content) >= 100 THEN 1 ELSE 0 END AS has_content
   FROM wiki_pages ORDER BY title ASC
 `);
@@ -1755,6 +1755,7 @@ function listWikiPagesLight() {
     }
     let imagePaths = (() => { try { return JSON.parse(row.image_paths || "[]"); } catch (_) { return []; } })();
     if (!imagePaths.length && row.image_path) imagePaths = [row.image_path];
+    const sfwImagePaths = (() => { try { return JSON.parse(row.sfw_image_paths || "[]"); } catch (_) { return []; } })();
     return {
       id: row.id,
       slug: row.slug || null,
@@ -1764,6 +1765,7 @@ function listWikiPagesLight() {
       extraCategories: (() => { try { return JSON.parse(row.extra_categories || "[]"); } catch (_) { return []; } })(),
       meta: (() => { try { return JSON.parse(row.meta || "{}"); } catch (_) { return {}; } })(),
       imagePaths,
+      sfwImagePaths,
       views: row.views || 0,
       owned: !!row.owned,
       featured: !!row.featured,
