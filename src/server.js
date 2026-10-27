@@ -31,6 +31,7 @@ const {
   getLootboxCount,
   listCodexAuthors,
   getCodexAuthorBySlug,
+  getSfwSet,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -474,6 +475,8 @@ const RESTRICTED_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0
 app.use(
   "/uploads",
   (req, res, next) => {
+    // Images marquées SFW par l'admin : accessibles sans compte
+    if (!req.user && getSfwSet().has('/uploads' + req.path)) return next();
     if (!req.user) return res.status(403).end();
     const status = req.user.accountStatus || 'actif';
     if (status === 'restreint' && !req.user.isAdmin) {

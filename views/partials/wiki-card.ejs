@@ -113,7 +113,10 @@
   data-sous-cat="<%= (page.meta && page.meta.sous_cat) || '' %>"
   data-empty="<%= wcIsEmpty ? '1' : '0' %>">
 
-  <% if (page.imagePaths && page.imagePaths.length && currentUser) { %>
+  <%
+    var wcCoverSfw = !!(page.sfwImagePaths && page.imagePaths && page.imagePaths.length && page.sfwImagePaths.indexOf(page.imagePaths[0]) !== -1);
+  %>
+  <% if (page.imagePaths && page.imagePaths.length && (currentUser || wcCoverSfw)) { %>
     <%# ── Carte AVEC image ───────────────────────────────────────────── %>
     <div class="wiki-card-image" data-images="<%= page.imagePaths.join('|') %>">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>

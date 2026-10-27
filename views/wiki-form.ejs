@@ -308,11 +308,13 @@
               : !isCover;
             var posEntry    = (pm.positional_images || []).filter(function(pi) { return pi.path === src; })[0];
             var section     = posEntry ? (posEntry.section || '') : '';
+            var isSfw       = !!(page.sfwImagePaths && page.sfwImagePaths.indexOf(src) !== -1);
           %>
             <div class="wf-img-card"
                  data-path="<%= src %>"
                  data-cover="<%= isCover ? '1' : '0' %>"
                  data-secondary="<%= isSecondary ? '1' : '0' %>"
+                 data-sfw="<%= isSfw ? '1' : '0' %>"
                  data-section="<%= section %>">
               <div class="wf-img-card-photo">
                 <img src="<%= thumbUrl(src) %>" class="wf-img-thumb" alt="" loading="lazy" />
@@ -321,6 +323,7 @@
               <div class="wf-img-card-controls">
                 <button type="button" class="wf-img-ctrl wf-img-ctrl--star<%= isCover ? ' on' : '' %>" data-action="cover" title="Image principale">&#9733;</button>
                 <button type="button" class="wf-img-ctrl wf-img-ctrl--heart<%= isSecondary ? ' on' : '' %>" data-action="secondary" title="Images secondaires">&#10084;</button>
+                <button type="button" class="wf-img-ctrl wf-img-ctrl--sfw<%= isSfw ? ' on' : '' %>" data-action="sfw" title="Visible sans compte (SFW)">&#9728;</button>
                 <select class="wf-img-ctrl wf-img-ctrl--section<%= section ? ' on' : '' %>" data-action="section" title="Int&eacute;grer dans une section">
                   <option value="">&#9657;&nbsp;Section</option>
                   <% if (section) { %><option value="<%= section %>" selected><%= section.length > 16 ? section.slice(0,14)+'\u2026' : section %></option><% } %>

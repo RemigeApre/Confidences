@@ -51,6 +51,7 @@ const {
   getCodexAuthorBySlug,
   getWikiPageBySlug,
   updateWikiPageSlug,
+  invalidateSfwSet,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
@@ -440,6 +441,7 @@ function parseImagesMeta(body, existingPaths, newFiles) {
 
   const toRemove  = Array.isArray(meta.remove)   ? meta.remove   : [];
   const secondary = Array.isArray(meta.secondary) ? meta.secondary : [];
+  const sfwTokens = Array.isArray(meta.sfw)       ? meta.sfw      : [];
   const sections  = (meta.sections && typeof meta.sections === "object") ? meta.sections : {};
   const coverVal  = meta.cover || "";
 
@@ -479,7 +481,9 @@ function parseImagesMeta(body, existingPaths, newFiles) {
     })
     .filter(Boolean);
 
-  return { imagePaths, secondary_image_paths, positional_images };
+  const sfwImagePaths = sfwTokens.map(resolve).filter((p) => p && imagePaths.includes(p));
+
+  return { imagePaths, secondary_image_paths, positional_images, sfwImagePaths };
 }
 
 function injectVarianteImages(body, files) {
@@ -781,7 +785,7 @@ function buildWikiRouter(config) {
     const newImgFiles = files.filter((f) => f.fieldname === "images");
     const bodyWithVarianteImgs = injectVarianteImages(req.body, files);
     const meta = parseMeta(category, bodyWithVarianteImgs);
-    const { imagePaths, secondary_image_paths, positional_images } = parseImagesMeta(req.body, [], newImgFiles);
+    const { imagePaths, secondary_image_paths, positional_images, sfwImagePaths } = parseImagesMeta(req.body, [], newImgFiles);
     meta.secondary_image_paths = secondary_image_paths;
     meta.positional_images     = positional_images;
     meta.secondary_configured  = true;
@@ -792,7 +796,8 @@ function buildWikiRouter(config) {
     const parody = normalizeParody(String(req.body.parody || ""));
     const subParody = normalizeParody(String(req.body.sub_parody || ""));
 
-    const { id: newId, slug: newSlug } = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody, slug: req.body.meta_slug || '' });
+    const { id: newId, slug: newSlug } = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, slug: req.body.meta_slug || '' });
+    invalidateSfwSet();
     syncPageGalleryImages(newId, title, imagePaths, meta);
     res.redirect(`/wiki/${newSlug || newId}`);
   });
@@ -1016,7 +1021,7 @@ function buildWikiRouter(config) {
     const newImgFiles = files.filter((f) => f.fieldname === "images");
     const bodyWithVarianteImgs = injectVarianteImages(req.body, files);
     const meta = parseMeta(category, bodyWithVarianteImgs);
-    const { imagePaths, secondary_image_paths, positional_images } =
+    const { imagePaths, secondary_image_paths, positional_images, sfwImagePaths } =
       parseImagesMeta(req.body, existing.imagePaths, newImgFiles);
     meta.secondary_image_paths = secondary_image_paths;
     meta.positional_images     = positional_images;
@@ -1029,7 +1034,8 @@ function buildWikiRouter(config) {
     const parody = normalizeParody(String(req.body.parody || ""));
     const subParody = normalizeParody(String(req.body.sub_parody || ""));
     const cardSummary = req.body.card_summary !== undefined ? String(req.body.card_summary || '').trim() : undefined;
-    updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, owned, meta, extraCategories, parody, subParody, cardSummary: cardSummary || null });
+    updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, cardSummary: cardSummary || null });
+    invalidateSfwSet();
     syncPageGalleryImages(id, title, imagePaths, meta, existing.title.trim().toLowerCase());
     // Update slug if provided and different from current
     let finalSlug = existing.slug;

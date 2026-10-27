@@ -90,6 +90,8 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity_set_at TEXT"); } catch
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sfw_image_paths TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
+
 // ── Migration slug ──────────────────────────────────────────────────────────
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN slug TEXT"); } catch (_) {}
 
@@ -1658,6 +1660,7 @@ function rowToWikiPage(row) {
   }
   let imagePaths = JSON.parse(row.image_paths || "[]");
   if (!imagePaths.length && row.image_path) imagePaths = [row.image_path];
+  const sfwImagePaths = (() => { try { return JSON.parse(row.sfw_image_paths || "[]"); } catch (_) { return []; } })();
   return {
     id: row.id,
     slug: row.slug || null,
@@ -1666,6 +1669,7 @@ function rowToWikiPage(row) {
     content: row.content,
     tags: JSON.parse(row.tags),
     imagePaths,
+    sfwImagePaths,
     owned: !!row.owned,
     meta: JSON.parse(row.meta || "{}"),
     // rating/flame/interested : propres a chaque profil, voir content_reactions.
@@ -1702,7 +1706,7 @@ function listFeaturedWikiPages() {
   return db.prepare("SELECT * FROM wiki_pages WHERE featured = 1").all().map(rowToWikiPage);
 }
 
-function insertWikiPage({ title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody, slug: rawSlug }) {
+function insertWikiPage({ title, category, content, tags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, slug: rawSlug }) {
   const now = new Date().toISOString();
   // Generate slug if not provided
   let base = rawSlug ? slugify(rawSlug) : slugify(title);
@@ -1714,10 +1718,10 @@ function insertWikiPage({ title, category, content, tags, imagePaths, owned, met
   }
   const info = db
     .prepare(
-      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, owned, meta, extra_categories, parody, sub_parody, slug, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, sfw_image_paths, owned, meta, extra_categories, parody, sub_parody, slug, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", slug, now, now);
+    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), JSON.stringify(sfwImagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", slug, now, now);
   return { id: info.lastInsertRowid, slug };
 }
 
@@ -1837,20 +1841,38 @@ function updateWikiPageSlug(id, rawSlug) {
   return slug;
 }
 
-function updateWikiPage(id, { title, category, content, tags, imagePaths, owned, meta, extraCategories, parody, subParody, cardSummary }) {
-  const existing = db.prepare("SELECT image_paths, image_path FROM wiki_pages WHERE id = ?").get(id);
+function updateWikiPage(id, { title, category, content, tags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, cardSummary }) {
+  const existing = db.prepare("SELECT image_paths, image_path, sfw_image_paths FROM wiki_pages WHERE id = ?").get(id);
   if (!existing) return false;
   let finalImagePaths = imagePaths;
   if (finalImagePaths === undefined) {
     finalImagePaths = JSON.parse(existing.image_paths || "[]");
     if (!finalImagePaths.length && existing.image_path) finalImagePaths = [existing.image_path];
   }
+  const finalSfwPaths = sfwImagePaths !== undefined ? sfwImagePaths : JSON.parse(existing.sfw_image_paths || "[]");
   db.prepare(
-    `UPDATE wiki_pages SET title = ?, category = ?, content = ?, tags = ?, image_paths = ?, owned = ?, meta = ?, extra_categories = ?, parody = ?, sub_parody = ?, card_summary = ?, updated_at = ?
+    `UPDATE wiki_pages SET title = ?, category = ?, content = ?, tags = ?, image_paths = ?, sfw_image_paths = ?, owned = ?, meta = ?, extra_categories = ?, parody = ?, sub_parody = ?, card_summary = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", cardSummary !== undefined ? (cardSummary || null) : existing.card_summary, new Date().toISOString(), id);
+  ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), JSON.stringify(finalSfwPaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", cardSummary !== undefined ? (cardSummary || null) : existing.card_summary, new Date().toISOString(), id);
   return true;
 }
+
+// ── Cache SFW images ─────────────────────────────────────────────────────────
+// Permet au middleware uploads de vérifier en O(1) si une image est SFW,
+// sans requête DB par requête image. Invalidé après chaque save.
+let _sfwCache = null;
+function getSfwSet() {
+  if (_sfwCache) return _sfwCache;
+  const rows = db.prepare("SELECT sfw_image_paths FROM wiki_pages WHERE sfw_image_paths != '[]'").all();
+  _sfwCache = new Set();
+  for (const row of rows) {
+    try {
+      for (const p of JSON.parse(row.sfw_image_paths || "[]")) _sfwCache.add(p);
+    } catch (_) {}
+  }
+  return _sfwCache;
+}
+function invalidateSfwSet() { _sfwCache = null; }
 
 function updateWikiCardSummary(wikiPageId, summary) {
   db.prepare("UPDATE wiki_pages SET card_summary = ? WHERE id = ?").run(summary || null, wikiPageId);
@@ -5169,6 +5191,7 @@ module.exports = {
   getWikiPage,
   getWikiPageBySlug,
   updateWikiPage,
+  getSfwSet, invalidateSfwSet,
   updateWikiPageSlug,
   slugify,
   deleteWikiPage,
