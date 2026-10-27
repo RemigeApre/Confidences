@@ -114,18 +114,20 @@
   data-empty="<%= wcIsEmpty ? '1' : '0' %>">
 
   <%
-    var wcCoverSfw = !!(page.sfwImagePaths && page.imagePaths && page.imagePaths.length && page.sfwImagePaths.indexOf(page.imagePaths[0]) !== -1);
+    var wcSfwPaths = page.sfwImagePaths || [];
+    var wcCover = currentUser ? (page.imagePaths && page.imagePaths[0]) : (wcSfwPaths[0] || null);
+    var wcDataImages = currentUser ? (page.imagePaths || []) : wcSfwPaths;
   %>
-  <% if (page.imagePaths && page.imagePaths.length && (currentUser || wcCoverSfw)) { %>
+  <% if (wcCover) { %>
     <%# ── Carte AVEC image ───────────────────────────────────────────── %>
-    <div class="wiki-card-image" data-images="<%= page.imagePaths.join('|') %>">
+    <div class="wiki-card-image" data-images="<%= wcDataImages.join('|') %>">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
       <% if (currentUser && currentUser.isAdmin && wcHasEn && !wcIsComplete) { %><span class="wiki-en-badge">EN</span><% } %>
       <% if (wcStatPctF !== null) { %>
         <div class="wiki-card-stat-donut" style="--pct:<%= wcStatPctF %>" title="<%= wcStatPctF %>% des femmes"></div>
       <% } %>
-      <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="" class="wiki-card-img" loading="lazy" />
+      <img src="<%= thumbUrl(wcCover) %>" data-src="<%= wcCover %>" alt="" class="wiki-card-img" loading="lazy" />
       <div class="wiki-card-overlay">
         <% if (currentUser) { %><span class="wiki-card-badges">
           <% if (page.rating) { %><span class="wiki-card-mini-stars"><% for (var si = 1; si <= 5; si++) { %><span class="wiki-card-star<%= si <= page.rating ? ' filled' : '' %>">&#9733;</span><% } %></span><% } %>
