@@ -735,50 +735,40 @@
           </div>
         <% } %>
 
-        <%# ── YMYL : Avertissement médical ── %>
+        <%# ── YMYL : Note médicale ── %>
         <% if (pm.medical) { %>
-          <details class="wiki-ymyl-block wiki-ymyl-medical" open>
-            <summary class="wiki-ymyl-summary">
-              <span class="wiki-ymyl-icon" aria-hidden="true">&#x2695;&#xFE0F;</span>
-              <span class="wiki-ymyl-label" data-fr="Note médicale" data-en="Medical note">Note médicale</span>
-            </summary>
-            <div class="wiki-ymyl-body">
-              <div class="wiki-md wiki-ymyl-text"><span class="wiki-md-raw" hidden><%= pm.medical %></span></div>
-              <% if (pm.medical_sources && pm.medical_sources.length) { %>
-                <ol class="wiki-sources-list wiki-ymyl-sources">
-                  <% pm.medical_sources.forEach(function(src) { %>
-                    <li class="wiki-sources-item">
-                      <% if (src.url) { %><a href="<%= src.url %>" class="wiki-sources-link" target="_blank" rel="noopener noreferrer"><%- src.label || src.url %></a><% } else { %><span class="wiki-sources-label"><%- src.label %></span><% } %>
-                      <% if (src.authors || src.year) { %><span class="wiki-sources-meta"><% if (src.authors) { %><span class="wiki-sources-authors"><%= src.authors %></span><% } %><% if (src.year) { %><span class="wiki-sources-year">(<%= src.year %>)</span><% } %></span><% } %>
-                    </li>
-                  <% }) %>
-                </ol>
-              <% } %>
-            </div>
-          </details>
+          <div class="wiki-pos-section wiki-ymyl-section">
+            <h2 class="wiki-pos-section-heading" style="text-align:center" data-fr="Note médicale" data-en="Medical note">Note médicale</h2>
+            <div class="wiki-md"><span class="wiki-md-raw" hidden><%= pm.medical %></span></div>
+            <% if (pm.medical_sources && pm.medical_sources.length) { %>
+              <ol class="wiki-sources-list wiki-ymyl-sources">
+                <% pm.medical_sources.forEach(function(src) { %>
+                  <li class="wiki-sources-item">
+                    <% if (src.url) { %><a href="<%= src.url %>" class="wiki-sources-link" target="_blank" rel="noopener noreferrer"><%- src.label || src.url %></a><% } else { %><span class="wiki-sources-label"><%- src.label %></span><% } %>
+                    <% if (src.authors || src.year) { %><span class="wiki-sources-meta"><% if (src.authors) { %><span class="wiki-sources-authors"><%= src.authors %></span><% } %><% if (src.year) { %><span class="wiki-sources-year">(<%= src.year %>)</span><% } %></span><% } %>
+                  </li>
+                <% }) %>
+              </ol>
+            <% } %>
+          </div>
         <% } %>
 
-        <%# ── YMYL : Avertissement psychologique ── %>
+        <%# ── YMYL : Note psychologique ── %>
         <% if (pm.psychologique) { %>
-          <details class="wiki-ymyl-block wiki-ymyl-psychologique" open>
-            <summary class="wiki-ymyl-summary">
-              <span class="wiki-ymyl-icon" aria-hidden="true">&#x1F9E0;</span>
-              <span class="wiki-ymyl-label" data-fr="Note psychologique" data-en="Psychological note">Note psychologique</span>
-            </summary>
-            <div class="wiki-ymyl-body">
-              <div class="wiki-md wiki-ymyl-text"><span class="wiki-md-raw" hidden><%= pm.psychologique %></span></div>
-              <% if (pm.psychologique_sources && pm.psychologique_sources.length) { %>
-                <ol class="wiki-sources-list wiki-ymyl-sources">
-                  <% pm.psychologique_sources.forEach(function(src) { %>
-                    <li class="wiki-sources-item">
-                      <% if (src.url) { %><a href="<%= src.url %>" class="wiki-sources-link" target="_blank" rel="noopener noreferrer"><%- src.label || src.url %></a><% } else { %><span class="wiki-sources-label"><%- src.label %></span><% } %>
-                      <% if (src.authors || src.year) { %><span class="wiki-sources-meta"><% if (src.authors) { %><span class="wiki-sources-authors"><%= src.authors %></span><% } %><% if (src.year) { %><span class="wiki-sources-year">(<%= src.year %>)</span><% } %></span><% } %>
-                    </li>
-                  <% }) %>
-                </ol>
-              <% } %>
-            </div>
-          </details>
+          <div class="wiki-pos-section wiki-ymyl-section">
+            <h2 class="wiki-pos-section-heading" style="text-align:center" data-fr="Note psychologique" data-en="Psychological note">Note psychologique</h2>
+            <div class="wiki-md"><span class="wiki-md-raw" hidden><%= pm.psychologique %></span></div>
+            <% if (pm.psychologique_sources && pm.psychologique_sources.length) { %>
+              <ol class="wiki-sources-list wiki-ymyl-sources">
+                <% pm.psychologique_sources.forEach(function(src) { %>
+                  <li class="wiki-sources-item">
+                    <% if (src.url) { %><a href="<%= src.url %>" class="wiki-sources-link" target="_blank" rel="noopener noreferrer"><%- src.label || src.url %></a><% } else { %><span class="wiki-sources-label"><%- src.label %></span><% } %>
+                    <% if (src.authors || src.year) { %><span class="wiki-sources-meta"><% if (src.authors) { %><span class="wiki-sources-authors"><%= src.authors %></span><% } %><% if (src.year) { %><span class="wiki-sources-year">(<%= src.year %>)</span><% } %></span><% } %>
+                  </li>
+                <% }) %>
+              </ol>
+            <% } %>
+          </div>
         <% } %>
 
         <%# ── Sources / Citations ── %>

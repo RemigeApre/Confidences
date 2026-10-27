@@ -200,7 +200,7 @@ app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", imm
 // Les crawlers IA (GPTBot, ClaudeBot…) ont accès via robots.txt et bénéficient
 // aussi des endpoints dédiés (/llms-full.txt, /api/wiki/index.json, /wiki/:id.md).
 app.use((req, res, next) => {
-  const isWikiPublic = req.path === "/wiki" || req.path.startsWith("/wiki/");
+  const isWikiPublic = req.path === "/" || req.path === "/wiki" || req.path.startsWith("/wiki/") || req.path.startsWith("/auteurs/");
   // Fichiers de vérification Google/Bing/moteurs : aucun X-Robots-Tag, servis bruts
   const isVerification = /^\/google[a-f0-9]+\.html$/.test(req.path)
     || /^\/bing[a-zA-Z0-9_-]+\.xml$/.test(req.path);

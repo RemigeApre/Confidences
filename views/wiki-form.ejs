@@ -329,6 +329,35 @@
       <textarea name="card_summary" class="wiki-textarea wiki-pos-textarea" rows="3"
         placeholder="Texte affiché au dos de la carte lootbox (2-4 lignes courtes)&hellip;"><%= page.cardSummary || '' %></textarea>
 
+      <%# ── YMYL : Notes médicale / psychologique ── %>
+      <div class="wf-section-title">Notes YMYL <span class="wf-orce-badge" style="background:rgba(251,191,36,.15);color:#fbbf24;border-color:rgba(251,191,36,.3);vertical-align:middle">YMYL</span></div>
+
+      <details class="prot-sb-details" id="wf-medical-details"<%= pm.medical ? ' open' : '' %>>
+        <summary class="prot-sb-details-summary">Note médicale <span class="wf-orce-badge">YMYL</span></summary>
+        <div class="prot-sb-details-body">
+          <p class="prot-sb-label" style="margin-bottom:.6rem">Contenu médical validé : risques, contre-indications, recommandations cliniques. Visible uniquement si rempli.</p>
+          <textarea name="meta_medical" class="wiki-textarea wf-md-input" rows="4"
+                    placeholder="Risques, précautions médicales, références cliniques…"><%= pm.medical || '' %></textarea>
+          <p class="prot-sb-label" style="margin:.6rem 0 .4rem">Sources médicales</p>
+          <div id="wf-medical-sources-list"></div>
+          <button type="button" class="wf-sources-add-btn" data-target="medical">+ Ajouter une source médicale</button>
+          <input type="hidden" name="meta_medical_sources" id="wf-medical-sources-hidden" value="<%= JSON.stringify(pm.medical_sources || []) %>" />
+        </div>
+      </details>
+
+      <details class="prot-sb-details" id="wf-psychologique-details"<%= pm.psychologique ? ' open' : '' %>>
+        <summary class="prot-sb-details-summary">Note psychologique <span class="wf-orce-badge">YMYL</span></summary>
+        <div class="prot-sb-details-body">
+          <p class="prot-sb-label" style="margin-bottom:.6rem">Contenu psychologique validé : dynamiques émotionnelles, impacts psychologiques, conseils thérapeutiques. Visible uniquement si rempli.</p>
+          <textarea name="meta_psychologique" class="wiki-textarea wf-md-input" rows="4"
+                    placeholder="Dynamiques psychologiques, impacts émotionnels, recommandations…"><%= pm.psychologique || '' %></textarea>
+          <p class="prot-sb-label" style="margin:.6rem 0 .4rem">Sources psychologiques</p>
+          <div id="wf-psychologique-sources-list"></div>
+          <button type="button" class="wf-sources-add-btn" data-target="psychologique">+ Ajouter une source psychologique</button>
+          <input type="hidden" name="meta_psychologique_sources" id="wf-psychologique-sources-hidden" value="<%= JSON.stringify(pm.psychologique_sources || []) %>" />
+        </div>
+      </details>
+
       <%# ── Actions mobile ── %>
       <div class="wiki-form-actions wf-mobile-actions">
         <button type="submit">Enregistrer</button>
@@ -452,34 +481,6 @@
             <div id="wf-sources-list"></div>
             <button type="button" id="wf-sources-add" class="wf-sources-add-btn">+ Ajouter une source</button>
             <input type="hidden" name="meta_sources" id="wf-sources-hidden" value="<%= JSON.stringify(pm.sources || []) %>" />
-          </div>
-        </details>
-
-        <%# ── YMYL : Note médicale ── %>
-        <details class="prot-sb-details" id="wf-medical-details"<%= pm.medical ? ' open' : '' %>>
-          <summary class="prot-sb-details-summary">&#x2695;&#xFE0F; Note médicale <span class="wf-orce-badge">YMYL</span></summary>
-          <div class="prot-sb-details-body">
-            <p class="prot-sb-label" style="margin-bottom:.6rem">Contenu médical validé : risques, contre-indications, recommandations cliniques. Visible uniquement si rempli (affiché réduit sur l'article).</p>
-            <textarea name="meta_medical" class="wiki-textarea wf-md-input" rows="4"
-                      placeholder="Risques, précautions médicales, références cliniques…"><%= pm.medical || '' %></textarea>
-            <p class="prot-sb-label" style="margin:.6rem 0 .4rem">Sources médicales</p>
-            <div id="wf-medical-sources-list"></div>
-            <button type="button" class="wf-sources-add-btn" data-target="medical">+ Ajouter une source médicale</button>
-            <input type="hidden" name="meta_medical_sources" id="wf-medical-sources-hidden" value="<%= JSON.stringify(pm.medical_sources || []) %>" />
-          </div>
-        </details>
-
-        <%# ── YMYL : Note psychologique ── %>
-        <details class="prot-sb-details" id="wf-psychologique-details"<%= pm.psychologique ? ' open' : '' %>>
-          <summary class="prot-sb-details-summary">&#x1F9E0; Note psychologique <span class="wf-orce-badge">YMYL</span></summary>
-          <div class="prot-sb-details-body">
-            <p class="prot-sb-label" style="margin-bottom:.6rem">Contenu psychologique validé : dynamiques émotionnelles, impacts psychologiques, conseils thérapeutiques. Visible uniquement si rempli.</p>
-            <textarea name="meta_psychologique" class="wiki-textarea wf-md-input" rows="4"
-                      placeholder="Dynamiques psychologiques, impacts émotionnels, recommandations…"><%= pm.psychologique || '' %></textarea>
-            <p class="prot-sb-label" style="margin:.6rem 0 .4rem">Sources psychologiques</p>
-            <div id="wf-psychologique-sources-list"></div>
-            <button type="button" class="wf-sources-add-btn" data-target="psychologique">+ Ajouter une source psychologique</button>
-            <input type="hidden" name="meta_psychologique_sources" id="wf-psychologique-sources-hidden" value="<%= JSON.stringify(pm.psychologique_sources || []) %>" />
           </div>
         </details>
 
