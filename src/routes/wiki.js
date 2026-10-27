@@ -647,6 +647,7 @@ function buildWikiRouter(config) {
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 30);
     const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
+    const aiNavPages = pages.map((p) => ({ id: p.id, title: p.title }));
     res.render("wiki-index", {
       config, chapters, pages,
       allTags: getAllTags(pages),
@@ -655,6 +656,7 @@ function buildWikiRouter(config) {
       recentAdded, recentUpdated, popular,
       hasOwnedItems: pages.some((p) => p.owned),
       wikiTitlesEn,
+      aiNavPages,
       metaDescription: `Codex Confidence — encyclopédie de sexologie bilingue FR/EN. ${pages.length} fiches : positions, pratiques, fantasmes, partenaires, tenues, objets et plus.`,
       ...CTX
     });
@@ -956,7 +958,8 @@ function buildWikiRouter(config) {
           return found ? { ...found, role: a.role } : null;
         }).filter(Boolean)
       : [];
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, ...CTX });
+    const aiNavPages = allPages.map((p) => ({ id: p.id, title: p.title }));
+    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, ...CTX });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {

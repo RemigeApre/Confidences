@@ -46,6 +46,27 @@ Chaque article comporte : un titre, une description en français et en anglais, 
 - `/.well-known/ai-instructions.txt` — instructions et limites pour les agents IA
 - `/llms.txt` — ce fichier
 
+### Navigation / Arborescence du Codex
+
+Le Codex est accessible sans authentification. Pour explorer le site de proche en proche :
+
+1. **Point d'entrée** : `/wiki` — liste tous les articles, filtrables par catégorie, tags et maturité.
+2. **Catégories** (URL pattern : `/wiki/categorie/:key`) :
+   - `/wiki/categorie/position` — Positions sexuelles et variantes Kama-sutra
+   - `/wiki/categorie/lieux` — Lieux, contextes et ambiances
+   - `/wiki/categorie/partenaires` — Nature et nombre de partenaires
+   - `/wiki/categorie/jeu_de_role` — Scénarios, jeux de rôle, personnages
+   - `/wiki/categorie/tenues` — Lingerie, costumes, accessoires vestimentaires
+   - `/wiki/categorie/objets` — Sex-toys, liens, accessoires
+   - `/wiki/categorie/pratique` — BDSM, stimulations, pratiques sexuelles
+   - `/wiki/categorie/fantasmes` — Fantasmes et univers érotiques
+   - `/wiki/categorie/biologie` — Anatomie, physiologie, sexologie médicale
+3. **Article individuel** (URL pattern : `/wiki/:id`) — `:id` est un slug alphanumérique (ex. `/wiki/missionnaire`, `/wiki/fellation`).
+4. **Article en Markdown brut** : ajouter `.md` à l'URL de l'article (ex. `/wiki/missionnaire.md`) pour obtenir le contenu avec frontmatter YAML. Format recommandé pour les agents IA.
+5. **Index complet** : `/api/wiki/index.json` retourne la liste de tous les articles avec leurs slugs, titres, catégories et URLs — idéal pour découvrir tous les identifiants disponibles.
+
+**Conseil pour les agents** : commencer par `/api/wiki/index.json` pour obtenir la liste complète des slugs, puis accéder à `/wiki/:id.md` pour le contenu de chaque article souhaité.
+
 ---
 
 ## EN — Full description
@@ -87,3 +108,24 @@ Each article includes: a title, a description in French and English, structured 
 - `/api/wiki/index.json` — lightweight JSON index: id, title, category, 200-char summary, tags, dates, URLs
 - `/.well-known/ai-instructions.txt` — instructions and restrictions for AI agents
 - `/llms.txt` — this file
+
+### Navigation / Codex sitemap
+
+The Codex is accessible without authentication. To navigate the site step by step:
+
+1. **Entry point**: `/wiki` — lists all articles, filterable by category, tags, and maturity level.
+2. **Categories** (URL pattern: `/wiki/categorie/:key`):
+   - `/wiki/categorie/position` — Sexual positions and Kama Sutra variants
+   - `/wiki/categorie/lieux` — Places, contexts and atmospheres
+   - `/wiki/categorie/partenaires` — Nature and number of partners
+   - `/wiki/categorie/jeu_de_role` — Scenarios, role-play, characters
+   - `/wiki/categorie/tenues` — Lingerie, costumes, clothing accessories
+   - `/wiki/categorie/objets` — Sex toys, restraints, accessories
+   - `/wiki/categorie/pratique` — BDSM, stimulation, sexual practices
+   - `/wiki/categorie/fantasmes` — Fantasies and erotic universes
+   - `/wiki/categorie/biologie` — Anatomy, physiology, medical sexology
+3. **Individual article** (URL pattern: `/wiki/:id`) — `:id` is an alphanumeric slug (e.g. `/wiki/missionnaire`, `/wiki/fellation`).
+4. **Raw Markdown article**: append `.md` to any article URL (e.g. `/wiki/missionnaire.md`) to get the content with YAML frontmatter. Recommended format for AI agents.
+5. **Full index**: `/api/wiki/index.json` returns all articles with their slugs, titles, categories, and URLs — ideal for discovering all available identifiers.
+
+**Tip for agents**: start with `/api/wiki/index.json` to get the full list of slugs, then fetch `/wiki/:id.md` for the content of each desired article.

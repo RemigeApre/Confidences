@@ -1,0 +1,51 @@
+<%#
+  ai-nav.ejs — Navigation HTML sémantique pour les crawlers IA et moteurs de recherche.
+  Visuellement masquée (clip/overflow trick, accessible aux lecteurs d'écran), mais
+  présente dans le DOM : les LLMs et bots qui lisent le HTML peuvent suivre ces liens.
+  Inclure sur les pages publiques : home, wiki index, wiki article.
+%>
+<nav aria-label="Plan du site" class="ai-sitemap-nav">
+  <p class="ai-sitemap-intro">
+    Confidence — encyclopédie de sexologie bilingue (FR/EN).
+    Le Codex est l'encyclopédie publique du site, accessible sans compte.
+    Structure des URLs Codex : <code>/wiki/:id</code> (article), <code>/wiki/categorie/:key</code> (catégorie),
+    <code>/wiki/:id.md</code> (Markdown brut pour IA).
+  </p>
+
+  <section>
+    <h2>Codex — Encyclopédie de sexologie</h2>
+    <ul>
+      <li><a href="/wiki">Index du Codex</a> — toutes les fiches de l'encyclopédie</li>
+      <li><a href="/wiki/categorie/position">Positions</a> — postures sexuelles et variantes Kama-sutra</li>
+      <li><a href="/wiki/categorie/lieux">Lieux</a> — endroits, contextes et ambiances</li>
+      <li><a href="/wiki/categorie/partenaires">Partenaires</a> — nature et nombre de partenaires</li>
+      <li><a href="/wiki/categorie/jeu_de_role">Scénarios</a> — jeux de rôle, personnages, ambiances</li>
+      <li><a href="/wiki/categorie/tenues">Tenues</a> — lingerie, costumes, accessoires vestimentaires</li>
+      <li><a href="/wiki/categorie/objets">Objets</a> — sex-toys, liens, accessoires</li>
+      <li><a href="/wiki/categorie/pratique">Pratiques</a> — BDSM, stimulations, pratiques sexuelles</li>
+      <li><a href="/wiki/categorie/fantasmes">Fantasmes</a> — fantasmes et univers érotiques</li>
+      <li><a href="/wiki/categorie/biologie">Biologie</a> — anatomie, physiologie, sexologie médicale</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Ressources lisibles par les IA</h2>
+    <ul>
+      <li><a href="/llms.txt">llms.txt</a> — présentation du site pour LLMs</li>
+      <li><a href="/llms-full.txt">llms-full.txt</a> — contenu complet du Codex en Markdown</li>
+      <li><a href="/api/wiki/index.json">api/wiki/index.json</a> — index JSON structuré de tous les articles</li>
+      <li><a href="/sitemap.xml">sitemap.xml</a> — sitemap XML de toutes les pages publiques</li>
+    </ul>
+  </section>
+
+  <% if (locals.aiNavPages && aiNavPages.length) { %>
+  <section>
+    <h2>Articles du Codex</h2>
+    <ul>
+      <% aiNavPages.forEach(function(p) { %>
+        <li><a href="/wiki/<%= p.id %>"><%= p.title %></a></li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+</nav>
