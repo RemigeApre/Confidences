@@ -547,6 +547,20 @@ function buildGalleryRouter(config) {
     res.json({ ok: true, safe });
   });
 
+  router.post("/:id/special", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.json({ ok: false });
+    const image = getGalleryImage(id);
+    if (!image) return res.json({ ok: false });
+    const val = String(req.body.special || "normal");
+    if (!["normal", "ultra", "irrealiste"].includes(val)) return res.json({ ok: false });
+    let tags = image.tags.filter((t) => t !== "ultra" && t !== "irréaliste");
+    if (val === "ultra") tags = [...tags, "ultra"];
+    else if (val === "irrealiste") tags = [...tags, "irréaliste"];
+    updateGalleryImage(id, { title: image.title, titleVisible: image.titleVisible, category: image.category, tags, notes: image.notes, imagePaths: image.imagePaths, wikiPageId: image.wikiPageId, author: image.author, parody: image.parody, subParody: image.subParody, protagonistIds: image.protagonistIds, safe: image.safe });
+    res.json({ ok: true, ultra: val === "ultra", irrealiste: val === "irrealiste" });
+  });
+
   router.post("/:id/processed", requireAdmin, express.json(), (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.json({ ok: false });
