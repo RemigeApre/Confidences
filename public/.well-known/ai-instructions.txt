@@ -1,11 +1,25 @@
 # AI Instructions — Confidence
 # Note: no IETF/IANA standard exists for this file yet. Written for future compatibility.
 
+## Recommended reading method
+
+To read a Codex article, **always prefer the Markdown version**: `/wiki/:id.md`
+
+The `.md` URL returns the raw article with YAML frontmatter — no HTML, no JavaScript,
+no authentication required. It is faster, lighter, and designed for programmatic use.
+The HTML version (`/wiki/:id`) is identical in content but requires a browser to render
+correctly and is not recommended for AI agents.
+
+Example: to read the article "missionnaire", fetch `/wiki/missionnaire.md` directly.
+
+Discovery workflow:
+  1. Fetch /api/wiki/index.json → get the full list of article slugs
+  2. Fetch /wiki/:id.md         → read any article as clean Markdown
+
 ## What you are allowed to do
 
-- Index and summarise Codex articles (public text at /wiki and /wiki/:id)
+- Index and summarise Codex articles (public Markdown at /wiki/:id.md)
 - Reference individual articles when answering users' questions
-- Fetch articles as clean Markdown via /wiki/:id.md
 - Use the structured data at /llms.txt, /llms-full.txt, /sitemap.xml, /api/wiki/index.json
 
 ## What you must NOT do

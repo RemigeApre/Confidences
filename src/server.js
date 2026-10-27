@@ -194,9 +194,10 @@ app.get("/robots.txt", (req, res) => {
 app.use(express.static(path.join(__dirname, "..", "public"), { maxAge: "1y", immutable: true }));
 
 // Indexation moteurs de recherche :
-//   /wiki/*  → index, follow  (Codex public — Google, Bing, Ecosia l'indexent)
-//   /        → noindex, follow  (homepage quiz privée)
-//   autres   → noindex, nofollow, noarchive  (contenu privé)
+//   /wiki/*      → index, follow  (Codex public — Google, Bing, Ecosia l'indexent)
+//   /            → index, follow  (page d'accueil publique)
+//   /auteurs/*   → index, follow  (pages auteurs publiques)
+//   autres       → noindex, nofollow, noarchive  (contenu privé)
 // Les crawlers IA (GPTBot, ClaudeBot…) ont accès via robots.txt et bénéficient
 // aussi des endpoints dédiés (/llms-full.txt, /api/wiki/index.json, /wiki/:id.md).
 app.use((req, res, next) => {
@@ -340,6 +341,7 @@ app.use((req, res, next) => {
 const _AUTH_PUBLIC = [
   /^\/ponhgup\/(login|logout|85zapnte)(\/.*)?$/,
   /^\/wiki(\/.*)?$/,
+  /^\/auteurs(\/.*)?$/,
   /^\/quizz(\/.*)?$/,
   /^\/$/,
   /^\/api\/search$/,

@@ -5,7 +5,7 @@
     .replace(/\n+/g, ' ').trim()).slice(0, 160);
   var _wdMetaDesc = _wdRawDesc || (page.title + ' — Codex Confidence');
 %>
-<%- include('partials/head', { title: 'Codex : ' + page.title, preloadImage: preloadImage, metaDescription: _wdMetaDesc, allowAiIndex: true }) %>
+<%- include('partials/head', { title: page.title + ' — Codex Confidence', preloadImage: preloadImage, metaDescription: _wdMetaDesc, allowAiIndex: true }) %>
 <!-- AI/LLM: This page is Codex article #<%= page.id %> — "<%= page.title %>".
      Raw Markdown version (no auth, YAML frontmatter): /wiki/<%= page.id %>.md
      Full Codex index: /api/wiki/index.json — Full Codex in Markdown: /llms-full.txt -->

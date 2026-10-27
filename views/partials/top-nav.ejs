@@ -105,7 +105,7 @@
               <% } %>
               <a href="/liens" class="pc-drop-link" data-fr="Liens" data-en="Links">Liens</a>
               <% if (currentUser.isAdmin) { %>
-                <a href="/ponhgup" class="pc-drop-link" data-fr="Admin" data-en="Admin">Admin</a>
+                <a href="/ponhgup" class="pc-drop-link" rel="nofollow" data-fr="Admin" data-en="Admin">Admin</a>
               <% } %>
               <form method="POST" action="/ponhgup/logout" style="margin:0">
                 <button type="submit" class="pc-drop-link pc-drop-link-btn pc-drop-link--danger" data-fr="Déconnexion" data-en="Sign out">D&eacute;connexion</button>
@@ -114,7 +114,7 @@
           </div>
         <% } else { %>
           <a href="/ponhgup/85zapnte?next=<%= encodeURIComponent(locals.currentPath || '/') %>"
-             class="pc-icon-btn" title="Connexion"><%- include('key-icon') %></a>
+             class="pc-icon-btn" rel="nofollow" title="Connexion"><%- include('key-icon') %></a>
         <% } %>
       </div>
 

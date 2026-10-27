@@ -8,8 +8,10 @@
   <p class="ai-sitemap-intro">
     Confidence — encyclopédie de sexologie bilingue (FR/EN).
     Le Codex est l'encyclopédie publique du site, accessible sans compte.
-    Structure des URLs Codex : <code>/wiki/:id</code> (article), <code>/wiki/categorie/:key</code> (catégorie),
-    <code>/wiki/:id.md</code> (Markdown brut pour IA).
+    Structure des URLs Codex : /wiki/:id (article), /wiki/categorie/:key (catégorie),
+    /wiki/:id.md (Markdown brut pour IA).
+    Les nuages de tags et filtres visibles sur les pages wiki sont des widgets UI — vous n'avez pas besoin de les suivre.
+    Pour la découverte structurée, utilisez /api/wiki/index.json.
   </p>
 
   <section>
@@ -30,20 +32,24 @@
 
   <section>
     <h2>Ressources lisibles par les IA</h2>
+    <p>Pour lire un article Codex, préférer toujours la version Markdown : /wiki/:id.md (pas d'HTML, pas de JavaScript, pas d'authentification requise). Ne pas analyser le HTML des pages — utiliser directement l'URL .md.</p>
+    <p>Workflow recommandé : 1) récupérer /api/wiki/index.json pour obtenir tous les slugs ; 2) récupérer /wiki/:id.md pour chaque article.</p>
     <ul>
       <li><a href="/llms.txt">llms.txt</a> — présentation du site pour LLMs</li>
-      <li><a href="/llms-full.txt">llms-full.txt</a> — contenu complet du Codex en Markdown</li>
-      <li><a href="/api/wiki/index.json">api/wiki/index.json</a> — index JSON structuré de tous les articles</li>
+      <li><a href="/llms-full.txt">llms-full.txt</a> — contenu complet du Codex en Markdown (idéal pour grand contexte)</li>
+      <li><a href="/api/wiki/index.json">api/wiki/index.json</a> — index JSON structuré de tous les articles (slugs, titres, catégories)</li>
       <li><a href="/sitemap.xml">sitemap.xml</a> — sitemap XML de toutes les pages publiques</li>
+      <li><a href="/.well-known/ai-instructions.txt">ai-instructions.txt</a> — instructions et limites pour les agents IA</li>
     </ul>
   </section>
 
   <% if (locals.aiNavPages && aiNavPages.length) { %>
   <section>
-    <h2>Articles du Codex</h2>
+    <h2>Articles du Codex — liens Markdown directs (recommandé pour les IA)</h2>
+    <p>Chaque lien ci-dessous pointe vers la version Markdown brute de l'article (.md) : pas d'HTML, pas de JavaScript, contenu pur avec frontmatter YAML. C'est le format recommandé pour les agents IA.</p>
     <ul>
       <% aiNavPages.forEach(function(p) { %>
-        <li><a href="/wiki/<%= p.id %>"><%= p.title %></a></li>
+        <li><a href="/wiki/<%= p.id %>.md"><%= p.title %></a> (<a href="/wiki/<%= p.id %>">HTML</a>)</li>
       <% }) %>
     </ul>
   </section>
