@@ -15,12 +15,16 @@
 -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="<%= locals.allowIndex ? 'index, follow' : (locals.allowAiIndex ? 'noindex, follow' : 'noindex, nofollow, noarchive') %>" />
+  <%# Pages Codex publiques : index + snippets illimités + grande image → éligibles aux AI Overviews %>
+  <meta name="robots" content="<%= locals.allowIndex ? 'index, follow, max-snippet: -1, max-image-preview: large, max-video-preview: -1' : (locals.allowAiIndex ? 'noindex, follow' : 'noindex, nofollow, noarchive') %>" />
   <meta name="color-scheme" content="dark" />
   <%
     var _metaDesc = locals.metaDescription || (typeof title !== 'undefined' ? title + ' — Codex Confidence, encyclopédie de sexologie.' : 'Codex Confidence — encyclopédie de sexologie bilingue FR/EN.');
     var _pageTitle = typeof title !== 'undefined' ? title : 'Codex Confidence';
-    var _canonicalUrl = (locals.siteUrl || '') + (locals.currentPath || '/');
+    // Canonical sans query string ni hash — évite que ?explore=1, ?page=2 etc.
+    // créent des doublons aux yeux de Google.
+    var _rawPath = (locals.currentPath || '/').split('?')[0].split('#')[0];
+    var _canonicalUrl = (locals.siteUrl || '') + _rawPath;
     var _ogImage = locals.ogImage || (locals.preloadImage ? (locals.siteUrl || '') + locals.preloadImage : null);
   %>
   <meta name="description" content="<%= _metaDesc %>" />
