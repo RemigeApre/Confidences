@@ -174,6 +174,7 @@ function buildItems(galleryImages, wikiPages) {
     parody: img.parody || "",
     subParody: img.subParody || "",
     protagonistIds: img.protagonistIds || [],
+    safe: !!img.safe,
     date: img.createdAt,
   }));
 
@@ -524,6 +525,25 @@ function buildGalleryRouter(config) {
       logGalleryView(id, req.user ? req.user.id : null);
     }
     res.json({ ok: true });
+  });
+
+  router.post("/:id/safe", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.json({ ok: false });
+    const image = getGalleryImage(id);
+    if (!image) return res.json({ ok: false });
+    const safe = !image.safe;
+    updateGalleryImage(id, { title: image.title, titleVisible: image.titleVisible, category: image.category, tags: image.tags, notes: image.notes, imagePaths: image.imagePaths, wikiPageId: image.wikiPageId, author: image.author, parody: image.parody, subParody: image.subParody, protagonistIds: image.protagonistIds, safe });
+    if (image.wikiPageId) {
+      const wikiPage = getWikiPage(image.wikiPageId);
+      if (wikiPage) {
+        const sfwSet = new Set(wikiPage.sfwImagePaths || []);
+        image.imagePaths.forEach((p) => { if (safe) sfwSet.add(p); else sfwSet.delete(p); });
+        setWikiPageSfwPaths(wikiPage.id, Array.from(sfwSet));
+        invalidateSfwSet();
+      }
+    }
+    res.json({ ok: true, safe });
   });
 
   router.post("/:id/processed", requireAdmin, express.json(), (req, res) => {

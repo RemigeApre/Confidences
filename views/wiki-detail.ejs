@@ -1127,7 +1127,15 @@
   </div>
   <aside class="gallery-lb-panel">
     <button type="button" class="gallery-lb-panel-handle" aria-label="Remonter voir la photo"></button>
-    <button type="button" class="gallery-lb-close" title="Fermer">&#215;</button>
+    <div class="gallery-lb-panel-header">
+      <div class="gallery-lb-panel-header-actions">
+        <% if (currentUser && currentUser.isAdmin) { %>
+        <button type="button" class="lb-sfw-toggle-btn" id="gallery-lb-sfw-btn"
+                title="Visible sans compte (SFW)" aria-label="SFW" hidden>&#9728;</button>
+        <% } %>
+      </div>
+      <button type="button" class="gallery-lb-close" title="Fermer">&#215;</button>
+    </div>
     <div id="gallery-lb-explore-nav" class="gallery-lb-explore-nav" hidden></div>
     <%- include('partials/lb-meta-block') %>
     <div class="lb-spacer"></div>
