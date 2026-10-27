@@ -55,7 +55,8 @@
     var pmSup  = Array.isArray(pm.supports) ? pm.supports : (pm.supports ? [pm.supports] : []);
     var hasPosMeta = page.category === 'position' && (pm.categorie || pm.qui_dessus || (pm.canal && pm.canal.length) || pmOri.length || pm.nb_partenaires || pm.partenaire_actif || pmSup.length);
 
-    var hasImages = page.imagePaths && page.imagePaths.length;
+    var visibleImagePaths = currentUser ? page.imagePaths : (page.sfwImagePaths || []);
+    var hasImages = visibleImagePaths.length > 0;
     var derivedTerms = (pm.termes_derives || []).map(function (t) {
       return typeof t === 'string' ? { term: t, en: false } : t;
     });
@@ -585,9 +586,9 @@
         <% } %>
 
         <%# Image principale — mobile uniquement, glissée par JS avant le 1er h2 ─ %>
-        <% if (hasImages && currentUser) { %>
+        <% if (hasImages) { %>
           <div class="wiki-mobile-hero" id="wiki-mobile-hero" aria-hidden="true">
-            <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="<%= page.title %>" class="wiki-mobile-hero-img" loading="lazy" data-lb-bound="1" style="cursor:zoom-in" />
+            <img src="<%= thumbUrl(visibleImagePaths[0]) %>" data-src="<%= visibleImagePaths[0] %>" alt="<%= page.title %>" class="wiki-mobile-hero-img" loading="lazy" data-lb-bound="1" style="cursor:zoom-in" />
           </div>
         <% } %>
 
@@ -877,9 +878,9 @@
         </div>
 
         <%# c) Image principale ─ %>
-        <% if (hasImages && currentUser) { %>
+        <% if (hasImages) { %>
           <div class="wiki-right-img-wrap">
-            <img src="<%= thumbUrl(page.imagePaths[0]) %>" data-src="<%= page.imagePaths[0] %>" alt="<%= page.title %>" class="wiki-right-img" data-lb-bound="1" style="cursor:zoom-in" />
+            <img src="<%= thumbUrl(visibleImagePaths[0]) %>" data-src="<%= visibleImagePaths[0] %>" alt="<%= page.title %>" class="wiki-right-img" data-lb-bound="1" style="cursor:zoom-in" />
           </div>
         <% } %>
 
@@ -941,15 +942,15 @@
         <% } %>
 
         <%# Carrousel images secondaires (mobile uniquement, entre tags et réactions) ─ %>
-        <% if (hasImages && page.imagePaths.length > 1 && currentUser) { %>
-          <% var secCount = page.imagePaths.length - 1; %>
+        <% if (hasImages && visibleImagePaths.length > 1) { %>
+          <% var secCount = visibleImagePaths.length - 1; %>
           <div class="wiki-mobile-sec-wrap">
             <div class="wiki-mobile-sec-heading">
               <span data-fr="Autres images" data-en="More images">Autres images</span>
               <span class="wiki-mobile-sec-counter" id="wiki-sec-counter"><%= secCount > 1 ? '1\u00a0/\u00a0' + secCount : '' %></span>
             </div>
             <div class="wiki-mobile-sec-carousel" id="wiki-sec-carousel">
-              <% page.imagePaths.slice(1).forEach(function (src) { %>
+              <% visibleImagePaths.slice(1).forEach(function (src) { %>
                 <div class="wiki-mobile-sec-item">
                   <img src="<%= thumbUrl(src) %>" alt="" class="wiki-mobile-sec-img" loading="lazy" />
                 </div>
@@ -1106,7 +1107,7 @@
 })();
 </script>
 <%# ── Lightbox galerie (identique à gallery.ejs) ──────────────────────── %>
-<% if (currentUser) { %>
+<% if (currentUser || visibleImagePaths.length) { %>
 <%# Conteneur caché pour les fausses cartes galerie %>
 <div id="wiki-gallery-ghost" style="display:none" aria-hidden="true"></div>
 
@@ -1164,9 +1165,36 @@ window.IRREALISTE_MODE = 'visible';
 
 <script nonce="<%= nonce %>">
 (function () {
+  var _sfwPaths = <%- JSON.stringify(page.sfwImagePaths || []) %>;
+
   // Ouvre le lightbox galerie complet (favoris, note, infos…) pour n'importe quelle src.
   function openGalleryLightbox(src) {
     if (!src) return;
+    // Non-connecté : lightbox simple avec les images SFW uniquement (pas de fetch)
+    <% if (!currentUser) { %>
+    (function() {
+      var ghost = document.getElementById('wiki-gallery-ghost');
+      if (!ghost || !_sfwPaths.length) return;
+      var card = document.createElement('div');
+      card.className = 'gallery-card';
+      // On met l'image cliquée en premier, puis les autres SFW
+      card.dataset.images = [src].concat(_sfwPaths.filter(function(p) { return p !== src; })).join('|');
+      card.dataset.filtered = '1';
+      ['galleryId','displayTitle','title','titleVisible','tags','author','parody','subParody','series'].forEach(function(k) { card.dataset[k] = ''; });
+      card.dataset.rating = '0'; card.dataset.fav = '0';
+      card.dataset.wikiId = ''; card.dataset.protagonists = ''; card.dataset.processed = '0'; card.dataset.ai = '0';
+      ghost.appendChild(card);
+      if (window._galleryOpenCard) {
+        window._galleryOpenCard(card);
+        var lb = document.getElementById('gallery-lightbox');
+        if (lb) lb.addEventListener('gallery:closed', function cleanup() {
+          lb.removeEventListener('gallery:closed', cleanup);
+          if (ghost.contains(card)) ghost.removeChild(card);
+        });
+      }
+    })();
+    return;
+    <% } %>
     fetch('/galerie/by-path?src=' + encodeURIComponent(src))
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -1212,7 +1240,7 @@ window.IRREALISTE_MODE = 'visible';
     var _wikiMeta = null;
     try { _wikiMeta = JSON.parse(document.getElementById('wiki-current-page-meta').textContent); } catch(_) {}
     var _wikiId = _wikiMeta && _wikiMeta.id;
-    var _sfwSet = new Set(<%- JSON.stringify(page.sfwImagePaths || []) %>);
+    var _sfwSet = new Set(_sfwPaths);
     // Met à jour l'état du bouton quand la lightbox change d'image
     var _lbImg = document.querySelector('.gallery-lb-img');
     function _updateSfwBtn() {
@@ -1235,7 +1263,8 @@ window.IRREALISTE_MODE = 'visible';
         body: JSON.stringify({ src: src })
       }).then(function(r) { return r.json(); }).then(function(d) {
         if (!d.ok) return;
-        if (d.sfw) _sfwSet.add(src); else _sfwSet.delete(src);
+        if (d.sfw) { _sfwSet.add(src); if (_sfwPaths.indexOf(src) === -1) _sfwPaths.push(src); }
+        else { _sfwSet.delete(src); var _i = _sfwPaths.indexOf(src); if (_i !== -1) _sfwPaths.splice(_i, 1); }
         sfwBtn.classList.toggle('on', d.sfw);
       });
     });
