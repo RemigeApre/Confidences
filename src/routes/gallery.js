@@ -541,9 +541,9 @@ function buildGalleryRouter(config) {
         const sfwSet = new Set(wikiPage.sfwImagePaths || []);
         image.imagePaths.forEach((p) => { if (safe) sfwSet.add(p); else sfwSet.delete(p); });
         setWikiPageSfwPaths(wikiPage.id, Array.from(sfwSet));
-        invalidateSfwSet();
       }
     }
+    invalidateSfwSet();
     res.json({ ok: true, safe });
   });
 

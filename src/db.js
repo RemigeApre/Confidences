@@ -1865,11 +1865,17 @@ function updateWikiPage(id, { title, category, content, tags, imagePaths, sfwIma
 let _sfwCache = null;
 function getSfwSet() {
   if (_sfwCache) return _sfwCache;
-  const rows = db.prepare("SELECT sfw_image_paths FROM wiki_pages WHERE sfw_image_paths != '[]'").all();
   _sfwCache = new Set();
-  for (const row of rows) {
+  const wikiRows = db.prepare("SELECT sfw_image_paths FROM wiki_pages WHERE sfw_image_paths != '[]'").all();
+  for (const row of wikiRows) {
     try {
       for (const p of JSON.parse(row.sfw_image_paths || "[]")) _sfwCache.add(p);
+    } catch (_) {}
+  }
+  const galleryRows = db.prepare("SELECT image_paths FROM gallery_images WHERE safe = 1").all();
+  for (const row of galleryRows) {
+    try {
+      for (const p of JSON.parse(row.image_paths || "[]")) _sfwCache.add(p);
     } catch (_) {}
   }
   return _sfwCache;
