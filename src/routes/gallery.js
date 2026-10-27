@@ -45,6 +45,9 @@ const {
   countUserRatingsTotal,
   getTranslationsForEntity,
   setTranslation,
+  updateWikiPage,
+  setWikiPageSfwPaths,
+  invalidateSfwSet,
 } = require("../db");
 const { requireUser, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -570,6 +573,17 @@ function buildGalleryRouter(config) {
 
     updateGalleryImage(id, { title, titleVisible, category, tags, notes, imagePaths, wikiPageId, author, parody, subParody, protagonistIds, safe });
     setGalleryLinks(id, galleryLinksData);
+
+    // Sync safe ↔ codex : si l'image est liée à une fiche wiki, mettre à jour sfw_image_paths
+    if (image.wikiPageId) {
+      const wikiPage = getWikiPage(image.wikiPageId);
+      if (wikiPage) {
+        const sfwSet = new Set(wikiPage.sfwImagePaths || []);
+        image.imagePaths.forEach((p) => { if (safe) sfwSet.add(p); else sfwSet.delete(p); });
+        setWikiPageSfwPaths(wikiPage.id, Array.from(sfwSet));
+        invalidateSfwSet();
+      }
+    }
 
     const added = (req.files || []).map((f) => `/uploads/gallery/${f.filename}`);
     added.forEach((p) => {

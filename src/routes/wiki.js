@@ -52,6 +52,7 @@ const {
   getWikiPageBySlug,
   updateWikiPageSlug,
   invalidateSfwSet,
+  setWikiPageSfwPaths,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
@@ -1140,8 +1141,11 @@ function buildWikiRouter(config) {
     const sfw = new Set(page.sfwImagePaths || []);
     const isSfw = sfw.has(src);
     if (isSfw) sfw.delete(src); else sfw.add(src);
-    updateWikiPage(page.id, { title: page.title, category: page.category, content: page.content, tags: page.tags, imagePaths: page.imagePaths, sfwImagePaths: Array.from(sfw), owned: page.owned, meta: page.meta, extraCategories: page.extraCategories, parody: page.parody, subParody: page.subParody });
-    invalidateSfwSet();
+    const newSfwPaths = Array.from(sfw);
+    setWikiPageSfwPaths(page.id, newSfwPaths);
+    // Sync ↔ gallery : mettre à jour la colonne safe de l'entrée gallery_images correspondante
+    const galImg = listGalleryImages().find((g) => g.imagePaths.includes(src));
+    if (galImg) updateGalleryImage(galImg.id, { safe: !isSfw });
     res.json({ ok: true, sfw: !isSfw });
   });
 

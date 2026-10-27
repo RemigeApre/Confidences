@@ -1876,6 +1876,13 @@ function getSfwSet() {
 }
 function invalidateSfwSet() { _sfwCache = null; }
 
+// Met à jour uniquement sfw_image_paths sans recharger toute la fiche.
+function setWikiPageSfwPaths(id, sfwImagePaths) {
+  db.prepare("UPDATE wiki_pages SET sfw_image_paths = ?, updated_at = ? WHERE id = ?")
+    .run(JSON.stringify(sfwImagePaths || []), new Date().toISOString(), id);
+  _sfwCache = null;
+}
+
 function updateWikiCardSummary(wikiPageId, summary) {
   db.prepare("UPDATE wiki_pages SET card_summary = ? WHERE id = ?").run(summary || null, wikiPageId);
 }
@@ -5195,7 +5202,7 @@ module.exports = {
   getWikiPage,
   getWikiPageBySlug,
   updateWikiPage,
-  getSfwSet, invalidateSfwSet,
+  getSfwSet, invalidateSfwSet, setWikiPageSfwPaths,
   updateWikiPageSlug,
   slugify,
   deleteWikiPage,
