@@ -49,7 +49,7 @@ const {
   setWikiPageSfwPaths,
   invalidateSfwSet,
 } = require("../db");
-const { requireUser, requireAdmin } = require("../auth");
+const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, specialTagOf, isOffForUser } = require("../specialContent");
 
