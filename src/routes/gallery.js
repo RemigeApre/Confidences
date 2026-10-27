@@ -124,12 +124,15 @@ function unlinkFiles(paths) {
 function buildItems(galleryImages, wikiPages) {
   // Pages déjà couvertes par un enregistrement gallery lié → pas de doublon
   const linkedPageIds = new Set(galleryImages.filter((g) => g.wikiPageId).map((g) => g.wikiPageId));
+  // Chemins déjà couverts par une fiche gallery (même si wikiPageId est null)
+  const linkedImagePaths = new Set(galleryImages.flatMap((g) => g.imagePaths));
 
   const wikiItems = [];
   wikiPages.forEach((page) => {
     // Images principales : une carte par image (destackées)
     if (page.imagePaths && page.imagePaths.length && !linkedPageIds.has(page.id)) {
       page.imagePaths.forEach((imgPath) => {
+        if (linkedImagePaths.has(imgPath)) return; // déjà dans gallery_images
         wikiItems.push({
           type: "wiki",
           id: null,
