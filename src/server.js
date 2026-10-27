@@ -352,6 +352,7 @@ const _AUTH_PUBLIC = [
   /^\/wiki(\/.*)?$/,
   /^\/auteurs(\/.*)?$/,
   /^\/quizz(\/.*)?$/,
+  /^\/galerie$/,
   /^\/$/,
   /^\/api\/search$/,
   /^\/api\/tags\/results$/,
