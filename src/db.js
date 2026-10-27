@@ -1869,13 +1869,19 @@ function getSfwSet() {
   const wikiRows = db.prepare("SELECT sfw_image_paths FROM wiki_pages WHERE sfw_image_paths != '[]'").all();
   for (const row of wikiRows) {
     try {
-      for (const p of JSON.parse(row.sfw_image_paths || "[]")) _sfwCache.add(p);
+      for (const p of JSON.parse(row.sfw_image_paths || "[]")) {
+        _sfwCache.add(p);
+        _sfwCache.add(p.replace(/\.[a-zA-Z0-9]+$/, "-thumb.webp"));
+      }
     } catch (_) {}
   }
   const galleryRows = db.prepare("SELECT image_paths FROM gallery_images WHERE safe = 1").all();
   for (const row of galleryRows) {
     try {
-      for (const p of JSON.parse(row.image_paths || "[]")) _sfwCache.add(p);
+      for (const p of JSON.parse(row.image_paths || "[]")) {
+        _sfwCache.add(p);
+        _sfwCache.add(p.replace(/\.[a-zA-Z0-9]+$/, "-thumb.webp"));
+      }
     } catch (_) {}
   }
   return _sfwCache;
