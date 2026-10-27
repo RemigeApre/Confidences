@@ -92,6 +92,8 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sub_parody TEXT NOT NULL DEFAUL
 
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sfw_image_paths TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN safe INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+
 // ── Migration slug ──────────────────────────────────────────────────────────
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN slug TEXT"); } catch (_) {}
 
@@ -2314,6 +2316,7 @@ function rowToGalleryImage(row) {
     protagonistIds: (() => { try { return JSON.parse(row.protagonist_ids || "[]"); } catch(_) { return []; } })(),
     protagonistEvos: (() => { try { return JSON.parse(row.protagonist_evos || "{}"); } catch(_) { return {}; } })(),
     aiSuspected: !!row.ai_suspected,
+    safe: !!row.safe,
     rarity: row.rarity || 'common',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -2389,10 +2392,11 @@ function updateGalleryImage(id, updates) {
   const protagonistIds = u.protagonistIds !== undefined ? (u.protagonistIds || [])  : img.protagonistIds;
   const wikiPageId     = u.wikiPageId     !== undefined ? u.wikiPageId               : img.wikiPageId;
   let imagePaths       = u.imagePaths     !== undefined ? u.imagePaths               : img.imagePaths;
+  const safe           = u.safe           !== undefined ? u.safe                     : img.safe;
   db.prepare(
-    `UPDATE gallery_images SET title = ?, title_visible = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, updated_at = ?
+    `UPDATE gallery_images SET title = ?, title_visible = ?, category = ?, tags = ?, notes = ?, filename = ?, image_paths = ?, wiki_page_id = ?, author = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, safe = ?, updated_at = ?
      WHERE id = ?`
-  ).run(title, titleVisible ? 1 : 0, category, JSON.stringify(tags), notes, imagePaths[0] || "", JSON.stringify(imagePaths), wikiPageId || null, author, parody, subParody, JSON.stringify(protagonistIds), new Date().toISOString(), id);
+  ).run(title, titleVisible ? 1 : 0, category, JSON.stringify(tags), notes, imagePaths[0] || "", JSON.stringify(imagePaths), wikiPageId || null, author, parody, subParody, JSON.stringify(protagonistIds), safe ? 1 : 0, new Date().toISOString(), id);
   return true;
 }
 
