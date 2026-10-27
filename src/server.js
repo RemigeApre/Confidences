@@ -264,8 +264,15 @@ app.use((req, res, next) => {
 // 404 silencieux, pas de redirect, pas de corps : ne leur confirme rien.
 // Chemins légitimes à exclure du scan blocker (faux positifs du pattern .xml)
 const _SCAN_WHITELIST = new Set(["/sitemap.xml"]);
+// Les chemins .well-known légitimes (robots, IA) doivent passer même si le
+// pattern générique \.well-known est dans SCAN_PATH_PATTERNS.
+const _SCAN_WELLKNOWN_OK = new Set([
+  "/.well-known/ai-instructions.txt",
+  "/.well-known/security.txt",
+]);
 app.use((req, res, next) => {
   if (_SCAN_WHITELIST.has(req.path)) return next();
+  if (_SCAN_WELLKNOWN_OK.has(req.path)) return next();
   if (isScanPath(req.path)) return res.status(404).end();
   next();
 });
