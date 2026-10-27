@@ -349,6 +349,11 @@
         </button>
         <button type="button" class="lb-sfw-toggle-btn" id="gallery-lb-sfw-btn"
                 title="Visible sans compte (SFW)" aria-label="SFW" hidden>&#9728;</button>
+        <% } %>
+      </div>
+      <%# Badge centré — admin : cliquable avec dropdown ; user connecté : lecture seule %>
+      <div class="lb-special-center">
+        <% if (currentUser && currentUser.isAdmin) { %>
         <div class="lb-special-wrap" id="gallery-lb-special-wrap" hidden>
           <button type="button" class="lb-special-badge" id="gallery-lb-special-badge" aria-haspopup="true"></button>
           <div class="lb-special-drop" id="gallery-lb-special-drop" hidden>
