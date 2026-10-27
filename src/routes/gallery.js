@@ -201,17 +201,18 @@ function getCtx(user) {
 
 function buildGalleryRouter(config) {
   const router = express.Router();
-  router.use(requireUser);
 
   router.get("/", (req, res) => {
-    const { items, allTags } = getCtx(req.user);
+    const { items: rawItems, allTags: rawAllTags } = getCtx(req.user);
+    const items = req.user ? rawItems : rawItems.filter((i) => i.safe);
+    const allTags = req.user ? rawAllTags : Array.from(new Set(items.flatMap((i) => i.tags))).sort((a, b) => a.localeCompare(b, "fr"));
     const tagImageCounts = {};
     items.forEach((item) => {
       item.tags.forEach((t) => { tagImageCounts[t] = (tagImageCounts[t] || 0) + 1; });
     });
-    const favoriteGalleryIds = listFavoriteRows(req.user.id)
+    const favoriteGalleryIds = req.user ? listFavoriteRows(req.user.id)
       .filter((r) => r.item_type === "gallery")
-      .map((r) => r.item_id);
+      .map((r) => r.item_id) : [];
     const topTags = allTags.slice(0, 20);
     const galleryIds = items.filter((i) => i.id).map((i) => i.id);
     const seriesMap = galleryIds.length ? getSeriesMapForIds(galleryIds) : {};
@@ -644,7 +645,7 @@ function buildGalleryRouter(config) {
     });
   });
 
-  router.post("/:id/react", express.json(), (req, res) => {
+  router.post("/:id/react", requireUserJson, express.json(), (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.json({ ok: false });
     if (!getGalleryImage(id)) return res.json({ ok: false });
