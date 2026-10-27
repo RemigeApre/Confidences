@@ -533,6 +533,33 @@
         %>
         <p class="wiki-left-updated" data-fr="Dernière modification\u00a0: <%= _updDateFr %>" data-en="Last updated: <%= _updDateEn %>">Derni&egrave;re modification&nbsp;: <%= _updDateFr %></p>
 
+        <%# ── Auteur(s) (E-E-A-T) ── %>
+        <% if (locals.pageAuthorMain) { %>
+          <div class="wiki-authors-block">
+            <a href="/auteurs/<%= pageAuthorMain.slug %>" class="wiki-author-main" title="<%= pageAuthorMain.credentials %>">
+              <% if (pageAuthorMain.avatar_url) { %>
+                <img src="<%= pageAuthorMain.avatar_url %>" alt="" class="wiki-author-avatar" />
+              <% } else { %>
+                <span class="wiki-author-avatar wiki-author-avatar-placeholder" aria-hidden="true">&#x1F464;</span>
+              <% } %>
+              <span class="wiki-author-info">
+                <span class="wiki-author-name"><%= pageAuthorMain.name %></span>
+                <% if (pageAuthorMain.credentials) { %><span class="wiki-author-creds"><%= pageAuthorMain.credentials %></span><% } %>
+              </span>
+            </a>
+            <% if (locals.pageAuthorsSecondary && pageAuthorsSecondary.length) { %>
+              <div class="wiki-authors-secondary">
+                <% pageAuthorsSecondary.forEach(function(a) { %>
+                  <a href="/auteurs/<%= a.slug %>" class="wiki-author-secondary-item">
+                    <span class="wiki-author-secondary-name"><%= a.name %></span>
+                    <span class="wiki-author-secondary-role"><%= a.role %></span>
+                  </a>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
+
       </aside>
 
       <%# ─ COLONNE GAUCHE : contenu texte ─ %>
@@ -705,6 +732,76 @@
           <div class="wiki-pos-section wiki-pos-nouvelles">
             <h3 class="wiki-pos-section-heading" data-fr="Nouvelles" data-en="Stories">Nouvelles</h3>
             <div class="wiki-pos-nouvelles-text"><%= pm.nouvelles %></div>
+          </div>
+        <% } %>
+
+        <%# ── YMYL : Avertissement médical ── %>
+        <% if (pm.medical) { %>
+          <details class="wiki-ymyl-block wiki-ymyl-medical" open>
+            <summary class="wiki-ymyl-summary">
+              <span class="wiki-ymyl-icon" aria-hidden="true">&#x2695;&#xFE0F;</span>
+              <span class="wiki-ymyl-label" data-fr="Note médicale" data-en="Medical note">Note médicale</span>
+            </summary>
+            <div class="wiki-ymyl-body">
+              <div class="wiki-md wiki-ymyl-text"><span class="wiki-md-raw" hidden><%= pm.medical %></span></div>
+              <% if (pm.medical_sources && pm.medical_sources.length) { %>
+                <ol class="wiki-sources-list wiki-ymyl-sources">
+                  <% pm.medical_sources.forEach(function(src) { %>
+                    <li class="wiki-sources-item">
+                      <% if (src.url) { %><a href="<%= src.url %>" class="wiki-sources-link" target="_blank" rel="noopener noreferrer"><%- src.label || src.url %></a><% } else { %><span class="wiki-sources-label"><%- src.label %></span><% } %>
+                      <% if (src.authors || src.year) { %><span class="wiki-sources-meta"><% if (src.authors) { %><span class="wiki-sources-authors"><%= src.authors %></span><% } %><% if (src.year) { %><span class="wiki-sources-year">(<%= src.year %>)</span><% } %></span><% } %>
+                    </li>
+                  <% }) %>
+                </ol>
+              <% } %>
+            </div>
+          </details>
+        <% } %>
+
+        <%# ── YMYL : Avertissement psychologique ── %>
+        <% if (pm.psychologique) { %>
+          <details class="wiki-ymyl-block wiki-ymyl-psychologique" open>
+            <summary class="wiki-ymyl-summary">
+              <span class="wiki-ymyl-icon" aria-hidden="true">&#x1F9E0;</span>
+              <span class="wiki-ymyl-label" data-fr="Note psychologique" data-en="Psychological note">Note psychologique</span>
+            </summary>
+            <div class="wiki-ymyl-body">
+              <div class="wiki-md wiki-ymyl-text"><span class="wiki-md-raw" hidden><%= pm.psychologique %></span></div>
+              <% if (pm.psychologique_sources && pm.psychologique_sources.length) { %>
+                <ol class="wiki-sources-list wiki-ymyl-sources">
+                  <% pm.psychologique_sources.forEach(function(src) { %>
+                    <li class="wiki-sources-item">
+                      <% if (src.url) { %><a href="<%= src.url %>" class="wiki-sources-link" target="_blank" rel="noopener noreferrer"><%- src.label || src.url %></a><% } else { %><span class="wiki-sources-label"><%- src.label %></span><% } %>
+                      <% if (src.authors || src.year) { %><span class="wiki-sources-meta"><% if (src.authors) { %><span class="wiki-sources-authors"><%= src.authors %></span><% } %><% if (src.year) { %><span class="wiki-sources-year">(<%= src.year %>)</span><% } %></span><% } %>
+                    </li>
+                  <% }) %>
+                </ol>
+              <% } %>
+            </div>
+          </details>
+        <% } %>
+
+        <%# ── Sources / Citations ── %>
+        <% if (pm.sources && pm.sources.length) { %>
+          <div class="wiki-sources-section">
+            <h3 class="wiki-sources-heading" data-fr="Sources" data-en="Sources">Sources</h3>
+            <ol class="wiki-sources-list">
+              <% pm.sources.forEach(function(src, i) { %>
+                <li class="wiki-sources-item">
+                  <% if (src.url) { %>
+                    <a href="<%= src.url %>" class="wiki-sources-link" target="_blank" rel="noopener noreferrer"><%- src.label || src.url %></a>
+                  <% } else { %>
+                    <span class="wiki-sources-label"><%- src.label %></span>
+                  <% } %>
+                  <% if (src.authors || src.year) { %>
+                    <span class="wiki-sources-meta">
+                      <% if (src.authors) { %><span class="wiki-sources-authors"><%= src.authors %></span><% } %>
+                      <% if (src.year) { %><span class="wiki-sources-year">(<%= src.year %>)</span><% } %>
+                    </span>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ol>
           </div>
         <% } %>
 
@@ -1383,7 +1480,14 @@ window.WIKI_CONTENT = <%- JSON.stringify({
       'url': _wdSiteUrl + '/wiki'
     },
     'url': _wdSiteUrl + '/wiki/' + page.id,
-    'author': { '@type': 'Organization', 'name': 'Codex Confidence', 'url': _wdSiteUrl },
+    'author': locals.pageAuthorMain
+      ? {
+          '@type': 'Person',
+          'name':  pageAuthorMain.name,
+          'url':   _wdSiteUrl + '/auteurs/' + pageAuthorMain.slug,
+          'jobTitle': pageAuthorMain.credentials || undefined,
+        }
+      : { '@type': 'Organization', 'name': 'Codex Confidence', 'url': _wdSiteUrl },
     'publisher': { '@type': 'Organization', 'name': 'Codex Confidence', 'url': _wdSiteUrl },
     'inLanguage': 'fr',
     'isAccessibleForFree': true
@@ -1396,6 +1500,38 @@ window.WIKI_CONTENT = <%- JSON.stringify({
   }
   if (page.tags && page.tags.length) {
     _wdJsonLd.keywords = page.tags.join(', ');
+    // GEO Primitive IV — Entity Relationship Structure : lister les tags comme
+    // entités nommées améliore la détection de relations par les pipelines RAG.
+    _wdJsonLd.mentions = page.tags.map(function(t) {
+      return { '@type': 'DefinedTerm', 'name': t, 'inDefinedTermSet': _wdSiteUrl + '/wiki' };
+    });
+  }
+  // E-E-A-T : contributeurs secondaires dans le JSON-LD
+  if (locals.pageAuthorsSecondary && pageAuthorsSecondary.length) {
+    _wdJsonLd.contributor = pageAuthorsSecondary.map(function(a) {
+      return { '@type': 'Person', 'name': a.name, 'url': _wdSiteUrl + '/auteurs/' + a.slug };
+    });
+  }
+  // GEO Primitive IV — relatedLink : connexions inter-articles explicites pour
+  // les graphes de connaissances des crawlers IA (ChatGPT Search, Claude Search).
+  if (suggestions && suggestions.length) {
+    _wdJsonLd.relatedLink = suggestions.map(function(s) {
+      return _wdSiteUrl + '/wiki/' + s.id;
+    });
+  }
+  // GEO Primitive IV — sameAs : ancrage sur une ressource d'autorité externe
+  // (Wikipedia / Wikidata) pour prouver l'identité de l'entité aux LLMs.
+  if (pm.wikipedia_url) {
+    _wdJsonLd.sameAs = Array.isArray(pm.wikipedia_url) ? pm.wikipedia_url : [pm.wikipedia_url];
+  }
+  if (pm.sources && pm.sources.length) {
+    _wdJsonLd.citation = pm.sources.map(function(s) {
+      var c = { '@type': 'CreativeWork', 'name': s.label || s.url };
+      if (s.url) c.url = s.url;
+      if (s.authors) c.author = s.authors;
+      if (s.year) c.datePublished = s.year;
+      return c;
+    });
   }
   // BreadcrumbList pour Google (fil d'Ariane dans les résultats)
   var _wdBreadcrumb = {
@@ -1410,6 +1546,59 @@ window.WIKI_CONTENT = <%- JSON.stringify({
 %>
 <script type="application/ld+json"><%- JSON.stringify(_wdJsonLd) %></script>
 <script type="application/ld+json"><%- JSON.stringify(_wdBreadcrumb) %></script>
+<%
+  // ── Schema.org MedicalWebPage ──────────────────────────────────────────────
+  // Activé si l'article contient une note médicale ou psychologique : signale
+  // explicitement aux crawlers que ce contenu touche à la santé (YMYL).
+  // Améliore la visibilité dans les réponses médicales de Google AI Overviews.
+  if (pm.medical || pm.psychologique) {
+    var _wdMedPage = {
+      '@context': 'https://schema.org',
+      '@type': 'MedicalWebPage',
+      'name': page.title,
+      'url': _wdSiteUrl + '/wiki/' + page.id,
+      'description': _wdMetaDesc,
+      'isAccessibleForFree': true,
+      'inLanguage': 'fr',
+      'publisher': { '@type': 'Organization', 'name': 'Codex Confidence', 'url': _wdSiteUrl },
+      'about': { '@type': 'MedicalEntity', 'name': page.title },
+    };
+    if (page.updatedAt) _wdMedPage.dateModified = new Date(page.updatedAt).toISOString().slice(0, 10);
+    if (locals.pageAuthorMain) {
+      _wdMedPage.author = {
+        '@type': 'Person',
+        'name': pageAuthorMain.name,
+        'url': _wdSiteUrl + '/auteurs/' + pageAuthorMain.slug,
+      };
+    }
+%>
+<script type="application/ld+json"><%- JSON.stringify(_wdMedPage) %></script>
+<% } %>
+<%
+  // ── Schema.org QAPage ──────────────────────────────────────────────────────
+  // Tous les articles Codex sont des définitions encyclopédiques répondant à
+  // "qu'est-ce que X ?" : QAPage permet à Google d'extraire la réponse directe
+  // et la faire apparaître dans les Featured Snippets et AI Overviews.
+  var _wdQA = {
+    '@context': 'https://schema.org',
+    '@type': 'QAPage',
+    'name': page.title + ' — définition et explication',
+    'url': _wdSiteUrl + '/wiki/' + page.id,
+    'mainEntity': {
+      '@type': 'Question',
+      'name': 'Qu\u2019est-ce que ' + page.title.toLowerCase() + '\u00a0?',
+      'acceptedAnswer': {
+        '@type': 'Answer',
+        'text': _wdMetaDesc,
+        'url': _wdSiteUrl + '/wiki/' + page.id,
+        'author': locals.pageAuthorMain
+          ? { '@type': 'Person', 'name': pageAuthorMain.name }
+          : { '@type': 'Organization', 'name': 'Codex Confidence' },
+      },
+    },
+  };
+%>
+<script type="application/ld+json"><%- JSON.stringify(_wdQA) %></script>
 
 <script nonce="<%= nonce %>">
 (function () {

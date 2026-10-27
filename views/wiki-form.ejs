@@ -402,6 +402,87 @@
           </div>
         </details>
 
+        <%# ── Auteurs (E-E-A-T) ── %>
+        <% var _hasAuthor = pm.author_main || (pm.authors_secondary && pm.authors_secondary.length); %>
+        <details class="prot-sb-details" id="wf-authors-details"<%= _hasAuthor ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">&#x1F58B; Auteur(s) <span class="wf-orce-badge" style="background:rgba(251,191,36,.15);color:#fbbf24;border-color:rgba(251,191,36,.3)">E-E-A-T</span></summary>
+          <div class="prot-sb-details-body">
+            <p class="prot-sb-label" style="margin-bottom:.8rem">L'auteur principal est affiché sur l'article et exposé en JSON-LD <code>Person</code>. Les auteurs secondaires apparaissent dans la section "Contributeurs".</p>
+            <% if (!locals.codexAuthors || !codexAuthors.length) { %>
+              <p class="prot-sb-label" style="color:#f87171">Aucun auteur créé. <a href="/ponhgup/auteurs" target="_blank" style="color:var(--accent)">Créer un auteur &rarr;</a></p>
+            <% } else { %>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem">
+                <div>
+                  <label class="prot-sb-label">Auteur principal</label>
+                  <select name="meta_author_main" class="wiki-input">
+                    <option value="">-- Aucun --</option>
+                    <% codexAuthors.forEach(function(a) { %>
+                      <option value="<%= a.slug %>"<%= pm.author_main === a.slug ? ' selected' : '' %>><%= a.name %><% if (a.credentials) { %> — <%= a.credentials %><% } %></option>
+                    <% }) %>
+                  </select>
+                </div>
+              </div>
+              <p class="prot-sb-label" style="margin-bottom:.4rem">Auteurs secondaires</p>
+              <div id="wf-authors-secondary-list"></div>
+              <button type="button" id="wf-authors-add" class="wf-sources-add-btn">+ Ajouter un contributeur</button>
+              <input type="hidden" name="meta_authors_secondary" id="wf-authors-secondary-hidden"
+                     value="<%= JSON.stringify(pm.authors_secondary || []) %>" />
+              <script id="wf-codex-authors-data" type="application/json"><%- JSON.stringify(codexAuthors.map(function(a){ return { slug: a.slug, name: a.name }; })) %></script>
+            <% } %>
+          </div>
+        </details>
+
+        <%# ── Wikipedia / sameAs (GEO) ── %>
+        <details class="prot-sb-details" id="wf-wikipedia-details"<%= pm.wikipedia_url ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">Wikipedia / sameAs <span class="wf-orce-badge">GEO</span></summary>
+          <div class="prot-sb-details-body">
+            <p class="prot-sb-label" style="margin-bottom:.6rem">URL Wikipedia (ou Wikidata) correspondant à cet article. Permet aux IA de vérifier l'identité de l'entité (<code>sameAs</code> dans le JSON-LD).</p>
+            <input type="url" name="meta_wikipedia_url"
+                   class="wiki-input"
+                   placeholder="https://fr.wikipedia.org/wiki/…"
+                   value="<%= pm.wikipedia_url || '' %>" />
+          </div>
+        </details>
+
+        <%# ── Sources / Citations ── %>
+        <details class="prot-sb-details" id="wf-sources-details"<%= (pm.sources && pm.sources.length) ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">Sources <span class="wf-orce-badge">GEO</span></summary>
+          <div class="prot-sb-details-body">
+            <p class="prot-sb-label" style="margin-bottom:.6rem">Références bibliographiques et liens sources cités dans l'article.</p>
+            <div id="wf-sources-list"></div>
+            <button type="button" id="wf-sources-add" class="wf-sources-add-btn">+ Ajouter une source</button>
+            <input type="hidden" name="meta_sources" id="wf-sources-hidden" value="<%= JSON.stringify(pm.sources || []) %>" />
+          </div>
+        </details>
+
+        <%# ── YMYL : Note médicale ── %>
+        <details class="prot-sb-details" id="wf-medical-details"<%= pm.medical ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">&#x2695;&#xFE0F; Note médicale <span class="wf-orce-badge">YMYL</span></summary>
+          <div class="prot-sb-details-body">
+            <p class="prot-sb-label" style="margin-bottom:.6rem">Contenu médical validé : risques, contre-indications, recommandations cliniques. Visible uniquement si rempli (affiché réduit sur l'article).</p>
+            <textarea name="meta_medical" class="wiki-textarea wf-md-input" rows="4"
+                      placeholder="Risques, précautions médicales, références cliniques…"><%= pm.medical || '' %></textarea>
+            <p class="prot-sb-label" style="margin:.6rem 0 .4rem">Sources médicales</p>
+            <div id="wf-medical-sources-list"></div>
+            <button type="button" class="wf-sources-add-btn" data-target="medical">+ Ajouter une source médicale</button>
+            <input type="hidden" name="meta_medical_sources" id="wf-medical-sources-hidden" value="<%= JSON.stringify(pm.medical_sources || []) %>" />
+          </div>
+        </details>
+
+        <%# ── YMYL : Note psychologique ── %>
+        <details class="prot-sb-details" id="wf-psychologique-details"<%= pm.psychologique ? ' open' : '' %>>
+          <summary class="prot-sb-details-summary">&#x1F9E0; Note psychologique <span class="wf-orce-badge">YMYL</span></summary>
+          <div class="prot-sb-details-body">
+            <p class="prot-sb-label" style="margin-bottom:.6rem">Contenu psychologique validé : dynamiques émotionnelles, impacts psychologiques, conseils thérapeutiques. Visible uniquement si rempli.</p>
+            <textarea name="meta_psychologique" class="wiki-textarea wf-md-input" rows="4"
+                      placeholder="Dynamiques psychologiques, impacts émotionnels, recommandations…"><%= pm.psychologique || '' %></textarea>
+            <p class="prot-sb-label" style="margin:.6rem 0 .4rem">Sources psychologiques</p>
+            <div id="wf-psychologique-sources-list"></div>
+            <button type="button" class="wf-sources-add-btn" data-target="psychologique">+ Ajouter une source psychologique</button>
+            <input type="hidden" name="meta_psychologique_sources" id="wf-psychologique-sources-hidden" value="<%= JSON.stringify(pm.psychologique_sources || []) %>" />
+          </div>
+        </details>
+
         <%# ── Paramètres partenaires ── %>
         <div id="wf-partenaires-params" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
 
@@ -860,6 +941,150 @@
       resultsList.style.display = 'none';
     }
   });
+})();
+</script>
+<script nonce="<%= nonce %>">
+// Widget sources générique — utilisé pour sources, medical_sources, psychologique_sources
+function initSourcesWidget(listId, hiddenId) {
+  var list   = document.getElementById(listId);
+  var hidden = document.getElementById(hiddenId);
+  if (!list || !hidden) return;
+
+  var sources = [];
+  try { sources = JSON.parse(hidden.value) || []; } catch(_) {}
+
+  function sync() {
+    hidden.value = JSON.stringify(sources.map(function(s, i) {
+      var row = list.children[i];
+      if (!row) return s;
+      return {
+        label:   row.querySelector('.wf-src-label').value,
+        url:     row.querySelector('.wf-src-url').value,
+        authors: row.querySelector('.wf-src-authors').value,
+        year:    row.querySelector('.wf-src-year').value,
+      };
+    }));
+  }
+
+  function renderRow(s, idx) {
+    var row = document.createElement('div');
+    row.className = 'wf-src-row';
+    row.innerHTML =
+      '<div class="wf-src-row-top">' +
+        '<input class="wf-src-label wf-sb-input" type="text" placeholder="Titre de la source\u2026" value="' + (s.label||'').replace(/"/g,'&quot;') + '" maxlength="500" />' +
+        '<button type="button" class="wf-src-remove" title="Supprimer">\u00d7</button>' +
+      '</div>' +
+      '<input class="wf-src-url wf-sb-input" type="url" placeholder="URL (optionnel)\u2026" value="' + (s.url||'').replace(/"/g,'&quot;') + '" maxlength="500" />' +
+      '<div class="wf-src-row-meta">' +
+        '<input class="wf-src-authors wf-sb-input" type="text" placeholder="Auteur(s)\u2026" value="' + (s.authors||'').replace(/"/g,'&quot;') + '" maxlength="300" />' +
+        '<input class="wf-src-year wf-sb-input wf-src-year-input" type="text" placeholder="Ann\u00e9e" value="' + (s.year||'').replace(/"/g,'&quot;') + '" maxlength="10" />' +
+      '</div>';
+    row.querySelector('.wf-src-remove').addEventListener('click', function() {
+      sources.splice(idx, 1);
+      render();
+    });
+    ['wf-src-label','wf-src-url','wf-src-authors','wf-src-year'].forEach(function(cls) {
+      row.querySelector('.' + cls).addEventListener('input', sync);
+    });
+    return row;
+  }
+
+  function render() {
+    list.innerHTML = '';
+    sources.forEach(function(s, i) { list.appendChild(renderRow(s, i)); });
+    sync();
+  }
+
+  // Boutons "Ajouter" : soit le bouton legacy #wf-sources-add, soit les boutons
+  // génériques avec data-target correspondant au listId.
+  var addBtns = [];
+  if (listId === 'wf-sources-list') {
+    var legacy = document.getElementById('wf-sources-add');
+    if (legacy) addBtns.push(legacy);
+  }
+  document.querySelectorAll('.wf-sources-add-btn[data-target]').forEach(function(btn) {
+    if (listId === 'wf-' + btn.dataset.target + '-sources-list') addBtns.push(btn);
+  });
+  addBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      sources.push({ label: '', url: '', authors: '', year: '' });
+      render();
+      var last = list.lastElementChild;
+      if (last) last.querySelector('.wf-src-label').focus();
+    });
+  });
+
+  render();
+}
+
+initSourcesWidget('wf-sources-list',            'wf-sources-hidden');
+initSourcesWidget('wf-medical-sources-list',     'wf-medical-sources-hidden');
+initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidden');
+
+// Widget auteurs secondaires
+(function() {
+  var list   = document.getElementById('wf-authors-secondary-list');
+  var addBtn = document.getElementById('wf-authors-add');
+  var hidden = document.getElementById('wf-authors-secondary-hidden');
+  var dataSrc = document.getElementById('wf-codex-authors-data');
+  if (!list || !addBtn || !hidden || !dataSrc) return;
+
+  var allAuthors = [];
+  try { allAuthors = JSON.parse(dataSrc.textContent) || []; } catch(_) {}
+  var entries = [];
+  try { entries = JSON.parse(hidden.value) || []; } catch(_) {}
+
+  var ROLES = [
+    { v: 'relecteur',   l: 'Relecteur' },
+    { v: 'correcteur',  l: 'Correcteur' },
+    { v: 'contributeur',l: 'Contributeur' },
+    { v: 'traducteur',  l: 'Traducteur' },
+  ];
+
+  function sync() {
+    hidden.value = JSON.stringify(entries.map(function(e, i) {
+      var row = list.children[i];
+      if (!row) return e;
+      return {
+        slug: row.querySelector('.wf-auth-slug').value,
+        role: row.querySelector('.wf-auth-role').value,
+      };
+    }));
+  }
+
+  function renderRow(e, idx) {
+    var row = document.createElement('div');
+    row.className = 'wf-src-row wf-src-row-meta';
+    var selOpts = allAuthors.map(function(a) {
+      return '<option value="' + a.slug + '"' + (e.slug === a.slug ? ' selected' : '') + '>' + a.name + '</option>';
+    }).join('');
+    var roleOpts = ROLES.map(function(r) {
+      return '<option value="' + r.v + '"' + (e.role === r.v ? ' selected' : '') + '>' + r.l + '</option>';
+    }).join('');
+    row.innerHTML =
+      '<select class="wf-auth-slug wf-sb-input" style="flex:2"><option value="">-- Auteur --</option>' + selOpts + '</select>' +
+      '<select class="wf-auth-role wf-sb-input" style="flex:1">' + roleOpts + '</select>' +
+      '<button type="button" class="wf-src-remove" title="Supprimer">\u00d7</button>';
+    row.querySelector('.wf-src-remove').addEventListener('click', function() {
+      entries.splice(idx, 1); render();
+    });
+    row.querySelector('.wf-auth-slug').addEventListener('change', sync);
+    row.querySelector('.wf-auth-role').addEventListener('change', sync);
+    return row;
+  }
+
+  function render() {
+    list.innerHTML = '';
+    entries.forEach(function(e, i) { list.appendChild(renderRow(e, i)); });
+    sync();
+  }
+
+  addBtn.addEventListener('click', function() {
+    entries.push({ slug: '', role: 'contributeur' });
+    render();
+  });
+
+  render();
 })();
 </script>
 <%- include('partials/foot') %>

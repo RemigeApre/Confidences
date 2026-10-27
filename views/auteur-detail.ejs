@@ -1,0 +1,89 @@
+<%
+  var _authorDesc = author.bio
+    ? author.bio.replace(/^#+\s+/gm,'').replace(/\*\*?|__?/g,'').replace(/\n+/g,' ').trim().slice(0,160)
+    : (author.name + (author.credentials ? ' — ' + author.credentials : '') + '. Auteur Codex Confidence.');
+  var _siteUrl = locals.siteUrl || '';
+%>
+<%- include('partials/head', {
+  title: author.name + ' — Auteur Codex',
+  metaDescription: _authorDesc,
+  allowIndex: true
+}) %>
+
+<main class="container wide">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Codex', navBack: '/wiki' }) %>
+
+  <article class="wiki-detail-layout" itemscope itemtype="https://schema.org/Person">
+    <div class="wiki-detail-main">
+
+      <%# ── Entête auteur ── %>
+      <div class="author-header">
+        <% if (author.avatar_url) { %>
+          <img src="<%= author.avatar_url %>" alt="<%= author.name %>" class="author-avatar" itemprop="image" />
+        <% } else { %>
+          <div class="author-avatar author-avatar-placeholder" aria-hidden="true">&#x1F464;</div>
+        <% } %>
+        <div class="author-header-info">
+          <h1 class="author-name" itemprop="name"><%= author.name %></h1>
+          <% if (author.credentials) { %>
+            <p class="author-credentials" itemprop="jobTitle"><%= author.credentials %></p>
+          <% } %>
+          <p class="author-meta-line">
+            <span class="author-source-badge">Codex Confidence</span>
+            <% if (pages.length) { %>
+              <span style="color:var(--text-muted);font-size:.85rem"><%= pages.length %> article<%= pages.length > 1 ? 's' : '' %></span>
+            <% } %>
+          </p>
+        </div>
+      </div>
+
+      <%# ── Biographie ── %>
+      <% if (author.bio) { %>
+        <section class="author-bio-section">
+          <div class="wiki-md author-bio" itemprop="description"><span class="wiki-md-raw" hidden><%= author.bio %></span></div>
+        </section>
+      <% } %>
+
+      <%# ── Articles de cet auteur ── %>
+      <% if (pages.length) { %>
+        <section class="author-articles-section">
+          <h2 class="author-section-heading" data-fr="Articles" data-en="Articles">Articles</h2>
+          <ul class="author-articles-list">
+            <% pages.forEach(function(p) { %>
+              <li class="author-articles-item">
+                <a href="/wiki/<%= p.id %>" class="author-articles-link">
+                  <span class="author-articles-title"><%= p.title %></span>
+                  <% var role = (p.meta && p.meta.author_main === author.slug) ? 'Auteur principal' : 'Contributeur'; %>
+                  <span class="author-articles-role"><%= role %></span>
+                  <% if (p.updatedAt) { %><span class="author-articles-date"><%= p.updatedAt.slice(0,10) %></span><% } %>
+                </a>
+              </li>
+            <% }) %>
+          </ul>
+        </section>
+      <% } %>
+
+    </div><!-- /main -->
+  </article>
+
+  <%# ── JSON-LD Person ── %>
+  <%
+    var _ldPerson = {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      'name': author.name,
+      'url': _siteUrl + '/auteurs/' + author.slug,
+    };
+    if (author.credentials) _ldPerson.jobTitle = author.credentials;
+    if (author.avatar_url)  _ldPerson.image    = author.avatar_url;
+    if (author.bio) _ldPerson.description = _authorDesc;
+    if (pages.length) {
+      _ldPerson.author = pages.map(function(p) {
+        return { '@type': 'DefinedTerm', 'name': p.title, 'url': _siteUrl + '/wiki/' + p.id };
+      });
+    }
+  %>
+  <script type="application/ld+json"><%- JSON.stringify(_ldPerson) %></script>
+
+</main>
+<%- include('partials/foot') %>

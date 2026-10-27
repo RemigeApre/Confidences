@@ -47,6 +47,8 @@ const {
   getTranslationsForEntity,
   getFieldTranslationsByEntity,
   setTranslation,
+  listCodexAuthors,
+  getCodexAuthorBySlug,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
@@ -247,6 +249,44 @@ function normalizeCategory(value) {
 
 function arr(v) { return Array.isArray(v) ? v : v ? [v] : []; }
 
+function parseSources(raw) {
+  let arr = [];
+  try { arr = JSON.parse(raw); } catch (_) { return []; }
+  if (!Array.isArray(arr)) return [];
+  return arr.slice(0, 20).map((s) => ({
+    label:   String(s.label   || "").slice(0, 500).trim(),
+    url:     String(s.url     || "").slice(0, 500).trim(),
+    authors: String(s.authors || "").slice(0, 300).trim(),
+    year:    String(s.year    || "").slice(0,  10).trim(),
+  })).filter((s) => s.label || s.url);
+}
+
+// Valide les auteurs secondaires : [{slug, role}], max 10 entrées.
+function parseAuthorsSecondary(raw) {
+  let arr = [];
+  try { arr = JSON.parse(raw); } catch (_) { return []; }
+  if (!Array.isArray(arr)) return [];
+  return arr.slice(0, 10).map((a) => ({
+    slug: String(a.slug || "").slice(0, 100).trim(),
+    role: ["relecteur", "correcteur", "contributeur", "traducteur"].includes(a.role) ? a.role : "contributeur",
+  })).filter((a) => a.slug);
+}
+
+// Valide et nettoie une URL Wikipedia ou Wikidata saisie dans le formulaire admin.
+// N'accepte que les domaines wikipedia.org et wikidata.org pour éviter toute
+// injection de URL arbitraire dans le JSON-LD sameAs.
+function parseWikipediaUrl(raw) {
+  const url = String(raw || "").slice(0, 500).trim();
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    if (/(^|\.)wikipedia\.org$/.test(u.hostname) || /(^|\.)wikidata\.org$/.test(u.hostname)) {
+      return url;
+    }
+  } catch (_) {}
+  return "";
+}
+
 function parseMeta(category, body) {
   // Champs transversaux (toutes catégories)
   const pct = (v) => { const n = parseFloat(v); return (!isNaN(n) && n >= 0 && n <= 100) ? String(Math.round(n * 100) / 100) : ""; };
@@ -262,6 +302,14 @@ function parseMeta(category, body) {
     stats_note:         String(body.meta_stats_note      || "").slice(0, 1000).trim(),
     stats_dir_femmes:   body.meta_stats_dir_femmes === "donne" ? "donne" : "",
     stats_dir_hommes:   body.meta_stats_dir_hommes === "donne" ? "donne" : "",
+    author_main:            String(body.meta_author_main || "").slice(0, 100).trim(),
+    authors_secondary:      parseAuthorsSecondary(body.meta_authors_secondary || "[]"),
+    sources:                parseSources(body.meta_sources || "[]"),
+    medical:                String(body.meta_medical || "").slice(0, 5000).trim(),
+    medical_sources:        parseSources(body.meta_medical_sources || "[]"),
+    psychologique:          String(body.meta_psychologique || "").slice(0, 5000).trim(),
+    psychologique_sources:  parseSources(body.meta_psychologique_sources || "[]"),
+    wikipedia_url:          parseWikipediaUrl(body.meta_wikipedia_url || ""),
   };
 
   let specific = {};
@@ -821,7 +869,8 @@ function buildWikiRouter(config) {
       updatedAt: new Date().toISOString()
     };
     const returnTo = safeReturnTo(req.get("referer"), "/wiki");
-    res.render("wiki-form", { config, page: blankPage, pages, allTags: getAllTags(pages), returnTo, ...CTX });
+    const codexAuthors = listCodexAuthors();
+    res.render("wiki-form", { config, page: blankPage, pages, allTags: getAllTags(pages), returnTo, codexAuthors, ...CTX });
   });
 
   // ── Route markdown publique (crawlers IA, clients texte) ────────────────────
@@ -851,6 +900,7 @@ function buildWikiRouter(config) {
       tagLine,
       page.updatedAt ? `updated: "${page.updatedAt.slice(0, 10)}"` : null,
       `url: /wiki/${page.id}`,
+      page.meta && page.meta.wikipedia_url ? `same_as: "${page.meta.wikipedia_url}"` : null,
       "---",
       "",
       `# ${page.title}`,
@@ -898,7 +948,15 @@ function buildWikiRouter(config) {
     const varianteGenreId = page.meta && page.meta.variante_genre_id ? Number(page.meta.variante_genre_id) : null;
     const variantePage = varianteGenreId ? getWikiPage(varianteGenreId) : null;
     const translationsEn = getTranslationsForEntity("wiki", id, "en");
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, ...CTX });
+    // Résoudre les auteurs pour l'affichage et le JSON-LD
+    const pageAuthorMain = (page.meta && page.meta.author_main) ? getCodexAuthorBySlug(page.meta.author_main) : null;
+    const pageAuthorsSecondary = (page.meta && Array.isArray(page.meta.authors_secondary))
+      ? page.meta.authors_secondary.map((a) => {
+          const found = getCodexAuthorBySlug(a.slug);
+          return found ? { ...found, role: a.role } : null;
+        }).filter(Boolean)
+      : [];
+    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, ...CTX });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {
@@ -910,7 +968,10 @@ function buildWikiRouter(config) {
     const returnTo = safeReturnTo(req.get("referer"), `/wiki/${id}`);
     const editLang = req.query.editLang === "en" ? "en" : "fr";
     const translations = editLang === "en" ? getTranslationsForEntity("wiki", id, "en") : {};
-    res.render("wiki-form", { config, page, pages, allTags, returnTo, editLang, translations, ...CTX });
+    const codexAuthors = listCodexAuthors();
+    // Résoudre l'auteur principal pour l'affichage dans le formulaire (nom)
+    const codexAuthorMain = page.meta && page.meta.author_main ? getCodexAuthorBySlug(page.meta.author_main) : null;
+    res.render("wiki-form", { config, page, pages, allTags, returnTo, editLang, translations, codexAuthors, codexAuthorMain, ...CTX });
   });
 
   router.post("/:id", requireAdmin, upload.any(), (req, res) => {

@@ -90,6 +90,19 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity_set_at TEXT"); } catch
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
+// ── Auteurs Codex (E-E-A-T) ───────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS codex_authors (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug        TEXT UNIQUE NOT NULL,
+    name        TEXT NOT NULL,
+    credentials TEXT NOT NULL DEFAULT '',
+    bio         TEXT NOT NULL DEFAULT '',
+    avatar_url  TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
 // ── Traductions (FR → EN, extensible) ─────────────────────────────────────────
 // Le texte source (FR) reste dans les colonnes existantes.
 // Seules les versions traduites (EN) sont stockées ici.
@@ -5050,6 +5063,29 @@ function getFieldTranslationsByEntity(entity, field, lang) {
   return out;
 }
 
+// ── Auteurs Codex ────────────────────────────────────────────────────────────
+function listCodexAuthors() {
+  return db.prepare(`SELECT * FROM codex_authors ORDER BY name ASC`).all();
+}
+function getCodexAuthorBySlug(slug) {
+  return db.prepare(`SELECT * FROM codex_authors WHERE slug=?`).get(slug);
+}
+function getCodexAuthorById(id) {
+  return db.prepare(`SELECT * FROM codex_authors WHERE id=?`).get(id);
+}
+function createCodexAuthor({ slug, name, credentials, bio, avatar_url }) {
+  const r = db.prepare(`INSERT INTO codex_authors (slug, name, credentials, bio, avatar_url) VALUES (?,?,?,?,?)`)
+    .run(slug, name || '', credentials || '', bio || '', avatar_url || '');
+  return r.lastInsertRowid;
+}
+function updateCodexAuthor(slug, { name, credentials, bio, avatar_url }) {
+  db.prepare(`UPDATE codex_authors SET name=?, credentials=?, bio=?, avatar_url=? WHERE slug=?`)
+    .run(name || '', credentials || '', bio || '', avatar_url || '', slug);
+}
+function deleteCodexAuthor(slug) {
+  db.prepare(`DELETE FROM codex_authors WHERE slug=?`).run(slug);
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -5366,6 +5402,12 @@ module.exports = {
   updateCardVariantSummary,
   updateCardVariantTitle,
   deleteCardVariant,
+  listCodexAuthors,
+  getCodexAuthorBySlug,
+  getCodexAuthorById,
+  createCodexAuthor,
+  updateCodexAuthor,
+  deleteCodexAuthor,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

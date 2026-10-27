@@ -22,6 +22,7 @@
 #   /sitemap.xml            Sitemap de toutes les fiches / Sitemap of all articles
 #   /wiki/:id.md            Fiche individuelle en Markdown / Single article as Markdown
 #   /.well-known/ai-instructions.txt   Instructions et limites / Instructions & limits
+#   /bots.json              IPs des crawlers Anthropic (claude.com/crawling/bots.json)
 #
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -39,32 +40,316 @@ Allow: /google*.html
 Allow: /bing*.xml
 Disallow: /
 
-# ── Crawlers IA identifiés — accès complet au Codex textuel ───────────────────
-# Identified AI crawlers — full access to the textual Codex
+# ══════════════════════════════════════════════════════════════════════════════
+# GOOGLE
+# ══════════════════════════════════════════════════════════════════════════════
 
-User-agent: GPTBot
-User-agent: ChatGPT-User
-User-agent: OAI-SearchBot
-User-agent: anthropic-ai
-User-agent: ClaudeBot
-User-agent: Claude-User
-User-agent: Claude-SearchBot
-User-agent: PerplexityBot
+# Google-Extended : entraînement des modèles Gemini / Vertex AI
 User-agent: Google-Extended
-User-agent: Applebot-Extended
-User-agent: Amazonbot
-User-agent: cohere-ai
-User-agent: Diffbot
-User-agent: YouBot
-Allow: /
 Allow: /wiki
-Allow: /quizz
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /api/wiki/index.json
 Allow: /sitemap.xml
 Allow: /.well-known/
-Disallow: /ponhgup
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# ══════════════════════════════════════════════════════════════════════════════
+# OPENAI / CHATGPT
+# ══════════════════════════════════════════════════════════════════════════════
+
+# GPTBot : crawl pour l'entraînement des modèles OpenAI (GPT-4o, etc.)
+# Autoriser = le Codex peut alimenter les futures versions de ChatGPT.
+User-agent: GPTBot
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# OAI-SearchBot : indexation pour les citations en temps réel dans ChatGPT Search.
+# Bot le plus important pour être cité dans les réponses ChatGPT.
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# ChatGPT-User : fetch déclenché quand un utilisateur demande à ChatGPT
+# de lire une URL spécifique (navigation active).
+User-agent: ChatGPT-User
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ANTHROPIC / CLAUDE
+# ══════════════════════════════════════════════════════════════════════════════
+
+# anthropic-ai : user-agent legacy/alternatif d'Anthropic (conserver par sécurité).
+User-agent: anthropic-ai
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# ClaudeBot : crawl pour l'entraînement des modèles Anthropic (Claude 3, 4, etc.)
+# Autoriser = le Codex peut alimenter les futures versions de Claude.
+User-agent: ClaudeBot
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# Claude-SearchBot : indexation pour les citations dans Claude Search.
+# Bot le plus important pour être cité dans les réponses Claude.
+User-agent: Claude-SearchBot
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# Claude-User : fetch déclenché quand un utilisateur demande à Claude
+# de lire une URL spécifique (navigation active dans une conversation).
+User-agent: Claude-User
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# claude-code : CLI développeur Anthropic (outil WebFetch dans les conversations).
+# Accès complet au Codex public pour analyse et citation.
+User-agent: claude-code
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# ══════════════════════════════════════════════════════════════════════════════
+# AUTRES CRAWLERS IA
+# ══════════════════════════════════════════════════════════════════════════════
+
+# PerplexityBot : indexation pour les citations dans Perplexity AI.
+User-agent: PerplexityBot
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# Applebot-Extended : entraînement des modèles Apple Intelligence.
+User-agent: Applebot-Extended
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# Amazonbot : indexation Amazon Alexa / modèles AWS.
+User-agent: Amazonbot
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# cohere-ai : indexation pour les modèles Cohere (Command R+, etc.)
+User-agent: cohere-ai
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# Diffbot : extraction de données structurées pour IA.
+User-agent: Diffbot
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
+Disallow: /galerie
+Disallow: /bd
+Disallow: /nouvelles
+Disallow: /favoris
+Disallow: /compte
+Disallow: /couple
+Disallow: /lootbox
+Disallow: /jeu
+Disallow: /arcade
+Disallow: /uploads
+
+# YouBot : indexation pour You.com AI search.
+User-agent: YouBot
+Allow: /
+Allow: /wiki
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /api/wiki/index.json
+Allow: /sitemap.xml
+Allow: /.well-known/
 Disallow: /galerie
 Disallow: /bd
 Disallow: /nouvelles

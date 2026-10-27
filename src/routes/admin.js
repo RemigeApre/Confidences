@@ -104,6 +104,11 @@ const {
   getIpNotes,
   addIpNote,
   deleteIpNote,
+  listCodexAuthors,
+  getCodexAuthorBySlug,
+  createCodexAuthor,
+  updateCodexAuthor,
+  deleteCodexAuthor,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -1489,6 +1494,35 @@ function buildAdminRouter(config) {
       lon: geo.ll ? geo.ll[1] : null,
       range: geo.range ? geo.range.join(' – ') : '',
     });
+  });
+
+  // ── Auteurs Codex (E-E-A-T) ────────────────────────────────────────────────
+  // Liste tous les auteurs
+  router.get('/auteurs', requireAdmin, (req, res) => {
+    const authors = listCodexAuthors();
+    res.render('admin-auteurs', { config, authors });
+  });
+
+  // Créer un auteur (POST)
+  router.post('/auteurs/create', requireAdmin, (req, res) => {
+    const { name, slug, credentials, bio, avatar_url } = req.body;
+    const cleanSlug = (slug || name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+    if (!cleanSlug || !name) return res.redirect('/ponhgup/auteurs');
+    try { createCodexAuthor({ slug: cleanSlug, name: String(name).slice(0, 200).trim(), credentials: String(credentials || '').slice(0, 300).trim(), bio: String(bio || '').slice(0, 5000).trim(), avatar_url: String(avatar_url || '').slice(0, 500).trim() }); } catch (_) {}
+    res.redirect('/ponhgup/auteurs');
+  });
+
+  // Modifier un auteur (POST)
+  router.post('/auteurs/:slug/update', requireAdmin, (req, res) => {
+    const { name, credentials, bio, avatar_url } = req.body;
+    updateCodexAuthor(req.params.slug, { name: String(name || '').slice(0, 200).trim(), credentials: String(credentials || '').slice(0, 300).trim(), bio: String(bio || '').slice(0, 5000).trim(), avatar_url: String(avatar_url || '').slice(0, 500).trim() });
+    res.redirect('/ponhgup/auteurs');
+  });
+
+  // Supprimer un auteur (POST)
+  router.post('/auteurs/:slug/delete', requireAdmin, (req, res) => {
+    deleteCodexAuthor(req.params.slug);
+    res.redirect('/ponhgup/auteurs');
   });
 
   return router;

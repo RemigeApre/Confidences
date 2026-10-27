@@ -29,6 +29,8 @@ const {
   getTranslation, getTranslationsForEntity, getFieldTranslationsByEntity,
   recordIpLog,
   getLootboxCount,
+  listCodexAuthors,
+  getCodexAuthorBySlug,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -1093,6 +1095,20 @@ app.use("/lootbox", buildLootboxRouter(config));
 app.use("/jeu", buildJeuRouter(config));
 app.use("/arcade", buildArcadeRouter(config));
 
+// ── Pages auteurs publiques (E-E-A-T) ────────────────────────────────────────
+// /auteurs/:slug — biographie de l'auteur, liste de ses articles Codex.
+// Accessible sans auth (le Codex est public).
+app.get("/auteurs/:slug", (req, res) => {
+  const author = getCodexAuthorBySlug(req.params.slug);
+  if (!author) return res.status(404).render("404", { config });
+  const pages = listWikiPages().filter((p) => {
+    const m = p.meta || {};
+    return m.author_main === author.slug ||
+      (Array.isArray(m.authors_secondary) && m.authors_secondary.some((a) => a.slug === author.slug));
+  });
+  res.render("auteur-detail", { config, author, pages });
+});
+
 // ── Index JSON léger du Codex (crawlers IA, outils tiers) ───────────────────
 // Annuaire public de toutes les fiches Codex : id, titre, catégorie, résumé
 // court (200 chars de texte brut), tags, date de mise à jour, URLs.
@@ -1127,6 +1143,7 @@ app.get("/api/wiki/index.json", (req, res) => {
       updated:      p.updatedAt ? p.updatedAt.slice(0, 10) : (p.createdAt ? p.createdAt.slice(0, 10) : null),
       url:          `${siteUrl}/wiki/${p.id}`,
       markdown_url: `${siteUrl}/wiki/${p.id}.md`,
+      same_as:      (p.meta && p.meta.wikipedia_url) || null,
     }));
 
     res.set("Content-Type", "application/json; charset=utf-8");

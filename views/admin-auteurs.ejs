@@ -1,0 +1,96 @@
+<%- include('partials/head', { title: 'Auteurs Codex', extraCss: ['admin.css'] }) %>
+
+<div class="admin-topbar">
+  <a href="/ponhgup" class="admin-topbar-back">&larr;</a>
+  <span class="admin-topbar-title">Auteurs Codex (E-E-A-T)</span>
+</div>
+
+<main class="container" style="max-width:860px;padding-top:1.5rem">
+
+  <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:1.5rem">
+    Les auteurs sont affichés sur chaque article et exposés en JSON-LD <code>Person</code> pour les moteurs IA.
+    Le slug sert d'identifiant URL (<code>/auteurs/:slug</code>) et ne peut pas être modifié après création.
+  </p>
+
+  <%# ── Formulaire création ─ %>
+  <details class="prot-sb-details" style="margin-bottom:1.5rem">
+    <summary class="prot-sb-details-summary" style="font-size:1rem">+ Nouvel auteur</summary>
+    <div class="prot-sb-details-body">
+      <form method="POST" action="/ponhgup/auteurs/create" style="display:grid;gap:.6rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+          <div>
+            <label class="prot-sb-label">Nom complet *</label>
+            <input type="text" name="name" class="wiki-input" required maxlength="200" placeholder="Dr. Marie Dupont" />
+          </div>
+          <div>
+            <label class="prot-sb-label">Slug URL * <small style="opacity:.6">(a-z, chiffres, tirets)</small></label>
+            <input type="text" name="slug" class="wiki-input" maxlength="80" placeholder="marie-dupont" pattern="[a-z0-9\-]+" />
+          </div>
+        </div>
+        <div>
+          <label class="prot-sb-label">Titre / Qualifications</label>
+          <input type="text" name="credentials" class="wiki-input" maxlength="300" placeholder="Sexologue clinique, PhD en sciences humaines" />
+        </div>
+        <div>
+          <label class="prot-sb-label">Bio (Markdown)</label>
+          <textarea name="bio" class="wiki-textarea" rows="4" maxlength="5000" placeholder="Biographie courte visible sur la page auteur…"></textarea>
+        </div>
+        <div>
+          <label class="prot-sb-label">URL avatar <small style="opacity:.6">(optionnel)</small></label>
+          <input type="url" name="avatar_url" class="wiki-input" maxlength="500" placeholder="https://…" />
+        </div>
+        <button type="submit" class="btn-primary" style="width:fit-content">Créer l'auteur</button>
+      </form>
+    </div>
+  </details>
+
+  <%# ── Liste des auteurs ─ %>
+  <% if (!authors.length) { %>
+    <p style="color:var(--text-muted);text-align:center;padding:2rem">Aucun auteur encore créé.</p>
+  <% } else { %>
+    <div style="display:grid;gap:.75rem">
+      <% authors.forEach(function(a) { %>
+        <details class="prot-sb-details">
+          <summary class="prot-sb-details-summary">
+            <% if (a.avatar_url) { %><img src="<%= a.avatar_url %>" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:.4rem;vertical-align:middle" /><% } %>
+            <strong><%= a.name %></strong>
+            <span style="color:var(--text-muted);font-size:.82rem;margin-left:.5rem"><%= a.credentials %></span>
+            <code style="margin-left:auto;font-size:.75rem;color:var(--text-muted)">/auteurs/<%= a.slug %></code>
+          </summary>
+          <div class="prot-sb-details-body">
+            <form method="POST" action="/ponhgup/auteurs/<%= a.slug %>/update" style="display:grid;gap:.6rem">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+                <div>
+                  <label class="prot-sb-label">Nom complet</label>
+                  <input type="text" name="name" class="wiki-input" value="<%= a.name %>" maxlength="200" required />
+                </div>
+                <div>
+                  <label class="prot-sb-label">Qualifications</label>
+                  <input type="text" name="credentials" class="wiki-input" value="<%= a.credentials %>" maxlength="300" />
+                </div>
+              </div>
+              <div>
+                <label class="prot-sb-label">Bio (Markdown)</label>
+                <textarea name="bio" class="wiki-textarea" rows="4" maxlength="5000"><%= a.bio %></textarea>
+              </div>
+              <div>
+                <label class="prot-sb-label">URL avatar</label>
+                <input type="url" name="avatar_url" class="wiki-input" value="<%= a.avatar_url %>" maxlength="500" />
+              </div>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <button type="submit" class="btn-primary" style="width:fit-content">Enregistrer</button>
+                <a href="/auteurs/<%= a.slug %>" target="_blank" style="font-size:.82rem;color:var(--accent)">Voir page publique &rarr;</a>
+              </div>
+            </form>
+            <form method="POST" action="/ponhgup/auteurs/<%= a.slug %>/delete" style="margin-top:.75rem"
+                  onsubmit="return confirm('Supprimer <%= a.name %> ? Cette action est irréversible.')">
+              <button type="submit" class="btn-danger" style="font-size:.8rem">Supprimer l'auteur</button>
+            </form>
+          </div>
+        </details>
+      <% }) %>
+    </div>
+  <% } %>
+
+</main>
+<%- include('partials/foot') %>
