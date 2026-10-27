@@ -553,6 +553,8 @@
         <% var _wdContent = t(page.content, 'wiki', page.id, 'content'); %>
         <% if (_wdContent) { %>
           <div class="wiki-md" data-wiki-field="content"><span class="wiki-md-raw" hidden><%= _wdContent %></span></div>
+          <%# Fallback pour agents IA/navigateurs sans JS : contenu brut visible dans l'arbre d'accessibilité %>
+          <noscript><div class="wiki-noscript-content"><%- _wdContent %></div></noscript>
         <% } %>
 
         <%# Image principale — mobile uniquement, glissée par JS avant le 1er h2 ─ %>

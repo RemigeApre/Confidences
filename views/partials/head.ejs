@@ -31,6 +31,9 @@
   <title><%= _pageTitle %></title>
   <%# ── Canonical ── %>
   <link rel="canonical" href="<%= _canonicalUrl %>" />
+  <% if (locals.allowIndex) { %>
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+  <% } %>
   <%# ── Open Graph (partage social, prévisualisation Discord/Reddit/WhatsApp) ── %>
   <meta property="og:type" content="<%= locals.allowIndex ? 'article' : 'website' %>" />
   <meta property="og:title" content="<%= _pageTitle %>" />
