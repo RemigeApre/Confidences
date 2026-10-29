@@ -5,11 +5,13 @@
     <span class="bd-reader-title"><%= book._title || book.title %></span>
     <span class="bd-reader-counter" id="bd-counter">1 / <%= book.imagePaths.length %></span>
     <div class="bd-reader-actions">
-      <%# Favori (livre entier) %>
-      <button type="button" class="bd-reader-fav link-button<%= isFavorite ? ' active' : '' %>" id="bd-fav-btn" data-item-id="<%= book.id %>" title="Favori">&#128278;</button>
-      <%# Ça m'intéresse (livre entier — la note/j'adore/masquer sont
-          individuels par page, voir la barre en bas). %>
-      <button type="button" class="bd-react-btn<%= book.interested ? ' active' : '' %>" id="bd-interested-btn" data-id="<%= book.id %>" title="Ça m&rsquo;int&eacute;resse">&#10024;</button>
+      <% if (currentUser) { %>
+        <%# Favori (livre entier) %>
+        <button type="button" class="bd-reader-fav link-button<%= isFavorite ? ' active' : '' %>" id="bd-fav-btn" data-item-id="<%= book.id %>" title="Favori">&#128278;</button>
+        <%# Ça m'intéresse (livre entier — la note/j'adore/masquer sont
+            individuels par page, voir la barre en bas). %>
+        <button type="button" class="bd-react-btn<%= book.interested ? ' active' : '' %>" id="bd-interested-btn" data-id="<%= book.id %>" title="Ça m&rsquo;int&eacute;resse">&#10024;</button>
+      <% } %>
       <% if (currentUser && currentUser.isAdmin) { %><a href="/bd/<%= book.id %>/edit" class="bd-reader-edit link-button">Modifier</a><% } %>
     </div>
   </div>
@@ -33,15 +35,23 @@
         contrairement au favori et à "Ça m'intéresse" ci-dessus qui restent
         pour le livre entier. %>
     <div class="bd-page-actions" id="bd-page-actions">
-      <span class="bd-rating-stars" id="bd-rating">
-        <% for (var i = 1; i <= 5; i++) { %>
-          <button type="button" class="bd-star" data-val="<%= i %>">&#9733;</button>
+      <% if (currentUser) { %>
+        <span class="bd-rating-stars" id="bd-rating">
+          <% for (var i = 1; i <= 5; i++) { %>
+            <button type="button" class="bd-star" data-val="<%= i %>">&#9733;</button>
+          <% } %>
+        </span>
+        <button type="button" class="bd-react-btn" id="bd-flame-btn" title="J&rsquo;adore cette page">&#128293;</button>
+        <button type="button" class="bd-react-btn" id="bd-page-hidden-btn" title="Masquer cette page">&#128065;</button>
+        <% if (partnerUser) { %>
+          <span class="wiki-partner-reveal bd-partner-reveal" id="bd-page-partner-reveal" data-partner-name="<%= partnerUser.displayName %>" hidden></span>
         <% } %>
-      </span>
-      <button type="button" class="bd-react-btn" id="bd-flame-btn" title="J&rsquo;adore cette page">&#128293;</button>
-      <button type="button" class="bd-react-btn" id="bd-page-hidden-btn" title="Masquer cette page">&#128065;</button>
-      <% if (partnerUser) { %>
-        <span class="wiki-partner-reveal bd-partner-reveal" id="bd-page-partner-reveal" data-partner-name="<%= partnerUser.displayName %>" hidden></span>
+      <% } else { %>
+        <p class="bd-guest-msg"
+          data-fr="Noter, enregistrer et mettre en favoris sont réservés aux personnes connectées."
+          data-en="Rating, saving and adding to favorites are reserved for logged-in users.">
+          Noter, enregistrer et mettre en favoris sont r&eacute;serv&eacute;s aux personnes connect&eacute;es.
+        </p>
       <% } %>
     </div>
   <% } %>

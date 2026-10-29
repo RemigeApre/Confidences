@@ -203,9 +203,13 @@ function buildGalleryRouter(config) {
   const router = express.Router();
 
   router.get("/", (req, res) => {
+    // Hors de France (voir req.isFrenchVisitor, src/geo.js), un visiteur
+    // anonyme voit tout comme un compte connecté ; en France, inchangé :
+    // seules les images marquées "safe" sans compte.
+    const canSeeAll = !!req.user || !req.isFrenchVisitor;
     const { items: rawItems, allTags: rawAllTags } = getCtx(req.user);
-    const items = req.user ? rawItems : rawItems.filter((i) => i.safe);
-    const allTags = req.user ? rawAllTags : Array.from(new Set(items.flatMap((i) => i.tags))).sort((a, b) => a.localeCompare(b, "fr"));
+    const items = canSeeAll ? rawItems : rawItems.filter((i) => i.safe);
+    const allTags = canSeeAll ? rawAllTags : Array.from(new Set(items.flatMap((i) => i.tags))).sort((a, b) => a.localeCompare(b, "fr"));
     const tagImageCounts = {};
     items.forEach((item) => {
       item.tags.forEach((t) => { tagImageCounts[t] = (tagImageCounts[t] || 0) + 1; });

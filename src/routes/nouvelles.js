@@ -1,5 +1,5 @@
 const express = require("express");
-const { requireUser, requireAdmin } = require("../auth");
+const { requireUser, requireUserOrForeign, requireUserJson, requireAdmin } = require("../auth");
 const db = require("../db");
 const { getUserReaction, setUserReaction, normalizeParody } = db;
 
@@ -46,7 +46,11 @@ function renderContent(text) {
 
 function buildNouvellesRouter(config) {
   const router = express.Router();
-  router.use(requireUser);
+  // Lecture : ouverte hors de France, voir requireUserOrForeign. Les routes
+  // d'écriture/admin plus bas gardent requireAdmin, inchangé quelle que soit
+  // la géolocalisation ; la réaction (/:id/react) a sa propre garde stricte
+  // requireUserJson ajoutée plus bas, car elle ne peut pas être anonyme.
+  router.use(requireUserOrForeign);
 
   // Recherche de nouvelles (pour liens depuis la galerie/formulaires)
   router.get("/search", requireUser, (req, res) => {
@@ -173,7 +177,10 @@ function buildNouvellesRouter(config) {
   });
 
   // ── Réaction (étoiles + J'adore) ──────────────────────────────────────────
-  router.post("/:id/react", express.json(), (req, res) => {
+  // Garde explicite (ne reposait auparavant que sur le requireUser global du
+  // routeur, devenu requireUserOrForeign ci-dessus) : réagir suppose un vrai
+  // profil, impossible pour un visiteur anonyme même hors de France.
+  router.post("/:id/react", requireUserJson, express.json(), (req, res) => {
     const nouvelle = db.getNouvelleById(req.params.id);
     if (!nouvelle) return res.status(404).json({ ok: false });
     parseNouvelle(nouvelle);

@@ -36,6 +36,18 @@ function requireUser(req, res, next) {
   res.redirect("/ponhgup/85zapnte?next=" + encodeURIComponent(req.originalUrl));
 }
 
+// Variante "lecture NSFW" (BD/nouvelles) : laisse aussi passer un visiteur
+// non connecté si la géoloc IP le place hors de France (voir src/geo.js et
+// req.isFrenchVisitor, posé par le middleware dans server.js). En France,
+// identique à requireUser — compte obligatoire. À réserver aux routes de
+// simple consultation : les actions (réagir, admin...) doivent garder
+// requireUser/requireUserJson/requireAdmin, jamais cette variante.
+function requireUserOrForeign(req, res, next) {
+  if (req.user) return next();
+  if (!req.isFrenchVisitor) return next();
+  res.redirect("/ponhgup/85zapnte?next=" + encodeURIComponent(req.originalUrl));
+}
+
 // Variante pour les endpoints JSON/fetch (widgets AJAX) : une redirection
 // HTML casserait le JSON.parse() cote client, on renvoie donc un simple 401.
 function requireUserJson(req, res, next) {
@@ -53,4 +65,4 @@ function tokenForUser(user) {
   return "user:" + user.id;
 }
 
-module.exports = { verifyLogin, attachUser, requireUser, requireUserJson, requireAdmin, tokenForUser };
+module.exports = { verifyLogin, attachUser, requireUser, requireUserOrForeign, requireUserJson, requireAdmin, tokenForUser };

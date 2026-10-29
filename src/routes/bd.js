@@ -3,7 +3,7 @@ const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
 const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation } = require("../db");
-const { requireUser, requireUserJson, requireAdmin } = require("../auth");
+const { requireUser, requireUserOrForeign, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
 
@@ -62,7 +62,10 @@ function applyImageOrder(existing, newFiles, orderRaw) {
 
 function buildBdRouter(config) {
   const router = express.Router();
-  router.use(requireUser);
+  // Lecture (liste + lecteur) : ouverte hors de France, voir requireUserOrForeign.
+  // Les routes d'écriture/admin ci-dessous gardent requireAdmin/requireUserJson,
+  // inchangées quelle que soit la géolocalisation.
+  router.use(requireUserOrForeign);
 
   router.get("/", (req, res) => {
     const userId = req.user ? req.user.id : null;
@@ -210,7 +213,7 @@ function buildBdRouter(config) {
     if (lang === "en" && _bdTr.description) book._description = _bdTr.description;
     res.render("bd-detail", {
       config, book, prevBook, nextBook,
-      isFavorite: isFavorite(req.user.id, "bd", book.id),
+      isFavorite: req.user ? isFavorite(req.user.id, "bd", book.id) : false,
       pageReactions, partnerPageReactions,
     });
   });

@@ -20,6 +20,7 @@ const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
 const buildRacesRouter = require("./routes/races");
 const { attachUser } = require("./auth");
+const { isFrenchIp } = require("./geo");
 const {
   db, getAllTagMeta, getAllTagCategories, getAllTagParents, getAllTagSubcategories, setTagType, setTagCategory, setTagParent, setTagSubcategory, createStandaloneTag, renameTagEverywhere,
   listWikiPages, listGalleryImages, getGalleryImage, listBdBooks, recordActivityPing, recordAnonVisit,
@@ -301,6 +302,14 @@ app.use(
 
 app.use(attachUser);
 
+// Visiteur français ? (restriction géo du contenu NSFW, voir src/geo.js) —
+// calculé une fois par requête, réutilisé par le mur d'authentification et
+// par la galerie/BD/nouvelles plus bas.
+app.use((req, res, next) => {
+  req.isFrenchVisitor = isFrenchIp(req.ip);
+  next();
+});
+
 // ── IP Logger : enregistre chaque requête GET non-statique ───────────────────
 app.use((req, res, next) => {
   if (req.method === 'GET') {
@@ -361,9 +370,15 @@ const _AUTH_PUBLIC = [
   /^\/llms-full\.txt$/,
   /^\/api\/wiki\/index\.json$/,
 ];
+// Contenu NSFW (galerie/BD/nouvelles) : en France, compte obligatoire comme
+// avant ; hors France (voir req.isFrenchVisitor, src/geo.js), laissé passer
+// ici — les routes d'écriture/admin restent protégées par leurs propres
+// requireAdmin/requireUserJson à l'intérieur de chaque routeur, geo ou pas.
+const _NSFW_VIEW_PREFIXES = [/^\/galerie(\/.*)?$/, /^\/bd(\/.*)?$/, /^\/nouvelles(\/.*)?$/];
 app.use((req, res, next) => {
   if (req.user) return next();
   if (_AUTH_PUBLIC.some(re => re.test(req.path))) return next();
+  if (!req.isFrenchVisitor && _NSFW_VIEW_PREFIXES.some(re => re.test(req.path))) return next();
   if (req.method === 'GET') {
     return res.redirect(302, '/ponhgup/85zapnte?next=' + encodeURIComponent(req.originalUrl));
   }
@@ -477,8 +492,11 @@ const RESTRICTED_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0
 app.use(
   "/uploads",
   (req, res, next) => {
-    // Images marquées SFW par l'admin : accessibles sans compte
+    // Images marquées SFW par l'admin : accessibles sans compte, où que ce
+    // soit. Hors de France, tout le reste aussi (voir req.isFrenchVisitor,
+    // src/geo.js) — en France, inchangé : SFW uniquement sans compte.
     if (!req.user && getSfwSet().has('/uploads' + req.path)) return next();
+    if (!req.user && !req.isFrenchVisitor) return next();
     if (!req.user) return res.status(403).end();
     const status = req.user.accountStatus || 'actif';
     if (status === 'restreint' && !req.user.isAdmin) {
