@@ -8,7 +8,7 @@
   };
 %>
 <main class="container wide wiki-locked" style="--ch-hue: 250">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Codex', navBack: '/', navAbout: true }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: 'Codex', navBack: '/' }) %>
 
   <%- include('partials/mobile-filter-toggle') %>
 
@@ -89,6 +89,19 @@
           <button type="button" id="wiki-save-filter-btn" class="wiki-filter-reset-btn filter-profile-save-btn" hidden data-fr="Enregistrer le filtre" data-en="Save filter">Enregistrer le filtre</button>
         <% } %>
         <button type="button" id="wiki-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger" data-fr="Réinitialiser les filtres" data-en="Reset filters">R&eacute;initialiser les filtres</button>
+
+        <%# "À propos" — remplace l'ancien bouton "i" du bandeau mobile (voir
+            top-nav.ejs). Visible uniquement en téléphone (<640px, voir
+            style.css .wiki-sidebar-about-mobile) ; le contenu principal
+            (wiki-intro-details-mobile plus bas) reste inchangé pour PC. %>
+        <details class="wiki-sidebar-about-mobile">
+          <summary class="wiki-intro-summary" data-fr="! À propos !" data-en="! About !">! &Agrave; propos !</summary>
+          <div class="wiki-index-intro">
+            <p data-fr="Le codex de Confidence est un espace d'encyclopédie agrémenté par les administrateurs du site. Il vise à être exhaustif sur tout ce qui touche à la sexualité, des pratiques aux fantasmes en passant par les objets et les scénarios. Vous pouvez noter, mettre en favoris et explorer à votre rythme." data-en="The Confidence codex is an encyclopedia curated by the site administrators. It aims to be exhaustive on everything related to sexuality — from practices to fantasies, objects and scenarios. You can rate, bookmark and explore at your own pace.">Le codex de Confidence est un espace d&rsquo;encyclop&eacute;die agr&eacute;ment&eacute; par les administrateurs du site. Il vise &agrave; &ecirc;tre exhaustif sur tout ce qui touche &agrave; la sexualit&eacute;, des pratiques aux fantasmes en passant par les objets et les sc&eacute;narios. Vous pouvez noter, mettre en favoris et explorer &agrave; votre rythme.</p>
+            <p data-fr="Il existe deux tags spéciaux : Ultra, pour les contenus les plus extrêmes, et Irréaliste, pour les scénarios qui relèvent davantage du fantasme pur. Ces deux tags peuvent être masqués depuis les filtres." data-en="There are two special tags: Ultra, for the most extreme content, and Unrealistic, for scenarios that lean more towards pure fantasy. Both tags can be hidden from the filters.">Il existe deux tags sp&eacute;ciaux&nbsp;: <strong>Ultra</strong>, pour les contenus les plus extr&ecirc;mes, et <strong>Irr&eacute;aliste</strong>, pour les sc&eacute;narios qui rel&egrave;vent davantage du fantasme pur. Ces deux tags peuvent &ecirc;tre masqu&eacute;s depuis les filtres.</p>
+          </div>
+        </details>
+
         <% if (currentUser) { %>
           <button type="button" id="wiki-explore-btn" class="wiki-filter-reset-btn wiki-explore-btn" data-fr="Explorer l'inconnu" data-en="Explore the unknown">Explorer l&rsquo;inconnu</button>
         <% } %>
@@ -284,15 +297,6 @@
     var catDetails = document.querySelector('.wiki-cats-collapsible');
     if (catDetails) catDetails.open = true;
   }
-
-  var aboutBtn = document.getElementById('mobile-about-btn');
-  var aboutDetails = document.getElementById('wiki-intro-details-mobile');
-  if (!aboutBtn || !aboutDetails) return;
-  aboutBtn.addEventListener('click', function() {
-    var open = aboutDetails.open;
-    aboutDetails.open = !open;
-    aboutBtn.setAttribute('aria-expanded', !open ? 'true' : 'false');
-  });
 })();
 </script>
 <%- include('partials/ai-nav', { aiNavPages: locals.aiNavPages || [] }) %>
