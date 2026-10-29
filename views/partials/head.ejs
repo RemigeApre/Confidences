@@ -25,6 +25,13 @@
   <%# Pages Codex publiques : index + snippets illimités + grande image → éligibles aux AI Overviews %>
   <meta name="robots" content="<%= locals.allowIndex ? 'index, follow, max-snippet: -1, max-image-preview: large, max-video-preview: -1' : (locals.allowAiIndex ? 'noindex, follow' : 'noindex, nofollow, noarchive') %>" />
   <meta name="color-scheme" content="dark" />
+  <%# ── Favicon (clé dans un médaillon violet/or — voir public/favicon.svg) ──
+      Le SVG couvre déjà tous les navigateurs modernes ; les PNG sont générés
+      au build (voir scripts/build.js) et ne demandent rien de plus ici. ── %>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <%
     var _metaDesc = locals.metaDescription || (typeof title !== 'undefined' ? title + ' — Codex Confidence, encyclopédie de sexologie.' : 'Codex Confidence — encyclopédie de sexologie bilingue FR/EN.');
     var _pageTitle = typeof title !== 'undefined' ? title : 'Codex Confidence';

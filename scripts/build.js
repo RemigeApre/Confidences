@@ -105,4 +105,29 @@ for (const f of toCompress) {
   console.log(`  ${f}: raw=${Math.round(content.length/1024)}K  gz=${Math.round(gz.length/1024)}K  br=${Math.round(br.length/1024)}K`);
 }
 
+// ── Favicons ────────────────────────────────────────────────────────────────
+// Génère les PNG depuis public/favicon.svg (source vectorielle, committée en
+// texte comme le CSS/JS) à chaque build — jamais de binaire à committer, les
+// icônes suivent automatiquement si le SVG change. sharp n'a pas d'API sync,
+// d'où l'IIFE async ci-dessous ; Node n'arrêtera pas le process tant qu'elle
+// n'est pas résolue, même si "✓ Build terminé" s'affiche avant dans les logs.
+const faviconSvg = path.join(PUB, 'favicon.svg');
+if (fs.existsSync(faviconSvg)) {
+  const sharp = require('sharp');
+  const faviconSizes = [
+    ['favicon-16.png', 16],
+    ['favicon-32.png', 32],
+    ['apple-touch-icon.png', 180],
+    ['icon-192.png', 192],
+    ['icon-512.png', 512],
+  ];
+  console.log('\n── Favicons (depuis favicon.svg) ────────────────────────────────────────');
+  (async () => {
+    for (const [name, size] of faviconSizes) {
+      await sharp(faviconSvg, { density: 384 }).resize(size, size).png().toFile(path.join(PUB, name));
+      console.log(`  ${name}: ${size}x${size}`);
+    }
+  })().catch(e => console.error('  ✗ favicons:', e.message));
+}
+
 console.log('\n✓ Build terminé.\n');
