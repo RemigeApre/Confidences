@@ -259,12 +259,15 @@
   .wiki-cats-collapsible > summary::-webkit-details-marker { display: none; }
   .wiki-cats-collapsible > summary::before,
   .wiki-cats-collapsible > summary::after {
-    content: "›"; font-size: 1rem; opacity: .6;
+    font-size: 1rem; opacity: .6;
     transition: transform .2s; display: inline-block; line-height: 1;
   }
+  /* En miroir : fermé, les deux chevrons pointent vers le mot */
+  .wiki-cats-collapsible > summary::before { content: "›"; }
+  .wiki-cats-collapsible > summary::after { content: "‹"; }
   .wiki-cats-collapsible[open] > summary { color: var(--fg); border-color: rgba(255,255,255,.3); }
-  .wiki-cats-collapsible[open] > summary::before,
-  .wiki-cats-collapsible[open] > summary::after { transform: rotate(90deg); }
+  .wiki-cats-collapsible[open] > summary::before { transform: rotate(90deg); }
+  .wiki-cats-collapsible[open] > summary::after { transform: rotate(-90deg); }
 
   /* Cartes catégories : centrées, taille uniforme */
   .wiki-cats-collapsible .wiki-index-cats {

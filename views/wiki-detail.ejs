@@ -934,25 +934,12 @@
           <% } %>
         <% } %>
 
-        <%# f) Tags : badge unifié (couleur ultra/irréaliste/page dédiée/terme
-               dérivé/normal), clic = popup — voir partials/tag-badge.ejs.
-               Un terme dérivé (ex. "chevaux" dérivé de la page "Cheval") est
-               déjà inclus dans page.tags (voir autoEnrichTags côté serveur),
-               donc rendu une seule fois ici, en jaune. ─ %>
-        <% if (hasAnyTags) { %>
-          <div class="wiki-right-tags">
-            <% page.tags.forEach(function (t) { %>
-              <%- include('partials/tag-badge', { tag: t }) %>
-            <% }) %>
-          </div>
-        <% } %>
-
         <%# Carrousel images secondaires (mobile uniquement, entre tags et réactions) ─ %>
         <% if (hasImages && visibleImagePaths.length > 1) { %>
           <% var secCount = visibleImagePaths.length - 1; %>
           <div class="wiki-mobile-sec-wrap">
             <div class="wiki-mobile-sec-heading">
-              <span data-fr="Autres images" data-en="More images">Autres images</span>
+              <span data-fr="Images" data-en="Images">Images</span>
               <span class="wiki-mobile-sec-counter" id="wiki-sec-counter"><%= secCount > 1 ? '1\u00a0/\u00a0' + secCount : '' %></span>
             </div>
             <div class="wiki-mobile-sec-carousel" id="wiki-sec-carousel">
@@ -982,6 +969,22 @@
           })();
           </script>
           <% } %>
+        <% } %>
+
+        <%# f) Tags : badge unifié (couleur ultra/irréaliste/page dédiée/terme
+               dérivé/normal), clic = popup — voir partials/tag-badge.ejs.
+               Un terme dérivé (ex. "chevaux" dérivé de la page "Cheval") est
+               déjà inclus dans page.tags (voir autoEnrichTags côté serveur),
+               donc rendu une seule fois ici, en jaune. Sur téléphone, passe
+               après "Images" avec un petit "Tags :" discret sur la même
+               ligne (voir .wiki-right-tags-label, mobile uniquement). ─ %>
+        <% if (hasAnyTags) { %>
+          <div class="wiki-right-tags">
+            <span class="wiki-right-tags-label" data-fr="Tags&nbsp;:" data-en="Tags:">Tags&nbsp;:</span>
+            <% page.tags.forEach(function (t) { %>
+              <%- include('partials/tag-badge', { tag: t }) %>
+            <% }) %>
+          </div>
         <% } %>
 
         <%# e) Réactions côte à côte ─ %>
@@ -1033,10 +1036,10 @@
 
         <%# Bouton "Copier pour une IA" — discret, disponible à tous ─ %>
         <button type="button" class="wiki-copy-ai-btn" id="wiki-copy-ai-btn"
-                data-fr="Copier pour une IA" data-en="Copy for AI"
                 title="Copier un résumé textuel de cette fiche pour le coller dans une IA">
           <span class="wiki-copy-ai-icon">&#128203;</span>
           <span class="wiki-copy-ai-label" data-fr="Copier pour une IA" data-en="Copy for AI">Copier pour une IA</span>
+          <span class="wiki-copy-ai-label-mobile" data-fr="Copier" data-en="Copy">Copier</span>
         </button>
 
         </div><%# /wiki-right-body %>
@@ -1383,14 +1386,18 @@ window.WIKI_CONTENT = <%- JSON.stringify({
 
   function flashBtn(btn, labelFr, labelEn) {
     var lbl = btn.querySelector('.wiki-copy-ai-label');
+    var lblM = btn.querySelector('.wiki-copy-ai-label-mobile');
     var origFr = 'Copier pour une IA', origEn = 'Copy for AI';
+    var origFrM = 'Copier', origEnM = 'Copy';
     btn.disabled = true;
     if (lbl) { lbl.dataset.fr = labelFr; lbl.dataset.en = labelEn; lbl.textContent = labelFr; }
-    else { btn.title = labelFr; }
+    if (lblM) { lblM.dataset.fr = labelFr; lblM.dataset.en = labelEn; lblM.textContent = labelFr; }
+    if (!lbl && !lblM) { btn.title = labelFr; }
     setTimeout(function () {
       btn.disabled = false;
       if (lbl) { lbl.dataset.fr = origFr; lbl.dataset.en = origEn; lbl.textContent = origFr; }
-      else { btn.title = 'Copier pour une IA'; }
+      if (lblM) { lblM.dataset.fr = origFrM; lblM.dataset.en = origEnM; lblM.textContent = origFrM; }
+      if (!lbl && !lblM) { btn.title = 'Copier pour une IA'; }
     }, 2000);
   }
 
