@@ -945,7 +945,7 @@
             <div class="wiki-mobile-sec-carousel" id="wiki-sec-carousel">
               <% visibleImagePaths.slice(1).forEach(function (src) { %>
                 <div class="wiki-mobile-sec-item">
-                  <img src="<%= thumbUrl(src) %>" alt="" class="wiki-mobile-sec-img" loading="lazy" />
+                  <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-mobile-sec-img" loading="lazy" style="cursor:zoom-in" />
                 </div>
               <% }) %>
             </div>
@@ -1293,12 +1293,18 @@ window.IRREALISTE_MODE = 'visible';
     }
     // Image secondaire
     var wrap = e.target.closest('.wiki-secondary-img-wrap');
-    if (!wrap) return;
-    var imgEl = wrap.querySelector('.wiki-secondary-img');
-    if (!imgEl) return;
-    e.preventDefault();
-    var src = imgEl.dataset.src || imgEl.src;
-    openGalleryLightbox(src);
+    if (wrap) {
+      var imgEl = wrap.querySelector('.wiki-secondary-img');
+      if (imgEl) { e.preventDefault(); openGalleryLightbox(imgEl.dataset.src || imgEl.src); }
+      return;
+    }
+    // Image du carrousel mobile ("Images", sous les tags)
+    var secItem = e.target.closest('.wiki-mobile-sec-item');
+    if (secItem) {
+      var secImg = secItem.querySelector('.wiki-mobile-sec-img');
+      if (secImg) { e.preventDefault(); openGalleryLightbox(secImg.dataset.src || secImg.src); }
+      return;
+    }
   });
 })();
 </script>

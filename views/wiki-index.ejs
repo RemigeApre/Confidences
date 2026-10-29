@@ -275,6 +275,13 @@
     gap: .55rem;
     margin-bottom: 0;
   }
+  /* Nombre impair de catégories : la dernière, seule sur sa ligne, se
+     centre au lieu de rester collée à gauche. */
+  .wiki-cats-collapsible .wiki-index-cats .wiki-index-cat-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc(50% - .275rem);
+  }
   .wiki-cats-collapsible .wiki-index-cat-card {
     align-items: center; text-align: center;
     padding: .85rem .6rem;
