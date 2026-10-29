@@ -152,7 +152,7 @@
         background: none; border: none; padding: 0; cursor: pointer; color: #fff;
       }
       /* Compenser le header fixe sur le contenu */
-      .wiki-detail { padding-top: calc(var(--topnav-height) + .5rem); }
+      .wiki-detail { padding-top: calc(var(--topnav-height) + .2rem); }
 
       /* ── Vagues de navigation ── */
       .wiki-wave-nav { pointer-events: none; }
@@ -215,21 +215,23 @@
         padding-top: 0;
       }
       .wiki-detail .wiki-section-summary {
-        display: block !important;
-        text-align: center !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: .65rem;
         width: 100%;
         padding: .6rem .5rem;
         font-size: 1.1rem;
       }
-      .wiki-detail .wiki-section-summary:before { display: none !important; }
+      .wiki-detail .wiki-section-summary:before,
       .wiki-detail .wiki-section-summary:after {
-        content: ' ▾';
-        font-size: .7em;
+        content: '▾';
+        font-size: .85em;
         color: hsl(var(--ch-hue, 220), 55%, 55%);
         display: inline-block;
         transition: transform .2s ease;
-        transform-origin: center .4em;
       }
+      .wiki-detail .wiki-section[open] > .wiki-section-summary:before,
       .wiki-detail .wiki-section[open] > .wiki-section-summary:after {
         transform: rotate(-180deg);
       }
