@@ -1279,53 +1279,51 @@ window.IRREALISTE_MODE = 'visible';
     });
   }
 
-  // Clic sur une image secondaire, l'image hero mobile ou l'image principale PC.
-  document.addEventListener('click', function (e) {
+  // Tap sur une image (hero mobile, image principale PC, image secondaire,
+  // carrousel mobile) → ouvre le lightbox. Détection par pointerdown/move/up
+  // avec seuil de déplacement plutôt qu'un simple "click" : sur mobile, un
+  // "click" se fait très souvent avaler par le navigateur dès que le doigt a
+  // un peu bougé pendant l'appui (confondu avec un début de scroll), même
+  // hors d'un carrousel — c'est ce qui empêchait l'image principale de
+  // s'ouvrir alors que le code semblait correct.
+  var tapStartX = 0, tapStartY = 0, tapMoved = false;
+  document.addEventListener('pointerdown', function (e) {
+    tapStartX = e.clientX; tapStartY = e.clientY; tapMoved = false;
+  });
+  document.addEventListener('pointermove', function (e) {
+    if (Math.abs(e.clientX - tapStartX) > 10 || Math.abs(e.clientY - tapStartY) > 10) tapMoved = true;
+  });
+  document.addEventListener('pointerup', function (e) {
+    if (tapMoved) return;
     // Image hero mobile
     var hero = e.target.closest('.wiki-mobile-hero');
     if (hero) {
       var img = hero.querySelector('.wiki-mobile-hero-img');
-      if (img) { e.preventDefault(); openGalleryLightbox(img.dataset.src || img.src); }
+      if (img) openGalleryLightbox(img.dataset.src || img.src);
       return;
     }
     // Image principale colonne droite (PC/tablette)
     var rightWrap = e.target.closest('.wiki-right-img-wrap');
     if (rightWrap) {
-      var img = rightWrap.querySelector('.wiki-right-img');
-      if (img) { e.preventDefault(); openGalleryLightbox(img.dataset.src || img.src); }
+      var rImg = rightWrap.querySelector('.wiki-right-img');
+      if (rImg) openGalleryLightbox(rImg.dataset.src || rImg.src);
       return;
     }
     // Image secondaire
     var wrap = e.target.closest('.wiki-secondary-img-wrap');
     if (wrap) {
       var imgEl = wrap.querySelector('.wiki-secondary-img');
-      if (imgEl) { e.preventDefault(); openGalleryLightbox(imgEl.dataset.src || imgEl.src); }
+      if (imgEl) openGalleryLightbox(imgEl.dataset.src || imgEl.src);
+      return;
+    }
+    // Image du carrousel mobile ("Images", sous les tags)
+    var secItem = e.target.closest('.wiki-mobile-sec-item');
+    if (secItem) {
+      var secImg = secItem.querySelector('.wiki-mobile-sec-img');
+      if (secImg) openGalleryLightbox(secImg.dataset.src || secImg.src);
       return;
     }
   });
-
-  // Image du carrousel mobile ("Images", sous les tags) — ce carrousel
-  // défile horizontalement au doigt ; un simple listener "click" se fait
-  // trop souvent avaler par le navigateur dès que le doigt a légèrement
-  // bougé pendant le tap (confondu avec un début de scroll). On détecte
-  // donc nous-mêmes un vrai tap (déplacement minime) via pointerdown/up.
-  var secCarousel = document.getElementById('wiki-sec-carousel');
-  if (secCarousel) {
-    var secTapX = 0, secTapY = 0, secTapMoved = false;
-    secCarousel.addEventListener('pointerdown', function (e) {
-      secTapX = e.clientX; secTapY = e.clientY; secTapMoved = false;
-    });
-    secCarousel.addEventListener('pointermove', function (e) {
-      if (Math.abs(e.clientX - secTapX) > 8 || Math.abs(e.clientY - secTapY) > 8) secTapMoved = true;
-    });
-    secCarousel.addEventListener('pointerup', function (e) {
-      if (secTapMoved) return;
-      var secItem = e.target.closest('.wiki-mobile-sec-item');
-      if (!secItem) return;
-      var secImg = secItem.querySelector('.wiki-mobile-sec-img');
-      if (secImg) openGalleryLightbox(secImg.dataset.src || secImg.src);
-    });
-  }
 })();
 </script>
 <script nonce="<%= nonce %>" src="/gallery.js?v=<%= assetVersion %>"></script>
