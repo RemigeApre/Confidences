@@ -144,7 +144,7 @@
     <%# ─ Strips ─ %>
     <% if (recentAdded.length) { %>
       <div class="wiki-index-strip-section">
-        <h2 class="wiki-index-strip-title" data-fr="Derniers ajouts" data-en="Latest additions">Derniers ajouts</h2>
+        <h2 class="wiki-index-strip-title" data-fr="Nouveautés" data-en="New">Nouveaut&eacute;s</h2>
         <div class="wiki-chapter-strip-wrap">
           <div class="wiki-chapter-strip">
             <% recentAdded.forEach(function (page) { %>
@@ -158,7 +158,7 @@
 
     <% if (recentUpdated.length) { %>
       <div class="wiki-index-strip-section">
-        <h2 class="wiki-index-strip-title" data-fr="Dernières mises à jour" data-en="Recently updated">Derni&egrave;res mises &agrave; jour</h2>
+        <h2 class="wiki-index-strip-title" data-fr="Mises à jour" data-en="Updated">Mises &agrave; jour</h2>
         <div class="wiki-chapter-strip-wrap">
           <div class="wiki-chapter-strip">
             <% recentUpdated.forEach(function (page) { %>
@@ -257,11 +257,13 @@
     transition: border-color .15s, color .15s;
   }
   .wiki-cats-collapsible > summary::-webkit-details-marker { display: none; }
+  .wiki-cats-collapsible > summary::before,
   .wiki-cats-collapsible > summary::after {
     content: "›"; font-size: 1rem; opacity: .6;
     transition: transform .2s; display: inline-block; line-height: 1;
   }
   .wiki-cats-collapsible[open] > summary { color: var(--fg); border-color: rgba(255,255,255,.3); }
+  .wiki-cats-collapsible[open] > summary::before,
   .wiki-cats-collapsible[open] > summary::after { transform: rotate(90deg); }
 
   /* Cartes catégories : centrées, taille uniforme */
@@ -286,8 +288,8 @@
   .wiki-intro-details > summary.wiki-intro-summary { display: none; }
   .wiki-intro-details { margin-bottom: .5rem; }
 
-  /* Titres de section encore plus discrets sur mobile */
-  .wiki-index-strip-title { color: #606070; }
+  /* Titres de section bien lisibles sur mobile */
+  .wiki-index-strip-title { color: var(--fg); }
 }
 </style>
 <script nonce="<%= nonce %>">
