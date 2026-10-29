@@ -1,0 +1,21 @@
+<%- include('partials/head', { title: 'Réinitialiser le mot de passe' }) %>
+<main class="container narrow gate-page">
+  <a href="/ponhgup/85zapnte" class="gate-back-link" aria-label="Retour &agrave; la connexion" title="Retour &agrave; la connexion">&larr;</a>
+
+  <h1 class="gate-title">Nouveau mot de passe</h1>
+
+  <% if (!valid) { %>
+    <p class="error gate-error">Ce lien n'est plus valable (expir&eacute; ou d&eacute;j&agrave; utilis&eacute;). Refaites une demande.</p>
+  <% } else { %>
+    <% if (error) { %>
+      <p class="error gate-error"><%= error %></p>
+    <% } %>
+    <form method="POST" action="/ponhgup/85zapnte/reinitialiser/<%= token %>" class="gate-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="password" name="password" placeholder="nouveau mot de passe" required autofocus autocomplete="new-password" />
+      <input type="password" name="password2" placeholder="confirmer le mot de passe" required autocomplete="new-password" />
+      <button type="submit" aria-label="Valider" title="Valider">&#8594;</button>
+    </form>
+  <% } %>
+</main>
+<%- include('partials/foot') %>

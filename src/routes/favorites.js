@@ -14,6 +14,7 @@ const {
   getUserById,
   listConnectionLogsForUser,
   updateOwnProfile,
+  getUserByEmail,
   updateUserPassword,
   getUserCredentials,
   countUserNotes,
@@ -445,6 +446,9 @@ function buildFavoritesRouter(config) {
 
     const email = String(req.body.email || "").trim().slice(0, 254);
     if (email && !email.includes("@")) return renderIdentite(res, req, { error: "Adresse mail invalide." });
+    if (email && getUserByEmail(email, req.user.id)) {
+      return renderIdentite(res, req, { error: "Cette adresse mail est déjà utilisée par un autre profil." });
+    }
 
     const sexeRaw = String(req.body.sexe || "");
     const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";

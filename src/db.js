@@ -274,6 +274,22 @@ try { db.exec("ALTER TABLE users ADD COLUMN birth_year INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN updated_at TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT"); } catch (_) {}
 
+// Jetons de réinitialisation de mot de passe ("mot de passe oublié") : à
+// usage unique, expirent après 1h. Pas de contrainte UNIQUE sur users.email
+// côté SQL (beaucoup de profils ont '' comme email par défaut, une
+// UNIQUE casserait dès le deuxième profil sans mail) — l'unicité est
+// vérifiée côté applicatif, uniquement quand l'email n'est pas vide.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  )
+`);
+
 // Gouts + reglages d'affichage, propres a chaque profil (section "Goûts" /
 // "Paramètres" de /favoris). ultra_mode/irrealiste_mode : "hidden" (masque
 // par defaut mais reste affichable via le bouton bascule existant),
@@ -948,6 +964,38 @@ function listUsers() {
 
 function updateUserPassword(id, passwordHash) {
   db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(passwordHash, new Date().toISOString(), id);
+}
+
+// Email vide ("") jamais considéré comme un doublon — seuls deux emails
+// non vides identiques comptent. excludeUserId : pour permettre à un
+// profil de ré-enregistrer son propre email sans se bloquer lui-même.
+function getUserByEmail(email, excludeUserId) {
+  if (!email) return null;
+  const row = db.prepare("SELECT * FROM users WHERE email = ? AND id != ?").get(email, excludeUserId || 0);
+  return rowToUser(row);
+}
+
+function createPasswordReset(userId) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1h
+  db.prepare(
+    "INSERT INTO password_resets (user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?)"
+  ).run(userId, token, expiresAt, new Date().toISOString());
+  return token;
+}
+
+// Renvoie { userId } si le jeton est valide (existe, pas utilisé, pas
+// expiré), sinon null — ne distingue pas la raison à l'appelant (jeton
+// bidon vs expiré vs déjà consommé), ça n'a pas besoin d'être plus précis.
+function getPasswordReset(token) {
+  const row = db.prepare(
+    "SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expires_at > ?"
+  ).get(token, new Date().toISOString());
+  return row ? { userId: row.user_id } : null;
+}
+
+function markPasswordResetUsed(token) {
+  db.prepare("UPDATE password_resets SET used = 1 WHERE token = ?").run(token);
 }
 
 const VALID_ACCOUNT_STATUSES = ['actif', 'restreint', 'bloque'];
@@ -5269,6 +5317,10 @@ module.exports = {
   updateOwnProfile,
   updateUserSettings,
   updateUserPassword,
+  getUserByEmail,
+  createPasswordReset,
+  getPasswordReset,
+  markPasswordResetUsed,
   touchLastLogin,
   addFavorite,
   removeFavorite,

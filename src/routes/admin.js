@@ -109,9 +109,14 @@ const {
   createCodexAuthor,
   updateCodexAuthor,
   deleteCodexAuthor,
+  getUserByEmail,
+  createPasswordReset,
+  getPasswordReset,
+  markPasswordResetUsed,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
+const { sendMail } = require("../mailer");
 const { createThrottle } = require("../loginThrottle");
 const crypto = require("crypto");
 const { slugify, computeScores, flattenItemsRaw } = require("../scoring");
@@ -240,6 +245,85 @@ function buildAdminRouter(config) {
     res.render("admin-login", { error: "Identifiants incorrects.", next: next || "", csrfToken: ensureCsrf(req) });
   });
 
+  // ── Mot de passe oublié : demande du lien de réinitialisation ─────────
+  router.get("/85zapnte/oubli", (req, res) => {
+    if (req.user) return res.redirect(req.user.isAdmin ? "/ponhgup" : "/favoris");
+    res.render("mot-de-passe-oublie", { csrfToken: ensureCsrf(req), message: null, error: null });
+  });
+
+  router.post("/85zapnte/oubli", (req, res) => {
+    const sessionToken = req.session && req.session.csrfToken;
+    const bodyToken    = req.body._csrf;
+    if (!sessionToken || !bodyToken || sessionToken !== bodyToken) {
+      return res.status(403).render("mot-de-passe-oublie", { csrfToken: ensureCsrf(req), message: null, error: "Requête invalide." });
+    }
+
+    // Même throttle par IP que le login : évite qu'on puisse spammer l'envoi
+    // de mails ou sonder des usernames en boucle.
+    const key  = req.ip;
+    const wait = loginThrottle.secondsToWait(key);
+    if (wait > 0) {
+      return res.render("mot-de-passe-oublie", { csrfToken: ensureCsrf(req), message: null, error: `Trop de tentatives. Réessaie dans ${wait}s.` });
+    }
+    loginThrottle.recordFailure(key);
+
+    const username = String(req.body.username || "").trim();
+    const user = username ? getUserByUsername(username) : null;
+
+    // Même message qu'il existe ou non (anti-énumération) : seule
+    // l'absence de mail renseigné change la réponse, jamais l'existence
+    // du compte lui-même.
+    if (!user || !user.email) {
+      return res.render("mot-de-passe-oublie", { csrfToken: ensureCsrf(req), error: null,
+        message: "Aucun mail n'est renseigné sur ce profil. Contactez la personne qui vous a créé ce compte." });
+    }
+
+    const token = createPasswordReset(user.id);
+    const resetUrl = res.locals.siteUrl + "/ponhgup/85zapnte/reinitialiser/" + token;
+    sendMail({
+      to: user.email,
+      subject: "Réinitialisation de votre mot de passe — Confidences",
+      text: "Bonjour,\n\nVous avez demandé à réinitialiser le mot de passe du profil \"" + user.displayName + "\".\n"
+          + "Cliquez sur ce lien (valable 1h) pour choisir un nouveau mot de passe :\n" + resetUrl + "\n\n"
+          + "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.",
+      html: "<p>Bonjour,</p><p>Vous avez demand&eacute; &agrave; r&eacute;initialiser le mot de passe du profil &laquo;&nbsp;" + user.displayName + "&nbsp;&raquo;.</p>"
+          + "<p><a href=\"" + resetUrl + "\">Cliquez ici pour choisir un nouveau mot de passe</a> (lien valable 1h).</p>"
+          + "<p>Si vous n'&ecirc;tes pas &agrave; l'origine de cette demande, ignorez ce message.</p>",
+    });
+
+    res.render("mot-de-passe-oublie", { csrfToken: ensureCsrf(req), error: null,
+      message: "Un mail a été envoyé à votre adresse." });
+  });
+
+  // ── Réinitialisation via le lien reçu par mail ─────────────────────────
+  router.get("/85zapnte/reinitialiser/:token", (req, res) => {
+    const reset = getPasswordReset(req.params.token);
+    res.render("reinitialiser-mot-de-passe", { csrfToken: ensureCsrf(req), token: req.params.token, valid: !!reset, error: null });
+  });
+
+  router.post("/85zapnte/reinitialiser/:token", (req, res) => {
+    const token = req.params.token;
+    const reset = getPasswordReset(token);
+    const sessionToken = req.session && req.session.csrfToken;
+    const bodyToken    = req.body._csrf;
+    if (!reset || !sessionToken || !bodyToken || sessionToken !== bodyToken) {
+      return res.render("reinitialiser-mot-de-passe", { csrfToken: ensureCsrf(req), token, valid: !!reset, error: "Requête invalide." });
+    }
+
+    const pwd  = String(req.body.password || "");
+    const pwd2 = String(req.body.password2 || "");
+    if (pwd.length < 4) {
+      return res.render("reinitialiser-mot-de-passe", { csrfToken: ensureCsrf(req), token, valid: true, error: "Nouveau mot de passe trop court." });
+    }
+    if (pwd !== pwd2) {
+      return res.render("reinitialiser-mot-de-passe", { csrfToken: ensureCsrf(req), token, valid: true, error: "Les deux mots de passe ne correspondent pas." });
+    }
+
+    updateUserPassword(reset.userId, hashPassword(pwd));
+    markPasswordResetUsed(token);
+    res.redirect("/ponhgup/85zapnte?reset=1");
+  });
+
   router.post("/logout", (req, res) => {
     req.session.destroy(() => res.redirect("/ponhgup/85zapnte"));
   });
@@ -363,10 +447,13 @@ function buildAdminRouter(config) {
     if (getUserByUsername(username)) {
       return renderAdmin(req, res, "Ce nom d'utilisateur existe déjà.");
     }
+    const email = String(req.body.email || "").trim();
+    if (email && getUserByEmail(email)) {
+      return renderAdmin(req, res, "Cette adresse mail est déjà utilisée par un autre profil.");
+    }
 
     const newId = createUser({ username, displayName, passwordHash: hashPassword(password), isAdmin, isTest });
 
-    const email = String(req.body.email || "").trim();
     const sexeRaw = String(req.body.sexe || "");
     const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";
     const birthYear = req.body.birth_year ? Number(req.body.birth_year) || null : null;
@@ -396,6 +483,11 @@ function buildAdminRouter(config) {
     if (dupe && dupe.id !== id) {
       return renderAdmin(req, res, "Ce nom d'utilisateur existe déjà.");
     }
+    const email = String(req.body.email || "").trim();
+    const emailDupe = getUserByEmail(email, id);
+    if (email && emailDupe) {
+      return renderAdmin(req, res, "Cette adresse mail est déjà utilisée par un autre profil.");
+    }
 
     const role = String(req.body.role || "normal");
     const isAdmin = id === req.session.userId ? true : role === "admin";
@@ -405,7 +497,6 @@ function buildAdminRouter(config) {
     const canSeeOwned = req.body.can_see_owned === "on";
     updateUser(id, { username, displayName, isAdmin, isTest, sexe, canSeeOwned });
 
-    const email = String(req.body.email || "").trim();
     const birthYear = req.body.birth_year ? Number(req.body.birth_year) || null : null;
     const orientation = String(req.body.orientation || "");
     updateOwnProfile(id, { displayName, email, sexe, birthYear });

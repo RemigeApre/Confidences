@@ -1,0 +1,22 @@
+<%- include('partials/head', { title: 'Mot de passe oublié' }) %>
+<main class="container narrow gate-page">
+  <a href="/ponhgup/85zapnte" class="gate-back-link" aria-label="Retour &agrave; la connexion" title="Retour &agrave; la connexion">&larr;</a>
+
+  <h1 class="gate-title">Mot de passe oublié</h1>
+
+  <% if (error) { %>
+    <p class="error gate-error"><%= error %></p>
+  <% } %>
+  <% if (message) { %>
+    <p class="gate-error"><%= message %></p>
+  <% } else { %>
+    <form method="POST" action="/ponhgup/85zapnte/oubli" class="gate-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="text" name="username" placeholder="identifiant" required autofocus autocomplete="username" autocapitalize="none" spellcheck="false" />
+      <button type="submit" aria-label="Envoyer" title="Envoyer">&#8594;</button>
+    </form>
+  <% } %>
+
+  <p class="gate-help">Un mail de r&eacute;initialisation sera envoy&eacute; &agrave; l'adresse enregistr&eacute;e sur votre profil, si vous en avez renseign&eacute; une.</p>
+</main>
+<%- include('partials/foot') %>
