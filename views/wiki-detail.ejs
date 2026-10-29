@@ -152,10 +152,14 @@
         background: none; border: none; padding: 0; cursor: pointer; color: #fff;
       }
       /* Compenser le header fixe sur le contenu */
-      .wiki-detail { padding-top: calc(var(--topnav-height) + .2rem); }
+      .wiki-detail { padding-top: calc(var(--topnav-height) + 1.05rem); }
 
       /* ── Vagues de navigation ── */
-      .wiki-wave-nav { pointer-events: none; }
+      /* display:contents : ses enfants .wiki-wave sont déjà position:fixed,
+         donc ce conteneur ne peint rien, mais restait un élément flex à part
+         entière dans .wiki-detail (gap:1.1rem) — un "gap fantôme" invisible
+         qui poussait tout le contenu vers le bas sans raison visible. */
+      .wiki-wave-nav { pointer-events: none; display: contents; }
       .wiki-wave {
         position: fixed;
         top: var(--topnav-height);
@@ -1298,14 +1302,30 @@ window.IRREALISTE_MODE = 'visible';
       if (imgEl) { e.preventDefault(); openGalleryLightbox(imgEl.dataset.src || imgEl.src); }
       return;
     }
-    // Image du carrousel mobile ("Images", sous les tags)
-    var secItem = e.target.closest('.wiki-mobile-sec-item');
-    if (secItem) {
-      var secImg = secItem.querySelector('.wiki-mobile-sec-img');
-      if (secImg) { e.preventDefault(); openGalleryLightbox(secImg.dataset.src || secImg.src); }
-      return;
-    }
   });
+
+  // Image du carrousel mobile ("Images", sous les tags) — ce carrousel
+  // défile horizontalement au doigt ; un simple listener "click" se fait
+  // trop souvent avaler par le navigateur dès que le doigt a légèrement
+  // bougé pendant le tap (confondu avec un début de scroll). On détecte
+  // donc nous-mêmes un vrai tap (déplacement minime) via pointerdown/up.
+  var secCarousel = document.getElementById('wiki-sec-carousel');
+  if (secCarousel) {
+    var secTapX = 0, secTapY = 0, secTapMoved = false;
+    secCarousel.addEventListener('pointerdown', function (e) {
+      secTapX = e.clientX; secTapY = e.clientY; secTapMoved = false;
+    });
+    secCarousel.addEventListener('pointermove', function (e) {
+      if (Math.abs(e.clientX - secTapX) > 8 || Math.abs(e.clientY - secTapY) > 8) secTapMoved = true;
+    });
+    secCarousel.addEventListener('pointerup', function (e) {
+      if (secTapMoved) return;
+      var secItem = e.target.closest('.wiki-mobile-sec-item');
+      if (!secItem) return;
+      var secImg = secItem.querySelector('.wiki-mobile-sec-img');
+      if (secImg) openGalleryLightbox(secImg.dataset.src || secImg.src);
+    });
+  }
 })();
 </script>
 <script nonce="<%= nonce %>" src="/gallery.js?v=<%= assetVersion %>"></script>
