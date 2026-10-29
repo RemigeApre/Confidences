@@ -16,6 +16,8 @@ const {
   updateOwnProfile,
   getUserByEmail,
   updateUserPassword,
+  destroyAllSessionsForUser,
+  logSecurityEvent,
   getUserCredentials,
   countUserNotes,
   getUserDetail,
@@ -58,6 +60,7 @@ const {
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
+const { sendMail } = require("../mailer");
 
 const WIKI_CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -471,6 +474,21 @@ function buildFavoritesRouter(config) {
       return renderMotDePasse(res, req, { error: "Nouveau mot de passe trop court." });
     }
     updateUserPassword(req.user.id, hashPassword(next));
+    // Déconnecte les autres sessions restées ouvertes ailleurs avec
+    // l'ancien mot de passe (jamais la session en cours), et prévient par
+    // mail si une adresse est renseignée.
+    destroyAllSessionsForUser(req.user.id, req.sessionID);
+    logSecurityEvent(req.user.id, "password_changed", req.ip, req.headers["user-agent"] || "");
+    if (req.user.email) {
+      sendMail({
+        to: req.user.email,
+        subject: "Votre mot de passe a été modifié — Confidences",
+        text: "Bonjour,\n\nLe mot de passe du profil \"" + req.user.displayName + "\" vient d'être modifié.\n"
+            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
+        html: "<p>Bonjour,</p><p>Le mot de passe du profil &laquo;&nbsp;" + req.user.displayName + "&nbsp;&raquo; vient d'&ecirc;tre modifi&eacute;.</p>"
+            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+      });
+    }
     res.redirect("/favoris/mot-de-passe?ok=1");
   });
 

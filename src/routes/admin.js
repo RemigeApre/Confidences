@@ -23,6 +23,7 @@ const {
   deleteUser,
   getUserFavoritesWithDetails,
   logConnection,
+  logSecurityEvent,
   listConnectionLogs,
   getAnonStats,
   getWikiKPIs,
@@ -112,7 +113,9 @@ const {
   getUserByEmail,
   createPasswordReset,
   getPasswordReset,
-  markPasswordResetUsed,
+  countRecentPasswordResets,
+  invalidateAllPasswordResets,
+  destroyAllSessionsForUser,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -182,6 +185,29 @@ function buildAdminRouter(config) {
     return req.session.csrfToken;
   }
 
+  // À appeler après TOUT changement effectif de mot de passe (self-service,
+  // reset par mail, ou admin qui force un nouveau mot de passe) : coupe les
+  // sessions restées ouvertes ailleurs avec l'ancien mot de passe, et
+  // prévient le profil par mail si une adresse est renseignée — pour qu'il
+  // le sache si ce n'est pas lui qui a fait le changement. exceptSid : la
+  // session en cours (si on change son propre mot de passe) n'est jamais
+  // coupée.
+  function afterPasswordChange(userId, req, exceptSid) {
+    destroyAllSessionsForUser(userId, exceptSid);
+    logSecurityEvent(userId, "password_changed", req.ip, req.headers["user-agent"] || "");
+    const u = getUserById(userId);
+    if (u && u.email) {
+      sendMail({
+        to: u.email,
+        subject: "Votre mot de passe a été modifié — Confidences",
+        text: "Bonjour,\n\nLe mot de passe du profil \"" + u.displayName + "\" vient d'être modifié.\n"
+            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
+        html: "<p>Bonjour,</p><p>Le mot de passe du profil &laquo;&nbsp;" + u.displayName + "&nbsp;&raquo; vient d'&ecirc;tre modifi&eacute;.</p>"
+            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+      });
+    }
+  }
+
   router.get("/85zapnte", (req, res) => {
     if (req.user) return res.redirect(req.user.isAdmin ? "/ponhgup" : "/favoris");
     const csrfToken = ensureCsrf(req);
@@ -231,6 +257,9 @@ function buildAdminRouter(config) {
 
     // Escalade du statut selon le nombre d'échecs sur ce username
     const targetUser = getUserByUsername(rawUsername);
+    if (targetUser) {
+      logSecurityEvent(targetUser.id, "login_failed", req.ip, req.headers["user-agent"] || "");
+    }
     if (targetUser && !targetUser.isAdmin) {
       const failures = getLoginFailureCount(rawUsername);
       const currentStatus = targetUser.accountStatus || "actif";
@@ -274,11 +303,23 @@ function buildAdminRouter(config) {
     // l'absence de mail renseigné change la réponse, jamais l'existence
     // du compte lui-même.
     if (!user || !user.email) {
+      if (user) logSecurityEvent(user.id, "password_reset_requested", req.ip, req.headers["user-agent"] || "");
       return res.render("mot-de-passe-oublie", { csrfToken: ensureCsrf(req), error: null,
         message: "Aucun mail n'est renseigné sur ce profil. Contactez la personne qui vous a créé ce compte." });
     }
 
+    // Limite à 2 demandes/24h par profil : si quelqu'un d'autre connaît
+    // l'identifiant, il ne peut pas harceler la boîte mail de la victime.
+    // Comptée par profil (pas par IP, l'IP est déjà throttle plus haut) —
+    // c'est bien le compte visé qui doit être protégé, pas l'IP de qui tape.
+    const recentCount = countRecentPasswordResets(user.id);
+    if (recentCount >= 2) {
+      return res.render("mot-de-passe-oublie", { csrfToken: ensureCsrf(req), error: null,
+        message: `Attention, vous êtes à votre ${recentCount + 1}e demande, aucun mail de réinitialisation ne sera envoyé. Attendez 24 heures.` });
+    }
+
     const token = createPasswordReset(user.id);
+    logSecurityEvent(user.id, "password_reset_requested", req.ip, req.headers["user-agent"] || "");
     const resetUrl = res.locals.siteUrl + "/ponhgup/85zapnte/reinitialiser/" + token;
     sendMail({
       to: user.email,
@@ -320,7 +361,11 @@ function buildAdminRouter(config) {
     }
 
     updateUserPassword(reset.userId, hashPassword(pwd));
-    markPasswordResetUsed(token);
+    // Invalide aussi tout autre lien de reset encore en attente pour ce
+    // profil (reçu par mail plus tôt, pas encore utilisé) — personne n'est
+    // connecté ici (page publique), donc aucune session à préserver.
+    invalidateAllPasswordResets(reset.userId);
+    afterPasswordChange(reset.userId, req);
     res.redirect("/ponhgup/85zapnte?reset=1");
   });
 
@@ -520,6 +565,7 @@ function buildAdminRouter(config) {
     const password = String(req.body.password || "");
     if (password && Number.isInteger(id)) {
       updateUserPassword(id, hashPassword(password));
+      afterPasswordChange(id, req, req.sessionID);
     }
     res.redirect("/ponhgup#tab-utilisateurs");
   });
@@ -568,6 +614,7 @@ function buildAdminRouter(config) {
     const password = String(req.body.password || '').trim();
     if (!Number.isInteger(id) || password.length < 6) return res.status(400).json({ error: 'invalid' });
     updateUserPassword(id, hashPassword(password));
+    afterPasswordChange(id, req, req.sessionID);
     res.json({ ok: true });
   });
 

@@ -14,12 +14,20 @@
       <% } %>
     </ul>
 
+    <%
+      var EVENT_LABELS = {
+        login: 'Connexion',
+        login_failed: '&Eacute;chec de connexion',
+        password_reset_requested: 'Demande de r&eacute;initialisation du mot de passe',
+        password_changed: 'Mot de passe modifi&eacute;',
+      };
+    %>
     <% if (connectionLogs.length) { %>
       <details class="profil-history">
-        <summary>Historique des connexions (<%= connectionLogs.length %>)</summary>
+        <summary>Historique de s&eacute;curit&eacute; (<%= connectionLogs.length %>)</summary>
         <ul class="profil-journal">
           <% connectionLogs.forEach(function (log) { %>
-            <li><%= new Date(log.createdAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %>, <%= log.ip %></li>
+            <li class="profil-journal-event profil-journal-event--<%= log.eventType %>"><span class="profil-journal-badge"><%- EVENT_LABELS[log.eventType] || 'Connexion' %></span> &mdash; <%= new Date(log.createdAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %>, <%= log.ip %></li>
           <% }) %>
         </ul>
       </details>

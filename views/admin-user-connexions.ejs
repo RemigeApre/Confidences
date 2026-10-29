@@ -24,6 +24,9 @@
 .acl-event-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:.48rem}
 .acl-event--session .acl-event-dot{background:rgba(99,179,237,.6)}
 .acl-event--login   .acl-event-dot{background:rgba(251,191,36,.6)}
+.acl-event--login_failed .acl-event-dot{background:rgba(248,113,113,.65)}
+.acl-event--password_reset_requested .acl-event-dot{background:rgba(125,211,252,.65)}
+.acl-event--password_changed .acl-event-dot{background:rgba(196,181,253,.65)}
 .acl-event-body{flex:1;min-width:0}
 
 /* Session */
@@ -48,6 +51,9 @@
 /* Login */
 .acl-login-row{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem}
 .acl-login-badge{font-size:.73rem;font-weight:600;color:rgba(251,191,36,.75);letter-spacing:.02em}
+.acl-login-badge--login_failed{color:rgba(248,113,113,.85)}
+.acl-login-badge--password_reset_requested{color:rgba(125,211,252,.85)}
+.acl-login-badge--password_changed{color:rgba(196,181,253,.85)}
 .acl-login-ip{font-size:.73rem;color:rgba(255,255,255,.3);font-family:monospace}
 .acl-login-ua{font-size:.73rem;color:rgba(255,255,255,.38)}
 .acl-login-sep{color:rgba(255,255,255,.15);font-size:.65rem}
@@ -131,7 +137,7 @@
 
       /* ── KPIs résumé ── */
       var _totalSessions = sessions.length;
-      var _totalLogins   = connectionLogs.length;
+      var _totalLogins   = connectionLogs.filter(function(l) { return !l.eventType || l.eventType === 'login'; }).length;
       var _totalMins     = sessions.reduce(function(acc, s) { return acc + (s.durationMinutes || 0); }, 0);
       var _totalH = Math.floor(_totalMins / 60), _totalM = _totalMins % 60;
       var _durStr = _totalH > 0 ? _totalH + 'h' + (_totalM ? String(_totalM).padStart(2,'0') : '') : _totalMins + ' min';
@@ -192,14 +198,17 @@
                 </div>
               </div>
 
-            <% } else { var log = ev.log; var ua = parseUA(log.userAgent); %>
+            <% } else { var log = ev.log; var ua = parseUA(log.userAgent);
+                 var EVT_LABEL = { login: 'Connexion', login_failed: 'Échec de connexion', password_reset_requested: 'Demande de réinitialisation', password_changed: 'Mot de passe modifié' };
+                 var evtType = log.eventType || 'login';
+                 var evtLabel = EVT_LABEL[evtType] || 'Connexion'; %>
 
-              <div class="acl-event acl-event--login" title="<%= log.userAgent || '' %>">
+              <div class="acl-event acl-event--login acl-event--<%= evtType %>" title="<%= log.userAgent || '' %>">
                 <div class="acl-event-dot"></div>
                 <div class="acl-event-body">
                   <div class="acl-login-row">
                     <span class="acl-time"><%= fmtTime(ev.at) %></span>
-                    <span class="acl-login-badge">Connexion</span>
+                    <span class="acl-login-badge acl-login-badge--<%= evtType %>"><%= evtLabel %></span>
                     <span class="acl-login-sep">·</span>
                     <span class="acl-login-ip"><%= log.ip %></span>
                     <span class="acl-login-sep">·</span>

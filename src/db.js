@@ -613,6 +613,11 @@ db.exec(`
   )
 `);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_connection_logs_user ON connection_logs (user_id)`);
+// Type d'événement : 'login' (déjà toutes les lignes existantes, d'où le
+// défaut), 'login_failed', 'password_reset_requested', 'password_changed' —
+// même table, même affichage (historique profil), pour éviter de dupliquer
+// toute la logique de timeline déjà en place pour les connexions.
+try { db.exec("ALTER TABLE connection_logs ADD COLUMN event_type TEXT NOT NULL DEFAULT 'login'"); } catch (_) {}
 
 // ── Cartes Codex — items collectibles liés aux pages wiki ──────────────────
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN card_summary TEXT"); } catch(_) {}
@@ -994,8 +999,41 @@ function getPasswordReset(token) {
   return row ? { userId: row.user_id } : null;
 }
 
-function markPasswordResetUsed(token) {
-  db.prepare("UPDATE password_resets SET used = 1 WHERE token = ?").run(token);
+// Combien de demandes de réinitialisation ce profil a déjà déclenchées dans
+// les dernières 24h (compte toute demande ayant réellement généré un mail,
+// peu importe qu'elle ait ensuite été utilisée/expirée) — sert à limiter le
+// spam si quelqu'un d'autre connaît l'identifiant et harcèle la boîte mail.
+function countRecentPasswordResets(userId) {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  return db.prepare(
+    "SELECT COUNT(*) AS c FROM password_resets WHERE user_id = ? AND created_at > ?"
+  ).get(userId, since).c;
+}
+
+// Dès qu'un mot de passe est effectivement posé via un jeton, invalide TOUS
+// les jetons encore en attente de ce profil (pas que celui utilisé) — sinon
+// un vieux lien de reset reçu par mail plus tôt reste valable après coup.
+function invalidateAllPasswordResets(userId) {
+  db.prepare("UPDATE password_resets SET used = 1 WHERE user_id = ? AND used = 0").run(userId);
+}
+
+// Déconnecte toutes les sessions actives d'un profil (après un changement de
+// mot de passe, pour qu'une session restée ouverte ailleurs avec l'ancien
+// mot de passe ne survive pas au changement). exceptSid : la session en
+// cours (celle qui vient de faire le changement) n'est jamais coupée.
+function destroyAllSessionsForUser(userId, exceptSid) {
+  const rows = db.prepare("SELECT sid, sess FROM sessions").all();
+  const toDelete = [];
+  for (const row of rows) {
+    if (row.sid === exceptSid) continue;
+    let parsed;
+    try { parsed = JSON.parse(row.sess); } catch (_) { continue; }
+    if (parsed.userId === userId) toDelete.push(row.sid);
+  }
+  if (toDelete.length) {
+    const stmt = db.prepare("DELETE FROM sessions WHERE sid = ?");
+    db.transaction((sids) => { sids.forEach((sid) => stmt.run(sid)); })(toDelete);
+  }
 }
 
 const VALID_ACCOUNT_STATUSES = ['actif', 'restreint', 'bloque'];
@@ -2703,27 +2741,34 @@ function getUserFavoritesWithDetails(userId) {
 }
 
 function logConnection(userId, ip, userAgent) {
+  logSecurityEvent(userId, "login", ip, userAgent);
+}
+
+// Événement générique de sécurité, même table que les connexions : voir
+// event_type pour les valeurs possibles ('login', 'login_failed',
+// 'password_reset_requested', 'password_changed').
+function logSecurityEvent(userId, eventType, ip, userAgent) {
   db.prepare(
-    "INSERT INTO connection_logs (user_id, ip, user_agent, created_at) VALUES (?, ?, ?, ?)"
-  ).run(userId || null, ip || "", userAgent || "", new Date().toISOString());
+    "INSERT INTO connection_logs (user_id, ip, user_agent, created_at, event_type) VALUES (?, ?, ?, ?, ?)"
+  ).run(userId || null, ip || "", userAgent || "", new Date().toISOString(), eventType || "login");
 }
 
 function listConnectionLogs(limit) {
   return db.prepare(
-    `SELECT cl.id, cl.user_id, cl.ip, cl.user_agent, cl.created_at, u.display_name
+    `SELECT cl.id, cl.user_id, cl.ip, cl.user_agent, cl.created_at, cl.event_type, u.display_name
      FROM connection_logs cl
      LEFT JOIN users u ON u.id = cl.user_id
      ORDER BY cl.id DESC LIMIT ?`
   ).all(limit || 200).map(function(r) {
-    return { id: r.id, userId: r.user_id, ip: r.ip, userAgent: r.user_agent, createdAt: r.created_at, userDisplayName: r.display_name || null };
+    return { id: r.id, userId: r.user_id, ip: r.ip, userAgent: r.user_agent, createdAt: r.created_at, eventType: r.event_type, userDisplayName: r.display_name || null };
   });
 }
 
 function listConnectionLogsForUser(userId, limit) {
   return db.prepare(
-    "SELECT id, ip, user_agent, created_at FROM connection_logs WHERE user_id = ? ORDER BY id DESC LIMIT ?"
+    "SELECT id, ip, user_agent, created_at, event_type FROM connection_logs WHERE user_id = ? ORDER BY id DESC LIMIT ?"
   ).all(userId, limit || 20).map(function(r) {
-    return { id: r.id, ip: r.ip, userAgent: r.user_agent, createdAt: r.created_at };
+    return { id: r.id, ip: r.ip, userAgent: r.user_agent, createdAt: r.created_at, eventType: r.event_type };
   });
 }
 
@@ -5320,7 +5365,9 @@ module.exports = {
   getUserByEmail,
   createPasswordReset,
   getPasswordReset,
-  markPasswordResetUsed,
+  countRecentPasswordResets,
+  invalidateAllPasswordResets,
+  destroyAllSessionsForUser,
   touchLastLogin,
   addFavorite,
   removeFavorite,
@@ -5353,6 +5400,7 @@ module.exports = {
   resetUserContent,
   getUserFavoritesWithDetails,
   logConnection,
+  logSecurityEvent,
   listConnectionLogs,
   listConnectionLogsForUser,
   recordActivityPing,
