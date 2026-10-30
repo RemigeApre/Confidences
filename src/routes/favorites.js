@@ -435,6 +435,16 @@ function buildFavoritesRouter(config) {
   // toucher à l'identité ni au mot de passe. Voir resetUserContent. ──
   router.post("/parametres/reinitialiser", requireUser, (req, res) => {
     resetUserContent(req.user.id);
+    if (req.user.email) {
+      sendMail({
+        to: req.user.email,
+        subject: "Compte réinitialisé — Confidences",
+        text: "Bonjour,\n\nLe contenu personnel du profil \"" + req.user.displayName + "\" (notes, étoiles, j'adore/intéressé, contenus masqués, commentaires et favoris) vient d'être réinitialisé.\n"
+            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
+        html: "<p>Bonjour,</p><p>Le contenu personnel du profil &laquo;&nbsp;" + req.user.displayName + "&nbsp;&raquo; (notes, &eacute;toiles, j&rsquo;adore/int&eacute;ress&eacute;, contenus masqu&eacute;s, commentaires et favoris) vient d'&ecirc;tre r&eacute;initialis&eacute;.</p>"
+            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+      });
+    }
     res.redirect("/favoris/parametres?reset=1");
   });
 
@@ -449,7 +459,19 @@ function buildFavoritesRouter(config) {
       }
     }
     const userId = req.user.id;
+    const email = req.user.email;
+    const displayName = req.user.displayName;
     deleteUser(userId);
+    if (email) {
+      sendMail({
+        to: email,
+        subject: "Compte supprimé — Confidences",
+        text: "Bonjour,\n\nLe compte \"" + displayName + "\" vient d'être définitivement supprimé.\n"
+            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
+        html: "<p>Bonjour,</p><p>Le compte &laquo;&nbsp;" + displayName + "&nbsp;&raquo; vient d'&ecirc;tre d&eacute;finitivement supprim&eacute;.</p>"
+            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+      });
+    }
     req.session.destroy(() => res.redirect("/"));
   });
 

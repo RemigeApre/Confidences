@@ -132,11 +132,6 @@
     if (gridEl) gridEl.hidden = visible === 0;
   }
 
-  document.addEventListener('profil-ultra-toggle-change', function() {
-    hideUltra = localStorage.getItem('profil-hide-ultra') === '1';
-    applyFilters();
-  });
-
   document.querySelectorAll('#notes-tag .wiki-tag-chip').forEach(function(chip) {
     chip.addEventListener('click', function() {
       var tag = chip.dataset.tag;

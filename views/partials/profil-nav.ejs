@@ -1,8 +1,8 @@
 <%# Volet de navigation du profil :
     1. Coffre (lien direct)
     2. Activités <details> : Codex, Images, BD, Nouvelles, Historique, À lire
-    3. Gestion   <details> : Paramètres, Identité, Mot de passe…
-    4. Liens divers (couple, admin, déconnexion) %>
+    3. Lien couple (si applicable)
+    4. Bas de volet : icônes Paramètres/Identité + déconnexion %>
 <aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue: <%= roleHue %>">
   <div class="profil-nav-header">
     <a href="/favoris" class="profil-nav-name"><%= currentUser.displayName %></a>
@@ -84,46 +84,27 @@
       </nav>
     </details>
 
-    <%# ── 3. Gestion ── %>
-    <%
-      var _gestPaths = ['/favoris/parametres','/favoris/masques','/favoris/identite','/favoris/mot-de-passe','/favoris/journal'];
-      var _gestOpen = _gestPaths.some(function(p){ return currentPath === p; });
-    %>
-    <details class="profil-nav-accordion"<%= _gestOpen ? ' open' : '' %>>
-      <summary class="profil-nav-accordion-title">
-        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="8" cy="12" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2"/></svg>
-        Gestion
-        <svg class="profil-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-      </summary>
-      <nav class="profil-nav-links profil-nav-links--sub">
-        <a href="/favoris/parametres" class="profil-nav-link<%= currentPath === '/favoris/parametres' ? ' active' : '' %>">
-          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="8" cy="12" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2"/></svg>
-          <span>Param&egrave;tres</span>
-        </a>
-        <a href="/favoris/identite" class="profil-nav-link<%= currentPath === '/favoris/identite' ? ' active' : '' %>">
-          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-          <span>Identit&eacute;</span>
-        </a>
-      </nav>
-    </details>
-
-    <%# ── 4. Divers ── %>
-    <nav class="profil-nav-links">
-      <% if (locals.partnerUser) { %>
+    <%# ── 3. Lien couple ── %>
+    <% if (locals.partnerUser) { %>
+      <nav class="profil-nav-links">
         <a href="/couple" class="profil-nav-link profil-nav-sublink<%= currentPath.indexOf('/couple') === 0 ? ' active' : '' %>">
           <span>Profil de <%= partnerUser.displayName %></span>
         </a>
-      <% } %>
-      <% if (currentUser.isAdmin) { %>
-        <a href="/ponhgup" class="profil-nav-link profil-nav-sublink">
-          <span>Admin</span>
-        </a>
-      <% } %>
-      <form method="POST" action="/ponhgup/logout" class="profil-nav-logout-form">
-        <button type="submit" class="profil-nav-link profil-nav-sublink profil-nav-link--danger">D&eacute;connexion</button>
-      </form>
-    </nav>
+      </nav>
+    <% } %>
 
-    <button type="button" class="profil-ultra-toggle wiki-filter-reset-btn" id="profil-ultra-toggle" aria-pressed="false" title="Masquer les contenus Ultra" aria-label="Masquer les contenus Ultra">Masquer Ultra</button>
+    <%# ── 4. Bas de volet : Paramètres / Identité (icônes) + Déconnexion ── %>
+    <div class="profil-nav-icon-row">
+      <a href="/favoris/parametres" class="profil-nav-icon-btn<%= currentPath === '/favoris/parametres' ? ' active' : '' %>" title="Param&egrave;tres" aria-label="Param&egrave;tres">
+        <svg class="profil-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+      <a href="/favoris/identite" class="profil-nav-icon-btn<%= currentPath === '/favoris/identite' ? ' active' : '' %>" title="Identit&eacute;" aria-label="Identit&eacute;">
+        <svg class="profil-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+      </a>
+    </div>
+
+    <form method="POST" action="/ponhgup/logout" class="profil-nav-logout-form">
+      <button type="submit" class="profil-nav-logout-btn">D&eacute;connexion</button>
+    </form>
   </div>
 </aside>
