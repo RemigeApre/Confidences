@@ -12,47 +12,39 @@
     <form method="POST" action="/favoris/identite">
 
       <section class="profil-panel">
-        <h2 class="profil-panel-title">Identit&eacute;</h2>
         <div class="profil-panel-grid">
-          <div class="profil-card">
-            <span class="profil-card-head">Pseudo</span>
+          <label class="profil-field">
+            <span class="profil-field-label">Pseudo</span>
             <input type="text" name="display_name" value="<%= user.displayName %>" required autocomplete="off" class="profil-field-input" />
-          </div>
+          </label>
 
-          <div class="profil-card">
-            <span class="profil-card-head">Sexe</span>
-            <select name="sexe" class="profil-select">
-              <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
-              <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
-              <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
-              <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
-            </select>
-          </div>
+          <label class="profil-field">
+            <span class="profil-field-label">Sexe</span>
+            <div class="profil-field-with-icon">
+              <span class="profil-sexe-icon" id="sexe-icon" aria-hidden="true"></span>
+              <select name="sexe" id="sexe-select" class="profil-select">
+                <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
+                <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
+                <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
+                <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
+              </select>
+            </div>
+          </label>
 
-          <div class="profil-card">
-            <span class="profil-card-head">Ann&eacute;e de naissance</span>
+          <label class="profil-field">
+            <span class="profil-field-label">Ann&eacute;e de naissance</span>
             <input type="text" value="<%= user.birthYear || 'Non renseign&eacute;e' %>" disabled class="profil-field-input" />
-            <p class="profil-card-desc">Modifiable uniquement par l&rsquo;administrateur.</p>
-          </div>
+          </label>
         </div>
 
         <% if (identityLockedUntilLabel) { %>
           <p class="profil-identite-lock-note">Pseudo, sexe et orientation&nbsp;: un seul changement par semaine. Prochain changement possible le <%= identityLockedUntilLabel %>.</p>
         <% } %>
-      </section>
 
-      <section class="profil-panel">
-        <h2 class="profil-panel-title">Contact &amp; compte</h2>
-        <div class="profil-card profil-identite-column">
+        <div class="profil-panel-grid">
           <label class="profil-field">
             <span class="profil-field-label">Adresse mail</span>
             <input type="email" name="email" id="identite-email-input" data-original="<%= user.email || '' %>" value="<%= user.email || '' %>" placeholder="facultatif" autocomplete="off" class="profil-field-input" />
-          </label>
-
-          <label class="profil-field" id="identite-email-password-row" hidden>
-            <span class="profil-field-label">Mot de passe actuel</span>
-            <input type="password" name="email_password" autocomplete="current-password" class="profil-field-input" />
-            <span class="profil-card-desc">Requis pour confirmer le changement d&rsquo;adresse mail. Un mail pr&eacute;viendra l&rsquo;ancienne adresse.</span>
           </label>
 
           <label class="profil-field">
@@ -64,25 +56,23 @@
               <option value="bi" <%= user.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
             </select>
           </label>
+        </div>
 
-          <div class="profil-field profil-field-readonly">
-            <span class="profil-field-label">Identifiant de connexion</span>
-            <input type="text" value="<%= user.username %>" disabled class="profil-field-input" />
-          </div>
+        <label class="profil-field" id="identite-email-password-row" hidden>
+          <span class="profil-field-label">Mot de passe actuel</span>
+          <input type="password" name="email_password" autocomplete="current-password" class="profil-field-input" />
+          <span class="profil-card-desc">Requis pour confirmer le changement d&rsquo;adresse mail. Un mail pr&eacute;viendra l&rsquo;ancienne adresse.</span>
+        </label>
 
-          <div class="profil-field profil-field-readonly">
-            <span class="profil-field-label">Statut</span>
-            <input type="text" value="<%= user.isAdmin ? 'Administrateur' : (user.isTest ? 'Utilisateur (test)' : 'Utilisateur') %>" disabled class="profil-field-input" />
-          </div>
+        <div class="profil-identite-submit">
+          <button type="submit" class="profil-btn-primary">Enregistrer</button>
         </div>
       </section>
-
-      <button type="submit" class="profil-btn-primary">Enregistrer</button>
     </form>
 
     <section class="profil-panel">
       <h2 class="profil-panel-title">Pages li&eacute;es</h2>
-      <div class="profil-panel-grid">
+      <div class="profil-panel-grid profil-panel-grid--2col">
         <div class="profil-card">
           <span class="profil-card-head">Mot de passe</span>
           <p class="profil-card-desc">Changez le mot de passe de votre compte.</p>
@@ -119,13 +109,32 @@
 (function () {
   var emailInput = document.getElementById("identite-email-input");
   var pwdRow = document.getElementById("identite-email-password-row");
-  if (!emailInput || !pwdRow) return;
-  var original = emailInput.dataset.original || "";
-  function sync() {
-    pwdRow.hidden = emailInput.value.trim() === original;
+  if (emailInput && pwdRow) {
+    var original = emailInput.dataset.original || "";
+    function sync() {
+      pwdRow.hidden = emailInput.value.trim() === original;
+    }
+    sync();
+    emailInput.addEventListener("input", sync);
   }
-  sync();
-  emailInput.addEventListener("input", sync);
+
+  var sexeSelect = document.getElementById("sexe-select");
+  var sexeIcon = document.getElementById("sexe-icon");
+  if (sexeSelect && sexeIcon) {
+    var SEXE_ICONS = {
+      "":      { symbol: "?", cls: "" },
+      femme:   { symbol: "♀", cls: "profil-sexe-icon--femme" },
+      homme:   { symbol: "♂", cls: "profil-sexe-icon--homme" },
+      autre:   { symbol: "⚧", cls: "profil-sexe-icon--autre" }
+    };
+    function syncSexe() {
+      var info = SEXE_ICONS[sexeSelect.value] || SEXE_ICONS[""];
+      sexeIcon.textContent = info.symbol;
+      sexeIcon.className = "profil-sexe-icon" + (info.cls ? " " + info.cls : "");
+    }
+    syncSexe();
+    sexeSelect.addEventListener("change", syncSexe);
+  }
 })();
 </script>
 

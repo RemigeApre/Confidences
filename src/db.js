@@ -971,15 +971,18 @@ function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareN
   ).run(o, um, im, snwa, hr, id);
 }
 
+// COLLATE NOCASE : la casse n'a pas d'importance pour l'identifiant de
+// connexion ("Test" == "test"), à la fois pour la connexion elle-même et
+// pour empêcher deux comptes de ne différer que par la casse.
 function getUserByUsername(username) {
-  const row = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
+  const row = db.prepare("SELECT * FROM users WHERE username = ? COLLATE NOCASE").get(username);
   return rowToUser(row);
 }
 
 // Renvoie le hash : reserve a la verification de mot de passe au login,
 // jamais expose au reste de l'app (rowToUser ne le contient pas).
 function getUserCredentials(username) {
-  return db.prepare("SELECT * FROM users WHERE username = ?").get(username) || null;
+  return db.prepare("SELECT * FROM users WHERE username = ? COLLATE NOCASE").get(username) || null;
 }
 
 function getUserById(id) {
