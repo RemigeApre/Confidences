@@ -694,11 +694,6 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   const lang = (req.session && req.session.lang === "en") ? "en" : "fr";
   res.locals.lang = lang;
-  // Ultra / Irréaliste pour un invité (pas de compte) : choix posé sur la
-  // feuille d'accueil (voir /set-special-modes), porté par la session puisqu'il
-  // n'y a pas de profil pour le stocker. Voir src/specialContent.js.
-  res.locals.sessionUltraMode = (req.session && req.session.ultraMode) || null;
-  res.locals.sessionIrrealisteMode = (req.session && req.session.irrealisteMode) || null;
   // Helper dans les vues : t(fallbackFr, entityType, id, field)
   // Retourne la traduction EN si dispo, sinon le texte FR fourni.
   res.locals.t = function(fallback, entity, id, field) {
@@ -718,19 +713,6 @@ app.post("/set-lang", (req, res) => {
   } else {
     res.sendStatus(204);
   }
-});
-
-// Route POST /set-special-modes : choix Ultra/Irréaliste posé par un invité
-// (pas de compte) sur la feuille d'accueil — voir partials/age-gate.ejs et
-// src/specialContent.js#effectiveSpecialUser. Pour un compte connecté, c'est
-// /favoris (profil-parametres) qui gère ça, écrit en base ; ignoré ici.
-const SPECIAL_MODE_VALUES = ["hidden", "visible", "off"];
-app.post("/set-special-modes", (req, res) => {
-  if (req.user || !req.session) return res.sendStatus(204);
-  const { ultraMode, irrealisteMode } = req.body || {};
-  if (SPECIAL_MODE_VALUES.includes(ultraMode)) req.session.ultraMode = ultraMode;
-  if (SPECIAL_MODE_VALUES.includes(irrealisteMode)) req.session.irrealisteMode = irrealisteMode;
-  req.session.save(() => res.sendStatus(204));
 });
 
 // Profils de recherche personnels (voir "Enregistrer le filtre" dans les

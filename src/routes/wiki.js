@@ -56,7 +56,7 @@ const {
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
-const { filterOff, isOffForUser, specialTagOf, effectiveSpecialUser } = require("../specialContent");
+const { filterOff, isOffForUser, specialTagOf } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",   label: "Positions",   desc: "Postures, Kama-sutra et toutes leurs variantes.",                               hue: 270 },
@@ -646,7 +646,7 @@ function buildWikiRouter(config) {
   router.get("/", (req, res) => {
     const userId = req.user ? req.user.id : null;
     const partnerId = req.user ? req.user.partnerId : null;
-    const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), userId, "wiki")), effectiveSpecialUser(req)), partnerId, "wiki");
+    const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), userId, "wiki")), req.user), partnerId, "wiki");
     const visiblePages = pages.filter((p) => !isUltra(p));
     const chapters = CATEGORIES.map((cat) => {
       const allCatPages = pagesForCategory(visiblePages, cat.key);
@@ -682,7 +682,7 @@ function buildWikiRouter(config) {
 
   // ── Vue "tout" : toutes les pages, toutes categories melangees ──
   router.get("/tous", (req, res) => {
-    const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki")), effectiveSpecialUser(req)), req.user ? req.user.partnerId : null, "wiki");
+    const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki")), req.user), req.user ? req.user.partnerId : null, "wiki");
     const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
     res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, ...CTX });
   });
@@ -692,7 +692,7 @@ function buildWikiRouter(config) {
     const cat = CATEGORIES.find((c) => c.key === req.params.key);
     if (!cat) return res.redirect("/wiki");
     const all = sortedPages();
-    const pages = mergePartnerReaction(pagesForCategory(filterOff(excludeHidden(mergeUserReactions(all, req.user ? req.user.id : null, "wiki")), effectiveSpecialUser(req)), cat.key), req.user ? req.user.partnerId : null, "wiki");
+    const pages = mergePartnerReaction(pagesForCategory(filterOff(excludeHidden(mergeUserReactions(all, req.user ? req.user.id : null, "wiki")), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
     const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
     const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
     res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, metaDescription: `${cat.label} — Codex Confidence. ${pages.length} fiches de sexologie sur la catégorie ${cat.label}.`, ...CTX });
@@ -938,7 +938,7 @@ function buildWikiRouter(config) {
     const { page, redirectSlug } = findPageByParam(req.params.slug);
     if (redirectSlug) return res.redirect(301, `/wiki/${redirectSlug}`);
     if (!page) return res.status(404).render("404", { config, ...CTX });
-    if (isOffForUser(page.tags, effectiveSpecialUser(req))) return res.redirect("/wiki");
+    if (isOffForUser(page.tags, req.user)) return res.redirect("/wiki");
     incrementWikiViews(page.id, req.user ? req.user.id : null);
     const userId = req.user ? req.user.id : null;
     Object.assign(page, getUserReaction(userId, "wiki", page.id));
@@ -946,7 +946,7 @@ function buildWikiRouter(config) {
     const allPages = filterOff(mergeUserReactions(
       listWikiPagesLight(),
       userId, "wiki"
-    ), effectiveSpecialUser(req));
+    ), req.user);
     const idx = allPages.findIndex((p) => p.id === page.id);
     const prevPage = idx > 0 ? { id: allPages[idx - 1].id, slug: allPages[idx - 1].slug, title: allPages[idx - 1].title } : null;
     const nextPage = idx < allPages.length - 1 ? { id: allPages[idx + 1].id, slug: allPages[idx + 1].slug, title: allPages[idx + 1].title } : null;

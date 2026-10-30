@@ -28,15 +28,4 @@ function filterOff(items, user) {
   return items.filter((item) => !isOffForUser(item.tags, user));
 }
 
-// Un invité (pas de compte) n'a pas de profil pour porter ultra_mode/irrealiste_mode,
-// mais peut avoir répondu à la feuille d'accueil (voir /set-special-modes) : ce
-// choix est alors porté par la session. Retourne un objet {ultraMode, irrealisteMode}
-// compatible avec isOffForUser/filterOff, ou null si rien n'a jamais été choisi.
-function effectiveSpecialUser(req) {
-  if (req.user) return req.user;
-  const s = req.session;
-  if (!s || (!s.ultraMode && !s.irrealisteMode)) return null;
-  return { ultraMode: s.ultraMode || "hidden", irrealisteMode: s.irrealisteMode || "visible" };
-}
-
-module.exports = { specialTagOf, isOffForUser, filterOff, effectiveSpecialUser };
+module.exports = { specialTagOf, isOffForUser, filterOff };

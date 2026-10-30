@@ -79,44 +79,8 @@
     </div>
 
     <div class="age-gate-slide" id="age-gate-slide-4" data-slide="4" hidden>
-      <h2 class="age-gate-title" data-fr="R&eacute;glages d&rsquo;affichage" data-en="Display settings">R&eacute;glages d&rsquo;affichage</h2>
-      <p class="age-gate-body" data-fr="Confidences utilise deux marqueurs de contenu, Ultra et Irr&eacute;aliste. Choisissez comment les afficher&nbsp;: vous pourrez changer cela plus tard dans votre profil." data-en="Confidences uses two content markers, Ultra and Irrealistic. Choose how to display them: you'll be able to change this later in your profile.">Confidences utilise deux marqueurs de contenu, Ultra et Irr&eacute;aliste. Choisissez comment les afficher&nbsp;: vous pourrez changer cela plus tard dans votre profil.</p>
-
-      <div class="age-gate-setting">
-        <div class="age-gate-setting-label">
-          <span data-fr="Ultra" data-en="Ultra">Ultra</span>
-          <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Ultra rassemblent les pratiques et fantasmes les plus extrêmes du codex." aria-label="Qu'est-ce qu'un contenu Ultra ?">!</span>
-        </div>
-        <div class="user-setting-options" id="age-gate-ultra-mode-options">
-          <label class="user-setting-radio" data-val="hidden">
-            <input type="radio" name="age-gate-ultra-mode" value="hidden" /> <span data-fr="Masqu&eacute; (bascule)" data-en="Hidden (toggle)">Masqu&eacute; (bascule)</span>
-          </label>
-          <label class="user-setting-radio" data-val="visible">
-            <input type="radio" name="age-gate-ultra-mode" value="visible" /> <span data-fr="Visible" data-en="Visible">Visible</span>
-          </label>
-          <label class="user-setting-radio" data-val="off">
-            <input type="radio" name="age-gate-ultra-mode" value="off" /> <span data-fr="D&eacute;sactiv&eacute;" data-en="Disabled">D&eacute;sactiv&eacute;</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="age-gate-setting">
-        <div class="age-gate-setting-label">
-          <span data-fr="Irr&eacute;aliste" data-en="Irrealistic">Irr&eacute;aliste</span>
-          <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Irréaliste relèvent de scénarios impossibles : davantage le fantasme pur que le réalisable." aria-label="Qu'est-ce qu'un contenu Irréaliste ?">!</span>
-        </div>
-        <div class="user-setting-options" id="age-gate-irrealiste-mode-options">
-          <label class="user-setting-radio" data-val="hidden">
-            <input type="radio" name="age-gate-irrealiste-mode" value="hidden" /> <span data-fr="Masqu&eacute; (bascule)" data-en="Hidden (toggle)">Masqu&eacute; (bascule)</span>
-          </label>
-          <label class="user-setting-radio" data-val="visible">
-            <input type="radio" name="age-gate-irrealiste-mode" value="visible" /> <span data-fr="Visible" data-en="Visible">Visible</span>
-          </label>
-          <label class="user-setting-radio" data-val="off">
-            <input type="radio" name="age-gate-irrealiste-mode" value="off" /> <span data-fr="D&eacute;sactiv&eacute;" data-en="Disabled">D&eacute;sactiv&eacute;</span>
-          </label>
-        </div>
-      </div>
+      <h2 class="age-gate-title" data-fr="Ultra et Irr&eacute;aliste" data-en="Ultra and Irrealistic">Ultra et Irr&eacute;aliste</h2>
+      <p class="age-gate-body" data-fr="Confidences utilise deux marqueurs de contenu. Ultra rassemble les pratiques et fantasmes les plus extr&ecirc;mes du codex. Irr&eacute;aliste rel&egrave;ve de sc&eacute;narios impossibles&nbsp;: davantage le fantasme pur que le r&eacute;alisable. Vous pourrez choisir de les afficher, les masquer derri&egrave;re une bascule, ou les d&eacute;sactiver, depuis votre profil une fois connect&eacute;." data-en="Confidences uses two content markers. Ultra gathers the most extreme practices and fantasies of the codex. Irrealistic covers impossible scenarios: pure fantasy rather than what's achievable. You'll be able to choose to show them, hide them behind a toggle, or disable them, from your profile once logged in.">Confidences utilise deux marqueurs de contenu. Ultra rassemble les pratiques et fantasmes les plus extr&ecirc;mes du codex. Irr&eacute;aliste rel&egrave;ve de sc&eacute;narios impossibles&nbsp;: davantage le fantasme pur que le r&eacute;alisable. Vous pourrez choisir de les afficher, les masquer derri&egrave;re une bascule, ou les d&eacute;sactiver, depuis votre profil une fois connect&eacute;.</p>
 
       <div class="age-gate-actions age-gate-actions--single">
         <button type="button" class="age-gate-btn age-gate-btn--yes" id="age-gate-enter" data-fr="Entrer sur le site" data-en="Enter the site">Entrer sur le site</button>
@@ -149,42 +113,9 @@
     });
   }
 
-  var ultraContainer = document.getElementById("age-gate-ultra-mode-options");
-  var irrealisteContainer = document.getElementById("age-gate-irrealiste-mode-options");
-
-  function wireRadioGroup(container, initial) {
-    if (!container) return;
-    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
-    function sync(val) {
-      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === val); });
-    }
-    sync(initial);
-    labels.forEach(function (lbl) {
-      var radio = lbl.querySelector("input");
-      if (radio.value === initial) radio.checked = true;
-      radio.addEventListener("change", function () {
-        if (radio.checked) sync(radio.value);
-      });
-    });
-  }
-  wireRadioGroup(ultraContainer, "hidden");
-  wireRadioGroup(irrealisteContainer, "visible");
-
-  function radioValue(container, fallback) {
-    var checked = container && container.querySelector("input:checked");
-    return checked ? checked.value : fallback;
-  }
-
   function finish() {
     try { localStorage.setItem("lq-age-gate-seen", "1"); } catch (_) {}
-    var ultra = radioValue(ultraContainer, "hidden");
-    var irrealiste = radioValue(irrealisteContainer, "visible");
-    fetch("/set-special-modes", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "ultraMode=" + encodeURIComponent(ultra) + "&irrealisteMode=" + encodeURIComponent(irrealiste)
-    }).then(function () { window.location.reload(); })
-      .catch(function () { window.location.reload(); });
+    overlay.remove();
   }
 
   document.getElementById("age-gate-no").addEventListener("click", function () {

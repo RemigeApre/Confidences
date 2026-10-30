@@ -51,7 +51,7 @@ const {
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
-const { filterOff, specialTagOf, isOffForUser, effectiveSpecialUser } = require("../specialContent");
+const { filterOff, specialTagOf, isOffForUser } = require("../specialContent");
 
 const CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -181,12 +181,12 @@ function buildItems(galleryImages, wikiPages) {
   return [...galleryItems, ...wikiItems].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function getCtx(user, req) {
+function getCtx(user) {
   const userId = user ? user.id : null;
   const partnerId = user ? user.partnerId : null;
   const wikiPages = excludeHidden(mergeUserReactions(listWikiPages(), userId, "wiki"));
   const galleryImages = mergePartnerReaction(excludeHidden(mergeUserReactions(listGalleryImages(), userId, "gallery")), partnerId, "gallery");
-  const items = filterOff(buildItems(galleryImages, wikiPages), req ? effectiveSpecialUser(req) : user);
+  const items = filterOff(buildItems(galleryImages, wikiPages), user);
   const tagTotalCounts = {};
   items.forEach((item) => {
     item.tags.forEach((t) => { tagTotalCounts[t] = (tagTotalCounts[t] || 0) + 1; });
@@ -207,7 +207,7 @@ function buildGalleryRouter(config) {
     // anonyme voit tout comme un compte connecté ; en France, inchangé :
     // seules les images marquées "safe" sans compte.
     const canSeeAll = !!req.user || !req.isFrenchVisitor;
-    const { items: rawItems, allTags: rawAllTags } = getCtx(req.user, req);
+    const { items: rawItems, allTags: rawAllTags } = getCtx(req.user);
     const items = canSeeAll ? rawItems : rawItems.filter((i) => i.safe);
     const allTags = canSeeAll ? rawAllTags : Array.from(new Set(items.flatMap((i) => i.tags))).sort((a, b) => a.localeCompare(b, "fr"));
     const tagImageCounts = {};
@@ -340,7 +340,7 @@ function buildGalleryRouter(config) {
 
   // ── Import groupé ─────────────────────────────────
   router.get("/batch", requireAdmin, (req, res) => {
-    const { allTags } = getCtx(req.user, req);
+    const { allTags } = getCtx(req.user);
     const authors  = listGalleryAuthors();
     const parodies = listGalleryParodies();
     res.render("gallery-batch", { config, allTags, authors, parodies, categories: CATEGORIES });
@@ -511,7 +511,7 @@ function buildGalleryRouter(config) {
     const image = Number.isInteger(id) ? getGalleryImage(id) : null;
     if (!image) return res.redirect("/galerie");
     Object.assign(image, getUserReaction(req.user.id, "gallery", id));
-    const { allTags } = getCtx(req.user, req);
+    const { allTags } = getCtx(req.user);
     const imageSeries = getImageSeries(id);
     const allSeries = listSeries();
     const allProtagonists = listProtagonistes();
