@@ -4,108 +4,114 @@
 
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
-  <div class="profil-subpage">
+  <div class="profil-subpage profil-subpage--wide">
 
     <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
     <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
 
-    <div class="profil-setting-heading">
-      <span>Ultra</span>
-      <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Ultra rassemblent les pratiques et fantasmes les plus extrêmes du codex." aria-label="Qu'est-ce qu'un contenu Ultra ?">!</span>
-    </div>
-    <div class="user-setting-options" id="ultra-mode-options">
-      <label class="user-setting-radio" data-val="hidden">
-        <input type="radio" name="ultra-mode" value="hidden" /> Masqu&eacute; (bascule)
-      </label>
-      <label class="user-setting-radio" data-val="visible">
-        <input type="radio" name="ultra-mode" value="visible" /> Visible
-      </label>
-      <label class="user-setting-radio" data-val="off">
-        <input type="radio" name="ultra-mode" value="off" /> D&eacute;sactiv&eacute;
-      </label>
-    </div>
+    <section class="profil-panel">
+      <h2 class="profil-panel-title">Nature des contenus</h2>
+      <div class="profil-panel-grid">
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Ultra</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Ultra rassemblent les pratiques et fantasmes les plus extrêmes du codex." aria-label="Qu'est-ce qu'un contenu Ultra ?">!</span>
+          </div>
+          <select class="profil-select" id="ultra-mode-select">
+            <option value="hidden">Masqu&eacute; (bascule)</option>
+            <option value="visible">Visible</option>
+            <option value="off">D&eacute;sactiv&eacute;</option>
+          </select>
+        </div>
 
-    <div class="profil-setting-heading">
-      <span>Irr&eacute;aliste</span>
-      <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Irréaliste relèvent de scénarios impossibles : davantage le fantasme pur que le réalisable." aria-label="Qu'est-ce qu'un contenu Irréaliste ?">!</span>
-    </div>
-    <div class="user-setting-options" id="irrealiste-mode-options">
-      <label class="user-setting-radio" data-val="hidden">
-        <input type="radio" name="irrealiste-mode" value="hidden" /> Masqu&eacute; (bascule)
-      </label>
-      <label class="user-setting-radio" data-val="visible">
-        <input type="radio" name="irrealiste-mode" value="visible" /> Visible
-      </label>
-      <label class="user-setting-radio" data-val="off">
-        <input type="radio" name="irrealiste-mode" value="off" /> D&eacute;sactiv&eacute;
-      </label>
-    </div>
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Irr&eacute;aliste</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Irréaliste relèvent de scénarios impossibles : davantage le fantasme pur que le réalisable." aria-label="Qu'est-ce qu'un contenu Irréaliste ?">!</span>
+          </div>
+          <select class="profil-select" id="irrealiste-mode-select">
+            <option value="hidden">Masqu&eacute; (bascule)</option>
+            <option value="visible">Visible</option>
+            <option value="off">D&eacute;sactiv&eacute;</option>
+          </select>
+        </div>
 
-    <div class="profil-setting-heading">
-      <span>Filtrage des tags</span>
-    </div>
-    <div class="user-setting-options" id="tag-logic-options">
-      <label class="user-setting-radio" data-val="and">
-        <input type="radio" name="tag-logic" value="and" /> ET (tous les tags)
-      </label>
-      <label class="user-setting-radio" data-val="or">
-        <input type="radio" name="tag-logic" value="or" /> OU (au moins un)
-      </label>
-    </div>
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Contenus masqu&eacute;s</span>
+          </div>
+          <p class="profil-card-desc">Pages, images et BD que vous avez masqu&eacute;es individuellement.</p>
+          <a href="/favoris/masques" class="profil-card-btn">Voir &rarr;</a>
+        </div>
+      </div>
+    </section>
 
-    <div class="profil-setting-heading">
-      <span>Clic sur un tag</span>
-      <span class="profil-info-icon" tabindex="0" data-tip="Choisissez ce qui se passe quand vous cliquez sur un badge de tag : afficher un résumé, ou aller directement à sa page." aria-label="Comment fonctionne le clic sur un tag ?">!</span>
-    </div>
-    <div class="user-setting-options" id="tag-click-options">
-      <label class="user-setting-radio" data-val="popup">
-        <input type="radio" name="tag-click" value="popup" /> Aper&ccedil;u (popup)
-      </label>
-      <label class="user-setting-radio" data-val="direct">
-        <input type="radio" name="tag-click" value="direct" /> Acc&egrave;s direct (codex ou images)
-      </label>
-    </div>
+    <section class="profil-panel">
+      <h2 class="profil-panel-title">Comportement du site</h2>
+      <div class="profil-panel-grid">
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Filtrage des tags</span>
+          </div>
+          <select class="profil-select" id="tag-logic-select">
+            <option value="and">ET (tous les tags)</option>
+            <option value="or">OU (au moins un)</option>
+          </select>
+        </div>
 
-    <div class="profil-setting-heading">
-      <span>Historique</span>
-      <span class="profil-info-icon" tabindex="0" data-tip="Durée pendant laquelle vos consultations récentes (codex, images, BD) restent visibles dans Profil > Historique." aria-label="Que fait ce réglage ?">!</span>
-    </div>
-    <div class="user-setting-options" id="history-retention-options">
-      <label class="user-setting-radio" data-val="3jours">
-        <input type="radio" name="history-retention" value="3jours" /> 3 jours
-      </label>
-      <label class="user-setting-radio" data-val="1semaine">
-        <input type="radio" name="history-retention" value="1semaine" /> 1 semaine
-      </label>
-      <label class="user-setting-radio" data-val="1mois">
-        <input type="radio" name="history-retention" value="1mois" /> 1 mois
-      </label>
-      <label class="user-setting-radio" data-val="3mois">
-        <input type="radio" name="history-retention" value="3mois" /> 3 mois
-      </label>
-    </div>
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Clic sur un tag</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Choisissez ce qui se passe quand vous cliquez sur un badge de tag : afficher un résumé, ou aller directement à sa page." aria-label="Comment fonctionne le clic sur un tag ?">!</span>
+          </div>
+          <select class="profil-select" id="tag-click-select">
+            <option value="popup">Aper&ccedil;u (popup)</option>
+            <option value="direct">Acc&egrave;s direct (codex ou images)</option>
+          </select>
+        </div>
+      </div>
+    </section>
 
-    <div class="profil-setting-heading">
-      <span>Partage avec l&rsquo;admin</span>
-      <span class="profil-info-icon" tabindex="0" data-tip="Si coché, un badge vert indique à l'admin que vous acceptez qu'il consulte vos notes et favoris (codex, images, BD)." aria-label="Que fait cette option ?">!</span>
-    </div>
-    <label class="profil-checkbox-row" aria-label="Partage avec l'admin">
-      <input type="checkbox" id="share-notes-checkbox" <%= currentUser.shareNotesWithAdmin ? 'checked' : '' %> />
-    </label>
+    <section class="profil-panel">
+      <h2 class="profil-panel-title">Gestion du compte</h2>
+      <div class="profil-panel-grid">
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Historique</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Durée pendant laquelle vos consultations récentes (codex, images, BD) restent visibles dans Profil > Historique." aria-label="Que fait ce réglage ?">!</span>
+          </div>
+          <select class="profil-select" id="history-retention-select">
+            <option value="3jours">3 jours</option>
+            <option value="1semaine">1 semaine</option>
+            <option value="1mois">1 mois</option>
+            <option value="3mois">3 mois</option>
+          </select>
+        </div>
 
-    <div class="profil-setting-heading">
-      <span>Zone dangereuse</span>
-    </div>
-    <div class="profil-danger-zone">
-      <form method="POST" action="/favoris/parametres/reinitialiser" id="reset-account-form" class="profil-danger-row">
-        <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser le compte</button>
-        <p class="profil-danger-hint">Supprime vos notes, &eacute;toiles, j&rsquo;adore/int&eacute;ress&eacute;, &laquo;&nbsp;&agrave; lire plus tard&nbsp;&raquo;, contenus masqu&eacute;s, commentaires et favoris. Votre identit&eacute; et votre mot de passe restent inchang&eacute;s.</p>
-      </form>
-      <form method="POST" action="/favoris/parametres/supprimer" id="delete-account-form" class="profil-danger-row">
-        <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">Supprimer le compte</button>
-        <p class="profil-danger-hint">Supprime d&eacute;finitivement le compte et tout son contenu. Action irr&eacute;versible.</p>
-      </form>
-    </div>
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Partage avec l&rsquo;admin</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Si activé, un badge vert indique à l'admin que vous acceptez qu'il consulte vos notes et favoris (codex, images, BD)." aria-label="Que fait cette option ?">!</span>
+          </div>
+          <label class="profil-toggle">
+            <input type="checkbox" id="share-notes-checkbox" <%= currentUser.shareNotesWithAdmin ? 'checked' : '' %> />
+            <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
+            <span class="profil-toggle-label" id="share-notes-label"><%= currentUser.shareNotesWithAdmin ? 'Activé' : 'Désactivé' %></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="profil-danger-zone">
+        <form method="POST" action="/favoris/parametres/reinitialiser" id="reset-account-form" class="profil-danger-row">
+          <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser le compte</button>
+          <p class="profil-danger-hint">Supprime vos notes, &eacute;toiles, j&rsquo;adore/int&eacute;ress&eacute;, &laquo;&nbsp;&agrave; lire plus tard&nbsp;&raquo;, contenus masqu&eacute;s, commentaires et favoris. Votre identit&eacute; et votre mot de passe restent inchang&eacute;s.</p>
+        </form>
+        <form method="POST" action="/favoris/parametres/supprimer" id="delete-account-form" class="profil-danger-row">
+          <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">Supprimer le compte</button>
+          <p class="profil-danger-hint">Supprime d&eacute;finitivement le compte et tout son contenu. Action irr&eacute;versible.</p>
+        </form>
+      </div>
+    </section>
 
   </div>
 
@@ -113,7 +119,7 @@
 
 <script nonce="<%= nonce %>">
 (function () {
-  // ── Ultra / Irréaliste (sauvegarde serveur) ───────────────────────────────
+  // ── Ultra / Irréaliste / Historique (sauvegarde serveur) ─────────────────
   function savePref(field, value) {
     var body = {};
     body[field] = value;
@@ -124,62 +130,40 @@
     }).catch(function () {});
   }
 
-  function wireServerRadio(containerId, field, initial) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
-    var current = initial;
-    function sync() {
-      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
-    }
-    sync();
-    labels.forEach(function (lbl) {
-      var radio = lbl.querySelector("input");
-      if (radio.value === current) radio.checked = true;
-      radio.addEventListener("change", function () {
-        if (!radio.checked) return;
-        current = radio.value;
-        sync();
-        savePref(field, current);
-      });
+  function wireServerSelect(selectId, field, initial) {
+    var select = document.getElementById(selectId);
+    if (!select) return;
+    select.value = initial;
+    select.addEventListener("change", function () {
+      savePref(field, select.value);
     });
   }
 
-  wireServerRadio("ultra-mode-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
-  wireServerRadio("irrealiste-mode-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
-  wireServerRadio("history-retention-options", "historyRetention", window.HISTORY_RETENTION || "1mois");
+  wireServerSelect("ultra-mode-select",      "ultraMode",      window.ULTRA_MODE      || "hidden");
+  wireServerSelect("irrealiste-mode-select", "irrealisteMode", window.IRREALISTE_MODE || "visible");
+  wireServerSelect("history-retention-select", "historyRetention", window.HISTORY_RETENTION || "1mois");
 
   var shareCheckbox = document.getElementById("share-notes-checkbox");
+  var shareLabel = document.getElementById("share-notes-label");
   if (shareCheckbox) {
     shareCheckbox.addEventListener("change", function () {
+      if (shareLabel) shareLabel.textContent = shareCheckbox.checked ? "Activé" : "Désactivé";
       savePref("shareNotesWithAdmin", shareCheckbox.checked);
     });
   }
 
   // ── Filtrage des tags (localStorage) ─────────────────────────────────────
-  function wireLocalRadio(containerId, lsKey, defaultVal) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-    var labels = Array.prototype.slice.call(container.querySelectorAll(".user-setting-radio"));
-    var current = localStorage.getItem(lsKey) || defaultVal;
-    function sync() {
-      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
-    }
-    sync();
-    labels.forEach(function (lbl) {
-      var radio = lbl.querySelector("input");
-      if (radio.value === current) radio.checked = true;
-      radio.addEventListener("change", function () {
-        if (!radio.checked) return;
-        current = radio.value;
-        sync();
-        localStorage.setItem(lsKey, current);
-      });
+  function wireLocalSelect(selectId, lsKey, defaultVal) {
+    var select = document.getElementById(selectId);
+    if (!select) return;
+    select.value = localStorage.getItem(lsKey) || defaultVal;
+    select.addEventListener("change", function () {
+      localStorage.setItem(lsKey, select.value);
     });
   }
 
-  wireLocalRadio("tag-logic-options", "wiki-tag-logic", "and");
-  wireLocalRadio("tag-click-options", "tag-click-mode", "popup");
+  wireLocalSelect("tag-logic-select", "wiki-tag-logic", "and");
+  wireLocalSelect("tag-click-select", "tag-click-mode", "popup");
 
   // ── Zone dangereuse : double confirmation avant envoi, actions irréversibles ──
   var resetForm = document.getElementById("reset-account-form");
