@@ -5,7 +5,7 @@ const multer = require("multer");
 const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation } = require("../db");
 const { requireUser, requireUserOrForeign, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
-const { filterOff, isOffForUser } = require("../specialContent");
+const { filterOff, isOffForUser, effectiveSpecialUser } = require("../specialContent");
 
 const uploadsDir = path.join(__dirname, "..", "..", "data", "uploads", "bd");
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -70,7 +70,7 @@ function buildBdRouter(config) {
   router.get("/", (req, res) => {
     const userId = req.user ? req.user.id : null;
     const partnerId = req.user ? req.user.partnerId : null;
-    const books = filterOff(mergePartnerReaction(excludeHidden(mergeUserReactions(listBdBooks(), userId, "bd")), partnerId, "bd"), req.user);
+    const books = filterOff(mergePartnerReaction(excludeHidden(mergeUserReactions(listBdBooks(), userId, "bd")), partnerId, "bd"), effectiveSpecialUser(req));
     const tagSet = new Set();
     books.forEach((b) => b.tags.forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
@@ -194,7 +194,7 @@ function buildBdRouter(config) {
     const id = Number(req.params.id);
     const book = getBdBook(id);
     if (!book) return res.redirect("/bd");
-    if (isOffForUser(book.tags, req.user)) return res.redirect("/bd");
+    if (isOffForUser(book.tags, effectiveSpecialUser(req))) return res.redirect("/bd");
     logBdView(book.id, req.user ? req.user.id : null);
     const userId = req.user ? req.user.id : null;
     Object.assign(book, getUserReaction(userId, "bd", id));
