@@ -2,8 +2,9 @@
     1. Profil (lien direct, page pas encore réalisée)
     2. Coffre (lien direct, non réductible)
     3. Notes & favoris <details> : Codex, Images, BD, Nouvelles
-    4. Lien couple (si applicable)
-    5. Bas de volet : icônes Paramètres/Identité + déconnexion %>
+    4. À lire plus tard (lien direct)
+    5. Lien couple (si applicable)
+    6. Bas de volet : icônes Paramètres/Identité + déconnexion %>
 <aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue: <%= roleHue %>">
   <div class="wiki-sidebar-body">
 
@@ -70,12 +71,15 @@
       </nav>
     </details>
 
-    <%# ── 4. Lien couple ── %>
+    <%# ── 4. À lire plus tard ── %>
+    <a href="/favoris/a-lire-plus-tard" class="profil-nav-big-title<%= currentPath === '/favoris/a-lire-plus-tard' ? ' active' : '' %>">&Agrave; lire plus tard</a>
+
+    <%# ── 5. Lien couple ── %>
     <% if (locals.partnerUser) { %>
       <a href="/couple" class="profil-nav-big-title<%= currentPath.indexOf('/couple') === 0 ? ' active' : '' %>">Partenaire</a>
     <% } %>
 
-    <%# ── 5. Bas de volet : Paramètres / Identité / Déconnexion (icônes, même ligne) ── %>
+    <%# ── 6. Bas de volet : Paramètres / Identité / Déconnexion (icônes, même ligne) ── %>
     <form method="POST" action="/ponhgup/logout" id="profil-nav-logout-form" class="profil-nav-logout-form"></form>
     <div class="profil-nav-icon-row">
       <a href="/favoris/parametres" class="profil-nav-icon-btn profil-nav-icon-btn--accent<%= currentPath === '/favoris/parametres' ? ' active' : '' %>" title="Param&egrave;tres" aria-label="Param&egrave;tres">

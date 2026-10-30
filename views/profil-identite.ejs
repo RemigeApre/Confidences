@@ -20,15 +20,12 @@
 
           <label class="profil-field">
             <span class="profil-field-label">Sexe</span>
-            <div class="profil-field-with-icon">
-              <span class="profil-sexe-icon" id="sexe-icon" aria-hidden="true"></span>
-              <select name="sexe" id="sexe-select" class="profil-select">
-                <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
-                <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
-                <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
-                <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
-              </select>
-            </div>
+            <select name="sexe" id="sexe-select" class="profil-select profil-select--sexe">
+              <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
+              <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
+              <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
+              <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
+            </select>
           </label>
 
           <label class="profil-field">
@@ -73,30 +70,10 @@
     <section class="profil-panel">
       <h2 class="profil-panel-title">Pages li&eacute;es</h2>
       <div class="profil-panel-grid profil-panel-grid--2col">
-        <div class="profil-card">
-          <span class="profil-card-head">Mot de passe</span>
-          <p class="profil-card-desc">Changez le mot de passe de votre compte.</p>
-          <a href="/favoris/mot-de-passe" class="profil-card-btn">Changer &rarr;</a>
-        </div>
-
-        <div class="profil-card">
-          <span class="profil-card-head">Historique</span>
-          <p class="profil-card-desc">Vos consultations r&eacute;centes (codex, images, BD).</p>
-          <a href="/favoris/historique" class="profil-card-btn">Voir &rarr;</a>
-        </div>
-
-        <div class="profil-card">
-          <span class="profil-card-head">&Agrave; lire plus tard</span>
-          <p class="profil-card-desc">Les pages du codex mises de c&ocirc;t&eacute; pour plus tard.</p>
-          <a href="/favoris/a-lire-plus-tard" class="profil-card-btn">Voir &rarr;</a>
-        </div>
-
+        <a href="/favoris/mot-de-passe" class="profil-card profil-card--plain-btn">Mot de passe</a>
+        <a href="/favoris/historique" class="profil-card profil-card--plain-btn">Historique</a>
         <% if (currentUser.isAdmin) { %>
-        <div class="profil-card">
-          <span class="profil-card-head">Journal technique</span>
-          <p class="profil-card-desc">Historique des connexions et &eacute;v&eacute;nements de s&eacute;curit&eacute;.</p>
-          <a href="/favoris/journal" class="profil-card-btn">Voir &rarr;</a>
-        </div>
+        <a href="/favoris/journal" class="profil-card profil-card--plain-btn">Journal technique</a>
         <% } %>
       </div>
     </section>
@@ -119,18 +96,25 @@
   }
 
   var sexeSelect = document.getElementById("sexe-select");
-  var sexeIcon = document.getElementById("sexe-icon");
-  if (sexeSelect && sexeIcon) {
-    var SEXE_ICONS = {
-      "":      { symbol: "?", cls: "" },
-      femme:   { symbol: "♀", cls: "profil-sexe-icon--femme" },
-      homme:   { symbol: "♂", cls: "profil-sexe-icon--homme" },
-      autre:   { symbol: "⚧", cls: "profil-sexe-icon--autre" }
+  if (sexeSelect) {
+    var CHEVRON_BG = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 7l5 5 5-5' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")";
+    var SEXE_INFO = {
+      "":    { symbol: "?", color: "#999" },
+      femme: { symbol: "♀", color: "#e0699f" },
+      homme: { symbol: "♂", color: "#4a90d9" },
+      autre: { symbol: "⚧", color: "#9b59b6" }
     };
+    function iconBg(symbol, color) {
+      var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'>"
+        + "<text x='11' y='16' font-size='14' font-weight='700' text-anchor='middle' fill='" + color + "'>" + symbol + "</text></svg>";
+      return "url(\"data:image/svg+xml," + encodeURIComponent(svg) + "\")";
+    }
     function syncSexe() {
-      var info = SEXE_ICONS[sexeSelect.value] || SEXE_ICONS[""];
-      sexeIcon.textContent = info.symbol;
-      sexeIcon.className = "profil-sexe-icon" + (info.cls ? " " + info.cls : "");
+      var info = SEXE_INFO[sexeSelect.value] || SEXE_INFO[""];
+      sexeSelect.style.backgroundImage = iconBg(info.symbol, info.color) + "," + CHEVRON_BG;
+      sexeSelect.style.backgroundPosition = "left .6rem center, right .7rem center";
+      sexeSelect.style.backgroundRepeat = "no-repeat, no-repeat";
+      sexeSelect.style.borderColor = info.color;
     }
     syncSexe();
     sexeSelect.addEventListener("change", syncSexe);
