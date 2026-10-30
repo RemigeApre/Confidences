@@ -54,9 +54,6 @@
           <span>Images</span>
           <span class="profil-nav-count"><%= notesCounts.gallery %></span>
         </a>
-        <a href="/favoris/collections" class="profil-nav-link profil-nav-sublink<%= currentPath.indexOf('/favoris/collections') === 0 ? ' active' : '' %>">
-          <span>Mes collections</span>
-        </a>
         <a href="/favoris/notes/bd" class="profil-nav-link<%= currentPath === '/favoris/notes/bd' ? ' active' : '' %>">
           <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M7 21h13a2 2 0 0 0 2-2V6"/></svg>
           <span>BD</span>
@@ -66,16 +63,16 @@
           <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
           <span>Nouvelles</span>
         </a>
+        <a href="/favoris/collections" class="profil-nav-link<%= currentPath.indexOf('/favoris/collections') === 0 ? ' active' : '' %>">
+          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+          <span>Mes collections</span>
+        </a>
       </nav>
     </details>
 
     <%# ── 4. Lien couple ── %>
     <% if (locals.partnerUser) { %>
-      <nav class="profil-nav-links">
-        <a href="/couple" class="profil-nav-link profil-nav-sublink<%= currentPath.indexOf('/couple') === 0 ? ' active' : '' %>">
-          <span>Profil de <%= partnerUser.displayName %></span>
-        </a>
-      </nav>
+      <a href="/couple" class="profil-nav-big-title<%= currentPath.indexOf('/couple') === 0 ? ' active' : '' %>">Partenaire</a>
     <% } %>
 
     <%# ── 5. Bas de volet : Paramètres / Identité / Déconnexion (icônes, même ligne) ── %>
