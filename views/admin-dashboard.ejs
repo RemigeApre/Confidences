@@ -8,6 +8,7 @@
   <div class="admin-tabs-center">
 
     <button class="admin-tab-btn admin-tab--sys active" data-tab="utilisateurs">Utilisateurs</button>
+    <button class="admin-tab-btn admin-tab--sys" data-tab="demandes-compte">Demandes de compte<% var _pendingAR = accountRequests.filter(function(r){ return !r.contacted; }).length; %><% if (_pendingAR) { %><span class="admin-tab-badge"><%= _pendingAR %></span><% } %></button>
     <a href="/ponhgup/recompenses" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">R&eacute;compenses</a>
 
     <span class="admin-tabs-sep" aria-hidden="true"></span>
@@ -414,6 +415,37 @@
       </div>
     </div>
 
+  </section>
+
+  <%# ═══════════════════════════════════════════════
+      TAB : DEMANDES DE COMPTE (France — voir src/geo.js)
+  ═══════════════════════════════════════════════ %>
+  <section class="admin-tab-section" data-tab="demandes-compte" hidden>
+    <% if (!accountRequests.length) { %>
+      <p class="admin-muted">Aucune demande de compte pour l'instant.</p>
+    <% } else { %>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Mail</th><th>IP</th><th>Date</th><th>Statut</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% accountRequests.forEach(function(r) { %>
+            <tr class="<%= r.contacted ? 'admin-row-done' : '' %>">
+              <td><a href="mailto:<%= r.email %>"><%= r.email %></a></td>
+              <td><%= r.ip %></td>
+              <td><%= new Date(r.createdAt).toLocaleString('fr-FR') %></td>
+              <td><%= r.contacted ? 'Contacté' : 'En attente' %></td>
+              <td>
+                <form method="POST" action="/ponhgup/demande-compte/<%= r.id %>/contacted" style="margin:0">
+                  <input type="hidden" name="contacted" value="<%= r.contacted ? '0' : '1' %>" />
+                  <button type="submit" class="link-button"><%= r.contacted ? 'Marquer non contacté' : 'Marquer contacté' %></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
   </section>
 
   <%# ═══════════════════════════════════════════════

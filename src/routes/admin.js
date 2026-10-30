@@ -116,6 +116,10 @@ const {
   countRecentPasswordResets,
   invalidateAllPasswordResets,
   destroyAllSessionsForUser,
+  createAccountRequest,
+  listAccountRequests,
+  setAccountRequestContacted,
+  countPendingAccountRequests,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -166,6 +170,7 @@ const coverUpload = multer({
 
 const loginThrottle = createThrottle();
 const signupThrottle = createThrottle();
+const accountRequestThrottle = createThrottle();
 const SEXE_VALUES = ["", "femme", "homme", "autre"];
 
 
@@ -451,6 +456,65 @@ function buildAdminRouter(config) {
     });
   });
 
+  // ── "Je souhaite un compte" (France) ────────────────────────────────────
+  // Pas de création de compte automatique : juste un mail à contacter
+  // manuellement après vérification de majorité, voir liste admin
+  // ci-dessous. Défense anti-bot renforcée (demande explicite de
+  // l'utilisateur) : piège à robots + piège à vitesse (un bot poste en
+  // quelques ms, jamais un humain) + limitation par IP. Pas de CAPTCHA
+  // tiers (aucun service déjà en place, et ça demanderait de créer un
+  // compte chez un fournisseur) — acceptable ici car cette route n'agit
+  // jamais seule : elle écrit juste une ligne qu'un humain (toi) relit
+  // avant de faire quoi que ce soit.
+  router.get("/demande-compte", (req, res) => {
+    if (req.user) return res.redirect(req.user.isAdmin ? "/ponhgup" : "/favoris");
+    res.render("demande-compte", { csrfToken: ensureCsrf(req), error: null, done: false, formToken: Date.now() });
+  });
+
+  router.post("/demande-compte", (req, res) => {
+    if (req.user) return res.redirect(req.user.isAdmin ? "/ponhgup" : "/favoris");
+
+    const sessionToken = req.session && req.session.csrfToken;
+    const bodyToken    = req.body._csrf;
+    if (!sessionToken || !bodyToken || sessionToken !== bodyToken) {
+      return res.status(403).render("demande-compte", { csrfToken: ensureCsrf(req), error: "Requête invalide.", done: false, formToken: Date.now() });
+    }
+    // Piège à robots : champ invisible (voir CSS), jamais rempli par un humain.
+    if (String(req.body.website || "").trim()) {
+      return res.status(400).render("demande-compte", { csrfToken: ensureCsrf(req), error: "Requête invalide.", done: false, formToken: Date.now() });
+    }
+    // Piège à vitesse : le formulaire porte l'horodatage de son propre
+    // affichage (champ caché "ft") ; un humain met toujours plusieurs
+    // secondes à lire et taper son mail, un bot soumet quasi instantanément.
+    const formToken = Number(req.body.ft || 0);
+    if (!formToken || Date.now() - formToken < 3000) {
+      return res.status(400).render("demande-compte", { csrfToken: ensureCsrf(req), error: "Requête invalide.", done: false, formToken: Date.now() });
+    }
+
+    const key  = req.ip;
+    const wait = accountRequestThrottle.secondsToWait(key);
+    if (wait > 0) {
+      return res.render("demande-compte", { csrfToken: ensureCsrf(req), error: `Trop de tentatives. Réessaie dans ${wait}s.`, done: false, formToken: Date.now() });
+    }
+
+    const email = String(req.body.email || "").trim();
+    if (!email || !email.includes("@") || email.length > 254) {
+      accountRequestThrottle.recordFailure(key);
+      return res.render("demande-compte", { csrfToken: ensureCsrf(req), error: "Adresse mail invalide.", done: false, formToken: Date.now() });
+    }
+
+    accountRequestThrottle.recordSuccess(key);
+    createAccountRequest(email, req.ip);
+    res.render("demande-compte", { csrfToken: ensureCsrf(req), error: null, done: true, formToken: Date.now() });
+  });
+
+  // Marque/démarque une demande comme contactée (liste admin, voir renderAdmin).
+  router.post("/demande-compte/:id/contacted", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (Number.isInteger(id)) setAccountRequestContacted(id, req.body.contacted === "1");
+    res.redirect("/ponhgup#tab-demandes-compte");
+  });
+
   router.post("/logout", (req, res) => {
     req.session.destroy(() => res.redirect("/ponhgup/85zapnte"));
   });
@@ -548,12 +612,13 @@ function buildAdminRouter(config) {
     const fantasyWikiPages = listWikiPages()
       .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
     const anonStats = getAnonStats(7, '');
+    const accountRequests = listAccountRequests();
     res.render("admin-dashboard", {
       config, userStates, matrixSections, submissions,
       wikiPages, allWikiPagesSorted, galleryImages, connectionLogs,
       wikiKPIs, galleryKPIs,
       aiProfiles, fantasyWikiPages,
-      anonStats,
+      anonStats, accountRequests,
       adminError: adminError || null,
     });
   }

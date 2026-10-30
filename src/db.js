@@ -290,6 +290,20 @@ db.exec(`
   )
 `);
 
+// Demandes de compte (visiteurs localisés en France — voir src/geo.js) :
+// juste un mail à contacter manuellement après vérification de majorité,
+// jamais de création de compte automatique. Pas de contrainte UNIQUE sur
+// l'email : une personne peut redemander, l'admin verra les doublons.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS account_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    ip TEXT NOT NULL DEFAULT '',
+    contacted INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  )
+`);
+
 // Gouts + reglages d'affichage, propres a chaque profil (section "Goûts" /
 // "Paramètres" de /favoris). ultra_mode/irrealiste_mode : "hidden" (masque
 // par defaut mais reste affichable via le bouton bascule existant),
@@ -1034,6 +1048,29 @@ function destroyAllSessionsForUser(userId, exceptSid) {
     const stmt = db.prepare("DELETE FROM sessions WHERE sid = ?");
     db.transaction((sids) => { sids.forEach((sid) => stmt.run(sid)); })(toDelete);
   }
+}
+
+function createAccountRequest(email, ip) {
+  db.prepare(
+    "INSERT INTO account_requests (email, ip, created_at) VALUES (?, ?, ?)"
+  ).run(email, ip || "", new Date().toISOString());
+}
+
+// Non contactés d'abord (à traiter), puis par date décroissante.
+function listAccountRequests() {
+  return db.prepare(
+    "SELECT * FROM account_requests ORDER BY contacted ASC, id DESC"
+  ).all().map((r) => ({
+    id: r.id, email: r.email, ip: r.ip, contacted: !!r.contacted, createdAt: r.created_at,
+  }));
+}
+
+function setAccountRequestContacted(id, contacted) {
+  db.prepare("UPDATE account_requests SET contacted = ? WHERE id = ?").run(contacted ? 1 : 0, id);
+}
+
+function countPendingAccountRequests() {
+  return db.prepare("SELECT COUNT(*) AS c FROM account_requests WHERE contacted = 0").get().c;
 }
 
 const VALID_ACCOUNT_STATUSES = ['actif', 'restreint', 'bloque'];
@@ -5368,6 +5405,10 @@ module.exports = {
   countRecentPasswordResets,
   invalidateAllPasswordResets,
   destroyAllSessionsForUser,
+  createAccountRequest,
+  listAccountRequests,
+  setAccountRequestContacted,
+  countPendingAccountRequests,
   touchLastLogin,
   addFavorite,
   removeFavorite,

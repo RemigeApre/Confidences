@@ -1,0 +1,27 @@
+<%- include('partials/head', { title: 'Je souhaite un compte' }) %>
+<main class="container narrow gate-page">
+  <a href="/" class="gate-back-link" aria-label="Retour &agrave; l'accueil" title="Retour &agrave; l'accueil">&larr;</a>
+
+  <h1 class="gate-title">Je souhaite un compte</h1>
+
+  <p class="gate-help">La loi fran&ccedil;aise encadre strictement l'acc&egrave;s aux contenus pour adultes. En France, nous ne pouvons donner un compte qu'apr&egrave;s une v&eacute;rification fiable de la majorit&eacute; de la personne. Laissez votre adresse mail ci-dessous, nous vous contacterons pour la suite de la proc&eacute;dure.</p>
+
+  <% if (done) { %>
+    <p class="gate-error">Merci, votre demande a bien &eacute;t&eacute; enregistr&eacute;e. Vous serez contact&eacute;(e) par mail.</p>
+  <% } else { %>
+    <% if (error) { %>
+      <p class="error gate-error"><%= error %></p>
+    <% } %>
+    <form method="POST" action="/ponhgup/demande-compte" class="gate-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="ft" value="<%= formToken %>" />
+      <%# Piège à robots : champ invisible, jamais rempli par un humain (voir CSS .gate-honeypot). %>
+      <input type="text" name="website" class="gate-honeypot" tabindex="-1" autocomplete="off" />
+      <input type="email" name="email" placeholder="adresse mail" required autofocus autocomplete="email" maxlength="254" />
+      <button type="submit" aria-label="Envoyer" title="Envoyer">&#8594;</button>
+    </form>
+  <% } %>
+
+  <a href="/ponhgup/85zapnte" class="gate-forgot-link">Retour &agrave; la connexion</a>
+</main>
+<%- include('partials/foot') %>

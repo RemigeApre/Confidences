@@ -359,7 +359,7 @@ app.use((req, res, next) => {
 // Tout le reste → redirect vers login pour les humains (GET),
 //                 403 pour les appels API/POST sans session.
 const _AUTH_PUBLIC = [
-  /^\/ponhgup\/(login|logout|85zapnte|inscription)(\/.*)?$/,
+  /^\/ponhgup\/(login|logout|85zapnte|inscription|demande-compte)(\/.*)?$/,
   /^\/wiki(\/.*)?$/,
   /^\/auteurs(\/.*)?$/,
   /^\/quizz(\/.*)?$/,
