@@ -107,6 +107,17 @@
     });
     dispatch();
   };
+
+  // Pré-coche depuis l'URL (ex. ?tag=xxx) : utilisé par la popup tag (voir
+  // partials/tag-popup.ejs) pour arriver sur une page déjà filtrée.
+  var urlVal = new URLSearchParams(window.location.search).get('<%= _key %>');
+  if (urlVal) {
+    var pre = cloud.querySelector('.<%= _cls %>[data-<%= _key %>="' + urlVal.toLowerCase() + '"]');
+    if (pre) {
+      if (block.tagName === 'DETAILS') block.open = true;
+      pre.click();
+    }
+  }
 })();
 </script>
 <% } %>

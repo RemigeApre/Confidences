@@ -1031,7 +1031,7 @@ app.get("/api/tags/results", function (req, res) {
   var metaMap = {};
   try { metaMap = getAllTagMeta(); } catch (_) {}
   var type = resolveTagType(tag, metaMap);
-  var result = { wiki: [], galerie: [], bd: [], type: type };
+  var result = { wiki: [], galerie: [], bd: [], nouvelles: [], type: type };
   function hasTag(raw) {
     return parseTags(raw).some(function (t) { return String(t).toLowerCase().trim() === tag; });
   }
@@ -1049,6 +1049,13 @@ app.get("/api/tags/results", function (req, res) {
     try {
       db.prepare("SELECT id, title, tags FROM bd_books").all().forEach(function (r) {
         if (hasTag(r.tags)) result.bd.push({ id: r.id, title: r.title });
+      });
+    } catch (_) {}
+    try {
+      var isAdminUser = !!req.user.isAdmin;
+      db.prepare("SELECT id, title, tags, stage, hidden FROM nouvelles").all().forEach(function (r) {
+        if (!isAdminUser && (r.stage === "brouillon" || r.hidden)) return;
+        if (hasTag(r.tags)) result.nouvelles.push({ id: r.id, title: r.title });
       });
     } catch (_) {}
   }
