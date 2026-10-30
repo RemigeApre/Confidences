@@ -1,0 +1,107 @@
+<% if (!currentUser) { %>
+<div id="age-gate-overlay" class="age-gate-overlay" aria-modal="true" role="dialog" aria-label="Avant d'entrer sur Confidences">
+  <div class="age-gate-box">
+
+    <div class="age-gate-slide" id="age-gate-slide-1" data-slide="1">
+      <p class="age-gate-eyebrow" data-fr="Avant d&rsquo;entrer" data-en="Before you enter">Avant d&rsquo;entrer</p>
+      <h2 class="age-gate-title" data-fr="Confidences est un site exploratif sur la sexualit&eacute;." data-en="Confidences is an exploratory site about sexuality.">Confidences est un site exploratif sur la sexualit&eacute;.</h2>
+      <p class="age-gate-body" data-fr="Confirmez-vous &ecirc;tre majeur(e) dans votre pays de r&eacute;sidence&nbsp;?" data-en="Do you confirm you are of legal age in your country of residence?">Confirmez-vous &ecirc;tre majeur(e) dans votre pays de r&eacute;sidence&nbsp;?</p>
+      <div class="age-gate-actions">
+        <button type="button" class="age-gate-btn age-gate-btn--no" id="age-gate-no" data-fr="Non, je quitte" data-en="No, I'm leaving">Non, je quitte</button>
+        <button type="button" class="age-gate-btn age-gate-btn--yes" id="age-gate-yes" data-fr="Oui, je suis majeur(e)" data-en="Yes, I am of legal age">Oui, je suis majeur(e)</button>
+      </div>
+    </div>
+
+    <div class="age-gate-slide" id="age-gate-slide-2" data-slide="2" hidden>
+      <p class="age-gate-eyebrow" data-fr="Comprendre un fantasme" data-en="Understanding a fantasy">Comprendre un fantasme</p>
+      <h2 class="age-gate-title" data-fr="Les quatre cat&eacute;gories de fantasmes" data-en="The four categories of fantasies">Les quatre cat&eacute;gories de fantasmes</h2>
+      <p class="age-gate-body" data-fr="Pour aborder la sexualit&eacute; de mani&egrave;re saine, il est utile de distinguer ce que l&rsquo;on d&eacute;sire r&eacute;ellement de ce que l&rsquo;on fantasme. Confidences classe chaque fantasme en quatre cat&eacute;gories&nbsp;:" data-en="To approach sexuality in a healthy way, it helps to separate what you actually desire from what you merely fantasize about. Confidences classifies every fantasy into four categories:">Pour aborder la sexualit&eacute; de mani&egrave;re saine, il est utile de distinguer ce que l&rsquo;on d&eacute;sire r&eacute;ellement de ce que l&rsquo;on fantasme. Confidences classe chaque fantasme en quatre cat&eacute;gories&nbsp;:</p>
+      <ul class="age-gate-cats">
+        <li>
+          <span class="age-gate-cats-num">I</span>
+          <span class="age-gate-cats-text">
+            <strong data-fr="Possible et consenti" data-en="Possible and consensual">Possible et consenti</strong>
+            <span data-fr=" &mdash; fait, ou &agrave; faire." data-en=" &mdash; done, or to do.">&nbsp;&mdash; fait, ou &agrave; faire.</span>
+          </span>
+        </li>
+        <li>
+          <span class="age-gate-cats-num">II</span>
+          <span class="age-gate-cats-text">
+            <strong data-fr="Imaginaire" data-en="Imaginary">Imaginaire</strong>
+            <span data-fr=" &mdash; immoral, ill&eacute;gal, ou &agrave; ne pas faire." data-en=" &mdash; immoral, illegal, or not to do.">&nbsp;&mdash; immoral, ill&eacute;gal, ou &agrave; ne pas faire.</span>
+          </span>
+        </li>
+        <li>
+          <span class="age-gate-cats-num">III</span>
+          <span class="age-gate-cats-text">
+            <strong data-fr="Impossible" data-en="Impossible">Impossible</strong>
+            <span data-fr=" &mdash; hors de la r&eacute;alit&eacute;." data-en=" &mdash; outside of reality.">&nbsp;&mdash; hors de la r&eacute;alit&eacute;.</span>
+          </span>
+        </li>
+        <li>
+          <span class="age-gate-cats-num">IV</span>
+          <span class="age-gate-cats-text">
+            <strong data-fr="D&eacute;sint&eacute;r&ecirc;t" data-en="Disinterest">D&eacute;sint&eacute;r&ecirc;t</strong>
+            <span data-fr=" &mdash; n&rsquo;aime pas." data-en=" &mdash; don't like.">&nbsp;&mdash; n&rsquo;aime pas.</span>
+          </span>
+        </li>
+      </ul>
+      <div class="age-gate-actions age-gate-actions--single">
+        <button type="button" class="age-gate-btn age-gate-btn--yes" id="age-gate-continue-2" data-fr="Continuer" data-en="Continue">Continuer</button>
+      </div>
+    </div>
+
+    <div class="age-gate-slide" id="age-gate-slide-3" data-slide="3" hidden>
+      <p class="age-gate-eyebrow" data-fr="Nos r&egrave;gles" data-en="Our rules">Nos r&egrave;gles</p>
+      <h2 class="age-gate-title" data-fr="Avant de continuer" data-en="Before you continue">Avant de continuer</h2>
+      <ul class="age-gate-rules">
+        <li data-fr="Aucun contenu p&eacute;dophile n&rsquo;est pr&eacute;sent&eacute; ici, sous quelque forme que ce soit." data-en="No content depicting minors is presented here, in any form whatsoever.">Aucun contenu p&eacute;dophile n&rsquo;est pr&eacute;sent&eacute; ici, sous quelque forme que ce soit.</li>
+        <li data-fr="Aucune image de personne r&eacute;elle n&rsquo;est publi&eacute;e." data-en="No images of real people are published.">Aucune image de personne r&eacute;elle n&rsquo;est publi&eacute;e.</li>
+        <li data-fr="Le consentement se donne librement et reste r&eacute;vocable &agrave; tout moment&nbsp;: un fantasme n&rsquo;est pas un accord." data-en="Consent is given freely and remains revocable at any time: a fantasy is not an agreement.">Le consentement se donne librement et reste r&eacute;vocable &agrave; tout moment&nbsp;: un fantasme n&rsquo;est pas un accord.</li>
+        <li data-fr="L&rsquo;IA est une aide &agrave; la cr&eacute;ation. Les images suspect&eacute;es d&rsquo;avoir &eacute;t&eacute; cr&eacute;&eacute;es &agrave; partir d&rsquo;une personne r&eacute;elle (sans preuve) sont tagu&eacute;es et peuvent &ecirc;tre exclues&nbsp;; si une preuve est apport&eacute;e, l&rsquo;image est supprim&eacute;e du site." data-en="AI is a creative aid. Images suspected of being created from a real person (without proof) are tagged and may be excluded; if proof is provided, the image is removed from the site.">L&rsquo;IA est une aide &agrave; la cr&eacute;ation. Les images suspect&eacute;es d&rsquo;avoir &eacute;t&eacute; cr&eacute;&eacute;es &agrave; partir d&rsquo;une personne r&eacute;elle (sans preuve) sont tagu&eacute;es et peuvent &ecirc;tre exclues&nbsp;; si une preuve est apport&eacute;e, l&rsquo;image est supprim&eacute;e du site.</li>
+        <li data-fr="Votre vie priv&eacute;e est centrale&nbsp;: vos donn&eacute;es ne sont ni revendues, ni partag&eacute;es." data-en="Your privacy is central: your data is never resold or shared.">Votre vie priv&eacute;e est centrale&nbsp;: vos donn&eacute;es ne sont ni revendues, ni partag&eacute;es.</li>
+      </ul>
+      <div class="age-gate-actions age-gate-actions--single">
+        <button type="button" class="age-gate-btn age-gate-btn--yes" id="age-gate-enter" data-fr="J&rsquo;ai compris, entrer" data-en="I understand, enter">J&rsquo;ai compris, entrer</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script nonce="<%= nonce %>">
+(function () {
+  var overlay = document.getElementById("age-gate-overlay");
+  if (!overlay) return;
+  try {
+    if (localStorage.getItem("lq-age-gate-seen") === "1") {
+      overlay.remove();
+      return;
+    }
+  } catch (_) {}
+
+  var slides = {
+    1: document.getElementById("age-gate-slide-1"),
+    2: document.getElementById("age-gate-slide-2"),
+    3: document.getElementById("age-gate-slide-3")
+  };
+
+  function goTo(n) {
+    Object.keys(slides).forEach(function (k) {
+      slides[k].hidden = Number(k) !== n;
+    });
+  }
+
+  function finish() {
+    try { localStorage.setItem("lq-age-gate-seen", "1"); } catch (_) {}
+    overlay.remove();
+  }
+
+  document.getElementById("age-gate-no").addEventListener("click", function () {
+    window.location.href = "https://www.google.com";
+  });
+  document.getElementById("age-gate-yes").addEventListener("click", function () { goTo(2); });
+  document.getElementById("age-gate-continue-2").addEventListener("click", function () { goTo(3); });
+  document.getElementById("age-gate-enter").addEventListener("click", finish);
+})();
+</script>
+<% } %>

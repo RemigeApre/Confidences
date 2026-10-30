@@ -87,6 +87,9 @@
       if (localStorage.getItem("lq-consent-seen") !== "1") {
         document.documentElement.classList.add("consent-unseen");
       }
+      if (localStorage.getItem("lq-age-gate-seen") === "1") {
+        document.documentElement.classList.add("age-gate-seen");
+      }
     } catch (_) {}
   </script>
   <% if (locals.preloadImage) { %>
