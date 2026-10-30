@@ -1385,10 +1385,27 @@ window.WIKI_CONTENT = <%- JSON.stringify({
   var PAGE_URL  = window.location.origin + '/wiki/' + PAGE_ID;
   var PAGE_MD_URL = window.location.origin + '/wiki/' + PAGE_ID + '.md';
 
+  // Convertit un bloc potentiellement en HTML (contenu collé avec sa mise en
+  // forme au lieu du markdown attendu) en texte brut lisible, en gardant un
+  // saut de ligne entre les blocs (p/h1-6/li/br) plutôt que de tout recoller.
+  function htmlToPlainText(html) {
+    var withBreaks = String(html)
+      .replace(/<(p|div|h[1-6]|li|tr)[^>]*>/gi, '')
+      .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n');
+    var div = document.createElement('div');
+    div.innerHTML = withBreaks;
+    return (div.textContent || div.innerText || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
   function buildCopyText() {
     var wc = window.WIKI_CONTENT || {};
     var lang = (typeof localStorage !== 'undefined' && localStorage.getItem('slang') === 'en') ? 'en' : 'fr';
     var content = (wc.content && (wc.content[lang] || wc.content.fr)) || '';
+    // Si le champ contient en réalité du HTML (collé avec sa mise en forme
+    // au lieu du markdown attendu), on le nettoie d'abord via le DOM —
+    // garantit un texte copié toujours propre, quel que soit l'état réel du champ.
+    if (/<[a-z][\s\S]*>/i.test(content)) content = htmlToPlainText(content);
     // Texte brut sans markdown
     var plain = content
       .replace(/^#+\s+/gm, '').replace(/\*\*?|__?/g, '')
