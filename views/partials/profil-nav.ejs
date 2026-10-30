@@ -93,18 +93,18 @@
       </nav>
     <% } %>
 
-    <%# ── 4. Bas de volet : Paramètres / Identité (icônes) + Déconnexion ── %>
+    <%# ── 4. Bas de volet : Paramètres / Identité / Déconnexion (icônes, même ligne) ── %>
+    <form method="POST" action="/ponhgup/logout" id="profil-nav-logout-form" class="profil-nav-logout-form"></form>
     <div class="profil-nav-icon-row">
-      <a href="/favoris/parametres" class="profil-nav-icon-btn<%= currentPath === '/favoris/parametres' ? ' active' : '' %>" title="Param&egrave;tres" aria-label="Param&egrave;tres">
+      <a href="/favoris/parametres" class="profil-nav-icon-btn profil-nav-icon-btn--accent<%= currentPath === '/favoris/parametres' ? ' active' : '' %>" title="Param&egrave;tres" aria-label="Param&egrave;tres">
         <svg class="profil-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </a>
-      <a href="/favoris/identite" class="profil-nav-icon-btn<%= currentPath === '/favoris/identite' ? ' active' : '' %>" title="Identit&eacute;" aria-label="Identit&eacute;">
+      <a href="/favoris/identite" class="profil-nav-icon-btn profil-nav-icon-btn--accent<%= currentPath === '/favoris/identite' ? ' active' : '' %>" title="Identit&eacute;" aria-label="Identit&eacute;">
         <svg class="profil-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
       </a>
+      <button type="submit" form="profil-nav-logout-form" class="profil-nav-icon-btn profil-nav-icon-btn--danger" title="D&eacute;connexion" aria-label="D&eacute;connexion">
+        <svg class="profil-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
     </div>
-
-    <form method="POST" action="/ponhgup/logout" class="profil-nav-logout-form">
-      <button type="submit" class="profil-nav-logout-btn">D&eacute;connexion</button>
-    </form>
   </div>
 </aside>
