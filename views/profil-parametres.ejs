@@ -15,7 +15,6 @@
         <div class="profil-card">
           <div class="profil-card-head">
             <span>Ultra</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Ultra rassemblent les pratiques et fantasmes les plus extrêmes du codex." aria-label="Qu'est-ce qu'un contenu Ultra ?">!</span>
           </div>
           <select class="profil-select" id="ultra-mode-select">
             <option value="hidden">Masqu&eacute; (bascule)</option>
@@ -27,7 +26,6 @@
         <div class="profil-card">
           <div class="profil-card-head">
             <span>Irr&eacute;aliste</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Les contenus Irréaliste relèvent de scénarios impossibles : davantage le fantasme pur que le réalisable." aria-label="Qu'est-ce qu'un contenu Irréaliste ?">!</span>
           </div>
           <select class="profil-select" id="irrealiste-mode-select">
             <option value="hidden">Masqu&eacute; (bascule)</option>
@@ -85,12 +83,11 @@
         <div class="profil-card">
           <div class="profil-card-head">
             <span>Partage avec l&rsquo;admin</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Si activé, un badge vert indique à l'admin que vous acceptez qu'il consulte vos notes et favoris (codex, images, BD)." aria-label="Que fait cette option ?">!</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Permet à l'administrateur de voir votre activité et de faire du débogage." aria-label="Que fait cette option ?">!</span>
           </div>
           <label class="profil-toggle">
             <input type="checkbox" id="share-notes-checkbox" <%= currentUser.shareNotesWithAdmin ? 'checked' : '' %> />
             <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
-            <span class="profil-toggle-label" id="share-notes-label"><%= currentUser.shareNotesWithAdmin ? 'Activé' : 'Désactivé' %></span>
           </label>
         </div>
       </div>
@@ -136,10 +133,8 @@
   wireServerSelect("history-retention-select", "historyRetention", window.HISTORY_RETENTION || "1mois");
 
   var shareCheckbox = document.getElementById("share-notes-checkbox");
-  var shareLabel = document.getElementById("share-notes-label");
   if (shareCheckbox) {
     shareCheckbox.addEventListener("change", function () {
-      if (shareLabel) shareLabel.textContent = shareCheckbox.checked ? "Activé" : "Désactivé";
       savePref("shareNotesWithAdmin", shareCheckbox.checked);
     });
   }
