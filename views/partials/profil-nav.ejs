@@ -1,53 +1,47 @@
 <%# Volet de navigation du profil :
-    1. Coffre (lien direct)
-    2. Activités <details> : Codex, Images, BD, Nouvelles, Historique, À lire
-    3. Lien couple (si applicable)
-    4. Bas de volet : icônes Paramètres/Identité + déconnexion %>
+    1. Profil (lien direct, page pas encore réalisée)
+    2. Coffre (lien direct, non réductible)
+    3. Notes & favoris <details> : Codex, Images, BD, Nouvelles
+    4. Lien couple (si applicable)
+    5. Bas de volet : icônes Paramètres/Identité + déconnexion %>
 <aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue: <%= roleHue %>">
-  <div class="profil-nav-header">
-    <a href="/favoris" class="profil-nav-name"><%= currentUser.displayName %></a>
-  </div>
   <div class="wiki-sidebar-body">
 
-    <%# ── 1. Coffre ── %>
-    <%
-      var _cofreOpen = currentPath === '/favoris/coffre' || currentPath.indexOf('/favoris/coffre') === 0;
-      var _cofreView = locals.view || null;
-    %>
-    <details class="profil-nav-accordion"<%= _cofreOpen ? ' open' : '' %>>
-      <summary class="profil-nav-accordion-title">
-        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="12" width="20" height="10" rx="2"/><path d="M2 12 Q2 6 12 6 Q22 6 22 12"/><rect x="9" y="9" width="6" height="5" rx="1.5"/><circle cx="12" cy="17" r="1.5"/></svg>
-        Coffre
-        <svg class="profil-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-      </summary>
-      <nav class="profil-nav-links profil-nav-links--sub">
-        <a href="/favoris/coffre?view=images" class="profil-nav-link<%= _cofreOpen && _cofreView === 'images' ? ' active' : '' %>">
-          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          <span>Images</span>
-          <% if (locals.coffreUnlocks !== undefined) { %><span class="profil-nav-count"><%= locals.coffreUnlocks %></span><% } %>
-        </a>
-        <a href="/favoris/coffre?view=charms" class="profil-nav-link<%= _cofreOpen && _cofreView === 'charms' ? ' active' : '' %>">
-          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          <span>Charmes</span>
-          <% if (locals.coffreCharms !== undefined) { %><span class="profil-nav-count"><%= locals.coffreCharms %></span><% } %>
-        </a>
-        <a href="/favoris/coffre?view=themes" class="profil-nav-link<%= _cofreOpen && _cofreView === 'themes' ? ' active' : '' %>">
-          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
-          <span>Th&egrave;mes</span>
-          <% if (locals.coffreThemes !== undefined) { %><span class="profil-nav-count"><%= locals.coffreThemes %></span><% } %>
-        </a>
-      </nav>
-    </details>
+    <%# ── 1. Profil (à venir) ── %>
+    <a href="/favoris/profil-public" class="profil-nav-big-title<%= currentPath === '/favoris/profil-public' ? ' active' : '' %>">
+      Profil
+      <span class="profil-nav-wip-badge">Bient&ocirc;t</span>
+    </a>
 
-    <%# ── 2. Activités ── %>
+    <%# ── 2. Coffre (non réductible) ── %>
+    <% var _cofreView = locals.view || null; %>
+    <div class="profil-nav-section-title">Coffre</div>
+    <nav class="profil-nav-links profil-nav-links--sub">
+      <a href="/favoris/coffre?view=images" class="profil-nav-link<%= _cofreView === 'images' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span>Images</span>
+        <% if (locals.coffreUnlocks !== undefined) { %><span class="profil-nav-count"><%= locals.coffreUnlocks %></span><% } %>
+      </a>
+      <a href="/favoris/coffre?view=charms" class="profil-nav-link<%= _cofreView === 'charms' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span>Charmes</span>
+        <% if (locals.coffreCharms !== undefined) { %><span class="profil-nav-count"><%= locals.coffreCharms %></span><% } %>
+      </a>
+      <a href="/favoris/coffre?view=themes" class="profil-nav-link<%= _cofreView === 'themes' ? ' active' : '' %>">
+        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+        <span>Th&egrave;mes</span>
+        <% if (locals.coffreThemes !== undefined) { %><span class="profil-nav-count"><%= locals.coffreThemes %></span><% } %>
+      </a>
+    </nav>
+
+    <%# ── 3. Notes & favoris ── %>
     <%
-      var _actPaths = ['/favoris/notes/wiki','/favoris/notes/images','/favoris/collections','/favoris/notes/bd','/favoris/a-lire-plus-tard','/favoris/historique','/nouvelles'];
+      var _actPaths = ['/favoris/notes/wiki','/favoris/notes/images','/favoris/collections','/favoris/notes/bd','/nouvelles'];
       var _actOpen = _actPaths.some(function(p){ return currentPath === p || currentPath.indexOf(p) === 0; });
     %>
     <details class="profil-nav-accordion"<%= _actOpen ? ' open' : '' %>>
-      <summary class="profil-nav-accordion-title">
-        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Activit&eacute;s
+      <summary class="profil-nav-big-title profil-nav-big-title--toggle">
+        Notes &amp; favoris
         <svg class="profil-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
       </summary>
       <nav class="profil-nav-links profil-nav-links--sub">
@@ -73,18 +67,10 @@
           <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
           <span>Nouvelles</span>
         </a>
-        <a href="/favoris/historique" class="profil-nav-link<%= currentPath === '/favoris/historique' ? ' active' : '' %>">
-          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
-          <span>Historique</span>
-        </a>
-        <a href="/favoris/a-lire-plus-tard" class="profil-nav-link<%= currentPath === '/favoris/a-lire-plus-tard' ? ' active' : '' %>">
-          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
-          <span>&Agrave; lire plus tard</span>
-        </a>
       </nav>
     </details>
 
-    <%# ── 3. Lien couple ── %>
+    <%# ── 4. Lien couple ── %>
     <% if (locals.partnerUser) { %>
       <nav class="profil-nav-links">
         <a href="/couple" class="profil-nav-link profil-nav-sublink<%= currentPath.indexOf('/couple') === 0 ? ' active' : '' %>">
@@ -93,7 +79,7 @@
       </nav>
     <% } %>
 
-    <%# ── 4. Bas de volet : Paramètres / Identité / Déconnexion (icônes, même ligne) ── %>
+    <%# ── 5. Bas de volet : Paramètres / Identité / Déconnexion (icônes, même ligne) ── %>
     <form method="POST" action="/ponhgup/logout" id="profil-nav-logout-form" class="profil-nav-logout-form"></form>
     <div class="profil-nav-icon-row">
       <a href="/favoris/parametres" class="profil-nav-icon-btn profil-nav-icon-btn--accent<%= currentPath === '/favoris/parametres' ? ' active' : '' %>" title="Param&egrave;tres" aria-label="Param&egrave;tres">

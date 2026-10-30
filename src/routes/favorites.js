@@ -375,6 +375,13 @@ function buildFavoritesRouter(config) {
     res.json({ ok });
   });
 
+  // ── Profil public (à venir) : page future pour consulter le profil "public"
+  // d'un autre utilisateur, selon les réglages de partage choisis. Pour
+  // l'instant, simple page "en travaux" — voir partials/profil-nav.ejs. ──
+  router.get("/profil-public", requireUser, (req, res) => {
+    res.render("profil-public-wip", { config, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+  });
+
   router.get("/parametres", requireUser, (req, res) => {
     const notice = req.query.reset ? "Contenu réinitialisé : notes, commentaires et favoris supprimés." : null;
     const error = req.query.err ? decodeURIComponent(req.query.err) : null;
