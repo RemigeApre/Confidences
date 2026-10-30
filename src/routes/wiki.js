@@ -963,9 +963,10 @@ function buildWikiRouter(config) {
     // demarre son telechargement des le <head>, avant meme que le CSS/JS
     // n'aient fini de charger, au lieu d'attendre que le navigateur
     // decouvre le <img> en parsant le corps de la page.
-    const heroImg = req.user && page.imagePaths && page.imagePaths.length
+    const heroFullAccess = req.user || !req.isFrenchVisitor;
+    const heroImg = heroFullAccess && page.imagePaths && page.imagePaths.length
       ? res.locals.thumbUrl(page.imagePaths[0])
-      : (!req.user && page.sfwImagePaths && page.sfwImagePaths.length
+      : (!heroFullAccess && page.sfwImagePaths && page.sfwImagePaths.length
         ? res.locals.thumbUrl(page.sfwImagePaths[0]) : null);
     const exploreMode = req.query.explore === "1";
     const varianteGenreId = page.meta && page.meta.variante_genre_id ? Number(page.meta.variante_genre_id) : null;

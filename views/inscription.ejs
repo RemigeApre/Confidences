@@ -1,0 +1,29 @@
+<%- include('partials/head', { title: 'Créer un compte' }) %>
+<main class="container narrow gate-page">
+  <a href="/" class="gate-back-link" aria-label="Retour &agrave; l'accueil" title="Retour &agrave; l'accueil">&larr;</a>
+
+  <h1 class="gate-title">Cr&eacute;er un compte</h1>
+
+  <% if (blocked) { %>
+    <p class="gate-help">L'inscription libre n'est pas disponible pour les visiteurs localis&eacute;s en France. Contactez l'administrateur du site pour obtenir un compte.</p>
+  <% } else { %>
+    <% if (error) { %>
+      <p class="error gate-error"><%= error %></p>
+    <% } %>
+    <form method="POST" action="/ponhgup/inscription" class="gate-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <%# Piège à robots : champ invisible, jamais rempli par un humain (voir CSS .gate-honeypot). %>
+      <input type="text" name="website" class="gate-honeypot" tabindex="-1" autocomplete="off" />
+      <input type="text" name="nom" placeholder="pseudo" required autofocus autocomplete="username" maxlength="60" />
+      <input type="email" name="email" placeholder="adresse mail" required autocomplete="email" maxlength="254" />
+      <input type="password" name="password" placeholder="mot de passe" required autocomplete="new-password" />
+      <input type="password" name="password2" placeholder="confirmer le mot de passe" required autocomplete="new-password" />
+      <button type="submit" aria-label="Créer mon compte" title="Créer mon compte">&#8594;</button>
+    </form>
+
+    <p class="gate-help">L'adresse mail sert uniquement &agrave; r&eacute;initialiser votre mot de passe si vous l'oubliez.</p>
+  <% } %>
+
+  <a href="/ponhgup/85zapnte" class="gate-forgot-link">D&eacute;j&agrave; un compte ? Se connecter</a>
+</main>
+<%- include('partials/foot') %>

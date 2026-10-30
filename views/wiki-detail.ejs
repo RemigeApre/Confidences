@@ -55,7 +55,7 @@
     var pmSup  = Array.isArray(pm.supports) ? pm.supports : (pm.supports ? [pm.supports] : []);
     var hasPosMeta = page.category === 'position' && (pm.categorie || pm.qui_dessus || (pm.canal && pm.canal.length) || pmOri.length || pm.nb_partenaires || pm.partenaire_actif || pmSup.length);
 
-    var visibleImagePaths = currentUser ? page.imagePaths : (page.sfwImagePaths || []);
+    var visibleImagePaths = (currentUser || !isFrenchVisitor) ? page.imagePaths : (page.sfwImagePaths || []);
     var hasImages = visibleImagePaths.length > 0;
     var derivedTerms = (pm.termes_derives || []).map(function (t) {
       return typeof t === 'string' ? { term: t, en: false } : t;
@@ -608,7 +608,7 @@
                 <summary class="wiki-var-summary"><%= v.nom %></summary>
                 <div class="wiki-var-body">
                   <% if (v.description) { %><div class="wiki-md"><span class="wiki-md-raw" hidden><%= v.description %></span></div><% } %>
-                  <% if (currentUser && v.images && v.images.length) { %>
+                  <% if ((currentUser || !isFrenchVisitor) && v.images && v.images.length) { %>
                     <div class="wiki-var-images"><% v.images.forEach(function(src) { %><img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-var-img" loading="lazy" /><% }) %></div>
                   <% } %>
                   <% if (v.variantes && v.variantes.length) { %>
@@ -618,7 +618,7 @@
                         <summary class="wiki-var-summary"><%= sv.nom %></summary>
                         <div class="wiki-var-body">
                           <% if (sv.description) { %><div class="wiki-md"><span class="wiki-md-raw" hidden><%= sv.description %></span></div><% } %>
-                          <% if (currentUser && sv.images && sv.images.length) { %>
+                          <% if ((currentUser || !isFrenchVisitor) && sv.images && sv.images.length) { %>
                             <div class="wiki-var-images"><% sv.images.forEach(function(src) { %><img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-var-img" loading="lazy" /><% }) %></div>
                           <% } %>
                         </div>
@@ -1060,7 +1060,7 @@
           <% suggestions.forEach(function (s) { %>
             <% var scat = categories.find(function (c) { return c.key === s.category; }); %>
             <a href="/wiki/<%= s.slug || s.id %>" class="wiki-sugg-card">
-              <% if (s.imagePaths && s.imagePaths.length && currentUser) { %>
+              <% if (s.imagePaths && s.imagePaths.length && (currentUser || !isFrenchVisitor)) { %>
                 <div class="wiki-sugg-img-wrap"><img src="<%= thumbUrl(s.imagePaths[0]) %>" alt="" class="wiki-sugg-img" loading="lazy" /></div>
               <% } %>
               <span class="wiki-sugg-badge" style="background: hsl(<%= scat ? scat.hue : 220 %>, 55%, 45%)" data-fr="<%= scat ? scat.label : s.category %>" data-en="<%= scat ? (WD_CAT_EN[scat.key] || scat.label) : s.category %>"><%= scat ? scat.label : s.category %></span>
@@ -1179,8 +1179,10 @@ window.IRREALISTE_MODE = 'visible';
   // Ouvre le lightbox galerie complet (favoris, note, infos…) pour n'importe quelle src.
   function openGalleryLightbox(src) {
     if (!src) return;
-    // Non-connecté : lightbox simple avec les images SFW uniquement (pas de fetch)
-    <% if (!currentUser) { %>
+    // Non-connecté ET France : lightbox simple, images SFW uniquement (pas
+    // de fetch). Non-connecté hors de France : plein accès, même chemin que
+    // les comptes connectés (voir req.isFrenchVisitor, src/geo.js).
+    <% if (!currentUser && isFrenchVisitor) { %>
     (function() {
       var ghost = document.getElementById('wiki-gallery-ghost');
       if (!ghost || !_sfwPaths.length) return;

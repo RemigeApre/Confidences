@@ -303,10 +303,12 @@ app.use(
 app.use(attachUser);
 
 // Visiteur français ? (restriction géo du contenu NSFW, voir src/geo.js) —
-// calculé une fois par requête, réutilisé par le mur d'authentification et
-// par la galerie/BD/nouvelles plus bas.
+// calculé une fois par requête, réutilisé par le mur d'authentification,
+// par la galerie/BD/nouvelles plus bas, et par les vues EJS (res.locals,
+// même mécanisme que res.locals.currentUser) pour les images du Codex.
 app.use((req, res, next) => {
   req.isFrenchVisitor = isFrenchIp(req.ip);
+  res.locals.isFrenchVisitor = req.isFrenchVisitor;
   next();
 });
 
@@ -357,7 +359,7 @@ app.use((req, res, next) => {
 // Tout le reste → redirect vers login pour les humains (GET),
 //                 403 pour les appels API/POST sans session.
 const _AUTH_PUBLIC = [
-  /^\/ponhgup\/(login|logout|85zapnte)(\/.*)?$/,
+  /^\/ponhgup\/(login|logout|85zapnte|inscription)(\/.*)?$/,
   /^\/wiki(\/.*)?$/,
   /^\/auteurs(\/.*)?$/,
   /^\/quizz(\/.*)?$/,

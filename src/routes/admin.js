@@ -165,6 +165,7 @@ const coverUpload = multer({
 });
 
 const loginThrottle = createThrottle();
+const signupThrottle = createThrottle();
 const SEXE_VALUES = ["", "femme", "homme", "autre"];
 
 
@@ -367,6 +368,87 @@ function buildAdminRouter(config) {
     invalidateAllPasswordResets(reset.userId);
     afterPasswordChange(reset.userId, req);
     res.redirect("/ponhgup/85zapnte?reset=1");
+  });
+
+  // ── Inscription libre — réservée aux visiteurs hors de France ──────────
+  // En France, les comptes restent créés uniquement par l'admin (voir
+  // /ponhgup, onglet Utilisateurs) — en attendant le retour de l'organisme
+  // français sur les règles d'accès au contenu adulte. Hors de France
+  // (req.isFrenchVisitor, voir src/geo.js), inscription en libre-service.
+  router.get("/inscription", (req, res) => {
+    if (req.user) return res.redirect(req.user.isAdmin ? "/ponhgup" : "/favoris");
+    res.render("inscription", { csrfToken: ensureCsrf(req), error: null, blocked: req.isFrenchVisitor });
+  });
+
+  router.post("/inscription", (req, res) => {
+    if (req.user) return res.redirect(req.user.isAdmin ? "/ponhgup" : "/favoris");
+
+    // Vérification serveur, jamais seulement côté vue : un visiteur français
+    // ne peut pas s'inscrire même en postant directement sur cette route.
+    if (req.isFrenchVisitor) {
+      return res.status(403).render("inscription", { csrfToken: ensureCsrf(req), error: null, blocked: true });
+    }
+
+    const sessionToken = req.session && req.session.csrfToken;
+    const bodyToken    = req.body._csrf;
+    if (!sessionToken || !bodyToken || sessionToken !== bodyToken) {
+      return res.status(403).render("inscription", { csrfToken: ensureCsrf(req), error: "Requête invalide.", blocked: false });
+    }
+
+    // Piège à robots : champ invisible (voir CSS), jamais rempli par un humain.
+    if (String(req.body.website || "").trim()) {
+      return res.status(400).render("inscription", { csrfToken: ensureCsrf(req), error: "Requête invalide.", blocked: false });
+    }
+
+    const key  = req.ip;
+    const wait = signupThrottle.secondsToWait(key);
+    if (wait > 0) {
+      return res.render("inscription", { csrfToken: ensureCsrf(req), error: `Trop de tentatives. Réessaie dans ${wait}s.`, blocked: false });
+    }
+
+    const nom         = String(req.body.nom || "").trim();
+    const username     = nom.toLowerCase();
+    const displayName = nom;
+    const email       = String(req.body.email || "").trim();
+    const password    = String(req.body.password || "");
+    const password2   = String(req.body.password2 || "");
+
+    if (!nom || !email || !password) {
+      signupThrottle.recordFailure(key);
+      return res.render("inscription", { csrfToken: ensureCsrf(req), error: "Pseudo, mail et mot de passe sont obligatoires.", blocked: false });
+    }
+    if (!email.includes("@")) {
+      signupThrottle.recordFailure(key);
+      return res.render("inscription", { csrfToken: ensureCsrf(req), error: "Adresse mail invalide.", blocked: false });
+    }
+    if (password.length < 4) {
+      signupThrottle.recordFailure(key);
+      return res.render("inscription", { csrfToken: ensureCsrf(req), error: "Mot de passe trop court.", blocked: false });
+    }
+    if (password !== password2) {
+      signupThrottle.recordFailure(key);
+      return res.render("inscription", { csrfToken: ensureCsrf(req), error: "Les deux mots de passe ne correspondent pas.", blocked: false });
+    }
+    if (getUserByUsername(username)) {
+      signupThrottle.recordFailure(key);
+      return res.render("inscription", { csrfToken: ensureCsrf(req), error: "Ce nom d'utilisateur existe déjà.", blocked: false });
+    }
+    if (getUserByEmail(email)) {
+      signupThrottle.recordFailure(key);
+      return res.render("inscription", { csrfToken: ensureCsrf(req), error: "Cette adresse mail est déjà utilisée par un autre profil.", blocked: false });
+    }
+
+    signupThrottle.recordSuccess(key);
+    const newId = createUser({ username, displayName, passwordHash: hashPassword(password), isAdmin: false, isTest: false });
+    updateOwnProfile(newId, { displayName, email, sexe: "", birthYear: null });
+
+    req.session.regenerate((err) => {
+      if (err) return res.redirect("/ponhgup/85zapnte");
+      req.session.userId = newId;
+      logConnection(newId, req.ip, req.headers["user-agent"] || "");
+      touchLastLogin(newId);
+      res.redirect("/favoris");
+    });
   });
 
   router.post("/logout", (req, res) => {

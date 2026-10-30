@@ -115,8 +115,9 @@
 
   <%
     var wcSfwPaths = page.sfwImagePaths || [];
-    var wcCover = currentUser ? (page.imagePaths && page.imagePaths[0]) : (wcSfwPaths[0] || null);
-    var wcDataImages = currentUser ? (page.imagePaths || []) : wcSfwPaths;
+    var wcFullAccess = currentUser || !isFrenchVisitor;
+    var wcCover = wcFullAccess ? (page.imagePaths && page.imagePaths[0]) : (wcSfwPaths[0] || null);
+    var wcDataImages = wcFullAccess ? (page.imagePaths || []) : wcSfwPaths;
   %>
   <% if (wcCover) { %>
     <%# ── Carte AVEC image ───────────────────────────────────────────── %>
