@@ -4,62 +4,117 @@
 
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
-  <div class="profil-subpage">
+  <div class="profil-subpage profil-subpage--wide">
 
     <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
     <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
 
-    <form method="POST" action="/favoris/identite" class="profil-form">
+    <form method="POST" action="/favoris/identite">
 
-      <label class="profil-field">
-        <span class="profil-field-label">Pseudo</span>
-        <input type="text" name="display_name" value="<%= user.displayName %>" required autocomplete="off" class="profil-field-input" />
-      </label>
+      <section class="profil-panel">
+        <h2 class="profil-panel-title">Identit&eacute;</h2>
+        <div class="profil-panel-grid">
+          <div class="profil-card">
+            <span class="profil-card-head">Pseudo</span>
+            <input type="text" name="display_name" value="<%= user.displayName %>" required autocomplete="off" class="profil-field-input" />
+          </div>
 
-      <label class="profil-field">
-        <span class="profil-field-label">Orientation</span>
-        <select name="orientation" class="profil-field-input">
-          <option value="" <%= !user.orientation ? 'selected' : '' %>>Non pr&eacute;cis&eacute;e</option>
-          <option value="hetero" <%= user.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
-          <option value="gay" <%= user.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
-          <option value="bi" <%= user.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
-        </select>
-      </label>
+          <div class="profil-card">
+            <span class="profil-card-head">Sexe</span>
+            <select name="sexe" class="profil-select">
+              <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
+              <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
+              <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
+              <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
+            </select>
+          </div>
 
-      <label class="profil-field">
-        <span class="profil-field-label">Adresse mail</span>
-        <input type="email" name="email" value="<%= user.email || '' %>" placeholder="facultatif" autocomplete="off" class="profil-field-input" />
-      </label>
+          <div class="profil-card">
+            <span class="profil-card-head">Ann&eacute;e de naissance</span>
+            <input type="text" value="<%= user.birthYear || 'Non renseign&eacute;e' %>" disabled class="profil-field-input" />
+            <p class="profil-card-desc">Modifiable uniquement par l&rsquo;administrateur.</p>
+          </div>
+        </div>
 
-      <label class="profil-field">
-        <span class="profil-field-label">Sexe</span>
-        <select name="sexe" class="profil-field-input">
-          <option value="" <%= user.sexe === '' ? 'selected' : '' %>>Non pr&eacute;cis&eacute;</option>
-          <option value="femme" <%= user.sexe === 'femme' ? 'selected' : '' %>>Femme</option>
-          <option value="homme" <%= user.sexe === 'homme' ? 'selected' : '' %>>Homme</option>
-          <option value="autre" <%= user.sexe === 'autre' ? 'selected' : '' %>>Autre</option>
-        </select>
-      </label>
+        <% if (identityLockedUntilLabel) { %>
+          <p class="profil-identite-lock-note">Pseudo, sexe et orientation&nbsp;: un seul changement par semaine. Prochain changement possible le <%= identityLockedUntilLabel %>.</p>
+        <% } %>
+      </section>
 
-      <label class="profil-field">
-        <span class="profil-field-label">Ann&eacute;e de naissance</span>
-        <input type="number" name="birth_year" value="<%= user.birthYear || '' %>" placeholder="facultatif" min="1900" max="<%= new Date().getFullYear() %>" class="profil-field-input" />
-      </label>
+      <section class="profil-panel">
+        <h2 class="profil-panel-title">Contact &amp; compte</h2>
+        <div class="profil-card profil-identite-column">
+          <label class="profil-field">
+            <span class="profil-field-label">Adresse mail</span>
+            <input type="email" name="email" id="identite-email-input" data-original="<%= user.email || '' %>" value="<%= user.email || '' %>" placeholder="facultatif" autocomplete="off" class="profil-field-input" />
+          </label>
 
-      <div class="profil-field profil-field-readonly">
-        <span class="profil-field-label">Identifiant</span>
-        <input type="text" value="<%= user.username %>" disabled class="profil-field-input" />
-      </div>
+          <label class="profil-field" id="identite-email-password-row" hidden>
+            <span class="profil-field-label">Mot de passe actuel</span>
+            <input type="password" name="email_password" autocomplete="current-password" class="profil-field-input" />
+            <span class="profil-card-desc">Requis pour confirmer le changement d&rsquo;adresse mail. Un mail pr&eacute;viendra l&rsquo;ancienne adresse.</span>
+          </label>
 
-      <div class="profil-field profil-field-readonly">
-        <span class="profil-field-label">Statut</span>
-        <input type="text" value="<%= user.isAdmin ? 'Administrateur' : (user.isTest ? 'Utilisateur (test)' : 'Utilisateur') %>" disabled class="profil-field-input" />
-      </div>
+          <label class="profil-field">
+            <span class="profil-field-label">Orientation</span>
+            <select name="orientation" class="profil-select">
+              <option value="" <%= !user.orientation ? 'selected' : '' %>>Non pr&eacute;cis&eacute;e</option>
+              <option value="hetero" <%= user.orientation === 'hetero' ? 'selected' : '' %>>H&eacute;t&eacute;ro</option>
+              <option value="gay" <%= user.orientation === 'gay' ? 'selected' : '' %>>Gay</option>
+              <option value="bi" <%= user.orientation === 'bi' ? 'selected' : '' %>>Bi</option>
+            </select>
+          </label>
+
+          <div class="profil-field profil-field-readonly">
+            <span class="profil-field-label">Identifiant de connexion</span>
+            <input type="text" value="<%= user.username %>" disabled class="profil-field-input" />
+          </div>
+
+          <div class="profil-field profil-field-readonly">
+            <span class="profil-field-label">Statut</span>
+            <input type="text" value="<%= user.isAdmin ? 'Administrateur' : (user.isTest ? 'Utilisateur (test)' : 'Utilisateur') %>" disabled class="profil-field-input" />
+          </div>
+        </div>
+      </section>
 
       <button type="submit" class="profil-btn-primary">Enregistrer</button>
     </form>
 
+    <section class="profil-panel">
+      <h2 class="profil-panel-title">S&eacute;curit&eacute;</h2>
+      <div class="profil-panel-grid">
+        <div class="profil-card">
+          <span class="profil-card-head">Mot de passe</span>
+          <p class="profil-card-desc">Changez le mot de passe de votre compte.</p>
+          <a href="/favoris/mot-de-passe" class="profil-card-btn">Changer &rarr;</a>
+        </div>
+
+        <% if (currentUser.isAdmin) { %>
+        <div class="profil-card">
+          <span class="profil-card-head">Journal technique</span>
+          <p class="profil-card-desc">Historique des connexions et &eacute;v&eacute;nements de s&eacute;curit&eacute;.</p>
+          <a href="/favoris/journal" class="profil-card-btn">Voir &rarr;</a>
+        </div>
+        <% } %>
+      </div>
+    </section>
+
   </div>
 
 </main>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var emailInput = document.getElementById("identite-email-input");
+  var pwdRow = document.getElementById("identite-email-password-row");
+  if (!emailInput || !pwdRow) return;
+  var original = emailInput.dataset.original || "";
+  function sync() {
+    pwdRow.hidden = emailInput.value.trim() === original;
+  }
+  sync();
+  emailInput.addEventListener("input", sync);
+})();
+</script>
+
 <%- include('partials/foot') %>

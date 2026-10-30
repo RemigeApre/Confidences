@@ -14,6 +14,7 @@ const {
   getUserById,
   listConnectionLogsForUser,
   updateOwnProfile,
+  touchIdentityChange,
   getUserByEmail,
   updateUserPassword,
   destroyAllSessionsForUser,
@@ -81,10 +82,17 @@ function parseCollectionTags(raw) {
 }
 const SEXE_VALUES = ["", "femme", "homme", "autre"];
 
-function parseBirthYear(raw) {
-  const n = Number(raw);
-  if (!raw || !Number.isInteger(n) || n < 1900 || n > new Date().getFullYear()) return null;
-  return n;
+// Pseudo/sexe/orientation : un seul changement par semaine (voir
+// /favoris/identite). L'année de naissance n'est, elle, plus modifiable par
+// le profil lui-même du tout (réservée à l'admin, voir routes/admin.js).
+const IDENTITY_CHANGE_COOLDOWN_DAYS = 7;
+function identityChangeLockedUntil(user) {
+  if (!user.identityChangedAt) return null;
+  const next = new Date(user.identityChangedAt).getTime() + IDENTITY_CHANGE_COOLDOWN_DAYS * 86400000;
+  return next > Date.now() ? new Date(next) : null;
+}
+function formatFrDate(d) {
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 // Teinte du volet de navigation profil, selon le rôle du compte (même
@@ -189,9 +197,11 @@ function buildFavoritesRouter(config) {
 
   function renderIdentite(res, req, extra) {
     const user = getUserById(req.user.id);
+    const lockedUntil = identityChangeLockedUntil(user);
     res.render("profil-identite", {
       config,
       user,
+      identityLockedUntilLabel: lockedUntil ? formatFrDate(lockedUntil) : null,
       roleHue: roleHue(req.user),
       notesCounts: notesCounts(req.user),
       error: null,
@@ -444,22 +454,55 @@ function buildFavoritesRouter(config) {
   });
 
   router.post("/identite", requireUser, (req, res) => {
+    const user = getUserById(req.user.id);
     const displayName = String(req.body.display_name || "").trim();
     if (!displayName) return renderIdentite(res, req, { error: "Le pseudo est obligatoire." });
 
-    const email = String(req.body.email || "").trim().slice(0, 254);
-    if (email && !email.includes("@")) return renderIdentite(res, req, { error: "Adresse mail invalide." });
-    if (email && getUserByEmail(email, req.user.id)) {
-      return renderIdentite(res, req, { error: "Cette adresse mail est déjà utilisée par un autre profil." });
-    }
-
     const sexeRaw = String(req.body.sexe || "");
     const sexe = SEXE_VALUES.includes(sexeRaw) ? sexeRaw : "";
-    const birthYear = parseBirthYear(req.body.birth_year);
     const orientation = String(req.body.orientation || "");
 
-    updateOwnProfile(req.user.id, { displayName, email, sexe, birthYear });
+    // Pseudo / sexe / orientation : un seul changement par semaine. Si le
+    // quota est pris, on ignore ces trois champs (on garde les valeurs
+    // actuelles) plutôt que de bloquer tout le formulaire — le mail, lui,
+    // reste modifiable à tout moment.
+    const identityChanged = displayName !== user.displayName || sexe !== user.sexe || orientation !== (user.orientation || "");
+    const lockedUntil = identityChangeLockedUntil(user);
+    if (identityChanged && lockedUntil) {
+      return renderIdentite(res, req, {
+        error: "Pseudo, sexe et orientation : un seul changement par semaine. Prochain changement possible le " + formatFrDate(lockedUntil) + ".",
+      });
+    }
+
+    const email = String(req.body.email || "").trim().slice(0, 254);
+    if (email && !email.includes("@")) return renderIdentite(res, req, { error: "Adresse mail invalide." });
+    const emailChanged = email !== (user.email || "");
+    if (emailChanged) {
+      const emailPassword = String(req.body.email_password || "");
+      const creds = getUserCredentials(req.user.username);
+      if (!emailPassword || !creds || !verifyPassword(emailPassword, creds.password_hash)) {
+        return renderIdentite(res, req, { error: "Mot de passe incorrect : requis pour changer d'adresse mail." });
+      }
+      if (email && getUserByEmail(email, req.user.id)) {
+        return renderIdentite(res, req, { error: "Cette adresse mail est déjà utilisée par un autre profil." });
+      }
+    }
+
+    // Année de naissance : plus modifiable par le profil lui-même, voir
+    // routes/admin.js pour le changement côté admin.
+    updateOwnProfile(req.user.id, { displayName, email, sexe, birthYear: user.birthYear });
     updateUserSettings(req.user.id, { orientation });
+    if (identityChanged) touchIdentityChange(req.user.id);
+    if (emailChanged && user.email) {
+      sendMail({
+        to: user.email,
+        subject: "Adresse mail modifiée — Confidences",
+        text: "Bonjour,\n\nL'adresse mail associée au profil \"" + user.displayName + "\" vient d'être changée.\n"
+            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
+        html: "<p>Bonjour,</p><p>L'adresse mail associ&eacute;e au profil &laquo;&nbsp;" + user.displayName + "&nbsp;&raquo; vient d'&ecirc;tre chang&eacute;e.</p>"
+            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+      });
+    }
     res.redirect("/favoris/identite?ok=1");
   });
 

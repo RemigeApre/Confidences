@@ -75,6 +75,9 @@ try { db.exec("ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT
 // Dernière activité réelle (login + actions fortes + visites throttlées)
 try { db.exec("ALTER TABLE users ADD COLUMN last_active_at TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN last_path TEXT"); } catch (_) {}
+// Dernier changement de pseudo/sexe/orientation par le profil lui-même
+// (voir /favoris/identite) : limité à une fois par semaine.
+try { db.exec("ALTER TABLE users ADD COLUMN identity_changed_at TEXT"); } catch (_) {}
 
 // Migrations non destructives
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN meta TEXT NOT NULL DEFAULT '{}'"); } catch (_) {}
@@ -878,6 +881,7 @@ function rowToUser(row) {
     accountStatus: row.account_status || 'actif',
     lastActiveAt: row.last_active_at || null,
     lastPath: row.last_path || null,
+    identityChangedAt: row.identity_changed_at || null,
   };
 }
 
@@ -929,6 +933,12 @@ function updateOwnProfile(id, { displayName, email, sexe, birthYear }) {
   db.prepare(
     "UPDATE users SET display_name = ?, email = ?, sexe = ?, birth_year = ?, updated_at = ? WHERE id = ?"
   ).run(displayName, email || "", sexe || "", birthYear || null, new Date().toISOString(), id);
+}
+
+// Pose l'horodatage de limite hebdomadaire pseudo/sexe/orientation (voir
+// /favoris/identite) : appelé uniquement quand une de ces valeurs change réellement.
+function touchIdentityChange(id) {
+  db.prepare("UPDATE users SET identity_changed_at = ? WHERE id = ?").run(new Date().toISOString(), id);
 }
 
 function touchLastActive(id) {
@@ -5397,6 +5407,7 @@ module.exports = {
   createUser,
   updateUser,
   updateOwnProfile,
+  touchIdentityChange,
   updateUserSettings,
   updateUserPassword,
   getUserByEmail,
