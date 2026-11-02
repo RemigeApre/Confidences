@@ -33,10 +33,10 @@
           <details class="wiki-subpanel-details">
             <summary class="wiki-subpanel-summary" data-fr="Langue" data-en="Language">Langue</summary>
             <div class="bd-langue-filter" id="bd-langue-filter">
-              <button type="button" class="tag-chip bd-langue-chip" data-langue="francais">&#127467;&#127479; FR</button>
-              <button type="button" class="tag-chip bd-langue-chip" data-langue="anglais">&#127468;&#127463; EN</button>
-              <button type="button" class="tag-chip bd-langue-chip" data-langue="japonais">&#127471;&#127477; JP</button>
-              <button type="button" class="tag-chip bd-langue-chip" data-langue="autre">Autre</button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="francais">&#127467;&#127479;</button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="anglais">&#127468;&#127463;</button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="japonais">&#127471;&#127477;</button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="autre">🌐</button>
             </div>
           </details>
 
@@ -124,7 +124,7 @@
               <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
               <span class="bd-page-count"><%= book.imagePaths.length %>&nbsp;p.</span>
               <% if (book.tags.indexOf('en couleur') !== -1) { %><span class="bd-card-badge bd-card-badge--couleur">&#127775;</span><% } %>
-              <% if (book.langue) { %><span class="bd-card-badge bd-card-badge--langue bd-lang-<%= book.langue %>"><%= {francais:'FR',anglais:'EN',japonais:'JP',autre:'??'}[book.langue] || '' %></span><% } %>
+              <% if (book.langue) { %><span class="bd-card-badge bd-card-badge--langue bd-lang-<%= book.langue %>"><%= {francais:'🇫🇷',anglais:'🇬🇧',japonais:'🇯🇵',autre:'🌐'}[book.langue] || '' %></span><% } %>
             </div>
           <% } else { %>
             <div class="bd-card-cover bd-card-cover-empty">
