@@ -226,6 +226,8 @@ try { db.exec("ALTER TABLE bd_books ADD COLUMN interested INTEGER NOT NULL DEFAU
 try { db.exec("ALTER TABLE bd_books ADD COLUMN langue TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE bd_books ADD COLUMN parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE bd_books ADD COLUMN sub_parody TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE bd_books ADD COLUMN protagonist_ids TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
+try { db.exec("ALTER TABLE bd_books ADD COLUMN chapters TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_links (
@@ -2328,6 +2330,8 @@ function rowToBdBook(row) {
     langue: row.langue || "",
     parody: row.parody || "",
     subParody: row.sub_parody || "",
+    protagonistIds: (() => { try { return JSON.parse(row.protagonist_ids || "[]"); } catch (_) { return []; } })(),
+    chapters: (() => { try { return JSON.parse(row.chapters || "[]"); } catch (_) { return []; } })(),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -2342,15 +2346,15 @@ function getBdBook(id) {
   return row ? rowToBdBook(row) : null;
 }
 
-function insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody }) {
+function insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters }) {
   const now = new Date().toISOString();
   const info = db.prepare(
-    `INSERT INTO bd_books (title, description, tags, image_paths, langue, parody, sub_parody, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", parody || "", subParody || "", now, now);
+    `INSERT INTO bd_books (title, description, tags, image_paths, langue, parody, sub_parody, protagonist_ids, chapters, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), JSON.stringify(chapters || []), now, now);
   return info.lastInsertRowid;
 }
 
-function updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody }) {
+function updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters }) {
   const newPaths = imagePaths || [];
   // Une page retirée (checkbox "Supprimer cette page", voir bd-form.ejs)
   // n'a plus lieu d'avoir une réaction en base, pour aucun profil — sinon
@@ -2366,8 +2370,8 @@ function updateBdBook(id, { title, description, tags, imagePaths, langue, parody
     });
   }
   db.prepare(
-    `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, parody = ?, sub_parody = ?, updated_at = ? WHERE id = ?`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", parody || "", subParody || "", new Date().toISOString(), id);
+    `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, chapters = ?, updated_at = ? WHERE id = ?`
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), JSON.stringify(chapters || []), new Date().toISOString(), id);
 }
 
 function deleteBdBook(id) {

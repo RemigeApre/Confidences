@@ -48,6 +48,28 @@
           mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
         }) %>
 
+    <%# Personnages %>
+    <% if (locals.allProtagonists && allProtagonists.length && locals.editLang !== 'en') { %>
+    <div class="lbep-section">
+      <span class="lbep-label">Personnages</span>
+      <div class="lbep-chips" id="bdf-prot-chips">
+        <% (book ? book.protagonistIds : []).forEach(function(pid) {
+             var p = allProtagonists.find(function(x){ return x.id === pid; });
+             if (p) { %>
+          <span class="lbep-chip" data-prot-id="<%= p.id %>">
+            <span><%= p.name %></span>
+            <button type="button" class="lbep-chip-x">&times;</button>
+          </span>
+        <% } }) %>
+      </div>
+      <div style="position:relative">
+        <input type="text" class="lbep-input" id="bdf-prot-inp" placeholder="Ajouter un personnage&hellip;" autocomplete="off" />
+        <ul class="lbep-ac-drop" id="bdf-prot-drop" hidden></ul>
+      </div>
+      <div id="bdf-prot-hiddens"></div>
+    </div>
+    <% } %>
+
     </div><%# /ef-block origines %>
 
     <%# Langue %>
@@ -103,6 +125,21 @@
       <input type="hidden" name="image_order" id="bd-image-order" value="" />
     <% } %>
 
+    <%# Chapitres %>
+    <% if (locals.editLang !== 'en') { %>
+    <div class="bd-form-section bd-chapters-section">
+      <div class="bd-chapters-header">
+        <p class="wiki-meta-label">Chapitres</p>
+        <button type="button" class="bd-chapter-add-btn" id="bd-chapter-add">+ Ajouter un chapitre</button>
+      </div>
+      <div class="bd-chapter-list" id="bd-chapter-list">
+        <%# Rendu dynamique par le JS %>
+      </div>
+      <input type="hidden" name="chapters_json" id="bd-chapters-json"
+        value="<%= JSON.stringify(book ? (book.chapters || []) : []) %>" />
+    </div>
+    <% } %>
+
     <%# Nouvelles images %>
     <div class="bd-form-section">
       <label class="wiki-image-add-label">
@@ -117,6 +154,10 @@
     </div>
   </form>
 </main>
+<script nonce="<%= nonce %>">
+window.BD_PROTAGONISTS = <%- JSON.stringify((locals.allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;
+window.BD_TOTAL_PAGES = <%= book ? (book.imagePaths ? book.imagePaths.length : 0) : 0 %>;
+</script>
 <script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
 <script nonce="<%= nonce %>" src="/bd.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

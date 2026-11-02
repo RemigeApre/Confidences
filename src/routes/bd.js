@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation, listProtagonistes } = require("../db");
 const { requireUser, requireUserOrForeign, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -42,6 +42,17 @@ function applyUltraCheckbox(tags, checked) {
   return applyTagCheckbox(tags, "ultra", checked);
 }
 
+function parseChapters(raw) {
+  try {
+    const arr = JSON.parse(String(raw || "[]"));
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((c) => ({ title: String(c.title || "").trim().slice(0, 120), start: Math.max(0, Number(c.start) || 0) }))
+      .filter((c) => c.title)
+      .sort((a, b) => a.start - b.start);
+  } catch (_) { return []; }
+}
+
 function applyImageOrder(existing, newFiles, orderRaw) {
   if (!orderRaw) return [...existing, ...newFiles];
   const entries = String(orderRaw).split(",").map((s) => s.trim()).filter(Boolean);
@@ -75,11 +86,12 @@ function buildBdRouter(config) {
     books.forEach((b) => b.tags.forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
     const allParodies = listAllParodies();
-    res.render("bd", { config, books, allTags, allParodies });
+    const allProtagonists = listProtagonistes({ includeChildren: true });
+    res.render("bd", { config, books, allTags, allParodies, allProtagonists });
   });
 
   router.get("/new", requireAdmin, (req, res) => {
-    res.render("bd-form", { config, book: null, allParodies: listAllParodies() });
+    res.render("bd-form", { config, book: null, allParodies: listAllParodies(), allProtagonists: listProtagonistes({ includeChildren: true }) });
   });
 
   router.post("/", requireAdmin, upload.array("images", 200), (req, res) => {
@@ -94,7 +106,9 @@ function buildBdRouter(config) {
     const newFiles = (req.files || []).map((f) => `/uploads/bd/${f.filename}`);
     newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder([], newFiles, req.body.image_order);
-    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody });
+    const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
+    const chapters = parseChapters(req.body.chapters_json);
+    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters });
     res.redirect(`/bd/${id}`);
   });
 
@@ -104,7 +118,7 @@ function buildBdRouter(config) {
     if (!book) return res.redirect("/bd");
     const editLang = req.query.editLang === "en" ? "en" : "fr";
     const translations = editLang === "en" ? getTranslationsForEntity("bd", id, "en") : {};
-    res.render("bd-form", { config, book, allParodies: listAllParodies(), editLang, translations });
+    res.render("bd-form", { config, book, allParodies: listAllParodies(), allProtagonists: listProtagonistes({ includeChildren: true }), editLang, translations });
   });
 
   router.post("/:id/delete", requireAdmin, (req, res) => {
@@ -150,7 +164,9 @@ function buildBdRouter(config) {
     newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder(existing, newFiles, req.body.image_order);
 
-    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody });
+    const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
+    const chapters = parseChapters(req.body.chapters_json);
+    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters });
     res.redirect(`/bd/${id}`);
   });
 

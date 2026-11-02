@@ -1,24 +1,62 @@
 <%- include('partials/head', { title: 'BD : ' + book.title }) %>
 <main class="bd-reader-main">
+
+  <%# ── Topbar ─────────────────────────────────────────────────────── %>
   <div class="bd-reader-topbar">
-    <a href="/bd" class="bd-reader-back link-button">&larr; BD</a>
-    <span class="bd-reader-title"><%= book._title || book.title %></span>
-    <span class="bd-reader-counter" id="bd-counter">1 / <%= book.imagePaths.length %></span>
-    <div class="bd-reader-actions">
-      <% if (currentUser) { %>
-        <%# Favori (livre entier) %>
-        <button type="button" class="bd-reader-fav link-button<%= isFavorite ? ' active' : '' %>" id="bd-fav-btn" data-item-id="<%= book.id %>" title="Favori">&#128278;</button>
-        <%# Ça m'intéresse (livre entier — la note/j'adore/masquer sont
-            individuels par page, voir la barre en bas). %>
-        <button type="button" class="bd-react-btn<%= book.interested ? ' active' : '' %>" id="bd-interested-btn" data-id="<%= book.id %>" title="Ça m&rsquo;int&eacute;resse">&#10024;</button>
+    <a href="/bd" class="bd-reader-back link-button">&larr;</a>
+
+    <div class="bd-reader-center">
+      <span class="bd-reader-title" id="bd-reader-title"><%= book._title || book.title %></span>
+      <% if (book.chapters && book.chapters.length) { %>
+        <span class="bd-reader-chapter-name" id="bd-chapter-name"></span>
       <% } %>
-      <% if (currentUser && currentUser.isAdmin) { %><a href="/bd/<%= book.id %>/edit" class="bd-reader-edit link-button">Modifier</a><% } %>
+    </div>
+
+    <div class="bd-reader-right">
+      <span class="bd-reader-counter" id="bd-counter">1 / <%= book.imagePaths.length %></span>
+
+      <%# Menu table des matières %>
+      <% if (book.chapters && book.chapters.length) { %>
+      <div class="bd-tdm-wrap" id="bd-tdm-wrap">
+        <button type="button" class="bd-tdm-btn" id="bd-tdm-btn" title="Table des mati&egrave;res" aria-label="Table des mati&egrave;res">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18" aria-hidden="true">
+            <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="13" y2="15"/>
+          </svg>
+        </button>
+        <div class="bd-tdm-panel" id="bd-tdm-panel" hidden>
+          <p class="bd-tdm-title">Table des mati&egrave;res</p>
+          <% book.chapters.forEach(function(ch, idx) { %>
+            <button type="button" class="bd-tdm-item" data-start="<%= ch.start %>" data-idx="<%= idx %>">
+              <span class="bd-tdm-num">Ch. <%= idx + 1 %></span>
+              <span class="bd-tdm-label"><%= ch.title %></span>
+              <span class="bd-tdm-page">p. <%= ch.start + 1 %></span>
+            </button>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <div class="bd-reader-actions">
+        <% if (currentUser) { %>
+          <button type="button" class="bd-reader-fav link-button<%= isFavorite ? ' active' : '' %>" id="bd-fav-btn" data-item-id="<%= book.id %>" title="Favori">&#128278;</button>
+          <button type="button" class="bd-react-btn<%= book.interested ? ' active' : '' %>" id="bd-interested-btn" data-id="<%= book.id %>" title="Ça m&rsquo;int&eacute;resse">&#10024;</button>
+        <% } %>
+        <% if (currentUser && currentUser.isAdmin) { %><a href="/bd/<%= book.id %>/edit" class="bd-reader-edit link-button" title="Modifier">&#9998;</a><% } %>
+      </div>
     </div>
   </div>
 
   <% if (!book.imagePaths.length) { %>
     <p class="intro" style="text-align:center;padding:3rem">Aucune page dans cette BD.</p>
   <% } else { %>
+
+    <%# Bannière de transition de chapitre %>
+    <div class="bd-chapter-banner" id="bd-chapter-banner" hidden>
+      <span class="bd-chapter-banner-num" id="bd-chapter-banner-num"></span>
+      <span class="bd-chapter-banner-title" id="bd-chapter-banner-title"></span>
+    </div>
+
+    <%# Zone d'affichage de la page %>
     <div class="bd-reader-stage" id="bd-stage">
       <% book.imagePaths.forEach(function(src, i) { %>
         <div class="bd-reader-page" data-page="<%= i %>" <%= i === 0 ? '' : 'hidden' %>>
@@ -30,10 +68,7 @@
     <button type="button" class="bd-nav-btn bd-nav-prev" id="bd-prev" title="Page pr&eacute;c&eacute;dente" <%= book.imagePaths.length <= 1 ? 'hidden' : '' %>>&#8249;</button>
     <button type="button" class="bd-nav-btn bd-nav-next" id="bd-next" title="Page suivante" <%= book.imagePaths.length <= 1 ? 'hidden' : '' %>>&#8250;</button>
 
-    <%# Actions de la page affichée : note / j'adore / masquer sont
-        individuels par page (voir routes/bd.js POST /:id/page/:page/react),
-        contrairement au favori et à "Ça m'intéresse" ci-dessus qui restent
-        pour le livre entier. %>
+    <%# Actions de la page affichée %>
     <div class="bd-page-actions" id="bd-page-actions">
       <% if (currentUser) { %>
         <span class="bd-rating-stars" id="bd-rating">
@@ -54,6 +89,15 @@
         </p>
       <% } %>
     </div>
+
+    <%# Nav chapitres suivant/précédent (si chapitres définis) %>
+    <% if (book.chapters && book.chapters.length) { %>
+    <div class="bd-chapter-nav" id="bd-chapter-nav" hidden>
+      <button type="button" class="bd-chapter-nav-btn" id="bd-chapter-prev" title="Chapitre pr&eacute;c&eacute;dent">&#8592; Ch. <span id="bd-chapter-prev-label"></span></button>
+      <button type="button" class="bd-chapter-nav-btn bd-chapter-nav-btn--next" id="bd-chapter-next" title="Chapitre suivant">Ch. <span id="bd-chapter-next-label"></span> &#8594;</button>
+    </div>
+    <% } %>
+
   <% } %>
 </main>
 
@@ -61,53 +105,115 @@
 <script nonce="<%= nonce %>">
 (function() {
   var pages = Array.from(document.querySelectorAll(".bd-reader-page"));
-  var counter = document.getElementById("bd-counter");
-  var prev = document.getElementById("bd-prev");
-  var next = document.getElementById("bd-next");
-  var total = pages.length;
-  var bookId = <%= book.id %>;
+  var counter   = document.getElementById("bd-counter");
+  var prev      = document.getElementById("bd-prev");
+  var next      = document.getElementById("bd-next");
+  var total     = pages.length;
+  var bookId    = <%= book.id %>;
+  var CHAPTERS  = <%- JSON.stringify(book.chapters || []) %>;
 
-  // Réactions par page, préchargées côté serveur (voir routes/bd.js) —
-  // évite un fetch à chaque tour de page.
-  var PAGE_REACTIONS = <%- JSON.stringify(pageReactions) %>;
+  var PAGE_REACTIONS      = <%- JSON.stringify(pageReactions) %>;
   var PARTNER_PAGE_REACTIONS = <%- JSON.stringify(partnerPageReactions) %>;
 
   function pageReaction(n) { return PAGE_REACTIONS[n] || { rating: 0, flame: false, hidden: false }; }
   function isHidden(n) { return !!pageReaction(n).hidden; }
 
-  var startParam = parseInt(new URLSearchParams(window.location.search).get("start")) || 0;
-  var current = Math.max(0, Math.min(pages.length - 1, startParam));
-
-  // Initialiser à la bonne page si ?start=N (un lien depuis "Contenus
-  // masqués" doit pouvoir atteindre une page masquée directement, sans
-  // être sauté par le anti-saut ci-dessous).
-  if (current > 0) {
-    pages[0].hidden = true;
-    pages[current].hidden = false;
+  // ── Chapitres ──────────────────────────────────────────────────────
+  // Pour chaque page, retrouver son chapitre (index dans CHAPTERS).
+  function chapterIndexForPage(n) {
+    var ci = -1;
+    for (var i = 0; i < CHAPTERS.length; i++) {
+      if (CHAPTERS[i].start <= n) ci = i;
+    }
+    return ci;
   }
 
-  // ── Actions de la page affichée (note / j'adore / masquer) ──────────
-  var ratingWrap  = document.getElementById("bd-rating");
-  var stars       = ratingWrap ? ratingWrap.querySelectorAll(".bd-star") : [];
-  var flameBtn    = document.getElementById("bd-flame-btn");
-  var hiddenBtn   = document.getElementById("bd-page-hidden-btn");
+  var chapterName   = document.getElementById("bd-chapter-name");
+  var chapterBanner = document.getElementById("bd-chapter-banner");
+  var bannerNum     = document.getElementById("bd-chapter-banner-num");
+  var bannerTitle   = document.getElementById("bd-chapter-banner-title");
+  var chapterNav    = document.getElementById("bd-chapter-nav");
+  var chapterPrev   = document.getElementById("bd-chapter-prev");
+  var chapterNext   = document.getElementById("bd-chapter-next");
+  var prevLabel     = document.getElementById("bd-chapter-prev-label");
+  var nextLabel     = document.getElementById("bd-chapter-next-label");
+  var tdmWrap       = document.getElementById("bd-tdm-wrap");
+  var tdmBtn        = document.getElementById("bd-tdm-btn");
+  var tdmPanel      = document.getElementById("bd-tdm-panel");
+
+  var bannerTimer = null;
+
+  function showChapterBanner(ci) {
+    if (!chapterBanner || ci < 0) return;
+    if (bannerNum)   bannerNum.textContent   = "Chapitre " + (ci + 1);
+    if (bannerTitle) bannerTitle.textContent = CHAPTERS[ci].title;
+    chapterBanner.hidden = false;
+    chapterBanner.classList.remove("bd-chapter-banner--fade");
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(function() {
+      chapterBanner.classList.add("bd-chapter-banner--fade");
+      bannerTimer = setTimeout(function() { chapterBanner.hidden = true; }, 500);
+    }, 2200);
+  }
+
+  function updateChapterUI(n, prevN) {
+    if (!CHAPTERS.length) return;
+    var ci   = chapterIndexForPage(n);
+    var prevCi = prevN !== undefined ? chapterIndexForPage(prevN) : -2;
+
+    // Nom dans la topbar
+    if (chapterName) chapterName.textContent = ci >= 0 ? CHAPTERS[ci].title : "";
+
+    // Compteur : "p.N (Ch.X)"
+    if (counter) {
+      var chStr = ci >= 0 ? " · Ch." + (ci + 1) : "";
+      counter.textContent = (n + 1) + " / " + total + chStr;
+    }
+
+    // Bannière au changement de chapitre
+    if (ci !== prevCi && ci >= 0) showChapterBanner(ci);
+
+    // Nav chapitres
+    if (chapterNav) {
+      var hasPrev = ci > 0;
+      var hasNext = ci < CHAPTERS.length - 1;
+      chapterNav.hidden = !(hasPrev || hasNext);
+      if (chapterPrev) { chapterPrev.hidden = !hasPrev; if (prevLabel && hasPrev) prevLabel.textContent = ci; }
+      if (chapterNext) { chapterNext.hidden = !hasNext; if (nextLabel && hasNext) nextLabel.textContent = ci + 2; }
+    }
+
+    // TDM : surligner le chapitre actif
+    if (tdmPanel) {
+      tdmPanel.querySelectorAll(".bd-tdm-item").forEach(function(el) {
+        el.classList.toggle("active", Number(el.dataset.idx) === ci);
+      });
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────
+  var startParam = parseInt(new URLSearchParams(window.location.search).get("start")) || 0;
+  var current = Math.max(0, Math.min(total - 1, startParam));
+  if (current > 0) { pages[0].hidden = true; pages[current].hidden = false; }
+
+  // ── Actions page ──────────────────────────────────────────────────
+  var ratingWrap    = document.getElementById("bd-rating");
+  var stars         = ratingWrap ? ratingWrap.querySelectorAll(".bd-star") : [];
+  var flameBtn      = document.getElementById("bd-flame-btn");
+  var hiddenBtn     = document.getElementById("bd-page-hidden-btn");
   var partnerReveal = document.getElementById("bd-page-partner-reveal");
 
-  function renderStars(n) {
-    stars.forEach(function (s, i) { s.classList.toggle("filled", i < n); });
-  }
+  function renderStars(n) { stars.forEach(function(s, i) { s.classList.toggle("filled", i < n); }); }
 
   function syncPagePartnerReveal(n) {
     if (!partnerReveal) return;
     var r = PARTNER_PAGE_REACTIONS[n];
     var mine = pageReaction(n);
-    var hasPartnerReaction = r && (r.rating > 0 || r.flame);
-    if (!mine.rating || !hasPartnerReaction) { partnerReveal.hidden = true; return; }
+    if (!mine.rating || !r || !(r.rating > 0 || r.flame)) { partnerReveal.hidden = true; return; }
     var name = partnerReveal.dataset.partnerName || "Partenaire";
     var html = "&#127800; " + name + "&nbsp;: ";
     if (r.rating > 0) {
       html += '<span class="wiki-partner-reveal-stars">';
-      for (var pi = 1; pi <= 5; pi++) { html += '<span class="wiki-card-star' + (pi <= r.rating ? ' filled' : '') + '">&#9733;</span>'; }
+      for (var pi = 1; pi <= 5; pi++) html += '<span class="wiki-card-star' + (pi <= r.rating ? ' filled' : '') + '">&#9733;</span>';
       html += "</span>";
     }
     if (r.flame) html += '<span class="wiki-react-icon" title="J\'adore">&#128293;</span>';
@@ -118,60 +224,30 @@
   function syncPageActions(n) {
     var r = pageReaction(n);
     renderStars(r.rating);
-    if (flameBtn) flameBtn.classList.toggle("active", r.flame);
-    if (hiddenBtn) {
-      hiddenBtn.classList.toggle("active", r.hidden);
-      hiddenBtn.title = r.hidden ? "Réafficher cette page" : "Masquer cette page";
-    }
+    if (flameBtn)  flameBtn.classList.toggle("active", r.flame);
+    if (hiddenBtn) { hiddenBtn.classList.toggle("active", r.hidden); hiddenBtn.title = r.hidden ? "Réafficher cette page" : "Masquer cette page"; }
     syncPagePartnerReveal(n);
   }
 
   function sendPageReact(n, payload) {
-    fetch("/bd/" + bookId + "/page/" + n + "/react", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (!d.ok) return;
-        PAGE_REACTIONS[n] = { rating: d.rating, flame: d.flame, hidden: d.hidden };
-        if (n === current) syncPageActions(n);
-      });
+    fetch("/bd/" + bookId + "/page/" + n + "/react", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) { if (!d.ok) return; PAGE_REACTIONS[n] = { rating:d.rating, flame:d.flame, hidden:d.hidden }; if (n === current) syncPageActions(n); });
   }
 
-  stars.forEach(function (star) {
-    star.addEventListener("click", function () {
-      var val = Number(star.dataset.val);
-      var newRating = pageReaction(current).rating === val ? 0 : val;
-      sendPageReact(current, { rating: newRating });
-    });
+  stars.forEach(function(star) {
+    star.addEventListener("click", function() { var val = Number(star.dataset.val); sendPageReact(current, { rating: pageReaction(current).rating === val ? 0 : val }); });
   });
-  if (flameBtn) {
-    flameBtn.addEventListener("click", function () {
-      sendPageReact(current, { flame: !pageReaction(current).flame });
-    });
-  }
-  if (hiddenBtn) {
-    hiddenBtn.addEventListener("click", function () {
-      sendPageReact(current, { hidden: !pageReaction(current).hidden });
-    });
-  }
+  if (flameBtn)  flameBtn.addEventListener("click",  function() { sendPageReact(current, { flame:  !pageReaction(current).flame  }); });
+  if (hiddenBtn) hiddenBtn.addEventListener("click", function() { sendPageReact(current, { hidden: !pageReaction(current).hidden }); });
 
   // ── Navigation ────────────────────────────────────────────────────
-  // Prev/next/swipe sautent les pages masquées (comme partout ailleurs sur
-  // le site) ; un lien direct (?start=N, depuis "Contenus masqués") peut
-  // lui atteindre une page masquée sans problème, voir plus haut.
   function nextVisible(from, dir) {
     var n = from + dir;
     while (n >= 0 && n < total && isHidden(n)) n += dir;
     return (n >= 0 && n < total) ? n : -1;
   }
 
-  // Anti-latence : les pages voisines (masquées comprises pour ne pas se
-  // faire piéger par le anti-saut) sont chargées en tâche de fond dès
-  // qu'une page s'affiche — leur <img loading="lazy"> reste tel quel, mais
-  // le cache HTTP est déjà chaud quand on tourne la page.
   function preloadPageImg(n) {
     if (n < 0 || n >= total) return;
     var img = pages[n].querySelector(".bd-reader-img");
@@ -181,24 +257,42 @@
   function go(n) {
     n = Math.max(0, Math.min(total - 1, n));
     if (n === current) return;
+    var oldN = current;
     pages[current].hidden = true;
     pages[n].hidden = false;
     current = n;
-    if (counter) counter.textContent = (current + 1) + " / " + total;
+    if (!CHAPTERS.length && counter) counter.textContent = (current + 1) + " / " + total;
     if (prev) prev.hidden = current === 0;
     if (next) next.hidden = current === total - 1;
     syncPageActions(current);
+    updateChapterUI(current, oldN);
     preloadPageImg(current + 1);
     preloadPageImg(current - 1);
   }
 
-  function step(dir) {
-    var n = nextVisible(current, dir);
-    if (n !== -1) go(n);
-  }
+  function step(dir) { var n = nextVisible(current, dir); if (n !== -1) go(n); }
 
   if (prev) prev.addEventListener("click", function() { step(-1); });
   if (next) next.addEventListener("click", function() { step(1); });
+
+  // Chapitres : prev/next
+  if (chapterPrev) chapterPrev.addEventListener("click", function() {
+    var ci = chapterIndexForPage(current);
+    if (ci > 0) go(CHAPTERS[ci - 1].start);
+  });
+  if (chapterNext) chapterNext.addEventListener("click", function() {
+    var ci = chapterIndexForPage(current);
+    if (ci >= 0 && ci < CHAPTERS.length - 1) go(CHAPTERS[ci + 1].start);
+  });
+
+  // TDM
+  if (tdmBtn && tdmPanel) {
+    tdmBtn.addEventListener("click", function(e) { e.stopPropagation(); tdmPanel.hidden = !tdmPanel.hidden; });
+    document.addEventListener("click", function(e) { if (tdmPanel && !tdmPanel.hidden && tdmWrap && !tdmWrap.contains(e.target)) tdmPanel.hidden = true; });
+    tdmPanel.querySelectorAll(".bd-tdm-item").forEach(function(el) {
+      el.addEventListener("click", function() { go(Number(el.dataset.start)); tdmPanel.hidden = true; });
+    });
+  }
 
   // Keyboard
   document.addEventListener("keydown", function(e) {
@@ -206,67 +300,48 @@
     if (e.key === "ArrowRight") step(1);
   });
 
-  // Click left/right half of stage
+  // Click gauche/droite
   var stage = document.getElementById("bd-stage");
-  if (stage) {
-    stage.addEventListener("click", function(e) {
-      if (e.target.tagName === "A" || e.target.tagName === "BUTTON") return;
-      var x = e.clientX;
-      if (x < window.innerWidth / 2) step(-1);
-      else step(1);
-    });
-  }
+  if (stage) stage.addEventListener("click", function(e) {
+    if (e.target.tagName === "A" || e.target.tagName === "BUTTON") return;
+    if (e.clientX < window.innerWidth / 2) step(-1); else step(1);
+  });
 
   // Swipe
   var tx = 0;
   document.addEventListener("touchstart", function(e) { tx = e.touches[0].clientX; }, { passive: true });
-  document.addEventListener("touchend", function(e) {
-    var dx = e.changedTouches[0].clientX - tx;
-    if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
-  });
+  document.addEventListener("touchend",   function(e) { var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1); });
 
-  // Init compteur + prev/next + actions de la page de départ
-  if (counter) counter.textContent = (current + 1) + " / " + total;
+  // Init
+  if (!CHAPTERS.length && counter) counter.textContent = (current + 1) + " / " + total;
   if (prev) prev.hidden = current === 0;
   if (next) next.hidden = current === total - 1 || total <= 1;
   syncPageActions(current);
+  updateChapterUI(current);
   preloadPageImg(current + 1);
   preloadPageImg(current - 1);
 })();
 </script>
 <% } %>
+
 <script nonce="<%= nonce %>">
 (function () {
   var bookId = <%= book.id %>;
 
-  // ── Favori (livre entier) ──────────────────────────
   var favBtn = document.getElementById("bd-fav-btn");
-  if (favBtn) {
-    favBtn.addEventListener("click", function () {
-      fetch("/favoris/toggle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemType: "bd", itemId: bookId }),
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) { if (d.ok) favBtn.classList.toggle("active", d.active); });
-    });
-  }
+  if (favBtn) favBtn.addEventListener("click", function() {
+    fetch("/favoris/toggle", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ itemType:"bd", itemId:bookId }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) { if (d.ok) favBtn.classList.toggle("active", d.active); });
+  });
 
-  // ── Ça m'intéresse (livre entier) ───────────────────
   var intBtn = document.getElementById("bd-interested-btn");
-  if (intBtn) {
-    intBtn.addEventListener("click", function () {
-      var next = !intBtn.classList.contains("active");
-      fetch("/bd/" + bookId + "/react", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interested: next }),
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) { if (d.ok) intBtn.classList.toggle("active", d.interested); });
-    });
-  }
+  if (intBtn) intBtn.addEventListener("click", function() {
+    var nxt = !intBtn.classList.contains("active");
+    fetch("/bd/" + bookId + "/react", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ interested: nxt }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) { if (d.ok) intBtn.classList.toggle("active", d.interested); });
+  });
 })();
 </script>
 <%- include('partials/foot') %>
