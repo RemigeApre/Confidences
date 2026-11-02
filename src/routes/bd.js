@@ -42,6 +42,12 @@ function applyUltraCheckbox(tags, checked) {
   return applyTagCheckbox(tags, "ultra", checked);
 }
 
+const VALID_CATEGORIES = ["inconnu", "groupe", "monstre", "pokémon", "animaux", "bdsm"];
+
+function parseCategories(raw) {
+  return [].concat(raw || []).map((c) => String(c).toLowerCase().trim()).filter((c) => VALID_CATEGORIES.includes(c));
+}
+
 function parseChapters(raw) {
   try {
     const arr = JSON.parse(String(raw || "[]"));
@@ -108,7 +114,8 @@ function buildBdRouter(config) {
     const imagePaths = applyImageOrder([], newFiles, req.body.image_order);
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
     const chapters = parseChapters(req.body.chapters_json);
-    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters });
+    const categories = parseCategories(req.body.categories);
+    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories });
     res.redirect(`/bd/${id}`);
   });
 
@@ -166,7 +173,8 @@ function buildBdRouter(config) {
 
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
     const chapters = parseChapters(req.body.chapters_json);
-    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters });
+    const categories = parseCategories(req.body.categories);
+    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories });
     res.redirect(`/bd/${id}`);
   });
 

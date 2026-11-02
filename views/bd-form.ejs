@@ -72,6 +72,19 @@
 
     </div><%# /ef-block origines %>
 
+    <%# Catégories %>
+    <% var bdCats = ['inconnu','groupe','monstre','pokémon','animaux','bdsm']; %>
+    <div class="bd-form-chips">
+      <span class="wiki-meta-label">Cat&eacute;gories</span>
+      <% bdCats.forEach(function(cat) { %>
+        <label class="chip-option">
+          <input type="checkbox" name="categories" value="<%= cat %>"
+            <%= (book && book.categories && book.categories.indexOf(cat) !== -1) ? 'checked' : '' %> />
+          <span><%= cat.charAt(0).toUpperCase() + cat.slice(1) %></span>
+        </label>
+      <% }) %>
+    </div>
+
     <%# Langue %>
     <div class="bd-form-chips">
       <span class="wiki-meta-label">Langue</span>
