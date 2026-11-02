@@ -33,9 +33,9 @@
           <details class="wiki-subpanel-details">
             <summary class="wiki-subpanel-summary" data-fr="Langue" data-en="Language">Langue</summary>
             <div class="bd-langue-filter" id="bd-langue-filter">
-              <button type="button" class="tag-chip bd-langue-chip" data-langue="francais">&#127467;&#127479;</button>
-              <button type="button" class="tag-chip bd-langue-chip" data-langue="anglais">&#127468;&#127463;</button>
-              <button type="button" class="tag-chip bd-langue-chip" data-langue="japonais">&#127471;&#127477;</button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="francais"><img src="https://flagcdn.com/20x15/fr.png" alt="Français" class="bd-flag-img" /></button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="anglais"><img src="https://flagcdn.com/20x15/gb.png" alt="Anglais" class="bd-flag-img" /></button>
+              <button type="button" class="tag-chip bd-langue-chip" data-langue="japonais"><img src="https://flagcdn.com/20x15/jp.png" alt="Japonais" class="bd-flag-img" /></button>
               <button type="button" class="tag-chip bd-langue-chip" data-langue="autre">🌐</button>
             </div>
           </details>
@@ -122,9 +122,12 @@
           <% if (book.imagePaths && book.imagePaths.length) { %>
             <div class="bd-card-cover">
               <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
-              <span class="bd-page-count"><%= book.imagePaths.length %>&nbsp;p.</span>
+              <span class="bd-page-count"><%= book.imagePaths.length %>&nbsp;page<%= book.imagePaths.length > 1 ? 's' : '' %></span>
               <% if (book.tags.indexOf('en couleur') !== -1) { %><span class="bd-card-badge bd-card-badge--couleur">&#127775;</span><% } %>
-              <% if (book.langue) { %><span class="bd-card-badge bd-card-badge--langue bd-lang-<%= book.langue %>"><%= {francais:'🇫🇷',anglais:'🇬🇧',japonais:'🇯🇵',autre:'🌐'}[book.langue] || '' %></span><% } %>
+              <% if (book.langue === 'francais') { %><span class="bd-card-badge bd-card-badge--langue"><img src="https://flagcdn.com/20x15/fr.png" alt="FR" class="bd-flag-img" /></span>
+              <% } else if (book.langue === 'anglais') { %><span class="bd-card-badge bd-card-badge--langue"><img src="https://flagcdn.com/20x15/gb.png" alt="EN" class="bd-flag-img" /></span>
+              <% } else if (book.langue === 'japonais') { %><span class="bd-card-badge bd-card-badge--langue"><img src="https://flagcdn.com/20x15/jp.png" alt="JP" class="bd-flag-img" /></span>
+              <% } else if (book.langue === 'autre') { %><span class="bd-card-badge bd-card-badge--langue">🌐</span><% } %>
             </div>
           <% } else { %>
             <div class="bd-card-cover bd-card-cover-empty">

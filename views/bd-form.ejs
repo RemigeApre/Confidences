@@ -75,11 +75,11 @@
     <%# Langue %>
     <div class="bd-form-chips">
       <span class="wiki-meta-label">Langue</span>
-      <% var bdLangs = [['francais','🇫🇷 Français'],['anglais','🇬🇧 Anglais'],['japonais','🇯🇵 Japonais'],['autre','Autre']]; %>
+      <% var bdLangs = [['francais','<img src="https://flagcdn.com/20x15/fr.png" alt="" class="bd-flag-img"> Fran\u00e7ais'],['anglais','<img src="https://flagcdn.com/20x15/gb.png" alt="" class="bd-flag-img"> Anglais'],['japonais','<img src="https://flagcdn.com/20x15/jp.png" alt="" class="bd-flag-img"> Japonais'],['autre','\uD83C\uDF10 Autre']]; %>
       <% bdLangs.forEach(function(l) { %>
         <label class="chip-option">
           <input type="radio" name="langue" value="<%= l[0] %>" <%= (book && book.langue === l[0]) ? 'checked' : '' %> />
-          <span><%= l[1] %></span>
+          <span><%- l[1] %></span>
         </label>
       <% }) %>
     </div>
