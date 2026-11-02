@@ -118,10 +118,8 @@
   function _applyTypeState(btn, s) {
     btn.dataset.state = String(s);
     // état 0 : neutre  → style normal wiki-ultra-btn
-    // état 1 : inclure → vert (chip-include)
-    // état 2 : masquer → actif Codex (wiki-ultra-btn.active, bleu sombre)
-    btn.classList.toggle('chip-include', s === 1);
-    btn.classList.toggle('active',       s === 2);
+    // état 2 : masquer → actif (wiki-ultra-btn.active)
+    btn.classList.toggle('active', s === 2);
   }
 
   // Recherche
@@ -138,10 +136,10 @@
   if (sortEl) sortEl.addEventListener('change', dispatch);
   if (dispEl) dispEl.addEventListener('change', dispatch);
 
-  // Type (3 états)
+  // Type (2 états : neutre ↔ exclure)
   block.querySelectorAll('.wiki-ultra-btn[data-type]').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var s = ((Number(btn.dataset.state) || 0) + 1) % 3;
+      var s = Number(btn.dataset.state) === 0 ? 2 : 0;
       _applyTypeState(btn, s);
       dispatch();
     });
