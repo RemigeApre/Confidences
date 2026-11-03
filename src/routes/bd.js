@@ -109,7 +109,7 @@ function buildBdRouter(config) {
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
-    const newFiles = (req.files || []).map((f) => `/uploads/bd/${f.filename}`);
+    const newFiles = (req.files || []).sort((a, b) => a.originalname.localeCompare(b.originalname, undefined, { numeric: true, sensitivity: "base" })).map((f) => `/uploads/bd/${f.filename}`);
     newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder([], newFiles, req.body.image_order);
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
@@ -169,7 +169,7 @@ function buildBdRouter(config) {
     }
 
     const existing = book.imagePaths.filter((p) => !toRemove.has(p));
-    const newFiles = (req.files || []).map((f) => `/uploads/bd/${f.filename}`);
+    const newFiles = (req.files || []).sort((a, b) => a.originalname.localeCompare(b.originalname, undefined, { numeric: true, sensitivity: "base" })).map((f) => `/uploads/bd/${f.filename}`);
     newFiles.forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder(existing, newFiles, req.body.image_order);
 
