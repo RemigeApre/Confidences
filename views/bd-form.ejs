@@ -1,6 +1,8 @@
 <%- include('partials/head', { title: 'BD : ' + (book ? 'Modifier ' + book.title : 'Nouvelle BD') }) %>
-<main class="container">
+<main class="container wide bdf-has-right-sidebar">
   <%- include('partials/top-nav', { config: config }) %>
+  <button type="button" class="mobile-filter-toggle bdf-options-toggle" id="mobile-filter-toggle" aria-label="Options" aria-expanded="false" aria-controls="mobile-filter-sidebar">&#9881; Options</button>
+  <div class="nav-backdrop" id="mobile-filter-backdrop"></div>
   <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
     <% if (book) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/bd/' + book.id + '/edit' }) %><% } %>
@@ -15,7 +17,7 @@
 
   <h1 class="section-title-h1"><%= book ? 'Modifier' : 'Nouvelle BD' %></h1>
 
-  <form method="POST" action="<%= book ? '/bd/' + book.id : '/bd' %>" enctype="multipart/form-data" class="bdf-layout" id="bd-form" data-no-enter-submit>
+  <form method="POST" action="<%= book ? '/bd/' + book.id : '/bd' %>" enctype="multipart/form-data" class="bdf-form" id="bd-form" data-no-enter-submit>
     <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
 
     <%# ── COLONNE PRINCIPALE ───────────────────────────────────────── %>
@@ -83,7 +85,8 @@
     </div><%# /bdf-main %>
 
     <%# ── VOLET LATÉRAL ────────────────────────────────────────────── %>
-    <aside class="bdf-sidebar">
+    <aside class="bdf-sidebar" id="mobile-filter-sidebar">
+      <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
 
       <%# Catégories %>
       <% if (locals.editLang !== 'en') { %>
