@@ -7,6 +7,8 @@
   var LANG_FLAGS={francais:"https://flagcdn.com/20x15/fr.png",anglais:"https://flagcdn.com/20x15/gb.png",japonais:"https://flagcdn.com/20x15/jp.png"};
   var g=document.getElementById("bd-modal"),
       closeBtn=document.getElementById("bd-modal-close"),
+      elBanner=document.getElementById("bd-modal-banner"),
+      editBtn=document.getElementById("bd-modal-edit-btn"),
       imgEl=document.getElementById("bd-modal-cover"),
       titleEl=document.getElementById("bd-modal-title"),
       elMeta=document.getElementById("bd-modal-meta"),
@@ -28,7 +30,7 @@
 
   function openModal(d){
     if(d.imagePaths&&d.imagePaths[0]){imgEl.src=d.imagePaths[0];imgEl.style.display="";}else{imgEl.style.display="none";}
-    titleEl.textContent=d.title;
+    titleEl.textContent=d.title;(function(){if(!elBanner)return;if(d.imagePaths&&d.imagePaths[0]){var ti=new Image();ti.crossOrigin="anonymous";ti.onload=function(){var cv=document.createElement("canvas");cv.width=16;cv.height=16;var cx=cv.getContext("2d");try{cx.drawImage(ti,0,0,16,16);var px=cx.getImageData(0,0,16,16).data,rr=0,gg=0,bb=0,nn=px.length/4;for(var ii=0;ii<px.length;ii+=4){rr+=px[ii];gg+=px[ii+1];bb+=px[ii+2];}elBanner.style.background="rgba("+(rr/nn|0)+","+(gg/nn|0)+","+(bb/nn|0)+",.88)";}catch(ex){elBanner.style.background="";}};ti.onerror=function(){elBanner.style.background="";};ti.src=d.imagePaths[0];}else{elBanner.style.background="";}if(editBtn){editBtn.hidden=!window.BD_IS_ADMIN;if(window.BD_IS_ADMIN)editBtn.href="/bd/"+d.id+"/edit";}})();
     if(elMeta){
       elMeta.innerHTML="";
       if(d.langue&&LANG_FLAGS[d.langue]){var fi=document.createElement("img");fi.src=LANG_FLAGS[d.langue];fi.className="bd-flag-img";fi.alt=d.langue;elMeta.appendChild(fi);}

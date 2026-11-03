@@ -170,14 +170,19 @@
 <%# ── Modal BD ── %>
 <div class="bd-modal-overlay" id="bd-modal" hidden aria-modal="true" role="dialog">
   <div class="bd-modal">
-    <button type="button" class="bd-modal-close" id="bd-modal-close" aria-label="Fermer">&#215;</button>
+    <div class="bd-modal-banner" id="bd-modal-banner">
+      <span class="bd-modal-banner-title" id="bd-modal-title"></span>
+      <div class="bd-modal-banner-actions">
+        <a href="#" class="bd-modal-edit-btn" id="bd-modal-edit-btn" hidden>&#9998; Éditer</a>
+        <button type="button" class="bd-modal-close" id="bd-modal-close" aria-label="Fermer">&#215;</button>
+      </div>
+    </div>
 
     <div class="bd-modal-top">
       <div class="bd-modal-cover-wrap">
         <img id="bd-modal-cover" src="" alt="" class="bd-modal-cover-img" />
       </div>
       <div class="bd-modal-info">
-        <h2 class="bd-modal-title" id="bd-modal-title"></h2>
         <div class="bd-modal-meta" id="bd-modal-meta"></div>
         <div class="bd-modal-cats" id="bd-modal-cats"></div>
         <div class="bd-modal-parody" id="bd-modal-parody" hidden></div>
@@ -203,6 +208,7 @@
 <script nonce="<%= nonce %>">
 window.BD_PROTAGONISTS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;
 window.BD_IS_USER = <%= !!currentUser %>;
+window.BD_IS_ADMIN = <%= !!(currentUser && currentUser.isAdmin) %>;
 </script>
 <script nonce="<%= nonce %>" src="/bd.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>
