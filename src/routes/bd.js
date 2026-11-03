@@ -59,20 +59,19 @@ function parseChapters(raw) {
   } catch (_) { return []; }
 }
 
-function applyImageOrder(existing, newFiles, orderRaw) {
-  if (!orderRaw) return [...existing, ...newFiles];
+// newFilesByName : { originalname -> "/uploads/bd/xxx.jpg" }
+function applyImageOrder(existing, newFilesByName, orderRaw) {
+  if (!orderRaw) return [...existing, ...Object.values(newFilesByName)];
   const entries = String(orderRaw).split(",").map((s) => s.trim()).filter(Boolean);
   const result = [];
   for (const entry of entries) {
     if (entry.startsWith("__new__:")) {
-      const idx = Number(entry.slice(8));
-      if (!isNaN(idx) && idx >= 0 && idx < newFiles.length) result.push(newFiles[idx]);
+      const name = entry.slice(8);
+      if (newFilesByName[name]) result.push(newFilesByName[name]);
     } else if (existing.includes(entry)) {
       result.push(entry);
     }
   }
-  // If an explicit order was provided, honour it strictly — don't re-add skipped uploads.
-  // (Fallback: if orderRaw was empty/missing, we already returned early above.)
   return result;
 }
 
@@ -109,9 +108,10 @@ function buildBdRouter(config) {
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
-    const newFiles = (req.files || []).sort((a, b) => a.originalname.localeCompare(b.originalname, undefined, { numeric: true, sensitivity: "base" })).map((f) => `/uploads/bd/${f.filename}`);
-    newFiles.forEach((p) => generateThumb(p));
-    const imagePaths = applyImageOrder([], newFiles, req.body.image_order);
+    const newFilesByName = {};
+    (req.files || []).forEach((f) => { newFilesByName[f.originalname] = `/uploads/bd/${f.filename}`; });
+    Object.values(newFilesByName).forEach((p) => generateThumb(p));
+    const imagePaths = applyImageOrder([], newFilesByName, req.body.image_order);
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
     const chapters = parseChapters(req.body.chapters_json);
     const categories = parseCategories(req.body.categories);
@@ -169,9 +169,10 @@ function buildBdRouter(config) {
     }
 
     const existing = book.imagePaths.filter((p) => !toRemove.has(p));
-    const newFiles = (req.files || []).sort((a, b) => a.originalname.localeCompare(b.originalname, undefined, { numeric: true, sensitivity: "base" })).map((f) => `/uploads/bd/${f.filename}`);
-    newFiles.forEach((p) => generateThumb(p));
-    const imagePaths = applyImageOrder(existing, newFiles, req.body.image_order);
+    const newFilesByName = {};
+    (req.files || []).forEach((f) => { newFilesByName[f.originalname] = `/uploads/bd/${f.filename}`; });
+    Object.values(newFilesByName).forEach((p) => generateThumb(p));
+    const imagePaths = applyImageOrder(existing, newFilesByName, req.body.image_order);
 
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
     const chapters = parseChapters(req.body.chapters_json);

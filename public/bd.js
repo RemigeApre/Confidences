@@ -68,7 +68,7 @@
   if(!wrap||!orderEl||!chapEl)return;
 
   function sync(){
-    var allOrder=[];var chData=[];var gNewIdx=0;
+    var allOrder=[];var chData=[];
     var items=wrap.querySelectorAll(".bdf-ch-item");
     var multi=items.length>1;
     items.forEach(function(item,ci){
@@ -77,8 +77,7 @@
         if(!el.classList.contains("bd-sort-item-removed"))allOrder.push(el.dataset.src);
       });
       var nf=item._newFiles||[];
-      nf.forEach(function(_,fi){allOrder.push("__new__:"+(gNewIdx+fi));});
-      gNewIdx+=nf.length;
+      nf.forEach(function(f){allOrder.push("__new__:"+f.name);});
       var titleEl=item.querySelector(".bdf-ch-title-inp");
       var title=titleEl?titleEl.value.trim():"";
       if(multi||(chStart>0||title)){chData.push({title:title||("Chapitre "+(ci+1)),start:chStart});}
