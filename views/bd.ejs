@@ -36,16 +36,13 @@
           </div>
 
           <%# 3. Catégories %>
-          <details class="wiki-subpanel-details" open>
-            <summary class="wiki-subpanel-summary">Cat&eacute;gories</summary>
-            <div class="wiki-filter-section wiki-filter-toggles bd-cat-filter-grid" id="bd-cat-filter">
+          <div class="wiki-filter-section wiki-filter-toggles bd-cat-filter-grid" id="bd-cat-filter">
               <% [['inconnu','#6b7280'],['groupe','#7c3aed'],['monstre','#b45309'],['pokémon','#dc2626'],['animaux','#16a34a'],['bdsm','#db2777']].forEach(function(c) { %>
                 <button type="button" class="bd-cat-chip" data-cat="<%= c[0] %>" style="--cat-color:<%= c[1] %>">
                   <%= c[0].charAt(0).toUpperCase() + c[0].slice(1) %>
                 </button>
               <% }) %>
-            </div>
-          </details>
+          </div>
 
           <%# 4. Parodie %>
           <% if (allParodies && allParodies.length) { %>
