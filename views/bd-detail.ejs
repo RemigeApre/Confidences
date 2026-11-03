@@ -261,6 +261,8 @@
     pages[current].hidden = true;
     pages[n].hidden = false;
     current = n;
+    if(n === total - 1) localStorage.removeItem("bd_progress_" + bookId);
+    else localStorage.setItem("bd_progress_" + bookId, String(n));
     if (!CHAPTERS.length && counter) counter.textContent = (current + 1) + " / " + total;
     if (prev) prev.hidden = current === 0;
     if (next) next.hidden = current === total - 1;

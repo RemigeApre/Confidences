@@ -195,19 +195,22 @@
       </div>
     </div>
 
+    <div id="bd-modal-actions" class="bd-modal-actions"></div>
+
     <div class="bd-modal-preview-wrap" id="bd-modal-preview-wrap">
       <p class="bd-modal-preview-label">Aper&ccedil;u</p>
       <div class="bd-modal-preview" id="bd-modal-preview"></div>
     </div>
 
     <div class="bd-modal-footer">
-      <a href="#" id="bd-modal-read-btn" class="bd-modal-read-btn">Lire &rarr;</a>
+      <a href="#" id="bd-modal-read-btn" class="bd-modal-read-btn">Lire</a>
     </div>
   </div>
 </div>
 
 <script nonce="<%= nonce %>">
 window.BD_PROTAGONISTS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;
+window.BD_IS_USER = <%= !!currentUser %>;
 </script>
 <script nonce="<%= nonce %>" src="/bd.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>
