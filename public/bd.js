@@ -79,7 +79,7 @@
       var img=document.createElement("img");img.src=o;img.alt="Page "+(idx+1);img.loading="lazy";
       var num=document.createElement("span");num.className="bd-modal-thumb-num";num.textContent=idx+1;
       m.appendChild(img);m.appendChild(num);
-      m.addEventListener("click",function(){localStorage.setItem("bd_progress_"+d.id,String(idx));window.location.href="/bd/"+d.id+"?start="+idx;});
+      m.addEventListener("click",function(){sessionStorage.setItem("bd_return_popup",String(d.id));localStorage.setItem("bd_progress_"+d.id,String(idx));window.location.href="/bd/"+d.id+"?start="+idx;});
       previewEl.appendChild(m);
     });
     if(d.totalPages>10){var more=document.createElement("span");more.className="bd-modal-thumb-more";more.textContent="+"+(d.totalPages-10);previewEl.appendChild(more);}
@@ -89,12 +89,12 @@
       if(!isNaN(prog)&&prog>0&&prog<d.totalPages){readBtn.textContent="Continuer (p. "+(prog+1)+")";readBtn.href="/bd/"+d.id+"?start="+prog;}
       else{readBtn.textContent="Lire";readBtn.href="/bd/"+d.id;}
     }
-    g.hidden=false;document.body.style.overflow="hidden";
+    curOpenId=d.id;g.hidden=false;document.body.style.overflow="hidden";
   }
 
   function closeModal(){g.hidden=true;document.body.style.overflow="";}
 
-  var grid=document.getElementById("bd-grid");
+  var grid=document.getElementById("bd-grid");readBtn&&readBtn.addEventListener("click",function(){if(curOpenId)sessionStorage.setItem("bd_return_popup",String(curOpenId));});(function(){var pop=sessionStorage.getItem("bd_return_popup");if(!pop)return;sessionStorage.removeItem("bd_return_popup");setTimeout(function(){var bk=c[Number(pop)];if(bk&&g&&g.hidden)openModal(bk);},0);})();window.addEventListener("pageshow",function(ev){if(!ev.persisted)return;var pop=sessionStorage.getItem("bd_return_popup");if(!pop)return;sessionStorage.removeItem("bd_return_popup");var bk=c[Number(pop)];if(bk&&g&&g.hidden)openModal(bk);});
   grid&&grid.addEventListener("click",function(ev){var l=ev.target.closest(".bd-card[data-bd-id]");if(l){ev.preventDefault();var s=c[Number(l.dataset.bdId)];s&&openModal(s);}});
   closeBtn&&closeBtn.addEventListener("click",closeModal);
   g.addEventListener("click",function(ev){ev.target===g&&closeModal();});

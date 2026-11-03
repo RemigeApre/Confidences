@@ -3,7 +3,7 @@
 
   <%# ── Topbar ─────────────────────────────────────────────────────── %>
   <div class="bd-reader-topbar">
-    <a href="/bd" class="bd-reader-back link-button">&larr;</a>
+    <a href="/bd" class="bd-reader-back link-button" id="bd-back-btn">&larr;</a>
 
     <div class="bd-reader-center">
       <span class="bd-reader-title" id="bd-reader-title"><%= book._title || book.title %></span>
@@ -329,6 +329,16 @@
 <script nonce="<%= nonce %>">
 (function () {
   var bookId = <%= book.id %>;
+
+  // Retour vers /bd avec la pop-up de cette BD ouverte
+  var backBtn = document.getElementById("bd-back-btn");
+  if (backBtn) {
+    backBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      sessionStorage.setItem("bd_return_popup", String(bookId));
+      window.location.href = "/bd";
+    });
+  }
 
   var favBtn = document.getElementById("bd-fav-btn");
   if (favBtn) favBtn.addEventListener("click", function() {
