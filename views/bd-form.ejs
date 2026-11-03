@@ -4,6 +4,7 @@
   <button type="button" class="mobile-filter-toggle bdf-options-toggle" id="mobile-filter-toggle" aria-label="Options" aria-expanded="false" aria-controls="mobile-filter-sidebar">&#9881; Options</button>
   <div class="nav-backdrop" id="mobile-filter-backdrop"></div>
   <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="wf-back-btn">&#8592; Retour</a>
+  <button type="submit" form="bd-form" class="wf-save-btn bdf-save-fixed">Enregistrer</button>
   <% if (book) { %>
   <div class="wf-actions-right">
     <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/bd/' + book.id + '/edit' }) %>
@@ -22,10 +23,6 @@
 
     <%# ── COLONNE PRINCIPALE ───────────────────────────────────────── %>
     <div class="bdf-main">
-
-      <div class="bdf-topbar">
-        <button type="submit" class="wf-save-btn">Enregistrer</button>
-      </div>
 
       <% var _bdTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : (book ? book.title : ''); %>
       <% var _bdDesc  = (locals.editLang === 'en') ? ((locals.translations || {}).description || '') : (book ? book.description : ''); %>
