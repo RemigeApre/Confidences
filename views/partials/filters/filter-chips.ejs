@@ -31,7 +31,7 @@
   var _max    = (typeof maxItems  !== 'undefined') ? maxItems  : 60;
 %>
 <% if (_items.length) { %>
-<details class="wiki-subpanel-details filter-block filter-block--chips" id="<%= _fid %>-block">
+<details class="wiki-subpanel-details filter-block filter-block--chips" id="<%= _fid %>-block"<% if (typeof openByDefault !== 'undefined' && openByDefault) { %> open<% } %>>
   <summary class="wiki-subpanel-summary"<% if (_labelEn) { %> data-fr="<%= _label %>" data-en="<%= _labelEn %>"<% } %>><%= _label %></summary>
   <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
     placeholder="Chercher&hellip;" data-placeholder-fr="Chercher…" data-placeholder-en="Search…" autocomplete="off" />

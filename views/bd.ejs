@@ -36,12 +36,12 @@
           </div>
 
           <%# 3. Catégories %>
-          <details class="wiki-subpanel-details">
+          <details class="wiki-subpanel-details" open>
             <summary class="wiki-subpanel-summary">Cat&eacute;gories</summary>
-            <div class="wiki-filter-section wiki-filter-toggles" id="bd-cat-filter">
-              <% ['inconnu','groupe','monstre','pokémon','animaux','bdsm'].forEach(function(cat) { %>
-                <button type="button" class="wiki-ultra-btn bd-cat-chip" data-cat="<%= cat %>">
-                  <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+            <div class="wiki-filter-section wiki-filter-toggles bd-cat-filter-grid" id="bd-cat-filter">
+              <% [['inconnu','#6b7280'],['groupe','#7c3aed'],['monstre','#b45309'],['pokémon','#dc2626'],['animaux','#16a34a'],['bdsm','#db2777']].forEach(function(c) { %>
+                <button type="button" class="bd-cat-chip" data-cat="<%= c[0] %>" style="--cat-color:<%= c[1] %>">
+                  <%= c[0].charAt(0).toUpperCase() + c[0].slice(1) %>
                 </button>
               <% }) %>
             </div>
@@ -76,10 +76,11 @@
           <%# 5. Tags %>
           <% if (allTags && allTags.length) { %>
             <%- include('partials/filters/filter-tags', {
-                  filterId: 'bd-tag-filter',
-                  tags:     allTags,
-                  label:    'Tags',
-                  labelEn:  'Tags'
+                  filterId:      'bd-tag-filter',
+                  tags:          allTags,
+                  label:         'Tags',
+                  labelEn:       'Tags',
+                  openByDefault: true
                 }) %>
           <% } %>
 
@@ -162,9 +163,16 @@
 
 <%# ── Données BD pour le modal (JSON embarqué) ── %>
 <script type="application/json" id="bd-data-json"><%- JSON.stringify(books.map(function(b) {
-  return { id: b.id, title: b.title, description: b.description, tags: b.tags,
-           imagePaths: b.imagePaths.slice(0, 11).map(function(p){ return thumbUrl(p); }), totalPages: b.imagePaths.length,
-           flame: b.flame, interested: b.interested, rating: b.rating };
+  return {
+    id: b.id, title: b.title, description: b.description, tags: b.tags,
+    imagePaths: b.imagePaths.slice(0, 11).map(function(p){ return thumbUrl(p); }),
+    totalPages: b.imagePaths.length,
+    flame: b.flame, interested: b.interested, rating: b.rating,
+    parody: b.parody || '', subParody: b.subParody || '',
+    categories: b.categories || [],
+    langue: b.langue || '',
+    chaptersCount: (b.chapters || []).length
+  };
 })) %></script>
 
 <%# ── Modal BD ── %>
@@ -178,6 +186,9 @@
       </div>
       <div class="bd-modal-info">
         <h2 class="bd-modal-title" id="bd-modal-title"></h2>
+        <div class="bd-modal-meta" id="bd-modal-meta"></div>
+        <div class="bd-modal-cats" id="bd-modal-cats"></div>
+        <div class="bd-modal-parody" id="bd-modal-parody" hidden></div>
         <p class="bd-modal-desc" id="bd-modal-desc"></p>
         <div class="bd-modal-tags" id="bd-modal-tags"></div>
         <div class="bd-modal-reactions" id="bd-modal-reactions"></div>
@@ -190,7 +201,7 @@
     </div>
 
     <div class="bd-modal-footer">
-      <a href="#" id="bd-modal-read-btn" class="bd-modal-read-btn">Lire depuis le d&eacute;but &rarr;</a>
+      <a href="#" id="bd-modal-read-btn" class="bd-modal-read-btn">Lire &rarr;</a>
     </div>
   </div>
 </div>

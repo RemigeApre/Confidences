@@ -11,14 +11,15 @@
   var _cnt   = (typeof counts  !== 'undefined') ? counts  : null;
 %>
 <%- include('filter-chips', {
-      filterId:  _fid,
-      items:     _items,
-      itemKey:   'tag',
-      chipClass: 'wiki-tag-chip',
-      label:     _label,
-      labelEn:   _labelEn,
-      mode:      'multi',
-      eventName: 'tagfilter:change',
-      counts:    _cnt,
-      maxItems:  _max
+      filterId:      _fid,
+      items:         _items,
+      itemKey:       'tag',
+      chipClass:     'wiki-tag-chip',
+      label:         _label,
+      labelEn:       _labelEn,
+      mode:          'multi',
+      eventName:     'tagfilter:change',
+      counts:        _cnt,
+      maxItems:      _max,
+      openByDefault: (typeof openByDefault !== 'undefined') ? openByDefault : false
     }) %>
