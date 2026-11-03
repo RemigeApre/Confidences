@@ -125,9 +125,9 @@
           data-parody="<%= (book.parody || '').replace(/"/g, '') %>"
           data-protagonists="<%= (book.protagonistIds || []).join(',') %>"
           data-categories="<%= (book.categories || []).join(',') %>">
-          <% if (book.imagePaths && book.imagePaths.length) { %>
+          <% if ((book.coverPath || (book.imagePaths && book.imagePaths.length))) { %>
             <div class="bd-card-cover">
-              <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
+              <img src="<%= thumbUrl(book.coverPath || book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
               <% if (book.langue === 'francais') { %><span class="bd-card-flag"><img src="https://flagcdn.com/20x15/fr.png" alt="FR" class="bd-flag-img" /></span>
               <% } else if (book.langue === 'anglais') { %><span class="bd-card-flag"><img src="https://flagcdn.com/20x15/gb.png" alt="EN" class="bd-flag-img" /></span>
               <% } else if (book.langue === 'japonais') { %><span class="bd-card-flag"><img src="https://flagcdn.com/20x15/jp.png" alt="JP" class="bd-flag-img" /></span>
@@ -165,7 +165,8 @@
     langue: b.langue || '',
     author: b.author || '',
     protagonistIds: b.protagonistIds || [],
-    chapters: (b.chapters || []).map(function(c){ return { title: c.title, start: c.start }; })
+    coverPath: b.coverPath ? thumbUrl(b.coverPath) : '',
+    chapters: (b.chapters || []).map(function(c){ return { title: c.title, start: c.start, cover: c.cover ? thumbUrl(c.cover) : '' }; })
   };
 })) %></script>
 

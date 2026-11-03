@@ -230,6 +230,7 @@ try { db.exec("ALTER TABLE bd_books ADD COLUMN protagonist_ids TEXT NOT NULL DEF
 try { db.exec("ALTER TABLE bd_books ADD COLUMN chapters TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE bd_books ADD COLUMN categories TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE bd_books ADD COLUMN author TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE bd_books ADD COLUMN cover_path TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wiki_page_links (
@@ -2336,6 +2337,7 @@ function rowToBdBook(row) {
     chapters: (() => { try { return JSON.parse(row.chapters || "[]"); } catch (_) { return []; } })(),
     categories: (() => { try { return JSON.parse(row.categories || "[]"); } catch (_) { return []; } })(),
     author: row.author || "",
+    coverPath: row.cover_path || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -2350,15 +2352,15 @@ function getBdBook(id) {
   return row ? rowToBdBook(row) : null;
 }
 
-function insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author }) {
+function insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author, coverPath }) {
   const now = new Date().toISOString();
   const info = db.prepare(
-    `INSERT INTO bd_books (title, description, tags, image_paths, langue, parody, sub_parody, protagonist_ids, chapters, categories, author, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), JSON.stringify(chapters || []), JSON.stringify(categories || []), author || "", now, now);
+    `INSERT INTO bd_books (title, description, tags, image_paths, langue, parody, sub_parody, protagonist_ids, chapters, categories, author, cover_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(imagePaths || []), langue || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), JSON.stringify(chapters || []), JSON.stringify(categories || []), author || "", coverPath || "", now, now);
   return info.lastInsertRowid;
 }
 
-function updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author }) {
+function updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author, coverPath }) {
   const newPaths = imagePaths || [];
   // Une page retirée (checkbox "Supprimer cette page", voir bd-form.ejs)
   // n'a plus lieu d'avoir une réaction en base, pour aucun profil — sinon
@@ -2374,8 +2376,8 @@ function updateBdBook(id, { title, description, tags, imagePaths, langue, parody
     });
   }
   db.prepare(
-    `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, chapters = ?, categories = ?, author = ?, updated_at = ? WHERE id = ?`
-  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), JSON.stringify(chapters || []), JSON.stringify(categories || []), author || "", new Date().toISOString(), id);
+    `UPDATE bd_books SET title = ?, description = ?, tags = ?, image_paths = ?, langue = ?, parody = ?, sub_parody = ?, protagonist_ids = ?, chapters = ?, categories = ?, author = ?, cover_path = ?, updated_at = ? WHERE id = ?`
+  ).run(title, description, JSON.stringify(tags || []), JSON.stringify(newPaths), langue || "", parody || "", subParody || "", JSON.stringify(protagonistIds || []), JSON.stringify(chapters || []), JSON.stringify(categories || []), author || "", coverPath || "", new Date().toISOString(), id);
 }
 
 function deleteBdBook(id) {

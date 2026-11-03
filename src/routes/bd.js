@@ -53,7 +53,7 @@ function parseChapters(raw) {
     const arr = JSON.parse(String(raw || "[]"));
     if (!Array.isArray(arr)) return [];
     return arr
-      .map((c) => ({ title: String(c.title || "").trim().slice(0, 120), start: Math.max(0, Number(c.start) || 0) }))
+      .map((c) => ({ title: String(c.title || "").trim().slice(0, 120), start: Math.max(0, Number(c.start) || 0), cover: String(c.cover || "") }))
       .filter((c) => c.title)
       .sort((a, b) => a.start - b.start);
   } catch (_) { return []; }
@@ -98,7 +98,7 @@ function buildBdRouter(config) {
     res.render("bd-form", { config, book: null, allParodies: listAllParodies(), allProtagonists: listProtagonistes({ includeChildren: true }) });
   });
 
-  router.post("/", requireAdmin, upload.array("images", 200), (req, res) => {
+  router.post("/", requireAdmin, upload.any(), (req, res) => {
     const title = String(req.body.title || "").trim();
     if (!title) return res.redirect("/bd/new");
     const description = String(req.body.description || "").trim();
@@ -108,15 +108,34 @@ function buildBdRouter(config) {
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
+    const allFiles = req.files || [];
+    const imageFiles = allFiles.filter(f => f.fieldname === "images");
+    const coverFile = allFiles.find(f => f.fieldname === "cover") || null;
+    const chapterCoverFiles = {};
+    allFiles.filter(f => /^chapter_cover_\d+$/.test(f.fieldname)).forEach(f => {
+      chapterCoverFiles[Number(f.fieldname.replace("chapter_cover_", ""))] = f;
+    });
     const newFilesByName = {};
-    (req.files || []).forEach((f) => { newFilesByName[f.originalname] = `/uploads/bd/${f.filename}`; });
+    imageFiles.forEach((f) => { newFilesByName[f.originalname] = `/uploads/bd/${f.filename}`; });
     Object.values(newFilesByName).forEach((p) => generateThumb(p));
+    let coverPath = "";
+    if (coverFile) {
+      coverPath = `/uploads/bd/${coverFile.filename}`;
+      generateThumb(coverPath);
+    }
     const imagePaths = applyImageOrder([], newFilesByName, req.body.image_order);
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
     const chapters = parseChapters(req.body.chapters_json);
+    chapters.forEach((ch, ci) => {
+      const cf = chapterCoverFiles[ci];
+      if (cf) {
+        ch.cover = `/uploads/bd/${cf.filename}`;
+        generateThumb(ch.cover);
+      }
+    });
     const categories = parseCategories(req.body.categories);
     const author = String(req.body.author || "").trim().slice(0, 200);
-    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author });
+    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author, coverPath });
     res.redirect(`/bd/${id}`);
   });
 
@@ -137,12 +156,16 @@ function buildBdRouter(config) {
         try { fs.unlinkSync(path.join(uploadsDir, path.basename(src))); } catch (_) {}
         deleteThumb(src);
       }
+      if (book.coverPath) { try { fs.unlinkSync(path.join(uploadsDir, path.basename(book.coverPath))); } catch (_) {} deleteThumb(book.coverPath); }
+      for (const ch of book.chapters || []) {
+        if (ch.cover) { try { fs.unlinkSync(path.join(uploadsDir, path.basename(ch.cover))); } catch (_) {} deleteThumb(ch.cover); }
+      }
       deleteBdBook(id);
     }
     res.redirect("/bd");
   });
 
-  router.post("/:id", requireAdmin, upload.array("images", 200), (req, res) => {
+  router.post("/:id", requireAdmin, upload.any(), (req, res) => {
     const id = Number(req.params.id);
     const book = getBdBook(id);
     if (!book) return res.redirect("/bd");
@@ -169,16 +192,51 @@ function buildBdRouter(config) {
     }
 
     const existing = book.imagePaths.filter((p) => !toRemove.has(p));
+    const allFiles = req.files || [];
+    const imageFiles = allFiles.filter(f => f.fieldname === "images");
+    const coverFile = allFiles.find(f => f.fieldname === "cover") || null;
+    const chapterCoverFiles = {};
+    allFiles.filter(f => /^chapter_cover_\d+$/.test(f.fieldname)).forEach(f => {
+      chapterCoverFiles[Number(f.fieldname.replace("chapter_cover_", ""))] = f;
+    });
     const newFilesByName = {};
-    (req.files || []).forEach((f) => { newFilesByName[f.originalname] = `/uploads/bd/${f.filename}`; });
+    imageFiles.forEach((f) => { newFilesByName[f.originalname] = `/uploads/bd/${f.filename}`; });
     Object.values(newFilesByName).forEach((p) => generateThumb(p));
     const imagePaths = applyImageOrder(existing, newFilesByName, req.body.image_order);
 
+    let coverPath = book.coverPath || "";
+    if (req.body.remove_cover === "1" && coverPath) {
+      try { fs.unlinkSync(path.join(uploadsDir, path.basename(coverPath))); } catch (_) {}
+      deleteThumb(coverPath);
+      coverPath = "";
+    }
+    if (coverFile) {
+      if (coverPath) { try { fs.unlinkSync(path.join(uploadsDir, path.basename(coverPath))); } catch (_) {} deleteThumb(coverPath); }
+      coverPath = `/uploads/bd/${coverFile.filename}`;
+      generateThumb(coverPath);
+    }
+
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
     const chapters = parseChapters(req.body.chapters_json);
+    const oldChapters = book.chapters || [];
+    chapters.forEach((ch, ci) => {
+      const oldCover = (oldChapters[ci] || {}).cover || "";
+      const cf = chapterCoverFiles[ci];
+      if (cf) {
+        if (oldCover) { try { fs.unlinkSync(path.join(uploadsDir, path.basename(oldCover))); } catch (_) {} deleteThumb(oldCover); }
+        ch.cover = `/uploads/bd/${cf.filename}`;
+        generateThumb(ch.cover);
+      } else if (ch.cover === "" && oldCover) {
+        // cover was explicitly cleared in chapters_json
+        try { fs.unlinkSync(path.join(uploadsDir, path.basename(oldCover))); } catch (_) {}
+        deleteThumb(oldCover);
+      } else if (!ch.cover && oldCover) {
+        ch.cover = oldCover; // preserve if not changed
+      }
+    });
     const categories = parseCategories(req.body.categories);
     const author = String(req.body.author || "").trim().slice(0, 200);
-    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author });
+    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author, coverPath });
     res.redirect(`/bd/${id}`);
   });
 

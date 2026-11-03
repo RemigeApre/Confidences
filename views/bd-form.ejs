@@ -37,6 +37,25 @@
       <input type="text" name="author" class="wiki-input-sm" value="<%= book ? (book.author || '') : '' %>" placeholder="Auteur&hellip;" maxlength="200" />
       <% } %>
 
+      <% if (locals.editLang !== 'en') { %>
+      <div class="bdf-section bdf-cover-section">
+        <p class="bdf-sidebar-label">Couverture</p>
+        <div class="bdf-cover-wrap" id="bdf-cover-wrap">
+          <% if (book && book.coverPath) { %>
+          <img src="<%= thumbUrl(book.coverPath) %>" alt="" class="bdf-cover-img" id="bdf-cover-img" />
+          <button type="button" class="bdf-cover-rm-btn" id="bdf-cover-rm-btn" title="Supprimer la couverture">&times;</button>
+          <input type="hidden" name="remove_cover" id="bdf-remove-cover" value="0" />
+          <% } else { %>
+          <div class="bdf-cover-empty" id="bdf-cover-img-wrap"></div>
+          <% } %>
+        </div>
+        <label class="wiki-image-add-label bdf-cover-add-label">
+          <span>+ Couverture</span>
+          <input type="file" name="cover" accept="image/*" class="bdf-cover-file" id="bdf-cover-file" />
+        </label>
+      </div>
+      <% } %>
+
       <%# ── Chapitres & pages ── %>
       <div class="bdf-section bdf-chapters-outer">
         <div id="bdf-chapters-wrap">
@@ -51,17 +70,28 @@
                 for (var _ci = 0; _ci < _chs.length; _ci++) {
                   var _cStart = _chs[_ci].start;
                   var _cEnd = _ci + 1 < _chs.length ? _chs[_ci + 1].start : _imgs.length;
-                  _chGroups.push({ title: _chs[_ci].title, images: _imgs.slice(_cStart, _cEnd) });
+                  _chGroups.push({ title: _chs[_ci].title, images: _imgs.slice(_cStart, _cEnd), cover: _chs[_ci].cover || '' });
                 }
               }
             }
           %>
           <% _chGroups.forEach(function(cg, ci) { %>
-          <div class="bdf-ch-item" data-ch-idx="<%= ci %>">
+          <div class="bdf-ch-item" data-ch-idx="<%= ci %>" data-cover="<%= cg.cover %>">
             <div class="bdf-ch-head">
               <span class="bdf-ch-num">Chapitre <%= ci + 1 %></span>
               <input type="text" class="bdf-ch-title-inp" placeholder="Titre (optionnel)&hellip;" value="<%= cg.title %>" maxlength="120" />
               <% if (ci > 0) { %><button type="button" class="bdf-ch-remove-btn" title="Supprimer ce chapitre">&times;</button><% } %>
+            </div>
+            <div class="bdf-ch-cover-row">
+              <% if (cg.cover) { %>
+              <img src="<%= thumbUrl(cg.cover) %>" alt="" class="bdf-ch-cover-thumb" />
+              <button type="button" class="bdf-ch-cover-rm" title="Retirer la couverture">&times;</button>
+              <% } %>
+              <div class="bdf-ch-cover-preview"></div>
+              <label class="bdf-ch-cover-lbl" title="Couverture du chapitre">
+                <span>&#128444;</span>
+                <input type="file" name="chapter_cover_<%= ci %>" accept="image/*" class="bdf-ch-cover-file" />
+              </label>
             </div>
             <div class="bd-sort-grid bdf-ch-grid">
               <% cg.images.forEach(function(src, i) { %>
