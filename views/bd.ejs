@@ -163,7 +163,9 @@
     parody: b.parody || '', subParody: b.subParody || '',
     categories: b.categories || [],
     langue: b.langue || '',
-    chaptersCount: (b.chapters || []).length
+    author: b.author || '',
+    protagonistIds: b.protagonistIds || [],
+    chapters: (b.chapters || []).map(function(c){ return { title: c.title, start: c.start }; })
   };
 })) %></script>
 
@@ -173,7 +175,7 @@
     <div class="bd-modal-banner" id="bd-modal-banner">
       <span class="bd-modal-banner-title" id="bd-modal-title"></span>
       <div class="bd-modal-banner-actions">
-        <a href="#" class="bd-modal-edit-btn" id="bd-modal-edit-btn" hidden>&#9998; Éditer</a>
+        <a href="#" class="bd-modal-edit-btn" id="bd-modal-edit-btn" hidden>&#9998;</a>
         <button type="button" class="bd-modal-close" id="bd-modal-close" aria-label="Fermer">&#215;</button>
       </div>
     </div>
@@ -183,19 +185,19 @@
         <img id="bd-modal-cover" src="" alt="" class="bd-modal-cover-img" />
       </div>
       <div class="bd-modal-info">
-        <div class="bd-modal-meta" id="bd-modal-meta"></div>
         <div class="bd-modal-cats" id="bd-modal-cats"></div>
         <div class="bd-modal-parody" id="bd-modal-parody" hidden></div>
-        <p class="bd-modal-desc" id="bd-modal-desc"></p>
+        <div class="bd-modal-prots" id="bd-modal-prots" hidden></div>
         <div class="bd-modal-tags" id="bd-modal-tags"></div>
-        <div class="bd-modal-reactions" id="bd-modal-reactions"></div>
+        <div class="bd-modal-author" id="bd-modal-author" hidden></div>
+        <div class="bd-modal-meta" id="bd-modal-meta"></div>
+        <p class="bd-modal-desc" id="bd-modal-desc"></p>
       </div>
     </div>
 
     <div id="bd-modal-actions" class="bd-modal-actions"></div>
 
     <div class="bd-modal-preview-wrap" id="bd-modal-preview-wrap">
-      <p class="bd-modal-preview-label">Aper&ccedil;u</p>
       <div class="bd-modal-preview" id="bd-modal-preview"></div>
     </div>
 

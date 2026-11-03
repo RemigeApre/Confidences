@@ -115,7 +115,8 @@ function buildBdRouter(config) {
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
     const chapters = parseChapters(req.body.chapters_json);
     const categories = parseCategories(req.body.categories);
-    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories });
+    const author = String(req.body.author || "").trim().slice(0, 200);
+    const id = insertBdBook({ title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author });
     res.redirect(`/bd/${id}`);
   });
 
@@ -174,7 +175,8 @@ function buildBdRouter(config) {
     const protagonistIds = [].concat(req.body.protagonist_ids || []).map(Number).filter(Boolean);
     const chapters = parseChapters(req.body.chapters_json);
     const categories = parseCategories(req.body.categories);
-    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories });
+    const author = String(req.body.author || "").trim().slice(0, 200);
+    updateBdBook(id, { title, description, tags, imagePaths, langue, parody, subParody, protagonistIds, chapters, categories, author });
     res.redirect(`/bd/${id}`);
   });
 

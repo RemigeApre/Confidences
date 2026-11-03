@@ -28,6 +28,10 @@
     <textarea name="description" class="wiki-textarea" rows="3"
       placeholder="<%= locals.editLang === 'en' && book ? book.description : 'Description (optionnel)\u2026' %>"><%= _bdDesc %></textarea>
 
+    <% if (locals.editLang !== 'en') { %>
+    <input type="text" name="author" class="wiki-input-sm" value="<%= book ? (book.author || '') : '' %>" placeholder="Auteur&hellip;" maxlength="200" />
+    <% } %>
+
     <%# Tags %>
     <div class="wiki-tags-widget">
       <div class="wiki-tags-board">
