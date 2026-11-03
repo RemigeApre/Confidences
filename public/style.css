@@ -8,3 +8,21 @@
 .bd-modal-act-btn:hover{background:#ffffff1e;border-color:#ffffff30}
 .bd-modal-act-btn.active{background:rgba(240,180,41,.18);border-color:rgba(240,180,41,.5)}
 .wiki-tag-chip.bd-tag-no-visible{display:none\!important}
+
+/* ── BD Form two-column layout ───────────────────────────── */
+.bdf-layout{display:grid;grid-template-columns:1fr 270px;gap:2rem;align-items:start}
+.bdf-main{display:flex;flex-direction:column;gap:1.1rem}
+.bdf-sidebar{position:sticky;top:calc(var(--topnav-height,3.5rem) + .75rem);display:flex;flex-direction:column;gap:.85rem}
+.bdf-section{display:flex;flex-direction:column;gap:.6rem;background:#ffffff06;border:1px solid #ffffff0f;border-radius:10px;padding:1rem}
+.bdf-section-label{margin:0;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#ffffff60}
+.bdf-sidebar-block{background:#ffffff06;border:1px solid #ffffff0f;border-radius:10px;padding:.85rem .9rem;display:flex;flex-direction:column;gap:.55rem}
+.bdf-sidebar-label{margin:0;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#ffffff55}
+.bdf-chips-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.3rem}
+.bdf-chips-wrap{display:flex;flex-wrap:wrap;gap:.3rem}
+.bd-chapters-header{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+@media(max-width:860px){.bdf-layout{grid-template-columns:1fr}.bdf-sidebar{position:static;order:2}}
+@media(max-width:640px){.bdf-chips-grid{grid-template-columns:repeat(2,1fr)}}
+/* new file preview remove button */
+.bd-preview-remove{position:absolute;top:2px;right:2px;background:#e53535cc;border:none;color:#fff;font-size:.85rem;line-height:1;padding:.1rem .25rem;border-radius:3px;cursor:pointer;display:none}
+.bd-preview-item:hover .bd-preview-remove{display:block}
+.bd-preview-item{position:relative}

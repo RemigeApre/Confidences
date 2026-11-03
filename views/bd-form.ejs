@@ -15,160 +15,185 @@
 
   <h1 class="section-title-h1"><%= book ? 'Modifier' : 'Nouvelle BD' %></h1>
 
-  <form method="POST" action="<%= book ? '/bd/' + book.id : '/bd' %>" enctype="multipart/form-data" class="wiki-form" id="bd-form" data-no-enter-submit>
+  <form method="POST" action="<%= book ? '/bd/' + book.id : '/bd' %>" enctype="multipart/form-data" class="bdf-layout" id="bd-form" data-no-enter-submit>
     <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
 
-    <div class="ef-block">
-    <% var _bdTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : (book ? book.title : ''); %>
-    <% var _bdDesc  = (locals.editLang === 'en') ? ((locals.translations || {}).description || '') : (book ? book.description : ''); %>
+    <%# ── COLONNE PRINCIPALE ───────────────────────────────────────── %>
+    <div class="bdf-main">
 
-    <input type="text" name="title" class="wiki-title-input" required
-      value="<%= _bdTitle %>" placeholder="<%= locals.editLang === 'en' && book ? book.title : 'Titre\u2026' %>" />
+      <% var _bdTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : (book ? book.title : ''); %>
+      <% var _bdDesc  = (locals.editLang === 'en') ? ((locals.translations || {}).description || '') : (book ? book.description : ''); %>
 
-    <textarea name="description" class="wiki-textarea" rows="3"
-      placeholder="<%= locals.editLang === 'en' && book ? book.description : 'Description (optionnel)\u2026' %>"><%= _bdDesc %></textarea>
+      <input type="text" name="title" class="wiki-title-input" required
+        value="<%= _bdTitle %>" placeholder="<%= locals.editLang === 'en' && book ? book.title : 'Titre\u2026' %>" />
 
-    <% if (locals.editLang !== 'en') { %>
-    <input type="text" name="author" class="wiki-input-sm" value="<%= book ? (book.author || '') : '' %>" placeholder="Auteur&hellip;" maxlength="200" />
-    <% } %>
+      <textarea name="description" class="wiki-textarea" rows="4"
+        placeholder="<%= locals.editLang === 'en' && book ? book.description : 'Description (optionnel)\u2026' %>"><%= _bdDesc %></textarea>
 
-    <%# Tags %>
-    <div class="wiki-tags-widget">
-      <div class="wiki-tags-board">
-        <input type="text" class="wiki-tags-typing" placeholder="Tags&hellip;" autocomplete="off" />
-      </div>
-      <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= book ? book.tags.join(', ') : '' %>" />
-    </div>
+      <% if (locals.editLang !== 'en') { %>
+      <input type="text" name="author" class="wiki-input-sm" value="<%= book ? (book.author || '') : '' %>" placeholder="Auteur&hellip;" maxlength="200" />
+      <% } %>
 
-    </div><%# /ef-block meta %>
-
-    <div class="ef-block ef-block--origins">
-
-    <%# Parodie %>
-    <%- include('partials/parody-input', {
-          idPrefix:  'bdf',
-          mainValue: book ? book.parody    : '',
-          subValue:  book ? book.subParody : '',
-          mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
-        }) %>
-
-    <%# Personnages %>
-    <% if (locals.allProtagonists && allProtagonists.length && locals.editLang !== 'en') { %>
-    <div class="lbep-section">
-      <span class="lbep-label">Personnages</span>
-      <div class="lbep-chips" id="bdf-prot-chips">
-        <% (book ? book.protagonistIds : []).forEach(function(pid) {
-             var p = allProtagonists.find(function(x){ return x.id === pid; });
-             if (p) { %>
-          <span class="lbep-chip" data-prot-id="<%= p.id %>">
-            <span><%= p.name %></span>
-            <button type="button" class="lbep-chip-x">&times;</button>
-          </span>
-        <% } }) %>
-      </div>
-      <div style="position:relative">
-        <input type="text" class="lbep-input" id="bdf-prot-inp" placeholder="Ajouter un personnage&hellip;" autocomplete="off" />
-        <ul class="lbep-ac-drop" id="bdf-prot-drop" hidden></ul>
-      </div>
-      <div id="bdf-prot-hiddens"></div>
-    </div>
-    <% } %>
-
-    </div><%# /ef-block origines %>
-
-    <%# Catégories %>
-    <% var bdCats = ['inconnu','groupe','monstre','pokémon','animaux','bdsm']; %>
-    <div class="bd-form-chips">
-      <span class="wiki-meta-label">Cat&eacute;gories</span>
-      <% bdCats.forEach(function(cat) { %>
-        <label class="chip-option">
-          <input type="checkbox" name="categories" value="<%= cat %>"
-            <%= (book && book.categories && book.categories.indexOf(cat) !== -1) ? 'checked' : '' %> />
-          <span><%= cat.charAt(0).toUpperCase() + cat.slice(1) %></span>
-        </label>
-      <% }) %>
-    </div>
-
-    <%# Langue %>
-    <div class="bd-form-chips">
-      <span class="wiki-meta-label">Langue</span>
-      <% var bdLangs = [['francais','<img src="https://flagcdn.com/20x15/fr.png" alt="" class="bd-flag-img"> Fran\u00e7ais'],['anglais','<img src="https://flagcdn.com/20x15/gb.png" alt="" class="bd-flag-img"> Anglais'],['japonais','<img src="https://flagcdn.com/20x15/jp.png" alt="" class="bd-flag-img"> Japonais'],['autre','\uD83C\uDF10 Autre']]; %>
-      <% bdLangs.forEach(function(l) { %>
-        <label class="chip-option">
-          <input type="radio" name="langue" value="<%= l[0] %>" <%= (book && book.langue === l[0]) ? 'checked' : '' %> />
-          <span><%- l[1] %></span>
-        </label>
-      <% }) %>
-    </div>
-
-    <%# Flags spéciaux %>
-    <div class="bd-form-chips">
-      <label class="chip-option wiki-owned-chip">
-        <input type="checkbox" name="ultra" <%= (book && book.tags.some(function(t){ return t.toLowerCase() === 'ultra'; })) ? 'checked' : '' %> />
-        <span>&#128274;&nbsp;Marquer Ultra</span>
-      </label>
-      <label class="chip-option">
-        <input type="checkbox" name="couleur" <%= (book && book.tags.some(function(t){ return t.toLowerCase() === 'en couleur'; })) ? 'checked' : '' %> />
-        <span>&#127775;&nbsp;En couleur</span>
-      </label>
-    </div>
-
-    <%# Tri + images existantes %>
-    <% if (book && book.imagePaths && book.imagePaths.length) { %>
-      <div class="bd-form-section">
-        <p class="wiki-meta-label">Pages (glisser pour r&eacute;ordonner &mdash; ou les fl&egrave;ches sur t&eacute;l&eacute;phone)</p>
+      <%# ── Images ── %>
+      <div class="bdf-section">
+        <p class="bdf-section-label">Pages</p>
         <div class="bd-sort-grid" id="bd-sort-grid">
-          <% book.imagePaths.forEach(function(src, i) { %>
-            <div class="bd-sort-item" draggable="true" data-src="<%= src %>">
-              <div class="bd-sort-handle">&#8597;</div>
-              <img src="<%= thumbUrl(src) %>" alt="" class="bd-sort-img" loading="lazy" />
-              <span class="bd-sort-num"><%= i + 1 %></span>
-              <%# Déplacement au tap : le drag HTML5 n'existe pas au toucher
-                  sur mobile, ces flèches sont la seule façon d'y réordonner. %>
-              <div class="bd-sort-move">
-                <button type="button" class="bd-sort-move-btn bd-sort-move-up" title="D&eacute;placer vers le haut" aria-label="D&eacute;placer vers le haut">&#8593;</button>
-                <button type="button" class="bd-sort-move-btn bd-sort-move-down" title="D&eacute;placer vers le bas" aria-label="D&eacute;placer vers le bas">&#8595;</button>
+          <% if (book && book.imagePaths && book.imagePaths.length) { %>
+            <% book.imagePaths.forEach(function(src, i) { %>
+              <div class="bd-sort-item" draggable="true" data-src="<%= src %>">
+                <div class="bd-sort-handle">&#8597;</div>
+                <img src="<%= thumbUrl(src) %>" alt="" class="bd-sort-img" loading="lazy" />
+                <span class="bd-sort-num"><%= i + 1 %></span>
+                <div class="bd-sort-move">
+                  <button type="button" class="bd-sort-move-btn bd-sort-move-up" title="Haut" aria-label="Haut">&#8593;</button>
+                  <button type="button" class="bd-sort-move-btn bd-sort-move-down" title="Bas" aria-label="Bas">&#8595;</button>
+                </div>
+                <label class="bd-sort-remove" title="Supprimer cette page">
+                  <input type="checkbox" name="remove_image" value="<%= src %>" class="bd-remove-cb" />
+                  <span>&#215;</span>
+                </label>
               </div>
-              <label class="bd-sort-remove" title="Supprimer cette page">
-                <input type="checkbox" name="remove_image" value="<%= src %>" class="bd-remove-cb" />
-                <span>&#215;</span>
-              </label>
-            </div>
+            <% }) %>
+          <% } %>
+        </div>
+        <input type="hidden" name="image_order" id="bd-image-order" value="<%= (book && book.imagePaths) ? book.imagePaths.join(',') : '' %>" />
+        <div class="bd-new-previews" id="bd-new-previews"></div>
+        <label class="wiki-image-add-label">
+          <span>+ Ajouter des pages</span>
+          <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" id="bd-file-input" />
+        </label>
+      </div>
+
+      <%# ── Chapitres ── %>
+      <% if (locals.editLang !== 'en') { %>
+      <div class="bdf-section bd-chapters-section">
+        <div class="bd-chapters-header">
+          <p class="bdf-section-label">Chapitres</p>
+          <button type="button" class="bd-chapter-add-btn" id="bd-chapter-add">+ Ajouter un chapitre</button>
+        </div>
+        <div class="bd-chapter-list" id="bd-chapter-list"></div>
+        <input type="hidden" name="chapters_json" id="bd-chapters-json"
+          value="<%= JSON.stringify(book ? (book.chapters || []) : []) %>" />
+      </div>
+      <% } %>
+
+      <div class="wiki-form-actions wf-mobile-actions">
+        <button type="submit">Enregistrer</button>
+      </div>
+    </div><%# /bdf-main %>
+
+    <%# ── VOLET LATÉRAL ────────────────────────────────────────────── %>
+    <aside class="bdf-sidebar">
+
+      <%# Catégories %>
+      <% if (locals.editLang !== 'en') { %>
+      <div class="bdf-sidebar-block">
+        <p class="bdf-sidebar-label">Cat&eacute;gories</p>
+        <div class="bdf-chips-grid">
+          <% var bdCats = ['inconnu','groupe','monstre','pokémon','animaux','bdsm']; %>
+          <% bdCats.forEach(function(cat) { %>
+            <label class="chip-option">
+              <input type="checkbox" name="categories" value="<%= cat %>"
+                <%= (book && book.categories && book.categories.indexOf(cat) !== -1) ? 'checked' : '' %> />
+              <span><%= cat.charAt(0).toUpperCase() + cat.slice(1) %></span>
+            </label>
           <% }) %>
         </div>
-        <input type="hidden" name="image_order" id="bd-image-order" value="<%= book.imagePaths.join(',') %>" />
       </div>
-    <% } else { %>
-      <input type="hidden" name="image_order" id="bd-image-order" value="" />
-    <% } %>
+      <% } %>
 
-    <%# Chapitres %>
-    <% if (locals.editLang !== 'en') { %>
-    <div class="bd-form-section bd-chapters-section">
-      <div class="bd-chapters-header">
-        <p class="wiki-meta-label">Chapitres</p>
-        <button type="button" class="bd-chapter-add-btn" id="bd-chapter-add">+ Ajouter un chapitre</button>
+      <%# Langue %>
+      <% if (locals.editLang !== 'en') { %>
+      <div class="bdf-sidebar-block">
+        <p class="bdf-sidebar-label">Langue</p>
+        <div class="bdf-chips-wrap">
+          <% var bdLangs = [['francais','<img src="https://flagcdn.com/20x15/fr.png" alt="" class="bd-flag-img"> Fran\u00e7ais'],['anglais','<img src="https://flagcdn.com/20x15/gb.png" alt="" class="bd-flag-img"> Anglais'],['japonais','<img src="https://flagcdn.com/20x15/jp.png" alt="" class="bd-flag-img"> Japonais'],['autre','\uD83C\uDF10 Autre']]; %>
+          <% bdLangs.forEach(function(l) { %>
+            <label class="chip-option">
+              <input type="radio" name="langue" value="<%= l[0] %>" <%= (book && book.langue === l[0]) ? 'checked' : '' %> />
+              <span><%- l[1] %></span>
+            </label>
+          <% }) %>
+        </div>
       </div>
-      <div class="bd-chapter-list" id="bd-chapter-list">
-        <%# Rendu dynamique par le JS %>
+      <% } %>
+
+      <%# Flags %>
+      <% if (locals.editLang !== 'en') { %>
+      <div class="bdf-sidebar-block">
+        <p class="bdf-sidebar-label">Flags</p>
+        <div class="bdf-chips-wrap">
+          <label class="chip-option wiki-owned-chip">
+            <input type="checkbox" name="ultra"
+              <%= (book && book.tags.some(function(t){ return t.toLowerCase() === 'ultra'; })) ? 'checked' : '' %> />
+            <span>&#128274;&nbsp;Ultra</span>
+          </label>
+          <label class="chip-option">
+            <input type="checkbox" name="couleur"
+              <%= (book && book.tags.some(function(t){ return t.toLowerCase() === 'en couleur'; })) ? 'checked' : '' %> />
+            <span>&#127775;&nbsp;En couleur</span>
+          </label>
+          <label class="chip-option">
+            <input type="checkbox" name="irrealiste"
+              <%= (book && book.tags.some(function(t){ return t.toLowerCase() === 'irréaliste'; })) ? 'checked' : '' %> />
+            <span>Irr&eacute;aliste</span>
+          </label>
+        </div>
       </div>
-      <input type="hidden" name="chapters_json" id="bd-chapters-json"
-        value="<%= JSON.stringify(book ? (book.chapters || []) : []) %>" />
-    </div>
-    <% } %>
+      <% } %>
 
-    <%# Nouvelles images %>
-    <div class="bd-form-section">
-      <label class="wiki-image-add-label">
-        <span>+ Ajouter des pages</span>
-        <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" id="bd-file-input" />
-      </label>
-      <div class="bd-new-previews" id="bd-new-previews"></div>
-    </div>
+      <%# Tags %>
+      <% if (locals.editLang !== 'en') { %>
+      <div class="bdf-sidebar-block">
+        <p class="bdf-sidebar-label">Tags</p>
+        <div class="wiki-tags-widget">
+          <div class="wiki-tags-board">
+            <input type="text" class="wiki-tags-typing" placeholder="Tags&hellip;" autocomplete="off" />
+          </div>
+          <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= book ? book.tags.join(', ') : '' %>" />
+        </div>
+      </div>
+      <% } %>
 
-    <div class="wiki-form-actions wf-mobile-actions">
-      <button type="submit">Enregistrer</button>
-    </div>
+      <%# Parodie %>
+      <% if (locals.editLang !== 'en') { %>
+      <div class="bdf-sidebar-block">
+        <p class="bdf-sidebar-label">Parodie</p>
+        <%- include('partials/parody-input', {
+              idPrefix:  'bdf',
+              mainValue: book ? book.parody    : '',
+              subValue:  book ? book.subParody : '',
+              mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
+            }) %>
+      </div>
+      <% } %>
+
+      <%# Personnages %>
+      <% if (locals.allProtagonists && allProtagonists.length && locals.editLang !== 'en') { %>
+      <div class="bdf-sidebar-block">
+        <p class="bdf-sidebar-label">Personnages</p>
+        <div class="lbep-section" style="margin-top:0">
+          <div class="lbep-chips" id="bdf-prot-chips">
+            <% (book ? book.protagonistIds : []).forEach(function(pid) {
+                 var p = allProtagonists.find(function(x){ return x.id === pid; });
+                 if (p) { %>
+              <span class="lbep-chip" data-prot-id="<%= p.id %>">
+                <span><%= p.name %></span>
+                <button type="button" class="lbep-chip-x">&times;</button>
+              </span>
+            <% } }) %>
+          </div>
+          <div style="position:relative">
+            <input type="text" class="lbep-input" id="bdf-prot-inp" placeholder="Ajouter un personnage&hellip;" autocomplete="off" />
+            <ul class="lbep-ac-drop" id="bdf-prot-drop" hidden></ul>
+          </div>
+          <div id="bdf-prot-hiddens"></div>
+        </div>
+      </div>
+      <% } %>
+
+    </aside><%# /bdf-sidebar %>
+
   </form>
 </main>
 <script nonce="<%= nonce %>">

@@ -71,9 +71,8 @@ function applyImageOrder(existing, newFiles, orderRaw) {
       result.push(entry);
     }
   }
-  // Append any orphaned new files not referenced in order
-  const inResult = new Set(result);
-  for (const p of newFiles) { if (!inResult.has(p)) result.push(p); }
+  // If an explicit order was provided, honour it strictly — don't re-add skipped uploads.
+  // (Fallback: if orderRaw was empty/missing, we already returned early above.)
   return result;
 }
 
@@ -106,6 +105,7 @@ function buildBdRouter(config) {
     const description = String(req.body.description || "").trim();
     let tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
     tags = applyTagCheckbox(tags, "en couleur", req.body.couleur === "on");
+    tags = applyTagCheckbox(tags, "irréaliste", req.body.irrealiste === "on");
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
@@ -157,6 +157,7 @@ function buildBdRouter(config) {
     const description = String(req.body.description || "").trim();
     let tags = applyUltraCheckbox(parseTags(req.body.tags), req.body.ultra === "on");
     tags = applyTagCheckbox(tags, "en couleur", req.body.couleur === "on");
+    tags = applyTagCheckbox(tags, "irréaliste", req.body.irrealiste === "on");
     const langue = ["francais", "anglais", "japonais", "autre"].includes(req.body.langue) ? req.body.langue : "";
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
