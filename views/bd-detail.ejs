@@ -1,3 +1,32 @@
+<%
+// ── Séquence d'affichage avec couvertures injectées ───────────────────────
+// _vp[i] = { src, ri } où ri = index imagePaths (-1 = cover, pas de réaction)
+// _vChs = chapitres avec starts en indices d'affichage
+// _imgToDisp = imagePaths index → premier index d'affichage correspondant
+var _cover      = book.coverPath || '';
+var _chs        = book.chapters  || [];
+var _imgs       = book.imagePaths;
+var _vp         = [];
+var _vChs       = [];
+var _imgToDisp  = {};
+
+if (_cover) _vp.push({ src: _cover, ri: -1 });
+
+if (!_chs.length) {
+  _imgs.forEach(function(p, i) { _imgToDisp[i] = _vp.length; _vp.push({ src: p, ri: i }); });
+} else {
+  _chs.forEach(function(ch, ci) {
+    var _end   = ci + 1 < _chs.length ? _chs[ci + 1].start : _imgs.length;
+    var _dStart = _vp.length;
+    if (ch.cover) _vp.push({ src: ch.cover, ri: -1 });
+    for (var pi = ch.start; pi < _end; pi++) {
+      _imgToDisp[pi] = _vp.length;
+      _vp.push({ src: _imgs[pi], ri: pi });
+    }
+    _vChs.push({ title: ch.title, start: _dStart });
+  });
+}
+%>
 <%- include('partials/head', { title: 'BD : ' + book.title }) %>
 <main class="bd-reader-main">
 
@@ -13,7 +42,7 @@
     </div>
 
     <div class="bd-reader-right">
-      <span class="bd-reader-counter" id="bd-counter">1 / <%= book.imagePaths.length %></span>
+      <span class="bd-reader-counter" id="bd-counter">1 / <%= _vp.length %></span>
 
       <%# Menu table des matières %>
       <% if (book.chapters && book.chapters.length) { %>
@@ -25,11 +54,11 @@
         </button>
         <div class="bd-tdm-panel" id="bd-tdm-panel" hidden>
           <p class="bd-tdm-title">Table des mati&egrave;res</p>
-          <% book.chapters.forEach(function(ch, idx) { %>
+          <% _vChs.forEach(function(ch, idx) { %>
             <button type="button" class="bd-tdm-item" data-start="<%= ch.start %>" data-idx="<%= idx %>">
               <span class="bd-tdm-num">Ch. <%= idx + 1 %></span>
               <span class="bd-tdm-label"><%= ch.title %></span>
-              <span class="bd-tdm-page">p. <%= ch.start + 1 %></span>
+              <span class="bd-tdm-page">p. <%= _chs[idx].start + 1 %></span>
             </button>
           <% }) %>
         </div>
@@ -58,15 +87,15 @@
 
     <%# Zone d'affichage de la page %>
     <div class="bd-reader-stage" id="bd-stage">
-      <% book.imagePaths.forEach(function(src, i) { %>
-        <div class="bd-reader-page" data-page="<%= i %>" <%= i === 0 ? '' : 'hidden' %>>
-          <img src="<%= src %>" alt="Page <%= i + 1 %>" class="bd-reader-img" loading="lazy" />
+      <% _vp.forEach(function(pg, i) { %>
+        <div class="bd-reader-page<%= pg.ri < 0 ? ' bd-reader-cover-page' : '' %>" data-page="<%= i %>" <%= i === 0 ? '' : 'hidden' %>>
+          <img src="<%= pg.src %>" alt="<%= pg.ri < 0 ? 'Couverture' : 'Page ' + (pg.ri + 1) %>" class="bd-reader-img" loading="lazy" />
         </div>
       <% }) %>
     </div>
 
-    <button type="button" class="bd-nav-btn bd-nav-prev" id="bd-prev" title="Page pr&eacute;c&eacute;dente" <%= book.imagePaths.length <= 1 ? 'hidden' : '' %>>&#8249;</button>
-    <button type="button" class="bd-nav-btn bd-nav-next" id="bd-next" title="Page suivante" <%= book.imagePaths.length <= 1 ? 'hidden' : '' %>>&#8250;</button>
+    <button type="button" class="bd-nav-btn bd-nav-prev" id="bd-prev" title="Page pr&eacute;c&eacute;dente" <%= _vp.length <= 1 ? 'hidden' : '' %>>&#8249;</button>
+    <button type="button" class="bd-nav-btn bd-nav-next" id="bd-next" title="Page suivante" <%= _vp.length <= 1 ? 'hidden' : '' %>>&#8250;</button>
 
     <%# Actions de la page affichée %>
     <div class="bd-page-actions" id="bd-page-actions">
@@ -110,12 +139,18 @@
   var next      = document.getElementById("bd-next");
   var total     = pages.length;
   var bookId    = <%= book.id %>;
-  var CHAPTERS  = <%- JSON.stringify(book.chapters || []) %>;
+  var CHAPTERS  = <%- JSON.stringify(_vChs) %>;
+  var REACTION_INDICES = <%- JSON.stringify(_vp.map(function(p){return p.ri;})) %>;
+  var IMG_TO_DISP = <%- JSON.stringify(_imgToDisp) %>;
 
   var PAGE_REACTIONS      = <%- JSON.stringify(pageReactions) %>;
   var PARTNER_PAGE_REACTIONS = <%- JSON.stringify(partnerPageReactions) %>;
 
-  function pageReaction(n) { return PAGE_REACTIONS[n] || { rating: 0, flame: false, hidden: false }; }
+  function pageReaction(n) {
+    var ri = REACTION_INDICES[n];
+    if (ri === undefined || ri < 0) return { rating: 0, flame: false, hidden: false };
+    return PAGE_REACTIONS[ri] || { rating: 0, flame: false, hidden: false };
+  }
   function isHidden(n) { return !!pageReaction(n).hidden; }
 
   // ── Chapitres ──────────────────────────────────────────────────────
@@ -164,10 +199,11 @@
     // Nom dans la topbar
     if (chapterName) chapterName.textContent = ci >= 0 ? CHAPTERS[ci].title : "";
 
-    // Compteur : "p.N (Ch.X)"
+    // Compteur : "p.N (Ch.X)" ou "Couv."
     if (counter) {
+      var _rri = REACTION_INDICES[n];
       var chStr = ci >= 0 ? " · Ch." + (ci + 1) : "";
-      counter.textContent = (n + 1) + " / " + total + chStr;
+      counter.textContent = _rri < 0 ? ("Couv." + chStr) : ((_rri + 1) + " / " + <%- _imgs.length %> + chStr);
     }
 
     // Bannière au changement de chapitre
@@ -191,8 +227,19 @@
   }
 
   // ── Init ───────────────────────────────────────────────────────────
-  var startParam = parseInt(new URLSearchParams(window.location.search).get("start")) || 0;
-  var current = Math.max(0, Math.min(total - 1, startParam));
+  // ?disp= = index d'affichage direct (covers de chapitres)
+  // ?start= = index imagePaths → converti via IMG_TO_DISP
+  var _sp = new URLSearchParams(window.location.search);
+  var _dispStart;
+  if (_sp.has("disp")) {
+    _dispStart = parseInt(_sp.get("disp")) || 0;
+  } else if (_sp.has("start")) {
+    var _rawStart = parseInt(_sp.get("start")) || 0;
+    _dispStart = IMG_TO_DISP[_rawStart] !== undefined ? IMG_TO_DISP[_rawStart] : 0;
+  } else {
+    _dispStart = 0;
+  }
+  var current = Math.max(0, Math.min(total - 1, _dispStart));
   if (current > 0) { pages[0].hidden = true; pages[current].hidden = false; }
 
   // ── Actions page ──────────────────────────────────────────────────
@@ -206,7 +253,8 @@
 
   function syncPagePartnerReveal(n) {
     if (!partnerReveal) return;
-    var r = PARTNER_PAGE_REACTIONS[n];
+    var ri = REACTION_INDICES[n];
+    var r = ri >= 0 ? PARTNER_PAGE_REACTIONS[ri] : null;
     var mine = pageReaction(n);
     if (!mine.rating || !r || !(r.rating > 0 || r.flame)) { partnerReveal.hidden = true; return; }
     var name = partnerReveal.dataset.partnerName || "Partenaire";
@@ -222,6 +270,10 @@
   }
 
   function syncPageActions(n) {
+    var isCover = REACTION_INDICES[n] < 0;
+    var pageActionsEl = document.getElementById("bd-page-actions");
+    if (pageActionsEl) pageActionsEl.hidden = isCover;
+    if (isCover) return;
     var r = pageReaction(n);
     renderStars(r.rating);
     if (flameBtn)  flameBtn.classList.toggle("active", r.flame);
@@ -230,9 +282,11 @@
   }
 
   function sendPageReact(n, payload) {
-    fetch("/bd/" + bookId + "/page/" + n + "/react", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) })
+    var ri = REACTION_INDICES[n];
+    if (ri === undefined || ri < 0) return;
+    fetch("/bd/" + bookId + "/page/" + ri + "/react", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) })
       .then(function(r) { return r.json(); })
-      .then(function(d) { if (!d.ok) return; PAGE_REACTIONS[n] = { rating:d.rating, flame:d.flame, hidden:d.hidden }; if (n === current) syncPageActions(n); });
+      .then(function(d) { if (!d.ok) return; PAGE_REACTIONS[ri] = { rating:d.rating, flame:d.flame, hidden:d.hidden }; if (n === current) syncPageActions(n); });
   }
 
   stars.forEach(function(star) {
@@ -261,9 +315,10 @@
     pages[current].hidden = true;
     pages[n].hidden = false;
     current = n;
-    if(n === total - 1) localStorage.removeItem("bd_progress_" + bookId);
-    else localStorage.setItem("bd_progress_" + bookId, String(n));
-    if (!CHAPTERS.length && counter) counter.textContent = (current + 1) + " / " + total;
+    var _ri = REACTION_INDICES[n];
+    if (n === total - 1 || _ri < 0) localStorage.removeItem("bd_progress_" + bookId);
+    else localStorage.setItem("bd_progress_" + bookId, String(_ri));
+    if (!CHAPTERS.length && counter) counter.textContent = (_ri < 0 ? "Couv." : (_ri + 1) + " / " + <%- _imgs.length %>);
     if (prev) prev.hidden = current === 0;
     if (next) next.hidden = current === total - 1;
     syncPageActions(current);
@@ -315,7 +370,7 @@
   document.addEventListener("touchend",   function(e) { var dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1); });
 
   // Init
-  if (!CHAPTERS.length && counter) counter.textContent = (current + 1) + " / " + total;
+  if (!CHAPTERS.length && counter) { var _ri0=REACTION_INDICES[current]; counter.textContent = _ri0<0?"Couv.":(_ri0+1)+" / "+<%- _imgs.length %>; }
   if (prev) prev.hidden = current === 0;
   if (next) next.hidden = current === total - 1 || total <= 1;
   syncPageActions(current);
