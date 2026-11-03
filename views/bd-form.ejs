@@ -4,10 +4,11 @@
   <button type="button" class="mobile-filter-toggle bdf-options-toggle" id="mobile-filter-toggle" aria-label="Options" aria-expanded="false" aria-controls="mobile-filter-sidebar">&#9881; Options</button>
   <div class="nav-backdrop" id="mobile-filter-backdrop"></div>
   <a href="<%= book ? '/bd/' + book.id : '/bd' %>" class="wf-back-btn">&#8592; Retour</a>
+  <% if (book) { %>
   <div class="wf-actions-right">
-    <% if (book) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/bd/' + book.id + '/edit' }) %><% } %>
-    <button type="submit" form="bd-form" class="wf-save-btn">Enregistrer</button>
+    <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/bd/' + book.id + '/edit' }) %>
   </div>
+  <% } %>
   <% if (book) { %>
   <form method="POST" action="/bd/<%= book.id %>/delete" class="wf-delete-form-fixed"
     onsubmit="return confirm('Supprimer cette BD ?')">
@@ -15,13 +16,16 @@
   </form>
   <% } %>
 
-  <h1 class="section-title-h1"><%= book ? 'Modifier' : 'Nouvelle BD' %></h1>
 
   <form method="POST" action="<%= book ? '/bd/' + book.id : '/bd' %>" enctype="multipart/form-data" class="bdf-form" id="bd-form" data-no-enter-submit>
     <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
 
     <%# ── COLONNE PRINCIPALE ───────────────────────────────────────── %>
     <div class="bdf-main">
+
+      <div class="bdf-topbar">
+        <button type="submit" class="wf-save-btn">Enregistrer</button>
+      </div>
 
       <% var _bdTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : (book ? book.title : ''); %>
       <% var _bdDesc  = (locals.editLang === 'en') ? ((locals.translations || {}).description || '') : (book ? book.description : ''); %>
@@ -36,48 +40,61 @@
       <input type="text" name="author" class="wiki-input-sm" value="<%= book ? (book.author || '') : '' %>" placeholder="Auteur&hellip;" maxlength="200" />
       <% } %>
 
-      <%# ── Images ── %>
-      <div class="bdf-section">
-        <p class="bdf-section-label">Pages</p>
-        <div class="bd-sort-grid" id="bd-sort-grid">
-          <% if (book && book.imagePaths && book.imagePaths.length) { %>
-            <% book.imagePaths.forEach(function(src, i) { %>
-              <div class="bd-sort-item" draggable="true" data-src="<%= src %>">
-                <div class="bd-sort-handle">&#8597;</div>
-                <img src="<%= thumbUrl(src) %>" alt="" class="bd-sort-img" loading="lazy" />
-                <span class="bd-sort-num"><%= i + 1 %></span>
-                <div class="bd-sort-move">
-                  <button type="button" class="bd-sort-move-btn bd-sort-move-up" title="Haut" aria-label="Haut">&#8593;</button>
-                  <button type="button" class="bd-sort-move-btn bd-sort-move-down" title="Bas" aria-label="Bas">&#8595;</button>
+      <%# ── Chapitres & pages ── %>
+      <div class="bdf-section bdf-chapters-outer">
+        <div id="bdf-chapters-wrap">
+          <%
+            var _chGroups = [];
+            if (locals.editLang !== 'en') {
+              var _chs = book ? (book.chapters || []) : [];
+              var _imgs = book ? (book.imagePaths || []) : [];
+              if (_chs.length === 0) {
+                _chGroups = [{ title: '', images: _imgs }];
+              } else {
+                for (var _ci = 0; _ci < _chs.length; _ci++) {
+                  var _cStart = _chs[_ci].start;
+                  var _cEnd = _ci + 1 < _chs.length ? _chs[_ci + 1].start : _imgs.length;
+                  _chGroups.push({ title: _chs[_ci].title, images: _imgs.slice(_cStart, _cEnd) });
+                }
+              }
+            }
+          %>
+          <% _chGroups.forEach(function(cg, ci) { %>
+          <div class="bdf-ch-item" data-ch-idx="<%= ci %>">
+            <div class="bdf-ch-head">
+              <span class="bdf-ch-num">Chapitre <%= ci + 1 %></span>
+              <input type="text" class="bdf-ch-title-inp" placeholder="Titre (optionnel)&hellip;" value="<%= cg.title %>" maxlength="120" />
+              <% if (ci > 0) { %><button type="button" class="bdf-ch-remove-btn" title="Supprimer ce chapitre">&times;</button><% } %>
+            </div>
+            <div class="bd-sort-grid bdf-ch-grid">
+              <% cg.images.forEach(function(src, i) { %>
+                <div class="bd-sort-item" draggable="true" data-src="<%= src %>">
+                  <div class="bd-sort-handle">&#8597;</div>
+                  <img src="<%= thumbUrl(src) %>" alt="" class="bd-sort-img" loading="lazy" />
+                  <span class="bd-sort-num"><%= i + 1 %></span>
+                  <div class="bd-sort-move">
+                    <button type="button" class="bd-sort-move-btn bd-sort-move-up" title="Haut">&#8593;</button>
+                    <button type="button" class="bd-sort-move-btn bd-sort-move-down" title="Bas">&#8595;</button>
+                  </div>
+                  <label class="bd-sort-remove" title="Supprimer">
+                    <input type="checkbox" name="remove_image" value="<%= src %>" class="bd-remove-cb" />
+                    <span>&#215;</span>
+                  </label>
                 </div>
-                <label class="bd-sort-remove" title="Supprimer cette page">
-                  <input type="checkbox" name="remove_image" value="<%= src %>" class="bd-remove-cb" />
-                  <span>&#215;</span>
-                </label>
-              </div>
-            <% }) %>
-          <% } %>
+              <% }) %>
+            </div>
+            <div class="bdf-ch-previews"></div>
+            <label class="wiki-image-add-label bdf-ch-add-label">
+              <span>+ Pages</span>
+              <input type="file" name="images" accept="image/*" multiple class="bdf-ch-file" />
+            </label>
+          </div>
+          <% }) %>
         </div>
-        <input type="hidden" name="image_order" id="bd-image-order" value="<%= (book && book.imagePaths) ? book.imagePaths.join(',') : '' %>" />
-        <div class="bd-new-previews" id="bd-new-previews"></div>
-        <label class="wiki-image-add-label">
-          <span>+ Ajouter des pages</span>
-          <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" id="bd-file-input" />
-        </label>
+        <button type="button" class="bd-chapter-add-btn" id="bdf-add-chapter">+ Nouveau chapitre</button>
       </div>
-
-      <%# ── Chapitres ── %>
-      <% if (locals.editLang !== 'en') { %>
-      <div class="bdf-section bd-chapters-section">
-        <div class="bd-chapters-header">
-          <p class="bdf-section-label">Chapitres</p>
-          <button type="button" class="bd-chapter-add-btn" id="bd-chapter-add">+ Ajouter un chapitre</button>
-        </div>
-        <div class="bd-chapter-list" id="bd-chapter-list"></div>
-        <input type="hidden" name="chapters_json" id="bd-chapters-json"
-          value="<%= JSON.stringify(book ? (book.chapters || []) : []) %>" />
-      </div>
-      <% } %>
+      <input type="hidden" name="image_order" id="bd-image-order" value="" />
+      <input type="hidden" name="chapters_json" id="bd-chapters-json" value="<%= JSON.stringify(book ? (book.chapters || []) : []) %>" />
 
       <div class="wiki-form-actions wf-mobile-actions">
         <button type="submit">Enregistrer</button>
