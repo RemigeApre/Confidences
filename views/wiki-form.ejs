@@ -153,6 +153,14 @@
             </div>
           </div>
 
+          <div class="wiki-tenues-meta" <%= page.category === 'tenues' ? '' : 'hidden' %>>
+            <div class="wiki-meta-options">
+              <% tenuesSubs.forEach(function(s) { %>
+                <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
+              <% }) %>
+            </div>
+          </div>
+
           <div class="wiki-lieux-meta" <%= page.category === 'lieux' ? '' : 'hidden' %>>
             <div class="wiki-meta-options">
               <label class="chip-option"><input type="radio" name="meta_type_lieu" value="prive"  <%= pm.type_lieu === 'prive'  ? 'checked' : '' %>><span>Priv&eacute;</span></label>
