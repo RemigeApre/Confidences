@@ -54,12 +54,12 @@
         <%# ─ Filtre par catégorie ─ %>
         <div class="wiki-filter-section">
           <span class="wiki-filter-label">Catégorie</span>
-          <div class="links-filter tags-cat-filter-wrap" id="tags-cat-filter">
-            <button type="button" class="tag-chip active" data-cat-filter="">Toutes</button>
+          <select class="wiki-sort-select" id="tags-cat-filter" style="width:100%">
+            <option value="">Toutes</option>
             <% CAT_ORDER.forEach(function(cat) { %>
-            <button type="button" class="tag-chip" data-cat-filter="<%= cat %>"><%= CAT_LABELS[cat] %></button>
+            <option value="<%= cat %>"><%= CAT_LABELS[cat] %></option>
             <% }) %>
-          </div>
+          </select>
         </div>
 
         <%# ─ Filtre sous-catégorie (femme / homme uniquement, affiché via JS) ─ %>
@@ -365,6 +365,7 @@
   var hideVariants = false;
 
   var CATS_WITH_SUBCAT = <%- JSON.stringify(CAT_WITH_SUB) %>;
+  var CAT_LABELS_JS    = <%- JSON.stringify(CAT_LABELS) %>;
   var subcatSection    = document.getElementById("tags-subcat-filter-section");
   var subcatLabel      = document.getElementById("tags-subcat-filter-label");
   var subcatFilter     = document.getElementById("tags-subcat-filter");
@@ -372,7 +373,7 @@
   function syncSubcatPanel() {
     var show = CATS_WITH_SUBCAT[activeCat];
     if (subcatSection) subcatSection.hidden = !show;
-    if (show && subcatLabel) subcatLabel.textContent = (activeCat === 'femme' ? 'Femme' : 'Homme') + ' — sous-catégorie';
+    if (show && subcatLabel) subcatLabel.textContent = CAT_LABELS_JS[activeCat] + ' — sous-catégorie';
     if (!show) { activeSubcat = ""; if (subcatFilter) subcatFilter.querySelectorAll(".tag-chip").forEach(function(b){ b.classList.toggle("active", (b.dataset.subcatFilter || "") === ""); }); }
   }
 
@@ -468,24 +469,13 @@
     searchDebounceTimer = setTimeout(applyFilters, 120);
   });
 
-  /* ── Filtre par catégorie : sélection exclusive ── */
+  /* ── Filtre par catégorie : dropdown ── */
   var catFilter = document.getElementById("tags-cat-filter");
   if (catFilter) {
-    catFilter.querySelectorAll(".tag-chip[data-cat-filter]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var val = btn.dataset.catFilter || "";
-        if (activeCat === val && val !== "") {
-          // Désélectionner : retour à "Toutes"
-          activeCat = "";
-        } else {
-          activeCat = val;
-        }
-        catFilter.querySelectorAll(".tag-chip").forEach(function (b) {
-          b.classList.toggle("active", (b.dataset.catFilter || "") === activeCat);
-        });
-        syncSubcatPanel();
-        applyFilters();
-      });
+    catFilter.addEventListener("change", function () {
+      activeCat = catFilter.value;
+      syncSubcatPanel();
+      applyFilters();
     });
   }
 
