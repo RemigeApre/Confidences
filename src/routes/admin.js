@@ -174,6 +174,11 @@ const accountRequestThrottle = createThrottle();
 const SEXE_VALUES = ["", "femme", "homme", "autre"];
 
 
+function normalizeTag(t) {
+  return String(t).toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+function tagKey(t) { return normalizeTag(t).replace(/-/g, ''); }
+
 function safeNext(next) {
   if (typeof next !== "string") return null;
   if (!next.startsWith("/") || next.startsWith("//")) return null;
@@ -1553,7 +1558,7 @@ function buildAdminRouter(config) {
     const parody     = String(req.body.parody      || "").trim();
     const subParody  = String(req.body.sub_parody  || "").trim();
     const tagsRaw    = String(req.body.tags        || "").trim();
-    const tags       = tagsRaw ? [...new Set(tagsRaw.split(",").map(t => t.trim().toLowerCase()).filter(Boolean))] : [];
+    const tags       = tagsRaw ? (() => { const seen = new Set(); return tagsRaw.split(",").map(normalizeTag).filter(t => { if (!t) return false; const k = tagKey(t); if (seen.has(k)) return false; seen.add(k); return true; }); })() : [];
     const protRaw    = req.body.protagonist_ids;
     const protagonistIds = (Array.isArray(protRaw) ? protRaw : protRaw ? [protRaw] : [])
       .map(Number).filter(n => !isNaN(n) && n > 0);

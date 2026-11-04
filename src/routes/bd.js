@@ -26,8 +26,19 @@ const upload = multer({
   },
 });
 
+function normalizeTag(t) {
+  return String(t).toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+function tagKey(t) { return normalizeTag(t).replace(/-/g, ''); }
 function parseTags(raw) {
-  return [...new Set(String(raw || "").split(/[,;]+/).map((t) => t.trim().toLowerCase()).filter(Boolean))];
+  const seen = new Set();
+  return String(raw || "").split(/[,;]+/).map(normalizeTag).filter((t) => {
+    if (!t) return false;
+    const k = tagKey(t);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 
 // Fusionne une case à cocher tag avec les tags libres, sans doublon.

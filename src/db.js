@@ -796,7 +796,7 @@ function listBlacklistedTags(userId) {
 }
 
 function addBlacklistedTag(userId, tag) {
-  var t = String(tag || "").toLowerCase().trim();
+  var t = normalizeTagStr(tag);
   if (!t) return;
   db.prepare(
     "INSERT OR IGNORE INTO tag_blacklist (user_id, tag, created_at) VALUES (?, ?, ?)"
@@ -804,7 +804,7 @@ function addBlacklistedTag(userId, tag) {
 }
 
 function removeBlacklistedTag(userId, tag) {
-  var t = String(tag || "").toLowerCase().trim();
+  var t = normalizeTagStr(tag);
   db.prepare("DELETE FROM tag_blacklist WHERE user_id = ? AND tag = ?").run(userId, t);
 }
 
@@ -2713,9 +2713,13 @@ function getAllTagParents() {
   return result;
 }
 
+function normalizeTagStr(t) {
+  return String(t || "").toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
 function setTagParent(tag, parent) {
-  const t = String(tag || "").toLowerCase().trim();
-  const p = String(parent || "").toLowerCase().trim();
+  const t = normalizeTagStr(tag);
+  const p = normalizeTagStr(parent);
   if (!t) return;
   db.prepare("INSERT INTO tag_meta (tag, type, category, parent) VALUES (?, 'normal', 'autre', ?) ON CONFLICT(tag) DO UPDATE SET parent = excluded.parent").run(t, p);
 }
@@ -2731,26 +2735,28 @@ function getAllTagSubcategories() {
 }
 
 function setTagSubcategory(tag, subcategory) {
-  const t = String(tag || "").toLowerCase().trim();
+  const t = normalizeTagStr(tag);
   const s = VALID_SUBCATEGORIES.has(subcategory) ? subcategory : "";
   if (!t) return;
   db.prepare("INSERT INTO tag_meta (tag, type, category, subcategory) VALUES (?, 'normal', 'autre', ?) ON CONFLICT(tag) DO UPDATE SET subcategory = excluded.subcategory").run(t, s);
 }
 
 function setTagType(tag, type) {
+  const t = normalizeTagStr(tag);
+  if (!t) return;
   if (!VALID_TAG_TYPES.has(type)) type = "normal";
-  db.prepare("INSERT INTO tag_meta (tag, type, category) VALUES (?, ?, 'autre') ON CONFLICT(tag) DO UPDATE SET type = excluded.type").run(tag, type);
+  db.prepare("INSERT INTO tag_meta (tag, type, category) VALUES (?, ?, 'autre') ON CONFLICT(tag) DO UPDATE SET type = excluded.type").run(t, type);
 }
 
 function setTagCategory(tag, category) {
-  const t = String(tag || "").trim();
+  const t = normalizeTagStr(tag);
   if (!t) return;
   if (!VALID_TAG_CATEGORIES.has(category)) category = "autre";
   db.prepare("INSERT INTO tag_meta (tag, type, category) VALUES (?, 'normal', ?) ON CONFLICT(tag) DO UPDATE SET category = excluded.category").run(t, category);
 }
 
 function createStandaloneTag(tag, category) {
-  const t = String(tag || "").trim();
+  const t = normalizeTagStr(tag);
   if (!t) return false;
   const cat = VALID_TAG_CATEGORIES.has(category) ? category : "autre";
   db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type, category) VALUES (?, 'normal', ?)").run(t, cat);
@@ -3632,7 +3638,8 @@ function renameTagEverywhere(oldTag, newTag) {
     for (const row of rows) {
       try {
         const tags = JSON.parse(row.tags || "[]");
-        const idx = tags.findIndex((t) => String(t).toLowerCase().trim() === oldTag.toLowerCase());
+        const normOld = normalizeTagStr(oldTag);
+        const idx = tags.findIndex((t) => normalizeTagStr(t) === normOld);
         if (idx === -1) continue;
         tags[idx] = newTag;
         if (hasUpdatedAt) {
@@ -3812,8 +3819,11 @@ db.exec(`
   } catch (_) {}
 })();
 
-// Migration : normalise tous les tags existants en minuscules (one-time, idempotent)
+// Migration : normalise tous les tags existants (minuscules + séparateurs → tirets)
 (function normalizeExistingTags() {
+  function _norm(t) {
+    return String(t || "").toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  }
   const tagTables = ['wiki_pages', 'gallery_images', 'bd_books', 'links', 'nouvelles', 'protagonistes'];
   for (const table of tagTables) {
     try {
@@ -3822,12 +3832,29 @@ db.exec(`
       for (const row of rows) {
         try {
           const arr  = JSON.parse(row.tags);
-          const norm = JSON.stringify(arr.map(t => String(t).toLowerCase().trim()).filter(Boolean));
+          const seen = new Set();
+          const norm = JSON.stringify(arr.map(_norm).filter(t => {
+            if (!t) return false;
+            const k = t.replace(/-/g, '');
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          }));
           if (norm !== row.tags) upd.run(norm, row.id);
         } catch (_) {}
       }
     } catch (_) {}
   }
+  // Normalise aussi les clés de tag_meta
+  try {
+    const metaRows = db.prepare("SELECT tag FROM tag_meta").all();
+    for (const row of metaRows) {
+      const n = _norm(row.tag);
+      if (n !== row.tag) {
+        db.prepare("UPDATE tag_meta SET tag=? WHERE tag=?").run(n, row.tag);
+      }
+    }
+  } catch (_) {}
 })();
 
 // Seed "Profil principal"

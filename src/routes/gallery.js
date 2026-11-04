@@ -93,8 +93,19 @@ function findImageBySrc(src, galleryImages) {
   }) || null;
 }
 
+function normalizeTag(t) {
+  return String(t).toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+function tagKey(t) { return normalizeTag(t).replace(/-/g, ''); }
 function parseTags(raw) {
-  return String(raw || "").split(/[,;]+/).map((t) => t.trim().toLowerCase()).filter(Boolean);
+  const seen = new Set();
+  return String(raw || "").split(/[,;]+/).map(normalizeTag).filter((t) => {
+    if (!t) return false;
+    const k = tagKey(t);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 
 // La catégorie est optionnelle pour une image de galerie (contrairement au

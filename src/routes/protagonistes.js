@@ -83,7 +83,7 @@ function buildProtagonistesRouter(config) {
     const prenom = String(req.body.prenom || "").slice(0, 200).trim();
     const nom    = String(req.body.nom    || "").slice(0, 200).trim();
     if (!prenom && !nom) return res.redirect("/protagonistes/new");
-    const tags = [...new Set(String(req.body.tags || "").split(",").map(t => t.trim().toLowerCase()).filter(Boolean))];
+    const tags = (() => { const seen = new Set(); return String(req.body.tags || "").split(",").map(t => String(t).toLowerCase().trim().replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')).filter(t => { if(!t) return false; const k=t.replace(/-/g,''); if(seen.has(k)) return false; seen.add(k); return true; }); })();
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
     const gender = VALID_GENDERS.has(req.body.gender) ? req.body.gender : "";
@@ -150,7 +150,7 @@ function buildProtagonistesRouter(config) {
     if (!protagoniste) return res.redirect("/protagonistes");
 
     // Champs partagés FR/EN — toujours sauvegardés
-    const tags = [...new Set(String(req.body.tags || "").split(",").map(t => t.trim().toLowerCase()).filter(Boolean))];
+    const tags = (() => { const seen = new Set(); return String(req.body.tags || "").split(",").map(t => String(t).toLowerCase().trim().replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')).filter(t => { if(!t) return false; const k=t.replace(/-/g,''); if(seen.has(k)) return false; seen.add(k); return true; }); })();
     const parody = normalizeParody(String(req.body.parody || "").slice(0, 200));
     const subParody = normalizeParody(String(req.body.sub_parody || "").slice(0, 200));
     const gender = VALID_GENDERS.has(req.body.gender) ? req.body.gender : "";
