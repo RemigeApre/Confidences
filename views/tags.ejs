@@ -252,6 +252,7 @@
     <div class="tags-bulk-bar" id="tags-bulk-bar" hidden>
       <span class="tags-bulk-count" id="tags-bulk-count">0 sélectionné(s)</span>
       <select class="tags-bulk-select" id="tags-bulk-cat-select">
+        <option value="">— Aucune catégorie —</option>
         <% CAT_ORDER.forEach(function(cat) { %>
         <option value="<%= cat %>"><%= CAT_LABELS[cat] %></option>
         <% }) %>
@@ -335,6 +336,11 @@
   <% } %>
 </main>
 
+<script nonce="<%= nonce %>">
+window._LQCatLabels  = <%- JSON.stringify(CAT_LABELS) %>;
+window._LQSubsByCat  = <%- JSON.stringify(SUBCATS_BY_CAT) %>;
+window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
+</script>
 <script nonce="<%= nonce %>">
 (function () {
   var isAdmin = <%= currentUser && currentUser.isAdmin ? 'true' : 'false' %>;
@@ -605,7 +611,19 @@
       if (e.target.closest(".tags-item-wiki-link")) return;
       if (e.target.closest(".tags-cat-more-btn"))   return;
       var item = e.target.closest(".tags-item");
-      if (item && window.openTagPopup) { hideTooltip(); window.openTagPopup(item.dataset.tag); }
+      if (item && window.openTagPopup) {
+        hideTooltip();
+        var _cat = item.dataset.category || "";
+        var _sub = item.dataset.subcategory || "";
+        var _catLbl = (_cat && window._LQCatLabels) ? (window._LQCatLabels[_cat] || "") : "";
+        var _subLbl = "";
+        if (_sub && window._LQSubsByCat && window._LQSubsByCat[_cat]) {
+          var _sf = window._LQSubsByCat[_cat].filter(function(s){ return s.key === _sub; });
+          if (_sf.length) _subLbl = _sf[0].label;
+        }
+        window._currentTagMeta = (_catLbl || _subLbl) ? { catLabel: _catLbl, subLabel: _subLbl } : null;
+        window.openTagPopup(item.dataset.tag);
+      }
     });
   }
 
@@ -812,28 +830,32 @@
         bulkApplyBtn.textContent = "…";
 
         var promises = Array.from(selectedTags).map(function (tag) {
-          var catReq = fetch("/api/tags/category", {
+          // Catégorie d'abord, puis sous-catégorie (en série pour éviter la race condition de validation)
+          return fetch("/api/tags/category", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ tag: tag, category: cat })
-          }).then(function (r) { return r.json(); });
-
-          var subcatReq = catWithSub[cat]
-            ? fetch("/api/tags/subcategory", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tag: tag, subcategory: subcat })
-              }).then(function (r) { return r.json(); })
-            : Promise.resolve({ ok: true });
-
-          return Promise.all([catReq, subcatReq]).then(function (results) {
-            if (results[0].ok) {
+          }).then(function (r) { return r.json(); })
+          .then(function (catResult) {
+            if (!catResult.ok) return { tag: tag, ok: false };
+            var hasSub = !!(window._tagCatWithSub || window._LQCatWithSub)[cat];
+            if (!hasSub && !subcat) {
               document.querySelectorAll('.tags-item[data-tag="' + tag + '"]').forEach(function (el) {
-                el.dataset.category = cat;
-                el.dataset.subcategory = subcat;
+                el.dataset.category = cat; el.dataset.subcategory = "";
               });
+              return { tag: tag, ok: true };
             }
-            return { tag: tag, ok: !!results[0].ok };
+            return fetch("/api/tags/subcategory", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ tag: tag, subcategory: subcat, category: cat })
+            }).then(function (r) { return r.json(); })
+            .then(function () {
+              document.querySelectorAll('.tags-item[data-tag="' + tag + '"]').forEach(function (el) {
+                el.dataset.category = cat; el.dataset.subcategory = subcat;
+              });
+              return { tag: tag, ok: true };
+            });
           });
         });
 

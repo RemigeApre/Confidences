@@ -2,17 +2,19 @@
 var overlay=document.getElementById("tag-popup-overlay");
 if(!overlay)return;
 var title=document.getElementById("tag-popup-title");
+var metaEl=document.getElementById("tag-popup-meta");
 var closeBtn=document.getElementById("tag-popup-close");
 var wikiBtn=document.getElementById("tag-popup-wiki-btn");
 var galerieBtn=document.getElementById("tag-popup-gallery-btn");
 var bdBtn=document.getElementById("tag-popup-bd-btn");
 var nouvellesBtn=document.getElementById("tag-popup-nouvelles-btn");
 var current="";
-function close(){overlay.hidden=true;current=""}
+function close(){overlay.hidden=true;current="";if(metaEl)metaEl.hidden=true;}
 function open(raw){
 current=String(raw).toLowerCase().trim();
 if(!current)return;
 title.textContent=raw;
+if(metaEl){var meta=window._currentTagMeta||null;window._currentTagMeta=null;if(meta&&(meta.catLabel||meta.subLabel)){var parts=[meta.catLabel,meta.subLabel].filter(Boolean);metaEl.textContent=parts.join(" · ");metaEl.hidden=false;}else{metaEl.hidden=true;}}
 [wikiBtn,galerieBtn,bdBtn,nouvellesBtn].forEach(function(b){b.hidden=true});
 overlay.hidden=false;
 fetch("/api/tags/results?tag="+encodeURIComponent(current)).then(function(r){return r.json()}).then(function(data){

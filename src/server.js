@@ -979,8 +979,9 @@ app.put("/api/tags/subcategory", function (req, res) {
   if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false, error: "Interdit" });
   var tag         = String(req.body.tag         || "").toLowerCase().trim();
   var subcategory = String(req.body.subcategory || "").toLowerCase().trim();
+  var category    = req.body.category != null ? String(req.body.category).toLowerCase().trim() : null;
   if (!tag) return res.status(400).json({ ok: false, error: "Tag vide" });
-  setTagSubcategory(tag, subcategory);
+  setTagSubcategory(tag, subcategory, category);
   res.json({ ok: true });
 });
 

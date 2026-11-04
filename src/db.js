@@ -2876,11 +2876,15 @@ function getAllTagSubcategories() {
   return result;
 }
 
-function setTagSubcategory(tag, subcategory) {
+function setTagSubcategory(tag, subcategory, categoryKey) {
   const t = normalizeTagStr(tag);
   if (!t) return;
-  const meta = db.prepare("SELECT category FROM tag_meta WHERE tag=?").get(t);
-  const catKey = meta ? meta.category : '';
+  // Si categoryKey fourni par l'appelant, l'utiliser directement (évite une lecture stale)
+  let catKey = categoryKey != null ? String(categoryKey).toLowerCase().trim() : null;
+  if (catKey === null) {
+    const meta = db.prepare("SELECT category FROM tag_meta WHERE tag=?").get(t);
+    catKey = meta ? meta.category : '';
+  }
   const validSubs = getValidTagSubcategories(catKey);
   const s = validSubs.has(subcategory) ? subcategory : "";
   db.prepare("INSERT INTO tag_meta (tag, type, category, subcategory) VALUES (?, 'normal', 'autre', ?) ON CONFLICT(tag) DO UPDATE SET subcategory = excluded.subcategory").run(t, s);
