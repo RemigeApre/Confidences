@@ -1553,7 +1553,7 @@ function buildAdminRouter(config) {
     const parody     = String(req.body.parody      || "").trim();
     const subParody  = String(req.body.sub_parody  || "").trim();
     const tagsRaw    = String(req.body.tags        || "").trim();
-    const tags       = tagsRaw ? tagsRaw.split(",").map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+    const tags       = tagsRaw ? [...new Set(tagsRaw.split(",").map(t => t.trim().toLowerCase()).filter(Boolean))] : [];
     const protRaw    = req.body.protagonist_ids;
     const protagonistIds = (Array.isArray(protRaw) ? protRaw : protRaw ? [protRaw] : [])
       .map(Number).filter(n => !isNaN(n) && n > 0);

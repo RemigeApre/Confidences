@@ -85,8 +85,10 @@ const PRATIQUES_SUBCATS = [
   { key: "autre",        label: "Autre" },
 ];
 const TENUES_SUBCATS = [
-  { key: "accessoire", label: "Accessoire" },
-  { key: "autre",      label: "Autre" },
+  { key: "sous-vetements",  label: "Sous-vêtements" },
+  { key: "bas-et-collants", label: "Bas et collants" },
+  { key: "accessoire",      label: "Accessoire" },
+  { key: "autre",           label: "Autre" },
 ];
 const OBJETS_SUBCATS = [
   { key: "substance", label: "Substance" },
@@ -119,10 +121,10 @@ const upload = multer({
 });
 
 function parseTags(raw) {
-  return String(raw || "")
+  return [...new Set(String(raw || "")
     .split(/[,;]+/)
     .map((t) => t.trim().toLowerCase())
-    .filter(Boolean);
+    .filter(Boolean))];
 }
 
 // Enrichit les tags avec le titre de la page et ses termes dérivés,
@@ -243,7 +245,7 @@ function parseDerivedTerms(raw) {
     .filter(Boolean)
     .map((t) => {
       const en = /::en$/.test(t);
-      return { term: en ? t.slice(0, -4).trim() : t, en };
+      return { term: (en ? t.slice(0, -4).trim() : t).toLowerCase(), en };
     })
     .filter((t) => {
       if (!t.term) return false;

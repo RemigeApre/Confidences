@@ -3788,14 +3788,22 @@ db.exec(`
         const meta = JSON.parse(row.meta);
         if (!Array.isArray(meta.termes_derives) || meta.termes_derives.length === 0) continue;
         const seen = new Set();
-        const deduped = meta.termes_derives.filter((t) => {
-          const term = typeof t === "string" ? t : (t.term || "");
-          const key  = term.toLowerCase();
-          if (!key || seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-        if (deduped.length !== meta.termes_derives.length) {
+        const deduped = meta.termes_derives.reduce((acc, t) => {
+          const isStr = typeof t === "string";
+          const term  = (isStr ? t : (t.term || "")).toLowerCase();
+          if (!term || seen.has(term)) return acc;
+          seen.add(term);
+          acc.push(isStr ? term : { ...t, term });
+          return acc;
+        }, []);
+        const changed = deduped.length !== meta.termes_derives.length
+          || deduped.some((t, i) => {
+            const orig = meta.termes_derives[i];
+            const origTerm = typeof orig === "string" ? orig : (orig.term || "");
+            const newTerm  = typeof t    === "string" ? t    : (t.term    || "");
+            return origTerm !== newTerm;
+          });
+        if (changed) {
           meta.termes_derives = deduped;
           upd.run(JSON.stringify(meta), row.id);
         }

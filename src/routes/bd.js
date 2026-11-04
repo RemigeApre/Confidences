@@ -27,7 +27,7 @@ const upload = multer({
 });
 
 function parseTags(raw) {
-  return String(raw || "").split(/[,;]+/).map((t) => t.trim().toLowerCase()).filter(Boolean);
+  return [...new Set(String(raw || "").split(/[,;]+/).map((t) => t.trim().toLowerCase()).filter(Boolean))];
 }
 
 // Fusionne une case à cocher tag avec les tags libres, sans doublon.

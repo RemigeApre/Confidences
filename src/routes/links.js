@@ -4,10 +4,10 @@ const { fetchPageTitle } = require("../linkTitle");
 const { requireUser, requireAdmin } = require("../auth");
 
 function parseTags(raw) {
-  return String(raw || "")
+  return [...new Set(String(raw || "")
     .split(",")
     .map((t) => t.trim().toLowerCase())
-    .filter(Boolean);
+    .filter(Boolean))];
 }
 
 function isValidUrl(value) {
