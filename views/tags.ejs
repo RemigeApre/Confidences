@@ -77,8 +77,8 @@
         <%# ─ Filtre déclinaisons ─ %>
         <div class="wiki-filter-section">
           <label class="tags-variant-toggle">
-            <input type="checkbox" id="tags-hide-variants" />
-            <span>Masquer les d&eacute;clinaisons</span>
+            <input type="checkbox" id="tags-hide-variants" checked />
+            <span>Afficher les inclusions</span>
           </label>
         </div>
 
@@ -407,7 +407,7 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
   var typeStates   = {};   // type → 0 neutre / 1 inclus / 2 exclu
   var activeCat    = "";   // catégorie active (vide = toutes)
   var activeSubcat = "";   // sous-catégorie active (femme/homme uniquement)
-  var hideVariants = false;
+  var hideVariants = true;   // inclusions masquées par défaut
 
   var CATS_WITH_SUBCAT = <%- JSON.stringify(CAT_WITH_SUB) %>;
   var CAT_LABELS_JS    = <%- JSON.stringify(CAT_LABELS) %>;
@@ -576,7 +576,7 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
   var hideVariantsChk = document.getElementById("tags-hide-variants");
   if (hideVariantsChk) {
     hideVariantsChk.addEventListener("change", function () {
-      hideVariants = hideVariantsChk.checked;
+      hideVariants = !hideVariantsChk.checked; // coché = afficher = ne pas masquer
       applyFilters();
     });
   }
@@ -661,10 +661,38 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
           if (_sf.length) _subLbl = _sf[0].label;
         }
         var _children = (window._tagChildrenMap && window._tagChildrenMap[item.dataset.tag]) || [];
-        window._currentTagMeta = (_catLbl || _subLbl || _children.length)
-          ? { catLabel: _catLbl, subLabel: _subLbl, children: _children }
-          : null;
+        window._currentTagMeta = (_catLbl || _subLbl) ? { catLabel: _catLbl, subLabel: _subLbl } : null;
         window.openTagPopup(item.dataset.tag);
+        // Peupler les enfants directement après l'ouverture du popup (nav.js est déjà chargé ici)
+        var _childrenEl = document.getElementById("tag-popup-children");
+        if (_childrenEl) {
+          while (_childrenEl.firstChild) _childrenEl.removeChild(_childrenEl.firstChild);
+          if (_children.length) {
+            var _lbl = document.createElement("span");
+            _lbl.className = "tag-popup-children-label";
+            _lbl.textContent = "Inclusions\u00a0:";
+            _childrenEl.appendChild(_lbl);
+            _children.forEach(function (child) {
+              var _b = document.createElement("span");
+              _b.className = "tag-badge tag-badge--normal";
+              _b.dataset.tag = child;
+              _b.style.cursor = "pointer";
+              _b.textContent = child;
+              _b.addEventListener("click", function (ev) {
+                ev.stopPropagation();
+                var _cc = (window._tagChildrenMap && window._tagChildrenMap[child]) || [];
+                window._currentTagMeta = null;
+                window.openTagPopup(child);
+                var _ce2 = document.getElementById("tag-popup-children");
+                if (_ce2) { while (_ce2.firstChild) _ce2.removeChild(_ce2.firstChild); _ce2.hidden = !_cc.length; }
+              });
+              _childrenEl.appendChild(_b);
+            });
+            _childrenEl.hidden = false;
+          } else {
+            _childrenEl.hidden = true;
+          }
+        }
       }
     });
   }
@@ -1317,44 +1345,6 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
     map[parent].push(el.dataset.tag);
   });
   window._tagChildrenMap = map;
-})();
-</script>
-
-<%# ─── Popup : patch openTagPopup pour afficher sous-tags ─── %>
-<script nonce="<%= nonce %>">
-(function () {
-  var childrenEl = document.getElementById("tag-popup-children");
-  if (!childrenEl || !window.openTagPopup) return;
-  var _origOpen = window.openTagPopup;
-  window.openTagPopup = function (raw) {
-    var meta = window._currentTagMeta || {};
-    var children = meta.children || [];
-    _origOpen(raw);
-    while (childrenEl.firstChild) childrenEl.removeChild(childrenEl.firstChild);
-    if (children.length) {
-      var label = document.createElement("span");
-      label.className = "tag-popup-children-label";
-      label.textContent = "D\u00e9clinaisons\u00a0:";
-      childrenEl.appendChild(label);
-      children.forEach(function (child) {
-        var badge = document.createElement("span");
-        badge.className = "tag-badge tag-badge--normal";
-        badge.dataset.tag = child;
-        badge.style.cursor = "pointer";
-        badge.textContent = child;
-        badge.addEventListener("click", function (e) {
-          e.stopPropagation();
-          var childMeta = { catLabel: "", subLabel: "", children: (window._tagChildrenMap && window._tagChildrenMap[child]) || [] };
-          window._currentTagMeta = childMeta;
-          window.openTagPopup(child);
-        });
-        childrenEl.appendChild(badge);
-      });
-      childrenEl.hidden = false;
-    } else {
-      childrenEl.hidden = true;
-    }
-  };
 })();
 </script>
 
