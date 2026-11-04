@@ -256,11 +256,9 @@
         <option value="<%= cat %>"><%= CAT_LABELS[cat] %></option>
         <% }) %>
       </select>
+      <%# Options générées en JS selon la catégorie sélectionnée — voir updateSubcatVisibility %>
       <select class="tags-bulk-select" id="tags-bulk-subcat-select" hidden>
         <option value="">Sans sous-catégorie</option>
-        <% SUBCAT_ORDER.filter(function(k){ return k !== ''; }).forEach(function(k) { %>
-        <option value="<%= k %>"><%= SUBCAT_LABELS[k] || k %></option>
-        <% }) %>
       </select>
       <button type="button" class="tags-bulk-apply-btn" id="tags-bulk-apply-btn" disabled>Assigner</button>
       <button type="button" class="tags-bulk-cancel-btn" id="tags-bulk-cancel-btn">Annuler</button>
@@ -738,15 +736,25 @@
     var bulkSubcatSelect = document.getElementById("tags-bulk-subcat-select");
     var bulkApplyBtn     = document.getElementById("tags-bulk-apply-btn");
     var bulkCancelBtn    = document.getElementById("tags-bulk-cancel-btn");
-    var catWithSub       = { femme: true, homme: true };
-    var selectMode       = false;
-    var selectedTags     = new Set();
+    var catWithSub     = <%- JSON.stringify(CAT_WITH_SUB) %>;
+    var subcatsByCat   = <%- JSON.stringify(SUBCATS_BY_CAT) %>;
+    var selectMode     = false;
+    var selectedTags   = new Set();
 
     function updateSubcatVisibility() {
       if (!bulkSubcatSelect) return;
       var cat = bulkCatSelect ? bulkCatSelect.value : "";
-      bulkSubcatSelect.hidden = !catWithSub[cat];
-      if (!catWithSub[cat]) bulkSubcatSelect.value = "";
+      var hasSub = !!catWithSub[cat];
+      bulkSubcatSelect.hidden = !hasSub;
+      if (!hasSub) { bulkSubcatSelect.value = ""; return; }
+      // Repeupler les options selon la catégorie
+      var subs = subcatsByCat[cat] || [];
+      while (bulkSubcatSelect.options.length > 1) bulkSubcatSelect.remove(1);
+      subs.forEach(function(s) {
+        var opt = document.createElement("option");
+        opt.value = s.key; opt.textContent = s.label;
+        bulkSubcatSelect.appendChild(opt);
+      });
     }
     if (bulkCatSelect) {
       bulkCatSelect.addEventListener("change", updateSubcatVisibility);
