@@ -9,7 +9,7 @@ var galerieBtn=document.getElementById("tag-popup-gallery-btn");
 var bdBtn=document.getElementById("tag-popup-bd-btn");
 var nouvellesBtn=document.getElementById("tag-popup-nouvelles-btn");
 var current="";
-function close(){overlay.hidden=true;current="";if(metaEl)metaEl.hidden=true;}
+function close(){overlay.hidden=true;current="";if(metaEl)metaEl.hidden=true;var ce=document.getElementById("tag-popup-children");if(ce)ce.hidden=true;}
 function open(raw){
 current=String(raw).toLowerCase().trim();
 if(!current)return;

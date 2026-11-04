@@ -99,14 +99,64 @@
         </div>
         <% } %>
 
-        <% if (currentUser && currentUser.isAdmin) { %>
-        <%# ─ Admin : mode sélection multiple ─ %>
+      </div>
+    </div>
+  </aside>
+
+  <%# ─── VOLET ADMIN (droite) ──────────────────────────────────────────── %>
+  <% if (currentUser && currentUser.isAdmin) { %>
+  <aside class="tags-admin-sidebar" id="tags-admin-sidebar" aria-label="Administration des tags">
+    <button type="button" class="tags-admin-sidebar-close" id="tags-admin-sidebar-close" aria-label="Fermer">&times;</button>
+
+    <div class="wiki-chapter-hero">
+      <div class="wiki-chapter-hero-top">
+        <span class="wiki-chapter-hero-title" style="font-size:1rem;line-height:1.2">Admin tags</span>
+      </div>
+    </div>
+
+    <div class="wiki-sidebar-body">
+      <div class="wiki-sidebar-filters">
+
+        <%# ─ Mode sélection ─ %>
         <div class="wiki-filter-section">
           <button type="button" class="tags-select-mode-btn" id="tags-select-mode-btn">Sélectionner</button>
         </div>
-        <%# ─ Admin : ajouter des tags par catégorie ─ %>
+
+        <%# ─ Bulk bar (visible en mode sélection) ─ %>
+        <div class="tags-bulk-bar" id="tags-bulk-bar" hidden>
+          <span class="tags-bulk-count" id="tags-bulk-count">0 sélectionné(s)</span>
+
+          <div class="tags-bulk-mode-tabs" id="tags-bulk-mode-tabs">
+            <button type="button" class="tags-bulk-mode-tab active" data-bulk-mode="category">Catégorie</button>
+            <button type="button" class="tags-bulk-mode-tab" data-bulk-mode="parent">Sous-tag de</button>
+          </div>
+
+          <div class="tags-bulk-panel" id="tags-bulk-panel-category">
+            <select class="tags-bulk-select" id="tags-bulk-cat-select">
+              <option value="">— Aucune catégorie —</option>
+              <% CAT_ORDER.forEach(function(cat) { %>
+              <option value="<%= cat %>"><%= CAT_LABELS[cat] %></option>
+              <% }) %>
+            </select>
+            <%# Options sous-catégorie générées en JS par updateSubcatVisibility %>
+            <select class="tags-bulk-select" id="tags-bulk-subcat-select" hidden>
+              <option value="">Sans sous-catégorie</option>
+            </select>
+            <button type="button" class="tags-bulk-apply-btn" id="tags-bulk-apply-btn" disabled>Assigner</button>
+          </div>
+
+          <div class="tags-bulk-panel" id="tags-bulk-panel-parent" hidden>
+            <input type="text" class="tags-bulk-parent-input" id="tags-bulk-parent-input"
+                   placeholder="Tag parent (vide = aucun)" autocomplete="off" />
+            <button type="button" class="tags-bulk-apply-btn" id="tags-bulk-apply-parent-btn" disabled>Assigner</button>
+          </div>
+
+          <button type="button" class="tags-bulk-cancel-btn" id="tags-bulk-cancel-btn">Annuler</button>
+        </div>
+
+        <%# ─ Ajouter des tags ─ %>
         <div class="wiki-filter-section">
-          <span class="wiki-filter-label">Ajouter des tags</span>
+          <span class="wiki-filter-label">Créer des tags</span>
           <form id="tags-create-form" class="tags-create-form">
             <select id="tags-create-category" class="wiki-sort-select tags-create-select">
               <% CAT_ORDER.forEach(function(cat) { %>
@@ -124,13 +174,19 @@
           </form>
           <p class="tags-create-feedback" id="tags-create-feedback" hidden></p>
         </div>
+
+        <%# ─ Gestion catégories ─ %>
         <div class="wiki-filter-section">
           <button type="button" class="tags-manage-cats-btn" id="tags-manage-cats-btn">&#9881; Gestion catégories</button>
         </div>
-        <% } %>
+
       </div>
     </div>
   </aside>
+
+  <button type="button" class="tags-admin-fab" id="tags-admin-fab" aria-label="Ouvrir le panneau admin" aria-expanded="false">&#9881;</button>
+  <div class="tags-admin-backdrop" id="tags-admin-backdrop"></div>
+  <% } %>
 
   <%# ─── GRILLE DES TAGS ─────────────────────────────────────────────────── %>
   <div class="tags-grid" id="tags-grid">
@@ -248,23 +304,6 @@
 
     <p class="tags-empty" id="tags-empty" hidden>Aucun tag trouv&eacute;.</p>
 
-    <% if (currentUser && currentUser.isAdmin) { %>
-    <div class="tags-bulk-bar" id="tags-bulk-bar" hidden>
-      <span class="tags-bulk-count" id="tags-bulk-count">0 sélectionné(s)</span>
-      <select class="tags-bulk-select" id="tags-bulk-cat-select">
-        <option value="">— Aucune catégorie —</option>
-        <% CAT_ORDER.forEach(function(cat) { %>
-        <option value="<%= cat %>"><%= CAT_LABELS[cat] %></option>
-        <% }) %>
-      </select>
-      <%# Options générées en JS selon la catégorie sélectionnée — voir updateSubcatVisibility %>
-      <select class="tags-bulk-select" id="tags-bulk-subcat-select" hidden>
-        <option value="">Sans sous-catégorie</option>
-      </select>
-      <button type="button" class="tags-bulk-apply-btn" id="tags-bulk-apply-btn" disabled>Assigner</button>
-      <button type="button" class="tags-bulk-cancel-btn" id="tags-bulk-cancel-btn">Annuler</button>
-    </div>
-    <% } %>
   </div>
 
   <%# Popup de resultats/admin : voir partials/tag-popup.ejs %>
@@ -621,7 +660,10 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
           var _sf = window._LQSubsByCat[_cat].filter(function(s){ return s.key === _sub; });
           if (_sf.length) _subLbl = _sf[0].label;
         }
-        window._currentTagMeta = (_catLbl || _subLbl) ? { catLabel: _catLbl, subLabel: _subLbl } : null;
+        var _children = (window._tagChildrenMap && window._tagChildrenMap[item.dataset.tag]) || [];
+        window._currentTagMeta = (_catLbl || _subLbl || _children.length)
+          ? { catLabel: _catLbl, subLabel: _subLbl, children: _children }
+          : null;
         window.openTagPopup(item.dataset.tag);
       }
     });
@@ -875,6 +917,87 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
         });
       });
     }
+
+    /* ── Bulk : mode tabs (catégorie / sous-tag de) ── */
+    var bulkModeTabs     = document.getElementById("tags-bulk-mode-tabs");
+    var bulkPanelCat     = document.getElementById("tags-bulk-panel-category");
+    var bulkPanelParent  = document.getElementById("tags-bulk-panel-parent");
+    var bulkParentInput  = document.getElementById("tags-bulk-parent-input");
+    var bulkApplyParent  = document.getElementById("tags-bulk-apply-parent-btn");
+    var activeBulkMode   = "category";
+
+    if (bulkModeTabs) {
+      bulkModeTabs.querySelectorAll(".tags-bulk-mode-tab").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          activeBulkMode = tab.dataset.bulkMode;
+          bulkModeTabs.querySelectorAll(".tags-bulk-mode-tab").forEach(function (t) {
+            t.classList.toggle("active", t === tab);
+          });
+          if (bulkPanelCat)    bulkPanelCat.hidden   = (activeBulkMode !== "category");
+          if (bulkPanelParent) bulkPanelParent.hidden = (activeBulkMode !== "parent");
+        });
+      });
+    }
+
+    /* ── Bulk : assigner parent (sous-tag) ── */
+    if (bulkApplyParent) {
+      bulkApplyParent.addEventListener("click", function () {
+        if (!selectedTags.size) return;
+        var parent = bulkParentInput ? bulkParentInput.value.toLowerCase().trim() : "";
+        bulkApplyParent.disabled = true;
+        bulkApplyParent.textContent = "…";
+
+        var promises = Array.from(selectedTags).map(function (tag) {
+          return fetch("/api/tags/parent", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tag: tag, parent: parent })
+          }).then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d.ok) {
+              document.querySelectorAll('.tags-item[data-tag="' + tag + '"]').forEach(function (el) {
+                el.dataset.parent = parent;
+                el.classList.toggle("tags-item--variant", !!parent);
+              });
+              if (window._tagChildrenMap) {
+                Object.keys(window._tagChildrenMap).forEach(function (p) {
+                  window._tagChildrenMap[p] = window._tagChildrenMap[p].filter(function (c) { return c !== tag; });
+                });
+                if (parent) {
+                  window._tagChildrenMap[parent] = window._tagChildrenMap[parent] || [];
+                  if (window._tagChildrenMap[parent].indexOf(tag) === -1) window._tagChildrenMap[parent].push(tag);
+                }
+              }
+            }
+            return { tag: tag, ok: d.ok };
+          });
+        });
+
+        Promise.all(promises).then(function (results) {
+          var n = results.filter(function (r) { return r.ok; }).length;
+          bulkApplyParent.textContent = "Assigner";
+          exitSelectMode();
+          applyFilters();
+          if (createFeedback) {
+            createFeedback.textContent = n + " tag" + (n > 1 ? "s" : "") + (parent
+              ? " rattach\u00e9" + (n > 1 ? "s" : "") + " \u00e0 \u00ab\u00a0" + parent + "\u00a0\u00bb"
+              : " d\u00e9tach\u00e9" + (n > 1 ? "s" : "")) + " !";
+            createFeedback.style.color = "var(--accent)";
+            createFeedback.hidden = false;
+          }
+        }).catch(function () {
+          bulkApplyParent.textContent = "Assigner";
+          bulkApplyParent.disabled = false;
+        });
+      });
+    }
+
+    /* Activer le bouton parent quand des tags sont sélectionnés */
+    var _origUpdateBulkCount = updateBulkCount;
+    updateBulkCount = function () {
+      _origUpdateBulkCount();
+      if (bulkApplyParent) bulkApplyParent.disabled = (selectedTags.size === 0);
+    };
   }
 
 })();
@@ -1179,6 +1302,95 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
         } else { showFeedback(r.error || "Erreur", false); }
       });
   });
+})();
+</script>
+<% } %>
+
+<%# ─── Build children map ─────────────────────────────────────────── %>
+<script nonce="<%= nonce %>">
+(function () {
+  var map = {};
+  document.querySelectorAll(".tags-item[data-parent]").forEach(function (el) {
+    var parent = el.dataset.parent;
+    if (!parent) return;
+    if (!map[parent]) map[parent] = [];
+    map[parent].push(el.dataset.tag);
+  });
+  window._tagChildrenMap = map;
+})();
+</script>
+
+<%# ─── Popup : patch openTagPopup pour afficher sous-tags ─── %>
+<script nonce="<%= nonce %>">
+(function () {
+  var childrenEl = document.getElementById("tag-popup-children");
+  if (!childrenEl || !window.openTagPopup) return;
+  var _origOpen = window.openTagPopup;
+  window.openTagPopup = function (raw) {
+    var meta = window._currentTagMeta || {};
+    var children = meta.children || [];
+    _origOpen(raw);
+    while (childrenEl.firstChild) childrenEl.removeChild(childrenEl.firstChild);
+    if (children.length) {
+      var label = document.createElement("span");
+      label.className = "tag-popup-children-label";
+      label.textContent = "D\u00e9clinaisons\u00a0:";
+      childrenEl.appendChild(label);
+      children.forEach(function (child) {
+        var badge = document.createElement("span");
+        badge.className = "tag-badge tag-badge--normal";
+        badge.dataset.tag = child;
+        badge.style.cursor = "pointer";
+        badge.textContent = child;
+        badge.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var childMeta = { catLabel: "", subLabel: "", children: (window._tagChildrenMap && window._tagChildrenMap[child]) || [] };
+          window._currentTagMeta = childMeta;
+          window.openTagPopup(child);
+        });
+        childrenEl.appendChild(badge);
+      });
+      childrenEl.hidden = false;
+    } else {
+      childrenEl.hidden = true;
+    }
+  };
+})();
+</script>
+
+<% if (currentUser && currentUser.isAdmin) { %>
+<%# ─── Volet admin : toggle mobile ─────────────────────────────────── %>
+<script nonce="<%= nonce %>">
+(function () {
+  var sidebar  = document.getElementById("tags-admin-sidebar");
+  var fab      = document.getElementById("tags-admin-fab");
+  var backdrop = document.getElementById("tags-admin-backdrop");
+  var closeBtn = document.getElementById("tags-admin-sidebar-close");
+  if (!sidebar || !fab) return;
+
+  function openAdmin() {
+    sidebar.classList.add("tags-admin-sidebar--open");
+    if (backdrop) backdrop.classList.add("open");
+    fab.setAttribute("aria-expanded", "true");
+    document.body.classList.add("nav-drawer-locked");
+  }
+  function closeAdmin() {
+    sidebar.classList.remove("tags-admin-sidebar--open");
+    if (backdrop) backdrop.classList.remove("open");
+    fab.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("nav-drawer-locked");
+  }
+
+  fab.addEventListener("click", function () {
+    sidebar.classList.contains("tags-admin-sidebar--open") ? closeAdmin() : openAdmin();
+  });
+  if (backdrop) backdrop.addEventListener("click", closeAdmin);
+  if (closeBtn) closeBtn.addEventListener("click", closeAdmin);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && sidebar.classList.contains("tags-admin-sidebar--open")) closeAdmin();
+  });
+  var mft = document.getElementById("mobile-filter-toggle");
+  if (mft) mft.addEventListener("click", closeAdmin);
 })();
 </script>
 <% } %>
