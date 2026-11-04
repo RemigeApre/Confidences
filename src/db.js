@@ -763,6 +763,49 @@ try { db.exec("ALTER TABLE tag_meta ADD COLUMN category TEXT NOT NULL DEFAULT 'a
 try { db.exec("ALTER TABLE tag_meta ADD COLUMN parent TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE tag_meta ADD COLUMN subcategory TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
+// Catégories de tags (gérables depuis /tags)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tag_categories (
+    key        TEXT PRIMARY KEY,
+    label      TEXT NOT NULL,
+    has_subcats INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tag_subcategories (
+    key        TEXT PRIMARY KEY,
+    label      TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0
+  )
+`);
+// Seed des catégories et sous-catégories par défaut
+(function seedTagCategories() {
+  const cats = db.prepare("SELECT COUNT(*) as n FROM tag_categories").get();
+  if (cats.n === 0) {
+    const ins = db.prepare("INSERT OR IGNORE INTO tag_categories (key, label, has_subcats, sort_order) VALUES (?,?,?,?)");
+    [
+      ['femme',    'Femme',    1, 0],
+      ['homme',    'Homme',    1, 1],
+      ['rapport',  'Rapport',  0, 2],
+      ['lieu',     'Lieu',     0, 3],
+      ['relation', 'Relation', 0, 4],
+      ['objet',    'Objet',    0, 5],
+      ['autre',    'Autre',    0, 6],
+    ].forEach(r => ins.run(...r));
+  }
+  const subs = db.prepare("SELECT COUNT(*) as n FROM tag_subcategories").get();
+  if (subs.n === 0) {
+    const ins2 = db.prepare("INSERT OR IGNORE INTO tag_subcategories (key, label, sort_order) VALUES (?,?,?)");
+    [
+      ['physique',    'Physique',                  0],
+      ['ethnie',      'Ethnie',                    1],
+      ['fantastique', 'Fantastique et impossible', 2],
+      ['vetements',   'Vêtements',                 3],
+    ].forEach(r => ins2.run(...r));
+  }
+})();
+
 // Blacklist personnelle de tags (bouton "Masquer le tag" de la popup tag,
 // gérée depuis /tags/masques) : tout contenu portant un de ces tags reste
 // masqué partout pour ce profil, jusqu'à retrait explicite.
@@ -2687,8 +2730,60 @@ function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, no
 }
 
 // ── Tag metadata ──────────────────────────────────────────────────────────
-const VALID_TAG_TYPES      = new Set(["normal", "ultra", "irrealiste"]);
-const VALID_TAG_CATEGORIES = new Set(["objet", "femme", "homme", "rapport", "lieu", "relation", "autre"]);
+const VALID_TAG_TYPES = new Set(["normal", "ultra", "irrealiste"]);
+
+function getValidTagCategories() {
+  try {
+    const rows = db.prepare("SELECT key FROM tag_categories").all();
+    return new Set(rows.map(r => r.key));
+  } catch (_) { return new Set(["objet","femme","homme","rapport","lieu","relation","autre"]); }
+}
+function getValidTagSubcategories() {
+  try {
+    const rows = db.prepare("SELECT key FROM tag_subcategories").all();
+    return new Set([...rows.map(r => r.key), ""]);
+  } catch (_) { return new Set(["physique","ethnie","fantastique","vetements","autre",""]); }
+}
+
+function getAllCategories() {
+  return db.prepare("SELECT key, label, has_subcats, sort_order FROM tag_categories ORDER BY sort_order, key").all();
+}
+function getAllSubcategoriesList() {
+  return db.prepare("SELECT key, label, sort_order FROM tag_subcategories ORDER BY sort_order, key").all();
+}
+function createCategory(key, label, has_subcats) {
+  const k = String(key || "").toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!k) return false;
+  const n = db.prepare("SELECT MAX(sort_order) as m FROM tag_categories").get().m || 0;
+  db.prepare("INSERT OR IGNORE INTO tag_categories (key, label, has_subcats, sort_order) VALUES (?,?,?,?)").run(k, String(label||k), has_subcats ? 1 : 0, n + 1);
+  return k;
+}
+function updateCategory(key, label, has_subcats) {
+  db.prepare("UPDATE tag_categories SET label=?, has_subcats=? WHERE key=?").run(String(label||key), has_subcats ? 1 : 0, key);
+}
+function deleteCategory(key) {
+  if (key === 'autre') return false; // toujours garder 'autre'
+  const used = db.prepare("SELECT COUNT(*) as n FROM tag_meta WHERE category=?").get(key);
+  if (used && used.n > 0) return false;
+  db.prepare("DELETE FROM tag_categories WHERE key=?").run(key);
+  return true;
+}
+function createSubcategoryEntry(key, label) {
+  const k = String(key || "").toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!k) return false;
+  const n = db.prepare("SELECT MAX(sort_order) as m FROM tag_subcategories").get().m || 0;
+  db.prepare("INSERT OR IGNORE INTO tag_subcategories (key, label, sort_order) VALUES (?,?,?)").run(k, String(label||k), n + 1);
+  return k;
+}
+function updateSubcategoryEntry(key, label) {
+  db.prepare("UPDATE tag_subcategories SET label=? WHERE key=?").run(String(label||key), key);
+}
+function deleteSubcategoryEntry(key) {
+  const used = db.prepare("SELECT COUNT(*) as n FROM tag_meta WHERE subcategory=?").get(key);
+  if (used && used.n > 0) return false;
+  db.prepare("DELETE FROM tag_subcategories WHERE key=?").run(key);
+  return true;
+}
 // Migration : les tags en type "fantaisie" rejoignent "irrealiste"
 try { db.exec("UPDATE tag_meta SET type='irrealiste' WHERE type='fantaisie'"); } catch (_) {}
 
@@ -2736,7 +2831,8 @@ function getAllTagSubcategories() {
 
 function setTagSubcategory(tag, subcategory) {
   const t = normalizeTagStr(tag);
-  const s = VALID_SUBCATEGORIES.has(subcategory) ? subcategory : "";
+  const validSubs = getValidTagSubcategories();
+  const s = validSubs.has(subcategory) ? subcategory : "";
   if (!t) return;
   db.prepare("INSERT INTO tag_meta (tag, type, category, subcategory) VALUES (?, 'normal', 'autre', ?) ON CONFLICT(tag) DO UPDATE SET subcategory = excluded.subcategory").run(t, s);
 }
@@ -2751,7 +2847,7 @@ function setTagType(tag, type) {
 function setTagCategory(tag, category) {
   const t = normalizeTagStr(tag);
   if (!t) return;
-  if (!VALID_TAG_CATEGORIES.has(category)) category = "autre";
+  if (!getValidTagCategories().has(category)) category = "autre";
   db.prepare("INSERT INTO tag_meta (tag, type, category) VALUES (?, 'normal', ?) ON CONFLICT(tag) DO UPDATE SET category = excluded.category").run(t, category);
 }
 
@@ -5830,6 +5926,14 @@ module.exports = {
   getAllTagSubcategories,
   setTagSubcategory,
   CATS_WITH_SUBCATS,
+  getAllCategories,
+  getAllSubcategoriesList,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  createSubcategoryEntry,
+  updateSubcategoryEntry,
+  deleteSubcategoryEntry,
   createStandaloneTag,
   renameTagEverywhere,
   deleteUser,

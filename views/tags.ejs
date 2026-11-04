@@ -1,17 +1,37 @@
 <%- include('partials/head', { title: 'Tous les tags' }) %>
 <%
-  var CAT_LABELS   = { femme: 'Femme', homme: 'Homme', rapport: 'Rapport', lieu: 'Lieu', relation: 'Relation', objet: 'Objet', autre: 'Autre' };
-  var CAT_ORDER    = ['femme', 'homme', 'rapport', 'lieu', 'relation', 'objet', 'autre'];
-  var CAT_WITH_SUB = { femme: true, homme: true };
-  var SUBCAT_ORDER  = ['physique', 'ethnie', 'fantastique', 'vetements', ''];
-  var SUBCAT_LABELS = { physique: 'Physique', ethnie: 'Ethnie', fantastique: 'Fantastique et impossible', vetements: 'V\u00eatements', '': 'Sans cat\u00e9gorie' };
+  // Catégories et sous-catégories dynamiques (depuis la DB)
+  var CAT_LABELS   = {};
+  var CAT_ORDER    = [];
+  var CAT_WITH_SUB = {};
+  (dynamicCategories || []).forEach(function(c) {
+    CAT_LABELS[c.key]   = c.label;
+    CAT_ORDER.push(c.key);
+    if (c.has_subcats) CAT_WITH_SUB[c.key] = true;
+  });
+  if (!CAT_ORDER.length) {
+    CAT_LABELS   = { femme: 'Femme', homme: 'Homme', rapport: 'Rapport', lieu: 'Lieu', relation: 'Relation', objet: 'Objet', autre: 'Autre' };
+    CAT_ORDER    = ['femme', 'homme', 'rapport', 'lieu', 'relation', 'objet', 'autre'];
+    CAT_WITH_SUB = { femme: true, homme: true };
+  }
+  var SUBCAT_ORDER  = [];
+  var SUBCAT_LABELS = { '': 'Sans sous-catégorie' };
+  (dynamicSubcategories || []).forEach(function(s) {
+    SUBCAT_ORDER.push(s.key);
+    SUBCAT_LABELS[s.key] = s.label;
+  });
+  if (!SUBCAT_ORDER.length) {
+    SUBCAT_ORDER  = ['physique', 'ethnie', 'fantastique', 'vetements'];
+    SUBCAT_LABELS = { physique: 'Physique', ethnie: 'Ethnie', fantastique: 'Fantastique et impossible', vetements: 'Vêtements', '': 'Sans sous-catégorie' };
+  }
+  SUBCAT_ORDER.push(''); // "sans sous-catégorie" toujours en dernier
   var CAT_MAX = 20;
   var tagsByCat = {};
   CAT_ORDER.forEach(function(c) { tagsByCat[c] = []; });
   tags.forEach(function(item) {
     var c = item.category || 'autre';
-    if (!tagsByCat[c]) tagsByCat[c] = [];
-    tagsByCat[c].push(item);
+    if (!tagsByCat[c]) { tagsByCat['autre'] = tagsByCat['autre'] || []; tagsByCat['autre'].push(item); }
+    else tagsByCat[c].push(item);
   });
 %>
 <main class="container wide wiki-locked tags-page-locked" style="--ch-hue: 270">
@@ -111,6 +131,9 @@
             <button type="submit" class="tags-create-btn">+ Créer</button>
           </form>
           <p class="tags-create-feedback" id="tags-create-feedback" hidden></p>
+        </div>
+        <div class="wiki-filter-section">
+          <button type="button" class="tags-manage-cats-btn" id="tags-manage-cats-btn">&#9881; Gestion catégories</button>
         </div>
         <% } %>
       </div>
@@ -239,10 +262,9 @@
       </select>
       <select class="tags-bulk-select" id="tags-bulk-subcat-select" hidden>
         <option value="">Sans sous-catégorie</option>
-        <option value="physique">Physique</option>
-        <option value="ethnie">Ethnie</option>
-        <option value="fantastique">Fantastique et impossible</option>
-        <option value="vetements">Vêtements</option>
+        <% SUBCAT_ORDER.filter(function(k){ return k !== ''; }).forEach(function(k) { %>
+        <option value="<%= k %>"><%= SUBCAT_LABELS[k] || k %></option>
+        <% }) %>
       </select>
       <button type="button" class="tags-bulk-apply-btn" id="tags-bulk-apply-btn" disabled>Assigner</button>
       <button type="button" class="tags-bulk-cancel-btn" id="tags-bulk-cancel-btn">Annuler</button>
@@ -253,6 +275,65 @@
   <%# Popup de resultats/admin : voir partials/tag-popup.ejs %>
   <%# ─── Tooltip hover ── %>
   <div class="tags-tooltip" id="tags-tooltip" hidden></div>
+
+  <%# ─── Modal gestion catégories (admin) ─── %>
+  <% if (currentUser && currentUser.isAdmin) { %>
+  <div class="tags-mgmt-overlay" id="tags-mgmt-overlay" hidden>
+    <div class="tags-mgmt-panel">
+      <div class="tags-mgmt-header">
+        <span class="tags-mgmt-title">Gestion des catégories</span>
+        <button type="button" class="tags-mgmt-close" id="tags-mgmt-close">&#10005;</button>
+      </div>
+      <div class="tags-mgmt-body">
+
+        <%# Colonne catégories %>
+        <div class="tags-mgmt-col">
+          <div class="tags-mgmt-col-title">Catégories</div>
+          <ul class="tags-mgmt-list" id="tags-mgmt-cat-list">
+            <% (dynamicCategories || []).forEach(function(c) { %>
+            <li class="tags-mgmt-item" data-key="<%= c.key %>">
+              <span class="tags-mgmt-item-label" title="clé : <%= c.key %>"><%= c.label %></span>
+              <span class="tags-mgmt-item-sub-badge<%= c.has_subcats ? ' active' : '' %>">sous-cat</span>
+              <div class="tags-mgmt-item-actions">
+                <button type="button" class="tags-mgmt-edit-btn" data-type="cat" data-key="<%= c.key %>" data-label="<%= c.label %>" data-has-subcats="<%= c.has_subcats %>">&#9998;</button>
+                <button type="button" class="tags-mgmt-del-btn" data-type="cat" data-key="<%= c.key %>">&#128465;</button>
+              </div>
+            </li>
+            <% }) %>
+          </ul>
+          <form class="tags-mgmt-add-form" id="tags-mgmt-cat-add">
+            <input type="text" class="tags-mgmt-input" id="tags-mgmt-cat-label" placeholder="Nom de la catégorie" autocomplete="off">
+            <label class="tags-mgmt-checkbox-label"><input type="checkbox" id="tags-mgmt-cat-hassub"> Sous-catégories</label>
+            <button type="submit" class="tags-mgmt-add-btn">+ Ajouter</button>
+          </form>
+        </div>
+
+        <%# Colonne sous-catégories %>
+        <div class="tags-mgmt-col">
+          <div class="tags-mgmt-col-title">Sous-catégories</div>
+          <p class="tags-mgmt-col-hint">Partagées entre toutes les catégories activées</p>
+          <ul class="tags-mgmt-list" id="tags-mgmt-sub-list">
+            <% (dynamicSubcategories || []).forEach(function(s) { %>
+            <li class="tags-mgmt-item" data-key="<%= s.key %>">
+              <span class="tags-mgmt-item-label" title="clé : <%= s.key %>"><%= s.label %></span>
+              <div class="tags-mgmt-item-actions">
+                <button type="button" class="tags-mgmt-edit-btn" data-type="sub" data-key="<%= s.key %>" data-label="<%= s.label %>">&#9998;</button>
+                <button type="button" class="tags-mgmt-del-btn" data-type="sub" data-key="<%= s.key %>">&#128465;</button>
+              </div>
+            </li>
+            <% }) %>
+          </ul>
+          <form class="tags-mgmt-add-form" id="tags-mgmt-sub-add">
+            <input type="text" class="tags-mgmt-input" id="tags-mgmt-sub-label" placeholder="Nom de la sous-catégorie" autocomplete="off">
+            <button type="submit" class="tags-mgmt-add-btn">+ Ajouter</button>
+          </form>
+        </div>
+
+      </div>
+      <div class="tags-mgmt-feedback" id="tags-mgmt-feedback" hidden></div>
+    </div>
+  </div>
+  <% } %>
 </main>
 
 <script nonce="<%= nonce %>">
@@ -777,5 +858,160 @@
 
 })();
 </script>
+
+<% if (currentUser && currentUser.isAdmin) { %>
+<script nonce="<%= nonce %>">
+(function () {
+  var overlay    = document.getElementById("tags-mgmt-overlay");
+  var openBtn    = document.getElementById("tags-manage-cats-btn");
+  var closeBtn   = document.getElementById("tags-mgmt-close");
+  var feedback   = document.getElementById("tags-mgmt-feedback");
+  var catList    = document.getElementById("tags-mgmt-cat-list");
+  var subList    = document.getElementById("tags-mgmt-sub-list");
+  var catAddForm = document.getElementById("tags-mgmt-cat-add");
+  var subAddForm = document.getElementById("tags-mgmt-sub-add");
+
+  if (!overlay) return;
+
+  function showFeedback(msg, ok) {
+    if (!feedback) return;
+    feedback.textContent = msg;
+    feedback.style.color = ok ? "var(--accent)" : "hsl(0,70%,65%)";
+    feedback.hidden = false;
+    setTimeout(function () { feedback.hidden = true; }, 3000);
+  }
+
+  openBtn && openBtn.addEventListener("click", function () { overlay.hidden = false; });
+  closeBtn && closeBtn.addEventListener("click", function () { overlay.hidden = true; });
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.hidden = true; });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !overlay.hidden) overlay.hidden = true; });
+
+  function api(method, url, body) {
+    return fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) { return r.json(); });
+  }
+
+  function makeCatItem(key, label, has_subcats) {
+    var li = document.createElement("li");
+    li.className = "tags-mgmt-item";
+    li.dataset.key = key;
+    li.innerHTML =
+      '<span class="tags-mgmt-item-label" title="clé : ' + key + '">' + label + '</span>' +
+      '<span class="tags-mgmt-item-sub-badge' + (has_subcats ? ' active' : '') + '">sous-cat</span>' +
+      '<div class="tags-mgmt-item-actions">' +
+        '<button type="button" class="tags-mgmt-edit-btn" data-type="cat" data-key="' + key + '" data-label="' + label + '" data-has-subcats="' + (has_subcats ? '1' : '0') + '">&#9998;</button>' +
+        '<button type="button" class="tags-mgmt-del-btn" data-type="cat" data-key="' + key + '">&#128465;</button>' +
+      '</div>';
+    return li;
+  }
+  function makeSubItem(key, label) {
+    var li = document.createElement("li");
+    li.className = "tags-mgmt-item";
+    li.dataset.key = key;
+    li.innerHTML =
+      '<span class="tags-mgmt-item-label" title="clé : ' + key + '">' + label + '</span>' +
+      '<div class="tags-mgmt-item-actions">' +
+        '<button type="button" class="tags-mgmt-edit-btn" data-type="sub" data-key="' + key + '" data-label="' + label + '">&#9998;</button>' +
+        '<button type="button" class="tags-mgmt-del-btn" data-type="sub" data-key="' + key + '">&#128465;</button>' +
+      '</div>';
+    return li;
+  }
+
+  // Délégation clicks liste
+  function handleListClick(e) {
+    var editBtn = e.target.closest(".tags-mgmt-edit-btn");
+    var delBtn  = e.target.closest(".tags-mgmt-del-btn");
+
+    if (editBtn) {
+      var type   = editBtn.dataset.type;
+      var key    = editBtn.dataset.key;
+      var label  = editBtn.dataset.label;
+      var newLabel = window.prompt("Nouveau nom :", label);
+      if (!newLabel || newLabel === label) return;
+      if (type === "cat") {
+        var hasSub = editBtn.dataset.hasSubcats === "1";
+        var toggleSub = window.confirm("Cette catégorie a des sous-catégories activées : " + (hasSub ? "OUI" : "NON") + "\nCliquez OK pour basculer, Annuler pour garder.");
+        api("PUT", "/api/tag-categories/" + encodeURIComponent(key), { label: newLabel, has_subcats: toggleSub ? !hasSub : hasSub })
+          .then(function (r) {
+            if (r.ok) {
+              var li = catList.querySelector('[data-key="' + key + '"]');
+              if (li) { li.replaceWith(makeCatItem(key, newLabel, toggleSub ? !hasSub : hasSub)); }
+              showFeedback("Catégorie modifiée.", true);
+            } else { showFeedback(r.error || "Erreur", false); }
+          });
+      } else {
+        api("PUT", "/api/tag-subcategories/" + encodeURIComponent(key), { label: newLabel })
+          .then(function (r) {
+            if (r.ok) {
+              var li = subList.querySelector('[data-key="' + key + '"]');
+              if (li) { li.replaceWith(makeSubItem(key, newLabel)); }
+              showFeedback("Sous-catégorie modifiée.", true);
+            } else { showFeedback(r.error || "Erreur", false); }
+          });
+      }
+    }
+
+    if (delBtn) {
+      var type = delBtn.dataset.type;
+      var key  = delBtn.dataset.key;
+      if (!window.confirm('Supprimer "' + key + '" ?')) return;
+      var url = type === "cat" ? "/api/tag-categories/" + encodeURIComponent(key) : "/api/tag-subcategories/" + encodeURIComponent(key);
+      api("DELETE", url)
+        .then(function (r) {
+          if (r.ok) {
+            var list = type === "cat" ? catList : subList;
+            var li = list.querySelector('[data-key="' + key + '"]');
+            if (li) li.remove();
+            showFeedback("Supprimé.", true);
+          } else { showFeedback(r.error || "Impossible de supprimer (en cours d'utilisation ?)", false); }
+        });
+    }
+  }
+  catList && catList.addEventListener("click", handleListClick);
+  subList && subList.addEventListener("click", handleListClick);
+
+  // Ajout catégorie
+  if (catAddForm) {
+    catAddForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var labelEl  = document.getElementById("tags-mgmt-cat-label");
+      var hasSubEl = document.getElementById("tags-mgmt-cat-hassub");
+      var label = (labelEl ? labelEl.value.trim() : "");
+      if (!label) return;
+      api("POST", "/api/tag-categories", { label: label, has_subcats: hasSubEl && hasSubEl.checked ? 1 : 0 })
+        .then(function (r) {
+          if (r.ok) {
+            catList.appendChild(makeCatItem(r.key, label, hasSubEl && hasSubEl.checked));
+            labelEl.value = "";
+            if (hasSubEl) hasSubEl.checked = false;
+            showFeedback("Catégorie créée : " + r.key, true);
+          } else { showFeedback(r.error || "Erreur", false); }
+        });
+    });
+  }
+
+  // Ajout sous-catégorie
+  if (subAddForm) {
+    subAddForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var labelEl = document.getElementById("tags-mgmt-sub-label");
+      var label = (labelEl ? labelEl.value.trim() : "");
+      if (!label) return;
+      api("POST", "/api/tag-subcategories", { label: label })
+        .then(function (r) {
+          if (r.ok) {
+            subList.appendChild(makeSubItem(r.key, label));
+            labelEl.value = "";
+            showFeedback("Sous-catégorie créée : " + r.key, true);
+          } else { showFeedback(r.error || "Erreur", false); }
+        });
+    });
+  }
+})();
+</script>
+<% } %>
 
 <%- include('partials/foot') %>
