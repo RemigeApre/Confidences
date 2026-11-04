@@ -3778,6 +3778,24 @@ db.exec(`
   );
 `);
 
+// Migration : normalise tous les tags existants en minuscules (one-time, idempotent)
+(function normalizeExistingTags() {
+  const tagTables = ['wiki_pages', 'gallery_images', 'bd_books', 'links', 'nouvelles', 'protagonistes'];
+  for (const table of tagTables) {
+    try {
+      const rows = db.prepare(`SELECT id, tags FROM ${table} WHERE tags IS NOT NULL AND tags != '[]'`).all();
+      const upd  = db.prepare(`UPDATE ${table} SET tags=? WHERE id=?`);
+      for (const row of rows) {
+        try {
+          const arr  = JSON.parse(row.tags);
+          const norm = JSON.stringify(arr.map(t => String(t).toLowerCase().trim()).filter(Boolean));
+          if (norm !== row.tags) upd.run(norm, row.id);
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
+})();
+
 // Seed "Profil principal"
 (function seedProfilPrincipal() {
   db.prepare("INSERT OR IGNORE INTO profil_quiz_types (slug, name, description) VALUES (?,?,?)").run(

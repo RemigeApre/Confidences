@@ -121,7 +121,7 @@ const upload = multer({
 function parseTags(raw) {
   return String(raw || "")
     .split(/[,;]+/)
-    .map((t) => t.trim())
+    .map((t) => t.trim().toLowerCase())
     .filter(Boolean);
 }
 

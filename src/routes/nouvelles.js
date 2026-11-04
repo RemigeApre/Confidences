@@ -29,7 +29,7 @@ function isVisible(n, user) {
 }
 
 function parseTags(raw) {
-  return String(raw || "").split(",").map(t => t.trim()).filter(Boolean);
+  return String(raw || "").split(",").map(t => t.trim().toLowerCase()).filter(Boolean);
 }
 
 function parseNouvelle(n) {
