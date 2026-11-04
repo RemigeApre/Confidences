@@ -132,10 +132,12 @@
               <% } else if (book.langue === 'anglais') { %><span class="bd-card-flag"><img src="https://flagcdn.com/20x15/gb.png" alt="EN" class="bd-flag-img" /></span>
               <% } else if (book.langue === 'japonais') { %><span class="bd-card-flag"><img src="https://flagcdn.com/20x15/jp.png" alt="JP" class="bd-flag-img" /></span>
               <% } else if (book.langue === 'autre') { %><span class="bd-card-flag">🌐</span><% } %>
+              <% if (currentUser && currentUser.isAdmin) { %><span class="bd-card-finition bd-card-finition--<%= book.finition || 0 %>" title="Finition : <%= book.finition ? book.finition + '/5' : 'Brouillon' %>"><%= book.finition ? book.finition : 'B' %></span><% } %>
             </div>
           <% } else { %>
             <div class="bd-card-cover bd-card-cover-empty">
               <span class="bd-card-empty-icon">&#128214;</span>
+              <% if (currentUser && currentUser.isAdmin) { %><span class="bd-card-finition bd-card-finition--<%= book.finition || 0 %>" title="Finition : <%= book.finition ? book.finition + '/5' : 'Brouillon' %>"><%= book.finition ? book.finition : 'B' %></span><% } %>
             </div>
           <% } %>
           <div class="bd-card-body">

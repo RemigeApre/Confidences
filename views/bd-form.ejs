@@ -239,6 +239,22 @@
       </div>
       <% } %>
 
+      <%# Finition (admin uniquement) %>
+      <% if (locals.editLang !== 'en') { %>
+      <div class="bdf-sidebar-block bdf-finition-block">
+        <p class="bdf-sidebar-label">Finition</p>
+        <div class="bdf-finition-row">
+          <% var _fin = book ? (book.finition || 0) : 0; %>
+          <% [['0','Brouillon'],['1','1'],['2','2'],['3','3'],['4','4'],['5','5']].forEach(function(f) { %>
+          <label class="chip-option bdf-fin-chip">
+            <input type="radio" name="finition" value="<%= f[0] %>" <%= _fin === Number(f[0]) ? 'checked' : '' %> />
+            <span><%= f[1] %></span>
+          </label>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
     </aside><%# /bdf-sidebar %>
 
   </form>
