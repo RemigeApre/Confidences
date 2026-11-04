@@ -736,19 +736,19 @@
     var bulkSubcatSelect = document.getElementById("tags-bulk-subcat-select");
     var bulkApplyBtn     = document.getElementById("tags-bulk-apply-btn");
     var bulkCancelBtn    = document.getElementById("tags-bulk-cancel-btn");
-    var catWithSub     = <%- JSON.stringify(CAT_WITH_SUB) %>;
-    var subcatsByCat   = <%- JSON.stringify(SUBCATS_BY_CAT) %>;
+    window._tagCatWithSub   = <%- JSON.stringify(CAT_WITH_SUB) %>;
+    window._tagSubcatsByCat = <%- JSON.stringify(SUBCATS_BY_CAT) %>;
     var selectMode     = false;
     var selectedTags   = new Set();
 
     function updateSubcatVisibility() {
       if (!bulkSubcatSelect) return;
       var cat = bulkCatSelect ? bulkCatSelect.value : "";
-      var hasSub = !!catWithSub[cat];
+      var hasSub = !!window._tagCatWithSub[cat];
       bulkSubcatSelect.hidden = !hasSub;
       if (!hasSub) { bulkSubcatSelect.value = ""; return; }
-      // Repeupler les options selon la catégorie
-      var subs = subcatsByCat[cat] || [];
+      // Repeupler les options selon la catégorie (toujours depuis la source live)
+      var subs = window._tagSubcatsByCat[cat] || [];
       while (bulkSubcatSelect.options.length > 1) bulkSubcatSelect.remove(1);
       subs.forEach(function(s) {
         var opt = document.createElement("option");
@@ -1021,7 +1021,17 @@
         var labelEl = subRow.querySelector(".tags-mgmt-row-label");
         enterEditMode(subRow, labelEl ? labelEl.textContent.trim() : key, function(newLabel, done) {
           api("PUT", "/api/tag-subcategories/" + encodeURIComponent(catKey) + "/" + encodeURIComponent(key), { label: newLabel })
-            .then(function(r) { done(r.ok); if (r.ok) showFeedback("Sous-catégorie renommée.", true); else showFeedback(r.error||"Erreur", false); });
+            .then(function(r) {
+              done(r.ok);
+              if (r.ok) {
+                // Sync bulk bar data
+                if (window._tagSubcatsByCat && window._tagSubcatsByCat[catKey]) {
+                  var s = window._tagSubcatsByCat[catKey].find(function(s) { return s.key === key; });
+                  if (s) s.label = newLabel;
+                }
+                showFeedback("Sous-catégorie renommée.", true);
+              } else { showFeedback(r.error||"Erreur", false); }
+            });
         });
       } else if (catRow) {
         var key     = catRow.dataset.key;
@@ -1054,7 +1064,15 @@
         }
         api("DELETE", "/api/tag-subcategories/" + encodeURIComponent(catKey) + "/" + encodeURIComponent(key))
           .then(function(r) {
-            if (r.ok) { subRow.remove(); showFeedback('«\u00a0' + label + '\u00a0» supprimée.', true); }
+            if (r.ok) {
+              subRow.remove();
+              // Sync bulk bar data
+              if (window._tagSubcatsByCat && window._tagSubcatsByCat[catKey]) {
+                window._tagSubcatsByCat[catKey] = window._tagSubcatsByCat[catKey].filter(function(s) { return s.key !== key; });
+                if (!window._tagSubcatsByCat[catKey].length) window._tagCatWithSub[catKey] = false;
+              }
+              showFeedback('«\u00a0' + label + '\u00a0» supprimée.', true);
+            }
             else { showFeedback(r.error || "Utilisée par des tags", false); delete subRow.dataset.confirmDel; delBtn.textContent = "🗑"; delBtn.classList.remove("tags-mgmt-del-confirm"); }
           });
       } else if (catRow) {
@@ -1105,6 +1123,12 @@
             ul.appendChild(li);
           }
           if (inp) inp.value = "";
+          // Sync bulk bar data
+          if (window._tagSubcatsByCat) {
+            window._tagSubcatsByCat[catKey] = window._tagSubcatsByCat[catKey] || [];
+            window._tagSubcatsByCat[catKey].push({ key: r.key, label: label });
+            window._tagCatWithSub[catKey] = true;
+          }
           showFeedback("Sous-catégorie créée\u00a0: " + r.key, true);
         } else { showFeedback(r.error || "Erreur", false); }
       });
