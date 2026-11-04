@@ -89,7 +89,8 @@
       <%# Tags (avec classification ultra/irréaliste via tagRegistry) %>
       <% if (nouvelle.tags && nouvelle.tags.length) { %>
         <div class="nv-right-tags">
-          <% var _tOrd={wiki:0,normal:1,parent:2}; nouvelle.tags.slice().sort(function(a,b){ var ta=_tOrd[(tagRegistry[a.toLowerCase()]||{}).tier]??1; var tb=_tOrd[(tagRegistry[b.toLowerCase()]||{}).tier]??1; return ta-tb; }).forEach(function(t){ %><%- include('partials/tag-badge', { tag: t }) %><% }) %>
+          <% var _tOrd={wiki:0,normal:1,parent:2}; function _nvtrank(t){var r=_tOrd[(tagRegistry[t.toLowerCase()]||{}).tier];return r!==undefined?r:1;} %>
+          <% nouvelle.tags.slice().sort(function(a,b){return _nvtrank(a)-_nvtrank(b);}).forEach(function(t){ %><%- include('partials/tag-badge', { tag: t }) %><% }) %>
         </div>
       <% } %>
 
