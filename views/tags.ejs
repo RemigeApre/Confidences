@@ -128,7 +128,7 @@
 
           <div class="tags-bulk-mode-tabs" id="tags-bulk-mode-tabs">
             <button type="button" class="tags-bulk-mode-tab active" data-bulk-mode="category">Catégorie</button>
-            <button type="button" class="tags-bulk-mode-tab" data-bulk-mode="parent">Sous-tag de</button>
+            <button type="button" class="tags-bulk-mode-tab" data-bulk-mode="parent">Inclusion</button>
           </div>
 
           <div class="tags-bulk-panel" id="tags-bulk-panel-category">
@@ -147,7 +147,7 @@
 
           <div class="tags-bulk-panel" id="tags-bulk-panel-parent" hidden>
             <input type="text" class="tags-bulk-parent-input" id="tags-bulk-parent-input"
-                   placeholder="Tag parent (vide = aucun)" autocomplete="off" />
+                   placeholder="Tag conteneur (vide = aucun)" autocomplete="off" />
             <button type="button" class="tags-bulk-apply-btn" id="tags-bulk-apply-parent-btn" disabled>Assigner</button>
           </div>
 
@@ -980,8 +980,8 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
           applyFilters();
           if (createFeedback) {
             createFeedback.textContent = n + " tag" + (n > 1 ? "s" : "") + (parent
-              ? " rattach\u00e9" + (n > 1 ? "s" : "") + " \u00e0 \u00ab\u00a0" + parent + "\u00a0\u00bb"
-              : " d\u00e9tach\u00e9" + (n > 1 ? "s" : "")) + " !";
+              ? " inclus dans \u00ab\u00a0" + parent + "\u00a0\u00bb"
+              : " retir\u00e9" + (n > 1 ? "s" : "") + " de leur conteneur") + " !";
             createFeedback.style.color = "var(--accent)";
             createFeedback.hidden = false;
           }
