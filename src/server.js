@@ -23,7 +23,7 @@ const { attachUser } = require("./auth");
 const { isFrenchIp } = require("./geo");
 const {
   db, getAllTagMeta, getAllTagCategories, getAllTagParents, getAllTagSubcategories, setTagType, setTagCategory, setTagParent, setTagSubcategory, createStandaloneTag, renameTagEverywhere,
-  getAllCategories, getAllSubcategoriesList, createCategory, updateCategory, deleteCategory, createSubcategoryEntry, updateSubcategoryEntry, deleteSubcategoryEntry,
+  getAllCategories, getAllSubcategoriesList, getAllSubcategoriesByCategory, getAllCategoriesWithSubs, createCategory, updateCategory, deleteCategory, createSubcategoryEntry, updateSubcategoryEntry, deleteSubcategoryEntry,
   listWikiPages, listGalleryImages, getGalleryImage, listBdBooks, recordActivityPing, recordAnonVisit,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
@@ -936,11 +936,9 @@ app.get("/tags", function (req, res) {
     });
   } catch (_) {}
 
-  var dynamicCategories = [];
-  var dynamicSubcategories = [];
-  try { dynamicCategories    = getAllCategories(); } catch (_) {}
-  try { dynamicSubcategories = getAllSubcategoriesList(); } catch (_) {}
-  res.render("tags", { config, tags, wikiPageByTitle, currentUser: req.user || null, dynamicCategories, dynamicSubcategories });
+  var dynamicCategoriesWithSubs = [];
+  try { dynamicCategoriesWithSubs = getAllCategoriesWithSubs(); } catch (_) {}
+  res.render("tags", { config, tags, wikiPageByTitle, currentUser: req.user || null, dynamicCategoriesWithSubs });
 });
 
 // ── API admin : créer un tag standalone ────────────────────────────────────
@@ -1022,10 +1020,9 @@ app.put("/api/tags/rename", function (req, res) {
 // ── API admin : gestion catégories ────────────────────────────────────────
 app.get("/api/tag-categories", function (req, res) {
   if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false });
-  var cats = []; var subs = [];
-  try { cats = getAllCategories(); } catch (_) {}
-  try { subs = getAllSubcategoriesList(); } catch (_) {}
-  res.json({ ok: true, categories: cats, subcategories: subs });
+  var cats = [];
+  try { cats = getAllCategoriesWithSubs(); } catch (_) {}
+  res.json({ ok: true, categories: cats });
 });
 
 app.post("/api/tag-categories", function (req, res) {
@@ -1060,28 +1057,31 @@ app.delete("/api/tag-categories/:key", function (req, res) {
 // ── API admin : gestion sous-catégories ───────────────────────────────────
 app.post("/api/tag-subcategories", function (req, res) {
   if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false });
-  var label = String(req.body.label || "").trim();
-  var key   = String(req.body.key   || "").trim() || label.toLowerCase().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-  if (!label) return res.status(400).json({ ok: false, error: "Label requis" });
-  var k = createSubcategoryEntry(key, label);
-  if (!k) return res.status(409).json({ ok: false, error: "Clé déjà utilisée" });
+  var label       = String(req.body.label        || "").trim();
+  var categoryKey = String(req.body.category_key || "").trim();
+  var key         = String(req.body.key          || "").trim() || label.toLowerCase().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!label || !categoryKey) return res.status(400).json({ ok: false, error: "Label et catégorie requis" });
+  var k = createSubcategoryEntry(key, label, categoryKey);
+  if (!k) return res.status(409).json({ ok: false, error: "Clé déjà utilisée pour cette catégorie" });
   res.json({ ok: true, key: k });
 });
 
-app.put("/api/tag-subcategories/:key", function (req, res) {
+app.put("/api/tag-subcategories/:categoryKey/:key", function (req, res) {
   if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false });
-  var key   = String(req.params.key || "");
-  var label = String(req.body.label || "").trim();
+  var key         = String(req.params.key         || "");
+  var categoryKey = String(req.params.categoryKey || "");
+  var label       = String(req.body.label         || "").trim();
   if (!label) return res.status(400).json({ ok: false, error: "Label requis" });
-  updateSubcategoryEntry(key, label);
+  updateSubcategoryEntry(key, categoryKey, label);
   res.json({ ok: true });
 });
 
-app.delete("/api/tag-subcategories/:key", function (req, res) {
+app.delete("/api/tag-subcategories/:categoryKey/:key", function (req, res) {
   if (!req.user || !req.user.isAdmin) return res.status(403).json({ ok: false });
-  var key = String(req.params.key || "");
-  var ok = deleteSubcategoryEntry(key);
-  if (!ok) return res.status(409).json({ ok: false, error: "Sous-catégorie utilisée" });
+  var key         = String(req.params.key         || "");
+  var categoryKey = String(req.params.categoryKey || "");
+  var ok = deleteSubcategoryEntry(key, categoryKey);
+  if (!ok) return res.status(409).json({ ok: false, error: "Sous-catégorie utilisée par des tags" });
   res.json({ ok: true });
 });
 

@@ -774,11 +774,32 @@ db.exec(`
 `);
 db.exec(`
   CREATE TABLE IF NOT EXISTS tag_subcategories (
-    key        TEXT PRIMARY KEY,
-    label      TEXT NOT NULL,
-    sort_order INTEGER NOT NULL DEFAULT 0
+    key          TEXT NOT NULL,
+    category_key TEXT NOT NULL,
+    label        TEXT NOT NULL,
+    sort_order   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (key, category_key)
   )
 `);
+// Migration : ancienne table sans category_key → nouvelle table par catégorie
+(function migrateSubcategoriesToPerCategory() {
+  try {
+    const cols = db.prepare("PRAGMA table_info(tag_subcategories)").all();
+    if (cols.some(c => c.name === 'category_key')) return; // Déjà migré
+    const existing = db.prepare("SELECT key, label, sort_order FROM tag_subcategories").all();
+    db.exec("ALTER TABLE tag_subcategories RENAME TO tag_subcategories_old");
+    db.exec(`CREATE TABLE tag_subcategories (
+      key TEXT NOT NULL, category_key TEXT NOT NULL, label TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (key, category_key)
+    )`);
+    const catsWithSub = db.prepare("SELECT key FROM tag_categories WHERE has_subcats=1").all();
+    const ins = db.prepare("INSERT OR IGNORE INTO tag_subcategories (key, category_key, label, sort_order) VALUES (?,?,?,?)");
+    for (const cat of catsWithSub) {
+      for (const sub of existing) { ins.run(sub.key, cat.key, sub.label, sub.sort_order); }
+    }
+    db.exec("DROP TABLE IF EXISTS tag_subcategories_old");
+  } catch (e) { /* ignore si déjà fait */ }
+})();
 // Seed des catégories et sous-catégories par défaut
 (function seedTagCategories() {
   const cats = db.prepare("SELECT COUNT(*) as n FROM tag_categories").get();
@@ -796,13 +817,17 @@ db.exec(`
   }
   const subs = db.prepare("SELECT COUNT(*) as n FROM tag_subcategories").get();
   if (subs.n === 0) {
-    const ins2 = db.prepare("INSERT OR IGNORE INTO tag_subcategories (key, label, sort_order) VALUES (?,?,?)");
-    [
+    const ins2 = db.prepare("INSERT OR IGNORE INTO tag_subcategories (key, category_key, label, sort_order) VALUES (?,?,?,?)");
+    const catKeys = ['femme', 'homme'];
+    const defaults = [
       ['physique',    'Physique',                  0],
       ['ethnie',      'Ethnie',                    1],
       ['fantastique', 'Fantastique et impossible', 2],
       ['vetements',   'Vêtements',                 3],
-    ].forEach(r => ins2.run(...r));
+    ];
+    for (const ck of catKeys) {
+      for (const [key, label, ord] of defaults) { ins2.run(key, ck, label, ord); }
+    }
   }
 })();
 
@@ -2738,18 +2763,39 @@ function getValidTagCategories() {
     return new Set(rows.map(r => r.key));
   } catch (_) { return new Set(["objet","femme","homme","rapport","lieu","relation","autre"]); }
 }
-function getValidTagSubcategories() {
+function getValidTagSubcategories(categoryKey) {
   try {
-    const rows = db.prepare("SELECT key FROM tag_subcategories").all();
+    const rows = categoryKey
+      ? db.prepare("SELECT key FROM tag_subcategories WHERE category_key=?").all(categoryKey)
+      : db.prepare("SELECT DISTINCT key FROM tag_subcategories").all();
     return new Set([...rows.map(r => r.key), ""]);
-  } catch (_) { return new Set(["physique","ethnie","fantastique","vetements","autre",""]); }
+  } catch (_) { return new Set(["physique","ethnie","fantastique","vetements",""]); }
 }
 
 function getAllCategories() {
   return db.prepare("SELECT key, label, has_subcats, sort_order FROM tag_categories ORDER BY sort_order, key").all();
 }
-function getAllSubcategoriesList() {
-  return db.prepare("SELECT key, label, sort_order FROM tag_subcategories ORDER BY sort_order, key").all();
+// Retourne {categoryKey: [{key, label, sort_order}]}
+function getAllSubcategoriesByCategory() {
+  const rows = db.prepare("SELECT key, category_key, label, sort_order FROM tag_subcategories ORDER BY category_key, sort_order, label").all();
+  const result = {};
+  rows.forEach(r => {
+    if (!result[r.category_key]) result[r.category_key] = [];
+    result[r.category_key].push({ key: r.key, label: r.label, sort_order: r.sort_order });
+  });
+  return result;
+}
+// Retourne les catégories avec leurs sous-catégories intégrées
+function getAllCategoriesWithSubs() {
+  const cats = getAllCategories();
+  const subsMap = getAllSubcategoriesByCategory();
+  return cats.map(c => Object.assign({}, c, { subcategories: subsMap[c.key] || [] }));
+}
+function getAllSubcategoriesList(categoryKey) {
+  if (categoryKey) {
+    return db.prepare("SELECT key, label, sort_order FROM tag_subcategories WHERE category_key=? ORDER BY sort_order, label").all(categoryKey);
+  }
+  return db.prepare("SELECT key, category_key, label, sort_order FROM tag_subcategories ORDER BY category_key, sort_order, label").all();
 }
 function createCategory(key, label, has_subcats) {
   const k = String(key || "").toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -2762,26 +2808,27 @@ function updateCategory(key, label, has_subcats) {
   db.prepare("UPDATE tag_categories SET label=?, has_subcats=? WHERE key=?").run(String(label||key), has_subcats ? 1 : 0, key);
 }
 function deleteCategory(key) {
-  if (key === 'autre') return false; // toujours garder 'autre'
+  if (key === 'autre') return false;
   const used = db.prepare("SELECT COUNT(*) as n FROM tag_meta WHERE category=?").get(key);
   if (used && used.n > 0) return false;
   db.prepare("DELETE FROM tag_categories WHERE key=?").run(key);
+  db.prepare("DELETE FROM tag_subcategories WHERE category_key=?").run(key);
   return true;
 }
-function createSubcategoryEntry(key, label) {
+function createSubcategoryEntry(key, label, categoryKey) {
   const k = String(key || "").toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-  if (!k) return false;
-  const n = db.prepare("SELECT MAX(sort_order) as m FROM tag_subcategories").get().m || 0;
-  db.prepare("INSERT OR IGNORE INTO tag_subcategories (key, label, sort_order) VALUES (?,?,?)").run(k, String(label||k), n + 1);
+  if (!k || !categoryKey) return false;
+  const n = (db.prepare("SELECT MAX(sort_order) as m FROM tag_subcategories WHERE category_key=?").get(categoryKey).m || 0);
+  db.prepare("INSERT OR IGNORE INTO tag_subcategories (key, category_key, label, sort_order) VALUES (?,?,?,?)").run(k, categoryKey, String(label||k), n + 1);
   return k;
 }
-function updateSubcategoryEntry(key, label) {
-  db.prepare("UPDATE tag_subcategories SET label=? WHERE key=?").run(String(label||key), key);
+function updateSubcategoryEntry(key, categoryKey, label) {
+  db.prepare("UPDATE tag_subcategories SET label=? WHERE key=? AND category_key=?").run(String(label||key), key, categoryKey);
 }
-function deleteSubcategoryEntry(key) {
-  const used = db.prepare("SELECT COUNT(*) as n FROM tag_meta WHERE subcategory=?").get(key);
+function deleteSubcategoryEntry(key, categoryKey) {
+  const used = db.prepare("SELECT COUNT(*) as n FROM tag_meta WHERE subcategory=? AND category=?").get(key, categoryKey);
   if (used && used.n > 0) return false;
-  db.prepare("DELETE FROM tag_subcategories WHERE key=?").run(key);
+  db.prepare("DELETE FROM tag_subcategories WHERE key=? AND category_key=?").run(key, categoryKey);
   return true;
 }
 // Migration : les tags en type "fantaisie" rejoignent "irrealiste"
@@ -2831,9 +2878,11 @@ function getAllTagSubcategories() {
 
 function setTagSubcategory(tag, subcategory) {
   const t = normalizeTagStr(tag);
-  const validSubs = getValidTagSubcategories();
-  const s = validSubs.has(subcategory) ? subcategory : "";
   if (!t) return;
+  const meta = db.prepare("SELECT category FROM tag_meta WHERE tag=?").get(t);
+  const catKey = meta ? meta.category : '';
+  const validSubs = getValidTagSubcategories(catKey);
+  const s = validSubs.has(subcategory) ? subcategory : "";
   db.prepare("INSERT INTO tag_meta (tag, type, category, subcategory) VALUES (?, 'normal', 'autre', ?) ON CONFLICT(tag) DO UPDATE SET subcategory = excluded.subcategory").run(t, s);
 }
 
@@ -5928,6 +5977,8 @@ module.exports = {
   CATS_WITH_SUBCATS,
   getAllCategories,
   getAllSubcategoriesList,
+  getAllSubcategoriesByCategory,
+  getAllCategoriesWithSubs,
   createCategory,
   updateCategory,
   deleteCategory,
