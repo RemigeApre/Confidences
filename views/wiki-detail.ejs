@@ -985,7 +985,8 @@
         <% if (hasAnyTags) { %>
           <div class="wiki-right-tags">
             <span class="wiki-right-tags-label" data-fr="Tags&nbsp;:" data-en="Tags:">Tags&nbsp;:</span>
-            <% page.tags.forEach(function (t) { %>
+            <% var _tierOrder={wiki:0,normal:1,parent:2}; %>
+            <% page.tags.slice().sort(function(a,b){ var ta=_tierOrder[(tagRegistry[a.toLowerCase()]||{}).tier]??1; var tb=_tierOrder[(tagRegistry[b.toLowerCase()]||{}).tier]??1; return ta-tb; }).forEach(function(t){ %>
               <%- include('partials/tag-badge', { tag: t }) %>
             <% }) %>
           </div>

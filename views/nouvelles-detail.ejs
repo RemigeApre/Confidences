@@ -89,7 +89,7 @@
       <%# Tags (avec classification ultra/irréaliste via tagRegistry) %>
       <% if (nouvelle.tags && nouvelle.tags.length) { %>
         <div class="nv-right-tags">
-          <% nouvelle.tags.forEach(function(t) { %><%- include('partials/tag-badge', { tag: t }) %><% }) %>
+          <% var _tOrd={wiki:0,normal:1,parent:2}; nouvelle.tags.slice().sort(function(a,b){ var ta=_tOrd[(tagRegistry[a.toLowerCase()]||{}).tier]??1; var tb=_tOrd[(tagRegistry[b.toLowerCase()]||{}).tier]??1; return ta-tb; }).forEach(function(t){ %><%- include('partials/tag-badge', { tag: t }) %><% }) %>
         </div>
       <% } %>
 
