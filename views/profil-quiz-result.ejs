@@ -1,0 +1,83 @@
+<%
+  var worldMap = { 'DL': 'Eau', 'DP': 'Air', 'BL': 'Terre', 'BP': 'Feu' };
+  var code = attempt.result_code || '';
+  var worldKey = code.slice(0, 2);
+  var world = worldMap[worldKey] || archetype && archetype.world || '';
+  var normalAxes = axes.filter(function(a) { return !a.is_position; });
+  var positionAxes = axes.filter(function(a) { return a.is_position; });
+%>
+<%- include('partials/head', { title: (archetype ? archetype.name : code) + ' — ' + type.name }) %>
+<main class="container" style="--ch-hue: 270">
+  <%- include('partials/top-nav', { config: config, navTitle: type.name, navBack: '/quizz/profil' }) %>
+
+  <div class="pqres-wrap">
+    <div class="pqres-hero">
+      <div class="pqres-code"><%= code %> &middot; <%= attempt.result_position %></div>
+      <% if (world) { %><div class="pqres-world">Monde : <%= world %></div><% } %>
+      <div class="pqres-archetype"><%= archetype ? archetype.name : code %></div>
+      <% if (archetype && archetype.description) { %>
+      <p class="pqres-desc"><%= archetype.description %></p>
+      <% } %>
+    </div>
+
+    <div class="pqres-axes">
+      <% normalAxes.forEach(function(axis) { %>
+      <% var pct = scores[axis.slug] != null ? scores[axis.slug] : 0.5; %>
+      <% var pctDisplay = Math.round(pct * 100); %>
+      <div class="pqres-axis">
+        <div class="pqres-axis-name"><%= axis.name %></div>
+        <div class="pqres-axis-bar-wrap">
+          <span class="pqres-axis-pole"><%= axis.pole1_label %></span>
+          <div class="pqres-axis-track">
+            <div class="pqres-axis-fill" style="width:<%= pctDisplay %>%"></div>
+          </div>
+          <span class="pqres-axis-pole pqres-axis-pole--right"><%= axis.pole2_label %></span>
+          <span class="pqres-axis-pct"><%= pctDisplay %>%</span>
+        </div>
+      </div>
+      <% }) %>
+
+      <% if (positionAxes.length && scores['position_mener'] != null) { %>
+      <div class="pqres-axis">
+        <div class="pqres-axis-name">Position</div>
+        <div class="pqres-axis-bar-wrap">
+          <span class="pqres-axis-pole">Mener</span>
+          <div class="pqres-axis-track">
+            <div class="pqres-axis-fill" style="width:<%= Math.round(scores['position_mener'] * 100) %>%"></div>
+          </div>
+          <span class="pqres-axis-pct"><%= Math.round(scores['position_mener'] * 100) %>%</span>
+        </div>
+        <div class="pqres-axis-bar-wrap" style="margin-top:.4rem">
+          <span class="pqres-axis-pole">Se laisser mener</span>
+          <div class="pqres-axis-track">
+            <div class="pqres-axis-fill" style="width:<%= Math.round(scores['position_laisser'] * 100) %>%"></div>
+          </div>
+          <span class="pqres-axis-pct"><%= Math.round(scores['position_laisser'] * 100) %>%</span>
+        </div>
+      </div>
+      <% } %>
+    </div>
+
+    <% if (history && history.length > 1) { %>
+    <div class="pqres-history">
+      <p class="pqres-history-title">Historique</p>
+      <div class="pqres-history-list">
+        <% history.forEach(function(h) { %>
+        <a href="/quizz/profil/<%= type.slug %>/result/<%= h.id %>" class="pqres-history-item">
+          <span class="pqres-history-code"><%= h.result_code %>-<%= h.result_position %></span>
+          <span class="pqres-history-arch"><%= h.result_archetype %></span>
+          <span class="pqres-history-date"><%= h.created_at ? h.created_at.slice(0,10) : '' %></span>
+        </a>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+    <div style="margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <a href="/quizz/profil/<%= type.slug %>" class="pqt-card-btn" style="text-decoration:none">Repasser le test</a>
+      <a href="/quizz/profil" class="pqtake-nav-btn" style="text-decoration:none">Retour aux profils</a>
+    </div>
+  </div>
+
+  <%- include('partials/foot') %>
+</main>

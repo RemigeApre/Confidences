@@ -1,0 +1,36 @@
+<%- include('partials/head', { title: 'Quizz de profil' }) %>
+<main class="container" style="--ch-hue: 270">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Quizz de profil', navBack: '/quizz' }) %>
+
+  <div class="pqt-wrap">
+    <h1 class="pqt-title">Quizz de profil</h1>
+    <p class="pqt-desc">Des quizz de personnalité pour mieux comprendre votre façon de vivre le désir.</p>
+
+    <div class="pqt-cards">
+      <% types.forEach(function(t) { %>
+      <% var attempts = attemptsMap[t.id] || []; %>
+      <% var last = attempts[0] || null; %>
+      <a href="/quizz/profil/<%= t.slug %>" class="pqt-card">
+        <div class="pqt-card-info">
+          <p class="pqt-card-name"><%= t.name %></p>
+          <% if (t.description) { %>
+          <p class="pqt-card-desc"><%= t.description %></p>
+          <% } %>
+          <% if (last) { %>
+          <p class="pqt-card-last"><%= last.result_archetype %> (<%= last.result_code %>-<%= last.result_position %>)</p>
+          <% } %>
+        </div>
+        <% if (last) { %>
+        <span class="pqt-card-code"><%= last.result_code %></span>
+        <% } %>
+        <span class="pqt-card-btn"><%= last ? 'Repasser' : 'Commencer' %></span>
+      </a>
+      <% }) %>
+      <% if (!types.length) { %>
+      <p style="color:var(--muted)">Aucun quizz de profil disponible pour le moment.</p>
+      <% } %>
+    </div>
+  </div>
+
+  <%- include('partials/foot') %>
+</main>

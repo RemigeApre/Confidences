@@ -36,7 +36,12 @@ function buildCustomQuizRouter(config) {
     const updated  = all.filter(q => q.updated_at > q.created_at && q.updated_at >= weekAgo).slice(0, 10);
     const notDone  = all.filter(q => !completedIds.has(q.id)).slice(0, 10);
     const done     = all.filter(q => completedIds.has(q.id));
-    res.render("quiz-home", { config, featured, newest, updated, notDone, done, all, completedIds, progressMap });
+    const profilTypes = db.listProfilQuizTypes ? db.listProfilQuizTypes() : [];
+    const profilAttemptsMap = {};
+    if (userId && db.listProfilQuizAttempts) {
+      profilTypes.forEach(t => { profilAttemptsMap[t.id] = db.listProfilQuizAttempts(t.id, userId); });
+    }
+    res.render("quiz-home", { config, featured, newest, updated, notDone, done, all, completedIds, progressMap, profilTypes, profilAttemptsMap });
   });
 
   // Créer (admin)

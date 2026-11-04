@@ -1,0 +1,199 @@
+<%- include('partials/head', { title: 'Admin — ' + type.name }) %>
+<main class="container" style="--ch-hue: 270">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Admin : ' + type.name, navBack: '/quizz/profil' }) %>
+
+  <div class="pqadm-wrap">
+    <h1 style="font-size:1.3rem;font-weight:700;margin:0 0 .25rem"><%= type.name %></h1>
+    <p style="color:var(--muted);font-size:.85rem;margin:0 0 2rem"><%= type.description %></p>
+
+    <%# ── Questions ─────────────────────────────────────────────────────── %>
+    <div class="pqadm-section">
+      <div class="pqadm-section-title">Questions (<%= questions.length %>)</div>
+
+      <% axes.forEach(function(axis) { %>
+      <% var axisQs = questions.filter(function(q) { return q.axis_id === axis.id; }); %>
+      <h3 style="font-size:.85rem;color:var(--muted);margin:.75rem 0 .4rem"><%= axis.name %> (pôle 1: <%= axis.pole1_label %> / pôle 2: <%= axis.pole2_label %>)</h3>
+      <% if (axisQs.length) { %>
+      <table class="pqadm-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Pôle</th>
+            <th>Texte</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% axisQs.forEach(function(q) { %>
+          <tr id="qrow_<%= q.id %>">
+            <td style="color:var(--muted);min-width:30px"><%= q.id %></td>
+            <td>
+              <select class="q-pole" data-qid="<%= q.id %>">
+                <option value="1" <%= q.pole===1?'selected':'' %>><%= axis.pole1_label %></option>
+                <option value="2" <%= q.pole===2?'selected':'' %>><%= axis.pole2_label %></option>
+              </select>
+            </td>
+            <td><textarea class="q-text" data-qid="<%= q.id %>" rows="2"><%= q.text %></textarea></td>
+            <td style="white-space:nowrap">
+              <button type="button" class="pqadm-save-btn" data-qid="<%= q.id %>" data-axis="<%= q.axis_id %>">Sauver</button>
+              <button type="button" class="pqadm-del-btn" data-qid="<%= q.id %>" title="Supprimer">&#10005;</button>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+      <% }) %>
+
+      <div class="pqadm-add-row" style="margin-top:1rem">
+        <select id="add-q-axis">
+          <% axes.forEach(function(a) { %>
+          <option value="<%= a.id %>"><%= a.name %></option>
+          <% }) %>
+        </select>
+        <select id="add-q-pole">
+          <option value="1">Pôle 1</option>
+          <option value="2">Pôle 2</option>
+        </select>
+        <textarea id="add-q-text" placeholder="Texte de la question" rows="2"></textarea>
+        <button type="button" class="pqadm-add-btn" id="add-q-btn">+ Question</button>
+      </div>
+    </div>
+
+    <%# ── Archétypes ─────────────────────────────────────────────────────── %>
+    <div class="pqadm-section">
+      <div class="pqadm-section-title">Archétypes (<%= archetypes.length %>)</div>
+      <table class="pqadm-table">
+        <thead>
+          <tr><th>ID</th><th>Code</th><th>Nom</th><th>Monde</th><th>Description</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% archetypes.forEach(function(a) { %>
+          <tr id="arow_<%= a.id %>">
+            <td style="color:var(--muted)"><%= a.id %></td>
+            <td><input type="text" class="a-code" data-aid="<%= a.id %>" value="<%= a.code %>" style="background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:.25rem .4rem;font-size:.82rem;width:70px"></td>
+            <td><input type="text" class="a-name" data-aid="<%= a.id %>" value="<%= a.name %>" style="background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:.25rem .4rem;font-size:.82rem;width:120px"></td>
+            <td><input type="text" class="a-world" data-aid="<%= a.id %>" value="<%= a.world %>" style="background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:.25rem .4rem;font-size:.82rem;width:70px"></td>
+            <td><textarea class="a-desc" data-aid="<%= a.id %>" rows="2"><%= a.description %></textarea></td>
+            <td style="white-space:nowrap">
+              <button type="button" class="pqadm-save-btn a-save" data-aid="<%= a.id %>">Sauver</button>
+              <button type="button" class="pqadm-del-btn a-del" data-aid="<%= a.id %>" title="Supprimer">&#10005;</button>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <div class="pqadm-add-row" style="margin-top:.75rem">
+        <input type="text" id="add-a-code" placeholder="Code" style="background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:.3rem .5rem;font-size:.82rem;width:70px">
+        <input type="text" id="add-a-name" placeholder="Nom" style="background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:.3rem .5rem;font-size:.82rem;width:120px">
+        <input type="text" id="add-a-world" placeholder="Monde" style="background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:.3rem .5rem;font-size:.82rem;width:70px">
+        <textarea id="add-a-desc" placeholder="Description" rows="2"></textarea>
+        <button type="button" class="pqadm-add-btn" id="add-a-btn">+ Archétype</button>
+      </div>
+    </div>
+  </div>
+
+  <%- include('partials/foot') %>
+</main>
+<script>
+(function() {
+  var slug = '<%= type.slug %>';
+  var base = '/quizz/profil/' + slug + '/admin';
+
+  // Save question
+  document.querySelectorAll('.pqadm-save-btn[data-qid]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var qid = btn.dataset.qid;
+      var row = document.getElementById('qrow_' + qid);
+      var text = row.querySelector('.q-text').value;
+      var pole = Number(row.querySelector('.q-pole').value);
+      var axisId = Number(btn.dataset.axis);
+      fetch(base + '/question/' + qid, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text, axis_id: axisId, pole: pole })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        btn.textContent = d.ok ? 'OK' : 'Err';
+        setTimeout(function() { btn.textContent = 'Sauver'; }, 1500);
+      });
+    });
+  });
+
+  // Delete question
+  document.querySelectorAll('.pqadm-del-btn[data-qid]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var qid = btn.dataset.qid;
+      if (!confirm('Supprimer cette question ?')) return;
+      fetch(base + '/question/' + qid, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.ok) document.getElementById('qrow_' + qid).remove();
+        });
+    });
+  });
+
+  // Add question
+  document.getElementById('add-q-btn').addEventListener('click', function() {
+    var text = document.getElementById('add-q-text').value.trim();
+    var axisId = Number(document.getElementById('add-q-axis').value);
+    var pole = Number(document.getElementById('add-q-pole').value);
+    if (!text) return;
+    fetch(base + '/question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, axis_id: axisId, pole: pole })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) { document.getElementById('add-q-text').value = ''; location.reload(); }
+    });
+  });
+
+  // Save archetype
+  document.querySelectorAll('.a-save').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var aid = btn.dataset.aid;
+      var row = document.getElementById('arow_' + aid);
+      var code = row.querySelector('.a-code').value;
+      var name = row.querySelector('.a-name').value;
+      var world = row.querySelector('.a-world').value;
+      var desc = row.querySelector('.a-desc').value;
+      fetch(base + '/archetype/' + aid, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code, name: name, world: world, description: desc })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        btn.textContent = d.ok ? 'OK' : 'Err';
+        setTimeout(function() { btn.textContent = 'Sauver'; }, 1500);
+      });
+    });
+  });
+
+  // Delete archetype
+  document.querySelectorAll('.a-del').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var aid = btn.dataset.aid;
+      if (!confirm('Supprimer cet archétype ?')) return;
+      fetch(base + '/archetype/' + aid, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.ok) document.getElementById('arow_' + aid).remove();
+        });
+    });
+  });
+
+  // Add archetype
+  document.getElementById('add-a-btn').addEventListener('click', function() {
+    var code = document.getElementById('add-a-code').value.trim();
+    var name = document.getElementById('add-a-name').value.trim();
+    var world = document.getElementById('add-a-world').value.trim();
+    var desc = document.getElementById('add-a-desc').value.trim();
+    if (!code || !name) return;
+    fetch(base + '/archetype', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, name: name, world: world, description: desc })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) location.reload();
+    });
+  });
+})();
+</script>

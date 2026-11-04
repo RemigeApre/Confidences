@@ -125,6 +125,30 @@
         return out;
       }
     %>
+    <% if (locals.profilTypes && profilTypes.length) { %>
+    <section class="quiz-hub-strip quiz-hub-strip--profil">
+      <h2 class="quiz-hub-strip-title">Quizz de profil</h2>
+      <div class="quiz-hub-cards">
+        <% profilTypes.forEach(function(t) { %>
+        <% var lastAttempt = (locals.profilAttemptsMap && profilAttemptsMap[t.id] && profilAttemptsMap[t.id][0]) || null; %>
+        <a href="/quizz/profil/<%= t.slug %>" class="qhc qhc--profil">
+          <div class="qhc-img qhc-img--profil">
+            <span class="qhc-profil-icon">&#9672;</span>
+            <% if (lastAttempt) { %>
+            <span class="qhc-profil-code"><%= lastAttempt.result_code %>-<%= lastAttempt.result_position %></span>
+            <% } %>
+          </div>
+          <div class="qhc-body">
+            <p class="qhc-title"><%= t.name %></p>
+            <p class="qhc-meta"><%= lastAttempt ? lastAttempt.result_archetype : 'Non complété' %></p>
+          </div>
+          <div class="qhc-accent"></div>
+        </a>
+        <% }) %>
+      </div>
+      <div class="quiz-hub-strip-sep"></div>
+    </section>
+    <% } %>
     <%- quizStrip('Mis en avant', 'Featured', featured) %>
     <%- quizStrip('Nouveaux quizz', 'New quizzes', newest) %>
     <%- quizStrip('Non encore complétés', 'Not yet completed', notDone) %>

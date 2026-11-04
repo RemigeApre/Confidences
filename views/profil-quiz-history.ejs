@@ -1,0 +1,28 @@
+<%- include('partials/head', { title: 'Historique — ' + type.name }) %>
+<main class="container" style="--ch-hue: 270">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Historique', navBack: '/quizz/profil' }) %>
+
+  <div class="pqt-wrap">
+    <h1 class="pqt-title">Historique : <%= type.name %></h1>
+
+    <% if (!attempts.length) { %>
+    <p style="color:var(--muted)">Aucun résultat enregistré pour ce quizz.</p>
+    <% } else { %>
+    <div class="pqres-history-list">
+      <% attempts.forEach(function(h) { %>
+      <a href="/quizz/profil/<%= type.slug %>/result/<%= h.id %>" class="pqres-history-item">
+        <span class="pqres-history-code"><%= h.result_code %>-<%= h.result_position %></span>
+        <span class="pqres-history-arch"><%= h.result_archetype %></span>
+        <span class="pqres-history-date"><%= h.created_at ? h.created_at.slice(0,10) : '' %></span>
+      </a>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <div style="margin-top:1.5rem">
+      <a href="/quizz/profil/<%= type.slug %>" class="pqt-card-btn" style="text-decoration:none">Passer le test</a>
+    </div>
+  </div>
+
+  <%- include('partials/foot') %>
+</main>

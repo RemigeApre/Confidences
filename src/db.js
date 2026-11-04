@@ -3722,6 +3722,201 @@ if (!db.prepare("SELECT * FROM pragma_table_info('custom_quiz_questions') WHERE 
   db.exec("ALTER TABLE custom_quiz_questions ADD COLUMN wiki_link_id INTEGER DEFAULT NULL");
 }
 
+// ── Profil Quiz ─────────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS profil_quiz_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS profil_quiz_axes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type_id INTEGER NOT NULL REFERENCES profil_quiz_types(id) ON DELETE CASCADE,
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    pole1_code TEXT NOT NULL,
+    pole1_label TEXT NOT NULL,
+    pole2_code TEXT NOT NULL,
+    pole2_label TEXT NOT NULL,
+    is_position INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS profil_quiz_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type_id INTEGER NOT NULL REFERENCES profil_quiz_types(id) ON DELETE CASCADE,
+    axis_id INTEGER NOT NULL REFERENCES profil_quiz_axes(id) ON DELETE CASCADE,
+    pole INTEGER NOT NULL DEFAULT 1,
+    text TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS profil_quiz_archetypes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type_id INTEGER NOT NULL REFERENCES profil_quiz_types(id) ON DELETE CASCADE,
+    code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    world TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS profil_quiz_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type_id INTEGER NOT NULL REFERENCES profil_quiz_types(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL,
+    answers TEXT NOT NULL DEFAULT '{}',
+    scores TEXT NOT NULL DEFAULT '{}',
+    result_code TEXT NOT NULL DEFAULT '',
+    result_position TEXT NOT NULL DEFAULT '',
+    result_archetype TEXT NOT NULL DEFAULT '',
+    completed INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+// Seed "Profil principal"
+(function seedProfilPrincipal() {
+  db.prepare("INSERT OR IGNORE INTO profil_quiz_types (slug, name, description) VALUES (?,?,?)").run(
+    'principal', 'Profil principal', "Découvrez votre façon de vivre le désir à travers cinq axes."
+  );
+  const typeRow = db.prepare("SELECT id FROM profil_quiz_types WHERE slug='principal'").get();
+  if (!typeRow) return;
+  const typeId = typeRow.id;
+
+  const axesDef = [
+    { slug: 'rythme',    name: 'Rythme',    pole1_code: 'D', pole1_label: 'Doux',             pole2_code: 'B', pole2_label: 'Brutal',           is_position: 0, sort_order: 0 },
+    { slug: 'moteur',    name: 'Moteur',    pole1_code: 'L', pole1_label: 'Lien',              pole2_code: 'P', pole2_label: 'Physique',          is_position: 0, sort_order: 1 },
+    { slug: 'nouveaute', name: 'Nouveauté', pole1_code: 'C', pole1_label: 'Confort',           pole2_code: 'E', pole2_label: 'Expérimental',      is_position: 0, sort_order: 2 },
+    { slug: 'scenario',  name: 'Scénario',  pole1_code: 'S', pole1_label: 'Spontané',          pole2_code: 'M', pole2_label: 'Mise en scène',     is_position: 0, sort_order: 3 },
+    { slug: 'plaisir',   name: 'Plaisir',   pole1_code: 'O', pole1_label: 'Offrir',            pole2_code: 'R', pole2_label: 'Recevoir',          is_position: 0, sort_order: 4 },
+    { slug: 'position',  name: 'Position',  pole1_code: 'D', pole1_label: 'Mener',             pole2_code: 'S', pole2_label: 'Se laisser mener',  is_position: 1, sort_order: 5 },
+  ];
+  const axesCount = db.prepare("SELECT COUNT(*) as n FROM profil_quiz_axes WHERE type_id=?").get(typeId).n;
+  if (axesCount === 0) {
+    const insertAxis = db.prepare("INSERT INTO profil_quiz_axes (type_id, slug, name, pole1_code, pole1_label, pole2_code, pole2_label, is_position, sort_order) VALUES (?,?,?,?,?,?,?,?,?)");
+    for (const a of axesDef) {
+      insertAxis.run(typeId, a.slug, a.name, a.pole1_code, a.pole1_label, a.pole2_code, a.pole2_label, a.is_position, a.sort_order);
+    }
+  }
+
+  function axisId(slug) { return db.prepare("SELECT id FROM profil_quiz_axes WHERE type_id=? AND slug=?").get(typeId, slug).id; }
+
+  const qCount = db.prepare("SELECT COUNT(*) as n FROM profil_quiz_questions WHERE type_id=?").get(typeId).n;
+  if (qCount === 0) {
+    const insertQ = db.prepare("INSERT INTO profil_quiz_questions (type_id, axis_id, pole, text, sort_order) VALUES (?,?,?,?,?)");
+    const questions = [
+      // Rythme pole 1
+      { slug: 'rythme', pole: 1, text: "J'aime que chaque geste prenne son temps." },
+      { slug: 'rythme', pole: 1, text: "La douceur me touche plus que la force." },
+      { slug: 'rythme', pole: 1, text: "J'ai besoin de me sentir libre de mes mouvements, sans rien qui me retienne." },
+      { slug: 'rythme', pole: 1, text: "Même une légère douleur suffit à me couper l'envie." },
+      // Rythme pole 2
+      { slug: 'rythme', pole: 2, text: "J'aime quand l'intensité monte vite." },
+      { slug: 'rythme', pole: 2, text: "Un peu de rudesse me plaît plus qu'une douceur constante." },
+      { slug: 'rythme', pole: 2, text: "Être tenu fermement, ou tenir l'autre, m'excite." },
+      { slug: 'rythme', pole: 2, text: "Une pointe de douleur peut renforcer mon plaisir." },
+      // Moteur pole 1
+      { slug: 'moteur', pole: 1, text: "Sans confiance construite avec l'autre, le désir ne vient pas." },
+      { slug: 'moteur', pole: 1, text: "Je ne peux pas avoir envie de quelqu'un que je connais mal." },
+      { slug: 'moteur', pole: 1, text: "Ce qui me touche le plus dans l'acte, c'est ce qui nous lie." },
+      { slug: 'moteur', pole: 1, text: "La complicité avec l'autre compte plus que son physique." },
+      // Moteur pole 2
+      { slug: 'moteur', pole: 2, text: "Une forte attirance physique suffit à me donner envie, même sans bien connaître la personne." },
+      { slug: 'moteur', pole: 2, text: "Je peux désirer quelqu'un sans éprouver de sentiments pour lui." },
+      { slug: 'moteur', pole: 2, text: "Le désir peut naître d'un regard, d'une silhouette, d'un contact de peau." },
+      { slug: 'moteur', pole: 2, text: "Pour que l'acte me plaise, une relation construite n'est pas nécessaire." },
+      // Nouveauté pole 1
+      { slug: 'nouveaute', pole: 1, text: "Je retrouve toujours avec plaisir ce que nous connaissons déjà." },
+      { slug: 'nouveaute', pole: 1, text: "Je préfère approfondir ce qui marche plutôt que chercher autre chose." },
+      { slug: 'nouveaute', pole: 1, text: "Savoir à l'avance ce qui va se passer me met à l'aise." },
+      { slug: 'nouveaute', pole: 1, text: "Un geste répété avec attention vaut mieux qu'une nouveauté incertaine." },
+      // Nouveauté pole 2
+      { slug: 'nouveaute', pole: 2, text: "Je m'ennuie si l'on refait toujours la même chose." },
+      { slug: 'nouveaute', pole: 2, text: "L'idée d'essayer quelque chose que je n'ai jamais fait m'attire." },
+      { slug: 'nouveaute', pole: 2, text: "J'aime être surpris, même au risque d'être déçu." },
+      { slug: 'nouveaute', pole: 2, text: "Chercher de nouvelles façons de faire fait partie de mon plaisir." },
+      // Scénario pole 1
+      { slug: 'scenario', pole: 1, text: "Les meilleurs moments sont ceux que personne n'avait prévus." },
+      { slug: 'scenario', pole: 1, text: "Je préfère que l'envie naisse de l'instant plutôt que d'un plan." },
+      { slug: 'scenario', pole: 1, text: "Préparer à l'avance refroidit mon envie." },
+      { slug: 'scenario', pole: 1, text: "J'aime que tout se passe sans mise en place, au gré de l'humeur." },
+      // Scénario pole 2
+      { slug: 'scenario', pole: 2, text: "J'aime attendre un moment fixé à l'avance." },
+      { slug: 'scenario', pole: 2, text: "Un cadre pensé (lieu, ambiance, tenue) fait monter mon désir." },
+      { slug: 'scenario', pole: 2, text: "J'aime imaginer un scénario ou un rôle avec l'autre." },
+      { slug: 'scenario', pole: 2, text: "L'attente et la préparation font partie de mon plaisir." },
+      // Plaisir pole 1
+      { slug: 'plaisir', pole: 1, text: "Voir l'autre prendre du plaisir est ce qui me plaît le plus." },
+      { slug: 'plaisir', pole: 1, text: "Je suis plus heureux quand l'autre est comblé que quand je le suis." },
+      { slug: 'plaisir', pole: 1, text: "Je suis plus attentif aux réactions de l'autre qu'aux miennes." },
+      { slug: 'plaisir', pole: 1, text: "Mon plaisir vient surtout de celui que je donne." },
+      // Plaisir pole 2
+      { slug: 'plaisir', pole: 2, text: "Mon propre plaisir est ce que je cherche en premier." },
+      { slug: 'plaisir', pole: 2, text: "J'aime me concentrer sur mes propres sensations." },
+      { slug: 'plaisir', pole: 2, text: "J'ai besoin de me sentir comblé pour être pleinement présent." },
+      { slug: 'plaisir', pole: 2, text: "Je sais dire ce que j'aime, et j'aime le recevoir." },
+      // Position pole 1
+      { slug: 'position', pole: 1, text: "J'aime proposer et décider de la suite." },
+      { slug: 'position', pole: 1, text: "J'aime que l'autre compte sur moi pour donner le cap." },
+      { slug: 'position', pole: 1, text: "Prendre l'initiative me procure du plaisir." },
+      { slug: 'position', pole: 1, text: "J'aime guider ce qui se passe." },
+      // Position pole 2
+      { slug: 'position', pole: 2, text: "J'aime laisser l'autre décider à ma place." },
+      { slug: 'position', pole: 2, text: "Lâcher prise et me confier est un vrai plaisir." },
+      { slug: 'position', pole: 2, text: "J'aime que l'autre prenne l'initiative." },
+      { slug: 'position', pole: 2, text: "Me laisser guider me détend." },
+    ];
+    questions.forEach((q, i) => insertQ.run(typeId, axisId(q.slug), q.pole, q.text, i));
+  }
+
+  const archetypesDef = [
+    // Eau (DL)
+    { code: 'DLCSO', name: 'Dauphin',       world: 'Eau', description: "Préfère rester sur ce qui est connu. L'acte n'est pas préparé, il vient naturellement, comme un jeu. Le plaisir de l'autre passe en premier : le Dauphin offre une présence joyeuse et chaleureuse, un guide fidèle qui reste à ses côtés dans les eaux qu'ils connaissent bien." },
+    { code: 'DLCSR', name: 'Tortue marine', world: 'Eau', description: "Préfère rester sur ce qui est connu. L'acte n'est pas préparé, il vient naturellement, sans hâte. Son propre plaisir compte d'abord, et il le savoure avec sérénité, comme la tortue retrouve chaque année la plage qui l'a vue naître." },
+    { code: 'DLCMO', name: 'Loutre',         world: 'Eau', description: "Préfère rester sur ce qui est connu, mais soigne les moments qui comptent. Comme les loutres qui s'enroulent dans les algues et se tiennent par la patte pour ne pas se perdre, le plaisir offert au partenaire est fait d'attention et d'attachement." },
+    { code: 'DLCMR', name: 'Cygne',          world: 'Eau', description: "Préfère rester sur ce qui est connu, mais apprécie beaucoup les mises en scène et les préparations soignées. Comme le cygne qui forme un couple durable, savoure son propre plaisir au cœur d'un cérémonial élégant, auprès d'un partenaire de confiance." },
+    { code: 'DLESO', name: 'Hippocampe',     world: 'Eau', description: "Sans préparation, aime explorer de nouvelles choses et emmener son partenaire vers de nouveaux rivages pour les lui offrir, comme l'hippocampe des légendes qui porte ses passagers à travers les mers." },
+    { code: 'DLESR', name: 'Carpe-dragon',   world: 'Eau', description: "Sans préparation, aime expérimenter de nouvelles choses pour de nouvelles sensations, porté par le rêve de se transformer, comme la carpe qui remonte la cascade pour devenir dragon." },
+    { code: 'DLEMO', name: 'Dragon des mers',world: 'Eau', description: "Invente une histoire pour l'autre : expérimente de nouvelles choses, prépare la mise en scène et la lui offre, comme le dragon des légendes qui bâtit un palais de corail pour son invité." },
+    { code: 'DLEMR', name: 'Licorne des mers',world:'Eau', description: "Aime expérimenter et savourer une mise en scène nouvelle, personnage rare et précieux d'un récit où son propre plaisir est au centre, à l'image du narval que les légendes ont pris pour une licorne." },
+    // Air (DP)
+    { code: 'DPCSO', name: 'Colibri',        world: 'Air', description: "Préfère rester sur ce qui est connu. L'acte n'est pas préparé, il vient naturellement, avec légèreté. Le plaisir de l'autre passe en premier : comme le colibri qui s'arrête en plein vol pour effleurer chaque fleur." },
+    { code: 'DPCSR', name: 'Chouette',       world: 'Air', description: "Préfère rester sur ce qui est connu. L'acte n'est pas préparé, dans le silence et la douceur d'un plumage de velours. Son propre plaisir compte d'abord : savoure chaque sensation, comme la chouette qui glisse sans un bruit." },
+    { code: 'DPCMO', name: 'Oiseau jardinier',world:'Air', description: "Préfère rester sur ce qui est connu, mais soigne chaque détail de la préparation pour offrir à son partenaire des sensations précises. Comme l'oiseau jardinier qui orne son berceau de fleurs et d'objets choisis." },
+    { code: 'DPCMR', name: 'Flamant rose',   world: 'Air', description: "Préfère rester sur ce qui est connu, mais apprécie les préparations et les cadres soignés. Y savoure son propre plaisir, sans se presser, avec l'élégance du flamant qui danse en équilibre dans l'eau tiède." },
+    { code: 'DPESO', name: 'Pégase',          world: 'Air', description: "Sans préparation, aime expérimenter de nouvelles sensations et emmener son partenaire vers des hauteurs inconnues, offertes comme un envol." },
+    { code: 'DPESR', name: 'Zéphyr',         world: 'Air', description: "Sans préparation, butine de nouvelles sensations au gré de l'instant, comme le vent doux qui effleure tout sur son passage. Son plaisir est dans la découverte." },
+    { code: 'DPEMO', name: 'Hippogriffe',    world: 'Air', description: "Compose pour l'autre une expérience sensorielle nouvelle et la prépare comme une mise en scène à lui offrir, à l'image de l'hippogriffe des légendes, monture de l'inspiration poétique." },
+    { code: 'DPEMR', name: 'Oiseau de paradis',world:'Air',description: "Aime expérimenter et savourer une mise en scène sensorielle élaborée, où son propre plaisir est au centre, comme l'oiseau que les légendes disaient vivant dans l'air et nourri de rosée." },
+    // Terre (BL)
+    { code: 'BLCSO', name: 'Loup',           world: 'Terre', description: "Préfère rester sur ce qui est connu. L'acte n'est pas préparé, avec intensité. Le plaisir de l'autre passe en premier : comme le loup fidèle à sa meute, offre toute son ardeur à son partenaire, avec une loyauté sans faille." },
+    { code: 'BLCSR', name: 'Ours',           world: 'Terre', description: "Préfère rester sur ce qui est connu. L'acte n'est pas préparé, avec force. Son propre plaisir compte d'abord, et il le savoure pleinement dans la sécurité d'un lieu et d'un partenaire connus, comme l'ours dans sa tanière." },
+    { code: 'BLCMO', name: 'Éléphant',       world: 'Terre', description: "Préfère rester sur ce qui est connu, mais prépare avec soin les moments pour offrir à son partenaire une intensité façonnée avec patience, comme l'éléphant qui n'oublie rien et veille sur les siens." },
+    { code: 'BLCMR', name: 'Cerf',           world: 'Terre', description: "Préfère rester sur ce qui est connu, mais apprécie les rendez-vous et les rituels préparés. Y vit son propre plaisir avec ferveur, comme le cerf qui retrouve chaque automne la clairière du brame." },
+    { code: 'BLESO', name: 'Griffon',        world: 'Terre', description: "Sans préparation, aime expérimenter de nouvelles choses intenses, qu'il ouvre à son partenaire comme des chemins vers des trésors cachés, à l'image du griffon qui veille sur l'or des montagnes." },
+    { code: 'BLESR', name: 'Kitsune',        world: 'Terre', description: "Sans préparation, aime expérimenter de nouvelles choses intenses pour vivre ses propres sensations fortes, comme le renard-esprit aux neuf queues, curieux et fidèle à ceux qu'il aime." },
+    { code: 'BLEMO', name: 'Sphinx',         world: 'Terre', description: "Écrit pour l'autre une histoire intense : expérimente de nouvelles choses, prépare la mise en scène et la lui offre, avec la tension d'une énigme, comme le sphinx qui garde son mystère." },
+    { code: 'BLEMR', name: 'Qilin',          world: 'Terre', description: "Aime expérimenter et vivre une mise en scène intense et nouvelle, où son propre plaisir est au centre, comme le qilin rare et majestueux dont l'apparition marque les grands moments." },
+    // Feu (BP)
+    { code: 'BPCSO', name: 'Tigre',          world: 'Feu', description: "Préfère rester sur ce qui est connu. L'acte n'est pas préparé, avec force. Le plaisir de l'autre passe en premier : comme le tigre qui évolue avec aisance sur un territoire qu'il connaît, offre à son partenaire une puissance solide et sûre." },
+    { code: 'BPCSR', name: 'Lion',           world: 'Feu', description: "Préfère rester sur ce qui est connu. L'acte n'est pas préparé, avec force. Son propre plaisir compte d'abord, et il le savoure pleinement, avec l'assurance du lion qui se prélasse au soleil." },
+    { code: 'BPCMO', name: 'Lynx',           world: 'Feu', description: "Préfère rester sur ce qui est connu, mais prépare le moment avec patience pour offrir à son partenaire une intensité précise, au bon instant, comme le lynx dont le regard ne manque aucun détail." },
+    { code: 'BPCMR', name: 'Léopard',        world: 'Feu', description: "Préfère rester sur ce qui est connu, mais apprécie les rendez-vous et les cadres préparés. Y savoure son propre plaisir avec une intensité concentrée, comme le léopard qui retrouve son arbre et y prend tout son temps." },
+    { code: 'BPESO', name: 'Salamandre',     world: 'Feu', description: "Sans préparation, aime expérimenter de nouvelles choses intenses, audacieuses et inattendues, et les offrir à son partenaire, comme la salamandre des légendes qui traverse les flammes sans crainte." },
+    { code: 'BPESR', name: 'Dragon',         world: 'Feu', description: "Sans préparation, aime expérimenter de nouvelles sensations fortes pour son propre plaisir, avec la puissance et l'envol du dragon." },
+    { code: 'BPEMO', name: 'Oiseau de feu',  world: 'Feu', description: "Imagine pour l'autre une aventure intense et nouvelle : expérimente, prépare la mise en scène et la lui offre, comme l'oiseau de feu des contes dont une plume lumineuse ouvre la quête." },
+    { code: 'BPEMR', name: 'Phénix',         world: 'Feu', description: "Aime expérimenter et vivre une mise en scène intense et élaborée, où son propre plaisir est au centre, se consumant dans l'histoire pour en ressortir renouvelé, comme le phénix." },
+  ];
+  const insertArch = db.prepare("INSERT OR IGNORE INTO profil_quiz_archetypes (type_id, code, name, world, description) SELECT ?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM profil_quiz_archetypes WHERE type_id=? AND code=?)");
+  for (const a of archetypesDef) {
+    insertArch.run(typeId, a.code, a.name, a.world, a.description, typeId, a.code);
+  }
+})();
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS ai_profiles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -5354,6 +5549,96 @@ function deleteCodexAuthor(slug) {
   db.prepare(`DELETE FROM codex_authors WHERE slug=?`).run(slug);
 }
 
+// ── Profil Quiz ─────────────────────────────────────────────────────────────
+
+function listProfilQuizTypes() {
+  return db.prepare("SELECT * FROM profil_quiz_types ORDER BY id").all();
+}
+
+function getProfilQuizType(slug) {
+  return db.prepare("SELECT * FROM profil_quiz_types WHERE slug=?").get(slug);
+}
+
+function getProfilQuizAxes(typeId) {
+  return db.prepare("SELECT * FROM profil_quiz_axes WHERE type_id=? ORDER BY sort_order").all(typeId);
+}
+
+function getProfilQuizQuestions(typeId) {
+  return db.prepare("SELECT q.*, a.slug as axis_slug, a.name as axis_name, a.pole1_code, a.pole1_label, a.pole2_code, a.pole2_label, a.is_position FROM profil_quiz_questions q JOIN profil_quiz_axes a ON a.id=q.axis_id WHERE q.type_id=? ORDER BY q.sort_order").all(typeId);
+}
+
+function getProfilQuizArchetypes(typeId) {
+  return db.prepare("SELECT * FROM profil_quiz_archetypes WHERE type_id=? ORDER BY world, code").all(typeId);
+}
+
+function getProfilQuizAttempt(id, userId) {
+  return db.prepare("SELECT * FROM profil_quiz_attempts WHERE id=? AND user_id=?").get(id, userId);
+}
+
+function listProfilQuizAttempts(typeId, userId) {
+  return db.prepare("SELECT * FROM profil_quiz_attempts WHERE type_id=? AND user_id=? ORDER BY created_at DESC").all(typeId, userId);
+}
+
+function saveProfilQuizAttempt({ typeId, userId, answers, scores, resultCode, resultPosition, resultArchetype, completed }) {
+  const now = new Date().toISOString();
+  const info = db.prepare(
+    "INSERT INTO profil_quiz_attempts (type_id, user_id, answers, scores, result_code, result_position, result_archetype, completed, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)"
+  ).run(typeId, userId, JSON.stringify(answers||{}), JSON.stringify(scores||{}), resultCode||'', resultPosition||'', resultArchetype||'', completed?1:0, now, now);
+  return info.lastInsertRowid;
+}
+
+function updateProfilQuizAttempt(id, { answers, scores, resultCode, resultPosition, resultArchetype, completed }) {
+  const now = new Date().toISOString();
+  db.prepare(
+    "UPDATE profil_quiz_attempts SET answers=?, scores=?, result_code=?, result_position=?, result_archetype=?, completed=?, updated_at=? WHERE id=?"
+  ).run(JSON.stringify(answers||{}), JSON.stringify(scores||{}), resultCode||'', resultPosition||'', resultArchetype||'', completed?1:0, now, id);
+}
+
+function createProfilQuizType({ slug, name, description }) {
+  const now = new Date().toISOString();
+  return db.prepare("INSERT INTO profil_quiz_types (slug, name, description, created_at) VALUES (?,?,?,?)").run(slug, name, description||'', now).lastInsertRowid;
+}
+
+function updateProfilQuizType(id, { name, description }) {
+  db.prepare("UPDATE profil_quiz_types SET name=?, description=? WHERE id=?").run(name, description||'', id);
+}
+
+function createProfilQuizAxis({ typeId, slug, name, pole1Code, pole1Label, pole2Code, pole2Label, isPosition, sortOrder }) {
+  return db.prepare("INSERT INTO profil_quiz_axes (type_id, slug, name, pole1_code, pole1_label, pole2_code, pole2_label, is_position, sort_order) VALUES (?,?,?,?,?,?,?,?,?)").run(typeId, slug, name, pole1Code, pole1Label, pole2Code, pole2Label, isPosition?1:0, sortOrder||0).lastInsertRowid;
+}
+
+function updateProfilQuizAxis(id, { name, pole1Code, pole1Label, pole2Code, pole2Label, isPosition, sortOrder }) {
+  db.prepare("UPDATE profil_quiz_axes SET name=?, pole1_code=?, pole1_label=?, pole2_code=?, pole2_label=?, is_position=?, sort_order=? WHERE id=?").run(name, pole1Code, pole1Label, pole2Code, pole2Label, isPosition?1:0, sortOrder||0, id);
+}
+
+function deleteProfilQuizAxis(id) {
+  db.prepare("DELETE FROM profil_quiz_axes WHERE id=?").run(id);
+}
+
+function createProfilQuizQuestion({ typeId, axisId, pole, text, sortOrder }) {
+  return db.prepare("INSERT INTO profil_quiz_questions (type_id, axis_id, pole, text, sort_order) VALUES (?,?,?,?,?)").run(typeId, axisId, pole, text, sortOrder||0).lastInsertRowid;
+}
+
+function updateProfilQuizQuestion(id, { text, axisId, pole, sortOrder }) {
+  db.prepare("UPDATE profil_quiz_questions SET text=?, axis_id=?, pole=?, sort_order=? WHERE id=?").run(text, axisId, pole, sortOrder||0, id);
+}
+
+function deleteProfilQuizQuestion(id) {
+  db.prepare("DELETE FROM profil_quiz_questions WHERE id=?").run(id);
+}
+
+function createProfilQuizArchetype({ typeId, code, name, world, description }) {
+  return db.prepare("INSERT INTO profil_quiz_archetypes (type_id, code, name, world, description) VALUES (?,?,?,?,?)").run(typeId, code, name, world||'', description||'').lastInsertRowid;
+}
+
+function updateProfilQuizArchetype(id, { code, name, world, description }) {
+  db.prepare("UPDATE profil_quiz_archetypes SET code=?, name=?, world=?, description=? WHERE id=?").run(code, name, world||'', description||'', id);
+}
+
+function deleteProfilQuizArchetype(id) {
+  db.prepare("DELETE FROM profil_quiz_archetypes WHERE id=?").run(id);
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -5693,6 +5978,26 @@ module.exports = {
   createCodexAuthor,
   updateCodexAuthor,
   deleteCodexAuthor,
+  listProfilQuizTypes,
+  getProfilQuizType,
+  getProfilQuizAxes,
+  getProfilQuizQuestions,
+  getProfilQuizArchetypes,
+  getProfilQuizAttempt,
+  listProfilQuizAttempts,
+  saveProfilQuizAttempt,
+  updateProfilQuizAttempt,
+  createProfilQuizType,
+  updateProfilQuizType,
+  createProfilQuizAxis,
+  updateProfilQuizAxis,
+  deleteProfilQuizAxis,
+  createProfilQuizQuestion,
+  updateProfilQuizQuestion,
+  deleteProfilQuizQuestion,
+  createProfilQuizArchetype,
+  updateProfilQuizArchetype,
+  deleteProfilQuizArchetype,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

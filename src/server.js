@@ -1115,10 +1115,12 @@ app.get("/mobile-menu", (req, res) => {
 });
 
 const buildCustomQuizRouter = require("./routes/custom-quiz");
+const buildProfilQuizRouter = require("./routes/profil-quiz");
 const buildParodiesRouter = require("./routes/parodies");
 const buildLootboxRouter = require("./routes/lootbox");
 const buildJeuRouter = require("./routes/jeu");
 const buildArcadeRouter = require("./routes/arcade");
+app.use("/quizz/profil", buildProfilQuizRouter(config));
 app.use("/quizz", buildCustomQuizRouter(config));
 app.use("/", buildQuizRouter(config));
 app.use("/ponhgup", buildAdminRouter(config));
