@@ -432,8 +432,8 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
     var hasSearch   = !!q;
     var hasType     = includedTypes.length > 0 || excludedTypes.length > 0;
 
-    if (!hasSearch && !hasType && !hideVariants) {
-      // ── Mode groupé : cat/subcat filtrés directement sur les groupes ──
+    if (!hasSearch && !hasType) {
+      // ── Mode groupé : cat/subcat/variants filtrés directement sur les groupes ──
       groupedView.hidden = false;
       filteredView.hidden = true;
       if (emptyMsg) emptyMsg.hidden = true;
@@ -443,25 +443,22 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
         var matchCat = !activeCat || group.dataset.category === activeCat;
         group.hidden = !matchCat;
         if (matchCat) {
-          // Filtrer les sous-groupes si présents
           var subcatGroups = group.querySelectorAll(".tags-subcat-group");
           subcatGroups.forEach(function (sg) {
-            // sg.dataset.subcat = '' signifie "sans catégorie"
             var matchSub = !activeSubcat || (sg.dataset.subcat || "") === activeSubcat;
             sg.hidden = !matchSub;
           });
-          // Compter les items dans les groupes visibles
           group.querySelectorAll(".tags-item").forEach(function (item) {
-            // Pour les items hors sous-groupe (catégories plates)
-            // vérifier subcat si filtre subcat actif
             var parentSg = item.closest(".tags-subcat-group");
-            if (parentSg && parentSg.hidden) return;
-            visibleCount++;
+            if (parentSg && parentSg.hidden) { item.hidden = true; return; }
+            var matchVariant = !hideVariants || !item.dataset.parent;
+            item.hidden = !matchVariant;
+            if (matchVariant) visibleCount++;
           });
         }
       });
 
-      if (countDisplay) countDisplay.textContent = (activeCat || activeSubcat) ? visibleCount : TOTAL;
+      if (countDisplay) countDisplay.textContent = (activeCat || activeSubcat || hideVariants) ? visibleCount : TOTAL;
       return;
     }
 
@@ -1338,11 +1335,12 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
 <script nonce="<%= nonce %>">
 (function () {
   var map = {};
-  document.querySelectorAll(".tags-item[data-parent]").forEach(function (el) {
+  // Utiliser seulement la vue groupée pour éviter les doublons (grouped + filtered = même tags 2x)
+  document.querySelectorAll("#tags-grouped-view .tags-item[data-parent]").forEach(function (el) {
     var parent = el.dataset.parent;
     if (!parent) return;
     if (!map[parent]) map[parent] = [];
-    map[parent].push(el.dataset.tag);
+    if (map[parent].indexOf(el.dataset.tag) === -1) map[parent].push(el.dataset.tag);
   });
   window._tagChildrenMap = map;
 })();
