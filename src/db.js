@@ -2599,6 +2599,10 @@ function listAllParodies() {
   return [...set].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
 }
 
+function listBdAuthors() {
+  return db.prepare("SELECT DISTINCT author FROM bd_books WHERE author != '' ORDER BY author COLLATE NOCASE").all().map(r => r.author);
+}
+
 function listAllSubParodies(mainParody, q) {
   var set = new Set();
   [
@@ -5395,6 +5399,7 @@ module.exports = {
   updateGalleryImage,
   reactGalleryImage,
   deleteGalleryImage,
+  listBdAuthors,
   listGalleryAuthors,
   listGalleryParodies,
   normalizeParody,

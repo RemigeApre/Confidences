@@ -34,7 +34,10 @@
         placeholder="<%= locals.editLang === 'en' && book ? book.description : 'Description (optionnel)\u2026' %>"><%= _bdDesc %></textarea>
 
       <% if (locals.editLang !== 'en') { %>
-      <input type="text" name="author" class="wiki-input-sm" value="<%= book ? (book.author || '') : '' %>" placeholder="Auteur&hellip;" maxlength="200" />
+      <input type="text" name="author" class="wiki-input-sm" value="<%= book ? (book.author || '') : '' %>" placeholder="Auteur&hellip;" maxlength="200" list="bdf-author-list" autocomplete="off" />
+      <datalist id="bdf-author-list">
+        <% (locals.allBdAuthors || []).forEach(function(a) { %><option value="<%= a %>"><% }) %>
+      </datalist>
       <% } %>
 
       <% if (locals.editLang !== 'en') { %>
