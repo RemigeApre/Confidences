@@ -3778,6 +3778,32 @@ db.exec(`
   );
 `);
 
+// Migration : dédoublonne les termes_dérivés dans wiki_pages.meta (one-time, idempotent)
+(function deduplicateDerivedTerms() {
+  try {
+    const rows = db.prepare("SELECT id, meta FROM wiki_pages WHERE meta IS NOT NULL AND meta != '{}'").all();
+    const upd  = db.prepare("UPDATE wiki_pages SET meta=? WHERE id=?");
+    for (const row of rows) {
+      try {
+        const meta = JSON.parse(row.meta);
+        if (!Array.isArray(meta.termes_derives) || meta.termes_derives.length === 0) continue;
+        const seen = new Set();
+        const deduped = meta.termes_derives.filter((t) => {
+          const term = typeof t === "string" ? t : (t.term || "");
+          const key  = term.toLowerCase();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        if (deduped.length !== meta.termes_derives.length) {
+          meta.termes_derives = deduped;
+          upd.run(JSON.stringify(meta), row.id);
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+})();
+
 // Migration : normalise tous les tags existants en minuscules (one-time, idempotent)
 (function normalizeExistingTags() {
   const tagTables = ['wiki_pages', 'gallery_images', 'bd_books', 'links', 'nouvelles', 'protagonistes'];

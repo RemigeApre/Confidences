@@ -236,6 +236,7 @@ function syncPageGalleryImages(pageId, title, imagePaths, meta, oldTitleTag) {
 // l'utilisateur) — remplace l'ancien réglage global "Terme anglais"
 // qui s'appliquait à tort à tous les synonymes à la fois.
 function parseDerivedTerms(raw) {
+  const seen = new Set();
   return String(raw || "")
     .split(/[,;]+/)
     .map((t) => t.trim())
@@ -244,7 +245,13 @@ function parseDerivedTerms(raw) {
       const en = /::en$/.test(t);
       return { term: en ? t.slice(0, -4).trim() : t, en };
     })
-    .filter((t) => t.term);
+    .filter((t) => {
+      if (!t.term) return false;
+      const key = t.term.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function normalizeCategory(value) {
