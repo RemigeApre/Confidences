@@ -58,6 +58,26 @@ const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
 const { filterOff, isOffForUser, specialTagOf } = require("../specialContent");
 
+// ── Rate limiter par utilisateur pour les routes d'action ────────────────
+// Limite les routes /react et /note à 60 appels/min par userId
+const _actionLimits = new Map();
+function userActionAllowed(userId) {
+  const now = Date.now();
+  let entry = _actionLimits.get(userId);
+  if (!entry || now - entry.windowStart >= 60000) {
+    _actionLimits.set(userId, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= 60) return false;
+  entry.count += 1;
+  return true;
+}
+setInterval(() => {
+  const cutoff = Date.now() - 60000;
+  for (const [k, v] of _actionLimits) if (v.windowStart < cutoff) _actionLimits.delete(k);
+}, 5 * 60 * 1000).unref();
+// ─────────────────────────────────────────────────────────────────────────
+
 // ── Cache léger (TTL 5 min) ───────────────────────────────────────────────
 const CACHE_TTL = 5 * 60 * 1000;
 let _pagesCache = null;      // { data, at }
@@ -923,7 +943,7 @@ function buildWikiRouter(config) {
     res.json({ id: pick.id });
   });
 
-  router.get("/ajouter", requireUser, (req, res) => {
+  router.get("/ajouter", requireAdmin, (req, res) => {
     const preCategory = String(req.query.category || "");
     const preTitle    = String(req.query.title    || "");
     const pages = sortedPages();
@@ -1103,7 +1123,7 @@ function buildWikiRouter(config) {
     res.json({ links: getWikiPageLinks(id), backlinks: getWikiBacklinks(id) });
   });
 
-  router.post("/:id/page-links", requireUserJson, (req, res) => {
+  router.post("/:id/page-links", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const linked = Number(req.body.linked_page_id);
     if (!Number.isInteger(id) || !Number.isInteger(linked)) return res.status(400).json({ ok: false });
@@ -1111,7 +1131,7 @@ function buildWikiRouter(config) {
     res.json({ ok: true });
   });
 
-  router.delete("/:id/page-links", requireUserJson, (req, res) => {
+  router.delete("/:id/page-links", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     const linked = Number(req.body.linked_page_id);
     if (!Number.isInteger(id) || !Number.isInteger(linked)) return res.status(400).json({ ok: false });
@@ -1122,7 +1142,7 @@ function buildWikiRouter(config) {
   // ── Associations questions ──────────────────────────
   // Sens inverse : depuis une question du quizz, quelles pages wiki y sont
   // déjà liées (utilisé par le bouton "?" sur les questions).
-  router.get("/question-links/lookup", requireUserJson, (req, res) => {
+  router.get("/question-links/lookup", requireAdmin, (req, res) => {
     const sectionKey = String(req.query.section_key || "");
     const questionId = String(req.query.question_id || "");
     if (!sectionKey || !questionId) return res.json([]);
@@ -1130,7 +1150,7 @@ function buildWikiRouter(config) {
     res.json(pages.map((p) => ({ id: p.id, title: p.title, category: p.category })));
   });
 
-  router.get("/:id/question-links", requireUserJson, (req, res) => {
+  router.get("/:id/question-links", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.json([]);
     const links = getWikiQuestionLinks(id);
@@ -1147,20 +1167,28 @@ function buildWikiRouter(config) {
     res.json(enriched);
   });
 
-  router.post("/:id/question-links", requireUserJson, (req, res) => {
+  router.post("/:id/question-links", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
-    const { section_key, question_id } = req.body;
+    const section_key = String(req.body.section_key || "");
+    const question_id = String(req.body.question_id || "");
     if (!section_key || !question_id) return res.status(400).json({ ok: false });
+    if (!ALL_QUESTIONS.some((q) => q.section_key === section_key && q.question_id === question_id)) {
+      return res.status(400).json({ ok: false });
+    }
     addWikiQuestionLink(id, section_key, question_id);
     res.json({ ok: true });
   });
 
-  router.delete("/:id/question-links", requireUserJson, (req, res) => {
+  router.delete("/:id/question-links", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
-    const { section_key, question_id } = req.body;
+    const section_key = String(req.body.section_key || "");
+    const question_id = String(req.body.question_id || "");
     if (!section_key || !question_id) return res.status(400).json({ ok: false });
+    if (!ALL_QUESTIONS.some((q) => q.section_key === section_key && q.question_id === question_id)) {
+      return res.status(400).json({ ok: false });
+    }
     removeWikiQuestionLink(id, section_key, question_id);
     res.json({ ok: true });
   });
@@ -1168,7 +1196,11 @@ function buildWikiRouter(config) {
   router.post("/:id/react", requireUserJson, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
-    const { rating, flame, interested, readLater, hidden, practiced } = req.body;
+    if (!userActionAllowed(req.user.id)) return res.status(429).json({ ok: false, error: "rate_limited" });
+    const rawRating = req.body.rating;
+    const rating = rawRating !== undefined ? Math.max(0, Math.min(5, Math.round(Number(rawRating)))) : undefined;
+    if (rawRating !== undefined && isNaN(Number(rawRating))) return res.status(400).json({ ok: false });
+    const { flame, interested, readLater, hidden, practiced } = req.body;
     reactWikiPage(id, req.user.id, { rating, flame, interested, readLater, hidden, practiced });
     // J'adore = favori : synchro avec la table favorites
     if (flame) addFavorite(req.user.id, "wiki", id);
@@ -1208,7 +1240,9 @@ function buildWikiRouter(config) {
   router.post("/:id/note", requireUserJson, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
-    setUserNote(id, req.user.id, req.body.content || "");
+    if (!userActionAllowed(req.user.id)) return res.status(429).json({ ok: false, error: "rate_limited" });
+    const content = String(req.body.content || "").slice(0, 10000);
+    setUserNote(id, req.user.id, content);
     res.json({ ok: true });
   });
 
