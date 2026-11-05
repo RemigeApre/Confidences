@@ -1082,6 +1082,38 @@ initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidd
   });
 })();
 
+// Sauvegarde via fetch (feedback explicite)
+(function() {
+  var form = document.getElementById('wiki-edit-form');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var saveBtn = form.querySelector('.wf-sb-save-btn') || form.querySelector('[type=submit]');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Enregistrement\u2026'; }
+    var fd = new FormData(form);
+    fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-Save-Fetch': '1' },
+      body: fd
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(data) {
+      if (data.ok) {
+        if (saveBtn) { saveBtn.textContent = '\u2713 Enregistr\u00e9'; }
+        setTimeout(function() {
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Enregistrer'; }
+        }, 2500);
+      } else {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Erreur'; }
+      }
+    }).catch(function(err) {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Erreur r\u00e9seau'; }
+      console.error('[wiki-save]', err);
+    });
+  });
+})();
+
 // Accordéons volet gauche : parodie, synonymes
 (function() {
   document.querySelectorAll('.wf-sb-toggle[data-target]').forEach(function(btn) {

@@ -1113,6 +1113,9 @@ function buildWikiRouter(config) {
       const newSlug = updateWikiPageSlug(id, req.body.meta_slug.trim());
       if (newSlug) finalSlug = newSlug;
     }
+    if (req.headers['x-save-fetch'] === '1') {
+      return res.json({ ok: true, slug: finalSlug || id });
+    }
     res.redirect(safeReturnTo(req.body._returnTo, `/wiki/${finalSlug || id}`));
   });
 
