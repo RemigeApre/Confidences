@@ -51,9 +51,11 @@
     <aside class="wf-sidebar-left" id="wf-sidebar-left">
       <div class="wf-sidebar-inner">
 
-        <%# ── Retour ── %>
-        <div class="prot-sb-back-wrap">
-          <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="prot-sb-back-btn">&#8592; Retour</a>
+        <%# ── Topbar : retour + enregistrer + langue ── %>
+        <div class="wf-sb-topbar">
+          <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="wiki-left-back-btn" title="Retour">&#8592;</a>
+          <button type="submit" class="wf-sb-save-btn">Enregistrer</button>
+          <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
         </div>
 
         <%# ── Toggles rapides ── %>
@@ -387,13 +389,6 @@
     <%# SIDEBAR DROITE : Save / Stats / Orce / Détails  %>
     <%# ═══════════════════════════════════════════════ %>
     <aside class="wf-sidebar-right" id="wf-sidebar-right">
-
-      <%# ── En-tête sticky : lang toggle + save ── %>
-      <div class="wf-sidebar-header">
-        <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
-        <%# Note: edit URL uses numeric ID for the POST route (/:id), slug redirect handles public URLs %>
-        <button type="submit" class="wf-sidebar-save">Enregistrer</button>
-      </div>
 
       <div class="wf-sidebar-inner">
 
