@@ -664,6 +664,43 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
     });
   }
 
+  /* ── Popup : rendu des enfants (réutilisé dans click + add-subtag) ── */
+  window.renderTagPopupChildren = function (tag) {
+    var childrenEl = document.getElementById("tag-popup-children");
+    if (!childrenEl) return;
+    var children = (window._tagChildrenMap && window._tagChildrenMap[tag]) || [];
+    while (childrenEl.firstChild) childrenEl.removeChild(childrenEl.firstChild);
+    if (!children.length) { childrenEl.hidden = true; return; }
+    var lbl = document.createElement("span");
+    lbl.className = "tag-popup-children-label";
+    lbl.textContent = "Inclusions\u00a0:";
+    childrenEl.appendChild(lbl);
+    children.forEach(function (child) {
+      var b = document.createElement("span");
+      b.className = "tag-badge tag-badge--normal";
+      b.dataset.tag = child;
+      b.style.cursor = "pointer";
+      b.textContent = child;
+      b.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        window._currentTagMeta = null;
+        window.openTagPopup(child);
+        window.renderTagPopupChildren(child);
+        window._popupCurrentTag = child;
+        var addEl = document.getElementById("tag-popup-add-subtag");
+        if (addEl && window._tagsPageAdmin) {
+          var inp2 = document.getElementById("tag-popup-add-subtag-input");
+          var fb2  = document.getElementById("tag-popup-add-subtag-feedback");
+          if (inp2) inp2.value = "";
+          if (fb2)  fb2.hidden = true;
+          addEl.hidden = false;
+        }
+      });
+      childrenEl.appendChild(b);
+    });
+    childrenEl.hidden = false;
+  };
+
   /* ── Popup résultats/admin ── */
   if (grid) {
     grid.addEventListener("click", function (e) {
@@ -680,38 +717,18 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
           var _sf = window._LQSubsByCat[_cat].filter(function(s){ return s.key === _sub; });
           if (_sf.length) _subLbl = _sf[0].label;
         }
-        var _children = (window._tagChildrenMap && window._tagChildrenMap[item.dataset.tag]) || [];
         window._currentTagMeta = (_catLbl || _subLbl) ? { catLabel: _catLbl, subLabel: _subLbl } : null;
         window.openTagPopup(item.dataset.tag);
-        // Peupler les enfants directement après l'ouverture du popup (nav.js est déjà chargé ici)
-        var _childrenEl = document.getElementById("tag-popup-children");
-        if (_childrenEl) {
-          while (_childrenEl.firstChild) _childrenEl.removeChild(_childrenEl.firstChild);
-          if (_children.length) {
-            var _lbl = document.createElement("span");
-            _lbl.className = "tag-popup-children-label";
-            _lbl.textContent = "Inclusions\u00a0:";
-            _childrenEl.appendChild(_lbl);
-            _children.forEach(function (child) {
-              var _b = document.createElement("span");
-              _b.className = "tag-badge tag-badge--normal";
-              _b.dataset.tag = child;
-              _b.style.cursor = "pointer";
-              _b.textContent = child;
-              _b.addEventListener("click", function (ev) {
-                ev.stopPropagation();
-                var _cc = (window._tagChildrenMap && window._tagChildrenMap[child]) || [];
-                window._currentTagMeta = null;
-                window.openTagPopup(child);
-                var _ce2 = document.getElementById("tag-popup-children");
-                if (_ce2) { while (_ce2.firstChild) _ce2.removeChild(_ce2.firstChild); _ce2.hidden = !_cc.length; }
-              });
-              _childrenEl.appendChild(_b);
-            });
-            _childrenEl.hidden = false;
-          } else {
-            _childrenEl.hidden = true;
-          }
+        window.renderTagPopupChildren(item.dataset.tag);
+        window._popupCurrentTag = item.dataset.tag;
+        // Afficher le champ ajout sous-tag (admin seulement)
+        var addEl = document.getElementById("tag-popup-add-subtag");
+        if (addEl && window._tagsPageAdmin) {
+          var addInp = document.getElementById("tag-popup-add-subtag-input");
+          var addFb  = document.getElementById("tag-popup-add-subtag-feedback");
+          if (addInp) addInp.value = "";
+          if (addFb)  addFb.hidden = true;
+          addEl.hidden = false;
         }
       }
     });
@@ -1424,6 +1441,97 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
         } else { showFeedback(r.error || "Erreur", false); }
       });
   });
+
+  /* ── Popup : ajouter un sous-tag ── */
+  window._tagsPageAdmin = true;
+
+  var addSubtagForm = document.getElementById("tag-popup-add-subtag-form");
+  if (addSubtagForm) {
+    addSubtagForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var inp = document.getElementById("tag-popup-add-subtag-input");
+      var fb  = document.getElementById("tag-popup-add-subtag-feedback");
+      var sub = inp ? inp.value.toLowerCase().trim() : "";
+      var parentTag = window._popupCurrentTag || "";
+      if (!sub || !parentTag) return;
+
+      function popupFb(msg, ok) {
+        if (!fb) return;
+        fb.textContent = msg;
+        fb.style.color = ok ? "var(--accent)" : "var(--error,#e55)";
+        fb.hidden = false;
+      }
+
+      // Cas 3 : déjà sous-tag de ce tag
+      var currentChildren = (window._tagChildrenMap && window._tagChildrenMap[parentTag]) || [];
+      if (currentChildren.indexOf(sub) !== -1) {
+        popupFb("« " + sub + " » est déjà un sous-tag.", true);
+        return;
+      }
+
+      var parentEl = document.querySelector('#tags-grouped-view .tags-item[data-tag="' + parentTag + '"]');
+      var parentCat    = parentEl ? (parentEl.dataset.category    || "") : "";
+      var parentSubcat = parentEl ? (parentEl.dataset.subcategory || "") : "";
+      if (parentSubcat === "autre") parentSubcat = "";
+      var parentType   = parentEl ? (parentEl.dataset.type        || "normal") : "normal";
+
+      var subEl = document.querySelector('#tags-grouped-view .tags-item[data-tag="' + sub + '"]');
+      var submitBtn = addSubtagForm.querySelector(".tag-popup-add-subtag-btn");
+      if (submitBtn) submitBtn.disabled = true;
+
+      // Étape 1 : créer si inexistant
+      var step1 = subEl
+        ? Promise.resolve({ ok: true })
+        : fetch("/api/tags/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, category: parentCat }) }).then(function (r) { return r.json(); });
+
+      step1.then(function (r) {
+        if (!r.ok) { popupFb("Erreur création.", false); if (submitBtn) submitBtn.disabled = false; return Promise.reject(); }
+        // Étape 2 : assigner le parent
+        return fetch("/api/tags/parent", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, parent: parentTag }) }).then(function (r) { return r.json(); });
+      }).then(function (r) {
+        if (!r.ok) { popupFb("Erreur assignation.", false); if (submitBtn) submitBtn.disabled = false; return Promise.reject(); }
+        // Étape 3 : hériter catégorie
+        var catP = (parentCat && parentCat !== "autre")
+          ? fetch("/api/tags/category", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, category: parentCat }) }).then(function (r) { return r.json(); })
+          : Promise.resolve({ ok: true });
+        return catP.then(function () {
+          // Étape 4 : hériter sous-catégorie
+          if (!parentSubcat) return Promise.resolve();
+          return fetch("/api/tags/subcategory", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, subcategory: parentSubcat, category: parentCat }) }).then(function (r) { return r.json(); });
+        });
+      }).then(function () {
+        // Mettre à jour la map des enfants
+        if (!window._tagChildrenMap) window._tagChildrenMap = {};
+        // Retirer de l'ancien parent si migration
+        Object.keys(window._tagChildrenMap).forEach(function (p) {
+          window._tagChildrenMap[p] = window._tagChildrenMap[p].filter(function (c) { return c !== sub; });
+        });
+        window._tagChildrenMap[parentTag] = window._tagChildrenMap[parentTag] || [];
+        window._tagChildrenMap[parentTag].push(sub);
+
+        // Mettre à jour les éléments DOM existants
+        var wasNew = !subEl;
+        document.querySelectorAll('.tags-item[data-tag="' + sub + '"]').forEach(function (el) {
+          el.dataset.parent      = parentTag;
+          el.dataset.category    = parentCat;
+          el.dataset.subcategory = parentSubcat;
+          el.classList.add("tags-item--variant");
+          if (parentType === "ultra")       { el.dataset.type = "ultra";       el.classList.add("tags-item--ultra"); }
+          else if (parentType === "irrealiste") { el.dataset.type = "irrealiste"; el.classList.add("tags-item--irrealiste"); }
+        });
+
+        // Rafraîchir l'affichage des enfants dans le popup
+        window.renderTagPopupChildren(parentTag);
+        if (inp) inp.value = "";
+        if (submitBtn) submitBtn.disabled = false;
+        popupFb((wasNew ? "Créé et inclu" : "Inclu") + "\u00a0: « " + sub + " »", true);
+        applyFilters();
+      }).catch(function () {
+        if (submitBtn) submitBtn.disabled = false;
+      });
+    });
+  }
+
 })();
 </script>
 <% } %>
