@@ -989,10 +989,10 @@
                data-practiced="<%= page.practiced ? '1' : '0' %>"
                data-hidden="<%= page.hidden ? '1' : '0' %>">
 
-            <%# Ligne 1 : masquer + étoiles + flamme %>
+            <%# Ligne 1 : à lire (icône) + étoiles + j'adore (icône) %>
             <div class="wiki-react-line1">
-              <button type="button" class="wiki-react-btn wiki-react-hidden wiki-react-iconbtn<%= page.hidden ? ' active' : '' %>" data-key="hidden" data-tooltip="<%= page.hidden ? 'R\u00e9afficher' : 'Masquer' %>" data-fr="<%= page.hidden ? 'R\u00e9afficher' : 'Masquer' %>" data-en="<%= page.hidden ? 'Show' : 'Hide' %>">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              <button type="button" class="wiki-react-btn wiki-react-readlater wiki-react-iconbtn<%= page.readLater ? ' active' : '' %>" data-key="readlater" data-tooltip="&Agrave; lire" data-fr="&Agrave; lire" data-en="Read later">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
               </button>
               <div class="wiki-detail-rating wiki-right-rating" data-id="<%= page.id %>" data-rating="<%= page.rating %>">
                 <% for (var i = 1; i <= 5; i++) { %>
@@ -1000,17 +1000,17 @@
                 <% } %>
               </div>
               <button type="button" class="wiki-react-btn wiki-react-flame wiki-react-iconbtn<%= (page.flame || isFavorite) ? ' active' : '' %>" data-key="flame" data-tooltip="J'adore" data-fr="J'adore" data-en="Love it">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.47-.3 2.98-.93 4.03-1.92.28 1.14.42 2.32.42 3.18C15.75 17.6 13.9 19 11.71 19z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.47-.3 2.98-.93 4.03-1.92.28 1.14.42 2.32.42 3.18C15.75 17.6 13.9 19 11.71 19z"/></svg>
               </button>
             </div>
 
-            <%# Ligne 2 : intéressé · à lire · pratiqué %>
+            <%# Ligne 2 : intéressé · masquer · pratiqué %>
             <div class="wiki-react-line2">
               <button type="button" class="wiki-react-btn wiki-react-interest<%= page.interested ? ' active' : '' %>" data-key="interested">
                 <span class="wiki-react-label" data-fr="<%= interestedLabel %>" data-en="Interested"><%= interestedLabel %></span>
               </button>
-              <button type="button" class="wiki-react-btn wiki-react-readlater<%= page.readLater ? ' active' : '' %>" data-key="readlater">
-                <span class="wiki-react-label" data-fr="À lire" data-en="Read later">&Agrave; lire</span>
+              <button type="button" class="wiki-react-btn wiki-react-hidden<%= page.hidden ? ' active' : '' %>" data-key="hidden">
+                <span class="wiki-react-label" data-fr="<%= page.hidden ? 'R\u00e9afficher' : 'Masquer' %>" data-en="<%= page.hidden ? 'Show' : 'Hide' %>"><%= page.hidden ? 'R&eacute;afficher' : 'Masquer' %></span>
               </button>
               <button type="button" class="wiki-react-btn wiki-react-practiced<%= page.practiced ? ' active' : '' %>" data-key="practiced">
                 <span class="wiki-react-label" data-fr="Pratiqué" data-en="Tried">Pratiqu&eacute;</span>
