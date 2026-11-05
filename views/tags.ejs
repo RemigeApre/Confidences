@@ -56,6 +56,7 @@
           <span class="wiki-filter-label">Catégorie</span>
           <select class="wiki-sort-select" id="tags-cat-filter" style="width:100%">
             <option value="">Toutes</option>
+            <option value="__none__">Sans catégorie</option>
             <% CAT_ORDER.forEach(function(cat) { %>
             <option value="<%= cat %>"><%= CAT_LABELS[cat] %></option>
             <% }) %>
@@ -129,6 +130,7 @@
           <div class="tags-bulk-mode-tabs" id="tags-bulk-mode-tabs">
             <button type="button" class="tags-bulk-mode-tab active" data-bulk-mode="category">Catégorie</button>
             <button type="button" class="tags-bulk-mode-tab" data-bulk-mode="parent">Inclusion</button>
+            <button type="button" class="tags-bulk-mode-tab" data-bulk-mode="type">Famille</button>
           </div>
 
           <div class="tags-bulk-panel" id="tags-bulk-panel-category">
@@ -149,6 +151,12 @@
             <input type="text" class="tags-bulk-parent-input" id="tags-bulk-parent-input"
                    placeholder="Tag conteneur (vide = aucun)" autocomplete="off" />
             <button type="button" class="tags-bulk-apply-btn" id="tags-bulk-apply-parent-btn" disabled>Assigner</button>
+          </div>
+
+          <div class="tags-bulk-panel" id="tags-bulk-panel-type" hidden>
+            <button type="button" class="tags-bulk-type-btn" data-type="ultra">Ultra</button>
+            <button type="button" class="tags-bulk-type-btn" data-type="irrealiste">Irr&eacute;aliste</button>
+            <button type="button" class="tags-bulk-type-btn tags-bulk-type-btn--normal" data-type="normal">Normal</button>
           </div>
 
           <button type="button" class="tags-bulk-cancel-btn" id="tags-bulk-cancel-btn">Annuler</button>
@@ -416,7 +424,7 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
   var subcatFilter     = document.getElementById("tags-subcat-filter");
 
   function syncSubcatPanel() {
-    var show = CATS_WITH_SUBCAT[activeCat];
+    var show = activeCat && activeCat !== "__none__" && CATS_WITH_SUBCAT[activeCat];
     if (subcatSection) subcatSection.hidden = !show;
     if (show && subcatLabel) subcatLabel.textContent = CAT_LABELS_JS[activeCat] + ' — sous-catégorie';
     if (!show) { activeSubcat = ""; if (subcatFilter) subcatFilter.querySelectorAll(".tag-chip").forEach(function(b){ b.classList.toggle("active", (b.dataset.subcatFilter || "") === ""); }); }
@@ -431,8 +439,9 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
     });
     var hasSearch   = !!q;
     var hasType     = includedTypes.length > 0 || excludedTypes.length > 0;
+    var filterNone  = activeCat === "__none__";
 
-    if (!hasSearch && !hasType) {
+    if (!hasSearch && !hasType && !filterNone) {
       // ── Mode groupé : cat/subcat/variants filtrés directement sur les groupes ──
       groupedView.hidden = false;
       filteredView.hidden = true;
@@ -490,7 +499,7 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
                     && excludedTypes.indexOf(t) === -1;
       var itemSubcat = item.dataset.subcategory || "";
       if (itemSubcat === "autre") itemSubcat = "";
-      var matchCat    = !activeCat || item.dataset.category === activeCat;
+      var matchCat    = !activeCat || (filterNone ? !item.dataset.category : item.dataset.category === activeCat);
       var matchSubcat = !activeSubcat || itemSubcat === activeSubcat;
       // Les sous-tags qui correspondent directement à la recherche s'affichent même si hideVariants
       var matchVariant = !hideVariants || !item.dataset.parent || matchQ;
@@ -586,8 +595,17 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
   /* ── Filtre : masquer les déclinaisons ── */
   var hideVariantsChk = document.getElementById("tags-hide-variants");
   if (hideVariantsChk) {
+    // Restaurer depuis localStorage
+    try {
+      var saved = localStorage.getItem("lq-tags-show-variants");
+      if (saved !== null) {
+        hideVariantsChk.checked = saved === "1";
+        hideVariants = !hideVariantsChk.checked;
+      }
+    } catch (e) {}
     hideVariantsChk.addEventListener("change", function () {
-      hideVariants = !hideVariantsChk.checked; // coché = afficher = ne pas masquer
+      hideVariants = !hideVariantsChk.checked;
+      try { localStorage.setItem("lq-tags-show-variants", hideVariantsChk.checked ? "1" : "0"); } catch (e) {}
       applyFilters();
     });
   }
@@ -961,6 +979,7 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
     var bulkModeTabs     = document.getElementById("tags-bulk-mode-tabs");
     var bulkPanelCat     = document.getElementById("tags-bulk-panel-category");
     var bulkPanelParent  = document.getElementById("tags-bulk-panel-parent");
+    var bulkPanelType    = document.getElementById("tags-bulk-panel-type");
     var bulkParentInput  = document.getElementById("tags-bulk-parent-input");
     var bulkApplyParent  = document.getElementById("tags-bulk-apply-parent-btn");
     var activeBulkMode   = "category";
@@ -972,8 +991,57 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
           bulkModeTabs.querySelectorAll(".tags-bulk-mode-tab").forEach(function (t) {
             t.classList.toggle("active", t === tab);
           });
-          if (bulkPanelCat)    bulkPanelCat.hidden   = (activeBulkMode !== "category");
-          if (bulkPanelParent) bulkPanelParent.hidden = (activeBulkMode !== "parent");
+          if (bulkPanelCat)    bulkPanelCat.hidden    = (activeBulkMode !== "category");
+          if (bulkPanelParent) bulkPanelParent.hidden  = (activeBulkMode !== "parent");
+          if (bulkPanelType)   bulkPanelType.hidden    = (activeBulkMode !== "type");
+        });
+      });
+    }
+
+    /* ── Bulk : assigner type (Ultra / Irréaliste / Normal) ── */
+    if (bulkPanelType) {
+      bulkPanelType.querySelectorAll(".tags-bulk-type-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          if (!selectedTags.size) return;
+          var type = btn.dataset.type;
+          btn.disabled = true;
+          var origText = btn.textContent;
+          btn.textContent = "…";
+
+          var promises = Array.from(selectedTags).map(function (tag) {
+            return fetch("/api/tags/type", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ tag: tag, type: type })
+            }).then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d.ok) {
+                document.querySelectorAll('.tags-item[data-tag="' + tag + '"]').forEach(function (el) {
+                  el.dataset.type = type;
+                  el.classList.toggle("tags-item--ultra",      type === "ultra");
+                  el.classList.toggle("tags-item--irrealiste", type === "irrealiste");
+                });
+              }
+              return { tag: tag, ok: d.ok };
+            });
+          });
+
+          Promise.all(promises).then(function (results) {
+            btn.textContent = origText;
+            btn.disabled = false;
+            var n = results.filter(function (r) { return r.ok; }).length;
+            exitSelectMode();
+            applyFilters();
+            if (createFeedback) {
+              var label = type === "ultra" ? "Ultra" : type === "irrealiste" ? "Irréaliste" : "Normal";
+              createFeedback.textContent = n + " tag" + (n > 1 ? "s" : "") + " passé" + (n > 1 ? "s" : "") + " en " + label + " !";
+              createFeedback.style.color = "var(--accent)";
+              createFeedback.hidden = false;
+            }
+          }).catch(function () {
+            btn.textContent = origText;
+            btn.disabled = false;
+          });
         });
       });
     }
