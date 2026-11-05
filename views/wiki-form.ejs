@@ -58,13 +58,8 @@
           <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
         </div>
 
-        <%# ── Toggles rapides ── %>
-        <div class="wf-sb-toggles">
-          <button type="button" class="wf-sb-toggle<%= (page.parody || page.subParody) ? ' active' : '' %>" data-target="wf-sec-parodie">Parodie</button>
-          <button type="button" class="wf-sb-toggle<%= pmDerivedValue ? ' active' : '' %>" data-target="wf-sec-synonymes">Synonymes</button>
-          <button type="button" class="wf-sb-toggle<%= page.owned ? ' active' : '' %>" id="wf-toggle-possede">Poss&egrave;de</button>
-        </div>
-        <input type="hidden" name="owned" id="wf-owned-hidden" value="<%= page.owned ? 'on' : '' %>" />
+        <%# supprimé : wf-sb-toggles — sections devenues accordéons inline, Possède → checkbox %>
+
 
         <%# ── Catégorie + Aussi dans ── %>
         <div class="wf-cat-row">
@@ -101,16 +96,20 @@
           </select>
         </div>
 
-        <%# ── Synonymes ── %>
-        <div id="wf-sec-synonymes"<%= pmDerivedValue ? '' : ' hidden' %>>
-          <div class="wf-tagged-box">
-            <span class="prot-sb-label">Synonymes</span>
-            <div class="wiki-tags-widget wiki-derived-widget">
-              <div class="wiki-tags-board">
-                <input type="text" class="wiki-tags-typing" placeholder="Synonymes, termes d&eacute;riv&eacute;s&hellip;" autocomplete="off" />
+        <%# ── Synonymes (accordéon) ── %>
+        <div class="wf-sb-accordion">
+          <button type="button" class="wf-sb-toggle wf-sb-accordion-btn<%= pmDerivedValue ? ' active' : '' %>" data-target="wf-sec-synonymes">
+            <span>Synonymes</span><span class="wf-sb-accordion-arrow">&rsaquo;</span>
+          </button>
+          <div id="wf-sec-synonymes" class="wf-sb-accordion-body"<%= pmDerivedValue ? '' : ' hidden' %>>
+            <div class="wf-tagged-box">
+              <div class="wiki-tags-widget wiki-derived-widget">
+                <div class="wiki-tags-board">
+                  <input type="text" class="wiki-tags-typing" placeholder="Synonymes, termes d&eacute;riv&eacute;s&hellip;" autocomplete="off" />
+                </div>
+                <div class="wiki-tags-chips"></div>
+                <input type="hidden" name="meta_termes_derives" class="wiki-tags-hidden" value="<%= pmDerivedValue %>" />
               </div>
-              <div class="wiki-tags-chips"></div>
-              <input type="hidden" name="meta_termes_derives" class="wiki-tags-hidden" value="<%= pmDerivedValue %>" />
             </div>
           </div>
         </div>
@@ -137,9 +136,12 @@
           </div>
         </div>
 
-        <%# ── Parodie ── %>
-        <div id="wf-sec-parodie"<%= (page.parody || page.subParody) ? '' : ' hidden' %>>
-          <div class="prot-sb-details-body">
+        <%# ── Parodie (accordéon) ── %>
+        <div class="wf-sb-accordion">
+          <button type="button" class="wf-sb-toggle wf-sb-accordion-btn<%= (page.parody || page.subParody) ? ' active' : '' %>" data-target="wf-sec-parodie">
+            <span>Parodie</span><span class="wf-sb-accordion-arrow">&rsaquo;</span>
+          </button>
+          <div id="wf-sec-parodie" class="wf-sb-accordion-body"<%= (page.parody || page.subParody) ? '' : ' hidden' %>>
             <%- include('partials/parody-input', {
                   idPrefix:  'wkf',
                   mainValue: page.parody    || '',
@@ -148,6 +150,15 @@
                 }) %>
           </div>
         </div>
+
+        <%# ── Possède : feature toggle utilisateur ── %>
+        <label class="wf-possede-toggle">
+          <input type="checkbox" name="owned" value="on" <%= page.owned ? 'checked' : '' %> />
+          <div class="wf-possede-label">
+            <span class="wf-possede-label-title">Activer &laquo;&nbsp;Je poss&egrave;de&nbsp;&raquo;</span>
+            <span class="wf-possede-label-hint">Permet aux utilisateurs de cocher qu&rsquo;ils poss&egrave;dent cet objet</span>
+          </div>
+        </label>
 
       </div><%# /wf-sidebar-inner %>
 
@@ -1066,7 +1077,7 @@ initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidd
   });
 })();
 
-// Toggles volet gauche : parodie, synonymes, possède
+// Accordéons volet gauche : parodie, synonymes
 (function() {
   document.querySelectorAll('.wf-sb-toggle[data-target]').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -1075,14 +1086,6 @@ initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidd
       if (target) target.hidden = !target.hidden;
     });
   });
-  var togglePossede = document.getElementById('wf-toggle-possede');
-  var ownedHidden   = document.getElementById('wf-owned-hidden');
-  if (togglePossede && ownedHidden) {
-    togglePossede.addEventListener('click', function() {
-      togglePossede.classList.toggle('active');
-      ownedHidden.value = togglePossede.classList.contains('active') ? 'on' : '';
-    });
-  }
 })();
 
 // Sous-catégorie dynamique
