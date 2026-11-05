@@ -2920,7 +2920,7 @@ function setTagCategory(tag, category) {
 function createStandaloneTag(tag, category) {
   const t = normalizeTagStr(tag);
   if (!t) return false;
-  const cat = VALID_TAG_CATEGORIES.has(category) ? category : "autre";
+  const cat = getValidTagCategories().has(category) ? category : "autre";
   db.prepare("INSERT OR IGNORE INTO tag_meta (tag, type, category) VALUES (?, 'normal', ?)").run(t, cat);
   return true;
 }
