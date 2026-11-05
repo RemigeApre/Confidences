@@ -470,9 +470,21 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
     groupedView.querySelectorAll(".tags-cat-group").forEach(function(g){ g.hidden = false; });
     groupedView.querySelectorAll(".tags-subcat-group").forEach(function(g){ g.hidden = false; });
 
+    // Premier passage : identifier les parents dont un sous-tag correspond à la recherche
+    var matchingChildParents = {};
+    if (q) {
+      filteredView.querySelectorAll(".tags-item[data-parent]").forEach(function (item) {
+        if (item.dataset.tag.toLowerCase().indexOf(q) !== -1) {
+          matchingChildParents[item.dataset.parent] = true;
+        }
+      });
+    }
+
     var visible = 0;
     filteredView.querySelectorAll(".tags-item").forEach(function (item) {
-      var matchQ    = !q || item.dataset.tag.toLowerCase().indexOf(q) !== -1;
+      var tagName   = item.dataset.tag.toLowerCase();
+      var matchQ    = !q || tagName.indexOf(q) !== -1;
+      var matchParent = q && !item.dataset.parent && matchingChildParents[item.dataset.tag];
       var t         = item.dataset.type || "normal";
       var matchType = (includedTypes.length === 0 || includedTypes.indexOf(t) !== -1)
                     && excludedTypes.indexOf(t) === -1;
@@ -480,8 +492,10 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
       if (itemSubcat === "autre") itemSubcat = "";
       var matchCat    = !activeCat || item.dataset.category === activeCat;
       var matchSubcat = !activeSubcat || itemSubcat === activeSubcat;
-      var matchVariant = !hideVariants || !item.dataset.parent;
-      var show = matchQ && matchType && matchCat && matchSubcat && matchVariant;
+      // Les sous-tags qui correspondent directement à la recherche s'affichent même si hideVariants
+      var matchVariant = !hideVariants || !item.dataset.parent || matchQ;
+      var show = (matchQ || matchParent) && matchType && matchCat && matchSubcat && matchVariant;
+      item.classList.toggle("tags-item--parent-match", !!(matchParent && !matchQ));
       item.hidden = !show;
       if (show) visible++;
     });
@@ -1249,7 +1263,19 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
         }
         api("DELETE", "/api/tag-categories/" + encodeURIComponent(key))
           .then(function(r) {
-            if (r.ok) { catRow.remove(); showFeedback('«\u00a0' + label + '\u00a0» supprimée.', true); }
+            if (r.ok) {
+              catRow.remove();
+              // Mettre à jour les globaux et sélects
+              if (window._LQCatLabels) delete window._LQCatLabels[key];
+              if (window._LQCatWithSub) delete window._LQCatWithSub[key];
+              if (window._LQSubsByCat) delete window._LQSubsByCat[key];
+              [document.getElementById("tags-cat-filter"), document.getElementById("tags-bulk-cat-select"), document.getElementById("tags-create-category")].forEach(function(sel) {
+                if (!sel) return;
+                var opt = sel.querySelector('option[value="' + key + '"]');
+                if (opt) opt.remove();
+              });
+              showFeedback('«\u00a0' + label + '\u00a0» supprimée.', true);
+            }
             else { showFeedback(r.error || "Utilisée par des tags", false); delete catRow.dataset.confirmDel; delBtn.textContent = "🗑"; delBtn.classList.remove("tags-mgmt-del-confirm"); }
           });
       }
@@ -1323,6 +1349,18 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
           catList.insertBefore(li, catAddForm.closest(".tags-mgmt-add-row--cat"));
           labelEl.value = "";
           if (hasSubEl) hasSubEl.checked = false;
+          // Mettre à jour les globaux
+          if (window._LQCatLabels) window._LQCatLabels[r.key] = label;
+          if (window._LQCatWithSub) window._LQCatWithSub[r.key] = hasSub ? true : false;
+          if (window._LQSubsByCat && hasSub) window._LQSubsByCat[r.key] = [];
+          // Mettre à jour les 3 sélects
+          var newOpt = function(val, txt) { var o = document.createElement("option"); o.value = val; o.textContent = txt; return o; };
+          var catFilterEl    = document.getElementById("tags-cat-filter");
+          var bulkCatEl      = document.getElementById("tags-bulk-cat-select");
+          var createCatEl    = document.getElementById("tags-create-category");
+          if (catFilterEl)  catFilterEl.appendChild(newOpt(r.key, label));
+          if (bulkCatEl)    bulkCatEl.appendChild(newOpt(r.key, label));
+          if (createCatEl)  createCatEl.appendChild(newOpt(r.key, label));
           showFeedback("Catégorie créée\u00a0: " + r.key, true);
         } else { showFeedback(r.error || "Erreur", false); }
       });

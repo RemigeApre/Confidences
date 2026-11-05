@@ -2859,11 +2859,20 @@ function normalizeTagStr(t) {
   return String(t || "").toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 }
 
+const INHERITED_TYPES = new Set(["ultra", "irrealiste"]);
+
 function setTagParent(tag, parent) {
   const t = normalizeTagStr(tag);
   const p = normalizeTagStr(parent);
   if (!t) return;
   db.prepare("INSERT INTO tag_meta (tag, type, category, parent) VALUES (?, 'normal', 'autre', ?) ON CONFLICT(tag) DO UPDATE SET parent = excluded.parent").run(t, p);
+  // Héritage du type : si le parent est ultra/irréaliste, le sous-tag l'est forcément aussi
+  if (p) {
+    const parentMeta = db.prepare("SELECT type FROM tag_meta WHERE tag=?").get(p);
+    if (parentMeta && INHERITED_TYPES.has(parentMeta.type)) {
+      db.prepare("UPDATE tag_meta SET type=? WHERE tag=?").run(parentMeta.type, t);
+    }
+  }
 }
 
 const VALID_SUBCATEGORIES = new Set(["physique", "ethnie", "fantastique", "vetements", "autre", ""]);
@@ -2895,6 +2904,10 @@ function setTagType(tag, type) {
   if (!t) return;
   if (!VALID_TAG_TYPES.has(type)) type = "normal";
   db.prepare("INSERT INTO tag_meta (tag, type, category) VALUES (?, ?, 'autre') ON CONFLICT(tag) DO UPDATE SET type = excluded.type").run(t, type);
+  // Cascade vers les sous-tags : si ultra/irréaliste, les enfants héritent
+  if (INHERITED_TYPES.has(type)) {
+    db.prepare("UPDATE tag_meta SET type=? WHERE parent=?").run(type, t);
+  }
 }
 
 function setTagCategory(tag, category) {
