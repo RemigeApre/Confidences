@@ -49,14 +49,15 @@
     <%# SIDEBAR GAUCHE : Parodie / Synonymes / Catégories / Tags %>
     <%# ═══════════════════════════════════════════════════════ %>
     <aside class="wf-sidebar-left" id="wf-sidebar-left">
-      <div class="wf-sidebar-inner">
 
-        <%# ── Topbar : retour + enregistrer + langue ── %>
-        <div class="wf-sb-topbar">
-          <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="wiki-left-back-btn" title="Retour">&lsaquo;</a>
-          <button type="submit" class="wf-sb-save-btn">Enregistrer</button>
-          <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
-        </div>
+      <%# ── Topbar : hors du scroll — toujours visible ── %>
+      <div class="wf-sb-topbar">
+        <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="wiki-left-back-btn" title="Retour">&lsaquo;</a>
+        <button type="submit" class="wf-sb-save-btn">Enregistrer</button>
+        <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
+      </div>
+
+      <div class="wf-sidebar-inner">
 
         <%# supprimé : wf-sb-toggles — sections devenues accordéons inline, Possède → checkbox %>
 
@@ -153,10 +154,13 @@
 
         <%# ── Possède : feature toggle utilisateur ── %>
         <label class="wf-possede-toggle">
-          <input type="checkbox" name="owned" value="on" <%= page.owned ? 'checked' : '' %> />
           <div class="wf-possede-label">
-            <span class="wf-possede-label-title">Activer &laquo;&nbsp;Je poss&egrave;de&nbsp;&raquo;</span>
-            <span class="wf-possede-label-hint">Permet aux utilisateurs de cocher qu&rsquo;ils poss&egrave;dent cet objet</span>
+            <span class="wf-possede-label-title">&laquo;&nbsp;Je poss&egrave;de&nbsp;&raquo;</span>
+            <span class="wf-possede-label-hint">Active un bouton utilisateur sur la fiche</span>
+          </div>
+          <div class="wf-possede-switch">
+            <input type="checkbox" name="owned" value="on" <%= page.owned ? 'checked' : '' %> />
+            <span class="wf-possede-track"></span>
           </div>
         </label>
 
