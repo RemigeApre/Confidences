@@ -1105,6 +1105,7 @@ initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidd
           if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Enregistrer'; }
         }, 2500);
       } else {
+        console.error('[wiki-save] erreur serveur:', data.error);
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Erreur'; }
       }
     }).catch(function(err) {

@@ -1263,7 +1263,10 @@ function buildWikiRouter(config) {
 
   router.use((err, req, res, next) => {
     if (!err) return next();
-    console.error("[wiki] erreur route", req.method, req.originalUrl, err.message || err);
+    console.error("[wiki] erreur route", req.method, req.originalUrl, err.stack || err.message || err);
+    if (req.headers['x-save-fetch'] === '1') {
+      return res.status(500).json({ ok: false, error: err.message || String(err) });
+    }
     res.redirect("/wiki");
   });
 
