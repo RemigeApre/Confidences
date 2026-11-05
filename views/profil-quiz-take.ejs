@@ -16,7 +16,6 @@
 
     <div class="pqtake-top">
       <p class="pqtake-counter" id="pqtake-counter">Étape&nbsp;1&nbsp;/&nbsp;<%= pageGroups.length %></p>
-      <p class="pqtake-counter-sub" id="pqtake-counter-sub"></p>
     </div>
 
     <div id="pqtake-pages">
@@ -28,20 +27,16 @@
           <span class="pqtake-row-num"><%= pageIdx * PAGE_SIZE + qi + 1 %></span>
           <div class="pqtake-row-body">
             <p class="pqtake-question"><%= q.text %></p>
-            <div class="pqtake-scale">
-              <div class="pqtake-options">
-                <% [1,2,3,4,5].forEach(function(v) { %>
-                <div class="pqtake-opt">
-                  <input type="radio" name="q_<%= q.id %>" id="q_<%= q.id %>_<%= v %>" value="<%= v %>" data-qid="<%= q.id %>">
-                  <label for="q_<%= q.id %>_<%= v %>"><%= v %></label>
-                </div>
-                <% }) %>
+            <div class="pqtake-options">
+              <% [1,2,3,4,5].forEach(function(v) { %>
+              <div class="pqtake-opt">
+                <input type="radio" name="q_<%= q.id %>" id="q_<%= q.id %>_<%= v %>" value="<%= v %>" data-qid="<%= q.id %>">
+                <label for="q_<%= q.id %>_<%= v %>"><%= v %></label>
+                <% if (v === 1) { %><span class="pqtake-opt-lbl">Pas du tout</span><% } %>
+                <% if (v === 3) { %><span class="pqtake-opt-lbl">Neutre</span><% } %>
+                <% if (v === 5) { %><span class="pqtake-opt-lbl">Tout&nbsp;à fait</span><% } %>
               </div>
-              <div class="pqtake-scale-labels">
-                <span>Pas du tout</span>
-                <span>Neutre</span>
-                <span>Tout à fait</span>
-              </div>
+              <% }) %>
             </div>
           </div>
         </div>
@@ -76,7 +71,6 @@
   var pages     = document.querySelectorAll('.pqtake-page');
   var fill      = document.getElementById('pqtake-fill');
   var counter   = document.getElementById('pqtake-counter');
-  var counterSub= document.getElementById('pqtake-counter-sub');
   var prevBtn   = document.getElementById('pqtake-prev');
   var nextBtn   = document.getElementById('pqtake-next');
   var submitBtn = document.getElementById('pqtake-submit');
@@ -86,11 +80,8 @@
     pages[idx].style.display = 'block';
     current = idx;
 
-    var qFrom = idx * pageSize + 1;
-    var qTo   = Math.min((idx + 1) * pageSize, totalQ);
-    counter.textContent    = 'Étape\u00a0' + (idx + 1) + '\u00a0/\u00a0' + totalPages;
-    counterSub.textContent = 'Questions\u00a0' + qFrom + '\u2013' + qTo + '\u00a0sur\u00a0' + totalQ;
-    fill.style.width       = Math.round(((idx + 1) / totalPages) * 100) + '%';
+    counter.textContent = 'Étape\u00a0' + (idx + 1) + '\u00a0/\u00a0' + totalPages;
+    fill.style.width    = Math.round(((idx + 1) / totalPages) * 100) + '%';
 
     prevBtn.disabled          = idx === 0;
     nextBtn.style.display     = idx === totalPages - 1 ? 'none'         : 'inline-block';
