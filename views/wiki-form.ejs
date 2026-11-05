@@ -53,7 +53,7 @@
 
         <%# ── Topbar : retour + enregistrer + langue ── %>
         <div class="wf-sb-topbar">
-          <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="wiki-left-back-btn" title="Retour">&lt;</a>
+          <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="wiki-left-back-btn" title="Retour">&lsaquo;</a>
           <button type="submit" class="wf-sb-save-btn">Enregistrer</button>
           <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
         </div>
@@ -65,31 +65,6 @@
           <button type="button" class="wf-sb-toggle<%= page.owned ? ' active' : '' %>" id="wf-toggle-possede">Poss&egrave;de</button>
         </div>
         <input type="hidden" name="owned" id="wf-owned-hidden" value="<%= page.owned ? 'on' : '' %>" />
-
-        <%# ── Parodie ── %>
-        <div id="wf-sec-parodie"<%= (page.parody || page.subParody) ? '' : ' hidden' %>>
-          <div class="prot-sb-details-body">
-            <%- include('partials/parody-input', {
-                  idPrefix:  'wkf',
-                  mainValue: page.parody    || '',
-                  subValue:  page.subParody || '',
-                  mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
-                }) %>
-          </div>
-        </div>
-
-        <%# ── Synonymes ── %>
-        <div id="wf-sec-synonymes"<%= pmDerivedValue ? '' : ' hidden' %>>
-          <div class="prot-sb-details-body">
-            <div class="wiki-tags-widget wiki-derived-widget">
-              <div class="wiki-tags-board">
-                <input type="text" class="wiki-tags-typing" placeholder="Synonymes, termes d&eacute;riv&eacute;s&hellip;" autocomplete="off" />
-              </div>
-              <div class="wiki-tags-chips"></div>
-              <input type="hidden" name="meta_termes_derives" class="wiki-tags-hidden" value="<%= pmDerivedValue %>" />
-            </div>
-          </div>
-        </div>
 
         <%# ── Catégorie + Aussi dans ── %>
         <div class="wf-cat-row">
@@ -113,7 +88,7 @@
         </div>
 
         <%# ── Sous-catégorie (un seul select, peuplé dynamiquement) ── %>
-        <div class="prot-sb-section" id="wf-sb-subcat-wrap" hidden>
+        <div class="prot-sb-section wf-subcat-section" id="wf-sb-subcat-wrap" hidden>
           <span class="prot-sb-label">Sous-cat&eacute;gorie</span>
           <select name="meta_sous_cat" id="wf-subcat-select" class="prot-form-select-elegant prot-form-select-elegant--sm" style="width:100%">
             <option value="">— Choisir —</option>
@@ -126,10 +101,24 @@
           </select>
         </div>
 
+        <%# ── Synonymes ── %>
+        <div id="wf-sec-synonymes"<%= pmDerivedValue ? '' : ' hidden' %>>
+          <div class="wf-tagged-box">
+            <span class="prot-sb-label">Synonymes</span>
+            <div class="wiki-tags-widget wiki-derived-widget">
+              <div class="wiki-tags-board">
+                <input type="text" class="wiki-tags-typing" placeholder="Synonymes, termes d&eacute;riv&eacute;s&hellip;" autocomplete="off" />
+              </div>
+              <div class="wiki-tags-chips"></div>
+              <input type="hidden" name="meta_termes_derives" class="wiki-tags-hidden" value="<%= pmDerivedValue %>" />
+            </div>
+          </div>
+        </div>
+
         <%# ── Tags ── %>
-        <div class="prot-sb-section">
-          <span class="prot-sb-label">Tags</span>
-          <div class="wf-tags-unified">
+        <div class="prot-sb-section wf-tags-section">
+          <div class="wf-tagged-box">
+            <span class="prot-sb-label">Tags</span>
             <div class="wiki-tags-widget">
               <div class="wiki-tags-board">
                 <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag&hellip;" autocomplete="off" />
@@ -145,6 +134,18 @@
               </div>
               <% } %>
             </div>
+          </div>
+        </div>
+
+        <%# ── Parodie ── %>
+        <div id="wf-sec-parodie"<%= (page.parody || page.subParody) ? '' : ' hidden' %>>
+          <div class="prot-sb-details-body">
+            <%- include('partials/parody-input', {
+                  idPrefix:  'wkf',
+                  mainValue: page.parody    || '',
+                  subValue:  page.subParody || '',
+                  mainPh:    'Parodie (ex\u00a0: Pok\u00e9mon)\u2026'
+                }) %>
           </div>
         </div>
 
