@@ -581,24 +581,22 @@
 
         <p class="wiki-left-updated" data-fr="Dernière modification&nbsp;: <%= _updDateFr %>" data-en="Last updated: <%= _updDateEn %>">Derni&egrave;re modification&nbsp;: <%= _updDateFr %></p>
 
-        <%# Actions : modifier (admin) ─ %>
+        <%# Bloc admin : édition + maturité (fusionné) ─ %>
         <% if (currentUser && currentUser.isAdmin) { %>
-        <div class="wiki-left-admin-row">
-          <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
-        </div>
-        <% } %>
-        <% if (currentUser && currentUser.isAdmin) { %>
-          <div class="wiki-maturity-widget" id="wiki-maturity-widget" data-id="<%= page.id %>" data-level="<%= page.maturity || 0 %>">
-            <span class="wiki-maturity-label" data-fr="Maturité" data-en="Maturity">Maturit&eacute;</span>
-            <div class="wiki-maturity-levels">
-              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 0 ? ' active' : '' %>" data-level="0" data-fr="Brouillon" data-en="Draft">Brouillon</button>
-              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 1 ? ' active' : '' %>" data-level="1" data-fr="Écrite" data-en="Written">&Eacute;crite</button>
-              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 2 ? ' active' : '' %>" data-level="2">2</button>
-              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 3 ? ' active' : '' %>" data-level="3">3</button>
-              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 4 ? ' active' : '' %>" data-level="4">4</button>
-              <button type="button" class="wiki-maturity-lvl<%= (page.maturity || 0) === 5 ? ' active' : '' %>" data-level="5">5&nbsp;&#9201;</button>
-            </div>
+        <div class="wiki-left-admin-block" id="wiki-maturity-widget" data-id="<%= page.id %>" data-level="<%= page.maturity || 0 %>">
+          <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-left-edit-btn" title="Modifier" aria-label="Modifier">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <span>Modifier</span>
+          </a>
+          <div class="wiki-left-maturity">
+            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===0?' active':'' %>" data-level="0" title="Brouillon">B</button>
+            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===1?' active':'' %>" data-level="1" title="Écrite">1</button>
+            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===2?' active':'' %>" data-level="2" title="Relue">2</button>
+            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===3?' active':'' %>" data-level="3" title="Illustrée">3</button>
+            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===4?' active':'' %>" data-level="4" title="Validée">4</button>
+            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===5?' active':'' %>" data-level="5" title="Publiée">&#10003;</button>
           </div>
+        </div>
         <% } %>
 
       </aside>
