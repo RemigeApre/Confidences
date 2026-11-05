@@ -78,7 +78,7 @@
         <%# ─ Filtre déclinaisons ─ %>
         <div class="wiki-filter-section">
           <label class="tags-variant-toggle">
-            <input type="checkbox" id="tags-hide-variants" checked />
+            <input type="checkbox" id="tags-hide-variants" />
             <span>Afficher les inclusions</span>
           </label>
         </div>
@@ -595,17 +595,8 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
   /* ── Filtre : masquer les déclinaisons ── */
   var hideVariantsChk = document.getElementById("tags-hide-variants");
   if (hideVariantsChk) {
-    // Restaurer depuis localStorage
-    try {
-      var saved = localStorage.getItem("lq-tags-show-variants");
-      if (saved !== null) {
-        hideVariantsChk.checked = saved === "1";
-        hideVariants = !hideVariantsChk.checked;
-      }
-    } catch (e) {}
     hideVariantsChk.addEventListener("change", function () {
       hideVariants = !hideVariantsChk.checked;
-      try { localStorage.setItem("lq-tags-show-variants", hideVariantsChk.checked ? "1" : "0"); } catch (e) {}
       applyFilters();
     });
   }
