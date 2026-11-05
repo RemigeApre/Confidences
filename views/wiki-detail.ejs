@@ -294,7 +294,7 @@
         <%# Bandeau catégorie : retour + nom centré (nouveau design) %>
         <div class="wiki-chapter-hero wiki-left-cat-hero">
           <div class="wiki-chapter-hero-top">
-            <a href="<%= backHref %>" class="wiki-chapter-hero-back wiki-left-back-btn" title="<%= backLabel %>" aria-label="<%= backLabel %>"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 2L2 8L8 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <a href="<%= backHref %>" class="wiki-chapter-hero-back wiki-left-back-btn" title="<%= backLabel %>" aria-label="<%= backLabel %>"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
             <% if (cat) { %>
               <a href="/wiki/categorie/<%= page.category %>" class="wiki-chapter-hero-title wiki-left-cat-hero-title" data-fr="<%= cat.label %>" data-en="<%= WD_CAT_EN[page.category] || cat.label %>"><%= cat.label %></a>
             <% } else { %>
@@ -545,13 +545,6 @@
           var _updDateFr = new Date(page.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
           var _updDateEn = new Date(page.updatedAt).toLocaleDateString('en-GB',  { day: 'numeric', month: 'long', year: 'numeric' });
         %>
-        <%# Bouton copier — icône seule, centrée, au-dessus de la date %>
-        <button type="button" class="wiki-copy-ai-btn" id="wiki-copy-ai-btn"
-                title="Copier un résumé textuel de cette fiche" aria-label="Copier">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-        </button>
-
-        <p class="wiki-left-updated" data-fr="Dernière modification\u00a0: <%= _updDateFr %>" data-en="Last updated: <%= _updDateEn %>">Derni&egrave;re modification&nbsp;: <%= _updDateFr %></p>
 
         <%# ── Auteur(s) (E-E-A-T) ── %>
         <% if (locals.pageAuthorMain) { %>
@@ -580,12 +573,20 @@
           </div>
         <% } %>
 
-        <%# Actions : modifier + maturité (admin) ─ %>
+        <%# Actions : modifier (admin) ─ %>
         <% if (currentUser && currentUser.isAdmin) { %>
         <div class="wiki-left-admin-row">
           <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
         </div>
         <% } %>
+
+        <%# Bouton copier — icône seule, poussée en bas avant la date %>
+        <button type="button" class="wiki-copy-ai-btn" id="wiki-copy-ai-btn"
+                title="Copier un résumé textuel de cette fiche" aria-label="Copier">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+        </button>
+
+        <p class="wiki-left-updated" data-fr="Dernière modification\u00a0: <%= _updDateFr %>" data-en="Last updated: <%= _updDateEn %>">Derni&egrave;re modification&nbsp;: <%= _updDateFr %></p>
         <% if (currentUser && currentUser.isAdmin) { %>
           <div class="wiki-maturity-widget" id="wiki-maturity-widget" data-id="<%= page.id %>" data-level="<%= page.maturity || 0 %>">
             <span class="wiki-maturity-label" data-fr="Maturité" data-en="Maturity">Maturit&eacute;</span>
