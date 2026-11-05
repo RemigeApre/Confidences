@@ -1096,16 +1096,17 @@ initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidd
       headers: { 'X-Save-Fetch': '1' },
       body: fd
     }).then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function(data) {
+      return r.json().then(function(data) { return { status: r.status, data: data }; });
+    }).then(function(res) {
+      var data = res.data;
       if (data.ok) {
         if (saveBtn) { saveBtn.textContent = '\u2713 Enregistr\u00e9'; }
         setTimeout(function() {
           if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Enregistrer'; }
         }, 2500);
       } else {
-        console.error('[wiki-save] erreur serveur:', data.error);
+        console.error('[wiki-save] erreur serveur (' + res.status + '):', data.error);
+        alert('Erreur sauvegarde : ' + (data.error || 'inconnue'));
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Erreur'; }
       }
     }).catch(function(err) {
