@@ -1116,6 +1116,7 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
   }
 
   // Appliquer les filtres au chargement (masque les sous-tags par défaut)
+  window.lqApplyFilters = applyFilters;
   applyFilters();
 
 })();
@@ -1541,7 +1542,7 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
         inp.value = "";
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "+"; }
         popupFb(parts.join(", ") + ".", ok.length > 0);
-        if (ok.length) applyFilters();
+        if (ok.length && window.lqApplyFilters) window.lqApplyFilters();
       });
     });
   }
