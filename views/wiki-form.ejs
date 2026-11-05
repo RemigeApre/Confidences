@@ -53,7 +53,7 @@
 
         <%# ── Topbar : retour + enregistrer + langue ── %>
         <div class="wf-sb-topbar">
-          <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="wiki-left-back-btn" title="Retour">&#8592;</a>
+          <a href="<%= returnTo || (page.id ? '/wiki/' + (page.slug || page.id) : '/wiki') %>" class="wiki-left-back-btn" title="Retour">&lt;</a>
           <button type="submit" class="wf-sb-save-btn">Enregistrer</button>
           <% if (page.id) { %><%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/wiki/' + page.id + '/edit' }) %><% } %>
         </div>
@@ -176,7 +176,6 @@
       <% } %>
 
       <%# ── Description ── %>
-      <div class="wf-section-title">Description</div>
       <div class="wiki-editor" data-rich>
         <div class="md-toolbar">
           <button type="button" class="md-btn" data-cmd="bold" title="Gras (Ctrl+B)"><strong>B</strong></button>
