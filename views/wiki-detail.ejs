@@ -573,31 +573,33 @@
           </div>
         <% } %>
 
-        <%# Bouton copier — icône seule, poussée en bas avant la date %>
-        <button type="button" class="wiki-copy-ai-btn" id="wiki-copy-ai-btn"
-                title="Copier un résumé textuel de cette fiche" aria-label="Copier">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-        </button>
+        <%# Pied du volet gauche — fusionné %>
+        <div class="wiki-left-footer">
+          <%# Ligne date + copier %>
+          <button type="button" class="wiki-left-copy-row" id="wiki-copy-ai-btn"
+                  title="Copier un résumé textuel de cette fiche" aria-label="Copier">
+            <svg class="wiki-left-copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="13" height="13" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            <span class="wiki-left-updated" data-fr="Derni&egrave;re modif.&nbsp;: <%= _updDateFr %>" data-en="Updated: <%= _updDateEn %>">Derni&egrave;re modif.&nbsp;: <%= _updDateFr %></span>
+          </button>
 
-        <p class="wiki-left-updated" data-fr="Dernière modification&nbsp;: <%= _updDateFr %>" data-en="Last updated: <%= _updDateEn %>">Derni&egrave;re modification&nbsp;: <%= _updDateFr %></p>
-
-        <%# Bloc admin : édition + maturité (fusionné) ─ %>
-        <% if (currentUser && currentUser.isAdmin) { %>
-        <div class="wiki-left-admin-block" id="wiki-maturity-widget" data-id="<%= page.id %>" data-level="<%= page.maturity || 0 %>">
-          <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-left-edit-btn" title="Modifier" aria-label="Modifier">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-            <span>Modifier</span>
-          </a>
-          <div class="wiki-left-maturity">
-            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===0?' active':'' %>" data-level="0" title="Brouillon">B</button>
-            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===1?' active':'' %>" data-level="1" title="Écrite">1</button>
-            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===2?' active':'' %>" data-level="2" title="Relue">2</button>
-            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===3?' active':'' %>" data-level="3" title="Illustrée">3</button>
-            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===4?' active':'' %>" data-level="4" title="Validée">4</button>
-            <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===5?' active':'' %>" data-level="5" title="Publiée">&#10003;</button>
+          <%# Bloc admin : édition + maturité (fusionné) ─ %>
+          <% if (currentUser && currentUser.isAdmin) { %>
+          <div class="wiki-left-admin-block" id="wiki-maturity-widget" data-id="<%= page.id %>" data-level="<%= page.maturity || 0 %>">
+            <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-left-edit-btn" title="Modifier" aria-label="Modifier">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              <span>Modifier</span>
+            </a>
+            <div class="wiki-left-maturity">
+              <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===0?' active':'' %>" data-level="0" title="Brouillon">B</button>
+              <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===1?' active':'' %>" data-level="1" title="Écrite">1</button>
+              <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===2?' active':'' %>" data-level="2" title="Relue">2</button>
+              <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===3?' active':'' %>" data-level="3" title="Illustrée">3</button>
+              <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===4?' active':'' %>" data-level="4" title="Validée">4</button>
+              <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===5?' active':'' %>" data-level="5" title="Publiée">&#10003;</button>
+            </div>
           </div>
+          <% } %>
         </div>
-        <% } %>
 
       </aside>
 
