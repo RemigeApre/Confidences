@@ -841,7 +841,7 @@ function buildWikiRouter(config) {
     const category        = normalizeCategory(req.body.category);
     const content         = String(req.body.content || "").trim();
     let tags              = parseTags(req.body.tags);
-    const owned           = OWNED_CATEGORIES.includes(category) && req.body.owned === "on";
+    const owned           = req.body.owned === "on";
     const extraCategories = arr(req.body.extra_categories).filter((k) => CATEGORY_KEYS.includes(k) && k !== category);
 
     const files = req.files || [];
@@ -1083,7 +1083,7 @@ function buildWikiRouter(config) {
     const category = normalizeCategory(req.body.category);
     const content  = String(req.body.content || "").trim();
     let tags       = parseTags(req.body.tags);
-    const owned    = OWNED_CATEGORIES.includes(category) && req.body.owned === "on";
+    const owned    = req.body.owned === "on";
 
     const files = req.files || [];
     files.forEach((f) => generateThumb(`/uploads/wiki/${f.filename}`));
