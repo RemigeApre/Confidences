@@ -85,6 +85,7 @@
               <div class="wiki-tags-board">
                 <input type="text" class="wiki-tags-typing" placeholder="Synonymes, termes d&eacute;riv&eacute;s&hellip;" autocomplete="off" />
               </div>
+              <div class="wiki-tags-chips"></div>
               <input type="hidden" name="meta_termes_derives" class="wiki-tags-hidden" value="<%= pmDerivedValue %>" />
             </div>
           </div>
@@ -129,18 +130,15 @@
         <div class="prot-sb-section">
           <span class="prot-sb-label">Tags</span>
           <div class="wf-tags-unified">
-            <div class="wf-tags-special-row">
-              <% SPECIAL_TAGS.forEach(function(t) { %>
-                <button type="button" class="wiki-tag-suggest-chip wiki-tag-suggest-chip--special wf-tag-special" data-tag="<%= t %>"><%= t %></button>
-              <% }) %>
-            </div>
             <div class="wiki-tags-widget">
               <div class="wiki-tags-board">
                 <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag&hellip;" autocomplete="off" />
               </div>
+              <div class="wiki-tags-chips"></div>
               <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= page.tags.join(', ') %>" />
+              <%# Suggestions gardées cachées : wiki.js lit les data-tag pour l'autocomplétion %>
               <% if (allTagsNormal.length) { %>
-              <div class="wiki-tag-suggestions">
+              <div class="wiki-tag-suggestions" hidden>
                 <% allTagsNormal.forEach(function(t) { %>
                   <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
                 <% }) %>
