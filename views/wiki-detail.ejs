@@ -980,16 +980,6 @@
                donc rendu une seule fois ici, en jaune. Sur téléphone, passe
                après "Images" avec un petit "Tags :" discret sur la même
                ligne (voir .wiki-right-tags-label, mobile uniquement). ─ %>
-        <% if (hasAnyTags) { %>
-          <div class="wiki-right-tags">
-            <span class="wiki-right-tags-label" data-fr="Tags&nbsp;:" data-en="Tags:">Tags&nbsp;:</span>
-            <% var _tierOrder={wiki:0,normal:1,parent:2}; function _trank(t){var r=_tierOrder[(tagRegistry[t.toLowerCase()]||{}).tier];return r!==undefined?r:1;} %>
-            <% page.tags.slice().sort(function(a,b){return _trank(a)-_trank(b);}).forEach(function(t){ %>
-              <%- include('partials/tag-badge', { tag: t }) %>
-            <% }) %>
-          </div>
-        <% } %>
-
           <div class="wiki-react wiki-right-reactions"
                data-id="<%= page.id %>"
                data-flame="<%= (page.flame || isFavorite) ? '1' : '0' %>"
@@ -1040,6 +1030,16 @@
               </div>
             <% } %>
           </div>
+
+        <% if (hasAnyTags) { %>
+          <div class="wiki-right-tags">
+            <span class="wiki-right-tags-label" data-fr="Tags&nbsp;:" data-en="Tags:">Tags&nbsp;:</span>
+            <% var _tierOrder={wiki:0,normal:1,parent:2}; function _trank(t){var r=_tierOrder[(tagRegistry[t.toLowerCase()]||{}).tier];return r!==undefined?r:1;} %>
+            <% page.tags.slice().sort(function(a,b){return _trank(a)-_trank(b);}).forEach(function(t){ %>
+              <%- include('partials/tag-badge', { tag: t }) %>
+            <% }) %>
+          </div>
+        <% } %>
         <% } %>
 
 
