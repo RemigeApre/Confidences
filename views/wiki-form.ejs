@@ -386,76 +386,7 @@
           </div>
         </details>
 
-        <%# ── Orce ── %>
-        <details class="prot-sb-details"<%= (pm.orce_name || pm.orce_content) ? ' open' : '' %>>
-          <summary class="prot-sb-details-summary">Orce <span class="wf-orce-badge">univers</span></summary>
-          <div class="prot-sb-details-body">
-            <input type="text"
-                   name="meta_orce_name"
-                   class="wf-sb-input"
-                   placeholder="Nom en Orce (ajout&eacute; en tag)&hellip;"
-                   value="<%= pm.orce_name || '' %>"
-                   maxlength="200" />
-            <% var _trOrce = (locals.editLang === 'en') ? ((locals.translations || {}).meta_orce_content || '') : (pm.orce_content || ''); %>
-            <textarea name="meta_orce_content"
-                      class="wiki-textarea wf-md-input"
-                      rows="5"
-                      placeholder="<%= locals.editLang === 'en' ? (pm.orce_content || 'Orce description EN\u2026') : 'Description Orce\u2026' %>"><%= _trOrce %></textarea>
-          </div>
-        </details>
-
-        <%# ── Auteurs (E-E-A-T) ── %>
-        <% var _hasAuthor = pm.author_main || (pm.authors_secondary && pm.authors_secondary.length); %>
-        <details class="prot-sb-details" id="wf-authors-details"<%= _hasAuthor ? ' open' : '' %>>
-          <summary class="prot-sb-details-summary">&#x1F58B; Auteur(s) <span class="wf-orce-badge" style="background:rgba(251,191,36,.15);color:#fbbf24;border-color:rgba(251,191,36,.3)">E-E-A-T</span></summary>
-          <div class="prot-sb-details-body">
-            <p class="prot-sb-label" style="margin-bottom:.8rem">L'auteur principal est affiché sur l'article et exposé en JSON-LD <code>Person</code>. Les auteurs secondaires apparaissent dans la section "Contributeurs".</p>
-            <% if (!locals.codexAuthors || !codexAuthors.length) { %>
-              <p class="prot-sb-label" style="color:#f87171">Aucun auteur créé. <a href="/ponhgup/auteurs" target="_blank" style="color:var(--accent)">Créer un auteur &rarr;</a></p>
-            <% } else { %>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem">
-                <div>
-                  <label class="prot-sb-label">Auteur principal</label>
-                  <select name="meta_author_main" class="wiki-input">
-                    <option value="">-- Aucun --</option>
-                    <% codexAuthors.forEach(function(a) { %>
-                      <option value="<%= a.slug %>"<%= pm.author_main === a.slug ? ' selected' : '' %>><%= a.name %><% if (a.credentials) { %> — <%= a.credentials %><% } %></option>
-                    <% }) %>
-                  </select>
-                </div>
-              </div>
-              <p class="prot-sb-label" style="margin-bottom:.4rem">Auteurs secondaires</p>
-              <div id="wf-authors-secondary-list"></div>
-              <button type="button" id="wf-authors-add" class="wf-sources-add-btn">+ Ajouter un contributeur</button>
-              <input type="hidden" name="meta_authors_secondary" id="wf-authors-secondary-hidden"
-                     value="<%= JSON.stringify(pm.authors_secondary || []) %>" />
-              <script id="wf-codex-authors-data" type="application/json"><%- JSON.stringify(codexAuthors.map(function(a){ return { slug: a.slug, name: a.name }; })) %></script>
-            <% } %>
-          </div>
-        </details>
-
-        <%# ── Wikipedia / sameAs (GEO) ── %>
-        <details class="prot-sb-details" id="wf-wikipedia-details"<%= pm.wikipedia_url ? ' open' : '' %>>
-          <summary class="prot-sb-details-summary">Wikipedia / sameAs <span class="wf-orce-badge">GEO</span></summary>
-          <div class="prot-sb-details-body">
-            <p class="prot-sb-label" style="margin-bottom:.6rem">URL Wikipedia (ou Wikidata) correspondant à cet article. Permet aux IA de vérifier l'identité de l'entité (<code>sameAs</code> dans le JSON-LD).</p>
-            <input type="url" name="meta_wikipedia_url"
-                   class="wiki-input"
-                   placeholder="https://fr.wikipedia.org/wiki/…"
-                   value="<%= pm.wikipedia_url || '' %>" />
-          </div>
-        </details>
-
-        <%# ── Sources / Citations ── %>
-        <details class="prot-sb-details" id="wf-sources-details"<%= (pm.sources && pm.sources.length) ? ' open' : '' %>>
-          <summary class="prot-sb-details-summary">Sources <span class="wf-orce-badge">GEO</span></summary>
-          <div class="prot-sb-details-body">
-            <p class="prot-sb-label" style="margin-bottom:.6rem">Références bibliographiques et liens sources cités dans l'article.</p>
-            <div id="wf-sources-list"></div>
-            <button type="button" id="wf-sources-add" class="wf-sources-add-btn">+ Ajouter une source</button>
-            <input type="hidden" name="meta_sources" id="wf-sources-hidden" value="<%= JSON.stringify(pm.sources || []) %>" />
-          </div>
-        </details>
+        <%# (Orce, Auteurs, Wikipedia, Sources → déplacés dans le tiroir avancé en bas) %>
 
         <%# ── Paramètres partenaires ── %>
         <div id="wf-partenaires-params" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
@@ -767,43 +698,103 @@
 
         </div><%# /wiki-position-meta %>
 
-        <%# ── Pages liées ── %>
-        <% if (page.id) { %>
-        <details class="prot-sb-details" open>
-          <summary class="prot-sb-details-summary">Pages li&eacute;es</summary>
-          <div class="prot-sb-details-body">
-            <div class="wiki-page-links" data-page-id="<%= page.id %>">
-              <div class="wiki-pl-body">
-                <div class="wiki-pl-section">
-                  <div class="wiki-pl-cards" data-role="links"></div>
-                </div>
-                <div class="wiki-pl-section wiki-pl-backlinks-section" hidden>
-                  <p class="wiki-pl-back-label">R&eacute;f&eacute;renc&eacute;e par</p>
-                  <div class="wiki-pl-cards" data-role="backlinks"></div>
-                </div>
-              </div>
-              <div class="wiki-pl-add">
-                <input type="text" class="wiki-pl-search" placeholder="Lier une autre page&hellip;" autocomplete="off" />
-                <ul class="wiki-pl-results"></ul>
-              </div>
-            </div>
-          </div>
-        </details>
+        <%# ── Tiroir avancé (Orce / Auteurs / Wikipedia / Sources / Pages liées) ── %>
+        <% var _hasAuthor = pm.author_main || (pm.authors_secondary && pm.authors_secondary.length); %>
+        <% var _drawerOpen = !!(pm.orce_name || pm.orce_content || _hasAuthor || pm.wikipedia_url || (pm.sources && pm.sources.length)); %>
+        <details class="wf-advanced-drawer"<%= _drawerOpen ? ' open' : '' %>>
+          <summary class="wf-advanced-drawer-summary">···</summary>
 
-        <%# ── Questions liées ── %>
-        <details class="prot-sb-details">
-          <summary class="prot-sb-details-summary">Questions associ&eacute;es</summary>
-          <div class="prot-sb-details-body">
-            <div class="wiki-question-links" data-page-id="<%= page.id %>">
-              <ul class="wiki-ql-list"></ul>
-              <div class="wiki-ql-add">
-                <input type="text" class="wiki-ql-search" placeholder="Associer une question&hellip;" autocomplete="off" />
-                <ul class="wiki-ql-results"></ul>
+          <%# Orce %>
+          <details class="prot-sb-details"<%= (pm.orce_name || pm.orce_content) ? ' open' : '' %>>
+            <summary class="prot-sb-details-summary">Orce <span class="wf-orce-badge">univers</span></summary>
+            <div class="prot-sb-details-body">
+              <input type="text" name="meta_orce_name" class="wf-sb-input"
+                     placeholder="Nom en Orce (ajout&eacute; en tag)&hellip;"
+                     value="<%= pm.orce_name || '' %>" maxlength="200" />
+              <% var _trOrce = (locals.editLang === 'en') ? ((locals.translations || {}).meta_orce_content || '') : (pm.orce_content || ''); %>
+              <textarea name="meta_orce_content" class="wiki-textarea wf-md-input" rows="4"
+                        placeholder="<%= locals.editLang === 'en' ? (pm.orce_content || 'Orce EN\u2026') : 'Description Orce\u2026' %>"><%= _trOrce %></textarea>
+            </div>
+          </details>
+
+          <%# Auteurs %>
+          <details class="prot-sb-details" id="wf-authors-details"<%= _hasAuthor ? ' open' : '' %>>
+            <summary class="prot-sb-details-summary">Auteur(s) <span class="wf-orce-badge" style="background:rgba(251,191,36,.15);color:#fbbf24;border-color:rgba(251,191,36,.3)">E-E-A-T</span></summary>
+            <div class="prot-sb-details-body">
+              <% if (!locals.codexAuthors || !codexAuthors.length) { %>
+                <p class="prot-sb-label" style="color:#f87171">Aucun auteur. <a href="/ponhgup/auteurs" target="_blank" style="color:var(--accent)">Cr&eacute;er &rarr;</a></p>
+              <% } else { %>
+                <label class="prot-sb-label" style="margin-bottom:.3rem">Auteur principal</label>
+                <select name="meta_author_main" class="wiki-input" style="margin-bottom:.6rem">
+                  <option value="">-- Aucun --</option>
+                  <% codexAuthors.forEach(function(a) { %>
+                    <option value="<%= a.slug %>"<%= pm.author_main === a.slug ? ' selected' : '' %>><%= a.name %><% if (a.credentials) { %> — <%= a.credentials %><% } %></option>
+                  <% }) %>
+                </select>
+                <p class="prot-sb-label" style="margin-bottom:.3rem">Auteurs secondaires</p>
+                <div id="wf-authors-secondary-list"></div>
+                <button type="button" id="wf-authors-add" class="wf-sources-add-btn">+ Ajouter un contributeur</button>
+                <input type="hidden" name="meta_authors_secondary" id="wf-authors-secondary-hidden" value="<%= JSON.stringify(pm.authors_secondary || []) %>" />
+                <script id="wf-codex-authors-data" type="application/json"><%- JSON.stringify(codexAuthors.map(function(a){ return { slug: a.slug, name: a.name }; })) %></script>
+              <% } %>
+            </div>
+          </details>
+
+          <%# Wikipedia %>
+          <details class="prot-sb-details" id="wf-wikipedia-details"<%= pm.wikipedia_url ? ' open' : '' %>>
+            <summary class="prot-sb-details-summary">Wikipedia / sameAs <span class="wf-orce-badge">GEO</span></summary>
+            <div class="prot-sb-details-body">
+              <input type="url" name="meta_wikipedia_url" class="wiki-input"
+                     placeholder="https://fr.wikipedia.org/wiki/&hellip;"
+                     value="<%= pm.wikipedia_url || '' %>" />
+            </div>
+          </details>
+
+          <%# Sources %>
+          <details class="prot-sb-details" id="wf-sources-details"<%= (pm.sources && pm.sources.length) ? ' open' : '' %>>
+            <summary class="prot-sb-details-summary">Sources <span class="wf-orce-badge">GEO</span></summary>
+            <div class="prot-sb-details-body">
+              <div id="wf-sources-list"></div>
+              <button type="button" id="wf-sources-add" class="wf-sources-add-btn">+ Ajouter une source</button>
+              <input type="hidden" name="meta_sources" id="wf-sources-hidden" value="<%= JSON.stringify(pm.sources || []) %>" />
+            </div>
+          </details>
+
+          <%# Pages liées + Questions %>
+          <% if (page.id) { %>
+          <details class="prot-sb-details">
+            <summary class="prot-sb-details-summary">Pages li&eacute;es</summary>
+            <div class="prot-sb-details-body">
+              <div class="wiki-page-links" data-page-id="<%= page.id %>">
+                <div class="wiki-pl-body">
+                  <div class="wiki-pl-section"><div class="wiki-pl-cards" data-role="links"></div></div>
+                  <div class="wiki-pl-section wiki-pl-backlinks-section" hidden>
+                    <p class="wiki-pl-back-label">R&eacute;f&eacute;renc&eacute;e par</p>
+                    <div class="wiki-pl-cards" data-role="backlinks"></div>
+                  </div>
+                </div>
+                <div class="wiki-pl-add">
+                  <input type="text" class="wiki-pl-search" placeholder="Lier une autre page&hellip;" autocomplete="off" />
+                  <ul class="wiki-pl-results"></ul>
+                </div>
               </div>
             </div>
-          </div>
-        </details>
-        <% } %>
+          </details>
+          <details class="prot-sb-details">
+            <summary class="prot-sb-details-summary">Questions associ&eacute;es</summary>
+            <div class="prot-sb-details-body">
+              <div class="wiki-question-links" data-page-id="<%= page.id %>">
+                <ul class="wiki-ql-list"></ul>
+                <div class="wiki-ql-add">
+                  <input type="text" class="wiki-ql-search" placeholder="Associer une question&hellip;" autocomplete="off" />
+                  <ul class="wiki-ql-results"></ul>
+                </div>
+              </div>
+            </div>
+          </details>
+          <% } %>
+
+        </details><%# /wf-advanced-drawer %>
 
       </div><%# /wf-sidebar-inner %>
     </aside><%# /wf-sidebar-right %>
