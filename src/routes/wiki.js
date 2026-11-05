@@ -53,6 +53,7 @@ const {
   updateWikiPageSlug,
   invalidateSfwSet,
   setWikiPageSfwPaths,
+  getAllTagMeta,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
@@ -587,6 +588,8 @@ function getAllTags(pages) {
   const counts = new Map();
   pages.forEach((p) => p.tags.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
   PRESET_TAGS.forEach((t) => { if (!counts.has(t)) counts.set(t, 0); });
+  // Inclure aussi les tags connus dans tag_meta (sous-tags, standalone) même s'ils ne sont sur aucune page
+  Object.keys(getAllTagMeta()).forEach((t) => { if (!counts.has(t)) counts.set(t, 0); });
   return Array.from(counts.keys()).sort((a, b) => {
     const diff = (counts.get(b) || 0) - (counts.get(a) || 0);
     return diff !== 0 ? diff : a.localeCompare(b, "fr");
