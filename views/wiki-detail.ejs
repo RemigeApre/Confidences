@@ -291,23 +291,30 @@
       <%# ─ VOLET GAUCHE : métadonnées page (PC) ─ %>
       <aside class="wiki-detail-left">
 
-        <%# Ligne du haut : catégorie + icône éditoriale en face %>
-        <div class="wiki-left-top-row">
-          <% if (cat) { %>
-            <a href="/wiki/categorie/<%= page.category %>" class="wiki-left-cat-link" data-fr="<%= cat.label %>" data-en="<%= WD_CAT_EN[page.category] || cat.label %>"><%= cat.label %></a>
-          <% } %>
-          <% if (page.category === 'partenaires' && (pm.sous_cat === 'monstre' || pm.sous_cat === 'animaux')) { %>
-            <details class="wiki-editorial-note">
-              <summary class="wiki-editorial-icon" title="Note &eacute;ditoriale" data-fr="Note éditoriale" data-en="Editorial note">!</summary>
-              <div class="wiki-editorial-body">
-                <p class="wiki-editorial-body-title" data-fr="Note éditoriale" data-en="Editorial note">Note &eacute;ditoriale</p>
-                <p data-fr="La zoophilie comme fantasme n'est traitée que sur l'idée femme–animal, idem pour les monstres, femme–monstre, sauf cas particulier. C'est un choix éditorial, et une volonté." data-en="Zoophilia as a fantasy is only covered from the woman–animal perspective, same for monsters (woman–monster), except in specific cases. This is an editorial choice, and a deliberate one.">La zoophilie comme fantasme n&rsquo;est trait&eacute;e que sur l&rsquo;id&eacute;e femme&ndash;animal, idem pour les monstres, femme&ndash;monstre, sauf cas particulier. C&rsquo;est un choix &eacute;ditorial, et une volont&eacute;.</p>
-                <% if (currentUser) { %>
-                  <p data-fr="Le rapport femme–autre espèce part du postulat où l'animal est consentant, ce que le rapport homme–animal ne permet pas du tout. De plus, c'est aussi un choix esthétique : le site et sa ligne éditoriale ont goût de l'élégance, que ne posséderait en rien l'homme en ce contexte de fantasme." data-en="The woman–other species dynamic rests on the premise that the animal is willing, which the man–animal dynamic simply does not allow. It is also an aesthetic choice: the site and its editorial line favour elegance, something a male perspective would entirely lack in this fantasy context.">Le rapport femme&ndash;autre esp&egrave;ce part du postulat o&ugrave; l&rsquo;animal est consentant, ce que le rapport homme&ndash;animal ne permet pas du tout. De plus, c&rsquo;est aussi un choix esth&eacute;tique&nbsp;: le site et sa ligne &eacute;ditoriale ont go&ucirc;t de l&rsquo;&eacute;l&eacute;gance, que ne poss&egrave;derait en rien l&rsquo;homme en ce contexte de fantasme.</p>
-                <% } %>
-              </div>
-            </details>
-          <% } %>
+        <%# Bandeau catégorie : retour + nom centré (nouveau design) %>
+        <div class="wiki-chapter-hero wiki-left-cat-hero">
+          <div class="wiki-chapter-hero-top">
+            <a href="<%= backHref %>" class="wiki-chapter-hero-back" title="<%= backLabel %>" aria-label="<%= backLabel %>">&#8592;</a>
+            <% if (cat) { %>
+              <a href="/wiki/categorie/<%= page.category %>" class="wiki-chapter-hero-title wiki-left-cat-hero-title" data-fr="<%= cat.label %>" data-en="<%= WD_CAT_EN[page.category] || cat.label %>"><%= cat.label %></a>
+            <% } else { %>
+              <span class="wiki-chapter-hero-title wiki-left-cat-hero-title"></span>
+            <% } %>
+            <% if (page.category === 'partenaires' && (pm.sous_cat === 'monstre' || pm.sous_cat === 'animaux')) { %>
+              <details class="wiki-editorial-note">
+                <summary class="wiki-editorial-icon" title="Note &eacute;ditoriale" data-fr="Note éditoriale" data-en="Editorial note">!</summary>
+                <div class="wiki-editorial-body">
+                  <p class="wiki-editorial-body-title" data-fr="Note éditoriale" data-en="Editorial note">Note &eacute;ditoriale</p>
+                  <p data-fr="La zoophilie comme fantasme n'est traitée que sur l'idée femme–animal, idem pour les monstres, femme–monstre, sauf cas particulier. C'est un choix éditorial, et une volonté." data-en="Zoophilia as a fantasy is only covered from the woman–animal perspective, same for monsters (woman–monster), except in specific cases. This is an editorial choice, and a deliberate one.">La zoophilie comme fantasme n&rsquo;est trait&eacute;e que sur l&rsquo;id&eacute;e femme&ndash;animal, idem pour les monstres, femme&ndash;monstre, sauf cas particulier. C&rsquo;est un choix &eacute;ditorial, et une volont&eacute;.</p>
+                  <% if (currentUser) { %>
+                    <p data-fr="Le rapport femme–autre espèce part du postulat où l'animal est consentant, ce que le rapport homme–animal ne permet pas du tout. De plus, c'est aussi un choix esthétique : le site et sa ligne éditoriale ont goût de l'élégance, que ne posséderait en rien l'homme en ce contexte de fantasme." data-en="The woman–other species dynamic rests on the premise that the animal is willing, which the man–animal dynamic simply does not allow. It is also an aesthetic choice: the site and its editorial line favour elegance, something a male perspective would entirely lack in this fantasy context.">Le rapport femme&ndash;autre esp&egrave;ce part du postulat o&ugrave; l&rsquo;animal est consentant, ce que le rapport homme&ndash;animal ne permet pas du tout. De plus, c&rsquo;est aussi un choix esth&eacute;tique&nbsp;: le site et sa ligne &eacute;ditoriale ont go&ucirc;t de l&rsquo;&eacute;l&eacute;gance, que ne poss&egrave;derait en rien l&rsquo;homme en ce contexte de fantasme.</p>
+                  <% } %>
+                </div>
+              </details>
+            <% } else { %>
+              <span></span>
+            <% } %>
+          </div>
         </div>
 
         <% if (wdCanSeeOwned && page.owned) { %>
@@ -890,21 +897,6 @@
 
       <%# ─ COLONNE DROITE : panneau info (PC) ─ %>
       <aside class="wiki-detail-right">
-
-        <%# ─ Header : retour + catégories ─ %>
-        <div class="wiki-right-header">
-          <a href="<%= backHref %>" class="wiki-right-back" title="<%= backLabel %>">&#8592;</a>
-          <div class="wiki-right-header-cats">
-            <% if (cat) { %>
-              <a href="/wiki/categorie/<%= page.category %>" class="wiki-right-cat-text" data-fr="<%= cat.label %>" data-en="<%= WD_CAT_EN[page.category] || cat.label %>"><%= cat.label %></a>
-            <% } %>
-            <% (page.extraCategories || []).forEach(function (eck) { var ecat = categories.find(function (c) { return c.key === eck; }); if (ecat) { %>
-              <span class="wiki-right-cat-sep">&middot;</span>
-              <a href="/wiki/categorie/<%= eck %>" class="wiki-right-cat-text" data-fr="<%= ecat.label %>" data-en="<%= WD_CAT_EN[eck] || ecat.label %>"><%= ecat.label %></a>
-            <% } }) %>
-            <% if (wdCanSeeOwned && page.owned) { %><span class="wiki-right-owned-tag">&#9733;</span><% } %>
-          </div>
-        </div>
 
         <%# ─ Navigation PC : titre encadré par prev/next ─ %>
         <div class="wiki-right-nav">
