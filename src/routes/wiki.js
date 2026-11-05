@@ -58,6 +58,32 @@ const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
 const { filterOff, isOffForUser, specialTagOf } = require("../specialContent");
 
+// ── Cache léger (TTL 5 min) ───────────────────────────────────────────────
+const CACHE_TTL = 5 * 60 * 1000;
+let _pagesCache = null;      // { data, at }
+let _suggestCache = null;    // Map<pageId, { data, at }>
+
+function getCachedPages() {
+  if (_pagesCache && Date.now() - _pagesCache.at < CACHE_TTL) return _pagesCache.data;
+  _pagesCache = { data: listWikiPagesLight(), at: Date.now() };
+  return _pagesCache.data;
+}
+
+function getCachedSuggestions(page, allPages) {
+  if (!_suggestCache) _suggestCache = new Map();
+  const entry = _suggestCache.get(page.id);
+  if (entry && Date.now() - entry.at < CACHE_TTL) return entry.data;
+  const data = computeSuggestions(page, allPages);
+  _suggestCache.set(page.id, { data, at: Date.now() });
+  return data;
+}
+
+function invalidateWikiCache() {
+  _pagesCache = null;
+  _suggestCache = null;
+}
+// ─────────────────────────────────────────────────────────────────────────
+
 const CATEGORIES = [
   { key: "position",   label: "Positions",   desc: "Postures, Kama-sutra et toutes leurs variantes.",                               hue: 270 },
   { key: "lieux",      label: "Lieux",       desc: "Endroits, contextes et ambiances où se déroule l\u2019action.",                hue: 140 },
@@ -601,7 +627,7 @@ function buildWikiRouter(config) {
   const CTX = { categories: CATEGORIES, fantasmesSubs: FANTASMES_SUBCATS, pratiquesSubs: PRATIQUES_SUBCATS, objetsSubs: OBJETS_SUBCATS, tenuesSubs: TENUES_SUBCATS };
 
   function sortedPages() {
-    return listWikiPagesLight().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
+    return getCachedPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
   }
 
   // Lookup a page by numeric ID or slug. Returns { page, redirectSlug }.
@@ -816,6 +842,7 @@ function buildWikiRouter(config) {
 
     const { id: newId, slug: newSlug } = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, slug: req.body.meta_slug || '' });
     invalidateSfwSet();
+    invalidateWikiCache();
     syncPageGalleryImages(newId, title, imagePaths, meta);
     res.redirect(`/wiki/${newSlug || newId}`);
   });
@@ -961,13 +988,13 @@ function buildWikiRouter(config) {
     Object.assign(page, getUserReaction(userId, "wiki", page.id));
     mergePartnerReaction([page], req.user ? req.user.partnerId : null, "wiki");
     const allPages = filterOff(mergeUserReactions(
-      listWikiPagesLight(),
+      getCachedPages(),
       userId, "wiki"
     ), req.user);
     const idx = allPages.findIndex((p) => p.id === page.id);
     const prevPage = idx > 0 ? { id: allPages[idx - 1].id, slug: allPages[idx - 1].slug, title: allPages[idx - 1].title } : null;
     const nextPage = idx < allPages.length - 1 ? { id: allPages[idx + 1].id, slug: allPages[idx + 1].slug, title: allPages[idx + 1].title } : null;
-    const suggestions = computeSuggestions(page, allPages);
+    const suggestions = getCachedSuggestions(page, allPages);
     const back = wikiBackTarget(req);
     const pageIsFavorite = req.user ? isFavorite(req.user.id, "wiki", page.id) : false;
     let userNote = "";
@@ -1058,6 +1085,7 @@ function buildWikiRouter(config) {
     const cardSummary = req.body.card_summary !== undefined ? String(req.body.card_summary || '').trim() : undefined;
     updateWikiPage(id, { title, category, content, tags: enrichedTags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, cardSummary: cardSummary || null });
     invalidateSfwSet();
+    invalidateWikiCache();
     syncPageGalleryImages(id, title, imagePaths, meta, existing.title.trim().toLowerCase());
     // Update slug if provided and different from current
     let finalSlug = existing.slug;
@@ -1191,6 +1219,7 @@ function buildWikiRouter(config) {
       const page = getWikiPage(id);
       cat = page ? page.category : "";
       deleteWikiPage(id);
+      invalidateWikiCache();
     }
     res.redirect(cat ? `/wiki/categorie/${cat}` : "/wiki");
   });
