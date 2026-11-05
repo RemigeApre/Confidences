@@ -904,6 +904,8 @@ app.get("/tags", function (req, res) {
   try { parentMap = getAllTagParents(); } catch (_) {}
   var subcategoryMap = {};
   try { subcategoryMap = getAllTagSubcategories(); } catch (_) {}
+  var rowidMap = {};
+  try { db.prepare("SELECT tag, rowid FROM tag_meta").all().forEach(function (r) { rowidMap[r.tag] = r.rowid; }); } catch (_) {}
 
   var tags = Array.from(allKeys).map(function (t) {
     return {
@@ -914,6 +916,7 @@ app.get("/tags", function (req, res) {
       category:    categoryMap[t] || "autre",
       parent:      parentMap[t] || "",
       subcategory: subcategoryMap[t] || "",
+      rowid:       rowidMap[t] || 0,
     };
   }).sort(function (a, b) {
     var d = b.count - a.count;

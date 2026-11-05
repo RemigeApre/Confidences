@@ -51,6 +51,17 @@
       </div>
 
       <div class="wiki-sidebar-filters">
+        <%# ─ Tri ─ %>
+        <div class="wiki-filter-section">
+          <span class="wiki-filter-label">Trier par</span>
+          <select class="wiki-sort-select" id="tags-sort" style="width:100%">
+            <option value="count">Popularité</option>
+            <option value="az">A &#8594; Z</option>
+            <option value="za">Z &#8594; A</option>
+            <option value="new">Nouveauté</option>
+          </select>
+        </div>
+
         <%# ─ Filtre par catégorie ─ %>
         <div class="wiki-filter-section">
           <span class="wiki-filter-label">Catégorie</span>
@@ -245,6 +256,8 @@
                  data-subcategory="<%= item.subcategory || '' %>"
                  data-parent="<%= item.parent || '' %>"
                  data-wiki-id="<%= wikiId || '' %>"
+                 data-count="<%= item.count %>"
+                 data-rowid="<%= item.rowid || 0 %>"
                  data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
                  style="--tag-pct: <%= item.pct.toFixed(3) %>">
               <span class="tags-item-name"><%= item.tag %></span>
@@ -269,6 +282,8 @@
                data-subcategory=""
                data-parent="<%= item.parent || '' %>"
                data-wiki-id="<%= wikiId || '' %>"
+               data-count="<%= item.count %>"
+               data-rowid="<%= item.rowid || 0 %>"
                data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
                <% if (idx >= CAT_MAX) { %>data-cat-overflow="1"<% } %>
                style="--tag-pct: <%= item.pct.toFixed(3) %>">
@@ -297,6 +312,8 @@
            data-subcategory="<%= item.subcategory || '' %>"
            data-parent="<%= item.parent || '' %>"
            data-wiki-id="<%= wikiId || '' %>"
+           data-count="<%= item.count %>"
+           data-rowid="<%= item.rowid || 0 %>"
            data-breakdown='<%= JSON.stringify(item.breakdown).replace(/'/g, "&#39;") %>'
            style="--tag-pct: <%= item.pct.toFixed(3) %>">
         <span class="tags-item-name"><%= item.tag %></span>
@@ -415,7 +432,8 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
   var typeStates   = {};   // type → 0 neutre / 1 inclus / 2 exclu
   var activeCat    = "";   // catégorie active (vide = toutes)
   var activeSubcat = "";   // sous-catégorie active (femme/homme uniquement)
-  var hideVariants = true;   // inclusions masquées par défaut
+  var hideVariants = true; // inclusions masquées par défaut
+  var activeSort   = "count"; // tri actif
 
   var CATS_WITH_SUBCAT = <%- JSON.stringify(CAT_WITH_SUB) %>;
   var CAT_LABELS_JS    = <%- JSON.stringify(CAT_LABELS) %>;
@@ -440,8 +458,9 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
     var hasSearch   = !!q;
     var hasType     = includedTypes.length > 0 || excludedTypes.length > 0;
     var filterNone  = activeCat === "__none__";
+    var hasCustomSort = activeSort !== "count";
 
-    if (!hasSearch && !hasType && !filterNone) {
+    if (!hasSearch && !hasType && !filterNone && !hasCustomSort) {
       // ── Mode groupé : cat/subcat/variants filtrés directement sur les groupes ──
       groupedView.hidden = false;
       filteredView.hidden = true;
@@ -511,6 +530,18 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
 
     if (emptyMsg) emptyMsg.hidden = visible > 0;
     if (countDisplay) countDisplay.textContent = visible;
+
+    // Trier les items de la vue filtrée
+    if (activeSort !== "count") {
+      var allItems = Array.from(filteredView.querySelectorAll(".tags-item"));
+      allItems.sort(function (a, b) {
+        if (activeSort === "az") return a.dataset.tag.localeCompare(b.dataset.tag, "fr", { sensitivity: "base" });
+        if (activeSort === "za") return b.dataset.tag.localeCompare(a.dataset.tag, "fr", { sensitivity: "base" });
+        if (activeSort === "new") return parseInt(b.dataset.rowid || 0) - parseInt(a.dataset.rowid || 0);
+        return 0;
+      });
+      allItems.forEach(function (item) { filteredView.appendChild(item); });
+    }
   }
 
   /* ── Blacklist ── */
@@ -526,6 +557,15 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
     var maskedCount = document.getElementById("tags-masked-count");
     if (maskedCount) maskedCount.textContent = blacklist.length ? " (" + blacklist.length + ")" : "";
   });
+
+  /* ── Tri ── */
+  var sortSelect = document.getElementById("tags-sort");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", function () {
+      activeSort = sortSelect.value;
+      applyFilters();
+    });
+  }
 
   /* ── Recherche ── */
   var searchDebounceTimer = null;
