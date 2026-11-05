@@ -109,7 +109,7 @@ function buildProfilQuizRouter(config) {
     let scores = {};
     try { scores = JSON.parse(attempt.scores || '{}'); } catch {}
     const history = db.listProfilQuizAttempts(type.id, req.user.id);
-    res.render("profil-quiz-result", { config, type, attempt, axes, archetype, scores, history });
+    res.render("profil-quiz-result", { config, type, attempt, axes, archetype, archetypes, scores, history });
   });
 
   // Historique

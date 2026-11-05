@@ -326,3 +326,59 @@
 .wf-ymyl-sources>div:empty{display:none}
 .wf-ymyl-add-src{background:none!important;border:none!important;padding:.2rem .3rem!important;font-size:.75rem!important;color:rgba(251,191,36,.45)!important;cursor:pointer;transition:color .15s;width:auto!important}
 .wf-ymyl-add-src:hover{color:rgba(251,191,36,.85)!important}
+
+/* ── Quiz : prise du test multi-questions ───────────────────────────── */
+.pqtake-top{text-align:center;margin-bottom:1.5rem}
+.pqtake-counter-sub{font-size:.75rem;color:var(--muted);margin:.15rem 0 0}
+.pqtake-page{animation:pqtake-in .18s ease}
+@keyframes pqtake-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pqtake-row{padding:.25rem 0}
+.pqtake-row-head{display:flex;align-items:center;gap:.55rem;margin-bottom:.4rem}
+.pqtake-row-num{display:inline-flex;align-items:center;justify-content:center;width:1.55rem;height:1.55rem;border-radius:50%;background:rgba(139,92,246,.22);color:#a78bfa;font-size:.72rem;font-weight:700;flex-shrink:0}
+.pqtake-question--left{text-align:left;min-height:auto;margin-bottom:1rem}
+.pqtake-row-sep{height:1px;background:rgba(255,255,255,.07);margin:1.25rem 0}
+
+/* ── Résultat : carte profil ────────────────────────────────────────── */
+.pqres-profile-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:linear-gradient(135deg,hsl(270,35%,16%),hsl(270,25%,12%));border:1px solid hsl(270,40%,30%);border-radius:12px;padding:.9rem 1.1rem;margin-bottom:1.75rem}
+.pqres-profile-card-inner{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;min-width:0}
+.pqres-profile-card-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:hsl(270,50%,65%);flex-shrink:0}
+.pqres-profile-card-code{font-size:1.3rem;font-weight:800;letter-spacing:.12em;color:#e2e8f0}
+.pqres-profile-card-name{font-size:.95rem;font-weight:600;color:hsl(270,70%,72%)}
+.pqres-copy-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;color:rgba(255,255,255,.5);font-size:1rem;width:2.2rem;height:2.2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s,color .15s}
+.pqres-copy-btn:hover{background:rgba(255,255,255,.13);color:#fff}
+.pqres-actions{margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap}
+
+/* ── Résultat : volet archétypes ─────────────────────────────────────── */
+.pqres-arch-panel{margin-top:2.5rem;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden}
+.pqres-arch-panel-summary{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.1rem;cursor:pointer;list-style:none}
+.pqres-arch-panel-summary::-webkit-details-marker{display:none}
+.pqres-arch-panel-title{font-size:.85rem;font-weight:700;color:#e2e8f0;flex:1}
+.pqres-arch-panel-hint{font-size:.75rem;color:var(--muted)}
+.pqres-arch-panel-chevron{color:var(--muted);font-size:1.1rem;transition:transform .2s}
+.pqres-arch-panel[open]>.pqres-arch-panel-summary .pqres-arch-panel-chevron{transform:rotate(90deg)}
+.pqres-arch-panel-body{padding:.25rem .75rem .75rem}
+.pqres-arch-panel-intro{font-size:.8rem;color:var(--muted);line-height:1.6;margin:.25rem 0 1.25rem;padding:0 .35rem}
+
+/* monde */
+.pqres-world-block{margin-bottom:.35rem;border:1px solid rgba(255,255,255,.07);border-radius:10px;overflow:hidden}
+.pqres-world-head{display:flex;align-items:center;gap:.6rem;padding:.65rem .85rem;cursor:pointer;list-style:none}
+.pqres-world-head::-webkit-details-marker{display:none}
+.pqres-world-dot{width:.65rem;height:.65rem;border-radius:50%;flex-shrink:0}
+.pqres-world-name{font-size:.82rem;font-weight:700;color:#e2e8f0}
+.pqres-world-tagline{font-size:.72rem;color:var(--muted);flex:1}
+.pqres-world-code-hint{font-size:.68rem;font-family:monospace;color:var(--muted)}
+.pqres-world-chevron{color:var(--muted);font-size:.95rem;transition:transform .2s}
+.pqres-world-block[open]>.pqres-world-head .pqres-world-chevron{transform:rotate(90deg)}
+.pqres-world-body{padding:.35rem .5rem .5rem}
+
+/* archétype item */
+.pqres-arch-item{display:flex;gap:.65rem;padding:.5rem .4rem;border-bottom:1px solid rgba(255,255,255,.05);align-items:flex-start}
+.pqres-arch-item:last-child{border-bottom:none}
+.pqres-arch-item.is-mine{background:rgba(139,92,246,.1);border-radius:7px;border:1px solid rgba(139,92,246,.25);border-bottom-color:rgba(139,92,246,.25)}
+.pqres-arch-code-col{flex-shrink:0;padding-top:.1rem}
+.pqres-arch-code{font-family:monospace;font-size:.68rem;color:var(--muted);display:block}
+.pqres-arch-info{flex:1;min-width:0}
+.pqres-arch-name-row{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.15rem}
+.pqres-arch-name{font-size:.82rem;font-weight:700;color:#e2e8f0}
+.pqres-arch-mine-badge{font-size:.62rem;background:rgba(139,92,246,.3);color:#c4b5fd;border:1px solid rgba(139,92,246,.4);border-radius:999px;padding:.1rem .45rem;white-space:nowrap}
+.pqres-arch-short{font-size:.75rem;color:var(--muted);line-height:1.45;margin:0}

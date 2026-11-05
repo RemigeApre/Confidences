@@ -1,4 +1,11 @@
 <%- include('partials/head', { title: type.name }) %>
+<%
+  var PAGE_SIZE = 5;
+  var pageGroups = [];
+  for (var pi = 0; pi < questions.length; pi += PAGE_SIZE) {
+    pageGroups.push(questions.slice(pi, Math.min(pi + PAGE_SIZE, questions.length)));
+  }
+%>
 <main class="container" style="--ch-hue: 270">
   <%- include('partials/top-nav', { config: config, navTitle: type.name, navBack: '/quizz/profil' }) %>
 
@@ -6,30 +13,47 @@
     <div class="pqtake-progress">
       <div class="pqtake-progress-fill" id="pqtake-fill" style="width:0%"></div>
     </div>
-    <p class="pqtake-counter" id="pqtake-counter">Question 1 / <%= questions.length %></p>
 
-    <div id="pqtake-questions">
-      <% questions.forEach(function(q, i) { %>
-      <div class="pqtake-q" data-index="<%= i %>" style="display:<%= i === 0 ? 'block' : 'none' %>">
-        <p class="pqtake-axis-label"><%= q.axis_name %></p>
-        <p class="pqtake-question"><%= q.text %></p>
-        <div class="pqtake-scale">
-          <div class="pqtake-scale-labels">
-            <span>Pas du tout</span>
-            <span>Neutre</span>
-            <span>Tout à fait</span>
+    <div class="pqtake-top">
+      <p class="pqtake-counter" id="pqtake-counter">Étape&nbsp;1&nbsp;/&nbsp;<%= pageGroups.length %></p>
+      <p class="pqtake-counter-sub" id="pqtake-counter-sub"></p>
+    </div>
+
+    <div id="pqtake-pages">
+      <% pageGroups.forEach(function(pageQs, pageIdx) { %>
+      <div class="pqtake-page" data-page="<%= pageIdx %>" style="display:<%= pageIdx === 0 ? 'block' : 'none' %>">
+        <% pageQs.forEach(function(q, qi) { %>
+
+        <div class="pqtake-row">
+          <div class="pqtake-row-head">
+            <span class="pqtake-row-num"><%= pageIdx * PAGE_SIZE + qi + 1 %></span>
+            <span class="pqtake-axis-label"><%= q.axis_name %></span>
           </div>
-          <div class="pqtake-options">
-            <% [1,2,3,4,5].forEach(function(v) { %>
-            <div class="pqtake-opt">
-              <input type="radio" name="q_<%= q.id %>" id="q_<%= q.id %>_<%= v %>" value="<%= v %>" data-qid="<%= q.id %>">
-              <label for="q_<%= q.id %>_<%= v %>"><%= v %></label>
+          <p class="pqtake-question pqtake-question--left"><%= q.text %></p>
+          <div class="pqtake-scale">
+            <div class="pqtake-scale-labels">
+              <span>Pas du tout</span>
+              <span>Neutre</span>
+              <span>Tout à fait</span>
             </div>
-            <% }) %>
+            <div class="pqtake-options">
+              <% [1,2,3,4,5].forEach(function(v) { %>
+              <div class="pqtake-opt">
+                <input type="radio" name="q_<%= q.id %>" id="q_<%= q.id %>_<%= v %>" value="<%= v %>" data-qid="<%= q.id %>">
+                <label for="q_<%= q.id %>_<%= v %>"><%= v %></label>
+              </div>
+              <% }) %>
+            </div>
           </div>
         </div>
+
+        <% if (qi < pageQs.length - 1) { %>
+        <div class="pqtake-row-sep"></div>
+        <% } %>
+
+        <% }); %>
       </div>
-      <% }) %>
+      <% }); %>
     </div>
 
     <div class="pqtake-nav">
@@ -43,32 +67,37 @@
 </main>
 <script>
 (function() {
-  var total = <%= questions.length %>;
-  var current = 0;
-  var answers = {};
-  var slug = '<%= type.slug %>';
+  var totalPages = <%= pageGroups.length %>;
+  var totalQ     = <%= questions.length %>;
+  var pageSize   = <%= PAGE_SIZE %>;
+  var current    = 0;
+  var answers    = {};
+  var slug       = '<%= type.slug %>';
 
-  var qs = document.querySelectorAll('.pqtake-q');
-  var fill = document.getElementById('pqtake-fill');
-  var counter = document.getElementById('pqtake-counter');
-  var prevBtn = document.getElementById('pqtake-prev');
-  var nextBtn = document.getElementById('pqtake-next');
+  var pages     = document.querySelectorAll('.pqtake-page');
+  var fill      = document.getElementById('pqtake-fill');
+  var counter   = document.getElementById('pqtake-counter');
+  var counterSub= document.getElementById('pqtake-counter-sub');
+  var prevBtn   = document.getElementById('pqtake-prev');
+  var nextBtn   = document.getElementById('pqtake-next');
   var submitBtn = document.getElementById('pqtake-submit');
 
   function show(idx) {
-    qs.forEach(function(el) { el.style.display = 'none'; });
-    qs[idx].style.display = 'block';
+    pages.forEach(function(el) { el.style.display = 'none'; });
+    pages[idx].style.display = 'block';
     current = idx;
-    counter.textContent = 'Question ' + (idx + 1) + ' / ' + total;
-    fill.style.width = Math.round((idx / total) * 100) + '%';
-    prevBtn.disabled = idx === 0;
-    if (idx === total - 1) {
-      nextBtn.style.display = 'none';
-      submitBtn.style.display = 'inline-block';
-    } else {
-      nextBtn.style.display = 'inline-block';
-      submitBtn.style.display = 'none';
-    }
+
+    var qFrom = idx * pageSize + 1;
+    var qTo   = Math.min((idx + 1) * pageSize, totalQ);
+    counter.textContent    = 'Étape\u00a0' + (idx + 1) + '\u00a0/\u00a0' + totalPages;
+    counterSub.textContent = 'Questions\u00a0' + qFrom + '\u2013' + qTo + '\u00a0sur\u00a0' + totalQ;
+    fill.style.width       = Math.round(((idx + 1) / totalPages) * 100) + '%';
+
+    prevBtn.disabled          = idx === 0;
+    nextBtn.style.display     = idx === totalPages - 1 ? 'none'         : 'inline-block';
+    submitBtn.style.display   = idx === totalPages - 1 ? 'inline-block' : 'none';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   document.querySelectorAll('input[type=radio]').forEach(function(inp) {
@@ -82,12 +111,12 @@
   });
 
   nextBtn.addEventListener('click', function() {
-    if (current < total - 1) show(current + 1);
+    if (current < totalPages - 1) show(current + 1);
   });
 
   submitBtn.addEventListener('click', function() {
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Envoi...';
+    submitBtn.disabled    = true;
+    submitBtn.textContent = 'Envoi\u2026';
     fetch('/quizz/profil/' + slug, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -98,13 +127,13 @@
       if (data.ok) {
         window.location.href = '/quizz/profil/' + slug + '/result/' + data.attemptId;
       } else {
-        submitBtn.disabled = false;
+        submitBtn.disabled    = false;
         submitBtn.textContent = 'Terminer';
         alert('Une erreur est survenue.');
       }
     })
     .catch(function() {
-      submitBtn.disabled = false;
+      submitBtn.disabled    = false;
       submitBtn.textContent = 'Terminer';
       alert('Une erreur est survenue.');
     });

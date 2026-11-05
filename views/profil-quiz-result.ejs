@@ -1,25 +1,53 @@
 <%
-  var worldMap = { 'DL': 'Eau', 'DP': 'Air', 'BL': 'Terre', 'BP': 'Feu' };
-  var code = attempt.result_code || '';
-  var worldKey = code.slice(0, 2);
-  var world = worldMap[worldKey] || archetype && archetype.world || '';
-  var normalAxes = axes.filter(function(a) { return !a.is_position; });
-  var positionAxes = axes.filter(function(a) { return a.is_position; });
+  var worldMap  = { 'DL': 'Eau', 'DP': 'Air', 'BL': 'Terre', 'BP': 'Feu' };
+  var worldMeta = {
+    'DL': { name: 'Eau',   tagline: 'Douceur et lien',        hue: 210 },
+    'DP': { name: 'Air',   tagline: 'Douceur et sensation',   hue: 160 },
+    'BL': { name: 'Terre', tagline: 'Intensité et lien',      hue: 35  },
+    'BP': { name: 'Feu',   tagline: 'Intensité et sensation', hue: 15  }
+  };
+  var worldOrder = ['DL', 'DP', 'BL', 'BP'];
+
+  var code        = attempt.result_code || '';
+  var worldKey    = code.slice(0, 2);
+  var world       = worldMap[worldKey] || (archetype && archetype.world) || '';
+  var normalAxes  = axes.filter(function(a) { return !a.is_position; });
+  var posAxes     = axes.filter(function(a) { return  a.is_position; });
+  var archetypesList = typeof archetypes !== 'undefined' ? archetypes : [];
+
+  function firstSentence(text) {
+    if (!text) return '';
+    var i = text.indexOf('. ');
+    return i > 0 ? text.slice(0, i + 1) : text.slice(0, 140);
+  }
 %>
 <%- include('partials/head', { title: (archetype ? archetype.name : code) + ' — ' + type.name }) %>
 <main class="container" style="--ch-hue: 270">
   <%- include('partials/top-nav', { config: config, navTitle: type.name, navBack: '/quizz/profil' }) %>
 
   <div class="pqres-wrap">
+
+    <%# ── Héro ── %>
     <div class="pqres-hero">
-      <div class="pqres-code"><%= code %> &middot; <%= attempt.result_position %></div>
-      <% if (world) { %><div class="pqres-world">Monde : <%= world %></div><% } %>
+      <div class="pqres-code"><%= code %>&nbsp;&middot;&nbsp;<%= attempt.result_position %></div>
+      <% if (world) { %><div class="pqres-world">Monde&nbsp;: <%= world %></div><% } %>
       <div class="pqres-archetype"><%= archetype ? archetype.name : code %></div>
       <% if (archetype && archetype.description) { %>
       <p class="pqres-desc"><%= archetype.description %></p>
       <% } %>
     </div>
 
+    <%# ── Carte profil ── %>
+    <div class="pqres-profile-card">
+      <div class="pqres-profile-card-inner">
+        <span class="pqres-profile-card-label">Mon profil</span>
+        <span class="pqres-profile-card-code"><%= code %>-<%= attempt.result_position %></span>
+        <span class="pqres-profile-card-name"><%= archetype ? archetype.name : '' %></span>
+      </div>
+      <button class="pqres-copy-btn" id="pqres-copy-btn" title="Copier mon code" aria-label="Copier mon code">⎘</button>
+    </div>
+
+    <%# ── Axes ── %>
     <div class="pqres-axes">
       <% normalAxes.forEach(function(axis) { %>
       <% var pct = scores[axis.slug] != null ? scores[axis.slug] : 0.5; %>
@@ -37,7 +65,7 @@
       </div>
       <% }) %>
 
-      <% if (positionAxes.length && scores['position_mener'] != null) { %>
+      <% if (posAxes.length && scores['position_mener'] != null) { %>
       <div class="pqres-axis">
         <div class="pqres-axis-name">Position</div>
         <div class="pqres-axis-bar-wrap">
@@ -58,6 +86,7 @@
       <% } %>
     </div>
 
+    <%# ── Historique ── %>
     <% if (history && history.length > 1) { %>
     <div class="pqres-history">
       <p class="pqres-history-title">Historique</p>
@@ -73,11 +102,83 @@
     </div>
     <% } %>
 
-    <div style="margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap">
+    <%# ── Actions ── %>
+    <div class="pqres-actions">
       <a href="/quizz/profil/<%= type.slug %>" class="pqt-card-btn" style="text-decoration:none">Repasser le test</a>
       <a href="/quizz/profil" class="pqtake-nav-btn" style="text-decoration:none">Retour aux profils</a>
     </div>
+
+    <%# ── Volet archétypes ── %>
+    <% if (archetypesList.length > 0) { %>
+    <details class="pqres-arch-panel">
+      <summary class="pqres-arch-panel-summary">
+        <span class="pqres-arch-panel-title">Les 32 archétypes</span>
+        <span class="pqres-arch-panel-hint">Explorer tous les profils</span>
+        <span class="pqres-arch-panel-chevron">›</span>
+      </summary>
+
+      <div class="pqres-arch-panel-body">
+        <p class="pqres-arch-panel-intro">
+          Chaque monde regroupe huit êtres. Les profils <strong>Confort (C)</strong> sont des animaux réels,
+          les profils <strong>Expérimental (E)</strong> des créatures de légende. Le code se lit
+          Rythme&nbsp;· Moteur&nbsp;· Nouveauté&nbsp;· Scénario&nbsp;· Plaisir.
+        </p>
+
+        <% worldOrder.forEach(function(wk) { %>
+        <% var wm = worldMeta[wk]; %>
+        <% var worldArchs = archetypesList.filter(function(a){ return a.code && a.code.slice(0,2) === wk; }); %>
+        <% var isMyWorld = code.slice(0,2) === wk; %>
+
+        <details class="pqres-world-block" <%= isMyWorld ? 'open' : '' %>>
+          <summary class="pqres-world-head">
+            <span class="pqres-world-dot" style="background:hsl(<%= wm.hue %>,60%,55%)"></span>
+            <span class="pqres-world-name">Monde&nbsp;<%= wm.name %></span>
+            <span class="pqres-world-tagline"><%= wm.tagline %>&nbsp;&middot;&nbsp;<%= wk %></span>
+            <span class="pqres-world-chevron">›</span>
+          </summary>
+          <div class="pqres-world-body">
+            <% worldArchs.forEach(function(a) { %>
+            <div class="pqres-arch-item<%= a.code === code ? ' is-mine' : '' %>">
+              <div class="pqres-arch-code-col">
+                <span class="pqres-arch-code"><%= a.code %></span>
+              </div>
+              <div class="pqres-arch-info">
+                <div class="pqres-arch-name-row">
+                  <span class="pqres-arch-name"><%= a.name %></span>
+                  <% if (a.code === code) { %>
+                  <span class="pqres-arch-mine-badge">Mon profil</span>
+                  <% } %>
+                </div>
+                <% if (a.description) { %>
+                <p class="pqres-arch-short"><%= firstSentence(a.description) %></p>
+                <% } %>
+              </div>
+            </div>
+            <% }); %>
+          </div>
+        </details>
+
+        <% }); %>
+      </div>
+    </details>
+    <% } %>
+
   </div>
 
   <%- include('partials/foot') %>
 </main>
+<script>
+(function() {
+  var copyBtn = document.getElementById('pqres-copy-btn');
+  if (!copyBtn) return;
+  var profileText = '<%= code %>-<%= attempt.result_position %><%= archetype ? " \u00b7 " + archetype.name : "" %>';
+  copyBtn.addEventListener('click', function() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(profileText).then(function() {
+        copyBtn.textContent = '\u2713';
+        setTimeout(function(){ copyBtn.textContent = '\u2398'; }, 1500);
+      });
+    }
+  });
+})();
+</script>
