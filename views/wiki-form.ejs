@@ -90,89 +90,39 @@
           </div>
         </div>
 
-        <%# ── Catégorie principale ── %>
-        <div class="prot-sb-section">
-          <span class="prot-sb-label">Cat&eacute;gorie</span>
-          <select name="category" id="wiki-category-select" class="prot-form-select-elegant prot-form-select-elegant--sm" style="width:100%">
-            <% categories.forEach(function(c) { %>
-              <option value="<%= c.key %>" data-hue="<%= c.hue %>" <%= c.key === page.category ? 'selected' : '' %>><%= c.label %></option>
-            <% }) %>
-          </select>
+        <%# ── Catégorie + Aussi dans ── %>
+        <div class="wf-cat-row">
+          <div class="wf-cat-col">
+            <span class="prot-sb-label">Cat&eacute;gorie</span>
+            <select name="category" id="wiki-category-select" class="prot-form-select-elegant prot-form-select-elegant--sm">
+              <% categories.forEach(function(c) { %>
+                <option value="<%= c.key %>" data-hue="<%= c.hue %>" <%= c.key === page.category ? 'selected' : '' %>><%= c.label %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="wf-cat-col">
+            <span class="prot-sb-label">Aussi dans</span>
+            <select name="extra_categories" id="wf-aussi-dans-select" class="prot-form-select-elegant prot-form-select-elegant--sm">
+              <option value="">—</option>
+              <% categories.forEach(function(c) { %>
+                <option value="<%= c.key %>" <%= (page.extraCategories || [])[0] === c.key ? 'selected' : '' %>><%= c.label %></option>
+              <% }) %>
+            </select>
+          </div>
         </div>
 
-        <%# ── Aussi dans (extra-catégories) ── %>
-        <details class="prot-sb-details"<%= (page.extraCategories && page.extraCategories.length) ? ' open' : '' %>>
-          <summary class="prot-sb-details-summary">Aussi dans&hellip;</summary>
-          <div class="prot-sb-details-body">
-            <div class="wiki-extra-cats-field" id="wiki-edit-extra-cats">
-              <div class="wiki-meta-options">
-                <% categories.forEach(function(c) { %>
-                  <label class="chip-option wiki-extra-cat-option" data-cat="<%= c.key %>">
-                    <input type="checkbox" name="extra_categories" value="<%= c.key %>"
-                      <%= (page.extraCategories || []).indexOf(c.key) !== -1 ? 'checked' : '' %> />
-                    <span><%= c.label %></span>
-                  </label>
-                <% }) %>
-              </div>
-            </div>
-          </div>
-        </details>
-
-        <%# ── Sous-catégorie (dynamique selon la catégorie) ── %>
-        <div class="prot-sb-section" id="wf-sb-subcat-wrap">
+        <%# ── Sous-catégorie (un seul select, peuplé dynamiquement) ── %>
+        <div class="prot-sb-section" id="wf-sb-subcat-wrap" hidden>
           <span class="prot-sb-label">Sous-cat&eacute;gorie</span>
-
-          <div id="wf-partenaires-sous-cat" <%= page.category === 'partenaires' ? '' : 'hidden' %>>
-            <div class="wf-partenaires-type-chips">
-              <label class="chip-option chip-opt--nombre"><input type="radio" name="meta_sous_cat" value="nombre"     <%= psel('sous_cat','nombre')     %>><span>Nombre</span></label>
-              <label class="chip-option chip-opt--humain"><input type="radio" name="meta_sous_cat" value="humain"     <%= psel('sous_cat','humain')     %>><span>Humain</span></label>
-              <label class="chip-option chip-opt--monstre"><input type="radio" name="meta_sous_cat" value="monstre"    <%= psel('sous_cat','monstre')    %>><span>Monstre</span></label>
-              <label class="chip-option chip-opt--animaux"><input type="radio" name="meta_sous_cat" value="animaux"    <%= psel('sous_cat','animaux')    %>><span>Animal</span></label>
-              <label class="chip-option chip-opt--fetichisme"><input type="radio" name="meta_sous_cat" value="fetichisme" <%= psel('sous_cat','fetichisme') %>><span>F&eacute;tichisme</span></label>
-              <label class="chip-option chip-opt--autre"><input type="radio" name="meta_sous_cat" value="autre"      <%= psel('sous_cat','autre')      %>><span>Autre</span></label>
-            </div>
-          </div>
-
-          <div class="wiki-fantasmes-meta" <%= page.category === 'fantasmes' ? '' : 'hidden' %>>
-            <div class="wiki-meta-options">
-              <% fantasmesSubs.forEach(function(s) { %>
-                <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
-              <% }) %>
-            </div>
-          </div>
-
-          <div class="wiki-pratiques-meta" <%= page.category === 'pratique' ? '' : 'hidden' %>>
-            <div class="wiki-meta-options">
-              <% pratiquesSubs.forEach(function(s) { %>
-                <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
-              <% }) %>
-            </div>
-          </div>
-
-          <div class="wiki-objets-meta" <%= page.category === 'objets' ? '' : 'hidden' %>>
-            <div class="wiki-meta-options">
-              <% objetsSubs.forEach(function(s) { %>
-                <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
-              <% }) %>
-            </div>
-          </div>
-
-          <div class="wiki-tenues-meta" <%= page.category === 'tenues' ? '' : 'hidden' %>>
-            <div class="wiki-meta-options">
-              <% tenuesSubs.forEach(function(s) { %>
-                <label class="chip-option"><input type="radio" name="meta_sous_cat" value="<%= s.key %>" <%= pm.sous_cat === s.key ? 'checked' : '' %>><span><%= s.label %></span></label>
-              <% }) %>
-            </div>
-          </div>
-
-          <div class="wiki-lieux-meta" <%= page.category === 'lieux' ? '' : 'hidden' %>>
-            <div class="wiki-meta-options">
-              <label class="chip-option"><input type="radio" name="meta_type_lieu" value="prive"  <%= pm.type_lieu === 'prive'  ? 'checked' : '' %>><span>Priv&eacute;</span></label>
-              <label class="chip-option"><input type="radio" name="meta_type_lieu" value="public" <%= pm.type_lieu === 'public' ? 'checked' : '' %>><span>Public</span></label>
-              <label class="chip-option"><input type="radio" name="meta_type_lieu" value="cache"  <%= pm.type_lieu === 'cache'  ? 'checked' : '' %>><span>Cach&eacute;</span></label>
-            </div>
-          </div>
-
+          <select name="meta_sous_cat" id="wf-subcat-select" class="prot-form-select-elegant prot-form-select-elegant--sm" style="width:100%">
+            <option value="">— Choisir —</option>
+          </select>
+          <select name="meta_type_lieu" id="wf-type-lieu-select" class="prot-form-select-elegant prot-form-select-elegant--sm" style="width:100%" hidden>
+            <option value="">— Choisir —</option>
+            <option value="prive"  <%= pm.type_lieu === 'prive'  ? 'selected' : '' %>>Priv&eacute;</option>
+            <option value="public" <%= pm.type_lieu === 'public' ? 'selected' : '' %>>Public</option>
+            <option value="cache"  <%= pm.type_lieu === 'cache'  ? 'selected' : '' %>>Cach&eacute;</option>
+          </select>
         </div>
 
         <%# ── Tags ── %>
@@ -1135,6 +1085,53 @@ initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidd
       ownedHidden.value = togglePossede.classList.contains('active') ? 'on' : '';
     });
   }
+})();
+
+// Sous-catégorie dynamique
+(function() {
+  var subcatData = {
+    partenaires: [
+      {v:'nombre',l:'Nombre'},{v:'monstre',l:'Monstre'},{v:'animaux',l:'Animal'},
+      {v:'fetichisme',l:'F\u00e9tichisme'},{v:'autre',l:'Autre'}
+    ],
+    fantasmes: <%- JSON.stringify(fantasmesSubs.map(function(s){ return {v:s.key,l:s.label}; })) %>,
+    pratique:  <%- JSON.stringify(pratiquesSubs.map(function(s){ return {v:s.key,l:s.label}; })) %>,
+    objets:    <%- JSON.stringify(objetsSubs.map(function(s){ return {v:s.key,l:s.label}; })) %>,
+    tenues:    <%- JSON.stringify(tenuesSubs.map(function(s){ return {v:s.key,l:s.label}; })) %>
+  };
+  var currentSubcat = <%- JSON.stringify(pm.sous_cat || '') %>;
+  var catSel    = document.getElementById('wiki-category-select');
+  var subcatSel = document.getElementById('wf-subcat-select');
+  var lieuSel   = document.getElementById('wf-type-lieu-select');
+  var wrap      = document.getElementById('wf-sb-subcat-wrap');
+  if (!catSel || !subcatSel || !lieuSel || !wrap) return;
+
+  function updateSubcat(cat, keepVal) {
+    if (cat === 'lieux') {
+      subcatSel.hidden = true;
+      lieuSel.hidden = false;
+      wrap.hidden = false;
+      return;
+    }
+    lieuSel.hidden = true;
+    var opts = subcatData[cat];
+    if (!opts || !opts.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    subcatSel.hidden = false;
+    while (subcatSel.options.length > 1) subcatSel.remove(1);
+    opts.forEach(function(o) {
+      var opt = document.createElement('option');
+      opt.value = o.v;
+      opt.textContent = o.l;
+      if (o.v === keepVal) opt.selected = true;
+      subcatSel.appendChild(opt);
+    });
+  }
+
+  updateSubcat(catSel.value, currentSubcat);
+  catSel.addEventListener('change', function() {
+    updateSubcat(this.value, '');
+  });
 })();
 </script>
 <%- include('partials/foot') %>
