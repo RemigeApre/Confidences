@@ -25,24 +25,23 @@
         <% pageQs.forEach(function(q, qi) { %>
 
         <div class="pqtake-row">
-          <div class="pqtake-row-head">
-            <span class="pqtake-row-num"><%= pageIdx * PAGE_SIZE + qi + 1 %></span>
-            <span class="pqtake-axis-label"><%= q.axis_name %></span>
-          </div>
-          <p class="pqtake-question pqtake-question--left"><%= q.text %></p>
-          <div class="pqtake-scale">
-            <div class="pqtake-scale-labels">
-              <span>Pas du tout</span>
-              <span>Neutre</span>
-              <span>Tout à fait</span>
-            </div>
-            <div class="pqtake-options">
-              <% [1,2,3,4,5].forEach(function(v) { %>
-              <div class="pqtake-opt">
-                <input type="radio" name="q_<%= q.id %>" id="q_<%= q.id %>_<%= v %>" value="<%= v %>" data-qid="<%= q.id %>">
-                <label for="q_<%= q.id %>_<%= v %>"><%= v %></label>
+          <span class="pqtake-row-num"><%= pageIdx * PAGE_SIZE + qi + 1 %></span>
+          <div class="pqtake-row-body">
+            <p class="pqtake-question"><%= q.text %></p>
+            <div class="pqtake-scale">
+              <div class="pqtake-options">
+                <% [1,2,3,4,5].forEach(function(v) { %>
+                <div class="pqtake-opt">
+                  <input type="radio" name="q_<%= q.id %>" id="q_<%= q.id %>_<%= v %>" value="<%= v %>" data-qid="<%= q.id %>">
+                  <label for="q_<%= q.id %>_<%= v %>"><%= v %></label>
+                </div>
+                <% }) %>
               </div>
-              <% }) %>
+              <div class="pqtake-scale-labels">
+                <span>Pas du tout</span>
+                <span>Neutre</span>
+                <span>Tout à fait</span>
+              </div>
             </div>
           </div>
         </div>
@@ -65,7 +64,7 @@
 
   <%- include('partials/foot') %>
 </main>
-<script>
+<script nonce="<%= nonce %>">
 (function() {
   var totalPages = <%= pageGroups.length %>;
   var totalQ     = <%= questions.length %>;

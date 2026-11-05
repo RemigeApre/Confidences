@@ -102,15 +102,15 @@
 .pqtake-progress-fill{height:100%;background:hsl(270,60%,55%);transition:width .3s}
 .pqtake-counter{font-size:.8rem;color:var(--muted);text-align:center;margin:0 0 .75rem}
 .pqtake-axis-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);text-align:center;margin:0 0 .4rem}
-.pqtake-question{font-size:1.05rem;font-weight:600;text-align:center;margin:0 0 2rem;line-height:1.5;min-height:3.5rem}
+.pqtake-question{font-size:1.05rem;font-weight:600;text-align:center;margin:0 0 1.25rem;line-height:1.5}
 .pqtake-scale{display:flex;flex-direction:column;gap:.5rem}
 .pqtake-scale-labels{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
 .pqtake-options{display:flex;justify-content:space-between;gap:.35rem}
 .pqtake-opt{flex:1;display:flex;flex-direction:column;align-items:center;gap:.35rem}
 .pqtake-opt input{display:none}
 .pqtake-opt label{width:40px;height:40px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);transition:border-color .12s,background .12s}
-.pqtake-opt input:checked + label{border-color:hsl(270,60%,55%);background:hsl(270,40%,25%);color:#fff}
-.pqtake-opt label:hover{border-color:hsl(270,50%,50%)}
+.pqtake-opt input:checked + label{color:#fff}
+.pqtake-opt label:hover{filter:brightness(1.35)}
 .pqtake-nav{display:flex;justify-content:space-between;margin-top:2rem;gap:.5rem}
 .pqtake-nav-btn{background:var(--card);border:1px solid var(--border);color:var(--fg);border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;font-size:.9rem}
 .pqtake-nav-btn--next{background:hsl(270,50%,40%);border-color:transparent;color:#fff}
@@ -332,11 +332,21 @@
 .pqtake-counter-sub{font-size:.75rem;color:var(--muted);margin:.15rem 0 0}
 .pqtake-page{animation:pqtake-in .18s ease}
 @keyframes pqtake-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.pqtake-row{padding:.25rem 0}
-.pqtake-row-head{display:flex;align-items:center;gap:.55rem;margin-bottom:.4rem}
-.pqtake-row-num{display:inline-flex;align-items:center;justify-content:center;width:1.55rem;height:1.55rem;border-radius:50%;background:rgba(139,92,246,.22);color:#a78bfa;font-size:.72rem;font-weight:700;flex-shrink:0}
-.pqtake-question--left{text-align:left;min-height:auto;margin-bottom:1rem}
+.pqtake-row{display:flex;gap:1rem;align-items:stretch;padding:.5rem 0}
+.pqtake-row-num{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:2.2rem;border-radius:8px;background:hsl(195,55%,22%);color:hsl(195,70%,70%);font-size:.85rem;font-weight:700;align-self:stretch;min-height:5rem}
+.pqtake-row-body{flex:1;min-width:0}
 .pqtake-row-sep{height:1px;background:rgba(255,255,255,.07);margin:1.25rem 0}
+.pqtake-opt:nth-child(1) label{border-color:hsl(140,45%,32%);color:hsl(140,55%,55%)}
+.pqtake-opt:nth-child(2) label{border-color:hsl(80,45%,32%);color:hsl(80,55%,55%)}
+.pqtake-opt:nth-child(3) label{border-color:hsl(50,45%,32%);color:hsl(50,55%,55%)}
+.pqtake-opt:nth-child(4) label{border-color:hsl(22,50%,35%);color:hsl(22,60%,58%)}
+.pqtake-opt:nth-child(5) label{border-color:hsl(0,50%,35%);color:hsl(0,60%,58%)}
+.pqtake-opt:nth-child(1) input:checked + label{background:hsl(140,40%,16%);border-color:hsl(140,55%,45%)}
+.pqtake-opt:nth-child(2) input:checked + label{background:hsl(80,40%,16%);border-color:hsl(80,55%,45%)}
+.pqtake-opt:nth-child(3) input:checked + label{background:hsl(50,40%,16%);border-color:hsl(50,55%,45%)}
+.pqtake-opt:nth-child(4) input:checked + label{background:hsl(22,45%,16%);border-color:hsl(22,60%,48%)}
+.pqtake-opt:nth-child(5) input:checked + label{background:hsl(0,45%,16%);border-color:hsl(0,60%,50%)}
+.pqtake-scale-labels{margin-top:.4rem}
 
 /* ── Résultat : carte profil ────────────────────────────────────────── */
 .pqres-profile-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:linear-gradient(135deg,hsl(270,35%,16%),hsl(270,25%,12%));border:1px solid hsl(270,40%,30%);border-radius:12px;padding:.9rem 1.1rem;margin-bottom:1.75rem}
