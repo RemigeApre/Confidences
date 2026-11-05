@@ -1059,14 +1059,11 @@
             <% var scat = categories.find(function (c) { return c.key === s.category; }); %>
             <a href="/wiki/<%= s.slug || s.id %>" class="wiki-sugg-card" style="--sugg-hue:<%= scat ? scat.hue : 220 %>">
               <% if (s.imagePaths && s.imagePaths.length && (currentUser || !isFrenchVisitor)) { %>
-                <div class="wiki-sugg-img-wrap">
-                  <img src="<%= thumbUrl(s.imagePaths[0]) %>" alt="" class="wiki-sugg-img" loading="lazy" />
-                  <% if (s.rating > 0) { %><span class="wiki-sugg-rated" aria-label="Noté"></span><% } %>
-                </div>
-              <% } else { %>
-                <% if (s.rating > 0) { %><span class="wiki-sugg-rated wiki-sugg-rated--noimg" aria-label="Noté"></span><% } %>
+                <div class="wiki-sugg-img-wrap"><img src="<%= thumbUrl(s.imagePaths[0]) %>" alt="" class="wiki-sugg-img" loading="lazy" /></div>
               <% } %>
               <span class="wiki-sugg-title"><%= s.title %></span>
+              <span class="wiki-sugg-cat-bar"></span>
+              <% if (s.rating > 0) { %><span class="wiki-sugg-rated" aria-label="Noté"></span><% } %>
             </a>
           <% }) %>
         </div>
