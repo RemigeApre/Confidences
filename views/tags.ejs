@@ -1454,9 +1454,12 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
       e.preventDefault();
       var inp = document.getElementById("tag-popup-add-subtag-input");
       var fb  = document.getElementById("tag-popup-add-subtag-feedback");
-      var sub = inp ? inp.value.toLowerCase().trim() : "";
       var parentTag = window._popupCurrentTag || "";
-      if (!sub || !parentTag) return;
+      if (!inp || !parentTag) return;
+
+      // Accepter liste séparée par virgules et/ou sauts de ligne
+      var subs = inp.value.split(/[\n,]+/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+      if (!subs.length) return;
 
       function popupFb(msg, ok) {
         if (!fb) return;
@@ -1465,72 +1468,80 @@ window._LQCatWithSub = <%- JSON.stringify(CAT_WITH_SUB) %>;
         fb.hidden = false;
       }
 
-      // Cas 3 : déjà sous-tag de ce tag
-      var currentChildren = (window._tagChildrenMap && window._tagChildrenMap[parentTag]) || [];
-      if (currentChildren.indexOf(sub) !== -1) {
-        popupFb("« " + sub + " » est déjà un sous-tag.", true);
-        return;
-      }
-
       var parentEl = document.querySelector('#tags-grouped-view .tags-item[data-tag="' + parentTag + '"]');
       var parentCat    = parentEl ? (parentEl.dataset.category    || "") : "";
       var parentSubcat = parentEl ? (parentEl.dataset.subcategory || "") : "";
       if (parentSubcat === "autre") parentSubcat = "";
       var parentType   = parentEl ? (parentEl.dataset.type        || "normal") : "normal";
 
-      var subEl = document.querySelector('#tags-grouped-view .tags-item[data-tag="' + sub + '"]');
       var submitBtn = addSubtagForm.querySelector(".tag-popup-add-subtag-btn");
-      if (submitBtn) submitBtn.disabled = true;
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "…"; }
+      if (fb) fb.hidden = true;
 
-      // Étape 1 : créer si inexistant
-      var step1 = subEl
-        ? Promise.resolve({ ok: true })
-        : fetch("/api/tags/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, category: parentCat }) }).then(function (r) { return r.json(); });
+      // Traiter chaque tag séquentiellement
+      function processSub(sub) {
+        var currentChildren = (window._tagChildrenMap && window._tagChildrenMap[parentTag]) || [];
+        if (currentChildren.indexOf(sub) !== -1) return Promise.resolve({ sub: sub, status: "skip" });
 
-      step1.then(function (r) {
-        if (!r.ok) { popupFb("Erreur création.", false); if (submitBtn) submitBtn.disabled = false; return Promise.reject(); }
-        // Étape 2 : assigner le parent
-        return fetch("/api/tags/parent", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, parent: parentTag }) }).then(function (r) { return r.json(); });
-      }).then(function (r) {
-        if (!r.ok) { popupFb("Erreur assignation.", false); if (submitBtn) submitBtn.disabled = false; return Promise.reject(); }
-        // Étape 3 : hériter catégorie
-        var catP = (parentCat && parentCat !== "autre")
-          ? fetch("/api/tags/category", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, category: parentCat }) }).then(function (r) { return r.json(); })
-          : Promise.resolve({ ok: true });
-        return catP.then(function () {
-          // Étape 4 : hériter sous-catégorie
-          if (!parentSubcat) return Promise.resolve();
-          return fetch("/api/tags/subcategory", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, subcategory: parentSubcat, category: parentCat }) }).then(function (r) { return r.json(); });
-        });
-      }).then(function () {
-        // Mettre à jour la map des enfants
-        if (!window._tagChildrenMap) window._tagChildrenMap = {};
-        // Retirer de l'ancien parent si migration
-        Object.keys(window._tagChildrenMap).forEach(function (p) {
-          window._tagChildrenMap[p] = window._tagChildrenMap[p].filter(function (c) { return c !== sub; });
-        });
-        window._tagChildrenMap[parentTag] = window._tagChildrenMap[parentTag] || [];
-        window._tagChildrenMap[parentTag].push(sub);
-
-        // Mettre à jour les éléments DOM existants
+        var subEl = document.querySelector('#tags-grouped-view .tags-item[data-tag="' + sub + '"]');
         var wasNew = !subEl;
-        document.querySelectorAll('.tags-item[data-tag="' + sub + '"]').forEach(function (el) {
-          el.dataset.parent      = parentTag;
-          el.dataset.category    = parentCat;
-          el.dataset.subcategory = parentSubcat;
-          el.classList.add("tags-item--variant");
-          if (parentType === "ultra")       { el.dataset.type = "ultra";       el.classList.add("tags-item--ultra"); }
-          else if (parentType === "irrealiste") { el.dataset.type = "irrealiste"; el.classList.add("tags-item--irrealiste"); }
-        });
 
-        // Rafraîchir l'affichage des enfants dans le popup
+        var step1 = wasNew
+          ? fetch("/api/tags/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, category: parentCat }) }).then(function (r) { return r.json(); })
+          : Promise.resolve({ ok: true });
+
+        return step1.then(function (r) {
+          if (!r.ok) return { sub: sub, status: "error" };
+          return fetch("/api/tags/parent", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, parent: parentTag }) }).then(function (r) { return r.json(); });
+        }).then(function (r) {
+          if (!r.ok) return { sub: sub, status: "error" };
+          var catP = (parentCat && parentCat !== "autre")
+            ? fetch("/api/tags/category", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, category: parentCat }) }).then(function (r) { return r.json(); })
+            : Promise.resolve({ ok: true });
+          return catP.then(function () {
+            if (!parentSubcat) return { sub: sub, wasNew: wasNew, status: "ok" };
+            return fetch("/api/tags/subcategory", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tag: sub, subcategory: parentSubcat, category: parentCat }) })
+              .then(function () { return { sub: sub, wasNew: wasNew, status: "ok" }; });
+          });
+        }).then(function (res) {
+          if (res.status === "ok") {
+            if (!window._tagChildrenMap) window._tagChildrenMap = {};
+            Object.keys(window._tagChildrenMap).forEach(function (p) {
+              window._tagChildrenMap[p] = window._tagChildrenMap[p].filter(function (c) { return c !== sub; });
+            });
+            window._tagChildrenMap[parentTag] = window._tagChildrenMap[parentTag] || [];
+            window._tagChildrenMap[parentTag].push(sub);
+            document.querySelectorAll('.tags-item[data-tag="' + sub + '"]').forEach(function (el) {
+              el.dataset.parent      = parentTag;
+              el.dataset.category    = parentCat;
+              el.dataset.subcategory = parentSubcat;
+              el.classList.add("tags-item--variant");
+              if (parentType === "ultra")           { el.dataset.type = "ultra";       el.classList.add("tags-item--ultra"); }
+              else if (parentType === "irrealiste") { el.dataset.type = "irrealiste";  el.classList.add("tags-item--irrealiste"); }
+            });
+          }
+          return res;
+        }).catch(function () { return { sub: sub, status: "error" }; });
+      }
+
+      // Exécuter en séquence
+      subs.reduce(function (chain, sub) {
+        return chain.then(function (results) {
+          return processSub(sub).then(function (r) { results.push(r); return results; });
+        });
+      }, Promise.resolve([])).then(function (results) {
+        var ok   = results.filter(function (r) { return r.status === "ok"; });
+        var skip = results.filter(function (r) { return r.status === "skip"; });
+        var err  = results.filter(function (r) { return r.status === "error"; });
+        var parts = [];
+        if (ok.length)   parts.push(ok.length + " inclu" + (ok.length > 1 ? "s" : ""));
+        if (skip.length) parts.push(skip.length + " déjà présent" + (skip.length > 1 ? "s" : ""));
+        if (err.length)  parts.push(err.length + " erreur" + (err.length > 1 ? "s" : ""));
         window.renderTagPopupChildren(parentTag);
-        if (inp) inp.value = "";
-        if (submitBtn) submitBtn.disabled = false;
-        popupFb((wasNew ? "Créé et inclu" : "Inclu") + "\u00a0: « " + sub + " »", true);
-        applyFilters();
-      }).catch(function () {
-        if (submitBtn) submitBtn.disabled = false;
+        inp.value = "";
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "+"; }
+        popupFb(parts.join(", ") + ".", ok.length > 0);
+        if (ok.length) applyFilters();
       });
     });
   }
