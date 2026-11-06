@@ -114,6 +114,9 @@ db.exec(`CREATE TABLE IF NOT EXISTS public_profiles (
   featured_image_ids TEXT NOT NULL DEFAULT '[]',
   updated_at TEXT NOT NULL
 )`);
+try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_archetype INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_streak INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
+try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_coffre INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN extra_categories TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
@@ -935,7 +938,7 @@ function listFilterProfiles(userId, section) {
 
 function createFilterProfile(userId, section, name, state) {
   const info = db.prepare(
-    "INSERT INTO filter_profiles (user_id, section, name, state, created_at) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO filter_profiles (user_id, section, name, state, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   ).run(userId, section, name, JSON.stringify(state || {}), new Date().toISOString());
   return info.lastInsertRowid;
 }
@@ -5999,25 +6002,31 @@ function saveCodexPoll(pageId, { userId, sex, ageRange, fantasme, pratique, prat
 
 function getPublicProfile(userId) {
   const row = db.prepare("SELECT * FROM public_profiles WHERE user_id = ?").get(userId);
-  if (!row) return { showSexe: false, showWikiFavorites: false, featuredImageIds: [] };
+  if (!row) return { showSexe: false, showWikiFavorites: false, showArchetype: false, showStreak: true, showCoffre: true, featuredImageIds: [] };
   return {
     showSexe: !!row.show_sexe,
     showWikiFavorites: !!row.show_wiki_favorites,
+    showArchetype: !!row.show_archetype,
+    showStreak: row.show_streak !== undefined ? !!row.show_streak : true,
+    showCoffre: row.show_coffre !== undefined ? !!row.show_coffre : true,
     featuredImageIds: (() => { try { return JSON.parse(row.featured_image_ids || '[]'); } catch (_) { return []; } })(),
   };
 }
 
-function setPublicProfile(userId, { showSexe, showWikiFavorites, featuredImageIds }) {
+function setPublicProfile(userId, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, featuredImageIds }) {
   const ids = Array.isArray(featuredImageIds) ? featuredImageIds.slice(0, 5) : [];
   const now = new Date().toISOString();
-  db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, featured_image_ids, updated_at)
+  db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, show_archetype, show_streak, show_coffre, featured_image_ids, updated_at)
     VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
       show_sexe = excluded.show_sexe,
       show_wiki_favorites = excluded.show_wiki_favorites,
+      show_archetype = excluded.show_archetype,
+      show_streak = excluded.show_streak,
+      show_coffre = excluded.show_coffre,
       featured_image_ids = excluded.featured_image_ids,
       updated_at = excluded.updated_at`
-  ).run(userId, showSexe ? 1 : 0, showWikiFavorites ? 1 : 0, JSON.stringify(ids), now);
+  ).run(userId, showSexe ? 1 : 0, showWikiFavorites ? 1 : 0, showArchetype ? 1 : 0, showStreak ? 1 : 0, showCoffre ? 1 : 0, JSON.stringify(ids), now);
 }
 
 function getUserCoffreStats(userId) {

@@ -94,10 +94,11 @@
 
     <p class="pp-rp-name"><%= currentUser.displayName %></p>
 
-    <% if (streak > 0) { %>
+    <% if (pub.showStreak && streak > 0) { %>
       <div class="pp-rp-streak"><span class="pp-rp-streak-flame">🔥</span><span class="pp-rp-streak-count"><%= streak %></span><span class="pp-rp-streak-label">jour<%= streak > 1 ? 's' : '' %></span></div>
     <% } %>
 
+    <% if (pub.showCoffre) { %>
     <div class="pp-rp-coffre">
       <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.images %></span><span class="pp-rp-coffre-lbl">images</span></div>
       <div class="pp-rp-coffre-sep"></div>
@@ -105,6 +106,7 @@
       <div class="pp-rp-coffre-sep"></div>
       <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.themes %></span><span class="pp-rp-coffre-lbl">thèmes</span></div>
     </div>
+    <% } %>
 
     <% if (pub.showSexe && currentUser.sexe) { %>
       <span class="pp-rp-sexe" style="color:<%= SEXE_COLOR[currentUser.sexe] || '#888' %>">
@@ -113,7 +115,7 @@
       </span>
     <% } %>
 
-    <% if (quizResult) { %>
+    <% if (pub.showArchetype && quizResult) { %>
       <div class="pp-rp-archetype" style="--arch-hue:<%= quizResult.worldHue %>">
         <div class="pp-rp-arch-world"><%= quizResult.world %><% if (quizResult.worldTagline) { %><span class="pp-rp-arch-world-tag"> &middot; <%= quizResult.worldTagline %></span><% } %></div>
         <div class="pp-rp-arch-name"><%= quizResult.archetypeName %></div>
@@ -139,42 +141,81 @@
 <div class="pub-drawer-backdrop" id="pub-drawer-backdrop" aria-hidden="true"></div>
 <aside class="pub-drawer" id="pub-drawer" role="dialog" aria-modal="true" aria-label="Modifier le profil public" hidden>
   <div class="pub-drawer-header">
-    <h2 class="pub-drawer-title">Modifier le profil public</h2>
+    <span class="pub-drawer-title">Profil public</span>
     <button type="button" class="pub-drawer-close" id="pub-drawer-close" aria-label="Fermer">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
   <div class="pub-drawer-body">
     <form method="POST" action="/favoris/profil-public" id="pub-form">
+
       <div class="pub-drawer-section">
-        <div class="pub-drawer-section-title">Visibilit&eacute;</div>
-        <div class="pub-toggle-row">
-          <label class="pub-toggle-label" for="toggle-sexe">
-            <span>Afficher mon sexe</span>
-            <span class="pub-toggle-hint">(<%= currentUser.sexe ? SEXE_LABEL[currentUser.sexe] : 'Non précisé' %>)</span>
+        <p class="pub-drawer-section-title">Visibilit&eacute;</p>
+        <div class="pub-toggle-group">
+
+          <label class="pub-toggle-row" for="toggle-streak">
+            <span class="pub-toggle-row-left">
+              <span class="pub-toggle-row-icon">🔥</span>
+              <span class="pub-toggle-row-text">Flamme d&rsquo;activit&eacute;</span>
+            </span>
+            <span class="pub-toggle">
+              <input type="checkbox" id="toggle-streak" name="show_streak" value="1" <%= pub.showStreak ? 'checked' : '' %> />
+              <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+            </span>
           </label>
-          <label class="pub-toggle">
-            <input type="checkbox" id="toggle-sexe" name="show_sexe" value="1" <%= pub.showSexe ? 'checked' : '' %> />
-            <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+
+          <label class="pub-toggle-row" for="toggle-coffre">
+            <span class="pub-toggle-row-left">
+              <span class="pub-toggle-row-icon">📦</span>
+              <span class="pub-toggle-row-text">Stats du coffre</span>
+            </span>
+            <span class="pub-toggle">
+              <input type="checkbox" id="toggle-coffre" name="show_coffre" value="1" <%= pub.showCoffre ? 'checked' : '' %> />
+              <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+            </span>
           </label>
-        </div>
-        <div class="pub-toggle-row">
-          <label class="pub-toggle-label" for="toggle-wiki">
-            <span>Afficher mes favoris Codex</span>
-            <% if (wikiFavPages.length) { %><span class="pub-toggle-hint">(<%= wikiFavPages.length %> page<%= wikiFavPages.length > 1 ? 's' : '' %>)</span>
-            <% } else { %><span class="pub-toggle-hint">(aucun favori)</span><% } %>
+
+          <label class="pub-toggle-row" for="toggle-sexe">
+            <span class="pub-toggle-row-left">
+              <span class="pub-toggle-row-icon">◈</span>
+              <span class="pub-toggle-row-text">Sexe<% if (currentUser.sexe) { %><span class="pub-toggle-row-hint"> &middot; <%= SEXE_LABEL[currentUser.sexe] %></span><% } %></span>
+            </span>
+            <span class="pub-toggle">
+              <input type="checkbox" id="toggle-sexe" name="show_sexe" value="1" <%= pub.showSexe ? 'checked' : '' %> />
+              <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+            </span>
           </label>
-          <label class="pub-toggle">
-            <input type="checkbox" id="toggle-wiki" name="show_wiki_favorites" value="1" <%= pub.showWikiFavorites ? 'checked' : '' %> />
-            <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+
+          <label class="pub-toggle-row" for="toggle-wiki">
+            <span class="pub-toggle-row-left">
+              <span class="pub-toggle-row-icon">🔖</span>
+              <span class="pub-toggle-row-text">Favoris Codex<% if (wikiFavTotal) { %><span class="pub-toggle-row-hint"> &middot; <%= wikiFavTotal %></span><% } %></span>
+            </span>
+            <span class="pub-toggle">
+              <input type="checkbox" id="toggle-wiki" name="show_wiki_favorites" value="1" <%= pub.showWikiFavorites ? 'checked' : '' %> />
+              <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+            </span>
           </label>
+
+          <label class="pub-toggle-row" for="toggle-archetype">
+            <span class="pub-toggle-row-left">
+              <span class="pub-toggle-row-icon">✦</span>
+              <span class="pub-toggle-row-text">R&eacute;sultat de personnalit&eacute;<% if (quizResult) { %><span class="pub-toggle-row-hint"> &middot; <%= quizResult.archetypeName %></span><% } %></span>
+            </span>
+            <span class="pub-toggle">
+              <input type="checkbox" id="toggle-archetype" name="show_archetype" value="1" <%= pub.showArchetype ? 'checked' : '' %> />
+              <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+            </span>
+          </label>
+
         </div>
       </div>
+
       <div class="pub-drawer-section">
-        <div class="pub-drawer-section-title">Images en vedette <span class="pub-featured-count" id="pub-sel-count">0 / 5</span></div>
+        <p class="pub-drawer-section-title">Images en vedette <span class="pub-featured-count" id="pub-sel-count">0 / 5</span></p>
         <input type="hidden" name="featured_image_ids" id="pub-featured-ids" value="<%= pub.featuredImageIds.join(',') %>" />
         <% if (!coffre.length) { %>
-          <p class="pub-empty">Aucune image dans votre coffre. Ouvrez des lootboxes depuis la <a href="/jeu">page Jeu</a>&nbsp;!</p>
+          <p class="pub-empty-inline">Aucune image dans votre coffre &mdash; ouvrez des lootboxes depuis la <a href="/jeu">page Jeu</a>.</p>
         <% } else { %>
           <div class="pub-coffre-grid">
             <% coffre.forEach(function(u) { %>
@@ -188,9 +229,10 @@
           </div>
         <% } %>
       </div>
+
       <div class="pub-drawer-actions">
-        <button type="submit" class="profil-btn-primary">Enregistrer</button>
-        <button type="button" class="profil-btn-secondary" id="pub-cancel-btn">Annuler</button>
+        <button type="submit" class="pub-drawer-save">Enregistrer</button>
+        <button type="button" class="pub-drawer-cancel" id="pub-cancel-btn">Annuler</button>
       </div>
     </form>
   </div>

@@ -458,6 +458,9 @@ function buildFavoritesRouter(config) {
     try {
       const showSexe = req.body.show_sexe === "1";
       const showWikiFavorites = req.body.show_wiki_favorites === "1";
+      const showArchetype = req.body.show_archetype === "1";
+      const showStreak = req.body.show_streak === "1";
+      const showCoffre = req.body.show_coffre === "1";
       // featured_image_ids comes as comma-separated ref IDs
       const rawIds = String(req.body.featured_image_ids || "")
         .split(",")
@@ -467,7 +470,7 @@ function buildFavoritesRouter(config) {
       const coffre = getUserUnlocks(req.user.id);
       const ownedRefIds = new Set(coffre.map(u => u.refId));
       const featuredImageIds = rawIds.filter(id => ownedRefIds.has(id)).slice(0, 5);
-      setPublicProfile(req.user.id, { showSexe, showWikiFavorites, featuredImageIds });
+      setPublicProfile(req.user.id, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, featuredImageIds });
       res.redirect("/favoris/profil-public?ok=1");
     } catch (err) {
       console.error("[profil-public POST]", err);

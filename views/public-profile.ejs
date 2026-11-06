@@ -84,10 +84,11 @@
 
   <p class="pp-rp-name"><%= profileUser.displayName %></p>
 
-  <% if (streak > 0) { %>
+  <% if (pub.showStreak && streak > 0) { %>
     <div class="pp-rp-streak"><span class="pp-rp-streak-flame">🔥</span><span class="pp-rp-streak-count"><%= streak %></span><span class="pp-rp-streak-label">jour<%= streak > 1 ? 's' : '' %></span></div>
   <% } %>
 
+  <% if (pub.showCoffre) { %>
   <div class="pp-rp-coffre">
     <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.images %></span><span class="pp-rp-coffre-lbl">images</span></div>
     <div class="pp-rp-coffre-sep"></div>
@@ -95,6 +96,7 @@
     <div class="pp-rp-coffre-sep"></div>
     <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.themes %></span><span class="pp-rp-coffre-lbl">thèmes</span></div>
   </div>
+  <% } %>
 
   <% if (pub.showSexe && profileUser.sexe) { %>
     <span class="pp-rp-sexe" style="color:<%= SEXE_COLOR[profileUser.sexe] || '#888' %>">
@@ -103,7 +105,7 @@
     </span>
   <% } %>
 
-  <% if (quizResult) { %>
+  <% if (pub.showArchetype && quizResult) { %>
     <div class="pp-rp-archetype" style="--arch-hue:<%= quizResult.worldHue %>">
       <div class="pp-rp-arch-world"><%= quizResult.world %><% if (quizResult.worldTagline) { %><span class="pp-rp-arch-world-tag"> &middot; <%= quizResult.worldTagline %></span><% } %></div>
       <div class="pp-rp-arch-name"><%= quizResult.archetypeName %></div>
