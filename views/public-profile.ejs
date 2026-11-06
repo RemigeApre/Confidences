@@ -1,0 +1,98 @@
+<%
+  var SEXE_LABEL = { femme: 'Femme', homme: 'Homme', autre: 'Autre', '': '' };
+  var SEXE_SYMBOL = { femme: '♀', homme: '♂', autre: '⚧', '': '' };
+  var SEXE_COLOR  = { femme: '#e0699f', homme: '#4a90d9', autre: '#9b59b6', '': '#888' };
+  var metaDesc = profileUser.displayName + ' — profil sur Le Quizz.';
+%>
+<%- include('partials/head', { title: profileUser.displayName + ' — Profil' }) %>
+<main class="container pp-page">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <div class="pp-layout">
+
+    <%# ── Colonne principale ── %>
+    <div class="pp-main">
+
+      <%# ── Header : avatar + nom + username + sexe ── %>
+      <section class="pp-header">
+        <div class="pp-avatar-wrap">
+          <% if (avatarThumb) { %>
+            <%
+              var _c   = avatarCrop;
+              var _cx  = (_c && _c.x  != null) ? _c.x  : 50;
+              var _cy  = (_c && _c.y  != null) ? _c.y  : 50;
+              var _cs  = (_c && _c.scale != null && _c.scale >= 1) ? _c.scale : 1;
+              var _st  = 'object-position:' + _cx + '% ' + _cy + '%;transform:scale(' + _cs + ');transform-origin:' + _cx + '% ' + _cy + '%;';
+            %>
+            <div class="pp-avatar pp-avatar--img">
+              <img src="<%= avatarThumb %>" alt="" class="pp-avatar-img" style="<%= _st %>" />
+            </div>
+          <% } else { %>
+            <div class="pp-avatar pp-avatar--shape" style="--avatar-color:<%= profileUser.profileColor || '#6b7280' %>">
+              <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <polygon points="24,4 44,24 24,44 4,24" fill="var(--avatar-color)" />
+              </svg>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="pp-identity">
+          <h1 class="pp-display-name"><%= profileUser.displayName %></h1>
+          <% if (pub.showSexe && profileUser.sexe) { %>
+            <span class="pp-sexe-badge" style="color:<%= SEXE_COLOR[profileUser.sexe] || '#888' %>">
+              <span class="pp-sexe-symbol" aria-hidden="true"><%= SEXE_SYMBOL[profileUser.sexe] || '' %></span>
+              <%= SEXE_LABEL[profileUser.sexe] || profileUser.sexe %>
+            </span>
+          <% } %>
+        </div>
+      </section>
+
+      <%# ── Images en vedette ── %>
+      <% if (featuredImages.length) { %>
+        <section class="pp-section">
+          <h2 class="pp-section-title">Images en vedette</h2>
+          <div class="pp-featured-grid">
+            <% featuredImages.forEach(function(img) { %>
+              <a href="/galerie/<%= img.id %>" class="pp-featured-item" title="<%= img.title || '' %>">
+                <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" loading="lazy" />
+              </a>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <%# ── Favoris Codex ── %>
+      <% if (pub.showWikiFavorites && wikiFavorites.length) { %>
+        <section class="pp-section">
+          <h2 class="pp-section-title">Favoris Codex</h2>
+          <div class="pp-wiki-grid">
+            <% wikiFavorites.forEach(function(page) { %>
+              <%
+                var _cover = page.imagePaths && page.imagePaths[0];
+                var _hue   = 220;
+              %>
+              <a href="/wiki/<%= page.slug || page.id %>" class="pp-wiki-card" style="--wc-hue:<%= _hue %>">
+                <% if (_cover) { %>
+                  <div class="pp-wiki-card-img">
+                    <img src="<%= thumbUrl(_cover) %>" alt="" loading="lazy" />
+                  </div>
+                <% } else { %>
+                  <div class="pp-wiki-card-img pp-wiki-card-img--placeholder" style="background:hsl(<%= _hue %>,32%,14%)">
+                    <svg viewBox="0 0 60 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <circle cx="30" cy="18" r="10" fill="none" stroke="hsl(<%= _hue %>,55%,50%)" stroke-width="0.8" opacity="0.5"/>
+                    </svg>
+                  </div>
+                <% } %>
+                <div class="pp-wiki-card-title"><%= page.title %></div>
+              </a>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+    </div>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

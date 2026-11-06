@@ -1,0 +1,131 @@
+<%- include('partials/head', { title: 'Profil public' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage profil-subpage--wide">
+
+    <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
+    <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
+
+    <form method="POST" action="/favoris/profil-public" id="pub-form">
+
+      <%# ── Lien vers le profil public ── %>
+      <section class="profil-panel pub-preview-panel">
+        <div class="pub-preview-header">
+          <div>
+            <h2 class="profil-panel-title" style="margin-bottom:.25rem">Votre profil public</h2>
+            <p class="pub-preview-url">
+              <a href="/profil/<%= currentUser.displayName %>" class="pub-preview-link" target="_blank">/profil/<%= currentUser.displayName %></a>
+            </p>
+          </div>
+          <button type="submit" class="profil-btn-primary">Enregistrer</button>
+        </div>
+      </section>
+
+      <%# ── Visibilité : sexe ── %>
+      <section class="profil-panel">
+        <h2 class="profil-panel-title">Visibilit&eacute;</h2>
+        <div class="pub-toggle-row">
+          <label class="pub-toggle-label" for="toggle-sexe">
+            <span>Afficher mon sexe</span>
+            <span class="pub-toggle-hint">(<%= currentUser.sexe || 'Non précisé' %>)</span>
+          </label>
+          <label class="pub-toggle">
+            <input type="checkbox" id="toggle-sexe" name="show_sexe" value="1" <%= pub.showSexe ? 'checked' : '' %> />
+            <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="pub-toggle-row">
+          <label class="pub-toggle-label" for="toggle-wiki">
+            <span>Afficher mes favoris Codex</span>
+            <% if (wikiFavPages.length) { %>
+              <span class="pub-toggle-hint">(<%= wikiFavPages.length %> page<%= wikiFavPages.length > 1 ? 's' : '' %>)</span>
+            <% } else { %>
+              <span class="pub-toggle-hint">(aucun favori pour l&rsquo;instant)</span>
+            <% } %>
+          </label>
+          <label class="pub-toggle">
+            <input type="checkbox" id="toggle-wiki" name="show_wiki_favorites" value="1" <%= pub.showWikiFavorites ? 'checked' : '' %> />
+            <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
+          </label>
+        </div>
+      </section>
+
+      <%# ── Images en vedette (5 max depuis le coffre) ── %>
+      <section class="profil-panel">
+        <h2 class="profil-panel-title">Images en vedette <span class="pub-featured-count" id="pub-sel-count">0 / 5</span></h2>
+        <p class="pub-featured-hint">S&eacute;lectionnez jusqu&rsquo;&agrave; 5 images de votre coffre &agrave; mettre en avant sur votre profil.</p>
+        <input type="hidden" name="featured_image_ids" id="pub-featured-ids" value="<%= pub.featuredImageIds.join(',') %>" />
+
+        <% if (!coffre.length) { %>
+          <p class="pub-empty">Vous n&rsquo;avez pas encore d&rsquo;images dans votre coffre. Ouvrez des lootboxes depuis la <a href="/jeu">page Jeu</a>&nbsp;!</p>
+        <% } else { %>
+          <div class="pub-coffre-grid">
+            <% coffre.forEach(function(u) { %>
+              <%
+                var isSelected = pub.featuredImageIds.indexOf(u.refId) !== -1;
+              %>
+              <button type="button"
+                      class="pub-coffre-item pub-coffre-item--<%= u.rarity %><%= isSelected ? ' pub-coffre-item--selected' : '' %>"
+                      data-ref-id="<%= u.refId %>"
+                      title="<%= u.title || 'Sans titre' %>">
+                <% if (u.thumb) { %>
+                  <img src="<%= thumbUrl(u.thumb) %>" alt="<%= u.title %>" loading="lazy" />
+                <% } else { %>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                <% } %>
+                <span class="pub-coffre-check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+              </button>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+
+    </form>
+
+  </div>
+</main>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var MAX = 5;
+  var idsInput = document.getElementById("pub-featured-ids");
+  var countEl  = document.getElementById("pub-sel-count");
+  var items    = document.querySelectorAll(".pub-coffre-item");
+
+  // Parse initial selection from hidden input
+  var selected = new Set(
+    (idsInput.value || "").split(",").map(Number).filter(Boolean)
+  );
+
+  function sync() {
+    countEl.textContent = selected.size + " / " + MAX;
+    idsInput.value = Array.from(selected).join(",");
+    items.forEach(function (btn) {
+      var id = parseInt(btn.dataset.refId, 10);
+      btn.classList.toggle("pub-coffre-item--selected", selected.has(id));
+    });
+  }
+
+  items.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id = parseInt(btn.dataset.refId, 10);
+      if (selected.has(id)) {
+        selected.delete(id);
+      } else {
+        if (selected.size >= MAX) return;
+        selected.add(id);
+      }
+      sync();
+    });
+  });
+
+  sync();
+})();
+</script>
+
+<%- include('partials/foot') %>

@@ -58,6 +58,8 @@ const {
   THEME_DEFINITIONS,
   getUserCards,
   getUserPersonnageCards,
+  getPublicProfile,
+  setPublicProfile,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -375,11 +377,52 @@ function buildFavoritesRouter(config) {
     res.json({ ok });
   });
 
-  // ── Profil public (à venir) : page future pour consulter le profil "public"
-  // d'un autre utilisateur, selon les réglages de partage choisis. Pour
-  // l'instant, simple page "en travaux" — voir partials/profil-nav.ejs. ──
+  // ── Profil public : réglages (images en vedette, toggles de visibilité) ──────
   router.get("/profil-public", requireUser, (req, res) => {
-    res.render("profil-public-wip", { config, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+    const notice = req.query.ok ? "Profil public mis à jour." : null;
+    const error = req.query.err ? decodeURIComponent(req.query.err) : null;
+    const pub = getPublicProfile(req.user.id);
+    const coffre = getUserUnlocks(req.user.id);
+    // Wiki favorites for the toggle preview
+    const wikiFavIds = listFavoriteRows(req.user.id)
+      .filter(r => r.item_type === "wiki")
+      .map(r => r.item_id)
+      .slice(0, 12);
+    const wikiFavPages = wikiFavIds
+      .map(id => getWikiPage(id))
+      .filter(p => p && !p.hidden);
+    res.render("profil-public", {
+      config,
+      roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
+      notice,
+      error,
+      pub,
+      coffre,
+      wikiFavPages,
+      currentUser: req.user,
+    });
+  });
+
+  router.post("/profil-public", requireUser, (req, res) => {
+    try {
+      const showSexe = req.body.show_sexe === "1";
+      const showWikiFavorites = req.body.show_wiki_favorites === "1";
+      // featured_image_ids comes as comma-separated ref IDs
+      const rawIds = String(req.body.featured_image_ids || "")
+        .split(",")
+        .map(s => parseInt(s.trim(), 10))
+        .filter(n => !isNaN(n) && n > 0);
+      // Validate: each ID must be an unlock the user actually owns
+      const coffre = getUserUnlocks(req.user.id);
+      const ownedRefIds = new Set(coffre.map(u => u.refId));
+      const featuredImageIds = rawIds.filter(id => ownedRefIds.has(id)).slice(0, 5);
+      setPublicProfile(req.user.id, { showSexe, showWikiFavorites, featuredImageIds });
+      res.redirect("/favoris/profil-public?ok=1");
+    } catch (err) {
+      console.error("[profil-public POST]", err);
+      res.redirect("/favoris/profil-public?err=" + encodeURIComponent("Erreur lors de la sauvegarde."));
+    }
   });
 
   router.get("/parametres", requireUser, (req, res) => {

@@ -107,6 +107,13 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN rating INTEGER NOT NULL DEFAULT
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN flame INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN interested INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN views INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+db.exec(`CREATE TABLE IF NOT EXISTS public_profiles (
+  user_id INTEGER PRIMARY KEY,
+  show_sexe INTEGER NOT NULL DEFAULT 0,
+  show_wiki_favorites INTEGER NOT NULL DEFAULT 0,
+  featured_image_ids TEXT NOT NULL DEFAULT '[]',
+  updated_at TEXT NOT NULL
+)`);
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN extra_categories TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
@@ -5990,6 +5997,29 @@ function saveCodexPoll(pageId, { userId, sex, ageRange, fantasme, pratique, prat
   return 'created';
 }
 
+function getPublicProfile(userId) {
+  const row = db.prepare("SELECT * FROM public_profiles WHERE user_id = ?").get(userId);
+  if (!row) return { showSexe: false, showWikiFavorites: false, featuredImageIds: [] };
+  return {
+    showSexe: !!row.show_sexe,
+    showWikiFavorites: !!row.show_wiki_favorites,
+    featuredImageIds: (() => { try { return JSON.parse(row.featured_image_ids || '[]'); } catch (_) { return []; } })(),
+  };
+}
+
+function setPublicProfile(userId, { showSexe, showWikiFavorites, featuredImageIds }) {
+  const ids = Array.isArray(featuredImageIds) ? featuredImageIds.slice(0, 5) : [];
+  const now = new Date().toISOString();
+  db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, featured_image_ids, updated_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(user_id) DO UPDATE SET
+      show_sexe = excluded.show_sexe,
+      show_wiki_favorites = excluded.show_wiki_favorites,
+      featured_image_ids = excluded.featured_image_ids,
+      updated_at = excluded.updated_at`
+  ).run(userId, showSexe ? 1 : 0, showWikiFavorites ? 1 : 0, JSON.stringify(ids), now);
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -6363,6 +6393,8 @@ module.exports = {
   getCodexPollUserVote,
   getCodexPollAnonVote,
   saveCodexPoll,
+  getPublicProfile,
+  setPublicProfile,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

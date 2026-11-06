@@ -1195,6 +1195,7 @@ const buildParodiesRouter = require("./routes/parodies");
 const buildLootboxRouter = require("./routes/lootbox");
 const buildJeuRouter = require("./routes/jeu");
 const buildArcadeRouter = require("./routes/arcade");
+const buildProfilRouter = require("./routes/profil");
 app.use("/quizz/profil", buildProfilQuizRouter(config));
 app.use("/quizz", buildCustomQuizRouter(config));
 app.use("/", buildQuizRouter(config));
@@ -1213,6 +1214,7 @@ app.use("/parodies", buildParodiesRouter(config));
 app.use("/lootbox", buildLootboxRouter(config));
 app.use("/jeu", buildJeuRouter(config));
 app.use("/arcade", buildArcadeRouter(config));
+app.use("/profil", buildProfilRouter(config));
 
 // ── Pages auteurs publiques (E-E-A-T) ────────────────────────────────────────
 // /auteurs/:slug — biographie de l'auteur, liste de ses articles Codex.
