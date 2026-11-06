@@ -54,7 +54,13 @@ const {
   invalidateSfwSet,
   setWikiPageSfwPaths,
   getAllTagMeta,
+  getCodexPollAggregate,
+  getCodexPollUserVote,
+  getCodexPollAnonVote,
+  saveCodexPoll,
 } = require("../db");
+const crypto = require("crypto");
+const _POLL_SALT = process.env.POLL_SALT || "lq-poll-2025";
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb } = require("../thumbs");
 const { filterOff, isOffForUser, specialTagOf } = require("../specialContent");
@@ -362,14 +368,23 @@ function parseMeta(category, body) {
     termes_derives:     parseDerivedTerms(body.meta_termes_derives || ""),
     orce_name:          String(body.meta_orce_name    || "").slice(0, 200).trim(),
     orce_content:       String(body.meta_orce_content || "").slice(0, 10000).trim(),
-    stats_type:         ["pratique","fantasme"].includes(body.meta_stats_type) ? body.meta_stats_type : "",
-    stats_pct_general:  pct(body.meta_stats_pct_general),
-    stats_pct_hommes:   pct(body.meta_stats_pct_hommes),
-    stats_pct_femmes:   pct(body.meta_stats_pct_femmes),
-    stats_source:       String(body.meta_stats_source    || "").slice(0, 500).trim(),
-    stats_note:         String(body.meta_stats_note      || "").slice(0, 1000).trim(),
-    stats_dir_femmes:   body.meta_stats_dir_femmes === "donne" ? "donne" : "",
-    stats_dir_hommes:   body.meta_stats_dir_hommes === "donne" ? "donne" : "",
+    stats_type:              ["pratique","fantasme","both"].includes(body.meta_stats_type) ? body.meta_stats_type : "",
+    stats_pct_general:       pct(body.meta_stats_pct_general),
+    stats_pct_femmes:        pct(body.meta_stats_pct_femmes),
+    stats_pct_femmes_donne:  pct(body.meta_stats_pct_femmes_donne),
+    stats_pct_hommes:        pct(body.meta_stats_pct_hommes),
+    stats_pct_hommes_donne:  pct(body.meta_stats_pct_hommes_donne),
+    stats_source:            String(body.meta_stats_source || "").slice(0, 500).trim(),
+    stats_note:              String(body.meta_stats_note   || "").slice(0, 1000).trim(),
+    // Champs fantasme
+    stats_f_pct_general:     pct(body.meta_stats_f_pct_general),
+    stats_f_pct_femmes:      pct(body.meta_stats_f_pct_femmes),
+    stats_f_pct_hommes:      pct(body.meta_stats_f_pct_hommes),
+    stats_f_source:          String(body.meta_stats_f_source || "").slice(0, 500).trim(),
+    stats_f_note:            String(body.meta_stats_f_note   || "").slice(0, 1000).trim(),
+    // Rétro-compat lecture (non ressoumis mais conservé dans le JSON existant)
+    stats_dir_femmes:        "",
+    stats_dir_hommes:        "",
     author_main:            String(body.meta_author_main || "").slice(0, 100).trim(),
     authors_secondary:      parseAuthorsSecondary(body.meta_authors_secondary || "[]"),
     sources:                parseSources(body.meta_sources || "[]"),
@@ -1048,7 +1063,69 @@ function buildWikiRouter(config) {
         }).filter(Boolean)
       : [];
     const aiNavPages = allPages.map((p) => ({ id: p.id, slug: p.slug || p.id, title: p.title }));
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, ...CTX });
+    // Poll communautaire
+    const pollAggregate  = getCodexPollAggregate(page.id);
+    const userPollVote   = userId ? getCodexPollUserVote(page.id, userId) : null;
+    const pollToken      = req.cookies && req.cookies.poll_token ? req.cookies.poll_token : null;
+    const anonAlreadyVoted = (!userId && pollToken)
+      ? !!getCodexPollAnonVote(page.id, { browserToken: pollToken })
+      : false;
+    // Sexe du user connecté (pour pré-remplir le form)
+    const userSex = req.user ? (req.user.sexe || '') : '';
+    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, ...CTX });
+  });
+
+  // ── Sondage communautaire ─────────────────────────────────────────────────
+  router.post("/:slug/poll", (req, res) => {
+    const { page } = findPageByParam(req.params.slug);
+    if (!page) return res.status(404).json({ error: "not_found" });
+
+    const userId   = req.user ? req.user.id : null;
+    const isAnon   = !userId;
+    const body     = req.body || {};
+
+    // Sex : connecté → profil ; anonyme ou profil vide → corps de la requête
+    const VALID_SEX = new Set(["femme", "homme", "autre", "nr"]);
+    let sex = userId ? (req.user.sexe || "") : (body.sex || "");
+    // Si connecté sans sexe renseigné, accepter celui soumis
+    if (!VALID_SEX.has(sex)) sex = VALID_SEX.has(body.sex) ? body.sex : "nr";
+
+    // Validation des réponses
+    const toInt = (v) => (v === "1" || v === 1) ? 1 : (v === "0" || v === 0) ? 0 : null;
+    const fa = toInt(body.fantasme);
+    const pr = toInt(body.pratique);
+    if (fa === null || pr === null) return res.status(400).json({ error: "incomplete" });
+    if (pr === 1 && (toInt(body.pratique_recoit) === null || toInt(body.pratique_donne) === null)) {
+      return res.status(400).json({ error: "incomplete" });
+    }
+
+    let ipHash = "", browserToken = "";
+    if (isAnon) {
+      const ip = req.ip || (req.connection && req.connection.remoteAddress) || "";
+      ipHash = crypto.createHash("sha256").update(ip + "|" + page.id + "|" + _POLL_SALT).digest("hex").slice(0, 32);
+      browserToken = (req.cookies && req.cookies.poll_token) || "";
+      const existing = getCodexPollAnonVote(page.id, { ipHash, browserToken });
+      if (existing) return res.json({ alreadyVoted: true, aggregate: getCodexPollAggregate(page.id) });
+      if (!browserToken) browserToken = crypto.randomUUID();
+    }
+
+    const result = saveCodexPoll(page.id, {
+      userId,
+      sex,
+      ageRange: isAnon ? (body.age_range || "") : "",
+      fantasme: fa,
+      pratique: pr,
+      pratiqueRecoit: toInt(body.pratique_recoit),
+      pratiqueDonne:  toInt(body.pratique_donne),
+      ipHash,
+      browserToken,
+      isAnonymous: isAnon ? 1 : 0,
+    });
+
+    if (isAnon && result === "created") {
+      res.cookie("poll_token", browserToken, { httpOnly: true, maxAge: 365 * 24 * 60 * 60 * 1000, sameSite: "lax" });
+    }
+    return res.json({ success: true, result, aggregate: getCodexPollAggregate(page.id) });
   });
 
   router.get("/:id/edit", requireAdmin, (req, res) => {

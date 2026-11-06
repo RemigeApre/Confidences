@@ -81,6 +81,27 @@ try { db.exec("ALTER TABLE users ADD COLUMN identity_changed_at TEXT"); } catch 
 
 // Migrations non destructives
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN meta TEXT NOT NULL DEFAULT '{}'"); } catch (_) {}
+
+// ── Sondages communautaires (codex pages) ──────────────────────────────────
+db.exec(`CREATE TABLE IF NOT EXISTS codex_polls (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  page_id INTEGER NOT NULL,
+  user_id INTEGER,
+  sex TEXT NOT NULL DEFAULT '',
+  age_range TEXT NOT NULL DEFAULT '',
+  fantasme INTEGER,
+  pratique INTEGER,
+  pratique_recoit INTEGER,
+  pratique_donne INTEGER,
+  ip_hash TEXT NOT NULL DEFAULT '',
+  browser_token TEXT NOT NULL DEFAULT '',
+  is_anonymous INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+)`);
+try { db.exec(`CREATE UNIQUE INDEX codex_polls_user ON codex_polls(page_id, user_id) WHERE user_id IS NOT NULL`); } catch (_) {}
+try { db.exec(`CREATE INDEX codex_polls_ip ON codex_polls(page_id, ip_hash) WHERE ip_hash != ''`); } catch (_) {}
+try { db.exec(`CREATE INDEX codex_polls_token ON codex_polls(page_id, browser_token) WHERE browser_token != ''`); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN image_paths TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN rating INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN flame INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
@@ -5887,6 +5908,86 @@ function deleteProfilQuizArchetype(id) {
   db.prepare("DELETE FROM profil_quiz_archetypes WHERE id=?").run(id);
 }
 
+// ── Codex polls ───────────────────────────────────────────────────────────
+const _POLL_SEX_VALID = new Set(['femme', 'homme', 'autre', 'nr']);
+const _POLL_AGE_VALID = new Set(['18-24', '25-34', '35-44', '45-54', '55+']);
+
+function _pollStats(rows) {
+  const t = rows.length;
+  if (!t) return null;
+  const faOui  = rows.filter(r => r.fantasme === 1).length;
+  const prOui  = rows.filter(r => r.pratique === 1).length;
+  const prRows = rows.filter(r => r.pratique === 1);
+  const rcOui  = prRows.filter(r => r.pratique_recoit === 1).length;
+  const dnOui  = prRows.filter(r => r.pratique_donne  === 1).length;
+  const pct    = (n, d) => d >= 1 ? Math.round(n / d * 100) : null;
+  return {
+    total:        t,
+    pct_fantasme: pct(faOui, t),
+    pct_pratique: pct(prOui, t),
+    pratique_n:   prRows.length,
+    pct_recoit:   prRows.length >= 3 ? pct(rcOui, prRows.length) : null,
+    pct_donne:    prRows.length >= 3 ? pct(dnOui, prRows.length) : null,
+  };
+}
+
+function getCodexPollAggregate(pageId) {
+  const rows = db.prepare(
+    "SELECT sex, fantasme, pratique, pratique_recoit, pratique_donne, is_anonymous FROM codex_polls WHERE page_id = ?"
+  ).all(pageId);
+  const n       = rows.length;
+  const femmes  = rows.filter(r => r.sex === 'femme');
+  const hommes  = rows.filter(r => r.sex === 'homme');
+  return {
+    total:      n,
+    hasEnough:  n >= 5,
+    global:     n >= 5 ? _pollStats(rows) : null,
+    femmes:     femmes.length >= 5 ? _pollStats(femmes) : null,
+    hommes:     hommes.length >= 5 ? _pollStats(hommes) : null,
+    anon_count: rows.filter(r => r.is_anonymous).length,
+    reg_count:  rows.filter(r => !r.is_anonymous).length,
+  };
+}
+
+function getCodexPollUserVote(pageId, userId) {
+  return db.prepare("SELECT * FROM codex_polls WHERE page_id = ? AND user_id = ?").get(pageId, userId) || null;
+}
+
+function getCodexPollAnonVote(pageId, { ipHash, browserToken }) {
+  if (ipHash) {
+    const r = db.prepare("SELECT id FROM codex_polls WHERE page_id = ? AND ip_hash = ?").get(pageId, ipHash);
+    if (r) return r;
+  }
+  if (browserToken) {
+    return db.prepare("SELECT id FROM codex_polls WHERE page_id = ? AND browser_token = ?").get(pageId, browserToken) || null;
+  }
+  return null;
+}
+
+function saveCodexPoll(pageId, { userId, sex, ageRange, fantasme, pratique, pratiqueRecoit, pratiqueDonne, ipHash, browserToken, isAnonymous }) {
+  const now    = new Date().toISOString();
+  const toInt  = v => (v === 1 || v === '1') ? 1 : (v === 0 || v === '0') ? 0 : null;
+  const cleanS = _POLL_SEX_VALID.has(sex) ? sex : 'nr';
+  const cleanA = _POLL_AGE_VALID.has(ageRange) ? ageRange : '';
+  const fa = toInt(fantasme), pr = toInt(pratique);
+  const rc = pr === 1 ? toInt(pratiqueRecoit) : null;
+  const dn = pr === 1 ? toInt(pratiqueDonne)  : null;
+
+  if (userId) {
+    const existing = db.prepare("SELECT id FROM codex_polls WHERE page_id = ? AND user_id = ?").get(pageId, userId);
+    if (existing) {
+      db.prepare("UPDATE codex_polls SET sex=?,fantasme=?,pratique=?,pratique_recoit=?,pratique_donne=?,updated_at=? WHERE id=?")
+        .run(cleanS, fa, pr, rc, dn, now, existing.id);
+      return 'updated';
+    }
+  }
+  db.prepare(`INSERT INTO codex_polls
+    (page_id,user_id,sex,age_range,fantasme,pratique,pratique_recoit,pratique_donne,ip_hash,browser_token,is_anonymous,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(pageId, userId || null, cleanS, cleanA, fa, pr, rc, dn, ipHash || '', browserToken || '', isAnonymous ? 1 : 0, now, now);
+  return 'created';
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -6256,6 +6357,10 @@ module.exports = {
   createProfilQuizArchetype,
   updateProfilQuizArchetype,
   deleteProfilQuizArchetype,
+  getCodexPollAggregate,
+  getCodexPollUserVote,
+  getCodexPollAnonVote,
+  saveCodexPoll,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

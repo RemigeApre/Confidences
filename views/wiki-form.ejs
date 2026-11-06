@@ -20,10 +20,24 @@
   function ra(val, v)  { return val === v ? 'checked' : ''; }
 
   var stType = pm.stats_type || '';
-  var stPctG = pm.stats_pct_general != null ? pm.stats_pct_general : '';
-  var stPctH = pm.stats_pct_hommes  != null ? pm.stats_pct_hommes  : '';
-  var stPctF = pm.stats_pct_femmes  != null ? pm.stats_pct_femmes  : '';
-  var stSrc  = pm.stats_source || '';
+  var hasPratique = stType === 'pratique' || stType === 'both';
+  var hasFantasme = stType === 'fantasme' || stType === 'both';
+  var stPctG  = pm.stats_pct_general != null ? pm.stats_pct_general : '';
+  var stSrc   = pm.stats_source || '';
+  // Rétro-compat direction : si l'ancien toggle indiquait 'donne', migrer vers le champ donne
+  var _oldF = pm.stats_pct_femmes  != null ? pm.stats_pct_femmes  : '';
+  var _oldH = pm.stats_pct_hommes  != null ? pm.stats_pct_hommes  : '';
+  var _hasDonneFSaved = pm.stats_pct_femmes_donne != null && pm.stats_pct_femmes_donne !== '';
+  var _hasDonneHSaved = pm.stats_pct_hommes_donne != null && pm.stats_pct_hommes_donne !== '';
+  var stPctFRecoit = _hasDonneFSaved ? _oldF : (pm.stats_dir_femmes === 'donne' ? '' : _oldF);
+  var stPctFDonne  = _hasDonneFSaved ? pm.stats_pct_femmes_donne : (pm.stats_dir_femmes === 'donne' ? _oldF : (pm.stats_pct_femmes_donne || ''));
+  var stPctHRecoit = _hasDonneHSaved ? _oldH : (pm.stats_dir_hommes === 'donne' ? '' : _oldH);
+  var stPctHDonne  = _hasDonneHSaved ? pm.stats_pct_hommes_donne : (pm.stats_dir_hommes === 'donne' ? _oldH : (pm.stats_pct_hommes_donne || ''));
+  // Fantasme
+  var stFPctG = pm.stats_f_pct_general != null ? pm.stats_f_pct_general : '';
+  var stFPctF = pm.stats_f_pct_femmes  != null ? pm.stats_f_pct_femmes  : '';
+  var stFPctH = pm.stats_f_pct_hommes  != null ? pm.stats_f_pct_hommes  : '';
+  var stFSrc  = pm.stats_f_source || '';
 %>
 
 <main class="container wide">
@@ -366,37 +380,69 @@
       <div class="wf-sidebar-inner">
 
         <%# ── Statistiques ── %>
-        <details class="prot-sb-details"<%= stType ? ' open' : '' %>>
+        <details class="prot-sb-details"<%= (hasPratique || hasFantasme) ? ' open' : '' %>>
           <summary class="prot-sb-details-summary">Statistiques</summary>
           <div class="prot-sb-details-body wf-sb-stats">
             <div class="wf-stats-toggle-wrap">
-              <button type="button" class="wf-stats-pill<%= stType === 'pratique'  ? ' active' : '' %>" id="wf-stat-pratique">Pratiqu&eacute;</button>
-              <button type="button" class="wf-stats-pill wf-stats-pill--f<%= stType === 'fantasme' ? ' active' : '' %>" id="wf-stat-fantasme">Fantasm&eacute;</button>
+              <button type="button" class="wf-stats-pill<%= hasPratique ? ' active' : '' %>" id="wf-stat-pratique">Pratiqu&eacute;</button>
+              <button type="button" class="wf-stats-pill wf-stats-pill--f<%= hasFantasme ? ' active' : '' %>" id="wf-stat-fantasme">Fantasm&eacute;</button>
               <input type="hidden" name="meta_stats_type" id="wf-stats-type" value="<%= stType %>" />
             </div>
-            <div class="wf-stats-fields" id="wf-stats-fields" <%= stType ? '' : 'hidden' %>>
+
+            <%# ── Bloc Pratiqué ── %>
+            <div class="wf-stats-fields" id="wf-stats-fields-pratique" <%= hasPratique ? '' : 'hidden' %>>
+              <div class="wf-stats-subhead">Pratiqu&eacute;</div>
               <div class="wf-stats-pct-row">
                 <label class="wf-stats-pct-label">G&eacute;n&eacute;ral</label>
                 <input type="number" name="meta_stats_pct_general" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctG %>" placeholder="&mdash;" />
                 <span class="wf-stats-pct-unit">%</span>
               </div>
+              <div class="wf-stats-pct-row wf-stats-pct-row--dir">
+                <label class="wf-stats-pct-label">Femmes</label>
+                <span class="wf-stats-dir-label">Re&ccedil;oit</span>
+                <input type="number" name="meta_stats_pct_femmes" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctFRecoit %>" placeholder="&mdash;" />
+                <span class="wf-stats-pct-unit">%</span>
+                <span class="wf-stats-dir-sep">&middot;</span>
+                <span class="wf-stats-dir-label">Donne</span>
+                <input type="number" name="meta_stats_pct_femmes_donne" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctFDonne %>" placeholder="&mdash;" />
+                <span class="wf-stats-pct-unit">%</span>
+              </div>
+              <div class="wf-stats-pct-row wf-stats-pct-row--dir">
+                <label class="wf-stats-pct-label">Hommes</label>
+                <span class="wf-stats-dir-label">Re&ccedil;oit</span>
+                <input type="number" name="meta_stats_pct_hommes" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctHRecoit %>" placeholder="&mdash;" />
+                <span class="wf-stats-pct-unit">%</span>
+                <span class="wf-stats-dir-sep">&middot;</span>
+                <span class="wf-stats-dir-label">Donne</span>
+                <input type="number" name="meta_stats_pct_hommes_donne" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctHDonne %>" placeholder="&mdash;" />
+                <span class="wf-stats-pct-unit">%</span>
+              </div>
+              <input type="url" name="meta_stats_source" class="wf-stats-source-input" value="<%= stSrc %>" placeholder="Source (optionnel)&hellip;" />
+              <textarea name="meta_stats_note" class="wf-stats-note-input" rows="2" placeholder="Note contextuelle (optionnelle)&hellip;"><%= pm.stats_note || '' %></textarea>
+            </div>
+
+            <%# ── Bloc Fantasmé ── %>
+            <div class="wf-stats-fields" id="wf-stats-fields-fantasme" <%= hasFantasme ? '' : 'hidden' %>>
+              <div class="wf-stats-subhead">Fantasm&eacute;</div>
+              <div class="wf-stats-pct-row">
+                <label class="wf-stats-pct-label">G&eacute;n&eacute;ral</label>
+                <input type="number" name="meta_stats_f_pct_general" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stFPctG %>" placeholder="&mdash;" />
+                <span class="wf-stats-pct-unit">%</span>
+              </div>
               <div class="wf-stats-pct-row">
                 <label class="wf-stats-pct-label">Femmes</label>
-                <input type="number" name="meta_stats_pct_femmes"  class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctF %>" placeholder="&mdash;" />
+                <input type="number" name="meta_stats_f_pct_femmes" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stFPctF %>" placeholder="&mdash;" />
                 <span class="wf-stats-pct-unit">%</span>
-                <button type="button" class="wf-stats-dir-btn<%= pm.stats_dir_femmes === 'donne' ? ' donne' : '' %> wf-stats-dir-pratique" data-inp="wf-dir-femmes"><%= pm.stats_dir_femmes === 'donne' ? 'Donn\u00e9' : 'Re\u00e7u' %></button>
-                <input type="hidden" name="meta_stats_dir_femmes" id="wf-dir-femmes" value="<%= pm.stats_dir_femmes || '' %>" />
               </div>
               <div class="wf-stats-pct-row">
                 <label class="wf-stats-pct-label">Hommes</label>
-                <input type="number" name="meta_stats_pct_hommes"  class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stPctH %>" placeholder="&mdash;" />
+                <input type="number" name="meta_stats_f_pct_hommes" class="wf-stats-pct-input" min="0" max="100" step="0.01" value="<%= stFPctH %>" placeholder="&mdash;" />
                 <span class="wf-stats-pct-unit">%</span>
-                <button type="button" class="wf-stats-dir-btn<%= pm.stats_dir_hommes === 'donne' ? ' donne' : '' %> wf-stats-dir-pratique" data-inp="wf-dir-hommes"><%= pm.stats_dir_hommes === 'donne' ? 'Donn\u00e9' : 'Re\u00e7u' %></button>
-                <input type="hidden" name="meta_stats_dir_hommes" id="wf-dir-hommes" value="<%= pm.stats_dir_hommes || '' %>" />
               </div>
-              <input type="url" name="meta_stats_source" class="wf-stats-source-input" value="<%= stSrc %>" placeholder="Lien source (optionnel)&hellip;" />
-              <textarea name="meta_stats_note" class="wf-stats-note-input" rows="2" placeholder="Note contextuelle (optionnelle)&hellip;"><%= pm.stats_note || '' %></textarea>
+              <input type="url" name="meta_stats_f_source" class="wf-stats-source-input" value="<%= stFSrc %>" placeholder="Source (optionnel)&hellip;" />
+              <textarea name="meta_stats_f_note" class="wf-stats-note-input" rows="2" placeholder="Note contextuelle (optionnelle)&hellip;"><%= pm.stats_f_note || '' %></textarea>
             </div>
+
           </div>
         </details>
 
@@ -819,40 +865,36 @@
 
 <script nonce="<%= nonce %>">
 (function () {
-  var inp    = document.getElementById("wf-stats-type");
-  var fields = document.getElementById("wf-stats-fields");
-  var btnP   = document.getElementById("wf-stat-pratique");
-  var btnF   = document.getElementById("wf-stat-fantasme");
-  if (!inp || !btnP || !btnF || !fields) return;
-
-  var dirBtns = document.querySelectorAll(".wf-stats-dir-pratique");
+  var typeInp  = document.getElementById("wf-stats-type");
+  var fieldsPr = document.getElementById("wf-stats-fields-pratique");
+  var fieldsF  = document.getElementById("wf-stats-fields-fantasme");
+  var btnP     = document.getElementById("wf-stat-pratique");
+  var btnF     = document.getElementById("wf-stat-fantasme");
+  if (!typeInp || !btnP || !btnF) return;
 
   function sync() {
-    var v = inp.value;
-    fields.hidden = !v;
-    btnP.classList.toggle("active", v === "pratique");
-    btnF.classList.toggle("active", v === "fantasme");
-    dirBtns.forEach(function(b) { b.hidden = (v !== "pratique"); });
+    var v = typeInp.value;
+    var hasPr = v === "pratique" || v === "both";
+    var hasFa = v === "fantasme" || v === "both";
+    if (fieldsPr) fieldsPr.hidden = !hasPr;
+    if (fieldsF)  fieldsF.hidden  = !hasFa;
+    btnP.classList.toggle("active", hasPr);
+    btnF.classList.toggle("active", hasFa);
   }
 
   btnP.addEventListener("click", function () {
-    inp.value = inp.value === "pratique" ? "" : "pratique";
+    var v  = typeInp.value;
+    var pr = v === "pratique" || v === "both";
+    var fa = v === "fantasme" || v === "both";
+    typeInp.value = pr ? (fa ? "fantasme" : "") : (fa ? "both" : "pratique");
     sync();
   });
   btnF.addEventListener("click", function () {
-    inp.value = inp.value === "fantasme" ? "" : "fantasme";
+    var v  = typeInp.value;
+    var pr = v === "pratique" || v === "both";
+    var fa = v === "fantasme" || v === "both";
+    typeInp.value = fa ? (pr ? "pratique" : "") : (pr ? "both" : "fantasme");
     sync();
-  });
-
-  dirBtns.forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      var hidden = document.getElementById(btn.dataset.inp);
-      if (!hidden) return;
-      var isDonne = hidden.value === "donne";
-      hidden.value = isDonne ? "" : "donne";
-      btn.textContent = isDonne ? "Re\u00e7u" : "Donn\u00e9";
-      btn.classList.toggle("donne", !isDonne);
-    });
   });
 })();
 </script>

@@ -698,66 +698,255 @@
         <% } %>
 
         <%# Statistiques pratique / fantasme (transversal) ─ %>
-        <% if (pm.stats_type) {
-             var stPctG = pm.stats_pct_general != null && pm.stats_pct_general !== '' ? pm.stats_pct_general : null;
-             var stPctH = pm.stats_pct_hommes  != null && pm.stats_pct_hommes  !== '' ? pm.stats_pct_hommes  : null;
-             var stPctF = pm.stats_pct_femmes  != null && pm.stats_pct_femmes  !== '' ? pm.stats_pct_femmes  : null;
-             var hasAny = stPctG !== null || stPctH !== null || stPctF !== null;
+        <%
+          var _stType     = pm.stats_type || '';
+          var _hasPratique = _stType === 'pratique' || _stType === 'both';
+          var _hasFantasme = _stType === 'fantasme' || _stType === 'both';
+          // Données pratiqué
+          var _prPctG  = pm.stats_pct_general  != null && pm.stats_pct_general  !== '' ? pm.stats_pct_general  : null;
+          var _prPctFR = pm.stats_pct_femmes   != null && pm.stats_pct_femmes   !== '' ? pm.stats_pct_femmes   : null;
+          var _prPctFD = pm.stats_pct_femmes_donne != null && pm.stats_pct_femmes_donne !== '' ? pm.stats_pct_femmes_donne : null;
+          var _prPctHR = pm.stats_pct_hommes   != null && pm.stats_pct_hommes   !== '' ? pm.stats_pct_hommes   : null;
+          var _prPctHD = pm.stats_pct_hommes_donne != null && pm.stats_pct_hommes_donne !== '' ? pm.stats_pct_hommes_donne : null;
+          // Rétro-compat : si aucun champ _donne, utiliser l'ancien stats_dir
+          if (_prPctFD === null && _prPctFR !== null && pm.stats_dir_femmes === 'donne') { _prPctFD = _prPctFR; _prPctFR = null; }
+          if (_prPctHD === null && _prPctHR !== null && pm.stats_dir_hommes === 'donne') { _prPctHD = _prPctHR; _prPctHR = null; }
+          var _hasPrAny = _prPctG !== null || _prPctFR !== null || _prPctFD !== null || _prPctHR !== null || _prPctHD !== null;
+          // Données fantasmé
+          var _faPctG  = pm.stats_f_pct_general != null && pm.stats_f_pct_general !== '' ? pm.stats_f_pct_general : null;
+          var _faPctF  = pm.stats_f_pct_femmes  != null && pm.stats_f_pct_femmes  !== '' ? pm.stats_f_pct_femmes  : null;
+          var _faPctH  = pm.stats_f_pct_hommes  != null && pm.stats_f_pct_hommes  !== '' ? pm.stats_f_pct_hommes  : null;
+          var _hasFaAny = _faPctG !== null || _faPctF !== null || _faPctH !== null;
+          var _showBlock = (_hasPratique && _hasPrAny) || (_hasFantasme && _hasFaAny);
         %>
+        <% if (_showBlock) { %>
         <div class="wiki-stats-block">
           <h3 class="wiki-stats-title" data-fr="Statistiques" data-en="Statistics">Statistiques</h3>
-          <%
-            var _statSubFr = pm.stats_type === 'pratique' ? 'Pourcentage de personnes ayant r\u00e9alis\u00e9 ce fantasme' : 'Pourcentage de personnes ayant particuli\u00e8rement ce fantasme';
-            var _statSubEn = pm.stats_type === 'pratique' ? 'Percentage of people who have fulfilled this fantasy' : 'Percentage of people who particularly have this fantasy';
-          %>
-          <p class="wiki-stats-subtitle" data-fr="<%= _statSubFr %>" data-en="<%= _statSubEn %>"><%= _statSubFr %></p>
-          <% if (!hasAny) { %>
-            <p class="wiki-stats-empty" data-fr="Aucune donnée disponible pour le moment." data-en="No data available yet.">Aucune donn&eacute;e disponible pour le moment.</p>
-          <% } else { %>
+
+          <%# ── Pratiqué ── %>
+          <% if (_hasPratique && _hasPrAny) { %>
+          <div class="wiki-stats-section">
+            <% if (_hasFantasme && _hasFaAny) { %><p class="wiki-stats-subhead" data-fr="Pratiqué" data-en="Practiced">Pratiqu&eacute;</p><% } %>
+            <p class="wiki-stats-subtitle" data-fr="Pourcentage de personnes ayant réalisé cela" data-en="Percentage of people who have done this">Pourcentage de personnes ayant r&eacute;alis&eacute; cela</p>
             <div class="wiki-stats-donuts">
-              <% if (stPctG !== null) { %>
+              <% if (_prPctG !== null) { %>
                 <div class="wiki-stats-donut-wrap">
-                  <div class="wiki-stats-donut" style="--pct:<%= stPctG %>;--clr:hsl(220,70%,62%)">
-                    <span class="wiki-stats-donut-val" style="color:hsl(220,80%,76%)"><%= stPctG %><span class="wiki-stats-donut-sym">%</span></span>
+                  <div class="wiki-stats-donut" style="--pct:<%= _prPctG %>;--clr:hsl(220,70%,62%)">
+                    <span class="wiki-stats-donut-val" style="color:hsl(220,80%,76%)"><%= _prPctG %><span class="wiki-stats-donut-sym">%</span></span>
                   </div>
                   <span class="wiki-stats-donut-lbl" data-fr="Général" data-en="General">G&eacute;n&eacute;ral</span>
                 </div>
               <% } %>
-              <% if (stPctF !== null) { %>
-                <%
-                  var stDirF    = pm.stats_type === 'pratique' ? (pm.stats_dir_femmes === 'donne' ? 'ont donn\u00e9' : 'ont re\u00e7u') : null;
-                  var stDirF_En = pm.stats_type === 'pratique' ? (pm.stats_dir_femmes === 'donne' ? 'gave' : 'received') : null;
-                %>
+              <% if (_prPctFR !== null) { %>
                 <div class="wiki-stats-donut-wrap">
-                  <div class="wiki-stats-donut" style="--pct:<%= stPctF %>;--clr:hsl(340,65%,62%)">
-                    <span class="wiki-stats-donut-val" style="color:hsl(340,75%,78%)"><%= stPctF %><span class="wiki-stats-donut-sym">%</span></span>
+                  <div class="wiki-stats-donut" style="--pct:<%= _prPctFR %>;--clr:hsl(340,65%,62%)">
+                    <span class="wiki-stats-donut-val" style="color:hsl(340,75%,78%)"><%= _prPctFR %><span class="wiki-stats-donut-sym">%</span></span>
                   </div>
-                  <span class="wiki-stats-donut-lbl"><span data-fr="Femmes" data-en="Women">Femmes</span><% if (stDirF) { %><br><span class="wiki-stats-dir-badge" data-fr="<%= stDirF %>" data-en="<%= stDirF_En %>"><%= stDirF %></span><% } %></span>
+                  <span class="wiki-stats-donut-lbl"><span data-fr="Femmes" data-en="Women">Femmes</span><br><span class="wiki-stats-dir-badge" data-fr="ont reçu" data-en="received">ont re&ccedil;u</span></span>
                 </div>
               <% } %>
-              <% if (stPctH !== null) { %>
-                <%
-                  var stDirH    = pm.stats_type === 'pratique' ? (pm.stats_dir_hommes === 'donne' ? 'ont donn\u00e9' : 'ont re\u00e7u') : null;
-                  var stDirH_En = pm.stats_type === 'pratique' ? (pm.stats_dir_hommes === 'donne' ? 'gave' : 'received') : null;
-                %>
+              <% if (_prPctFD !== null) { %>
                 <div class="wiki-stats-donut-wrap">
-                  <div class="wiki-stats-donut" style="--pct:<%= stPctH %>;--clr:hsl(200,70%,56%)">
-                    <span class="wiki-stats-donut-val" style="color:hsl(200,80%,74%)"><%= stPctH %><span class="wiki-stats-donut-sym">%</span></span>
+                  <div class="wiki-stats-donut" style="--pct:<%= _prPctFD %>;--clr:hsl(340,55%,52%)">
+                    <span class="wiki-stats-donut-val" style="color:hsl(340,65%,70%)"><%= _prPctFD %><span class="wiki-stats-donut-sym">%</span></span>
                   </div>
-                  <span class="wiki-stats-donut-lbl"><span data-fr="Hommes" data-en="Men">Hommes</span><% if (stDirH) { %><br><span class="wiki-stats-dir-badge" data-fr="<%= stDirH %>" data-en="<%= stDirH_En %>"><%= stDirH %></span><% } %></span>
+                  <span class="wiki-stats-donut-lbl"><span data-fr="Femmes" data-en="Women">Femmes</span><br><span class="wiki-stats-dir-badge" data-fr="ont donné" data-en="gave">ont donn&eacute;</span></span>
+                </div>
+              <% } %>
+              <% if (_prPctHR !== null) { %>
+                <div class="wiki-stats-donut-wrap">
+                  <div class="wiki-stats-donut" style="--pct:<%= _prPctHR %>;--clr:hsl(200,70%,56%)">
+                    <span class="wiki-stats-donut-val" style="color:hsl(200,80%,74%)"><%= _prPctHR %><span class="wiki-stats-donut-sym">%</span></span>
+                  </div>
+                  <span class="wiki-stats-donut-lbl"><span data-fr="Hommes" data-en="Men">Hommes</span><br><span class="wiki-stats-dir-badge" data-fr="ont reçu" data-en="received">ont re&ccedil;u</span></span>
+                </div>
+              <% } %>
+              <% if (_prPctHD !== null) { %>
+                <div class="wiki-stats-donut-wrap">
+                  <div class="wiki-stats-donut" style="--pct:<%= _prPctHD %>;--clr:hsl(200,60%,46%)">
+                    <span class="wiki-stats-donut-val" style="color:hsl(200,70%,64%)"><%= _prPctHD %><span class="wiki-stats-donut-sym">%</span></span>
+                  </div>
+                  <span class="wiki-stats-donut-lbl"><span data-fr="Hommes" data-en="Men">Hommes</span><br><span class="wiki-stats-dir-badge" data-fr="ont donné" data-en="gave">ont donn&eacute;</span></span>
                 </div>
               <% } %>
             </div>
+            <% if (pm.stats_source) { %><a href="<%= pm.stats_source %>" class="wiki-stats-source" target="_blank" rel="noopener noreferrer">Source</a><% } %>
+            <% if (pm.stats_note) { %><p class="wiki-stats-ctx-note"><%= pm.stats_note %></p><% } %>
+          </div>
           <% } %>
-          <% if (pm.stats_source) { %>
-            <a href="<%= pm.stats_source %>" class="wiki-stats-source" target="_blank" rel="noopener noreferrer">Source</a>
+
+          <%# ── Fantasmé ── %>
+          <% if (_hasFantasme && _hasFaAny) { %>
+          <div class="wiki-stats-section<%= (_hasPratique && _hasPrAny) ? ' wiki-stats-section--sep' : '' %>">
+            <% if (_hasPratique && _hasPrAny) { %><p class="wiki-stats-subhead" data-fr="Fantasmé" data-en="Fantasized">Fantasm&eacute;</p><% } %>
+            <p class="wiki-stats-subtitle" data-fr="Pourcentage de personnes ayant particulièrement ce fantasme" data-en="Percentage of people who particularly have this fantasy">Pourcentage de personnes ayant particuli&egrave;rement ce fantasme</p>
+            <div class="wiki-stats-donuts">
+              <% if (_faPctG !== null) { %>
+                <div class="wiki-stats-donut-wrap">
+                  <div class="wiki-stats-donut" style="--pct:<%= _faPctG %>;--clr:hsl(220,70%,62%)">
+                    <span class="wiki-stats-donut-val" style="color:hsl(220,80%,76%)"><%= _faPctG %><span class="wiki-stats-donut-sym">%</span></span>
+                  </div>
+                  <span class="wiki-stats-donut-lbl" data-fr="Général" data-en="General">G&eacute;n&eacute;ral</span>
+                </div>
+              <% } %>
+              <% if (_faPctF !== null) { %>
+                <div class="wiki-stats-donut-wrap">
+                  <div class="wiki-stats-donut" style="--pct:<%= _faPctF %>;--clr:hsl(340,65%,62%)">
+                    <span class="wiki-stats-donut-val" style="color:hsl(340,75%,78%)"><%= _faPctF %><span class="wiki-stats-donut-sym">%</span></span>
+                  </div>
+                  <span class="wiki-stats-donut-lbl" data-fr="Femmes" data-en="Women">Femmes</span>
+                </div>
+              <% } %>
+              <% if (_faPctH !== null) { %>
+                <div class="wiki-stats-donut-wrap">
+                  <div class="wiki-stats-donut" style="--pct:<%= _faPctH %>;--clr:hsl(200,70%,56%)">
+                    <span class="wiki-stats-donut-val" style="color:hsl(200,80%,74%)"><%= _faPctH %><span class="wiki-stats-donut-sym">%</span></span>
+                  </div>
+                  <span class="wiki-stats-donut-lbl" data-fr="Hommes" data-en="Men">Hommes</span>
+                </div>
+              <% } %>
+            </div>
+            <% if (pm.stats_f_source) { %><a href="<%= pm.stats_f_source %>" class="wiki-stats-source" target="_blank" rel="noopener noreferrer">Source</a><% } %>
+            <% if (pm.stats_f_note) { %><p class="wiki-stats-ctx-note"><%= pm.stats_f_note %></p><% } %>
+          </div>
           <% } %>
-          <% if (pm.stats_note) { %>
-            <p class="wiki-stats-ctx-note"><%= pm.stats_note %></p>
-          <% } %>
+
           <p class="wiki-stats-note" data-fr="Ces études ont été faites sur la population commune, intégrant donc la majorité ne s'intéressant pas au domaine. Les chiffres des personnes intéressées à la sexualité sont bien plus hauts, en général." data-en="These studies were conducted on the general population, which includes the majority who are not interested in the subject. Figures for people interested in sexuality are generally much higher.">Ces &eacute;tudes ont &eacute;t&eacute; faites sur la population commune, int&eacute;grant donc la majorit&eacute; ne s&rsquo;int&eacute;ressant pas au domaine. Les chiffres des personnes int&eacute;ress&eacute;es &agrave; la sexualit&eacute; sont bien plus hauts, en g&eacute;n&eacute;ral.</p>
         </div>
         <% } %>
+
+        <%# ── Sondage communautaire ── %>
+        <%
+          var _pollAlreadyVoted = userPollVote || anonAlreadyVoted;
+          var _pollNeedSex      = !currentUser || !userSex || userSex === '';
+          var _pollUserSexVal   = userSex || '';
+        %>
+        <div class="wiki-poll-block" id="wiki-poll-block" data-page-id="<%= page.id %>" data-slug="<%= page.slug || page.id %>">
+          <h3 class="wiki-poll-title" data-fr="Et vous ?" data-en="And you?">Et vous&nbsp;?</h3>
+
+          <%# Form (caché si déjà voté) %>
+          <div class="wiki-poll-form" id="wiki-poll-form"<% if (_pollAlreadyVoted) { %> hidden<% } %>>
+
+            <% if (_pollNeedSex) { %>
+            <div class="wiki-poll-sex-row" id="wiki-poll-sex-row">
+              <span class="wiki-poll-sex-label" data-fr="Vous êtes" data-en="You are">Vous &ecirc;tes</span>
+              <div class="wiki-poll-sex-choices">
+                <button type="button" class="wiki-poll-sex-btn" data-val="femme" data-fr="Femme" data-en="Woman">Femme</button>
+                <button type="button" class="wiki-poll-sex-btn" data-val="homme" data-fr="Homme" data-en="Man">Homme</button>
+                <button type="button" class="wiki-poll-sex-btn" data-val="autre" data-fr="Autre" data-en="Other">Autre</button>
+                <button type="button" class="wiki-poll-sex-btn" data-val="nr" data-fr="Préfère ne pas dire" data-en="Prefer not to say">NSP</button>
+              </div>
+            </div>
+            <% } %>
+
+            <% if (!currentUser) { %>
+            <div class="wiki-poll-age-row">
+              <label class="wiki-poll-age-label" data-fr="Tranche d'âge" data-en="Age range">Tranche d&rsquo;&acirc;ge</label>
+              <select class="wiki-poll-age-select" id="wiki-poll-age">
+                <option value="">—</option>
+                <option value="18-24">18&ndash;24</option>
+                <option value="25-34">25&ndash;34</option>
+                <option value="35-44">35&ndash;44</option>
+                <option value="45-54">45&ndash;54</option>
+                <option value="55+">55+</option>
+              </select>
+            </div>
+            <% } %>
+
+            <div class="wiki-poll-questions">
+              <div class="wiki-poll-q" data-q="fantasme">
+                <span class="wiki-poll-q-label" data-fr="Avez-vous déjà fantasmé sur cela ?" data-en="Have you ever fantasized about this?">Avez-vous d&eacute;j&agrave; fantasm&eacute; sur cela&nbsp;?</span>
+                <div class="wiki-poll-q-choices">
+                  <button type="button" class="wiki-poll-ans-btn" data-q="fantasme" data-val="1" data-fr="Oui" data-en="Yes">Oui</button>
+                  <button type="button" class="wiki-poll-ans-btn" data-q="fantasme" data-val="0" data-fr="Non" data-en="No">Non</button>
+                </div>
+              </div>
+              <div class="wiki-poll-q" data-q="pratique">
+                <span class="wiki-poll-q-label" data-fr="L'avez-vous déjà pratiqué ?" data-en="Have you ever practiced it?">L&rsquo;avez-vous d&eacute;j&agrave; pratiqu&eacute;&nbsp;?</span>
+                <div class="wiki-poll-q-choices">
+                  <button type="button" class="wiki-poll-ans-btn" data-q="pratique" data-val="1" data-fr="Oui" data-en="Yes">Oui</button>
+                  <button type="button" class="wiki-poll-ans-btn" data-q="pratique" data-val="0" data-fr="Non" data-en="No">Non</button>
+                </div>
+              </div>
+              <div class="wiki-poll-q wiki-poll-q--direction" id="wiki-poll-direction" hidden>
+                <span class="wiki-poll-q-label" data-fr="En le pratiquant, avez-vous reçu ?" data-en="When practicing, did you receive?">En le pratiquant, avez-vous re&ccedil;u&nbsp;?</span>
+                <div class="wiki-poll-q-choices">
+                  <button type="button" class="wiki-poll-ans-btn" data-q="pratique_recoit" data-val="1" data-fr="Oui" data-en="Yes">Oui</button>
+                  <button type="button" class="wiki-poll-ans-btn" data-q="pratique_recoit" data-val="0" data-fr="Non" data-en="No">Non</button>
+                </div>
+              </div>
+              <div class="wiki-poll-q wiki-poll-q--direction" id="wiki-poll-donne" hidden>
+                <span class="wiki-poll-q-label" data-fr="Et avez-vous donné ?" data-en="And did you give?">Et avez-vous donn&eacute;&nbsp;?</span>
+                <div class="wiki-poll-q-choices">
+                  <button type="button" class="wiki-poll-ans-btn" data-q="pratique_donne" data-val="1" data-fr="Oui" data-en="Yes">Oui</button>
+                  <button type="button" class="wiki-poll-ans-btn" data-q="pratique_donne" data-val="0" data-fr="Non" data-en="No">Non</button>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="wiki-poll-submit" id="wiki-poll-submit" disabled
+              data-fr="Répondre" data-en="Submit">R&eacute;pondre</button>
+          </div>
+
+          <%# Résultats %>
+          <div class="wiki-poll-results" id="wiki-poll-results"<% if (!_pollAlreadyVoted) { %> hidden<% } %>>
+            <%
+              var _pa = pollAggregate || { total: 0, hasEnough: false };
+            %>
+            <p class="wiki-poll-total">
+              <% if (_pa.total === 0) { %>
+                <span data-fr="Soyez le premier à répondre !" data-en="Be the first to answer!">Soyez le premier &agrave; r&eacute;pondre&nbsp;!</span>
+              <% } else if (!_pa.hasEnough) { %>
+                <span data-fr="<%= _pa.total %> réponse<%= _pa.total > 1 ? 's' : '' %> — résultats dès 5 réponses" data-en="<%= _pa.total %> answer<%= _pa.total > 1 ? 's' : '' %> — results from 5 answers"><%= _pa.total %> r&eacute;ponse<%= _pa.total > 1 ? 's' : '' %> &mdash; r&eacute;sultats d&egrave;s 5 r&eacute;ponses</span>
+              <% } else { %>
+                <span data-fr="<%= _pa.total %> réponses" data-en="<%= _pa.total %> answers"><%= _pa.total %> r&eacute;ponses</span>
+              <% } %>
+            </p>
+            <% if (_pa.hasEnough && _pa.global) { %>
+            <div class="wiki-poll-bars" id="wiki-poll-bars">
+              <%
+                function pollBar(label, labelEn, pct, clr) {
+                  if (pct === null) return '';
+                  return '<div class="wiki-poll-bar-row">'
+                    + '<span class="wiki-poll-bar-lbl" data-fr="' + label + '" data-en="' + labelEn + '">' + label + '</span>'
+                    + '<div class="wiki-poll-bar-track"><div class="wiki-poll-bar-fill" style="width:' + pct + '%;background:' + clr + '"></div></div>'
+                    + '<span class="wiki-poll-bar-pct">' + pct + '%</span>'
+                    + '</div>';
+                }
+              %>
+              <%- pollBar('Ont fantasmé', 'Fantasized', _pa.global.pct_fantasme, 'hsl(260,55%,52%)') %>
+              <%- pollBar('Ont pratiqué', 'Practiced',  _pa.global.pct_pratique, 'hsl(200,60%,46%)') %>
+              <% if (_pa.global.pct_recoit !== null || _pa.global.pct_donne !== null) { %>
+              <p class="wiki-poll-bars-sub" data-fr="Parmi ceux qui ont pratiqué" data-en="Among those who practiced">Parmi ceux qui ont pratiqu&eacute;</p>
+              <%- pollBar('Ont reçu',  'Received', _pa.global.pct_recoit, 'hsl(340,55%,52%)') %>
+              <%- pollBar('Ont donné', 'Gave',     _pa.global.pct_donne,  'hsl(340,45%,42%)') %>
+              <% } %>
+              <% if (_pa.femmes || _pa.hommes) { %>
+              <div class="wiki-poll-bysex">
+                <% if (_pa.femmes) { %>
+                <div class="wiki-poll-bysex-col">
+                  <p class="wiki-poll-bysex-head" data-fr="Femmes (<%= _pa.femmes.total %>)" data-en="Women (<%= _pa.femmes.total %>)">Femmes (<%= _pa.femmes.total %>)</p>
+                  <%- pollBar('Fantasmé', 'Fantasized', _pa.femmes.pct_fantasme, 'hsl(260,55%,52%)') %>
+                  <%- pollBar('Pratiqué', 'Practiced',  _pa.femmes.pct_pratique, 'hsl(200,60%,46%)') %>
+                  <%- pollBar('Reçu', 'Received', _pa.femmes.pct_recoit, 'hsl(340,55%,52%)') %>
+                  <%- pollBar('Donné', 'Gave', _pa.femmes.pct_donne, 'hsl(340,45%,42%)') %>
+                </div>
+                <% } %>
+                <% if (_pa.hommes) { %>
+                <div class="wiki-poll-bysex-col">
+                  <p class="wiki-poll-bysex-head" data-fr="Hommes (<%= _pa.hommes.total %>)" data-en="Men (<%= _pa.hommes.total %>)">Hommes (<%= _pa.hommes.total %>)</p>
+                  <%- pollBar('Fantasmé', 'Fantasized', _pa.hommes.pct_fantasme, 'hsl(260,55%,52%)') %>
+                  <%- pollBar('Pratiqué', 'Practiced',  _pa.hommes.pct_pratique, 'hsl(200,60%,46%)') %>
+                  <%- pollBar('Reçu', 'Received', _pa.hommes.pct_recoit, 'hsl(340,55%,52%)') %>
+                  <%- pollBar('Donné', 'Gave', _pa.hommes.pct_donne, 'hsl(340,45%,42%)') %>
+                </div>
+                <% } %>
+              </div>
+              <% } %>
+            </div>
+            <% } %>
+          </div>
+        </div>
 
         <%# Informations utiles (positions) ─ %>
         <% var _pmInfos = t(pm.infos_utiles, 'wiki', page.id, 'meta_infos_utiles'); %>
@@ -1749,6 +1938,129 @@ window.WIKI_CONTENT = <%- JSON.stringify({
       }
     });
   });
+})();
+</script>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var block   = document.getElementById('wiki-poll-block');
+  if (!block) return;
+  var form    = document.getElementById('wiki-poll-form');
+  var results = document.getElementById('wiki-poll-results');
+  var submitBtn = document.getElementById('wiki-poll-submit');
+  var slug    = block.dataset.slug;
+  var needSex = !!document.getElementById('wiki-poll-sex-row');
+  var userSexFixed = <%= JSON.stringify(userSex || '') %>;
+
+  var answers = { sex: userSexFixed || null, age_range: null, fantasme: null, pratique: null, pratique_recoit: null, pratique_donne: null };
+
+  function checkComplete() {
+    if (needSex && !answers.sex) { submitBtn.disabled = true; return; }
+    if (answers.fantasme === null || answers.pratique === null) { submitBtn.disabled = true; return; }
+    if (answers.pratique === '1' && (answers.pratique_recoit === null || answers.pratique_donne === null)) { submitBtn.disabled = true; return; }
+    submitBtn.disabled = false;
+  }
+
+  // Sex buttons
+  document.querySelectorAll('.wiki-poll-sex-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.wiki-poll-sex-btn').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      answers.sex = btn.dataset.val;
+      checkComplete();
+    });
+  });
+
+  // Age select
+  var ageSelect = document.getElementById('wiki-poll-age');
+  if (ageSelect) ageSelect.addEventListener('change', function () { answers.age_range = ageSelect.value || null; });
+
+  // Answer buttons
+  document.querySelectorAll('.wiki-poll-ans-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var q = btn.dataset.q;
+      document.querySelectorAll('.wiki-poll-ans-btn[data-q="' + q + '"]').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      answers[q] = btn.dataset.val;
+      // Afficher/cacher reçu+donné selon la réponse à pratique
+      if (q === 'pratique') {
+        var dirQ = document.querySelectorAll('.wiki-poll-q--direction');
+        dirQ.forEach(function (el) { el.hidden = btn.dataset.val !== '1'; });
+        if (btn.dataset.val !== '1') { answers.pratique_recoit = null; answers.pratique_donne = null; }
+      }
+      checkComplete();
+    });
+  });
+
+  // Submit
+  submitBtn && submitBtn.addEventListener('click', function () {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '…';
+    var payload = {
+      fantasme:        answers.fantasme,
+      pratique:        answers.pratique,
+      pratique_recoit: answers.pratique_recoit,
+      pratique_donne:  answers.pratique_donne,
+    };
+    if (needSex)                 payload.sex = answers.sex;
+    if (answers.age_range)       payload.age_range = answers.age_range;
+
+    fetch('/wiki/' + slug + '/poll', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.error === 'incomplete') { submitBtn.disabled = false; submitBtn.textContent = 'Répondre'; return; }
+      if (form)    form.hidden    = true;
+      renderResults(data.aggregate);
+      if (results) results.hidden = false;
+    })
+    .catch(function () { submitBtn.disabled = false; submitBtn.textContent = 'Répondre'; });
+  });
+
+  function bar(label, pct, clr) {
+    if (pct === null || pct === undefined) return '';
+    return '<div class="wiki-poll-bar-row">'
+      + '<span class="wiki-poll-bar-lbl">' + label + '</span>'
+      + '<div class="wiki-poll-bar-track"><div class="wiki-poll-bar-fill" style="width:' + pct + '%;background:' + clr + '"></div></div>'
+      + '<span class="wiki-poll-bar-pct">' + pct + '%</span>'
+      + '</div>';
+  }
+
+  function colHtml(g, label) {
+    if (!g) return '';
+    var html = '<div class="wiki-poll-bysex-col">';
+    html += '<p class="wiki-poll-bysex-head">' + label + ' (' + g.total + ')</p>';
+    html += bar('Fantasmé', g.pct_fantasme, 'hsl(260,55%,52%)');
+    html += bar('Pratiqué', g.pct_pratique, 'hsl(200,60%,46%)');
+    if (g.pct_recoit !== null && g.pct_recoit !== undefined) html += bar('Reçu',  g.pct_recoit, 'hsl(340,55%,52%)');
+    if (g.pct_donne  !== null && g.pct_donne  !== undefined) html += bar('Donné', g.pct_donne,  'hsl(340,45%,42%)');
+    return html + '</div>';
+  }
+
+  function renderResults(agg) {
+    if (!results) return;
+    var totalEl = results.querySelector('.wiki-poll-total');
+    if (totalEl) {
+      if (!agg || agg.total === 0) totalEl.textContent = 'Soyez le premier à répondre !';
+      else if (!agg.hasEnough)     totalEl.textContent = agg.total + ' réponse' + (agg.total > 1 ? 's' : '') + ' — résultats dès 5 réponses';
+      else                          totalEl.textContent = agg.total + ' réponses';
+    }
+    var barsEl = document.getElementById('wiki-poll-bars');
+    if (!barsEl || !agg || !agg.hasEnough || !agg.global) return;
+    var g = agg.global;
+    var html = bar('Ont fantasmé', g.pct_fantasme, 'hsl(260,55%,52%)') + bar('Ont pratiqué', g.pct_pratique, 'hsl(200,60%,46%)');
+    if (g.pct_recoit !== null || g.pct_donne !== null) {
+      html += '<p class="wiki-poll-bars-sub">Parmi ceux qui ont pratiqué</p>';
+      html += bar('Ont reçu',  g.pct_recoit, 'hsl(340,55%,52%)') + bar('Ont donné', g.pct_donne, 'hsl(340,45%,42%)');
+    }
+    if (agg.femmes || agg.hommes) {
+      html += '<div class="wiki-poll-bysex">' + colHtml(agg.femmes, 'Femmes') + colHtml(agg.hommes, 'Hommes') + '</div>';
+    }
+    barsEl.innerHTML = html;
+  }
 })();
 </script>
 
