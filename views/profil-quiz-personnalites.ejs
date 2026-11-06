@@ -7,83 +7,239 @@
   };
   var worldOrder = ['DL', 'DP', 'BL', 'BP'];
   var normalAxes = axes.filter(function(a) { return !a.is_position; });
-
-  function firstSentence(text) {
-    if (!text) return '';
-    var i = text.indexOf('. ');
-    return i > 0 ? text.slice(0, i + 1) : text.slice(0, 160);
-  }
 %>
 <%- include('partials/head', { title: 'Les personnalités — ' + type.name }) %>
-<main class="container" style="--ch-hue: 270">
+<main class="container pqp-container" style="--ch-hue: 270">
   <%- include('partials/top-nav', { config: config, navTitle: 'Les personnalités', navBack: '/quizz/profil' }) %>
 
-  <div class="pqpers-wrap">
+  <button class="pqp-mobile-toggle" id="pqpMobileToggle" aria-label="Navigation" aria-expanded="false">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx=".75" fill="currentColor"/></svg>
+    <span data-fr="Naviguer" data-en="Navigate">Naviguer</span>
+  </button>
 
-    <%# ── Intro ── %>
-    <div class="pqpers-intro">
-      <h1 class="pqpers-title">Les 32 personnalités</h1>
-      <p class="pqpers-subtitle">
-        Chaque profil se lit en cinq lettres : <strong>Rythme · Moteur · Nouveauté · Scénario · Plaisir</strong>,
-        suivi d'une position (<strong>D</strong> Dominant · <strong>S</strong> Soumis · <strong>SW</strong> Souple).
-      </p>
-    </div>
+  <div class="pqp-layout">
 
-    <%# ── Axes expliqués ── %>
-    <section class="pqpers-axes-section">
-      <h2 class="pqpers-section-title">Les cinq dimensions</h2>
-      <div class="pqpers-axes-grid">
-        <% normalAxes.forEach(function(axis) { %>
-        <div class="pqpers-axis-card">
-          <div class="pqpers-axis-card-name"><%= axis.name %></div>
-          <div class="pqpers-axis-card-poles">
-            <span class="pqpers-axis-card-pole pqpers-axis-card-pole--1"><%= axis.pole1_label || axis.pole1_code %></span>
-            <span class="pqpers-axis-card-sep">↔</span>
-            <span class="pqpers-axis-card-pole pqpers-axis-card-pole--2"><%= axis.pole2_label || axis.pole2_code %></span>
+    <%# ── Sidebar ── %>
+    <nav class="pqp-sidebar" id="pqpSidebar" aria-label="Navigation">
+      <div class="pqp-sidebar-inner">
+
+        <a class="pqp-nav-link pqp-nav-intro is-active" data-panel="intro" href="#intro">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.3"/><line x1="6.5" y1="5.5" x2="6.5" y2="9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="6.5" cy="3.8" r=".8" fill="currentColor"/></svg>
+          <span data-fr="Introduction" data-en="Introduction">Introduction</span>
+        </a>
+
+        <div class="pqp-sidebar-sep"></div>
+
+        <% worldOrder.forEach(function(wk) { %>
+        <% var wm = worldMeta[wk]; %>
+        <% var wArchs = archetypes.filter(function(a){ return a.code && a.code.slice(0,2) === wk; }); %>
+        <div class="pqp-nav-world-group" data-world="<%= wk %>">
+          <button class="pqp-nav-world-btn" data-panel="world-<%= wk %>" style="--w-hue:<%= wm.hue %>">
+            <span class="pqp-nav-world-dot"></span>
+            <span class="pqp-nav-world-label">
+              <span class="pqp-nav-world-name">Monde <%= wm.name %></span>
+              <span class="pqp-nav-world-tag"><%= wm.tagline %></span>
+            </span>
+            <svg class="pqp-nav-chevron" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2.5 4l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="pqp-nav-archs" id="archs-<%= wk %>">
+            <% wArchs.forEach(function(a) { %>
+            <a class="pqp-nav-arch" data-panel="arch-<%= a.code %>" href="#arch-<%= a.code %>" style="--w-hue:<%= wm.hue %>">
+              <span class="pqp-nav-arch-code"><%= a.code %></span>
+              <span class="pqp-nav-arch-name"><%= a.name || a.code %></span>
+            </a>
+            <% }) %>
           </div>
         </div>
         <% }) %>
+
+        <div class="pqp-sidebar-sep pqp-sidebar-sep--bottom"></div>
+        <a href="/quizz/profil/<%= type.slug %>" class="pqp-nav-cta" data-fr="Passer le test" data-en="Take the test">Passer le test</a>
       </div>
-    </section>
+    </nav>
 
-    <%# ── Mondes ── %>
-    <% worldOrder.forEach(function(wk) { %>
-    <% var wm = worldMeta[wk]; %>
-    <% var worldArchs = archetypes.filter(function(a){ return a.code && a.code.slice(0,2) === wk; }); %>
-    <% if (!worldArchs.length) return; %>
+    <div class="pqp-sidebar-overlay" id="pqpOverlay"></div>
 
-    <section class="pqpers-world" style="--w-hue:<%= wm.hue %>">
-      <div class="pqpers-world-header">
-        <div class="pqpers-world-dot"></div>
-        <div>
-          <h2 class="pqpers-world-name">Monde <%= wm.name %></h2>
-          <p class="pqpers-world-tagline"><%= wm.tagline %></p>
-        </div>
-        <span class="pqpers-world-code"><%= wk %></span>
-      </div>
+    <%# ── Contenu ── %>
+    <div class="pqp-content" id="pqpContent">
 
-      <div class="pqpers-archs-grid">
-        <% worldArchs.forEach(function(a) { %>
-        <div class="pqpers-arch-card">
-          <div class="pqpers-arch-card-top">
-            <span class="pqpers-arch-card-code"><%= a.code %></span>
-            <span class="pqpers-arch-card-name"><%= a.name || a.code %></span>
+      <%# Panel : Introduction %>
+      <section class="pqp-panel is-active" id="panel-intro">
+        <div class="pqp-panel-inner">
+          <h1 class="pqp-panel-title" data-fr="Les 32 personnalités" data-en="The 32 personalities">Les 32 personnalités</h1>
+          <p class="pqp-panel-lead">
+            Chaque profil se lit en cinq lettres&nbsp;: <strong>Rythme · Moteur · Nouveauté · Scénario · Plaisir</strong>,
+            suivi d'une position (<strong>D</strong>&nbsp;Dominant · <strong>S</strong>&nbsp;Soumis · <strong>SW</strong>&nbsp;Souple).
+          </p>
+
+          <h2 class="pqp-section-heading" data-fr="Les cinq dimensions" data-en="The five dimensions">Les cinq dimensions</h2>
+          <div class="pqpers-axes-grid">
+            <% normalAxes.forEach(function(axis) { %>
+            <div class="pqpers-axis-card">
+              <div class="pqpers-axis-card-name"><%= axis.name %></div>
+              <div class="pqpers-axis-card-poles">
+                <span class="pqpers-axis-card-pole pqpers-axis-card-pole--1"><%= axis.pole1_label || axis.pole1_code %></span>
+                <span class="pqpers-axis-card-sep">↔</span>
+                <span class="pqpers-axis-card-pole pqpers-axis-card-pole--2"><%= axis.pole2_label || axis.pole2_code %></span>
+              </div>
+            </div>
+            <% }) %>
           </div>
+
+          <h2 class="pqp-section-heading" data-fr="Les quatre familles" data-en="The four families">Les quatre familles</h2>
+          <div class="pqp-worlds-overview">
+            <% worldOrder.forEach(function(wk) { %>
+            <% var wm = worldMeta[wk]; %>
+            <% var wArchs = archetypes.filter(function(a){ return a.code && a.code.slice(0,2) === wk; }); %>
+            <button class="pqp-world-card" data-panel="world-<%= wk %>" style="--w-hue:<%= wm.hue %>">
+              <div class="pqp-world-card-dot"></div>
+              <div class="pqp-world-card-body">
+                <span class="pqp-world-card-code"><%= wk %></span>
+                <span class="pqp-world-card-name">Monde <%= wm.name %></span>
+                <span class="pqp-world-card-sep">·</span>
+                <span class="pqp-world-card-tag"><%= wm.tagline %></span>
+              </div>
+              <span class="pqp-world-card-count"><%= wArchs.length %> profils</span>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3.5l3.5 3.5-3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <% }) %>
+          </div>
+        </div>
+      </section>
+
+      <%# Panels : Familles %>
+      <% worldOrder.forEach(function(wk) { %>
+      <% var wm = worldMeta[wk]; %>
+      <% var wArchs = archetypes.filter(function(a){ return a.code && a.code.slice(0,2) === wk; }); %>
+      <section class="pqp-panel" id="panel-world-<%= wk %>" style="--w-hue:<%= wm.hue %>">
+        <div class="pqp-panel-inner">
+          <div class="pqp-world-hero">
+            <div class="pqp-world-hero-glow"></div>
+            <span class="pqp-world-hero-code"><%= wk %></span>
+            <div class="pqp-world-hero-text">
+              <h1 class="pqp-world-hero-name">Monde <%= wm.name %></h1>
+              <p class="pqp-world-hero-tagline"><%= wm.tagline %></p>
+            </div>
+          </div>
+
+          <div class="pqp-archs-list">
+            <% wArchs.forEach(function(a) { %>
+            <button class="pqp-arch-row" data-panel="arch-<%= a.code %>" style="--w-hue:<%= wm.hue %>">
+              <span class="pqp-arch-row-code"><%= a.code %></span>
+              <div class="pqp-arch-row-body">
+                <span class="pqp-arch-row-name"><%= a.name || a.code %></span>
+                <% if (a.description) { %>
+                <span class="pqp-arch-row-preview"><%= a.description.slice(0, 100) %><%= a.description.length > 100 ? '…' : '' %></span>
+                <% } %>
+              </div>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4.5 3l4 3.5-4 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <% }) %>
+          </div>
+        </div>
+      </section>
+      <% }) %>
+
+      <%# Panels : Archétypes %>
+      <% archetypes.forEach(function(a) { %>
+      <% var wk = a.code ? a.code.slice(0,2) : 'DL'; %>
+      <% var wm = worldMeta[wk] || worldMeta['DL']; %>
+      <section class="pqp-panel" id="panel-arch-<%= a.code %>" style="--w-hue:<%= wm.hue %>">
+        <div class="pqp-panel-inner">
+          <button class="pqp-back-btn" data-panel="world-<%= wk %>">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M8.5 9.5L5 6.5l3.5-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Monde <%= wm.name %>
+          </button>
+
+          <div class="pqp-arch-hero">
+            <span class="pqp-arch-hero-code"><%= a.code %></span>
+            <div class="pqp-arch-hero-text">
+              <h1 class="pqp-arch-hero-name"><%= a.name || a.code %></h1>
+              <span class="pqp-arch-hero-world">Monde <%= wm.name %> · <%= wm.tagline %></span>
+            </div>
+          </div>
+
           <% if (a.description) { %>
-          <p class="pqpers-arch-card-desc"><%= a.description %></p>
+          <p class="pqp-arch-desc"><%= a.description %></p>
+          <% } else { %>
+          <p class="pqp-arch-desc pqp-arch-desc--empty">Aucune description disponible pour ce profil.</p>
           <% } %>
         </div>
-        <% }) %>
-      </div>
-    </section>
+      </section>
+      <% }) %>
 
-    <% }) %>
-
-    <div class="pqpers-cta">
-      <a href="/quizz/profil/<%= type.slug %>" class="pqt-card-btn" style="text-decoration:none">Passer le test</a>
-    </div>
-
-  </div>
+    </div><%# end .pqp-content %>
+  </div><%# end .pqp-layout %>
 
   <%- include('partials/foot') %>
 </main>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var allPanels = document.querySelectorAll('.pqp-panel');
+  var sidebar   = document.getElementById('pqpSidebar');
+  var overlay   = document.getElementById('pqpOverlay');
+  var toggle    = document.getElementById('pqpMobileToggle');
+  var content   = document.getElementById('pqpContent');
+
+  function navigate(panelId, push) {
+    allPanels.forEach(function (p) { p.classList.remove('is-active'); });
+    var target = document.getElementById('panel-' + panelId);
+    if (!target) return;
+    target.classList.add('is-active');
+    content.scrollTop = 0;
+
+    document.querySelectorAll('[data-panel]').forEach(function (el) { el.classList.remove('is-active'); });
+    document.querySelectorAll('[data-panel="' + panelId + '"]').forEach(function (el) { el.classList.add('is-active'); });
+
+    // Auto-expand matching world group
+    var m = panelId.match(/^(world|arch)-([A-Z]{2})/);
+    if (m) expandWorld(m[2]);
+
+    if (push !== false) history.pushState(null, '', '#' + panelId);
+    closeSidebar();
+  }
+
+  function expandWorld(wk) {
+    var group = document.querySelector('.pqp-nav-world-group[data-world="' + wk + '"]');
+    if (group) group.classList.add('is-expanded');
+  }
+
+  function closeSidebar() {
+    if (window.innerWidth <= 640) {
+      sidebar.classList.remove('is-open');
+      overlay.classList.remove('is-visible');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  document.querySelectorAll('[data-panel]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      var panelId = el.getAttribute('data-panel');
+      if (el.classList.contains('pqp-nav-world-btn')) {
+        var wk = panelId.replace('world-', '');
+        var group = document.querySelector('.pqp-nav-world-group[data-world="' + wk + '"]');
+        if (group) group.classList.toggle('is-expanded');
+      }
+      navigate(panelId);
+    });
+  });
+
+  toggle.addEventListener('click', function () {
+    var open = sidebar.classList.toggle('is-open');
+    overlay.classList.toggle('is-visible', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+  overlay.addEventListener('click', closeSidebar);
+
+  window.addEventListener('popstate', function () {
+    var h = location.hash.replace('#', '');
+    if (h && document.getElementById('panel-' + h)) navigate(h, false);
+  });
+
+  var hash = location.hash.replace('#', '');
+  if (hash && document.getElementById('panel-' + hash)) navigate(hash, false);
+  else navigate('intro', false);
+})();
+</script>
