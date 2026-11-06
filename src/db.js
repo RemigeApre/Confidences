@@ -2741,8 +2741,15 @@ function getContentByParody(parody, subParody) {
 }
 
 function updateGalleryImageMeta(id, { tags, author, parody, subParody, title, notes, processed, protagonistIds, protagonistEvos, aiSuspected } = {}) {
-  const sets = ["tags = ?", "author = ?", "parody = ?", "sub_parody = ?", "updated_at = ?"];
-  const params = [JSON.stringify(tags || []), author || "", parody || "", subParody || "", new Date().toISOString()];
+  const sets = ["updated_at = ?"];
+  const params = [new Date().toISOString()];
+  // Chaque champ n'est mis à jour QUE s'il est explicitement fourni — évite
+  // d'écraser des données existantes quand seul un sous-ensemble est passé
+  // (ex : POST /processed qui ne passe que { processed } ne doit pas vider les tags).
+  if (tags          !== undefined) { sets.unshift("tags = ?");        params.unshift(JSON.stringify(tags || [])); }
+  if (author        !== undefined) { sets.unshift("author = ?");      params.unshift(author || ""); }
+  if (parody        !== undefined) { sets.unshift("parody = ?");      params.unshift(parody || ""); }
+  if (subParody     !== undefined) { sets.unshift("sub_parody = ?");  params.unshift(subParody || ""); }
   if (title          !== undefined) { sets.splice(sets.length - 1, 0, "title = ?");           params.splice(params.length - 1, 0, title); }
   if (notes          !== undefined) { sets.splice(sets.length - 1, 0, "notes = ?");           params.splice(params.length - 1, 0, notes); }
   if (typeof processed === "number") { sets.splice(sets.length - 1, 0, "processed = ?");      params.splice(params.length - 1, 0, processed); }
