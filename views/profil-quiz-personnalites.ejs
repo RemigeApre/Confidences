@@ -1,0 +1,89 @@
+<%
+  var worldMeta = {
+    'DL': { name: 'Eau',   tagline: 'Douceur et lien',        hue: 210 },
+    'DP': { name: 'Air',   tagline: 'Douceur et sensation',   hue: 160 },
+    'BL': { name: 'Terre', tagline: 'Intensité et lien',      hue: 35  },
+    'BP': { name: 'Feu',   tagline: 'Intensité et sensation', hue: 15  }
+  };
+  var worldOrder = ['DL', 'DP', 'BL', 'BP'];
+  var normalAxes = axes.filter(function(a) { return !a.is_position; });
+
+  function firstSentence(text) {
+    if (!text) return '';
+    var i = text.indexOf('. ');
+    return i > 0 ? text.slice(0, i + 1) : text.slice(0, 160);
+  }
+%>
+<%- include('partials/head', { title: 'Les personnalités — ' + type.name }) %>
+<main class="container" style="--ch-hue: 270">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Les personnalités', navBack: '/quizz/profil' }) %>
+
+  <div class="pqpers-wrap">
+
+    <%# ── Intro ── %>
+    <div class="pqpers-intro">
+      <h1 class="pqpers-title">Les 32 personnalités</h1>
+      <p class="pqpers-subtitle">
+        Chaque profil se lit en cinq lettres : <strong>Rythme · Moteur · Nouveauté · Scénario · Plaisir</strong>,
+        suivi d'une position (<strong>D</strong> Dominant · <strong>S</strong> Soumis · <strong>SW</strong> Souple).
+      </p>
+    </div>
+
+    <%# ── Axes expliqués ── %>
+    <section class="pqpers-axes-section">
+      <h2 class="pqpers-section-title">Les cinq dimensions</h2>
+      <div class="pqpers-axes-grid">
+        <% normalAxes.forEach(function(axis) { %>
+        <div class="pqpers-axis-card">
+          <div class="pqpers-axis-card-name"><%= axis.name %></div>
+          <div class="pqpers-axis-card-poles">
+            <span class="pqpers-axis-card-pole pqpers-axis-card-pole--1"><%= axis.pole1_label || axis.pole1_code %></span>
+            <span class="pqpers-axis-card-sep">↔</span>
+            <span class="pqpers-axis-card-pole pqpers-axis-card-pole--2"><%= axis.pole2_label || axis.pole2_code %></span>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </section>
+
+    <%# ── Mondes ── %>
+    <% worldOrder.forEach(function(wk) { %>
+    <% var wm = worldMeta[wk]; %>
+    <% var worldArchs = archetypes.filter(function(a){ return a.code && a.code.slice(0,2) === wk; }); %>
+    <% if (!worldArchs.length) return; %>
+
+    <section class="pqpers-world" style="--w-hue:<%= wm.hue %>">
+      <div class="pqpers-world-header">
+        <div class="pqpers-world-dot"></div>
+        <div>
+          <h2 class="pqpers-world-name">Monde <%= wm.name %></h2>
+          <p class="pqpers-world-tagline"><%= wm.tagline %></p>
+        </div>
+        <span class="pqpers-world-code"><%= wk %></span>
+      </div>
+
+      <div class="pqpers-archs-grid">
+        <% worldArchs.forEach(function(a) { %>
+        <div class="pqpers-arch-card">
+          <div class="pqpers-arch-card-top">
+            <span class="pqpers-arch-card-code"><%= a.code %></span>
+            <span class="pqpers-arch-card-name"><%= a.name || a.code %></span>
+          </div>
+          <% if (a.description) { %>
+          <p class="pqpers-arch-card-desc"><%= a.description %></p>
+          <% } %>
+        </div>
+        <% }) %>
+      </div>
+    </section>
+
+    <% }) %>
+
+    <div class="pqpers-cta">
+      <a href="/quizz/profil/<%= type.slug %>" class="pqt-card-btn" style="text-decoration:none">Passer le test</a>
+    </div>
+
+  </div>
+
+  <%- include('partials/foot') %>
+</main>

@@ -102,16 +102,33 @@
           <div class="pc-nav-item pc-has-drop pc-hover-menu">
             <button type="button" class="pc-icon-btn pc-avatar-btn <%= _roleClass %>" title="<%= currentUser.displayName %>"><%- include('profile-avatar') %></button>
             <div class="pc-drop pc-drop-right">
-              <a href="/favoris" class="pc-drop-link" data-fr="Profil" data-en="Profile">Profil</a>
+              <a href="/favoris" class="pc-drop-link" data-fr="Profil" data-en="Profile">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+                Profil
+              </a>
               <% if (locals.partnerUser) { %>
-                <a href="/couple" class="pc-drop-link" data-fr="Profil de <%= partnerUser.displayName %>" data-en="<%= partnerUser.displayName %>'s profile">Profil de <%= partnerUser.displayName %></a>
+                <a href="/couple" class="pc-drop-link pc-drop-link--partner" data-fr="Profil de <%= partnerUser.displayName %>" data-en="<%= partnerUser.displayName %>'s profile">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M10 9.5C8.3 9.5 7 8.2 7 6.5S8.3 3.5 10 3.5s3 1.3 3 3-1.3 3-3 3zm-5 1c-1.4 0-2.5-1.1-2.5-2.5S3.6 5.5 5 5.5m10 0c1.4 0 2.5 1.1 2.5 2.5S16.4 10 15 10M2 16.5c0-2.5 1.8-4.5 4-4.5m12 0c2.2 0 4 2 4 4.5M5 16.5c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
+                  <%= partnerUser.displayName %>
+                </a>
               <% } %>
-              <a href="/liens" class="pc-drop-link" data-fr="Liens" data-en="Links">Liens</a>
+              <a href="/liens" class="pc-drop-link" data-fr="Liens" data-en="Links">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15" aria-hidden="true"><path d="M8 11a4 4 0 0 0 5.6.4l2-2A4 4 0 0 0 10 3.9L8.9 5"/><path d="M12 9a4 4 0 0 0-5.6-.4l-2 2A4 4 0 0 0 10 16.1l1-.9"/></svg>
+                Liens
+              </a>
               <% if (currentUser.isAdmin) { %>
-                <a href="/ponhgup" class="pc-drop-link" rel="nofollow" data-fr="Admin" data-en="Admin">Admin</a>
+                <hr class="pc-drop-sep">
+                <a href="/ponhgup" class="pc-drop-link pc-drop-link--admin" rel="nofollow" data-fr="Admin" data-en="Admin">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><path fill-rule="evenodd" d="M10 1.5a1 1 0 0 1 .894.553l1.618 3.278 3.618.526a1 1 0 0 1 .555 1.705l-2.618 2.552.618 3.603a1 1 0 0 1-1.451 1.054L10 12.898l-3.234 1.7a1 1 0 0 1-1.451-1.054l.618-3.603L3.315 7.562a1 1 0 0 1 .555-1.705l3.618-.526L9.106 2.053A1 1 0 0 1 10 1.5z" clip-rule="evenodd"/></svg>
+                  Admin
+                </a>
               <% } %>
+              <hr class="pc-drop-sep">
               <form method="POST" action="/ponhgup/logout" style="margin:0">
-                <button type="submit" class="pc-drop-link pc-drop-link-btn pc-drop-link--danger" data-fr="Déconnexion" data-en="Sign out">D&eacute;connexion</button>
+                <button type="submit" class="pc-drop-link pc-drop-link-btn pc-drop-link--logout" data-fr="Déconnexion" data-en="Sign out">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15" aria-hidden="true"><path d="M13 10H3m0 0 3-3m-3 3 3 3"/><path d="M9 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2"/></svg>
+                  D&eacute;connexion
+                </button>
               </form>
             </div>
           </div>

@@ -64,6 +64,16 @@ function buildProfilQuizRouter(config) {
     res.render("profil-quiz-home", { config, types, attemptsMap });
   });
 
+  // Page des personnalités
+  router.get("/personnalites", (req, res) => {
+    const types = db.listProfilQuizTypes();
+    const type = types[0];
+    if (!type) return res.redirect("/quizz/profil");
+    const axes = db.getProfilQuizAxes(type.id);
+    const archetypes = db.getProfilQuizArchetypes(type.id);
+    res.render("profil-quiz-personnalites", { config, type, axes, archetypes });
+  });
+
   // Passer le test
   router.get("/:slug", (req, res) => {
     const type = db.getProfilQuizType(req.params.slug);
