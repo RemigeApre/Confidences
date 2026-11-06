@@ -1076,7 +1076,7 @@ function buildWikiRouter(config) {
   });
 
   // ── Sondage communautaire ─────────────────────────────────────────────────
-  router.post("/:slug/poll", (req, res) => {
+  router.post("/:slug/poll", express.json(), (req, res) => {
     const { page } = findPageByParam(req.params.slug);
     if (!page) return res.status(404).json({ error: "not_found" });
 

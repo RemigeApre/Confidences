@@ -717,6 +717,12 @@
           var _faPctF  = pm.stats_f_pct_femmes  != null && pm.stats_f_pct_femmes  !== '' ? pm.stats_f_pct_femmes  : null;
           var _faPctH  = pm.stats_f_pct_hommes  != null && pm.stats_f_pct_hommes  !== '' ? pm.stats_f_pct_hommes  : null;
           var _hasFaAny = _faPctG !== null || _faPctF !== null || _faPctH !== null;
+          // Rétro-compat : ancien format 'fantasme' stockait les % dans stats_pct_* (pas stats_f_pct_*)
+          if (_stType === 'fantasme' && !_hasFaAny && _hasPrAny) {
+            _faPctG = _prPctG; _faPctF = _prPctFR || _prPctFD; _faPctH = _prPctHR || _prPctHD;
+            _hasFaAny = _faPctG !== null || _faPctF !== null || _faPctH !== null;
+            _hasPrAny = false; // évite d'afficher les mêmes données deux fois
+          }
           var _showBlock = (_hasPratique && _hasPrAny) || (_hasFantasme && _hasFaAny);
         %>
         <% if (_showBlock) { %>
@@ -1955,6 +1961,7 @@ window.WIKI_CONTENT = <%- JSON.stringify({
   var answers = { sex: userSexFixed || null, age_range: null, fantasme: null, pratique: null, pratique_recoit: null, pratique_donne: null };
 
   function checkComplete() {
+    if (!submitBtn) return;
     if (needSex && !answers.sex) { submitBtn.disabled = true; return; }
     if (answers.fantasme === null || answers.pratique === null) { submitBtn.disabled = true; return; }
     if (answers.pratique === '1' && (answers.pratique_recoit === null || answers.pratique_donne === null)) { submitBtn.disabled = true; return; }
