@@ -590,5 +590,45 @@ body.pub-drawer-open{overflow:hidden}
 @media(max-width:640px){.pp-header{gap:.85rem}.pp-avatar{width:68px;height:68px}.pp-display-name{font-size:1.15rem}.pp-featured-grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}.pp-wiki-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}.pub-topbar{flex-wrap:wrap}}
 /* ── Profil public — vue standalone (/profil/:username) ─────────────────── */
 .pp-standalone{min-height:100vh}
-.pp-standalone-body{max-width:680px;margin:0 auto;padding:1.5rem 1rem 3rem}
-@media(max-width:640px){.pp-standalone-body{padding:1rem .75rem 2.5rem}}
+/* layout deux colonnes : flux central + volet droit */
+.pp-layout{display:grid;grid-template-columns:1fr 220px;grid-template-areas:"main side";gap:1.5rem;max-width:900px;margin:0 auto;padding:1.5rem 1rem 3rem;align-items:start}
+.pp-main{grid-area:main;min-width:0}
+/* volet droit */
+.pp-sidebar{grid-area:side;background:var(--pp-bg,hsl(220,10%,11%));border:1px solid var(--pp-border,rgba(255,255,255,.12));border-radius:14px;padding:1.1rem .9rem 1.2rem;display:flex;flex-direction:column;align-items:center;gap:.55rem;position:sticky;top:calc(var(--topnav-height,56px) + 1rem)}
+.pp-sidebar-avatar-wrap{margin-bottom:.1rem}
+.pp-sidebar-avatar{width:88px;height:88px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;border:2px solid var(--pp-border,rgba(255,255,255,.12))}
+.pp-sidebar-avatar-img{width:100%;height:100%;object-fit:cover;display:block}
+.pp-sidebar-avatar--shape{background:transparent}
+.pp-sidebar-avatar--shape svg{width:66px;height:66px}
+.pp-sidebar-name{font-size:1rem;font-weight:700;color:var(--pp-accent,#e2e8f0);text-align:center;margin:0;line-height:1.2;word-break:break-word;width:100%}
+.pp-sidebar-sexe{font-size:.78rem;font-weight:600;text-align:center;padding:.14rem .5rem;border-radius:999px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1)}
+/* encart archétype */
+.pp-archetype{margin-top:.4rem;width:100%;background:rgba(0,0,0,.2);border:1px solid hsla(var(--arch-hue,220),45%,45%,.35);border-radius:10px;padding:.7rem .75rem;text-align:center}
+.pp-archetype-world{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:hsl(var(--arch-hue,220),55%,60%);margin-bottom:.25rem;line-height:1.2}
+.pp-archetype-world-tag{font-weight:400;opacity:.7}
+.pp-archetype-name{font-size:.88rem;font-weight:700;color:#e2e8f0;line-height:1.25;margin-bottom:.3rem}
+.pp-archetype-desc{font-size:.72rem;color:hsl(220,8%,60%);line-height:1.5;margin:0 0 .4rem;text-align:left}
+.pp-archetype-code{font-size:.63rem;font-family:monospace;color:hsl(var(--arch-hue,220),40%,50%);letter-spacing:.05em;border-top:1px solid rgba(255,255,255,.07);padding-top:.38rem;margin-top:.1rem}
+/* flux central */
+.pp-section{margin-bottom:1.6rem}
+.pp-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:hsl(220,8%,50%);margin:0 0 .65rem;padding-bottom:.4rem;border-bottom:1px solid rgba(255,255,255,.07)}
+/* strip images vedette */
+.pp-featured-strip{display:flex;gap:.5rem}
+.pp-featured-item{display:block;border-radius:8px;overflow:hidden;flex:1;min-width:0;aspect-ratio:3/4;background:rgba(255,255,255,.05)}
+.pp-featured-item img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .2s}
+.pp-featured-item:hover img{opacity:.82}
+/* strip favoris codex */
+.pp-wiki-strip{display:flex;gap:.5rem;flex-wrap:wrap}
+.pp-wiki-card{display:block;border-radius:8px;overflow:hidden;text-decoration:none;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);transition:border-color .15s;width:calc(16.666% - .42rem);min-width:80px;flex-shrink:0}
+.pp-wiki-card:hover{border-color:rgba(255,255,255,.2)}
+.pp-wiki-card-img{aspect-ratio:3/4;overflow:hidden;background:rgba(255,255,255,.06)}
+.pp-wiki-card-img img{width:100%;height:100%;object-fit:cover;display:block}
+.pp-wiki-card-img--placeholder{display:flex;align-items:center;justify-content:center}
+.pp-wiki-card-img--placeholder svg{width:60%;height:60%}
+.pp-wiki-card-title{font-size:.7rem;color:var(--fg);padding:.35rem .4rem .4rem;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pp-empty-state{font-size:.84rem;color:hsl(220,8%,46%);padding:2rem 0;font-style:italic}
+/* responsive ≤ 760px : sidebar passe en haut, horizontale */
+@media(max-width:760px){.pp-layout{grid-template-columns:1fr;grid-template-areas:"side" "main";gap:1rem;padding:1rem .75rem 2.5rem}.pp-sidebar{position:static;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:.7rem 1rem;border-radius:12px;padding:.85rem .9rem}.pp-sidebar-avatar{width:58px;height:58px;border-radius:9px}.pp-sidebar-avatar--shape svg{width:44px;height:44px}.pp-sidebar-name{text-align:left;font-size:.9rem;width:auto;flex:1}.pp-archetype{margin-top:0;text-align:left;flex-basis:100%}.pp-archetype-world-tag{display:none}.pp-featured-item{flex:0 0 calc(33.333% - .34rem)}.pp-wiki-card{width:calc(33.333% - .34rem)}}
+/* layout inset dans profil-subpage */
+.pp-preview-wrap{margin-top:.5rem}
+.pp-layout--inset{max-width:100%;padding:0}

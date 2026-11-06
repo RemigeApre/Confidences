@@ -2,6 +2,26 @@
   var SEXE_LABEL  = { femme: 'Femme', homme: 'Homme', autre: 'Autre', '': '' };
   var SEXE_SYMBOL = { femme: '♀', homme: '♂', autre: '⚧', '': '' };
   var SEXE_COLOR  = { femme: '#e0699f', homme: '#4a90d9', autre: '#9b59b6', '': '#888' };
+
+  // Thème
+  var _themeHue = themeDef && themeDef.hue;
+  var _themeSat = (themeDef && themeDef.sat) || 55;
+  var _sidebarBg, _sidebarBorder, _sidebarAccent;
+  if (_themeHue) {
+    _sidebarBg     = 'hsl(' + _themeHue + ',' + _themeSat + '%,10%)';
+    _sidebarBorder = 'hsl(' + _themeHue + ',' + _themeSat + '%,22%)';
+    _sidebarAccent = 'hsl(' + _themeHue + ',' + _themeSat + '%,52%)';
+  } else if (themeDef && themeDef.key === 'blanc') {
+    _sidebarBg     = 'hsl(220,8%,16%)';
+    _sidebarBorder = 'hsl(220,8%,28%)';
+    _sidebarAccent = 'hsl(220,8%,70%)';
+  } else {
+    _sidebarBg     = 'hsl(220,10%,11%)';
+    _sidebarBorder = 'hsl(220,10%,20%)';
+    _sidebarAccent = 'hsl(220,8%,55%)';
+  }
+
+  // Avatar crop
   var _crop = avatarCrop;
   var _cx   = (_crop && _crop.x  != null) ? _crop.x  : 50;
   var _cy   = (_crop && _crop.y  != null) ? _crop.y  : 50;
@@ -12,71 +32,110 @@
 <main class="container pp-standalone">
   <%- include('partials/top-nav', { config: config }) %>
 
-  <div class="pp-standalone-body">
+  <div class="pp-layout">
 
-    <section class="pp-header">
-      <div class="pp-avatar-wrap">
+    <%# ═══════════════════════════════════════════════ %>
+    <%# ── FLUX CENTRAL ── %>
+    <%# ═══════════════════════════════════════════════ %>
+    <div class="pp-main">
+
+      <% if (featuredImages.length) { %>
+        <section class="pp-section">
+          <h2 class="pp-section-title">Images en vedette</h2>
+          <div class="pp-featured-strip">
+            <% featuredImages.forEach(function(img) { %>
+              <a href="/galerie/<%= img.id %>" class="pp-featured-item" title="<%= img.title || '' %>">
+                <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" loading="lazy" />
+              </a>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (pub.showWikiFavorites && wikiFavorites.length) { %>
+        <section class="pp-section">
+          <h2 class="pp-section-title">Favoris Codex</h2>
+          <div class="pp-wiki-strip">
+            <% wikiFavorites.forEach(function(page) { %>
+              <%
+                var _cover = page.imagePaths && page.imagePaths[0];
+                var _hue   = 220;
+              %>
+              <a href="/wiki/<%= page.slug || page.id %>" class="pp-wiki-card">
+                <% if (_cover) { %>
+                  <div class="pp-wiki-card-img">
+                    <img src="<%= thumbUrl(_cover) %>" alt="" loading="lazy" />
+                  </div>
+                <% } else { %>
+                  <div class="pp-wiki-card-img pp-wiki-card-img--placeholder" style="background:hsl(<%= _hue %>,32%,14%)">
+                    <svg viewBox="0 0 60 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="30" cy="18" r="10" fill="none" stroke="hsl(<%= _hue %>,55%,50%)" stroke-width="0.8" opacity="0.5"/></svg>
+                  </div>
+                <% } %>
+                <div class="pp-wiki-card-title"><%= page.title %></div>
+              </a>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (!featuredImages.length && !(pub.showWikiFavorites && wikiFavorites.length)) { %>
+        <div class="pp-empty-state">Ce profil est encore vide.</div>
+      <% } %>
+
+    </div>
+
+    <%# ═══════════════════════════════════════════════ %>
+    <%# ── VOLET DROIT ── %>
+    <%# ═══════════════════════════════════════════════ %>
+    <aside class="pp-sidebar" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
+
+      <%# ── Avatar ── %>
+      <div class="pp-sidebar-avatar-wrap">
         <% if (avatarThumb) { %>
-          <div class="pp-avatar pp-avatar--img">
-            <img src="<%= avatarThumb %>" alt="" class="pp-avatar-img" style="<%= _imgStyle %>" />
+          <div class="pp-sidebar-avatar pp-sidebar-avatar--img">
+            <img src="<%= avatarThumb %>" alt="" class="pp-sidebar-avatar-img" style="<%= _imgStyle %>" />
           </div>
         <% } else { %>
-          <div class="pp-avatar pp-avatar--shape" style="--avatar-color:<%= profileUser.profileColor || '#6b7280' %>">
+          <div class="pp-sidebar-avatar pp-sidebar-avatar--shape" style="--avatar-color:<%= profileUser.profileColor || '#6b7280' %>">
             <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <polygon points="24,4 44,24 24,44 4,24" fill="var(--avatar-color)" />
             </svg>
           </div>
         <% } %>
       </div>
-      <div class="pp-identity">
-        <h1 class="pp-display-name"><%= profileUser.displayName %></h1>
-        <% if (pub.showSexe && profileUser.sexe) { %>
-          <span class="pp-sexe-badge" style="color:<%= SEXE_COLOR[profileUser.sexe] || '#888' %>">
-            <span aria-hidden="true"><%= SEXE_SYMBOL[profileUser.sexe] || '' %></span>
-            <%= SEXE_LABEL[profileUser.sexe] || profileUser.sexe %>
-          </span>
-        <% } %>
-      </div>
-    </section>
 
-    <% if (featuredImages.length) { %>
-      <section class="pp-section">
-        <h2 class="pp-section-title">Images en vedette</h2>
-        <div class="pp-featured-grid">
-          <% featuredImages.forEach(function(img) { %>
-            <a href="/galerie/<%= img.id %>" class="pp-featured-item" title="<%= img.title || '' %>">
-              <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" loading="lazy" />
-            </a>
-          <% }) %>
-        </div>
-      </section>
-    <% } %>
+      <%# ── Pseudo ── %>
+      <p class="pp-sidebar-name"><%= profileUser.displayName %></p>
 
-    <% if (pub.showWikiFavorites && wikiFavorites.length) { %>
-      <section class="pp-section">
-        <h2 class="pp-section-title">Favoris Codex</h2>
-        <div class="pp-wiki-grid">
-          <% wikiFavorites.forEach(function(page) { %>
-            <%
-              var _cover = page.imagePaths && page.imagePaths[0];
-              var _hue   = 220;
-            %>
-            <a href="/wiki/<%= page.slug || page.id %>" class="pp-wiki-card">
-              <% if (_cover) { %>
-                <div class="pp-wiki-card-img">
-                  <img src="<%= thumbUrl(_cover) %>" alt="" loading="lazy" />
-                </div>
-              <% } else { %>
-                <div class="pp-wiki-card-img pp-wiki-card-img--placeholder" style="background:hsl(<%= _hue %>,32%,14%)">
-                  <svg viewBox="0 0 60 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="30" cy="18" r="10" fill="none" stroke="hsl(<%= _hue %>,55%,50%)" stroke-width="0.8" opacity="0.5"/></svg>
-                </div>
-              <% } %>
-              <div class="pp-wiki-card-title"><%= page.title %></div>
-            </a>
-          <% }) %>
+      <%# ── Sexe ── %>
+      <% if (pub.showSexe && profileUser.sexe) { %>
+        <span class="pp-sidebar-sexe" style="color:<%= SEXE_COLOR[profileUser.sexe] || '#888' %>">
+          <span aria-hidden="true"><%= SEXE_SYMBOL[profileUser.sexe] %></span>
+          <%= SEXE_LABEL[profileUser.sexe] %>
+        </span>
+      <% } %>
+
+      <%# ── Archétype ── %>
+      <% if (quizResult) { %>
+        <div class="pp-archetype" style="--arch-hue:<%= quizResult.worldHue %>">
+          <div class="pp-archetype-world">
+            <%= quizResult.world %>
+            <% if (quizResult.worldTagline) { %><span class="pp-archetype-world-tag">&nbsp;&middot;&nbsp;<%= quizResult.worldTagline %></span><% } %>
+          </div>
+          <div class="pp-archetype-name"><%= quizResult.archetypeName %></div>
+          <% if (quizResult.archetypeDesc) { %>
+            <p class="pp-archetype-desc"><%=
+              (function(t) {
+                var i = t.indexOf('. ');
+                return i > 0 ? t.slice(0, i + 1) : t.slice(0, 120);
+              })(quizResult.archetypeDesc)
+            %></p>
+          <% } %>
+          <div class="pp-archetype-code"><%= quizResult.code %><% if (quizResult.position) { %>&#8202;&middot;&#8202;<%= quizResult.position %><% } %></div>
         </div>
-      </section>
-    <% } %>
+      <% } %>
+
+    </aside>
 
   </div>
 </main>

@@ -60,6 +60,9 @@ const {
   getUserPersonnageCards,
   getPublicProfile,
   setPublicProfile,
+  listProfilQuizAttempts,
+  getProfilQuizType,
+  getProfilQuizArchetypes,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -378,6 +381,12 @@ function buildFavoritesRouter(config) {
   });
 
   // ── Profil public : aperçu + réglages ────────────────────────────────────────
+  const WORLD_META_FAV = {
+    DL: { name: 'Eau',   tagline: 'Douceur et lien',        hue: 210 },
+    DP: { name: 'Air',   tagline: 'Douceur et sensation',   hue: 160 },
+    BL: { name: 'Terre', tagline: 'Intensité et lien',      hue: 35  },
+    BP: { name: 'Feu',   tagline: 'Intensité et sensation', hue: 15  },
+  };
   router.get("/profil-public", requireUser, (req, res) => {
     const notice = req.query.ok ? "Profil public mis à jour." : null;
     const error = req.query.err ? decodeURIComponent(req.query.err) : null;
@@ -396,6 +405,32 @@ function buildFavoritesRouter(config) {
       .slice(0, 12)
       .map(r => getWikiPage(r.item_id))
       .filter(p => p && !p.hidden);
+    // Theme
+    const themeDef = THEME_DEFINITIONS.find(t => t.key === (req.user.activeTheme || 'default')) || THEME_DEFINITIONS[0];
+    // Quiz archetype
+    let quizResult = null;
+    try {
+      const quizType = getProfilQuizType('principal');
+      if (quizType) {
+        const attempts = listProfilQuizAttempts(quizType.id, req.user.id);
+        const done = attempts.find(a => a.completed);
+        if (done) {
+          const archetypes = getProfilQuizArchetypes(quizType.id);
+          const archetype = archetypes.find(a => a.code === done.result_code) || null;
+          const worldKey = (done.result_code || '').slice(0, 2);
+          const wm = WORLD_META_FAV[worldKey] || {};
+          quizResult = {
+            code: done.result_code,
+            position: done.result_position,
+            archetypeName: done.result_archetype || (archetype && archetype.name) || done.result_code,
+            archetypeDesc: archetype ? archetype.description : '',
+            world: wm.name || '',
+            worldHue: wm.hue || 220,
+            worldTagline: wm.tagline || '',
+          };
+        }
+      }
+    } catch (_) {}
     res.render("profil-public", {
       config,
       roleHue: roleHue(req.user),
@@ -406,6 +441,8 @@ function buildFavoritesRouter(config) {
       coffre,
       featuredImages,
       wikiFavPages,
+      themeDef,
+      quizResult,
       currentUser: req.user,
     });
   });

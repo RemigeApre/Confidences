@@ -3,13 +3,31 @@
   var SEXE_SYMBOL = { femme: '♀', homme: '♂', autre: '⚧', '': '' };
   var SEXE_COLOR  = { femme: '#e0699f', homme: '#4a90d9', autre: '#9b59b6', '': '#888' };
 
-  // Avatar
+  // Avatar (utilise les locals injectés par le middleware res.locals.profileAvatarThumb)
   var _avatarThumb = locals.profileAvatarThumb || null;
   var _crop = currentUser.profileImageCrop;
   var _cx   = (_crop && _crop.x  != null) ? _crop.x  : 50;
   var _cy   = (_crop && _crop.y  != null) ? _crop.y  : 50;
   var _cs   = (_crop && _crop.scale != null && _crop.scale >= 1) ? _crop.scale : 1;
   var _imgStyle = 'object-position:' + _cx + '% ' + _cy + '%;transform:scale(' + _cs + ');transform-origin:' + _cx + '% ' + _cy + '%;';
+
+  // Thème
+  var _themeHue = themeDef && themeDef.hue;
+  var _themeSat = (themeDef && themeDef.sat) || 55;
+  var _sidebarBg, _sidebarBorder, _sidebarAccent;
+  if (_themeHue) {
+    _sidebarBg     = 'hsl(' + _themeHue + ',' + _themeSat + '%,10%)';
+    _sidebarBorder = 'hsl(' + _themeHue + ',' + _themeSat + '%,22%)';
+    _sidebarAccent = 'hsl(' + _themeHue + ',' + _themeSat + '%,52%)';
+  } else if (themeDef && themeDef.key === 'blanc') {
+    _sidebarBg     = 'hsl(220,8%,16%)';
+    _sidebarBorder = 'hsl(220,8%,28%)';
+    _sidebarAccent = 'hsl(220,8%,70%)';
+  } else {
+    _sidebarBg     = 'hsl(220,10%,11%)';
+    _sidebarBorder = 'hsl(220,10%,20%)';
+    _sidebarAccent = 'hsl(220,8%,55%)';
+  }
 %>
 <%- include('partials/head', { title: 'Profil public' }) %>
 <main class="container wide profil-page gallery-has-sidebar">
@@ -22,7 +40,7 @@
     <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
     <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
 
-    <%# ── Barre de profil public ── %>
+    <%# ── Barre : lien + bouton Modifier ── %>
     <div class="pub-topbar">
       <div class="pub-topbar-left">
         <span class="pub-topbar-label">Votre profil public</span>
@@ -32,88 +50,91 @@
     </div>
 
     <%# ═══════════════════════════════════════════════════════════════════ %>
-    <%# ── APERÇU PUBLIC ── %>
+    <%# ── APERÇU : même layout que /profil/:username ── %>
     <%# ═══════════════════════════════════════════════════════════════════ %>
+    <div class="pp-preview-wrap">
+      <div class="pp-layout pp-layout--inset">
 
-    <%# ── Header : avatar + identité ── %>
-    <section class="pp-header">
-      <div class="pp-avatar-wrap">
-        <% if (_avatarThumb) { %>
-          <div class="pp-avatar pp-avatar--img">
-            <img src="<%= _avatarThumb %>" alt="" class="pp-avatar-img" style="<%= _imgStyle %>" />
-          </div>
-        <% } else { %>
-          <div class="pp-avatar pp-avatar--shape" style="--avatar-color:<%= currentUser.profileColor || '#6b7280' %>">
-            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <polygon points="24,4 44,24 24,44 4,24" fill="var(--avatar-color)" />
-            </svg>
-          </div>
-        <% } %>
-      </div>
-      <div class="pp-identity">
-        <h1 class="pp-display-name"><%= currentUser.displayName %></h1>
-        <% if (pub.showSexe && currentUser.sexe) { %>
-          <span class="pp-sexe-badge" style="color:<%= SEXE_COLOR[currentUser.sexe] || '#888' %>">
-            <span aria-hidden="true"><%= SEXE_SYMBOL[currentUser.sexe] || '' %></span>
-            <%= SEXE_LABEL[currentUser.sexe] || currentUser.sexe %>
-          </span>
-        <% } else if (!pub.showSexe && currentUser.sexe) { %>
-          <span class="pp-hidden-hint">Sexe masqu&eacute; sur le profil public</span>
-        <% } %>
-      </div>
-    </section>
+        <%# ── Flux central ── %>
+        <div class="pp-main">
+          <% if (featuredImages.length) { %>
+            <section class="pp-section">
+              <h2 class="pp-section-title">Images en vedette</h2>
+              <div class="pp-featured-strip">
+                <% featuredImages.forEach(function(img) { %>
+                  <a href="/galerie/<%= img.id %>" class="pp-featured-item" title="<%= img.title || '' %>">
+                    <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" loading="lazy" />
+                  </a>
+                <% }) %>
+              </div>
+            </section>
+          <% } %>
 
-    <%# ── Images en vedette ── %>
-    <% if (featuredImages.length) { %>
-      <section class="pp-section">
-        <h2 class="pp-section-title">Images en vedette</h2>
-        <div class="pp-featured-grid">
-          <% featuredImages.forEach(function(img) { %>
-            <a href="/galerie/<%= img.id %>" class="pp-featured-item" title="<%= img.title || '' %>">
-              <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" loading="lazy" />
-            </a>
-          <% }) %>
+          <% if (pub.showWikiFavorites && wikiFavPages.length) { %>
+            <section class="pp-section">
+              <h2 class="pp-section-title">Favoris Codex</h2>
+              <div class="pp-wiki-strip">
+                <% wikiFavPages.forEach(function(page) { %>
+                  <% var _cover = page.imagePaths && page.imagePaths[0]; var _hue = 220; %>
+                  <a href="/wiki/<%= page.slug || page.id %>" class="pp-wiki-card">
+                    <% if (_cover) { %>
+                      <div class="pp-wiki-card-img"><img src="<%= thumbUrl(_cover) %>" alt="" loading="lazy" /></div>
+                    <% } else { %>
+                      <div class="pp-wiki-card-img pp-wiki-card-img--placeholder" style="background:hsl(<%= _hue %>,32%,14%)">
+                        <svg viewBox="0 0 60 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="30" cy="18" r="10" fill="none" stroke="hsl(<%= _hue %>,55%,50%)" stroke-width="0.8" opacity="0.5"/></svg>
+                      </div>
+                    <% } %>
+                    <div class="pp-wiki-card-title"><%= page.title %></div>
+                  </a>
+                <% }) %>
+              </div>
+            </section>
+          <% } %>
+
+          <% if (!featuredImages.length && !(pub.showWikiFavorites && wikiFavPages.length)) { %>
+            <div class="pp-empty-state">Aucun contenu &agrave; afficher pour l&rsquo;instant &mdash; ajoutez des images ou activez vos favoris Codex.</div>
+          <% } %>
         </div>
-      </section>
-    <% } else { %>
-      <div class="pp-empty-hint">Aucune image en vedette s&eacute;lectionn&eacute;e &mdash; cliquez sur &laquo;&nbsp;Modifier&nbsp;&raquo; pour en ajouter.</div>
-    <% } %>
 
-    <%# ── Favoris Codex ── %>
-    <% if (pub.showWikiFavorites && wikiFavPages.length) { %>
-      <section class="pp-section">
-        <h2 class="pp-section-title">Favoris Codex</h2>
-        <div class="pp-wiki-grid">
-          <% wikiFavPages.forEach(function(page) { %>
-            <%
-              var _cover = page.imagePaths && page.imagePaths[0];
-              var _hue   = 220;
-            %>
-            <a href="/wiki/<%= page.slug || page.id %>" class="pp-wiki-card">
-              <% if (_cover) { %>
-                <div class="pp-wiki-card-img">
-                  <img src="<%= thumbUrl(_cover) %>" alt="" loading="lazy" />
-                </div>
-              <% } else { %>
-                <div class="pp-wiki-card-img pp-wiki-card-img--placeholder" style="background:hsl(<%= _hue %>,32%,14%)">
-                  <svg viewBox="0 0 60 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="30" cy="18" r="10" fill="none" stroke="hsl(<%= _hue %>,55%,50%)" stroke-width="0.8" opacity="0.5"/></svg>
-                </div>
-              <% } %>
-              <div class="pp-wiki-card-title"><%= page.title %></div>
-            </a>
-          <% }) %>
-        </div>
-      </section>
-    <% } %>
+        <%# ── Volet droit ── %>
+        <aside class="pp-sidebar" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
+          <div class="pp-sidebar-avatar-wrap">
+            <% if (_avatarThumb) { %>
+              <div class="pp-sidebar-avatar pp-sidebar-avatar--img">
+                <img src="<%= _avatarThumb %>" alt="" class="pp-sidebar-avatar-img" style="<%= _imgStyle %>" />
+              </div>
+            <% } else { %>
+              <div class="pp-sidebar-avatar pp-sidebar-avatar--shape" style="--avatar-color:<%= currentUser.profileColor || '#6b7280' %>">
+                <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polygon points="24,4 44,24 24,44 4,24" fill="var(--avatar-color)" /></svg>
+              </div>
+            <% } %>
+          </div>
+          <p class="pp-sidebar-name"><%= currentUser.displayName %></p>
+          <% if (pub.showSexe && currentUser.sexe) { %>
+            <span class="pp-sidebar-sexe" style="color:<%= SEXE_COLOR[currentUser.sexe] || '#888' %>">
+              <span aria-hidden="true"><%= SEXE_SYMBOL[currentUser.sexe] %></span>
+              <%= SEXE_LABEL[currentUser.sexe] %>
+            </span>
+          <% } %>
+          <% if (quizResult) { %>
+            <div class="pp-archetype" style="--arch-hue:<%= quizResult.worldHue %>">
+              <div class="pp-archetype-world"><%= quizResult.world %><% if (quizResult.worldTagline) { %><span class="pp-archetype-world-tag">&nbsp;&middot;&nbsp;<%= quizResult.worldTagline %></span><% } %></div>
+              <div class="pp-archetype-name"><%= quizResult.archetypeName %></div>
+              <% if (quizResult.archetypeDesc) { %><p class="pp-archetype-desc"><%=
+                (function(t){ var i=t.indexOf('. '); return i>0?t.slice(0,i+1):t.slice(0,120); })(quizResult.archetypeDesc)
+              %></p><% } %>
+              <div class="pp-archetype-code"><%= quizResult.code %><% if (quizResult.position) { %>&#8202;&middot;&#8202;<%= quizResult.position %><% } %></div>
+            </div>
+          <% } %>
+        </aside>
 
-    <%# ═══════════════════════════════════════════════════════════════════ %>
-    <%# ── TIROIR DE MODIFICATION ── %>
-    <%# ═══════════════════════════════════════════════════════════════════ %>
+      </div>
+    </div>
 
   </div>
 </main>
 
-<%# ── Tiroir (drawer) de modification ── %>
+<%# ── Tiroir de modification ── %>
 <div class="pub-drawer-backdrop" id="pub-drawer-backdrop" aria-hidden="true"></div>
 <aside class="pub-drawer" id="pub-drawer" role="dialog" aria-modal="true" aria-label="Modifier le profil public" hidden>
   <div class="pub-drawer-header">
@@ -122,11 +143,9 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
-
   <div class="pub-drawer-body">
     <form method="POST" action="/favoris/profil-public" id="pub-form">
 
-      <%# ── Visibilité ── %>
       <div class="pub-drawer-section">
         <div class="pub-drawer-section-title">Visibilit&eacute;</div>
         <div class="pub-toggle-row">
@@ -142,11 +161,8 @@
         <div class="pub-toggle-row">
           <label class="pub-toggle-label" for="toggle-wiki">
             <span>Afficher mes favoris Codex</span>
-            <% if (wikiFavPages.length) { %>
-              <span class="pub-toggle-hint">(<%= wikiFavPages.length %> page<%= wikiFavPages.length > 1 ? 's' : '' %>)</span>
-            <% } else { %>
-              <span class="pub-toggle-hint">(aucun favori)</span>
-            <% } %>
+            <% if (wikiFavPages.length) { %><span class="pub-toggle-hint">(<%= wikiFavPages.length %> page<%= wikiFavPages.length > 1 ? 's' : '' %>)</span>
+            <% } else { %><span class="pub-toggle-hint">(aucun favori)</span><% } %>
           </label>
           <label class="pub-toggle">
             <input type="checkbox" id="toggle-wiki" name="show_wiki_favorites" value="1" <%= pub.showWikiFavorites ? 'checked' : '' %> />
@@ -155,32 +171,22 @@
         </div>
       </div>
 
-      <%# ── Images en vedette ── %>
       <div class="pub-drawer-section">
         <div class="pub-drawer-section-title">
           Images en vedette
           <span class="pub-featured-count" id="pub-sel-count">0 / 5</span>
         </div>
         <input type="hidden" name="featured_image_ids" id="pub-featured-ids" value="<%= pub.featuredImageIds.join(',') %>" />
-
         <% if (!coffre.length) { %>
           <p class="pub-empty">Aucune image dans votre coffre. Ouvrez des lootboxes depuis la <a href="/jeu">page Jeu</a>&nbsp;!</p>
         <% } else { %>
           <div class="pub-coffre-grid">
             <% coffre.forEach(function(u) { %>
               <% var isSelected = pub.featuredImageIds.indexOf(u.refId) !== -1; %>
-              <button type="button"
-                      class="pub-coffre-item<%= isSelected ? ' pub-coffre-item--selected' : '' %>"
-                      data-ref-id="<%= u.refId %>"
-                      title="<%= u.title || 'Sans titre' %>">
-                <% if (u.thumb) { %>
-                  <img src="<%= thumbUrl(u.thumb) %>" alt="" loading="lazy" />
-                <% } else { %>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                <% } %>
-                <span class="pub-coffre-check" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </span>
+              <button type="button" class="pub-coffre-item<%= isSelected ? ' pub-coffre-item--selected' : '' %>" data-ref-id="<%= u.refId %>" title="<%= u.title || 'Sans titre' %>">
+                <% if (u.thumb) { %><img src="<%= thumbUrl(u.thumb) %>" alt="" loading="lazy" />
+                <% } else { %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><% } %>
+                <span class="pub-coffre-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
               </button>
             <% }) %>
           </div>
@@ -191,7 +197,6 @@
         <button type="submit" class="profil-btn-primary">Enregistrer</button>
         <button type="button" class="profil-btn-secondary" id="pub-cancel-btn">Annuler</button>
       </div>
-
     </form>
   </div>
 </aside>
@@ -209,67 +214,45 @@
     backdrop.hidden = false;
     backdrop.setAttribute("aria-hidden", "false");
     document.body.classList.add("pub-drawer-open");
-    setTimeout(function() {
+    setTimeout(function () {
       drawer.classList.add("pub-drawer--visible");
       backdrop.classList.add("pub-drawer-backdrop--visible");
     }, 10);
   }
-
   function closeDrawer() {
     drawer.classList.remove("pub-drawer--visible");
     backdrop.classList.remove("pub-drawer-backdrop--visible");
     document.body.classList.remove("pub-drawer-open");
-    setTimeout(function() {
-      drawer.hidden = true;
-      backdrop.hidden = true;
-      backdrop.setAttribute("aria-hidden", "true");
-    }, 240);
+    setTimeout(function () { drawer.hidden = true; backdrop.hidden = true; backdrop.setAttribute("aria-hidden","true"); }, 240);
   }
-
   editBtn.addEventListener("click", openDrawer);
   closeBtn.addEventListener("click", closeDrawer);
   cancelBtn.addEventListener("click", closeDrawer);
   backdrop.addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !drawer.hidden) closeDrawer(); });
 
-  document.addEventListener("keydown", function(e) {
-    if (e.key === "Escape" && !drawer.hidden) closeDrawer();
-  });
-
-  // ── Picker d'images ──────────────────────────────────────────────────
-  var MAX      = 5;
+  // Picker
+  var MAX = 5;
   var idsInput = document.getElementById("pub-featured-ids");
   var countEl  = document.getElementById("pub-sel-count");
   var items    = document.querySelectorAll(".pub-coffre-item");
-
-  var selected = new Set(
-    (idsInput.value || "").split(",").map(Number).filter(Boolean)
-  );
+  var selected = new Set((idsInput.value || "").split(",").map(Number).filter(Boolean));
 
   function syncPicker() {
     countEl.textContent = selected.size + " / " + MAX;
     idsInput.value = Array.from(selected).join(",");
     items.forEach(function (btn) {
-      var id = parseInt(btn.dataset.refId, 10);
-      btn.classList.toggle("pub-coffre-item--selected", selected.has(id));
+      btn.classList.toggle("pub-coffre-item--selected", selected.has(parseInt(btn.dataset.refId, 10)));
     });
   }
-
   items.forEach(function (btn) {
     btn.addEventListener("click", function () {
       var id = parseInt(btn.dataset.refId, 10);
-      if (selected.has(id)) {
-        selected.delete(id);
-      } else {
-        if (selected.size >= MAX) return;
-        selected.add(id);
-      }
+      if (selected.has(id)) { selected.delete(id); } else { if (selected.size >= MAX) return; selected.add(id); }
       syncPicker();
     });
   });
-
   syncPicker();
-
-  // ── Ouvrir directement en mode édition si ?edit=1 ──
   if (window.location.search.indexOf("edit=1") !== -1) openDrawer();
 })();
 </script>
