@@ -632,3 +632,28 @@ body.pub-drawer-open{overflow:hidden}
 /* layout inset dans profil-subpage */
 .pp-preview-wrap{margin-top:.5rem}
 .pp-layout--inset{max-width:100%;padding:0}
+/* ── volet droit fixe dans la gouttière (profil-public + public-profile) ── */
+.pp-right-panel{position:fixed;right:0;top:var(--topnav-height);bottom:0;width:calc((100vw - 900px)/2);min-width:200px;max-width:280px;background:var(--pp-bg,hsl(220,10%,11%));border-left:1px solid var(--pp-border,rgba(255,255,255,.1));overflow-y:auto;overflow-x:hidden;padding:1.4rem 1rem 2rem;display:flex;flex-direction:column;align-items:center;gap:.6rem;z-index:5}
+@media(max-width:1120px){.pp-right-panel{display:none}}
+/* avatar */
+.pp-rp-avatar{width:88px;height:88px;border-radius:12px;overflow:hidden;border:2px solid var(--pp-border,rgba(255,255,255,.12));background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pp-rp-avatar--img{background:none}
+.pp-rp-avatar-img{width:100%;height:100%;object-fit:cover;display:block}
+.pp-rp-avatar--shape{background:transparent;border-color:transparent}
+.pp-rp-avatar--shape svg{width:66px;height:66px}
+/* nom / sexe */
+.pp-rp-name{font-size:1rem;font-weight:700;color:var(--pp-accent,#e2e8f0);text-align:center;margin:0;line-height:1.25;word-break:break-word;width:100%}
+.pp-rp-sexe{font-size:.75rem;font-weight:600;text-align:center;padding:.15rem .55rem;border-radius:999px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1)}
+/* encart archétype */
+.pp-rp-archetype{margin-top:.3rem;width:100%;background:rgba(0,0,0,.2);border:1px solid hsla(var(--arch-hue,220),45%,45%,.35);border-radius:10px;padding:.7rem .75rem;text-align:center}
+.pp-rp-arch-world{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:hsl(var(--arch-hue,220),55%,60%);margin-bottom:.25rem;line-height:1.2}
+.pp-rp-arch-world-tag{font-weight:400;opacity:.7}
+.pp-rp-arch-name{font-size:.86rem;font-weight:700;color:#e2e8f0;line-height:1.25;margin-bottom:.3rem}
+.pp-rp-arch-desc{font-size:.71rem;color:hsl(220,8%,60%);line-height:1.5;margin:0 0 .4rem;text-align:left}
+.pp-rp-arch-code{font-size:.62rem;font-family:monospace;color:hsl(var(--arch-hue,220),40%,50%);letter-spacing:.05em;border-top:1px solid rgba(255,255,255,.07);padding-top:.38rem;margin-top:.1rem}
+/* flux central — public-profile standalone */
+.pp-content{max-width:820px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+/* alias classes utilisées dans les vues */
+.pp-wiki-card-img--ph{display:flex;align-items:center;justify-content:center}
+.pp-wiki-card-img--ph svg{width:60%;height:60%}
+.pp-empty{font-size:.84rem;color:hsl(220,8%,46%);padding:2rem 0;font-style:italic}

@@ -3,30 +3,24 @@
   var SEXE_SYMBOL = { femme: '♀', homme: '♂', autre: '⚧', '': '' };
   var SEXE_COLOR  = { femme: '#e0699f', homme: '#4a90d9', autre: '#9b59b6', '': '#888' };
 
-  // Avatar (utilise les locals injectés par le middleware res.locals.profileAvatarThumb)
   var _avatarThumb = locals.profileAvatarThumb || null;
   var _crop = currentUser.profileImageCrop;
-  var _cx   = (_crop && _crop.x  != null) ? _crop.x  : 50;
-  var _cy   = (_crop && _crop.y  != null) ? _crop.y  : 50;
-  var _cs   = (_crop && _crop.scale != null && _crop.scale >= 1) ? _crop.scale : 1;
+  var _cx = (_crop && _crop.x  != null) ? _crop.x  : 50;
+  var _cy = (_crop && _crop.y  != null) ? _crop.y  : 50;
+  var _cs = (_crop && _crop.scale != null && _crop.scale >= 1) ? _crop.scale : 1;
   var _imgStyle = 'object-position:' + _cx + '% ' + _cy + '%;transform:scale(' + _cs + ');transform-origin:' + _cx + '% ' + _cy + '%;';
 
-  // Thème
   var _themeHue = themeDef && themeDef.hue;
   var _themeSat = (themeDef && themeDef.sat) || 55;
-  var _sidebarBg, _sidebarBorder, _sidebarAccent;
+  var _rpBg, _rpBorder, _rpAccent;
   if (_themeHue) {
-    _sidebarBg     = 'hsl(' + _themeHue + ',' + _themeSat + '%,10%)';
-    _sidebarBorder = 'hsl(' + _themeHue + ',' + _themeSat + '%,22%)';
-    _sidebarAccent = 'hsl(' + _themeHue + ',' + _themeSat + '%,52%)';
+    _rpBg     = 'hsl(' + _themeHue + ',' + _themeSat + '%,10%)';
+    _rpBorder = 'hsl(' + _themeHue + ',' + _themeSat + '%,22%)';
+    _rpAccent = 'hsl(' + _themeHue + ',' + _themeSat + '%,52%)';
   } else if (themeDef && themeDef.key === 'blanc') {
-    _sidebarBg     = 'hsl(220,8%,16%)';
-    _sidebarBorder = 'hsl(220,8%,28%)';
-    _sidebarAccent = 'hsl(220,8%,70%)';
+    _rpBg = 'hsl(220,8%,16%)'; _rpBorder = 'hsl(220,8%,28%)'; _rpAccent = 'hsl(220,8%,70%)';
   } else {
-    _sidebarBg     = 'hsl(220,10%,11%)';
-    _sidebarBorder = 'hsl(220,10%,20%)';
-    _sidebarAccent = 'hsl(220,8%,55%)';
+    _rpBg = 'hsl(220,10%,11%)'; _rpBorder = 'hsl(220,10%,20%)'; _rpAccent = 'hsl(220,8%,55%)';
   }
 %>
 <%- include('partials/head', { title: 'Profil public' }) %>
@@ -35,12 +29,12 @@
 
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
+  <%# ── Flux central (profil-subpage = zone centrale uniquement) ── %>
   <div class="profil-subpage profil-subpage--wide">
 
     <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
     <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
 
-    <%# ── Barre : lien + bouton Modifier ── %>
     <div class="pub-topbar">
       <div class="pub-topbar-left">
         <span class="pub-topbar-label">Votre profil public</span>
@@ -49,89 +43,79 @@
       <button type="button" class="profil-btn-secondary pub-edit-btn" id="pub-edit-btn">Modifier</button>
     </div>
 
-    <%# ═══════════════════════════════════════════════════════════════════ %>
-    <%# ── APERÇU : même layout que /profil/:username ── %>
-    <%# ═══════════════════════════════════════════════════════════════════ %>
-    <div class="pp-preview-wrap">
-      <div class="pp-layout pp-layout--inset">
-
-        <%# ── Flux central ── %>
-        <div class="pp-main">
-          <% if (featuredImages.length) { %>
-            <section class="pp-section">
-              <h2 class="pp-section-title">Images en vedette</h2>
-              <div class="pp-featured-strip">
-                <% featuredImages.forEach(function(img) { %>
-                  <a href="/galerie/<%= img.id %>" class="pp-featured-item" title="<%= img.title || '' %>">
-                    <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" loading="lazy" />
-                  </a>
-                <% }) %>
-              </div>
-            </section>
-          <% } %>
-
-          <% if (pub.showWikiFavorites && wikiFavPages.length) { %>
-            <section class="pp-section">
-              <h2 class="pp-section-title">Favoris Codex</h2>
-              <div class="pp-wiki-strip">
-                <% wikiFavPages.forEach(function(page) { %>
-                  <% var _cover = page.imagePaths && page.imagePaths[0]; var _hue = 220; %>
-                  <a href="/wiki/<%= page.slug || page.id %>" class="pp-wiki-card">
-                    <% if (_cover) { %>
-                      <div class="pp-wiki-card-img"><img src="<%= thumbUrl(_cover) %>" alt="" loading="lazy" /></div>
-                    <% } else { %>
-                      <div class="pp-wiki-card-img pp-wiki-card-img--placeholder" style="background:hsl(<%= _hue %>,32%,14%)">
-                        <svg viewBox="0 0 60 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="30" cy="18" r="10" fill="none" stroke="hsl(<%= _hue %>,55%,50%)" stroke-width="0.8" opacity="0.5"/></svg>
-                      </div>
-                    <% } %>
-                    <div class="pp-wiki-card-title"><%= page.title %></div>
-                  </a>
-                <% }) %>
-              </div>
-            </section>
-          <% } %>
-
-          <% if (!featuredImages.length && !(pub.showWikiFavorites && wikiFavPages.length)) { %>
-            <div class="pp-empty-state">Aucun contenu &agrave; afficher pour l&rsquo;instant &mdash; ajoutez des images ou activez vos favoris Codex.</div>
-          <% } %>
+    <% if (featuredImages.length) { %>
+      <section class="pp-section">
+        <h2 class="pp-section-title">Images en vedette</h2>
+        <div class="pp-featured-strip">
+          <% featuredImages.forEach(function(img) { %>
+            <a href="/galerie/<%= img.id %>" class="pp-featured-item" title="<%= img.title || '' %>">
+              <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" loading="lazy" />
+            </a>
+          <% }) %>
         </div>
+      </section>
+    <% } %>
 
-        <%# ── Volet droit ── %>
-        <aside class="pp-sidebar" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
-          <div class="pp-sidebar-avatar-wrap">
-            <% if (_avatarThumb) { %>
-              <div class="pp-sidebar-avatar pp-sidebar-avatar--img">
-                <img src="<%= _avatarThumb %>" alt="" class="pp-sidebar-avatar-img" style="<%= _imgStyle %>" />
-              </div>
-            <% } else { %>
-              <div class="pp-sidebar-avatar pp-sidebar-avatar--shape" style="--avatar-color:<%= currentUser.profileColor || '#6b7280' %>">
-                <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polygon points="24,4 44,24 24,44 4,24" fill="var(--avatar-color)" /></svg>
-              </div>
-            <% } %>
-          </div>
-          <p class="pp-sidebar-name"><%= currentUser.displayName %></p>
-          <% if (pub.showSexe && currentUser.sexe) { %>
-            <span class="pp-sidebar-sexe" style="color:<%= SEXE_COLOR[currentUser.sexe] || '#888' %>">
-              <span aria-hidden="true"><%= SEXE_SYMBOL[currentUser.sexe] %></span>
-              <%= SEXE_LABEL[currentUser.sexe] %>
-            </span>
-          <% } %>
-          <% if (quizResult) { %>
-            <div class="pp-archetype" style="--arch-hue:<%= quizResult.worldHue %>">
-              <div class="pp-archetype-world"><%= quizResult.world %><% if (quizResult.worldTagline) { %><span class="pp-archetype-world-tag">&nbsp;&middot;&nbsp;<%= quizResult.worldTagline %></span><% } %></div>
-              <div class="pp-archetype-name"><%= quizResult.archetypeName %></div>
-              <% if (quizResult.archetypeDesc) { %><p class="pp-archetype-desc"><%=
-                (function(t){ var i=t.indexOf('. '); return i>0?t.slice(0,i+1):t.slice(0,120); })(quizResult.archetypeDesc)
-              %></p><% } %>
-              <div class="pp-archetype-code"><%= quizResult.code %><% if (quizResult.position) { %>&#8202;&middot;&#8202;<%= quizResult.position %><% } %></div>
-            </div>
-          <% } %>
-        </aside>
+    <% if (pub.showWikiFavorites && wikiFavPages.length) { %>
+      <section class="pp-section">
+        <h2 class="pp-section-title">Favoris Codex</h2>
+        <div class="pp-wiki-strip">
+          <% wikiFavPages.forEach(function(page) { %>
+            <% var _cover = page.imagePaths && page.imagePaths[0]; %>
+            <a href="/wiki/<%= page.slug || page.id %>" class="pp-wiki-card">
+              <% if (_cover) { %>
+                <div class="pp-wiki-card-img"><img src="<%= thumbUrl(_cover) %>" alt="" loading="lazy" /></div>
+              <% } else { %>
+                <div class="pp-wiki-card-img pp-wiki-card-img--ph"><svg viewBox="0 0 60 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="30" cy="18" r="10" fill="none" stroke="hsl(220,55%,50%)" stroke-width="0.8" opacity="0.5"/></svg></div>
+              <% } %>
+              <div class="pp-wiki-card-title"><%= page.title %></div>
+            </a>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
 
-      </div>
-    </div>
+    <% if (!featuredImages.length && !(pub.showWikiFavorites && wikiFavPages.length)) { %>
+      <p class="pp-empty">Aucun contenu pour l&rsquo;instant &mdash; cliquez sur &laquo;&nbsp;Modifier&nbsp;&raquo;.</p>
+    <% } %>
 
   </div>
+
+  <%# ── Volet droit — hors du flux, dans la gouttière droite ── %>
+  <aside class="pp-right-panel" style="--pp-bg:<%= _rpBg %>;--pp-border:<%= _rpBorder %>;--pp-accent:<%= _rpAccent %>">
+
+    <% if (_avatarThumb) { %>
+      <div class="pp-rp-avatar pp-rp-avatar--img">
+        <img src="<%= _avatarThumb %>" alt="" class="pp-rp-avatar-img" style="<%= _imgStyle %>" />
+      </div>
+    <% } else { %>
+      <div class="pp-rp-avatar pp-rp-avatar--shape" style="--avatar-color:<%= currentUser.profileColor || '#6b7280' %>">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polygon points="24,4 44,24 24,44 4,24" fill="var(--avatar-color)" /></svg>
+      </div>
+    <% } %>
+
+    <p class="pp-rp-name"><%= currentUser.displayName %></p>
+
+    <% if (pub.showSexe && currentUser.sexe) { %>
+      <span class="pp-rp-sexe" style="color:<%= SEXE_COLOR[currentUser.sexe] || '#888' %>">
+        <span aria-hidden="true"><%= SEXE_SYMBOL[currentUser.sexe] %></span>
+        <%= SEXE_LABEL[currentUser.sexe] %>
+      </span>
+    <% } %>
+
+    <% if (quizResult) { %>
+      <div class="pp-rp-archetype" style="--arch-hue:<%= quizResult.worldHue %>">
+        <div class="pp-rp-arch-world"><%= quizResult.world %><% if (quizResult.worldTagline) { %><span class="pp-rp-arch-world-tag"> &middot; <%= quizResult.worldTagline %></span><% } %></div>
+        <div class="pp-rp-arch-name"><%= quizResult.archetypeName %></div>
+        <% if (quizResult.archetypeDesc) { %><p class="pp-rp-arch-desc"><%=
+          (function(t){ var i=t.indexOf('. '); return i>0?t.slice(0,i+1):t.slice(0,110); })(quizResult.archetypeDesc)
+        %></p><% } %>
+        <div class="pp-rp-arch-code"><%= quizResult.code %><% if (quizResult.position) { %> &middot; <%= quizResult.position %><% } %></div>
+      </div>
+    <% } %>
+
+  </aside>
+
 </main>
 
 <%# ── Tiroir de modification ── %>
@@ -145,7 +129,6 @@
   </div>
   <div class="pub-drawer-body">
     <form method="POST" action="/favoris/profil-public" id="pub-form">
-
       <div class="pub-drawer-section">
         <div class="pub-drawer-section-title">Visibilit&eacute;</div>
         <div class="pub-toggle-row">
@@ -170,20 +153,16 @@
           </label>
         </div>
       </div>
-
       <div class="pub-drawer-section">
-        <div class="pub-drawer-section-title">
-          Images en vedette
-          <span class="pub-featured-count" id="pub-sel-count">0 / 5</span>
-        </div>
+        <div class="pub-drawer-section-title">Images en vedette <span class="pub-featured-count" id="pub-sel-count">0 / 5</span></div>
         <input type="hidden" name="featured_image_ids" id="pub-featured-ids" value="<%= pub.featuredImageIds.join(',') %>" />
         <% if (!coffre.length) { %>
           <p class="pub-empty">Aucune image dans votre coffre. Ouvrez des lootboxes depuis la <a href="/jeu">page Jeu</a>&nbsp;!</p>
         <% } else { %>
           <div class="pub-coffre-grid">
             <% coffre.forEach(function(u) { %>
-              <% var isSelected = pub.featuredImageIds.indexOf(u.refId) !== -1; %>
-              <button type="button" class="pub-coffre-item<%= isSelected ? ' pub-coffre-item--selected' : '' %>" data-ref-id="<%= u.refId %>" title="<%= u.title || 'Sans titre' %>">
+              <% var isSel = pub.featuredImageIds.indexOf(u.refId) !== -1; %>
+              <button type="button" class="pub-coffre-item<%= isSel ? ' pub-coffre-item--selected' : '' %>" data-ref-id="<%= u.refId %>" title="<%= u.title || 'Sans titre' %>">
                 <% if (u.thumb) { %><img src="<%= thumbUrl(u.thumb) %>" alt="" loading="lazy" />
                 <% } else { %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><% } %>
                 <span class="pub-coffre-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
@@ -192,7 +171,6 @@
           </div>
         <% } %>
       </div>
-
       <div class="pub-drawer-actions">
         <button type="submit" class="profil-btn-primary">Enregistrer</button>
         <button type="button" class="profil-btn-secondary" id="pub-cancel-btn">Annuler</button>
@@ -203,57 +181,24 @@
 
 <script nonce="<%= nonce %>">
 (function () {
-  var editBtn   = document.getElementById("pub-edit-btn");
-  var drawer    = document.getElementById("pub-drawer");
-  var backdrop  = document.getElementById("pub-drawer-backdrop");
-  var closeBtn  = document.getElementById("pub-drawer-close");
+  var editBtn = document.getElementById("pub-edit-btn");
+  var drawer = document.getElementById("pub-drawer");
+  var backdrop = document.getElementById("pub-drawer-backdrop");
+  var closeBtn = document.getElementById("pub-drawer-close");
   var cancelBtn = document.getElementById("pub-cancel-btn");
-
-  function openDrawer() {
-    drawer.hidden = false;
-    backdrop.hidden = false;
-    backdrop.setAttribute("aria-hidden", "false");
-    document.body.classList.add("pub-drawer-open");
-    setTimeout(function () {
-      drawer.classList.add("pub-drawer--visible");
-      backdrop.classList.add("pub-drawer-backdrop--visible");
-    }, 10);
-  }
-  function closeDrawer() {
-    drawer.classList.remove("pub-drawer--visible");
-    backdrop.classList.remove("pub-drawer-backdrop--visible");
-    document.body.classList.remove("pub-drawer-open");
-    setTimeout(function () { drawer.hidden = true; backdrop.hidden = true; backdrop.setAttribute("aria-hidden","true"); }, 240);
-  }
-  editBtn.addEventListener("click", openDrawer);
-  closeBtn.addEventListener("click", closeDrawer);
-  cancelBtn.addEventListener("click", closeDrawer);
-  backdrop.addEventListener("click", closeDrawer);
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !drawer.hidden) closeDrawer(); });
-
-  // Picker
-  var MAX = 5;
-  var idsInput = document.getElementById("pub-featured-ids");
-  var countEl  = document.getElementById("pub-sel-count");
-  var items    = document.querySelectorAll(".pub-coffre-item");
-  var selected = new Set((idsInput.value || "").split(",").map(Number).filter(Boolean));
-
-  function syncPicker() {
-    countEl.textContent = selected.size + " / " + MAX;
-    idsInput.value = Array.from(selected).join(",");
-    items.forEach(function (btn) {
-      btn.classList.toggle("pub-coffre-item--selected", selected.has(parseInt(btn.dataset.refId, 10)));
-    });
-  }
-  items.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var id = parseInt(btn.dataset.refId, 10);
-      if (selected.has(id)) { selected.delete(id); } else { if (selected.size >= MAX) return; selected.add(id); }
-      syncPicker();
-    });
-  });
+  function open() { drawer.hidden=false; backdrop.hidden=false; backdrop.setAttribute("aria-hidden","false"); document.body.classList.add("pub-drawer-open"); setTimeout(function(){drawer.classList.add("pub-drawer--visible");backdrop.classList.add("pub-drawer-backdrop--visible");},10); }
+  function close() { drawer.classList.remove("pub-drawer--visible"); backdrop.classList.remove("pub-drawer-backdrop--visible"); document.body.classList.remove("pub-drawer-open"); setTimeout(function(){drawer.hidden=true;backdrop.hidden=true;backdrop.setAttribute("aria-hidden","true");},240); }
+  editBtn.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+  cancelBtn.addEventListener("click", close);
+  backdrop.addEventListener("click", close);
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape"&&!drawer.hidden) close(); });
+  var MAX=5, idsInput=document.getElementById("pub-featured-ids"), countEl=document.getElementById("pub-sel-count"), items=document.querySelectorAll(".pub-coffre-item");
+  var selected=new Set((idsInput.value||"").split(",").map(Number).filter(Boolean));
+  function syncPicker(){ countEl.textContent=selected.size+" / "+MAX; idsInput.value=Array.from(selected).join(","); items.forEach(function(b){ b.classList.toggle("pub-coffre-item--selected",selected.has(parseInt(b.dataset.refId,10))); }); }
+  items.forEach(function(b){ b.addEventListener("click",function(){ var id=parseInt(b.dataset.refId,10); if(selected.has(id)){selected.delete(id);}else{if(selected.size>=MAX)return;selected.add(id);} syncPicker(); }); });
   syncPicker();
-  if (window.location.search.indexOf("edit=1") !== -1) openDrawer();
+  if(window.location.search.indexOf("edit=1")!==-1) open();
 })();
 </script>
 
