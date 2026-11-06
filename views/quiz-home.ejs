@@ -127,11 +127,12 @@
     %>
     <% if (locals.profilTypes && profilTypes.length) { %>
     <section class="quiz-hub-strip quiz-hub-strip--profil">
-      <h2 class="quiz-hub-strip-title">Quizz de profil</h2>
+      <h2 class="quiz-hub-strip-title">Test de personnalité</h2>
       <div class="quiz-hub-cards">
         <% profilTypes.forEach(function(t) { %>
         <% var lastAttempt = (locals.profilAttemptsMap && profilAttemptsMap[t.id] && profilAttemptsMap[t.id][0]) || null; %>
-        <a href="/quizz/profil/<%= t.slug %>" class="qhc qhc--profil">
+        <a href="/quizz/profil/<%= t.slug %>" class="qhc qhc--profil<%= lastAttempt ? ' qhc--done' : '' %>">
+          <% if (lastAttempt) { %><span class="qhc-done-badge">&#10003;</span><% } %>
           <div class="qhc-img qhc-img--profil">
             <span class="qhc-profil-icon">&#9672;</span>
             <% if (lastAttempt) { %>
