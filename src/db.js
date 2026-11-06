@@ -6017,7 +6017,7 @@ function setPublicProfile(userId, { showSexe, showWikiFavorites, showArchetype, 
   const ids = Array.isArray(featuredImageIds) ? featuredImageIds.slice(0, 5) : [];
   const now = new Date().toISOString();
   db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, show_archetype, show_streak, show_coffre, featured_image_ids, updated_at)
-    VALUES (?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
       show_sexe = excluded.show_sexe,
       show_wiki_favorites = excluded.show_wiki_favorites,
