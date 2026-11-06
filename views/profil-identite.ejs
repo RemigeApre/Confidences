@@ -12,6 +12,16 @@
     <form method="POST" action="/favoris/identite">
 
       <section class="profil-panel">
+
+        <label class="profil-field profil-field--nom">
+          <span class="profil-field-label">Pr&eacute;nom ou nom</span>
+          <input type="text" name="nom" value="<%= user.nom || '' %>" maxlength="100" autocomplete="off" placeholder="Facultatif" class="profil-field-input" />
+          <span class="profil-field-hint profil-field-hint--lock">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="11" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Visible uniquement par vous, l&rsquo;admin, et votre partenaire li&eacute;.
+          </span>
+        </label>
+
         <div class="profil-panel-grid">
           <label class="profil-field">
             <span class="profil-field-label">Pseudo</span>

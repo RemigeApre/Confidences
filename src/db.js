@@ -300,6 +300,7 @@ try { db.exec("ALTER TABLE users ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0")
 // et/ou l'admin selon le champ) et journal technique automatique.
 try { db.exec("ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN sexe TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN nom TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN birth_year INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN updated_at TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT"); } catch (_) {}
@@ -945,6 +946,7 @@ function rowToUser(row) {
     isAdmin: !!row.is_admin,
     isTest: !!row.is_test,
     email: row.email || "",
+    nom: row.nom || "",
     sexe: row.sexe || "",
     birthYear: row.birth_year || null,
     createdAt: row.created_at,
@@ -1024,10 +1026,10 @@ function updateUser(id, { username, displayName, isAdmin, isTest, sexe, canSeeOw
 // Modifie les champs que l'utilisateur peut changer lui-meme sur son propre
 // compte : pseudo, email, sexe, annee de naissance (pas le role, pas
 // l'identifiant de connexion — reserves a l'admin).
-function updateOwnProfile(id, { displayName, email, sexe, birthYear }) {
+function updateOwnProfile(id, { displayName, email, sexe, birthYear, nom }) {
   db.prepare(
-    "UPDATE users SET display_name = ?, email = ?, sexe = ?, birth_year = ?, updated_at = ? WHERE id = ?"
-  ).run(displayName, email || "", sexe || "", birthYear || null, new Date().toISOString(), id);
+    "UPDATE users SET display_name = ?, email = ?, sexe = ?, birth_year = ?, nom = ?, updated_at = ? WHERE id = ?"
+  ).run(displayName, email || "", sexe || "", birthYear || null, String(nom || "").slice(0, 100).trim(), new Date().toISOString(), id);
 }
 
 // Pose l'horodatage de limite hebdomadaire pseudo/sexe/orientation (voir

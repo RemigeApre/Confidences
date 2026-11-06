@@ -519,7 +519,8 @@ function buildFavoritesRouter(config) {
 
     // Année de naissance : plus modifiable par le profil lui-même, voir
     // routes/admin.js pour le changement côté admin.
-    updateOwnProfile(req.user.id, { displayName, email, sexe, birthYear: user.birthYear });
+    const nom = String(req.body.nom || "").trim().slice(0, 100);
+    updateOwnProfile(req.user.id, { displayName, email, sexe, birthYear: user.birthYear, nom });
     updateUserSettings(req.user.id, { orientation });
     if (identityChanged) touchIdentityChange(req.user.id);
     if (emailChanged && user.email) {
