@@ -6061,7 +6061,7 @@ function getUserWikiStatusList(userId) {
   return db.prepare(`SELECT s.wiki_id, s.status, w.title, w.slug, w.category, w.image_paths
     FROM user_wiki_status s
     JOIN wiki_pages w ON w.id = s.wiki_id
-    WHERE s.user_id = ? AND w.category IN ('objets','tenues') AND w.hidden = 0
+    WHERE s.user_id = ? AND w.category IN ('objets','tenues')
     ORDER BY s.status, w.title`
   ).all(userId).map(function(r) {
     var paths = [];
