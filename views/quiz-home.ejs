@@ -128,12 +128,13 @@
     <% if (locals.profilTypes && profilTypes.length) { %>
     <section class="quiz-hub-strip quiz-hub-strip--profil">
       <h2 class="quiz-hub-strip-title">Test de personnalité</h2>
+      <p class="quiz-hub-profil-desc">Découvrez votre profil en cinq dimensions : rythme, moteur, nouveauté, scénario et plaisir. <a href="/quizz/profil/personnalites" class="pqt-pers-inline-link">Les 32 personnalités&nbsp;›</a></p>
       <div class="quiz-hub-cards">
         <% profilTypes.forEach(function(t) { %>
         <% var lastAttempt = (locals.profilAttemptsMap && profilAttemptsMap[t.id] && profilAttemptsMap[t.id][0]) || null; %>
         <a href="/quizz/profil/<%= t.slug %>" class="qhc qhc--profil<%= lastAttempt ? ' qhc--done' : '' %>">
-          <% if (lastAttempt) { %><span class="qhc-done-badge">&#10003;</span><% } %>
           <div class="qhc-img qhc-img--profil">
+          <% if (lastAttempt) { %><span class="qhc-done-badge">&#10003;</span><% } %>
             <span class="qhc-profil-icon">&#9672;</span>
             <% if (lastAttempt) { %>
             <span class="qhc-profil-code"><%= lastAttempt.result_code %>-<%= lastAttempt.result_position %></span>
