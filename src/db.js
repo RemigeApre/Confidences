@@ -6020,6 +6020,31 @@ function setPublicProfile(userId, { showSexe, showWikiFavorites, featuredImageId
   ).run(userId, showSexe ? 1 : 0, showWikiFavorites ? 1 : 0, JSON.stringify(ids), now);
 }
 
+function getUserCoffreStats(userId) {
+  const images = db.prepare("SELECT COUNT(*) as n FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").get(userId).n;
+  const charms = db.prepare("SELECT COUNT(*) as n FROM user_unlocks WHERE user_id = ? AND item_type = 'charm'").get(userId).n;
+  const themes = db.prepare('SELECT COUNT(*) as n FROM user_themes WHERE user_id = ?').get(userId).n;
+  return { images, charms, themes };
+}
+
+function getUserStreak(userId) {
+  const rows = db.prepare(
+    'SELECT DISTINCT date(created_at) as day FROM activity_pings WHERE user_id = ? ORDER BY day DESC LIMIT 365'
+  ).all(userId);
+  if (!rows.length) return 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  if (rows[0].day !== today && rows[0].day !== yesterday) return 0;
+  let streak = 1;
+  for (let i = 1; i < rows.length; i++) {
+    const a = new Date(rows[i - 1].day);
+    const b = new Date(rows[i].day);
+    if ((a - b) / 86400000 === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -6395,6 +6420,8 @@ module.exports = {
   saveCodexPoll,
   getPublicProfile,
   setPublicProfile,
+  getUserCoffreStats,
+  getUserStreak,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

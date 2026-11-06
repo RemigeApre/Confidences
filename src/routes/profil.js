@@ -10,6 +10,8 @@ const {
   getProfilQuizType,
   getProfilQuizArchetypes,
   THEME_DEFINITIONS,
+  getUserCoffreStats,
+  getUserStreak,
 } = require("../db");
 
 const WORLD_META = {
@@ -53,14 +55,19 @@ module.exports = function buildProfilRouter(config) {
       }
 
       // Wiki favorites
+      const _allWikiFavs = listFavoriteRows(user.id).filter(r => r.item_type === "wiki");
+      const wikiFavTotal = _allWikiFavs.length;
       let wikiFavorites = [];
       if (pub.showWikiFavorites) {
-        const favRows = listFavoriteRows(user.id).filter(r => r.item_type === "wiki");
-        for (const row of favRows.slice(0, 12)) {
+        for (const row of _allWikiFavs.slice(0, 12)) {
           const page = getWikiPage(row.item_id);
           if (page && !page.hidden) wikiFavorites.push(page);
         }
       }
+
+      // Coffre stats + streak
+      const coffreStats = getUserCoffreStats(user.id);
+      const streak = getUserStreak(user.id);
 
       // Theme color
       const themeDef = THEME_DEFINITIONS.find(t => t.key === (user.activeTheme || 'default')) || THEME_DEFINITIONS[0];
@@ -98,6 +105,9 @@ module.exports = function buildProfilRouter(config) {
         avatarCrop,
         featuredImages,
         wikiFavorites,
+        wikiFavTotal,
+        coffreStats,
+        streak,
         themeDef,
         quizResult,
       });

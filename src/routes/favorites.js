@@ -63,6 +63,8 @@ const {
   listProfilQuizAttempts,
   getProfilQuizType,
   getProfilQuizArchetypes,
+  getUserCoffreStats,
+  getUserStreak,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -400,11 +402,13 @@ function buildFavoritesRouter(config) {
       .filter(Boolean)
       .slice(0, 5);
     // Wiki favorites
-    const wikiFavPages = listFavoriteRows(req.user.id)
-      .filter(r => r.item_type === "wiki")
-      .slice(0, 12)
+    const _allWikiFavs = listFavoriteRows(req.user.id).filter(r => r.item_type === 'wiki');
+    const wikiFavTotal = _allWikiFavs.length;
+    const wikiFavPages = _allWikiFavs.slice(0, 12)
       .map(r => getWikiPage(r.item_id))
       .filter(p => p && !p.hidden);
+    const coffreStats = getUserCoffreStats(req.user.id);
+    const streak = getUserStreak(req.user.id);
     // Theme
     const themeDef = THEME_DEFINITIONS.find(t => t.key === (req.user.activeTheme || 'default')) || THEME_DEFINITIONS[0];
     // Quiz archetype
@@ -441,6 +445,9 @@ function buildFavoritesRouter(config) {
       coffre,
       featuredImages,
       wikiFavPages,
+      wikiFavTotal,
+      coffreStats,
+      streak,
       themeDef,
       quizResult,
       currentUser: req.user,

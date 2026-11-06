@@ -56,7 +56,7 @@
 
     <% if (pub.showWikiFavorites && wikiFavPages.length) { %>
       <section class="pp-section">
-        <h2 class="pp-section-title">Favoris Codex</h2>
+        <h2 class="pp-section-title">Favoris Codex<% if (wikiFavTotal > 12) { %> <span class="pp-section-count"><%= wikiFavTotal %></span><% } %></h2>
         <div class="pp-wiki-strip">
           <% wikiFavPages.forEach(function(page) { %>
             <% var _cover = page.imagePaths && page.imagePaths[0]; %>
@@ -93,6 +93,18 @@
     <% } %>
 
     <p class="pp-rp-name"><%= currentUser.displayName %></p>
+
+    <% if (streak > 0) { %>
+      <div class="pp-rp-streak"><span class="pp-rp-streak-flame">🔥</span><span class="pp-rp-streak-count"><%= streak %></span><span class="pp-rp-streak-label">jour<%= streak > 1 ? 's' : '' %></span></div>
+    <% } %>
+
+    <div class="pp-rp-coffre">
+      <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.images %></span><span class="pp-rp-coffre-lbl">images</span></div>
+      <div class="pp-rp-coffre-sep"></div>
+      <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.charms %></span><span class="pp-rp-coffre-lbl">charmes</span></div>
+      <div class="pp-rp-coffre-sep"></div>
+      <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.themes %></span><span class="pp-rp-coffre-lbl">thèmes</span></div>
+    </div>
 
     <% if (pub.showSexe && currentUser.sexe) { %>
       <span class="pp-rp-sexe" style="color:<%= SEXE_COLOR[currentUser.sexe] || '#888' %>">
