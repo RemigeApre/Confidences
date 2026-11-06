@@ -377,19 +377,24 @@ function buildFavoritesRouter(config) {
     res.json({ ok });
   });
 
-  // ── Profil public : réglages (images en vedette, toggles de visibilité) ──────
+  // ── Profil public : aperçu + réglages ────────────────────────────────────────
   router.get("/profil-public", requireUser, (req, res) => {
     const notice = req.query.ok ? "Profil public mis à jour." : null;
     const error = req.query.err ? decodeURIComponent(req.query.err) : null;
     const pub = getPublicProfile(req.user.id);
     const coffre = getUserUnlocks(req.user.id);
-    // Wiki favorites for the toggle preview
-    const wikiFavIds = listFavoriteRows(req.user.id)
+    // Resolve selected featured images for the preview
+    const unlockRefIds = new Set(coffre.map(u => u.refId));
+    const featuredImages = pub.featuredImageIds
+      .filter(id => unlockRefIds.has(id))
+      .map(id => getGalleryImage(id))
+      .filter(Boolean)
+      .slice(0, 5);
+    // Wiki favorites
+    const wikiFavPages = listFavoriteRows(req.user.id)
       .filter(r => r.item_type === "wiki")
-      .map(r => r.item_id)
-      .slice(0, 12);
-    const wikiFavPages = wikiFavIds
-      .map(id => getWikiPage(id))
+      .slice(0, 12)
+      .map(r => getWikiPage(r.item_id))
       .filter(p => p && !p.hidden);
     res.render("profil-public", {
       config,
@@ -399,6 +404,7 @@ function buildFavoritesRouter(config) {
       error,
       pub,
       coffre,
+      featuredImages,
       wikiFavPages,
       currentUser: req.user,
     });
