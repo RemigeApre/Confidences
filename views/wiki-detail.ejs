@@ -119,9 +119,8 @@
         <svg class="flag-fr" width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="7" height="15" fill="#002395"/><rect x="7" width="8" height="15" fill="#fff"/><rect x="15" width="7" height="15" fill="#ED2939"/></svg>
         <svg class="flag-en" width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="22" height="15" fill="#012169"/><path d="M0,0 L22,15 M22,0 L0,15" stroke="#fff" stroke-width="3.2"/><rect x="9.5" width="3" height="15" fill="#fff"/><rect y="6" width="22" height="3" fill="#fff"/><rect x="10" width="2" height="15" fill="#C8102E"/><rect y="6.5" width="22" height="2" fill="#C8102E"/></svg>
       </button>
-      <% if ((page.extraCategories && page.extraCategories.length) || (wdCanSeeOwned && page.owned)) { %>
+      <% if (page.extraCategories && page.extraCategories.length) { %>
         <div class="wiki-detail-banner-sub">
-          <% if (wdCanSeeOwned && page.owned) { %><span data-fr="★ Possédé" data-en="★ Owned">&#9733; Poss&eacute;d&eacute;</span><% } %>
           <% (page.extraCategories || []).forEach(function (eck) { var ecat = categories.find(function (c) { return c.key === eck; }); %>
             <span><%= ecat ? ecat.label : eck %></span>
           <% }) %>
@@ -317,8 +316,17 @@
           </div>
         </div>
 
-        <% if (wdCanSeeOwned && page.owned) { %>
-          <span class="wiki-left-owned" data-fr="★ Possédé" data-en="★ Owned">&#9733;&nbsp;Poss&eacute;d&eacute;</span>
+        <% if (currentUser && ['objets','tenues'].indexOf(page.category) !== -1) { %>
+          <div class="wiki-left-status" data-page-id="<%= page.id %>">
+            <button type="button" class="wiki-left-status-btn<%= userWikiStatus === 'posséde' ? ' active' : '' %>" data-status="posséde">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              Je poss&egrave;de
+            </button>
+            <button type="button" class="wiki-left-status-btn<%= userWikiStatus === 'souhaite' ? ' active' : '' %>" data-status="souhaite">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              Je souhaite
+            </button>
+          </div>
         <% } %>
 
         <%# ─ Partenaires : affichage riche complet ─ %>
@@ -1558,6 +1566,27 @@ window.IRREALISTE_MODE = 'visible';
     if (link.href && link.href.indexOf('/edit') !== -1) {
       link.addEventListener('click', flushNote);
     }
+  });
+})();
+
+// ── Statut possède / souhaite (objets & tenues) ──
+(function() {
+  var wrap = document.querySelector('.wiki-left-status');
+  if (!wrap) return;
+  var pageId = wrap.dataset.pageId;
+  wrap.querySelectorAll('.wiki-left-status-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var status = btn.dataset.status;
+      var isActive = btn.classList.contains('active');
+      var newStatus = isActive ? '' : status;
+      wrap.querySelectorAll('.wiki-left-status-btn').forEach(function(b) { b.classList.remove('active'); });
+      if (!isActive) btn.classList.add('active');
+      fetch('/wiki/' + pageId + '/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+    });
   });
 })();
 </script>

@@ -58,6 +58,8 @@ const {
   getCodexPollUserVote,
   getCodexPollAnonVote,
   saveCodexPoll,
+  getUserWikiStatus,
+  setUserWikiStatus,
 } = require("../db");
 const crypto = require("crypto");
 const _POLL_SALT = process.env.POLL_SALT || "lq-poll-2025";
@@ -1072,7 +1074,9 @@ function buildWikiRouter(config) {
       : false;
     // Sexe du user connecté (pour pré-remplir le form)
     const userSex = req.user ? (req.user.sexe || '') : '';
-    res.render("wiki-detail", { config, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, ...CTX });
+    const OWNED_CATS = ['objets', 'tenues'];
+    const userWikiStatus = (userId && OWNED_CATS.includes(page.category)) ? getUserWikiStatus(userId, page.id) : null;
+    res.render("wiki-detail", { config, userWikiStatus, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, ...CTX });
   });
 
   // ── Sondage communautaire ─────────────────────────────────────────────────
@@ -1293,7 +1297,16 @@ function buildWikiRouter(config) {
       checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsTotal(req.user.id), 5);
     }
     res.json({ ok: true });
-  });
+  })
+
+  router.post("/:id/status", requireUserJson, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ ok: false });
+    const status = String(req.body.status || '');
+    if (status && status !== 'posséde' && status !== 'souhaite') return res.status(400).json({ ok: false });
+    setUserWikiStatus(req.user.id, id, status);
+    res.json({ ok: true, status: status || null });
+  });;
 
   // Toggle SFW sur une image : ajoute/retire le chemin de sfw_image_paths
   router.post("/:id/sfw-image", requireAdmin, express.json(), (req, res) => {

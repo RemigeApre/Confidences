@@ -12,6 +12,7 @@ const {
   THEME_DEFINITIONS,
   getUserCoffreStats,
   getUserStreak,
+  getUserWikiStatusList,
 } = require("../db");
 
 const WORLD_META = {
@@ -68,6 +69,7 @@ module.exports = function buildProfilRouter(config) {
       // Coffre stats + streak
       const coffreStats = getUserCoffreStats(user.id);
       const streak = getUserStreak(user.id);
+      const wikiStatusItems = pub.showWikiStatus ? getUserWikiStatusList(user.id) : [];
 
       // Theme color
       const themeDef = THEME_DEFINITIONS.find(t => t.key === (user.activeTheme || 'default')) || THEME_DEFINITIONS[0];
@@ -108,6 +110,7 @@ module.exports = function buildProfilRouter(config) {
         wikiFavTotal,
         coffreStats,
         streak,
+        wikiStatusItems,
         themeDef,
         quizResult,
       });

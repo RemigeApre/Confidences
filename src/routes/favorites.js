@@ -65,6 +65,7 @@ const {
   getProfilQuizArchetypes,
   getUserCoffreStats,
   getUserStreak,
+  getUserWikiStatusList,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -409,6 +410,7 @@ function buildFavoritesRouter(config) {
       .filter(p => p && !p.hidden);
     const coffreStats = getUserCoffreStats(req.user.id);
     const streak = getUserStreak(req.user.id);
+    const wikiStatusItems = getUserWikiStatusList(req.user.id);
     // Theme
     const themeDef = THEME_DEFINITIONS.find(t => t.key === (req.user.activeTheme || 'default')) || THEME_DEFINITIONS[0];
     // Quiz archetype
@@ -448,6 +450,7 @@ function buildFavoritesRouter(config) {
       wikiFavTotal,
       coffreStats,
       streak,
+      wikiStatusItems,
       themeDef,
       quizResult,
       currentUser: req.user,
@@ -461,6 +464,7 @@ function buildFavoritesRouter(config) {
       const showArchetype = req.body.show_archetype === "1";
       const showStreak = req.body.show_streak === "1";
       const showCoffre = req.body.show_coffre === "1";
+      const showWikiStatus = req.body.show_wiki_status === "1";
       // featured_image_ids comes as comma-separated ref IDs
       const rawIds = String(req.body.featured_image_ids || "")
         .split(",")
@@ -470,7 +474,7 @@ function buildFavoritesRouter(config) {
       const coffre = getUserUnlocks(req.user.id);
       const ownedRefIds = new Set(coffre.map(u => u.refId));
       const featuredImageIds = rawIds.filter(id => ownedRefIds.has(id)).slice(0, 5);
-      setPublicProfile(req.user.id, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, featuredImageIds });
+      setPublicProfile(req.user.id, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, showWikiStatus, featuredImageIds });
       res.redirect("/favoris/profil-public?ok=1");
     } catch (err) {
       console.error("[profil-public POST]", err);

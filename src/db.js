@@ -114,9 +114,17 @@ db.exec(`CREATE TABLE IF NOT EXISTS public_profiles (
   featured_image_ids TEXT NOT NULL DEFAULT '[]',
   updated_at TEXT NOT NULL
 )`);
+try { db.prepare(`CREATE TABLE IF NOT EXISTS user_wiki_status (
+  user_id INTEGER NOT NULL,
+  wiki_id INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, wiki_id)
+)`).run(); } catch (_) {}
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_archetype INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_streak INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_coffre INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
+try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_wiki_status INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN extra_categories TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
@@ -6002,31 +6010,64 @@ function saveCodexPoll(pageId, { userId, sex, ageRange, fantasme, pratique, prat
 
 function getPublicProfile(userId) {
   const row = db.prepare("SELECT * FROM public_profiles WHERE user_id = ?").get(userId);
-  if (!row) return { showSexe: false, showWikiFavorites: false, showArchetype: false, showStreak: true, showCoffre: true, featuredImageIds: [] };
+  if (!row) return { showSexe: false, showWikiFavorites: false, showArchetype: false, showStreak: true, showCoffre: true, showWikiStatus: false, featuredImageIds: [] };
   return {
     showSexe: !!row.show_sexe,
     showWikiFavorites: !!row.show_wiki_favorites,
     showArchetype: !!row.show_archetype,
     showStreak: row.show_streak !== undefined ? !!row.show_streak : true,
     showCoffre: row.show_coffre !== undefined ? !!row.show_coffre : true,
+    showWikiStatus: !!row.show_wiki_status,
     featuredImageIds: (() => { try { return JSON.parse(row.featured_image_ids || '[]'); } catch (_) { return []; } })(),
   };
 }
 
-function setPublicProfile(userId, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, featuredImageIds }) {
+function setPublicProfile(userId, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, showWikiStatus, featuredImageIds }) {
   const ids = Array.isArray(featuredImageIds) ? featuredImageIds.slice(0, 5) : [];
   const now = new Date().toISOString();
-  db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, show_archetype, show_streak, show_coffre, featured_image_ids, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, show_archetype, show_streak, show_coffre, show_wiki_status, featured_image_ids, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
       show_sexe = excluded.show_sexe,
       show_wiki_favorites = excluded.show_wiki_favorites,
       show_archetype = excluded.show_archetype,
       show_streak = excluded.show_streak,
       show_coffre = excluded.show_coffre,
+      show_wiki_status = excluded.show_wiki_status,
       featured_image_ids = excluded.featured_image_ids,
       updated_at = excluded.updated_at`
-  ).run(userId, showSexe ? 1 : 0, showWikiFavorites ? 1 : 0, showArchetype ? 1 : 0, showStreak ? 1 : 0, showCoffre ? 1 : 0, JSON.stringify(ids), now);
+  ).run(userId, showSexe ? 1 : 0, showWikiFavorites ? 1 : 0, showArchetype ? 1 : 0, showStreak ? 1 : 0, showCoffre ? 1 : 0, showWikiStatus ? 1 : 0, JSON.stringify(ids), now);
+}
+
+function getUserWikiStatus(userId, wikiId) {
+  if (!userId) return null;
+  const row = db.prepare('SELECT status FROM user_wiki_status WHERE user_id = ? AND wiki_id = ?').get(userId, wikiId);
+  return row ? row.status : null;
+}
+
+function setUserWikiStatus(userId, wikiId, status) {
+  if (!status) {
+    db.prepare('DELETE FROM user_wiki_status WHERE user_id = ? AND wiki_id = ?').run(userId, wikiId);
+    return;
+  }
+  const now = new Date().toISOString();
+  db.prepare(`INSERT INTO user_wiki_status (user_id, wiki_id, status, updated_at) VALUES (?, ?, ?, ?)
+    ON CONFLICT(user_id, wiki_id) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at`
+  ).run(userId, wikiId, status, now);
+}
+
+function getUserWikiStatusList(userId) {
+  if (!userId) return [];
+  return db.prepare(`SELECT s.wiki_id, s.status, w.title, w.slug, w.category, w.image_paths
+    FROM user_wiki_status s
+    JOIN wiki_pages w ON w.id = s.wiki_id
+    WHERE s.user_id = ? AND w.category IN ('objets','tenues') AND w.hidden = 0
+    ORDER BY s.status, w.title`
+  ).all(userId).map(function(r) {
+    var paths = [];
+    try { paths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
+    return { wikiId: r.wiki_id, status: r.status, title: r.title, slug: r.slug || String(r.wiki_id), category: r.category, thumb: paths[0] || null };
+  });
 }
 
 function getUserCoffreStats(userId) {
@@ -6431,6 +6472,9 @@ module.exports = {
   setPublicProfile,
   getUserCoffreStats,
   getUserStreak,
+  getUserWikiStatus,
+  setUserWikiStatus,
+  getUserWikiStatusList,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
