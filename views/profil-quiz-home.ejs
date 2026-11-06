@@ -1,22 +1,21 @@
-<%- include('partials/head', { title: 'Quizz de profil' }) %>
+<%- include('partials/head', { title: 'Test de personnalité' }) %>
 <main class="container" style="--ch-hue: 270">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Quizz de profil', navBack: '/quizz' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: 'Test de personnalité', navBack: '/quizz' }) %>
 
   <div class="pqt-wrap">
-    <h1 class="pqt-title">Quizz de profil</h1>
-    <p class="pqt-desc">Des quizz de personnalité pour mieux comprendre votre façon de vivre le désir.</p>
-
-    <a href="/quizz/profil/personnalites" class="pqt-pers-link">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M10 9.5C8.3 9.5 7 8.2 7 6.5S8.3 3.5 10 3.5s3 1.3 3 3-1.3 3-3 3zm-5 1c-1.4 0-2.5-1.1-2.5-2.5S3.6 5.5 5 5.5m10 0c1.4 0 2.5 1.1 2.5 2.5S16.4 10 15 10M2 16.5c0-2.5 1.8-4.5 4-4.5m12 0c2.2 0 4 2 4 4.5M5 16.5c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
-      Explorer les 32 personnalités
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-    </a>
+    <h1 class="pqt-title">Test de personnalité</h1>
+    <p class="pqt-desc">
+      Découvrez votre profil intime en cinq dimensions : rythme, moteur, nouveauté, scénario et plaisir.
+      Chaque réponse révèle une facette de votre façon de vivre le désir.
+      <a href="/quizz/profil/personnalites" class="pqt-pers-inline-link">Découvrir les 32 personnalités&nbsp;›</a>
+    </p>
 
     <div class="pqt-cards">
       <% types.forEach(function(t) { %>
       <% var attempts = attemptsMap[t.id] || []; %>
       <% var last = attempts[0] || null; %>
-      <a href="/quizz/profil/<%= t.slug %>" class="pqt-card">
+      <a href="/quizz/profil/<%= t.slug %>" class="pqt-card<%= last ? ' pqt-card--done' : '' %>">
+        <% if (last) { %><span class="pqt-card-done-badge">&#10003;</span><% } %>
         <div class="pqt-card-info">
           <p class="pqt-card-name"><%= t.name %></p>
           <% if (t.description) { %>
@@ -33,7 +32,7 @@
       </a>
       <% }) %>
       <% if (!types.length) { %>
-      <p style="color:var(--muted)">Aucun quizz de profil disponible pour le moment.</p>
+      <p style="color:var(--muted)">Aucun test disponible pour le moment.</p>
       <% } %>
     </div>
   </div>
