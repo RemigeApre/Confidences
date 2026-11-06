@@ -32,15 +32,13 @@
   <%# ── Flux central (profil-subpage = zone centrale uniquement) ── %>
   <div class="profil-subpage profil-subpage--wide">
 
-    <% if (error) { %><p class="profil-msg profil-msg-error"><%= error %></p><% } %>
-    <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
-
+    <%# topbar affiché seulement sur écrans étroits (volet droit caché) %>
     <div class="pub-topbar">
       <div class="pub-topbar-left">
         <span class="pub-topbar-label">Votre profil public</span>
         <a href="/profil/<%= currentUser.displayName %>" class="pub-topbar-link" target="_blank">/profil/<%= currentUser.displayName %> &nearr;</a>
       </div>
-      <button type="button" class="profil-btn-secondary pub-edit-btn" id="pub-edit-btn">Modifier</button>
+      <button type="button" class="profil-btn-secondary pub-edit-btn">Modifier</button>
     </div>
 
     <% if (featuredImages.length) { %>
@@ -114,6 +112,13 @@
       </div>
     <% } %>
 
+    <div class="pp-rp-footer">
+      <% if (error) { %><p class="pp-rp-notice pp-rp-notice--error"><%= error %></p><% } %>
+      <% if (notice) { %><p class="pp-rp-notice pp-rp-notice--ok"><%= notice %></p><% } %>
+      <a href="/profil/<%= currentUser.displayName %>" class="pp-rp-publink" target="_blank">/profil/<%= currentUser.displayName %> &nearr;</a>
+      <button type="button" class="pp-rp-edit-btn pub-edit-btn">Modifier le profil</button>
+    </div>
+
   </aside>
 
 </main>
@@ -181,14 +186,14 @@
 
 <script nonce="<%= nonce %>">
 (function () {
-  var editBtn = document.getElementById("pub-edit-btn");
+  var editBtns = document.querySelectorAll(".pub-edit-btn");
   var drawer = document.getElementById("pub-drawer");
   var backdrop = document.getElementById("pub-drawer-backdrop");
   var closeBtn = document.getElementById("pub-drawer-close");
   var cancelBtn = document.getElementById("pub-cancel-btn");
   function open() { drawer.hidden=false; backdrop.hidden=false; backdrop.setAttribute("aria-hidden","false"); document.body.classList.add("pub-drawer-open"); setTimeout(function(){drawer.classList.add("pub-drawer--visible");backdrop.classList.add("pub-drawer-backdrop--visible");},10); }
   function close() { drawer.classList.remove("pub-drawer--visible"); backdrop.classList.remove("pub-drawer-backdrop--visible"); document.body.classList.remove("pub-drawer-open"); setTimeout(function(){drawer.hidden=true;backdrop.hidden=true;backdrop.setAttribute("aria-hidden","true");},240); }
-  editBtn.addEventListener("click", open);
+  editBtns.forEach(function(b){ b.addEventListener("click", open); });
   closeBtn.addEventListener("click", close);
   cancelBtn.addEventListener("click", close);
   backdrop.addEventListener("click", close);
