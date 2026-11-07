@@ -4712,6 +4712,16 @@ function countUserRatingsTotal(userId) {
  * @param {number} threshold   Seuil pour 1 lootbox (ex. 10 pour les notes)
  * @returns {number} Nombre de lootboxes accordées (0 si aucune)
  */
+function checkAndGrantDailyLoginLootbox(userId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const actionType = 'daily_' + today;
+  const existing = db.prepare('SELECT granted FROM user_action_lootboxes WHERE user_id = ? AND action_type = ?').get(userId, actionType);
+  if (existing && existing.granted >= 1) return 0;
+  grantLootbox(userId, 1, 'standard');
+  db.prepare('INSERT OR REPLACE INTO user_action_lootboxes (user_id, action_type, granted) VALUES (?, ?, 1)').run(userId, actionType);
+  return 1;
+}
+
 function checkAndGrantActionLootbox(userId, actionType, total, threshold) {
   const shouldHave = Math.floor(total / threshold);
   if (shouldHave <= 0) return 0;
@@ -6491,6 +6501,7 @@ module.exports = {
   deleteAiProfile,
   getLootboxCount,
   grantLootbox,
+  checkAndGrantDailyLoginLootbox,
   getMemoryImages,
   getMemoryTags,
   updateArcadeStats,

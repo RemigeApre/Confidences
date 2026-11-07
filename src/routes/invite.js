@@ -10,6 +10,7 @@ const {
   logConnection,
   touchLastLogin,
   setUserAccountStatus,
+  grantLootbox,
 } = require("../db");
 const { hashPassword } = require("../passwords");
 const { createThrottle } = require("../loginThrottle");
@@ -139,9 +140,10 @@ module.exports = function buildInviteRouter(config) {
       setUserAccountStatus(newId, "pending_invite");
     }
 
-    // Lier l'invité à l'inviteur
+    // Lier l'invité à l'inviteur + récompenser l'inviteur
     const country = isFrench ? "FR" : (String(req.body._country || "")).toUpperCase() || "";
     createInviteUse(invite.userId, newId, country, isFrench ? "pending" : "direct");
+    grantLootbox(invite.userId, 5, 'standard');
 
     if (isFrench) {
       // Ne pas ouvrir de session : l'utilisateur doit attendre l'approbation

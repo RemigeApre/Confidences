@@ -24,7 +24,7 @@ const { isFrenchIp } = require("./geo");
 const {
   db, getAllTagMeta, getAllTagCategories, getAllTagParents, getAllTagSubcategories, setTagType, setTagCategory, setTagParent, setTagSubcategory, createStandaloneTag, renameTagEverywhere,
   getAllCategories, getAllSubcategoriesList, getAllSubcategoriesByCategory, getAllCategoriesWithSubs, createCategory, updateCategory, deleteCategory, createSubcategoryEntry, updateSubcategoryEntry, deleteSubcategoryEntry,
-  listWikiPages, listGalleryImages, getGalleryImage, listBdBooks, recordActivityPing, recordAnonVisit,
+  listWikiPages, listGalleryImages, getGalleryImage, listBdBooks, recordActivityPing, recordAnonVisit, checkAndGrantDailyLoginLootbox,
   listBlacklistedTags, addBlacklistedTag, removeBlacklistedTag,
   listFilterProfiles, createFilterProfile, deleteFilterProfile,
   getUserById, isScanPath,
@@ -396,7 +396,10 @@ app.use((req, res, next) => {
 // contrairement à connection_logs (uniquement à la saisie du mot de passe),
 // permet de savoir quand un profil est simplement en train de naviguer.
 app.use((req, res, next) => {
-  if (req.user) recordActivityPing(req.user.id, req.path);
+  if (req.user) {
+    recordActivityPing(req.user.id, req.path);
+    checkAndGrantDailyLoginLootbox(req.user.id);
+  }
   next();
 });
 
