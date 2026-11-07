@@ -752,14 +752,14 @@ body.pub-drawer-open{overflow:hidden}
 .home-sidebar-cats{display:flex;flex-direction:column;gap:.65rem}
 .home-sidebar-cats .home-cat{padding:.75rem .9rem .8rem}
 .home-sidebar-cats .home-cat-body{font-size:.79rem;line-height:1.5}
-.home-col{margin-left:270px}
-@media(max-width:900px){.home-sidebar{display:none}.home-col{margin-left:0}}
+.home-col{margin-left:0}
+@media(max-width:900px){.home-sidebar{display:none}}
 /* ── Slogan ──────────────────────────────────────────────────────────────── */
 .home-slogan{padding:3.5rem 0 1.5rem;text-align:center}
 .home-slogan-text{font-size:clamp(.95rem,2vw,1.1rem);color:var(--muted);line-height:1.7;margin:0;font-style:italic;letter-spacing:.015em}
 /* ── Titres de section unifiés ───────────────────────────────────────────── */
-.home-changelog-title,.home-sections-title,.home-charter-title{display:flex;align-items:center;gap:1.2rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.55);margin:0 0 2rem;white-space:nowrap}
-.home-changelog-title::before,.home-changelog-title::after,.home-sections-title::before,.home-sections-title::after,.home-charter-title::before,.home-charter-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
+.home-changelog-title,.home-sections-title,.home-charter-title{display:flex;align-items:center;gap:1.2rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.65);margin:0 0 2rem;white-space:nowrap}
+.home-sections-title::before,.home-sections-title::after,.home-charter-title::before,.home-charter-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
 /* ── Test de personnalité / Totem ───────────────────────────────────────── */
 .home-totem{margin:3rem 0 0;border:1px solid rgba(255,255,255,.1);border-left:3px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.025);padding:1.4rem 1.6rem;display:flex;align-items:center;justify-content:space-between;gap:2rem}
 .home-totem-body{display:flex;flex-direction:column;gap:.4rem;min-width:0}
@@ -770,19 +770,17 @@ body.pub-drawer-open{overflow:hidden}
 .home-totem-cta:hover{color:var(--fg);border-color:rgba(255,255,255,.35)}
 @media(max-width:620px){.home-totem{flex-direction:column;align-items:flex-start;gap:.9rem}}
 /* ── Changelog : section page d'accueil ────────────────────────────────── */
-.home-changelog{margin:3.5rem 0 0;border-top:1px solid var(--border);padding-top:2.5rem}
-.home-changelog-title{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin:0 0 1.6rem;text-align:center}
+.home-changelog{margin:3.5rem 0 0;padding-top:0}
+.home-changelog-title{margin:0 0 1.6rem}
 /* cards grid */
 .home-cl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem}
-/* base card */
-.home-cl-card{display:flex;flex-direction:column;gap:.45rem;text-align:left;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-left-width:3px;border-left-color:rgba(255,255,255,.12);border-radius:9px;padding:.9rem 1rem;cursor:pointer;transition:border-color .15s,background .15s,transform .1s;color:inherit;font:inherit}
-.home-cl-card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);border-left-color:inherit;transform:translateY(-1px)}
-/* importance variants — left border accent : normal=vert, majeur=bleu, critique=violet */
-.home-cl-card--imp0{border-left-color:#3d9e6a}
-.home-cl-card--imp1{border-left-color:#4a90d9}
-.home-cl-card--imp1:hover{border-left-color:#6aaae8}
-.home-cl-card--imp2{border-left-color:#9b6ac8}
-.home-cl-card--imp2:hover{border-left-color:#b384e0}
+/* base card — couleur sur toute la carte selon importance */
+.home-cl-card{display:flex;flex-direction:column;gap:.45rem;text-align:left;border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:.9rem 1rem;cursor:pointer;transition:filter .15s,transform .1s;color:inherit;font:inherit}
+.home-cl-card:hover{filter:brightness(1.12);transform:translateY(-1px)}
+/* importance : normal=vert, majeur=bleu, critique=violet */
+.home-cl-card--imp0{background:rgba(61,158,106,.12);border-color:rgba(61,158,106,.25)}
+.home-cl-card--imp1{background:rgba(74,144,217,.12);border-color:rgba(74,144,217,.25)}
+.home-cl-card--imp2{background:rgba(155,106,200,.12);border-color:rgba(155,106,200,.25)}
 /* top row */
 .home-cl-card-top{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
 /* importance pill */
