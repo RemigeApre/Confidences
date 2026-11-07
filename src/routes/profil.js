@@ -1,4 +1,5 @@
 const express = require("express");
+const { requireUserJson } = require("../auth");
 const {
   getUserByUsername,
   getPublicProfile,
@@ -14,6 +15,9 @@ const {
   getUserStreak,
   getUserWikiStatusList,
   getTopRatedWikiItems,
+  toggleProfileLike,
+  countProfileLikes,
+  hasProfileLike,
 } = require("../db");
 
 const WORLD_META = {
@@ -100,6 +104,9 @@ module.exports = function buildProfilRouter(config) {
         }
       } catch (_) {}
 
+      const likeCount = countProfileLikes(user.id);
+      const isLiked = req.user ? hasProfileLike(req.user.id, user.id) : false;
+
       res.render("public-profile", {
         config,
         currentUser: req.user || null,
@@ -116,10 +123,26 @@ module.exports = function buildProfilRouter(config) {
         wikiStatusItems,
         themeDef,
         quizResult,
+        likeCount,
+        isLiked,
       });
     } catch (err) {
       console.error("[profil]", err);
       res.status(500).end();
+    }
+  });
+
+  // POST /profil/:username/like — toggle heart (JSON, auth required)
+  router.post("/:username/like", requireUserJson, (req, res) => {
+    try {
+      const user = getUserByUsername(req.params.username);
+      if (!user) return res.status(404).json({ error: 'not found' });
+      if (user.id === req.user.id) return res.status(400).json({ error: 'cannot like yourself' });
+      const liked = toggleProfileLike(req.user.id, user.id);
+      const count = countProfileLikes(user.id);
+      res.json({ liked, count });
+    } catch (err) {
+      res.status(500).json({ error: 'server error' });
     }
   });
 

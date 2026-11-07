@@ -68,6 +68,7 @@ const {
   getUserWikiStatusList,
   getTopRatedWikiItems,
   listPendingInvites,
+  listAllInviteUses,
   countPendingInvites,
   setInviteUseStatus,
   getUserInviteStats,
@@ -840,6 +841,17 @@ function buildFavoritesRouter(config) {
       pendingInvites,
       inviteStats,
       csrfToken: null, // formulaires simples, protection via session+requireUser
+    });
+  });
+
+  router.get("/amis", requireUser, (req, res) => {
+    const amis = listAllInviteUses(req.user.id);
+    res.render("favoris-amis", {
+      config,
+      roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
+      currentPath: "/favoris/amis",
+      amis,
     });
   });
 

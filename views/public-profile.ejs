@@ -142,6 +142,37 @@
 
   <p class="pp-rp-name"><%= profileUser.displayName %></p>
 
+  <% if (currentUser && currentUser.id !== profileUser.id) { %>
+    <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %>" id="pp-like-btn" aria-label="J'aime ce profil" data-username="<%= profileUser.username %>" data-liked="<%= isLiked ? '1' : '0' %>">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span class="pp-rp-like-count" id="pp-like-count"><%= likeCount || '' %></span>
+    </button>
+  <% } else if (likeCount > 0) { %>
+    <div class="pp-rp-like pp-rp-like--display">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span><%= likeCount %></span>
+    </div>
+  <% } %>
+  <script nonce="<%= nonce %>">
+  (function(){
+    var btn = document.getElementById('pp-like-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+      btn.disabled = true;
+      fetch('/profil/' + btn.dataset.username + '/like', { method: 'POST', credentials: 'same-origin' })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          btn.disabled = false;
+          btn.dataset.liked = d.liked ? '1' : '0';
+          btn.classList.toggle('pp-rp-like--on', d.liked);
+          btn.querySelector('svg').setAttribute('fill', d.liked ? 'currentColor' : 'none');
+          document.getElementById('pp-like-count').textContent = d.count || '';
+        })
+        .catch(function(){ btn.disabled = false; });
+    });
+  })();
+  </script>
+
   <% if (pub.showStreak && streak > 0) { %>
     <div class="pp-rp-streak"><span class="pp-rp-streak-flame">🔥</span><span class="pp-rp-streak-count"><%= streak %></span><span class="pp-rp-streak-label">jour<%= streak > 1 ? 's' : '' %></span></div>
   <% } %>

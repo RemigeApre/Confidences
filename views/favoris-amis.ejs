@@ -1,0 +1,29 @@
+<%- include('partials/head', { title: 'Amis' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+
+    <h1 class="profil-subpage-title">Amis</h1>
+    <p class="profil-subpage-desc">Personnes ayant rejoint via votre lien d&rsquo;invitation.</p>
+
+    <% if (!amis || !amis.length) { %>
+      <p class="amis-empty">Personne n&rsquo;a encore utilis&eacute; votre lien d&rsquo;invitation.</p>
+    <% } else { %>
+      <div class="amis-list">
+        <% amis.forEach(function(ami) { %>
+          <div class="amis-row">
+            <a href="/profil/<%= ami.username %>" class="amis-row-name"><%= ami.display_name %></a>
+            <span class="amis-row-user">@<%= ami.username %></span>
+            <% var statusLabel = { pending: 'En attente', approved: 'Actif', refused: 'Refus&eacute;', direct: 'Actif' }[ami.status] || ami.status; %>
+            <span class="amis-row-status amis-row-status--<%= ami.status %>"><%- statusLabel %></span>
+            <time class="amis-row-date" datetime="<%= ami.created_at.slice(0,10) %>"><%= new Date(ami.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' }) %></time>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+
+  </div>
+</main>
+<%- include('partials/foot') %>

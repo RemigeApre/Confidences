@@ -158,6 +158,12 @@ try { db.prepare(`CREATE TABLE IF NOT EXISTS invite_uses (
   status     TEXT NOT NULL DEFAULT 'pending',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 )`).run(); } catch (_) {}
+try { db.prepare(`CREATE TABLE IF NOT EXISTS profile_likes (
+  user_id   INTEGER NOT NULL,
+  target_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, target_id)
+)`).run(); } catch (_) {}
 
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN extra_categories TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
@@ -6201,6 +6207,36 @@ function getUserInviteStats(userId) {
   return { total: r ? r.n : 0 };
 }
 
+function listAllInviteUses(inviterId) {
+  return db.prepare(`
+    SELECT iu.id, iu.invitee_id, iu.country, iu.status, iu.created_at,
+           u.display_name, u.username
+    FROM invite_uses iu
+    JOIN users u ON u.id = iu.invitee_id
+    WHERE iu.inviter_id = ?
+    ORDER BY iu.created_at DESC
+  `).all(inviterId);
+}
+
+function toggleProfileLike(userId, targetId) {
+  const existing = db.prepare('SELECT 1 FROM profile_likes WHERE user_id=? AND target_id=?').get(userId, targetId);
+  if (existing) {
+    db.prepare('DELETE FROM profile_likes WHERE user_id=? AND target_id=?').run(userId, targetId);
+    return false;
+  }
+  db.prepare("INSERT INTO profile_likes (user_id, target_id, created_at) VALUES (?,?,?)").run(userId, targetId, new Date().toISOString());
+  return true;
+}
+
+function countProfileLikes(targetId) {
+  return db.prepare('SELECT COUNT(*) as n FROM profile_likes WHERE target_id=?').get(targetId).n;
+}
+
+function hasProfileLike(userId, targetId) {
+  if (!userId) return false;
+  return !!db.prepare('SELECT 1 FROM profile_likes WHERE user_id=? AND target_id=?').get(userId, targetId);
+}
+
 function getUserCoffreStats(userId) {
   const images = db.prepare("SELECT COUNT(*) as n FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").get(userId).n;
   const charms = db.prepare("SELECT COUNT(*) as n FROM user_unlocks WHERE user_id = ? AND item_type = 'charm'").get(userId).n;
@@ -6602,6 +6638,10 @@ module.exports = {
   getPublicProfile,
   setPublicProfile,
   getTopRatedWikiItems,
+  listAllInviteUses,
+  toggleProfileLike,
+  countProfileLikes,
+  hasProfileLike,
   getUserCoffreStats,
   getUserStreak,
   getUserWikiStatus,
