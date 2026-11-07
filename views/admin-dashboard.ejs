@@ -1370,12 +1370,17 @@
       <div class="cl-new-block">
         <h3 class="cl-block-title">Nouvelle entrée</h3>
         <form method="POST" action="/ponhgup/changelogs" class="cl-form">
-          <input type="text" name="title" placeholder="Titre (ex : v1.4 — Profil public)" class="cl-input" required maxlength="200" />
+          <input type="text" name="title" placeholder="Titre (ex : bêta 1.58 — Profil public)" class="cl-input" required maxlength="200" />
           <div class="cl-form-row">
             <input type="date" name="published_at" value="<%= new Date().toISOString().slice(0,10) %>" class="cl-date" />
+            <select name="importance" class="cl-select">
+              <option value="0">Normal</option>
+              <option value="1">Majeur</option>
+              <option value="2">Critique</option>
+            </select>
             <button type="submit" class="cl-btn-submit">Publier</button>
           </div>
-          <textarea name="body" placeholder="Contenu de la note (Markdown non rendu, texte brut)" class="cl-textarea" rows="6"></textarea>
+          <textarea name="body" placeholder="Contenu de la note (texte brut, les sauts de ligne sont respectés)" class="cl-textarea" rows="6"></textarea>
         </form>
       </div>
 
@@ -1387,9 +1392,15 @@
         <% } else { %>
           <div class="cl-list">
             <% changelogs.forEach(function(cl) { %>
-              <details class="cl-entry">
+              <%
+                var imp = cl.importance || 0;
+                var impLabel = ['Normal','Majeur','Critique'][imp] || 'Normal';
+                var impClass = ['','cl-imp--major','cl-imp--crit'][imp] || '';
+              %>
+              <details class="cl-entry <%= impClass %>">
                 <summary class="cl-entry-summary">
                   <span class="cl-entry-date"><%= cl.published_at.slice(0,10) %></span>
+                  <% if (imp > 0) { %><span class="cl-imp-dot cl-imp-dot--<%= imp %>"></span><% } %>
                   <span class="cl-entry-title"><%= cl.title %></span>
                   <svg class="cl-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                 </summary>
@@ -1398,6 +1409,11 @@
                     <input type="text" name="title" value="<%= cl.title %>" class="cl-input" required maxlength="200" />
                     <div class="cl-form-row">
                       <input type="date" name="published_at" value="<%= cl.published_at.slice(0,10) %>" class="cl-date" />
+                      <select name="importance" class="cl-select">
+                        <option value="0"<%= imp===0?' selected':'' %>>Normal</option>
+                        <option value="1"<%= imp===1?' selected':'' %>>Majeur</option>
+                        <option value="2"<%= imp===2?' selected':'' %>>Critique</option>
+                      </select>
                       <button type="submit" class="cl-btn-submit cl-btn-submit--edit">Enregistrer</button>
                     </div>
                     <textarea name="body" class="cl-textarea" rows="6"><%= cl.body %></textarea>

@@ -81,15 +81,17 @@
     <div class="home-cl-cards">
       <% changelogs.forEach(function(cl) { %>
         <%
+          var imp = cl.importance || 0;
           var versionMatch = cl.title.match(/\b(alpha|bêta|beta)\s*([\d.]+)?/i);
           var versionTag = versionMatch ? versionMatch[0] : null;
-          var excerpt = cl.body ? cl.body.replace(/<[^>]+>/g,'').slice(0,120) + (cl.body.length > 120 ? '…' : '') : '';
+          var excerpt = cl.body ? cl.body.replace(/<[^>]+>/g,'').slice(0,100) + (cl.body.length > 100 ? '…' : '') : '';
+          var impKey = ['','major','crit'][imp] || '';
         %>
-        <button class="home-cl-card" data-cl-id="<%= cl.id %>" type="button"
-          aria-haspopup="dialog">
+        <button class="home-cl-card home-cl-card--imp<%= imp %>" data-cl-id="<%= cl.id %>" type="button" aria-haspopup="dialog">
           <div class="home-cl-card-top">
+            <% if (imp > 0) { %><span class="home-cl-imp-pill home-cl-imp-pill--<%= impKey %>"><%= imp===2?'Critique':'Majeur' %></span><% } %>
             <% if (versionTag) { %><span class="home-cl-badge"><%= versionTag %></span><% } %>
-            <time class="home-cl-card-date" datetime="<%= cl.published_at.slice(0,10) %>"><%= new Date(cl.published_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) %></time>
+            <time class="home-cl-card-date" datetime="<%= cl.published_at.slice(0,10) %>"><%= new Date(cl.published_at).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }) %></time>
           </div>
           <span class="home-cl-card-title"><%= cl.title %></span>
           <% if (excerpt) { %><span class="home-cl-card-excerpt"><%= excerpt %></span><% } %>
@@ -98,11 +100,12 @@
         <dialog class="home-cl-dialog" id="cl-dialog-<%= cl.id %>">
           <div class="home-cl-dialog-inner">
             <div class="home-cl-dialog-head">
-              <div>
+              <div class="home-cl-dialog-meta">
+                <% if (imp > 0) { %><span class="home-cl-imp-pill home-cl-imp-pill--<%= impKey %>"><%= imp===2?'Critique':'Majeur' %></span><% } %>
                 <% if (versionTag) { %><span class="home-cl-badge"><%= versionTag %></span><% } %>
                 <time class="home-cl-card-date" datetime="<%= cl.published_at.slice(0,10) %>"><%= new Date(cl.published_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) %></time>
               </div>
-              <button class="home-cl-close" aria-label="Fermer" autofocus>&#x2715;</button>
+              <button class="home-cl-close" aria-label="Fermer">&#x2715;</button>
             </div>
             <h3 class="home-cl-dialog-title"><%= cl.title %></h3>
             <% if (cl.body) { %><div class="home-cl-dialog-body"><%- cl.body.replace(/\n/g,'<br>') %></div><% } %>

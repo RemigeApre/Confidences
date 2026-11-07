@@ -131,8 +131,10 @@ db.exec(`CREATE TABLE IF NOT EXISTS changelogs (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   title        TEXT NOT NULL DEFAULT '',
   body         TEXT NOT NULL DEFAULT '',
-  published_at TEXT NOT NULL DEFAULT (datetime('now'))
+  published_at TEXT NOT NULL DEFAULT (datetime('now')),
+  importance   INTEGER NOT NULL DEFAULT 0
 )`);
+try { db.exec("ALTER TABLE changelogs ADD COLUMN importance INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 // ── Système d'invitation ───────────────────────────────────────────────────
 // invite_tokens : un token permanent par utilisateur (son lien unique).
@@ -6107,14 +6109,14 @@ function listChangelogs() {
 function getChangelog(id) {
   return db.prepare('SELECT * FROM changelogs WHERE id = ?').get(id) || null;
 }
-function createChangelog({ title, body, published_at }) {
-  const r = db.prepare('INSERT INTO changelogs (title, body, published_at) VALUES (?, ?, ?)')
-    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10));
+function createChangelog({ title, body, published_at, importance }) {
+  const r = db.prepare('INSERT INTO changelogs (title, body, published_at, importance) VALUES (?, ?, ?, ?)')
+    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10), Number(importance) || 0);
   return r.lastInsertRowid;
 }
-function updateChangelog(id, { title, body, published_at }) {
-  db.prepare('UPDATE changelogs SET title = ?, body = ?, published_at = ? WHERE id = ?')
-    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10), id);
+function updateChangelog(id, { title, body, published_at, importance }) {
+  db.prepare('UPDATE changelogs SET title = ?, body = ?, published_at = ?, importance = ? WHERE id = ?')
+    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10), Number(importance) || 0, id);
 }
 function deleteChangelog(id) {
   db.prepare('DELETE FROM changelogs WHERE id = ?').run(id);

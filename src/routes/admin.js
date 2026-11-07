@@ -527,20 +527,22 @@ function buildAdminRouter(config) {
 
   // ── Changelogs ──────────────────────────────────────────────────────────────
   router.post("/changelogs", requireAdmin, (req, res) => {
-    const title = String(req.body.title || "").trim();
-    const body  = String(req.body.body  || "").trim();
-    const date  = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
-    if (title) createChangelog({ title, body, published_at: date });
+    const title      = String(req.body.title || "").trim();
+    const body       = String(req.body.body  || "").trim();
+    const date       = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
+    const importance = Number(req.body.importance) || 0;
+    if (title) createChangelog({ title, body, published_at: date, importance });
     res.redirect("/ponhgup#tab-changelog");
   });
 
   router.post("/changelogs/:id/edit", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.redirect("/ponhgup#tab-changelog");
-    const title = String(req.body.title || "").trim();
-    const body  = String(req.body.body  || "").trim();
-    const date  = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
-    updateChangelog(id, { title, body, published_at: date });
+    const title      = String(req.body.title || "").trim();
+    const body       = String(req.body.body  || "").trim();
+    const date       = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
+    const importance = Number(req.body.importance) || 0;
+    updateChangelog(id, { title, body, published_at: date, importance });
     res.redirect("/ponhgup#tab-changelog");
   });
 
