@@ -252,15 +252,12 @@
             </span>
           </label>
 
-          <label class="pub-toggle-row" for="toggle-archetype">
+          <label class="pub-toggle-row pub-toggle-row--always">
             <span class="pub-toggle-row-left">
-              <span class="pub-toggle-row-icon">✦</span>
-              <span class="pub-toggle-row-text">R&eacute;sultat de personnalit&eacute;<% if (quizResult) { %><span class="pub-toggle-row-hint"> &middot; <%= quizResult.archetypeName %></span><% } %></span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <span class="pub-toggle-row-text">Profil de personnalit&eacute;<% if (quizResult) { %><span class="pub-toggle-row-hint"> &middot; <%= quizResult.archetypeName %></span><% } %></span>
             </span>
-            <span class="pub-toggle">
-              <input type="checkbox" id="toggle-archetype" name="show_archetype" value="1" <%= pub.showArchetype ? 'checked' : '' %> />
-              <span class="pub-toggle-track"><span class="pub-toggle-thumb"></span></span>
-            </span>
+            <span class="pub-toggle-row-badge">Toujours affiché</span>
           </label>
 
           <label class="pub-toggle-row" for="toggle-wiki-status">
