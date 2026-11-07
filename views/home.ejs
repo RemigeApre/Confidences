@@ -69,8 +69,10 @@
             <%
               var imp = cl.importance || 0;
               var clTags = Array.isArray(cl.tags) ? cl.tags : [];
-              var versionMatch = cl.title.match(/\b(alpha|b[eê]ta)\s*[\d.]+/i);
-              var versionTag = versionMatch ? versionMatch[0] : null;
+              var versionMatch = cl.title.match(/\b(alpha|b[eê]ta)\s*([\d.]+)/i);
+              var versionTag  = versionMatch ? versionMatch[0] : null;
+              var vtLetter    = versionTag ? versionTag.charAt(0).toUpperCase() : null;
+              var vtNum       = versionMatch ? versionMatch[2] : null;
               var displayTitle = versionTag
                 ? cl.title.replace(versionMatch[0], '').replace(/^\s*[-:·]\s*/, '').trim()
                 : cl.title;
@@ -78,18 +80,26 @@
               var impKey = ['','major','crit'][imp] || '';
             %>
             <button class="home-cl-card home-cl-card--imp<%= imp %>" data-cl-id="<%= cl.id %>" type="button" aria-haspopup="dialog">
-              <div class="home-cl-card-top">
-                <% if (imp > 0) { %><span class="home-cl-imp-pill home-cl-imp-pill--<%= impKey %>"><%= imp===2?'Critique':'Majeur' %></span><% } %>
-                <% if (versionTag) { %><span class="home-cl-badge"><%= versionTag %></span><% } %>
-                <time class="home-cl-card-date" datetime="<%= cl.published_at.slice(0,10) %>"><%= new Date(cl.published_at).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }) %></time>
-              </div>
-              <% if (displayTitle) { %><span class="home-cl-card-title"><%= displayTitle %></span><% } %>
-              <% if (excerpt) { %><span class="home-cl-card-excerpt"><%= excerpt %></span><% } %>
-              <% if (clTags.length) { %>
-              <div class="home-cl-card-tags">
-                <% clTags.forEach(function(t){ var m=CL_TAG_META[t]; if(m){ %><span class="home-cl-tag <%= m.cls %>"><%= m.label %></span><% } }); %>
+              <% if (versionTag) { %>
+              <div class="home-cl-vtag" aria-hidden="true">
+                <span class="home-cl-vtag-letter"><%= vtLetter %></span>
+                <span class="home-cl-vtag-num"><%= vtNum %></span>
               </div>
               <% } %>
+              <div class="home-cl-content">
+                <div class="home-cl-card-top">
+                  <% if (imp > 0) { %><span class="home-cl-imp-pill home-cl-imp-pill--<%= impKey %>"><%= imp===2?'Critique':'Majeur' %></span><% } %>
+                  <time class="home-cl-card-date" datetime="<%= cl.published_at.slice(0,10) %>"><%= new Date(cl.published_at).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }) %></time>
+                </div>
+                <% if (displayTitle) { %><span class="home-cl-card-title"><%= displayTitle %></span><% } %>
+                <% if (!displayTitle && versionTag) { %><span class="home-cl-card-title"><%= versionTag %></span><% } %>
+                <% if (excerpt) { %><span class="home-cl-card-excerpt"><%= excerpt %></span><% } %>
+                <% if (clTags.length) { %>
+                <div class="home-cl-card-tags">
+                  <% clTags.forEach(function(t){ var m=CL_TAG_META[t]; if(m){ %><span class="home-cl-tag <%= m.cls %>"><%= m.label %></span><% } }); %>
+                </div>
+                <% } %>
+              </div>
             </button>
 
             <dialog class="home-cl-dialog" id="cl-dialog-<%= cl.id %>">
@@ -115,7 +125,7 @@
         </div>
       </section>
 
-      <script>
+      <script nonce="<%= nonce %>">
       (function(){
         document.querySelectorAll('.home-cl-card').forEach(function(btn){
           btn.addEventListener('click',function(){
