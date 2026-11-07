@@ -774,19 +774,20 @@ body.pub-drawer-open{overflow:hidden}
 /* cards grid */
 .home-cl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem}
 /* base card */
-.home-cl-card{display:flex;flex-direction:row;gap:0;text-align:left;border:1px solid rgba(255,255,255,.12);border-radius:10px;overflow:hidden;cursor:pointer;transition:filter .15s,transform .1s;color:inherit;font:inherit}
-.home-cl-card:hover{filter:brightness(1.15);transform:translateY(-1px)}
-/* importance : normal=vert foncé, majeur=bleu foncé, critique=violet foncé */
-.home-cl-card--imp0{background:#0e2318;border-color:#1e4d35}
-.home-cl-card--imp1{background:#0a1929;border-color:#163a5f}
-.home-cl-card--imp2{background:#160e24;border-color:#3a2060}
-/* bandeau vertical version (lettre + numéro) */
-.home-cl-vtag{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:30px;flex-shrink:0;padding:.5rem 0;border-right:1px solid rgba(255,255,255,.08)}
-.home-cl-card--imp0 .home-cl-vtag{background:#1a3d2a}
-.home-cl-card--imp1 .home-cl-vtag{background:#0f2540}
-.home-cl-card--imp2 .home-cl-vtag{background:#22124a}
-.home-cl-vtag-letter{font-size:.8rem;font-weight:800;color:#fff;line-height:1;text-transform:uppercase}
-.home-cl-vtag-num{font-size:.62rem;font-weight:600;color:rgba(255,255,255,.55);line-height:1.2;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg)}
+.home-cl-card{display:flex;flex-direction:row;gap:0;text-align:left;border:1px solid;border-radius:0;overflow:visible;cursor:pointer;transition:filter .15s;color:inherit;font:inherit;position:relative}
+.home-cl-card--vtag{padding-left:40px}
+.home-cl-card:hover{filter:brightness(1.12)}
+/* importance : normal=vert, majeur=bleu, critique=violet */
+.home-cl-card--imp0{background:#0c2a18;border-color:#2a9858}
+.home-cl-card--imp1{background:#08203a;border-color:#2868c8}
+.home-cl-card--imp2{background:#140b2c;border-color:#6c30c8}
+/* étiquette décalée : déborde de 5px au-dessus, en-dessous et à gauche */
+.home-cl-vtag{position:absolute;left:-5px;top:-5px;bottom:-5px;width:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1px solid;padding:0}
+.home-cl-card--imp0 .home-cl-vtag{background:#1c7a46;border-color:#2a9858}
+.home-cl-card--imp1 .home-cl-vtag{background:#1a4282;border-color:#2868c8}
+.home-cl-card--imp2 .home-cl-vtag{background:#3c1878;border-color:#6c30c8}
+.home-cl-vtag-letter{font-size:.85rem;font-weight:800;color:#fff;line-height:1.1;text-transform:uppercase;font-family:inherit}
+.home-cl-vtag-num{font-size:.72rem;font-weight:800;color:rgba(255,255,255,.85);line-height:1.2;text-align:center;font-family:inherit}
 /* zone de contenu de la carte */
 .home-cl-content{flex:1;display:flex;flex-direction:column;gap:.4rem;padding:.85rem .9rem;min-width:0}
 /* top row */
