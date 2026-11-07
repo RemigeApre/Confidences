@@ -77,83 +77,11 @@
     <%# ── 4b. Code invité ── %>
     <% if (locals.inviteToken) { %>
       <div class="profil-nav-invite-row">
-        <button type="button" class="profil-nav-big-title profil-nav-big-title--invite" id="pn-invite-btn">
-          Code invit&eacute;
-        </button>
+        <a href="/favoris/invitations" class="profil-nav-big-title<%= currentPath === '/favoris/invitations' ? ' active' : '' %>">Code invit&eacute;</a>
         <% if (locals.pendingInvitesCount > 0) { %>
-          <a href="/favoris/invitations" class="profil-nav-invite-badge<%= currentPath === '/favoris/invitations' ? ' active' : '' %>" title="<%= locals.pendingInvitesCount %> inscription<%= locals.pendingInvitesCount > 1 ? 's' : '' %> en attente"><%= locals.pendingInvitesCount %></a>
+          <span class="profil-nav-invite-badge" title="<%= locals.pendingInvitesCount %> inscription<%= locals.pendingInvitesCount > 1 ? 's' : '' %> en attente"><%= locals.pendingInvitesCount %></span>
         <% } %>
       </div>
-    <% } %>
-
-    <%# ── Modale code invité ── %>
-    <% if (locals.inviteToken) { %>
-    <div class="pn-invite-backdrop" id="pn-invite-backdrop" aria-hidden="true"></div>
-    <div class="pn-invite-modal" id="pn-invite-modal" role="dialog" aria-modal="true" aria-label="Code invité" hidden>
-      <div class="pn-invite-modal-inner">
-        <button type="button" class="pn-invite-close" id="pn-invite-close" aria-label="Fermer">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <div class="pn-invite-step" id="pn-invite-step-warn">
-          <p class="pn-invite-warn-text">Assurez-vous de donner ce lien exclusivement &agrave; des personnes majeures.</p>
-          <div class="pn-invite-warn-actions">
-            <button type="button" class="pn-invite-btn-ok" id="pn-invite-confirm">D&rsquo;accord</button>
-            <button type="button" class="pn-invite-btn-cancel" id="pn-invite-warn-cancel">Annuler</button>
-          </div>
-        </div>
-        <div class="pn-invite-step" id="pn-invite-step-link" hidden>
-          <p class="pn-invite-label">Lien d&rsquo;inscription</p>
-          <div class="pn-invite-link-row">
-            <input type="text" class="pn-invite-link-input" id="pn-invite-link-input" readonly value="" />
-            <button type="button" class="pn-invite-copy-btn" id="pn-invite-copy" aria-label="Copier le lien">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            </button>
-          </div>
-          <p class="pn-invite-hint">Envoyez ce lien &agrave; la personne. Elle devra s&rsquo;inscrire, et vous devrez valider son acc&egrave;s.</p>
-        </div>
-      </div>
-    </div>
-    <script nonce="<%= nonce %>">
-    (function(){
-      var inviteLink = window.location.origin + '/rejoindre/<%= inviteToken %>';
-      var btn = document.getElementById('pn-invite-btn');
-      var backdrop = document.getElementById('pn-invite-backdrop');
-      var modal = document.getElementById('pn-invite-modal');
-      var closeBtn = document.getElementById('pn-invite-close');
-      var confirmBtn = document.getElementById('pn-invite-confirm');
-      var warnCancelBtn = document.getElementById('pn-invite-warn-cancel');
-      var stepWarn = document.getElementById('pn-invite-step-warn');
-      var stepLink = document.getElementById('pn-invite-step-link');
-      var linkInput = document.getElementById('pn-invite-link-input');
-      var copyBtn = document.getElementById('pn-invite-copy');
-      linkInput.value = inviteLink;
-      function openModal() {
-        stepWarn.hidden = false; stepLink.hidden = true;
-        modal.hidden = false; backdrop.hidden = false;
-        backdrop.setAttribute('aria-hidden','false');
-        setTimeout(function(){ modal.classList.add('pn-invite-modal--visible'); backdrop.classList.add('pn-invite-backdrop--visible'); }, 10);
-      }
-      function closeModal() {
-        modal.classList.remove('pn-invite-modal--visible');
-        backdrop.classList.remove('pn-invite-backdrop--visible');
-        setTimeout(function(){ modal.hidden=true; backdrop.hidden=true; backdrop.setAttribute('aria-hidden','true'); }, 220);
-      }
-      btn.addEventListener('click', openModal);
-      closeBtn.addEventListener('click', closeModal);
-      warnCancelBtn.addEventListener('click', closeModal);
-      backdrop.addEventListener('click', closeModal);
-      document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !modal.hidden) closeModal(); });
-      confirmBtn.addEventListener('click', function(){
-        stepWarn.hidden = true; stepLink.hidden = false;
-      });
-      copyBtn.addEventListener('click', function(){
-        navigator.clipboard && navigator.clipboard.writeText(inviteLink).then(function(){
-          copyBtn.classList.add('pn-invite-copy-btn--copied');
-          setTimeout(function(){ copyBtn.classList.remove('pn-invite-copy-btn--copied'); }, 1500);
-        }).catch(function(){ linkInput.select(); document.execCommand('copy'); });
-      });
-    })();
-    </script>
     <% } %>
 
     <%# ── 5. Lien couple ── %>

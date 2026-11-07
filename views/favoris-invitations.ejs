@@ -3,38 +3,79 @@
   <%- include('partials/top-nav', { config: config }) %>
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
-  <div class="profil-subpage">
-    <h1 class="profil-subpage-title">Invitations en attente</h1>
+  <div class="profil-subpage profil-subpage--wide">
 
-    <% if (pendingInvites.length === 0) { %>
-      <p class="pp-empty">Aucune inscription en attente de validation.</p>
-    <% } else { %>
-      <ul class="inv-list">
-        <% pendingInvites.forEach(function(inv) { %>
-          <li class="inv-item">
-            <div class="inv-item-info">
-              <span class="inv-item-name"><%= inv.display_name %></span>
-              <span class="inv-item-meta">@<%= inv.username %></span>
-              <span class="inv-item-date"><%= new Date(inv.created_at).toLocaleDateString('fr-FR') %></span>
-            </div>
-            <div class="inv-item-actions">
-              <form method="POST" action="/favoris/invitations/<%= inv.id %>/approve" class="inv-form">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                <button type="submit" class="inv-btn inv-btn--approve">Valider</button>
-              </form>
-              <form method="POST" action="/favoris/invitations/<%= inv.id %>/refuse" class="inv-form">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                <button type="submit" class="inv-btn inv-btn--refuse">Refuser</button>
-              </form>
-            </div>
-          </li>
-        <% }); %>
-      </ul>
-    <% } %>
+    <%# ── Bloc info + lien ── %>
+    <section class="inv-page-section">
+      <p class="inv-page-notice">Donnez ce lien uniquement &agrave; des personnes majeures. Chaque inscription via votre lien vous est li&eacute;e : vous devrez valider l&rsquo;acc&egrave;s avant que la personne puisse se connecter.</p>
+
+      <% if (locals.inviteToken) { %>
+        <div class="inv-link-block">
+          <span class="inv-link-label">Votre lien d&rsquo;invitation</span>
+          <div class="inv-link-row">
+            <input type="text" class="inv-link-input" id="inv-link-input" readonly value="" />
+            <button type="button" class="inv-link-copy" id="inv-link-copy" aria-label="Copier le lien">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span class="inv-link-copy-label">Copier</span>
+            </button>
+          </div>
+        </div>
+        <script nonce="<%= nonce %>">
+        (function(){
+          var link = window.location.origin + '/rejoindre/<%= locals.inviteToken %>';
+          var input = document.getElementById('inv-link-input');
+          var copyBtn = document.getElementById('inv-link-copy');
+          var copyLabel = copyBtn.querySelector('.inv-link-copy-label');
+          input.value = link;
+          copyBtn.addEventListener('click', function(){
+            navigator.clipboard && navigator.clipboard.writeText(link).then(function(){
+              copyLabel.textContent = 'Copié';
+              copyBtn.classList.add('inv-link-copy--done');
+              setTimeout(function(){ copyLabel.textContent = 'Copier'; copyBtn.classList.remove('inv-link-copy--done'); }, 1800);
+            }).catch(function(){ input.select(); document.execCommand('copy'); });
+          });
+        })();
+        </script>
+      <% } %>
+    </section>
+
+    <%# ── Liste inscriptions en attente ── %>
+    <section class="inv-page-section">
+      <h2 class="inv-section-title">
+        Inscriptions en attente
+        <% if (pendingInvites.length > 0) { %><span class="inv-section-count"><%= pendingInvites.length %></span><% } %>
+      </h2>
+
+      <% if (pendingInvites.length === 0) { %>
+        <p class="inv-empty">Aucune inscription en attente.</p>
+      <% } else { %>
+        <ul class="inv-list">
+          <% pendingInvites.forEach(function(inv) { %>
+            <li class="inv-item">
+              <div class="inv-item-info">
+                <span class="inv-item-name"><%= inv.display_name %></span>
+                <span class="inv-item-sep">&middot;</span>
+                <span class="inv-item-meta">@<%= inv.username %></span>
+                <span class="inv-item-date"><%= new Date(inv.created_at).toLocaleDateString('fr-FR') %></span>
+              </div>
+              <div class="inv-item-actions">
+                <form method="POST" action="/favoris/invitations/<%= inv.id %>/approve" class="inv-form">
+                  <button type="submit" class="inv-btn inv-btn--approve">Valider</button>
+                </form>
+                <form method="POST" action="/favoris/invitations/<%= inv.id %>/refuse" class="inv-form">
+                  <button type="submit" class="inv-btn inv-btn--refuse">Refuser</button>
+                </form>
+              </div>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
 
     <% if (inviteStats.total > 0) { %>
       <p class="inv-stats"><%= inviteStats.total %> personne<%= inviteStats.total > 1 ? 's ont' : ' a' %> rejoint via votre lien.</p>
     <% } %>
+
   </div>
 </main>
 <%- include('partials/foot') %>
