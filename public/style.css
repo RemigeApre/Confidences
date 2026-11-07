@@ -521,7 +521,7 @@
 .pub-topbar-left{display:flex;flex-direction:column;gap:.15rem;min-width:0}
 .pub-topbar-label{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .pub-topbar-link{font-size:.82rem;color:var(--muted);text-decoration:none;word-break:break-all}
-.pub-topbar-link:hover{color:var(--fg)}
+.pub-topbar-link:hover{color:var(--fg)}.pub-topbar-avatar{width:38px!important;height:38px!important;border-radius:8px!important;flex-shrink:0}.pub-topbar-name{font-size:.88rem;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* aperçu profil (partagé avec /profil/:username via pp-* classes) */
 .pp-header{display:flex;align-items:flex-start;gap:1.1rem;margin-bottom:1.5rem}
 .pp-avatar-wrap{flex-shrink:0}
@@ -703,3 +703,51 @@ body.pub-drawer-open{overflow:hidden}
 .pp-rp-edit-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.25)}
 /* sur grand écran, la topbar est remplacée par le footer du volet droit */
 @media(min-width:1200px){.pub-topbar{display:none}}
+
+/* ── Invite : entrée Code invité dans profil-nav ─────────────────────────── */
+.profil-nav-invite-row{display:flex;align-items:center;gap:.4rem}
+.profil-nav-big-title--invite{background:none;border:none;cursor:pointer;padding:0;text-align:left;width:auto;flex:1}
+.profil-nav-invite-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:hsl(15,75%,52%);color:#fff;font-size:.7rem;font-weight:700;text-decoration:none;flex-shrink:0}
+/* ── Invite : modale ──────────────────────────────────────────────────────── */
+.pn-invite-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;opacity:0;transition:opacity .22s}
+.pn-invite-backdrop--visible{opacity:1}
+.pn-invite-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-54%);z-index:201;width:min(92vw,360px);background:hsl(220,12%,13%);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:1.4rem 1.3rem 1.2rem;opacity:0;transition:opacity .22s,transform .22s}
+.pn-invite-modal--visible{opacity:1;transform:translate(-50%,-50%)}
+.pn-invite-close{position:absolute;top:.7rem;right:.75rem;background:none;border:none;cursor:pointer;color:var(--muted);padding:.2rem;line-height:1}
+.pn-invite-close:hover{color:var(--fg)}
+.pn-invite-warn-text{font-size:.88rem;line-height:1.55;color:var(--fg);margin:0 0 1.1rem;padding-right:1rem}
+.pn-invite-warn-actions{display:flex;gap:.6rem}
+.pn-invite-btn-ok{flex:1;padding:.5rem .9rem;border-radius:7px;border:none;background:var(--accent);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;transition:opacity .15s}
+.pn-invite-btn-ok:hover{opacity:.85}
+.pn-invite-btn-cancel{padding:.5rem .9rem;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--muted);font-size:.85rem;cursor:pointer;transition:opacity .15s}
+.pn-invite-btn-cancel:hover{color:var(--fg)}
+.pn-invite-label{font-size:.74rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 .5rem}
+.pn-invite-link-row{display:flex;gap:.4rem;margin-bottom:.7rem}
+.pn-invite-link-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;color:var(--fg);font-size:.8rem;padding:.45rem .6rem;min-width:0;outline:none}
+.pn-invite-copy-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:var(--muted);cursor:pointer;transition:color .15s,background .15s;flex-shrink:0}
+.pn-invite-copy-btn:hover{color:var(--fg);background:rgba(255,255,255,.12)}
+.pn-invite-copy-btn--copied{color:hsl(140,55%,60%)!important}
+.pn-invite-hint{font-size:.74rem;color:var(--muted);line-height:1.4;margin:0}
+/* ── Invite : page d'attente (invitation-attente) ───────────────────────── */
+.invite-wait-card{max-width:380px;margin:5rem auto 0;text-align:center;padding:2rem 1.5rem;background:var(--card);border:1px solid var(--border);border-radius:16px}
+.invite-wait-icon{color:var(--muted);margin-bottom:1rem}
+.invite-wait-title{font-size:1.15rem;font-weight:700;color:var(--fg);margin:0 0 .9rem}
+.invite-wait-body{font-size:.88rem;color:var(--muted);line-height:1.55;margin:0 0 .6rem}
+.invite-wait-link{display:inline-block;margin-top:1.2rem;font-size:.82rem;color:var(--accent);text-decoration:none}
+.invite-wait-link:hover{text-decoration:underline}
+/* ── Invite : liste d'approbation (favoris-invitations) ─────────────────── */
+.inv-list{list-style:none;padding:0;margin:0 0 1.5rem;display:flex;flex-direction:column;gap:.6rem}
+.inv-item{display:flex;align-items:center;gap:1rem;padding:.8rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:10px}
+.inv-item-info{flex:1;min-width:0}
+.inv-item-name{font-size:.9rem;font-weight:600;color:var(--fg);display:block}
+.inv-item-meta{font-size:.78rem;color:var(--muted)}
+.inv-item-date{font-size:.75rem;color:var(--muted);margin-left:.5rem}
+.inv-item-actions{display:flex;gap:.5rem;flex-shrink:0}
+.inv-form{margin:0;padding:0}
+.inv-btn{padding:.35rem .75rem;border-radius:7px;border:none;font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .15s}
+.inv-btn--approve{background:hsl(140,50%,30%);color:hsl(140,55%,80%)}
+.inv-btn--refuse{background:hsl(0,30%,25%);color:hsl(0,55%,75%)}
+.inv-btn:hover{opacity:.8}
+.inv-stats{font-size:.8rem;color:var(--muted);margin-top:1.5rem}
+/* ── gate-help notice variant ──────────────────────────────────────────── */
+.gate-help--notice{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.6rem .8rem;margin-bottom:.5rem}

@@ -34,6 +34,8 @@ const {
   listCodexAuthors,
   getCodexAuthorBySlug,
   getSfwSet,
+  getOrCreateInviteToken,
+  countPendingInvites,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -372,6 +374,8 @@ const _AUTH_PUBLIC = [
   /^\/sitemap\.xml$/,
   /^\/llms-full\.txt$/,
   /^\/api\/wiki\/index\.json$/,
+  /^\/rejoindre\/.+$/,
+  /^\/invitation-attente$/,
 ];
 // Contenu NSFW (galerie/BD/nouvelles) : en France, compte obligatoire comme
 // avant ; hors France (voir req.isFrenchVisitor, src/geo.js), laissé passer
@@ -462,6 +466,35 @@ app.use((req, res, next) => {
   if (status === 'restreint') {
     const blocked = RESTRICTED_PREFIXES.some(p => req.path.startsWith(p));
     if (blocked) return res.status(403).render('blocked-restricted', { user: req.user });
+  }
+  next();
+});
+
+// ── Blocage pending_invite ────────────────────────────────────────────────────
+// Un compte en attente d'approbation par l'inviteur ne peut pas naviguer :
+// seules la page d'attente et le logout sont accessibles.
+app.use((req, res, next) => {
+  if (!req.user) return next();
+  if (req.user.accountStatus !== 'pending_invite') return next();
+  const allowedPaths = ['/invitation-attente', '/ponhgup/logout', '/ponhgup/85zapnte'];
+  if (allowedPaths.some(p => req.path.startsWith(p))) return next();
+  return res.redirect('/invitation-attente');
+});
+
+// ── Code invité — injecté dans res.locals pour profil-nav.ejs ────────────────
+// Calculé une fois par requête GET sur les pages /favoris.
+app.use((req, res, next) => {
+  if (req.user && req.method === 'GET' && req.path.startsWith('/favoris')) {
+    try {
+      res.locals.inviteToken = getOrCreateInviteToken(req.user.id);
+      res.locals.pendingInvitesCount = countPendingInvites(req.user.id);
+    } catch (_) {
+      res.locals.inviteToken = null;
+      res.locals.pendingInvitesCount = 0;
+    }
+  } else {
+    res.locals.inviteToken = null;
+    res.locals.pendingInvitesCount = 0;
   }
   next();
 });
@@ -1196,6 +1229,7 @@ const buildLootboxRouter = require("./routes/lootbox");
 const buildJeuRouter = require("./routes/jeu");
 const buildArcadeRouter = require("./routes/arcade");
 const buildProfilRouter = require("./routes/profil");
+const buildInviteRouter = require("./routes/invite");
 app.use("/quizz/profil", buildProfilQuizRouter(config));
 app.use("/quizz", buildCustomQuizRouter(config));
 app.use("/", buildQuizRouter(config));
@@ -1215,6 +1249,12 @@ app.use("/lootbox", buildLootboxRouter(config));
 app.use("/jeu", buildJeuRouter(config));
 app.use("/arcade", buildArcadeRouter(config));
 app.use("/profil", buildProfilRouter(config));
+app.use("/rejoindre", buildInviteRouter(config));
+
+// Page d'attente pour les comptes FR en attente de validation par l'inviteur
+app.get("/invitation-attente", (req, res) => {
+  res.render("invitation-attente", {});
+});
 
 // ── Pages auteurs publiques (E-E-A-T) ────────────────────────────────────────
 // /auteurs/:slug — biographie de l'auteur, liste de ses articles Codex.

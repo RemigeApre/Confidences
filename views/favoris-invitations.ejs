@@ -1,0 +1,40 @@
+<%- include('partials/head', { title: 'Invitations' }) %>
+<main class="container wide profil-page gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config }) %>
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage">
+    <h1 class="profil-subpage-title">Invitations en attente</h1>
+
+    <% if (pendingInvites.length === 0) { %>
+      <p class="pp-empty">Aucune inscription en attente de validation.</p>
+    <% } else { %>
+      <ul class="inv-list">
+        <% pendingInvites.forEach(function(inv) { %>
+          <li class="inv-item">
+            <div class="inv-item-info">
+              <span class="inv-item-name"><%= inv.display_name %></span>
+              <span class="inv-item-meta">@<%= inv.username %></span>
+              <span class="inv-item-date"><%= new Date(inv.created_at).toLocaleDateString('fr-FR') %></span>
+            </div>
+            <div class="inv-item-actions">
+              <form method="POST" action="/favoris/invitations/<%= inv.id %>/approve" class="inv-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="inv-btn inv-btn--approve">Valider</button>
+              </form>
+              <form method="POST" action="/favoris/invitations/<%= inv.id %>/refuse" class="inv-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="inv-btn inv-btn--refuse">Refuser</button>
+              </form>
+            </div>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+
+    <% if (inviteStats.total > 0) { %>
+      <p class="inv-stats"><%= inviteStats.total %> personne<%= inviteStats.total > 1 ? 's ont' : ' a' %> rejoint via votre lien.</p>
+    <% } %>
+  </div>
+</main>
+<%- include('partials/foot') %>

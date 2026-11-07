@@ -66,6 +66,11 @@ const {
   getUserCoffreStats,
   getUserStreak,
   getUserWikiStatusList,
+  listPendingInvites,
+  countPendingInvites,
+  setInviteUseStatus,
+  getUserInviteStats,
+  setUserAccountStatus,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -817,6 +822,46 @@ function buildFavoritesRouter(config) {
     const collection = Number.isInteger(id) ? getCollection(id) : null;
     if (collection && collection.userId === req.user.id) deleteCollection(id);
     res.redirect("/favoris/collections");
+  });
+
+  // ── Invitations ─────────────────────────────────────────────────────────────
+  router.get("/invitations", requireUser, (req, res) => {
+    const pendingInvites = listPendingInvites(req.user.id);
+    const inviteStats = getUserInviteStats(req.user.id);
+    res.render("favoris-invitations", {
+      config,
+      roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
+      currentPath: "/favoris/invitations",
+      pendingInvites,
+      inviteStats,
+      csrfToken: null, // formulaires simples, protection via session+requireUser
+    });
+  });
+
+  router.post("/invitations/:id/approve", requireUser, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.redirect("/favoris/invitations");
+    // Charge l'invite et vérifie que c'est bien l'inviteur qui agit
+    const rows = listPendingInvites(req.user.id);
+    const inv = rows.find(r => r.id === id);
+    if (inv) {
+      setInviteUseStatus(id, "approved");
+      setUserAccountStatus(inv.invitee_id, "actif");
+    }
+    res.redirect("/favoris/invitations");
+  });
+
+  router.post("/invitations/:id/refuse", requireUser, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.redirect("/favoris/invitations");
+    const rows = listPendingInvites(req.user.id);
+    const inv = rows.find(r => r.id === id);
+    if (inv) {
+      setInviteUseStatus(id, "refused");
+      setUserAccountStatus(inv.invitee_id, "bloque");
+    }
+    res.redirect("/favoris/invitations");
   });
 
   return router;

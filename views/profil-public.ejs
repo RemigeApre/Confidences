@@ -34,8 +34,17 @@
 
     <%# topbar affiché seulement sur écrans étroits (volet droit caché) %>
     <div class="pub-topbar">
+      <% if (_avatarThumb) { %>
+        <div class="pp-rp-avatar pp-rp-avatar--img pub-topbar-avatar">
+          <img src="<%= _avatarThumb %>" alt="" class="pp-rp-avatar-img" style="<%= _imgStyle %>" />
+        </div>
+      <% } else { %>
+        <div class="pp-rp-avatar pp-rp-avatar--shape pub-topbar-avatar" style="--avatar-color:<%= currentUser.profileColor || '#6b7280' %>">
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polygon points="24,4 44,24 24,44 4,24" fill="var(--avatar-color)" /></svg>
+        </div>
+      <% } %>
       <div class="pub-topbar-left">
-        <span class="pub-topbar-label">Votre profil public</span>
+        <span class="pub-topbar-name"><%= currentUser.displayName %></span>
         <a href="/profil/<%= currentUser.displayName %>" class="pub-topbar-link" target="_blank">/profil/<%= currentUser.displayName %> &nearr;</a>
       </div>
       <button type="button" class="profil-btn-secondary pub-edit-btn">Modifier</button>

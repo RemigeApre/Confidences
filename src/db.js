@@ -125,6 +125,28 @@ try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_archetype INTEGER NOT
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_streak INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_coffre INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_wiki_status INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+
+// ── Système d'invitation ───────────────────────────────────────────────────
+// invite_tokens : un token permanent par utilisateur (son lien unique).
+// invite_uses   : un enregistrement par inscription via un lien d'invitation.
+//   status : 'pending' (en attente d'approbation, FR uniquement)
+//            'approved' (approuvé par l'inviteur)
+//            'refused'  (refusé, compte bloqué)
+//            'direct'   (hors France : inscription directe, pas d'approbation)
+try { db.prepare(`CREATE TABLE IF NOT EXISTS invite_tokens (
+  user_id  INTEGER PRIMARY KEY,
+  token    TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`).run(); } catch (_) {}
+try { db.prepare(`CREATE TABLE IF NOT EXISTS invite_uses (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  inviter_id INTEGER NOT NULL,
+  invitee_id INTEGER NOT NULL UNIQUE,
+  country    TEXT NOT NULL DEFAULT '',
+  status     TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`).run(); } catch (_) {}
+
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN extra_categories TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN featured INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN maturity INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
@@ -6070,6 +6092,58 @@ function getUserWikiStatusList(userId) {
   });
 }
 
+// ── Invite token (un par utilisateur, créé à la demande) ─────────────────────
+function getOrCreateInviteToken(userId) {
+  const row = db.prepare('SELECT token FROM invite_tokens WHERE user_id = ?').get(userId);
+  if (row) return row.token;
+  const token = crypto.randomBytes(16).toString('hex');
+  db.prepare('INSERT OR IGNORE INTO invite_tokens (user_id, token) VALUES (?, ?)').run(userId, token);
+  // Relit en cas de race condition (IGNORE ne retourne pas le row existant)
+  return db.prepare('SELECT token FROM invite_tokens WHERE user_id = ?').get(userId).token;
+}
+
+function getInviteByToken(token) {
+  if (!token) return null;
+  const row = db.prepare('SELECT it.user_id, it.token FROM invite_tokens it WHERE it.token = ?').get(token);
+  if (!row) return null;
+  return { userId: row.user_id, token: row.token };
+}
+
+function createInviteUse(inviterId, inviteeId, country, status) {
+  db.prepare('INSERT OR IGNORE INTO invite_uses (inviter_id, invitee_id, country, status) VALUES (?, ?, ?, ?)')
+    .run(inviterId, inviteeId, country || '', status || 'pending');
+}
+
+function getInviteUseByInvitee(inviteeId) {
+  return db.prepare('SELECT * FROM invite_uses WHERE invitee_id = ?').get(inviteeId) || null;
+}
+
+function listPendingInvites(inviterId) {
+  return db.prepare(`
+    SELECT iu.id, iu.invitee_id, iu.country, iu.created_at,
+           u.display_name, u.username
+    FROM invite_uses iu
+    JOIN users u ON u.id = iu.invitee_id
+    WHERE iu.inviter_id = ? AND iu.status = 'pending'
+    ORDER BY iu.created_at DESC
+  `).all(inviterId);
+}
+
+function countPendingInvites(inviterId) {
+  if (!inviterId) return 0;
+  const r = db.prepare("SELECT COUNT(*) as n FROM invite_uses WHERE inviter_id = ? AND status = 'pending'").get(inviterId);
+  return r ? r.n : 0;
+}
+
+function setInviteUseStatus(inviteUseId, status) {
+  db.prepare('UPDATE invite_uses SET status = ? WHERE id = ?').run(status, inviteUseId);
+}
+
+function getUserInviteStats(userId) {
+  const r = db.prepare('SELECT COUNT(*) as n FROM invite_uses WHERE inviter_id = ?').get(userId);
+  return { total: r ? r.n : 0 };
+}
+
 function getUserCoffreStats(userId) {
   const images = db.prepare("SELECT COUNT(*) as n FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").get(userId).n;
   const charms = db.prepare("SELECT COUNT(*) as n FROM user_unlocks WHERE user_id = ? AND item_type = 'charm'").get(userId).n;
@@ -6475,6 +6549,14 @@ module.exports = {
   getUserWikiStatus,
   setUserWikiStatus,
   getUserWikiStatusList,
+  getOrCreateInviteToken,
+  getInviteByToken,
+  createInviteUse,
+  getInviteUseByInvitee,
+  listPendingInvites,
+  countPendingInvites,
+  setInviteUseStatus,
+  getUserInviteStats,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

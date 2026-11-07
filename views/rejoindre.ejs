@@ -1,0 +1,35 @@
+<%- include('partials/head', { title: 'Rejoindre' }) %>
+<main class="container narrow gate-page">
+  <a href="/" class="gate-back-link" aria-label="Retour &agrave; l'accueil" title="Retour &agrave; l'accueil">&larr;</a>
+
+  <h1 class="gate-title">Rejoindre</h1>
+
+  <% if (invalid) { %>
+    <p class="gate-help">Ce lien d&rsquo;invitation n&rsquo;existe pas ou a &eacute;t&eacute; r&eacute;voqu&eacute;. Demandez &agrave; votre contact de vous en envoyer un nouveau.</p>
+  <% } else { %>
+
+    <% if (isFrench) { %>
+      <p class="gate-help gate-help--notice">Vous &ecirc;tes en France. Votre compte sera cr&eacute;&eacute; mais restera en attente jusqu&rsquo;&agrave; ce que la personne qui vous a invit&eacute;(e) valide votre inscription.</p>
+    <% } %>
+
+    <% if (error) { %>
+      <p class="error gate-error"><%= error %></p>
+    <% } %>
+
+    <form method="POST" action="/rejoindre/<%= token %>" class="gate-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="text" name="website" class="gate-honeypot" tabindex="-1" autocomplete="off" />
+      <input type="text" name="nom" placeholder="pseudo" required autofocus autocomplete="username" maxlength="60" />
+      <input type="email" name="email" placeholder="adresse mail" required autocomplete="email" maxlength="254" />
+      <input type="password" name="password" placeholder="mot de passe" required autocomplete="new-password" />
+      <input type="password" name="password2" placeholder="confirmer le mot de passe" required autocomplete="new-password" />
+      <button type="submit" aria-label="Cr&eacute;er mon compte" title="Cr&eacute;er mon compte">&#8594;</button>
+    </form>
+
+    <p class="gate-help">L&rsquo;adresse mail sert uniquement &agrave; r&eacute;initialiser votre mot de passe si vous l&rsquo;oubliez.</p>
+
+  <% } %>
+
+  <a href="/ponhgup/85zapnte" class="gate-forgot-link">D&eacute;j&agrave; un compte&nbsp;? Se connecter</a>
+</main>
+<%- include('partials/foot') %>
