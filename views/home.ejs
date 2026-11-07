@@ -72,7 +72,7 @@
               var versionMatch = cl.title.match(/\b(alpha|b[eê]ta)\s*[\d.]+/i);
               var versionTag = versionMatch ? versionMatch[0] : null;
               var displayTitle = versionTag
-                ? cl.title.replace(versionMatch[0], '').replace(/^\s*[-:·]\s*/, '').trim() || cl.title
+                ? cl.title.replace(versionMatch[0], '').replace(/^\s*[-:·]\s*/, '').trim()
                 : cl.title;
               var excerpt = cl.body ? cl.body.replace(/<[^>]+>/g,'').slice(0,100) + (cl.body.length > 100 ? '\u2026' : '') : '';
               var impKey = ['','major','crit'][imp] || '';
@@ -133,14 +133,11 @@
 
       <%# ── Test de personnalité ────────────────────────────────────────── %>
       <section class="home-totem">
-        <div class="home-totem-inner">
-          <svg class="home-totem-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true" width="38" height="38"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><path d="M2 10c1-2 2.5-3 4-2.5M22 10c-1-2-2.5-3-4-2.5"/></svg>
-          <div class="home-totem-body">
-            <h2 class="home-totem-title" data-fr="Quel animal représente votre sexualité ?" data-en="What animal represents your sexuality?">Quel animal repr&eacute;sente votre sexualit&eacute;&nbsp;?</h2>
-            <p class="home-totem-desc" data-fr="Faites le test de personnalité et découvrez le totem qui correspond à vos désirs, vos fantasmes et votre façon d'aimer." data-en="Take the personality test and discover the totem that matches your desires, fantasies, and way of loving.">Faites le test de personnalit&eacute; et d&eacute;couvrez le totem qui correspond &agrave; vos d&eacute;sirs, vos fantasmes et votre fa&ccedil;on d&rsquo;aimer.</p>
-            <a href="/quizz" class="home-totem-cta" data-fr="Commencer le test" data-en="Start the test">Commencer le test</a>
-          </div>
+        <div class="home-totem-body">
+          <h2 class="home-totem-title" data-fr="Quel animal représente votre sexualité ?" data-en="What animal represents your sexuality?">Quel animal repr&eacute;sente votre sexualit&eacute;&nbsp;?</h2>
+          <p class="home-totem-desc" data-fr="Faites le test de personnalité et découvrez le totem qui correspond à vos désirs, vos fantasmes et votre façon d'aimer." data-en="Take the personality test and discover the totem that matches your desires, fantasies, and way of loving.">Faites le test de personnalit&eacute; et d&eacute;couvrez le totem qui correspond &agrave; vos d&eacute;sirs, vos fantasmes et votre fa&ccedil;on d&rsquo;aimer.</p>
         </div>
+        <a href="/quizz" class="home-totem-cta" data-fr="Commencer le test" data-en="Start the test">Commencer le test</a>
       </section>
 
       <%# ── Ce que vous trouverez ici ──────────────────────────────────── %>
