@@ -531,7 +531,8 @@ function buildAdminRouter(config) {
     const body       = String(req.body.body  || "").trim();
     const date       = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
     const importance = Number(req.body.importance) || 0;
-    if (title) createChangelog({ title, body, published_at: date, importance });
+    const tags       = [].concat(req.body.tags || []);
+    if (title) createChangelog({ title, body, published_at: date, importance, tags });
     res.redirect("/ponhgup#tab-changelog");
   });
 
@@ -542,7 +543,8 @@ function buildAdminRouter(config) {
     const body       = String(req.body.body  || "").trim();
     const date       = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
     const importance = Number(req.body.importance) || 0;
-    updateChangelog(id, { title, body, published_at: date, importance });
+    const tags       = [].concat(req.body.tags || []);
+    updateChangelog(id, { title, body, published_at: date, importance, tags });
     res.redirect("/ponhgup#tab-changelog");
   });
 

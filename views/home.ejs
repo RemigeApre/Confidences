@@ -57,9 +57,18 @@
       <section class="home-changelog">
         <h2 class="home-changelog-title">Notes de version</h2>
         <div class="home-cl-cards">
+          <%
+            var CL_TAG_META = {
+              nouveaute:     { label: 'Nouveauté',      cls: 'tag--new'  },
+              fonctionnalite:{ label: 'Fonctionnalité', cls: 'tag--feat' },
+              structure:     { label: 'Structure',      cls: 'tag--struct'},
+              securite:      { label: 'Sécurité',       cls: 'tag--sec'  }
+            };
+          %>
           <% changelogs.forEach(function(cl) { %>
             <%
               var imp = cl.importance || 0;
+              var clTags = Array.isArray(cl.tags) ? cl.tags : [];
               var versionMatch = cl.title.match(/\b(alpha|b[eê]ta)\s*[\d.]+/i);
               var versionTag = versionMatch ? versionMatch[0] : null;
               var displayTitle = versionTag
@@ -76,6 +85,11 @@
               </div>
               <% if (displayTitle) { %><span class="home-cl-card-title"><%= displayTitle %></span><% } %>
               <% if (excerpt) { %><span class="home-cl-card-excerpt"><%= excerpt %></span><% } %>
+              <% if (clTags.length) { %>
+              <div class="home-cl-card-tags">
+                <% clTags.forEach(function(t){ var m=CL_TAG_META[t]; if(m){ %><span class="home-cl-tag <%= m.cls %>"><%= m.label %></span><% } }); %>
+              </div>
+              <% } %>
             </button>
 
             <dialog class="home-cl-dialog" id="cl-dialog-<%= cl.id %>">
@@ -89,6 +103,11 @@
                   <button class="home-cl-close" aria-label="Fermer">&#x2715;</button>
                 </div>
                 <h3 class="home-cl-dialog-title"><%= cl.title %></h3>
+                <% if (clTags.length) { %>
+                <div class="home-cl-dialog-tags">
+                  <% clTags.forEach(function(t){ var m=CL_TAG_META[t]; if(m){ %><span class="home-cl-tag <%= m.cls %>"><%= m.label %></span><% } }); %>
+                </div>
+                <% } %>
                 <% if (cl.body) { %><div class="home-cl-dialog-body"><%- cl.body.replace(/\n/g,'<br>') %></div><% } %>
               </div>
             </dialog>

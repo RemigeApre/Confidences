@@ -135,6 +135,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS changelogs (
   importance   INTEGER NOT NULL DEFAULT 0
 )`);
 try { db.exec("ALTER TABLE changelogs ADD COLUMN importance INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE changelogs ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 
 // ── Système d'invitation ───────────────────────────────────────────────────
 // invite_tokens : un token permanent par utilisateur (son lien unique).
@@ -6103,20 +6104,30 @@ function getUserWikiStatusList(userId) {
 }
 
 // ── Changelogs ─────────────────────────────────────────────────────────────────
+const CL_VALID_TAGS = ['securite','fonctionnalite','structure','nouveaute'];
+function parseTags(raw) {
+  try { const t = JSON.parse(raw || '[]'); return Array.isArray(t) ? t.filter(x => CL_VALID_TAGS.includes(x)) : []; } catch { return []; }
+}
+function normalizeTags(input) {
+  const arr = Array.isArray(input) ? input : (input ? [input] : []);
+  return JSON.stringify(arr.filter(x => CL_VALID_TAGS.includes(x)));
+}
 function listChangelogs() {
-  return db.prepare('SELECT * FROM changelogs ORDER BY published_at DESC').all();
+  return db.prepare('SELECT * FROM changelogs ORDER BY published_at DESC').all()
+    .map(r => ({ ...r, tags: parseTags(r.tags) }));
 }
 function getChangelog(id) {
-  return db.prepare('SELECT * FROM changelogs WHERE id = ?').get(id) || null;
+  const r = db.prepare('SELECT * FROM changelogs WHERE id = ?').get(id) || null;
+  return r ? { ...r, tags: parseTags(r.tags) } : null;
 }
-function createChangelog({ title, body, published_at, importance }) {
-  const r = db.prepare('INSERT INTO changelogs (title, body, published_at, importance) VALUES (?, ?, ?, ?)')
-    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10), Number(importance) || 0);
+function createChangelog({ title, body, published_at, importance, tags }) {
+  const r = db.prepare('INSERT INTO changelogs (title, body, published_at, importance, tags) VALUES (?, ?, ?, ?, ?)')
+    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10), Number(importance) || 0, normalizeTags(tags));
   return r.lastInsertRowid;
 }
-function updateChangelog(id, { title, body, published_at, importance }) {
-  db.prepare('UPDATE changelogs SET title = ?, body = ?, published_at = ?, importance = ? WHERE id = ?')
-    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10), Number(importance) || 0, id);
+function updateChangelog(id, { title, body, published_at, importance, tags }) {
+  db.prepare('UPDATE changelogs SET title = ?, body = ?, published_at = ?, importance = ?, tags = ? WHERE id = ?')
+    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10), Number(importance) || 0, normalizeTags(tags), id);
 }
 function deleteChangelog(id) {
   db.prepare('DELETE FROM changelogs WHERE id = ?').run(id);
