@@ -26,6 +26,69 @@
 <main class="container wide pp-standalone">
   <%- include('partials/top-nav', { config: config }) %>
 
+  <%# ── En-tête mobile — visible uniquement sur petit écran (≤1199px) ── %>
+  <div class="pp-mobile-header" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
+    <div class="pp-mh-top">
+      <% if (avatarThumb) { %>
+        <div class="pp-mh-avatar pp-mh-avatar--img">
+          <img src="<%= avatarThumb %>" alt="" style="<%= _imgStyle %>" />
+        </div>
+      <% } else { %>
+        <div class="pp-mh-avatar pp-mh-avatar--shape" style="--avatar-color:<%= profileUser.profileColor || '#6b7280' %>">
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polygon points="24,4 44,24 24,44 4,24" fill="var(--avatar-color)" /></svg>
+        </div>
+      <% } %>
+      <div class="pp-mh-identity">
+        <p class="pp-rp-name"><%= profileUser.displayName %></p>
+        <% if (pub.showSexe && profileUser.sexe) { %>
+          <span class="pp-rp-sexe" style="color:<%= SEXE_COLOR[profileUser.sexe] || '#888' %>">
+            <span aria-hidden="true"><%= SEXE_SYMBOL[profileUser.sexe] %></span>
+            <%= SEXE_LABEL[profileUser.sexe] %>
+          </span>
+        <% } %>
+        <% if (currentUser && currentUser.id !== profileUser.id) { %>
+          <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %> pp-like-sync" aria-label="J'aime ce profil" data-username="<%= profileUser.username %>" data-liked="<%= isLiked ? '1' : '0' %>">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="pp-like-count-sync"><%= likeCount || '' %></span>
+          </button>
+        <% } else if (likeCount > 0) { %>
+          <div class="pp-rp-like pp-rp-like--display">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span><%= likeCount %></span>
+          </div>
+        <% } %>
+      </div>
+    </div>
+    <% if ((pub.showStreak && streak > 0) || pub.showCoffre) { %>
+      <div class="pp-mh-stats">
+        <% if (pub.showStreak && streak > 0) { %>
+          <div class="pp-rp-streak"><span class="pp-rp-streak-flame">🔥</span><span class="pp-rp-streak-count"><%= streak %></span><span class="pp-rp-streak-label">jour<%= streak > 1 ? 's' : '' %></span></div>
+        <% } %>
+        <% if (pub.showCoffre) { %>
+          <div class="pp-rp-coffre pp-mh-coffre">
+            <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.images %></span><span class="pp-rp-coffre-lbl">images</span></div>
+            <div class="pp-rp-coffre-sep"></div>
+            <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.charms %></span><span class="pp-rp-coffre-lbl">charmes</span></div>
+            <div class="pp-rp-coffre-sep"></div>
+            <div class="pp-rp-coffre-stat"><span class="pp-rp-coffre-num"><%= coffreStats.themes %></span><span class="pp-rp-coffre-lbl">thèmes</span></div>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+    <% if (quizResult) { %>
+      <div class="pp-rp-archetype" style="--arch-hue:<%= quizResult.worldHue %>">
+        <div class="pp-rp-arch-world"><%= quizResult.world %><% if (quizResult.worldTagline) { %><span class="pp-rp-arch-world-tag"> &middot; <%= quizResult.worldTagline %></span><% } %></div>
+        <div class="pp-rp-arch-name"><%= quizResult.archetypeName %></div>
+        <% if (quizResult.archetypeDesc) { %>
+          <p class="pp-rp-arch-desc"><%=
+            (function(t){ var i=t.indexOf('. '); return i>0?t.slice(0,i+1):t.slice(0,110); })(quizResult.archetypeDesc)
+          %></p>
+        <% } %>
+        <div class="pp-rp-arch-code"><%= quizResult.code %><% if (quizResult.position) { %> &middot; <%= quizResult.position %><% } %></div>
+      </div>
+    <% } %>
+  </div>
+
   <%# ── Flux central ── %>
   <div class="pp-content">
 
@@ -143,9 +206,9 @@
   <p class="pp-rp-name"><%= profileUser.displayName %></p>
 
   <% if (currentUser && currentUser.id !== profileUser.id) { %>
-    <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %>" id="pp-like-btn" aria-label="J'aime ce profil" data-username="<%= profileUser.username %>" data-liked="<%= isLiked ? '1' : '0' %>">
+    <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %> pp-like-sync" aria-label="J'aime ce profil" data-username="<%= profileUser.username %>" data-liked="<%= isLiked ? '1' : '0' %>">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-      <span class="pp-rp-like-count" id="pp-like-count"><%= likeCount || '' %></span>
+      <span class="pp-like-count-sync"><%= likeCount || '' %></span>
     </button>
   <% } else if (likeCount > 0) { %>
     <div class="pp-rp-like pp-rp-like--display">
@@ -155,20 +218,28 @@
   <% } %>
   <script nonce="<%= nonce %>">
   (function(){
-    var btn = document.getElementById('pp-like-btn');
-    if (!btn) return;
-    btn.addEventListener('click', function() {
-      btn.disabled = true;
-      fetch('/profil/' + btn.dataset.username + '/like', { method: 'POST', credentials: 'same-origin' })
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          btn.disabled = false;
-          btn.dataset.liked = d.liked ? '1' : '0';
-          btn.classList.toggle('pp-rp-like--on', d.liked);
-          btn.querySelector('svg').setAttribute('fill', d.liked ? 'currentColor' : 'none');
-          document.getElementById('pp-like-count').textContent = d.count || '';
-        })
-        .catch(function(){ btn.disabled = false; });
+    var btns = document.querySelectorAll('.pp-like-sync');
+    if (!btns.length) return;
+    var username = btns[0].dataset.username;
+    function sync(liked, count) {
+      btns.forEach(function(b){
+        b.disabled = false;
+        b.dataset.liked = liked ? '1' : '0';
+        b.classList.toggle('pp-rp-like--on', liked);
+        b.querySelector('svg').setAttribute('fill', liked ? 'currentColor' : 'none');
+      });
+      document.querySelectorAll('.pp-like-count-sync').forEach(function(el){
+        el.textContent = count || '';
+      });
+    }
+    btns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        btns.forEach(function(b){ b.disabled = true; });
+        fetch('/profil/' + username + '/like', { method: 'POST', credentials: 'same-origin' })
+          .then(function(r){ return r.json(); })
+          .then(function(d){ sync(d.liked, d.count); })
+          .catch(function(){ btns.forEach(function(b){ b.disabled = false; }); });
+      });
     });
   })();
   </script>

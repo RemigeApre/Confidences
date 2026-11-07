@@ -714,6 +714,29 @@ body.pub-drawer-open{overflow:hidden}
 .pp-rp-edit-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.25)}
 /* sur grand écran, la topbar est remplacée par le footer du volet droit */
 @media(min-width:1200px){.pub-topbar{display:none}}
+/* ── En-tête mobile public-profile (caché sur grand écran) ─────────────── */
+.pp-mobile-header{display:none;padding:1rem 1.25rem .75rem;background:var(--pp-bg,hsl(220,10%,11%));border-bottom:1px solid var(--pp-border,rgba(255,255,255,.1));margin-bottom:.25rem}
+.pp-mh-top{display:flex;align-items:flex-start;gap:.85rem;margin-bottom:.6rem}
+.pp-mh-avatar{width:68px;height:68px;border-radius:10px;overflow:hidden;border:2px solid var(--pp-border,rgba(255,255,255,.12));background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pp-mh-avatar--img{background:none}
+.pp-mh-avatar--img img{width:100%;height:100%;object-fit:cover;display:block}
+.pp-mh-avatar--shape{background:transparent;border-color:transparent}
+.pp-mh-avatar--shape svg{width:50px;height:50px}
+.pp-mh-identity{flex:1;min-width:0;display:flex;flex-direction:column;gap:.3rem;padding-top:.05rem}
+.pp-mh-identity .pp-rp-name{text-align:left;font-size:.95rem}
+.pp-mh-identity .pp-rp-like{margin-top:.15rem}
+.pp-mh-stats{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem}
+.pp-mh-coffre{flex:none;width:auto}
+@media(max-width:1199px){.pp-mobile-header{display:block}}
+/* ── Responsive public-profile ≤640px ──────────────────────────────────── */
+@media(max-width:640px){
+  .pp-content{padding:1rem .9rem 2.5rem}
+  .pp-wiki-strip{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:.5rem}
+  .pp-wiki-card{width:130px;min-width:130px}
+  .pp-featured-strip{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .pp-featured-item{min-width:110px;flex:none}
+  .pp-status-cols{flex-direction:column;gap:.75rem}
+}
 
 /* ── Invite : entrée Code invité dans profil-nav ─────────────────────────── */
 .profil-nav-invite-row{display:flex;align-items:center;gap:.5rem}
