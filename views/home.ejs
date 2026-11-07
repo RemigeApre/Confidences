@@ -74,17 +74,20 @@
               var vtLetter    = versionTag ? versionTag.charAt(0).toUpperCase() : null;
               var vtNum       = versionMatch ? versionMatch[2] : null;
               var vtNumParts  = vtNum ? vtNum.split('.') : [];
+              var vtMajor     = vtNumParts[0] || '';
+              var vtMinorChars = vtNumParts[1] ? vtNumParts[1].split('') : [];
               var displayTitle = versionTag
                 ? cl.title.replace(versionMatch[0], '').replace(/^\s*[-:·]\s*/, '').trim()
                 : cl.title;
               var excerpt = cl.body ? cl.body.replace(/<[^>]+>/g,'').slice(0,100) + (cl.body.length > 100 ? '\u2026' : '') : '';
               var impKey = ['','major','crit'][imp] || '';
             %>
-            <button class="home-cl-card home-cl-card--imp<%= imp %><%= versionTag ? ' home-cl-card--vtag' : '' %>" data-cl-id="<%= cl.id %>" type="button" aria-haspopup="dialog">
+            <button class="home-cl-card home-cl-card--imp<%= imp %>" data-cl-id="<%= cl.id %>" type="button" aria-haspopup="dialog">
               <% if (versionTag) { %>
               <div class="home-cl-vtag" aria-hidden="true">
                 <span class="home-cl-vtag-letter"><%= vtLetter %></span>
-                <span class="home-cl-vtag-num"><%= vtNumParts[0] %><% if(vtNumParts[1]){ %><br><%= vtNumParts[1] %><% } %></span>
+                <% if (vtMajor) { %><span class="home-cl-vtag-major"><%= vtMajor %></span><% } %>
+                <% if (vtMinorChars.length) { %><span class="home-cl-vtag-sep"></span><% vtMinorChars.forEach(function(d){ %><span class="home-cl-vtag-digit"><%= d %></span><% }); %><% } %>
               </div>
               <% } %>
               <div class="home-cl-content">
