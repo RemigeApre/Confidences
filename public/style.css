@@ -761,13 +761,25 @@ body.pub-drawer-open{overflow:hidden}
 .home-changelog-title,.home-sections-title,.home-charter-title{display:flex;align-items:center;gap:1.2rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.65);margin:0 0 2rem;white-space:nowrap}
 .home-sections-title::before,.home-sections-title::after,.home-charter-title::before,.home-charter-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
 /* ── Archétype sexuel ────────────────────────────────────────────────────── */
-.home-totem{margin:3rem 0 0;border-radius:14px;padding:3rem 2.5rem 2.6rem;text-align:center;background:#191420;border:1px solid rgba(210,185,230,.12)}
-.home-totem-title{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:800;color:#ede0f5;margin:0 0 1rem;line-height:1.2;letter-spacing:-.01em}
-.home-totem-desc{font-size:.88rem;color:rgba(220,205,235,.55);line-height:1.8;margin:0 auto 2rem;max-width:420px}
-.home-totem-cta{display:inline-flex;align-items:center;gap:.45rem;padding:.6rem 1.8rem;border-radius:8px;background:#b89ec4;border:none;color:#1a1225;font-size:.85rem;font-weight:700;text-decoration:none;letter-spacing:.02em;transition:background .15s,transform .15s}
-.home-totem-cta::after{content:'→';opacity:.7}
-.home-totem-cta:hover{background:#cbb4d8;transform:translateY(-1px)}
-@media(max-width:540px){.home-totem{padding:2.2rem 1.4rem 2rem}.home-totem-title{font-size:1.4rem}}
+.home-totem{margin:3rem 0 0;border-radius:10px;overflow:hidden;background:#0d0d13;border:1px solid rgba(255,255,255,.08)}
+/* ticker */
+.home-totem-ticker{overflow:hidden;border-bottom:1px solid rgba(255,255,255,.07);padding:.7rem 0;background:#0a0a10}
+.home-totem-ticker-track{display:flex;align-items:center;gap:2rem;white-space:nowrap;width:max-content;animation:totem-ticker 70s linear infinite;will-change:transform}
+.home-totem-ticker:hover .home-totem-ticker-track{animation-play-state:paused}
+@keyframes totem-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.hta{display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.hta svg{flex-shrink:0;opacity:.85}
+.hta--air{color:#9ec8f5}
+.hta--eau{color:#5ecfd4}
+.hta--feu{color:#f5885a}
+.hta--terre{color:#8cc98a}
+/* corps */
+.home-totem-body{padding:2.5rem 2.5rem 2.4rem;text-align:center}
+.home-totem-title{font-size:clamp(1.35rem,3vw,1.85rem);font-weight:800;color:#e8e8ed;margin:0 0 .9rem;line-height:1.2;letter-spacing:-.01em}
+.home-totem-desc{font-size:.88rem;color:rgba(200,200,215,.5);line-height:1.8;margin:0 auto 2rem;max-width:420px}
+.home-totem-cta{display:inline-flex;align-items:center;padding:.6rem 2rem;border-radius:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.85);font-size:.84rem;font-weight:700;text-decoration:none;letter-spacing:.04em;transition:background .15s,border-color .15s}
+.home-totem-cta:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.26)}
+@media(max-width:540px){.home-totem-body{padding:1.8rem 1.4rem 1.6rem}.home-totem-title{font-size:1.35rem}}
 /* ── Changelog : section page d'accueil ────────────────────────────────── */
 .home-changelog{margin:3.5rem 0 0;padding-top:0}
 .home-changelog-title{margin:0 0 1.6rem}
