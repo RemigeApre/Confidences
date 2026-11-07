@@ -23,6 +23,7 @@
     <span class="admin-tabs-sep" aria-hidden="true"></span>
 
     <button class="admin-tab-btn admin-tab--sys" data-tab="changelog">Changelog</button>
+    <button class="admin-tab-btn admin-tab--sys" data-tab="roadmap">Roadmap</button>
     <button class="admin-tab-btn admin-tab--sys" data-tab="ia">IA</button>
     <button class="admin-tab-btn admin-tab--sys" data-tab="log">Log</button>
 
@@ -1432,6 +1433,90 @@
                     <textarea name="body" class="cl-textarea" rows="6"><%= cl.body %></textarea>
                   </form>
                   <form method="POST" action="/ponhgup/changelogs/<%= cl.id %>/delete" class="cl-delete-form" onsubmit="return confirm('Supprimer cette entrée ?')">
+                    <button type="submit" class="cl-btn-delete">Supprimer</button>
+                  </form>
+                </div>
+              </details>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+
+  </section>
+
+  <%# ═══════════════════════════════════════════════
+      TAB : ROADMAP
+  ════════════════════════════════════════════════ %>
+  <section class="admin-tab-section" data-tab="roadmap" hidden>
+
+    <div class="cl-layout">
+
+      <%# ── Formulaire nouveau roadmap ── %>
+      <div class="cl-new-block">
+        <h3 class="cl-block-title">Nouvelle entrée</h3>
+        <form method="POST" action="/ponhgup/roadmap" class="cl-form">
+          <input type="text" name="title" placeholder="Fonctionnalité prévue…" class="cl-input" required maxlength="200" />
+          <div class="cl-form-row">
+            <select name="importance" class="cl-select">
+              <option value="0">Normal</option>
+              <option value="1">Priorité</option>
+              <option value="2">Urgent</option>
+            </select>
+            <button type="submit" class="cl-btn-submit">Publier</button>
+          </div>
+          <div class="cl-tags-row">
+            <label class="cl-tag-check"><input type="checkbox" name="tags" value="nouveaute"> Nouveauté</label>
+            <label class="cl-tag-check"><input type="checkbox" name="tags" value="fonctionnalite"> Fonctionnalité</label>
+            <label class="cl-tag-check"><input type="checkbox" name="tags" value="structure"> Structure</label>
+            <label class="cl-tag-check"><input type="checkbox" name="tags" value="securite"> Sécurité</label>
+          </div>
+          <textarea name="body" placeholder="Description détaillée (optionnel)" class="cl-textarea" rows="4"></textarea>
+        </form>
+      </div>
+
+      <%# ── Liste des entrées existantes ── %>
+      <div class="cl-list-block">
+        <h3 class="cl-block-title">Entrées <span class="cl-count"><%= roadmapItems.length %></span></h3>
+        <% if (!roadmapItems.length) { %>
+          <p class="admin-muted">Aucune entr&eacute;e pour l&rsquo;instant.</p>
+        <% } else { %>
+          <div class="cl-list">
+            <% roadmapItems.forEach(function(item) { %>
+              <%
+                var rdImp = item.importance || 0;
+                var rdImpLabel = ['Normal','Priorité','Urgent'][rdImp] || 'Normal';
+                var rdImpClass = ['','cl-imp--major','cl-imp--crit'][rdImp] || '';
+              %>
+              <details class="cl-entry <%= rdImpClass %>">
+                <summary class="cl-entry-summary">
+                  <% if (rdImp > 0) { %><span class="cl-imp-dot cl-imp-dot--<%= rdImp %>"></span><% } %>
+                  <span class="cl-entry-title"><%= item.title %></span>
+                  <span class="cl-entry-date" style="margin-left:auto;margin-right:.5rem"><%= item.vote_count %> vote<%= item.vote_count !== 1 ? 's' : '' %></span>
+                  <svg class="cl-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="cl-entry-edit">
+                  <form method="POST" action="/ponhgup/roadmap/<%= item.id %>/edit" class="cl-form">
+                    <input type="text" name="title" value="<%= item.title %>" class="cl-input" required maxlength="200" />
+                    <div class="cl-form-row">
+                      <select name="importance" class="cl-select">
+                        <option value="0"<%= rdImp===0?' selected':'' %>>Normal</option>
+                        <option value="1"<%= rdImp===1?' selected':'' %>>Priorité</option>
+                        <option value="2"<%= rdImp===2?' selected':'' %>>Urgent</option>
+                      </select>
+                      <button type="submit" class="cl-btn-submit cl-btn-submit--edit">Enregistrer</button>
+                    </div>
+                    <% var rdTags = item.tags || []; %>
+                    <div class="cl-tags-row">
+                      <label class="cl-tag-check"><input type="checkbox" name="tags" value="nouveaute"<%= rdTags.includes('nouveaute')?' checked':'' %>> Nouveauté</label>
+                      <label class="cl-tag-check"><input type="checkbox" name="tags" value="fonctionnalite"<%= rdTags.includes('fonctionnalite')?' checked':'' %>> Fonctionnalité</label>
+                      <label class="cl-tag-check"><input type="checkbox" name="tags" value="structure"<%= rdTags.includes('structure')?' checked':'' %>> Structure</label>
+                      <label class="cl-tag-check"><input type="checkbox" name="tags" value="securite"<%= rdTags.includes('securite')?' checked':'' %>> Sécurité</label>
+                    </div>
+                    <textarea name="body" class="cl-textarea" rows="4"><%= item.body %></textarea>
+                  </form>
+                  <form method="POST" action="/ponhgup/roadmap/<%= item.id %>/delete" class="cl-delete-form" onsubmit="return confirm('Supprimer cette entrée ?')">
                     <button type="submit" class="cl-btn-delete">Supprimer</button>
                   </form>
                 </div>

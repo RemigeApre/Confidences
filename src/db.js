@@ -138,6 +138,21 @@ db.exec(`CREATE TABLE IF NOT EXISTS changelogs (
 try { db.exec("ALTER TABLE changelogs ADD COLUMN importance INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE changelogs ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 
+// ── Roadmap ────────────────────────────────────────────────────────────────
+db.exec(`CREATE TABLE IF NOT EXISTS roadmap (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  title      TEXT NOT NULL DEFAULT '',
+  body       TEXT NOT NULL DEFAULT '',
+  importance INTEGER NOT NULL DEFAULT 0,
+  tags       TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`);
+db.exec(`CREATE TABLE IF NOT EXISTS roadmap_votes (
+  user_id    INTEGER NOT NULL,
+  roadmap_id INTEGER NOT NULL,
+  PRIMARY KEY (user_id, roadmap_id)
+)`);
+
 // ── Système d'invitation ───────────────────────────────────────────────────
 // invite_tokens : un token permanent par utilisateur (son lien unique).
 // invite_uses   : un enregistrement par inscription via un lien d'invitation.
@@ -6165,6 +6180,55 @@ function deleteChangelog(id) {
   db.prepare('DELETE FROM changelogs WHERE id = ?').run(id);
 }
 
+// ── Roadmap ────────────────────────────────────────────────────────────────
+function listRoadmap() {
+  const rows = db.prepare(`
+    SELECT r.*, COALESCE(v.cnt, 0) as vote_count
+    FROM roadmap r
+    LEFT JOIN (SELECT roadmap_id, COUNT(*) as cnt FROM roadmap_votes GROUP BY roadmap_id) v
+      ON v.roadmap_id = r.id
+    ORDER BY r.importance DESC, vote_count DESC, r.created_at DESC
+  `).all();
+  return rows.map(r => ({ ...r, tags: JSON.parse(r.tags || '[]') }));
+}
+function listRoadmapAdmin() {
+  const rows = db.prepare(`
+    SELECT r.*, COALESCE(v.cnt, 0) as vote_count
+    FROM roadmap r
+    LEFT JOIN (SELECT roadmap_id, COUNT(*) as cnt FROM roadmap_votes GROUP BY roadmap_id) v
+      ON v.roadmap_id = r.id
+    ORDER BY r.importance DESC, r.created_at DESC
+  `).all();
+  return rows.map(r => ({ ...r, tags: JSON.parse(r.tags || '[]') }));
+}
+function createRoadmapItem({ title, body, importance, tags }) {
+  return db.prepare('INSERT INTO roadmap (title, body, importance, tags) VALUES (?,?,?,?)')
+    .run(title || '', body || '', Number(importance) || 0, normalizeTags(tags)).lastInsertRowid;
+}
+function updateRoadmapItem(id, { title, body, importance, tags }) {
+  db.prepare('UPDATE roadmap SET title=?, body=?, importance=?, tags=? WHERE id=?')
+    .run(title || '', body || '', Number(importance) || 0, normalizeTags(tags), id);
+}
+function deleteRoadmapItem(id) {
+  db.prepare('DELETE FROM roadmap WHERE id=?').run(id);
+  db.prepare('DELETE FROM roadmap_votes WHERE roadmap_id=?').run(id);
+}
+function toggleRoadmapVote(userId, roadmapId) {
+  const existing = db.prepare('SELECT 1 FROM roadmap_votes WHERE user_id=? AND roadmap_id=?').get(userId, roadmapId);
+  if (existing) {
+    db.prepare('DELETE FROM roadmap_votes WHERE user_id=? AND roadmap_id=?').run(userId, roadmapId);
+  } else {
+    db.prepare('INSERT OR IGNORE INTO roadmap_votes (user_id, roadmap_id) VALUES (?,?)').run(userId, roadmapId);
+  }
+  const count = db.prepare('SELECT COUNT(*) as c FROM roadmap_votes WHERE roadmap_id=?').get(roadmapId).c;
+  return { voted: !existing, count };
+}
+function getUserRoadmapVotes(userId) {
+  if (!userId) return new Set();
+  const rows = db.prepare('SELECT roadmap_id FROM roadmap_votes WHERE user_id=?').all(userId);
+  return new Set(rows.map(r => r.roadmap_id));
+}
+
 // ── Invite token (un par utilisateur, créé à la demande) ─────────────────────
 function getOrCreateInviteToken(userId) {
   const row = db.prepare('SELECT token FROM invite_tokens WHERE user_id = ?').get(userId);
@@ -6663,6 +6727,13 @@ module.exports = {
   createChangelog,
   updateChangelog,
   deleteChangelog,
+  listRoadmap,
+  listRoadmapAdmin,
+  createRoadmapItem,
+  updateRoadmapItem,
+  deleteRoadmapItem,
+  toggleRoadmapVote,
+  getUserRoadmapVotes,
   getOrCreateInviteToken,
   getInviteByToken,
   createInviteUse,

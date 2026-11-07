@@ -125,6 +125,10 @@ const {
   createChangelog,
   updateChangelog,
   deleteChangelog,
+  listRoadmapAdmin,
+  createRoadmapItem,
+  updateRoadmapItem,
+  deleteRoadmapItem,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -554,6 +558,33 @@ function buildAdminRouter(config) {
     res.redirect("/ponhgup#tab-changelog");
   });
 
+  // ── Roadmap ──────────────────────────────────────────────────────────────
+  router.post("/roadmap", requireAdmin, (req, res) => {
+    const title      = String(req.body.title || "").trim();
+    const body       = String(req.body.body  || "").trim();
+    const importance = Number(req.body.importance) || 0;
+    const tags       = [].concat(req.body.tags || []);
+    if (title) createRoadmapItem({ title, body, importance, tags });
+    res.redirect("/ponhgup#tab-roadmap");
+  });
+
+  router.post("/roadmap/:id/edit", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.redirect("/ponhgup#tab-roadmap");
+    const title      = String(req.body.title || "").trim();
+    const body       = String(req.body.body  || "").trim();
+    const importance = Number(req.body.importance) || 0;
+    const tags       = [].concat(req.body.tags || []);
+    updateRoadmapItem(id, { title, body, importance, tags });
+    res.redirect("/ponhgup#tab-roadmap");
+  });
+
+  router.post("/roadmap/:id/delete", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (Number.isInteger(id)) deleteRoadmapItem(id);
+    res.redirect("/ponhgup#tab-roadmap");
+  });
+
   router.post("/logout", (req, res) => {
     req.session.destroy(() => res.redirect("/ponhgup/85zapnte"));
   });
@@ -653,13 +684,14 @@ function buildAdminRouter(config) {
     const anonStats = getAnonStats(7, '');
     const accountRequests = listAccountRequests();
     const changelogs = listChangelogs();
+    const roadmapItems = listRoadmapAdmin();
     res.render("admin-dashboard", {
       config, userStates, matrixSections, submissions,
       wikiPages, allWikiPagesSorted, galleryImages, connectionLogs,
       wikiKPIs, galleryKPIs,
       aiProfiles, fantasyWikiPages,
       anonStats, accountRequests,
-      changelogs,
+      changelogs, roadmapItems,
       adminError: adminError || null,
     });
   }

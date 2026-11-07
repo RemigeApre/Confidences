@@ -145,6 +145,97 @@
       </script>
       <% } %>
 
+      <%# ── Prochainement (roadmap) ───────────────────────────────────── %>
+      <% if (roadmapItems && roadmapItems.length) { %>
+      <section class="home-roadmap">
+        <h2 class="home-roadmap-title">Prochainement</h2>
+        <div class="home-rd-cards">
+          <% roadmapItems.forEach(function(item) { %>
+            <%
+              var rdImp = item.importance || 0;
+              var rdImpKey = ['','major','crit'][rdImp] || '';
+              var rdExcerpt = item.body ? item.body.replace(/<[^>]+>/g,'').slice(0,120) + (item.body.length > 120 ? '\u2026' : '') : '';
+              var rdVoted = userRoadmapVotes && userRoadmapVotes.has(item.id);
+              var rdTags = Array.isArray(item.tags) ? item.tags : [];
+            %>
+            <div class="home-rd-card home-rd-card--imp<%= rdImp %>"
+                 <% if (rdExcerpt || item.body) { %>data-rd-id="<%= item.id %>" role="button" tabindex="0" aria-haspopup="dialog"<% } %>>
+              <div class="home-rd-vtag" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              </div>
+              <div class="home-rd-content">
+                <div class="home-rd-card-top">
+                  <% if (rdImp > 0) { %><span class="home-cl-imp-pill home-cl-imp-pill--<%= rdImpKey %>"><%= rdImp===2?'Urgent':'Priorité' %></span><% } %>
+                </div>
+                <span class="home-rd-card-title"><%= item.title %></span>
+                <% if (rdExcerpt) { %><span class="home-rd-card-excerpt"><%= rdExcerpt %></span><% } %>
+              </div>
+              <button class="home-rd-vote<%= rdVoted ? ' home-rd-vote--on' : '' %>"
+                      data-id="<%= item.id %>"
+                      onclick="event.stopPropagation()"
+                      <% if (!currentUser) { %>disabled title="Connectez-vous pour voter"<% } %>>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="<%= rdVoted ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                <span class="home-rd-vote-count"><%= item.vote_count || 0 %></span>
+              </button>
+            </div>
+
+            <% if (item.body) { %>
+            <dialog class="home-cl-dialog home-rd-dialog" id="rd-dialog-<%= item.id %>">
+              <div class="home-cl-dialog-inner">
+                <div class="home-cl-dialog-head">
+                  <div class="home-cl-dialog-meta">
+                    <% if (rdImp > 0) { %><span class="home-cl-imp-pill home-cl-imp-pill--<%= rdImpKey %>"><%= rdImp===2?'Urgent':'Priorité' %></span><% } %>
+                    <% if (rdTags.length) { %>
+                      <% var CL_TAG_META2 = { nouveaute:{label:'Nouveauté',cls:'tag--new'}, fonctionnalite:{label:'Fonctionnalité',cls:'tag--feat'}, structure:{label:'Structure',cls:'tag--struct'}, securite:{label:'Sécurité',cls:'tag--sec'} }; %>
+                      <% rdTags.forEach(function(t){ var m=CL_TAG_META2[t]; if(m){ %><span class="home-cl-tag <%= m.cls %>"><%= m.label %></span><% } }); %>
+                    <% } %>
+                  </div>
+                  <button class="home-cl-close" aria-label="Fermer">&#x2715;</button>
+                </div>
+                <h3 class="home-cl-dialog-title"><%= item.title %></h3>
+                <div class="home-cl-dialog-body"><%- item.body.replace(/\n/g,'<br>') %></div>
+              </div>
+            </dialog>
+            <% } %>
+          <% }); %>
+        </div>
+      </section>
+
+      <script nonce="<%= nonce %>">
+      (function(){
+        // Ouvre les dialogs roadmap
+        document.querySelectorAll('.home-rd-card[data-rd-id]').forEach(function(card){
+          card.addEventListener('click', function(){
+            var dlg = document.getElementById('rd-dialog-' + card.dataset.rdId);
+            if (dlg) dlg.showModal();
+          });
+          card.addEventListener('keydown', function(e){
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+          });
+        });
+        document.querySelectorAll('.home-rd-dialog').forEach(function(dlg){
+          dlg.querySelector('.home-cl-close').addEventListener('click', function(){ dlg.close(); });
+          dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); });
+        });
+        // Votes
+        document.querySelectorAll('.home-rd-vote:not([disabled])').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            btn.disabled = true;
+            fetch('/roadmap/' + btn.dataset.id + '/vote', { method: 'POST', credentials: 'same-origin' })
+              .then(function(r){ return r.json(); })
+              .then(function(d){
+                btn.disabled = false;
+                btn.classList.toggle('home-rd-vote--on', d.voted);
+                btn.querySelector('svg').setAttribute('fill', d.voted ? 'currentColor' : 'none');
+                btn.querySelector('.home-rd-vote-count').textContent = d.count;
+              })
+              .catch(function(){ btn.disabled = false; });
+          });
+        });
+      })();
+      </script>
+      <% } %>
+
       <%# ── Archétype sexuel ────────────────────────────────────────────── %>
       <section class="home-totem">
         <div class="home-totem-ticker" aria-hidden="true">
