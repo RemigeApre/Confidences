@@ -761,14 +761,16 @@ body.pub-drawer-open{overflow:hidden}
 .home-changelog-title,.home-sections-title,.home-charter-title{display:flex;align-items:center;gap:1.2rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.65);margin:0 0 2rem;white-space:nowrap}
 .home-sections-title::before,.home-sections-title::after,.home-charter-title::before,.home-charter-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
 /* ── Test de personnalité / Totem ───────────────────────────────────────── */
-.home-totem{margin:3rem 0 0;border:1px solid rgba(255,255,255,.1);border-left:3px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.025);padding:1.4rem 1.6rem;display:flex;align-items:center;justify-content:space-between;gap:2rem}
-.home-totem-body{display:flex;flex-direction:column;gap:.4rem;min-width:0}
-.home-totem-title{font-size:.95rem;font-weight:700;color:var(--fg);margin:0;line-height:1.35}
-.home-totem-desc{font-size:.82rem;color:var(--muted);line-height:1.6;margin:0}
-.home-totem-cta{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .9rem;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.7);font-size:.8rem;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;transition:color .15s,border-color .15s}
-.home-totem-cta::after{content:'→';font-size:.85em}
-.home-totem-cta:hover{color:var(--fg);border-color:rgba(255,255,255,.35)}
-@media(max-width:620px){.home-totem{flex-direction:column;align-items:flex-start;gap:.9rem}}
+.home-totem{position:relative;margin:3rem 0 0;border-radius:18px;overflow:hidden;padding:3.5rem 2.5rem 3rem;text-align:center;background:linear-gradient(135deg,#140824 0%,#2e0d4e 35%,#5a1a3a 70%,#2a0a1e 100%);border:1px solid rgba(180,80,200,.2)}
+.home-totem::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 30%,rgba(200,80,180,.18) 0%,transparent 70%);pointer-events:none}
+.home-totem::after{content:'';position:absolute;bottom:-30px;right:-30px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(230,120,60,.12) 0%,transparent 70%);pointer-events:none}
+.home-totem-eyebrow{position:relative;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.18em;color:rgba(220,150,255,.6);margin:0 0 1rem}
+.home-totem-title{position:relative;font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:#fff;margin:0 0 1.1rem;line-height:1.15;letter-spacing:-.01em}
+.home-totem-desc{position:relative;font-size:.88rem;color:rgba(255,255,255,.55);line-height:1.75;margin:0 auto 2rem;max-width:460px}
+.home-totem-cta{position:relative;display:inline-flex;align-items:center;gap:.55rem;padding:.7rem 2rem;border-radius:50px;background:linear-gradient(135deg,#c03090,#e06030);border:none;color:#fff;font-size:.88rem;font-weight:700;text-decoration:none;letter-spacing:.02em;transition:opacity .18s,transform .18s;box-shadow:0 4px 24px rgba(200,50,130,.35)}
+.home-totem-cta::after{content:'→'}
+.home-totem-cta:hover{opacity:.88;transform:translateY(-2px);box-shadow:0 8px 32px rgba(200,50,130,.5)}
+@media(max-width:540px){.home-totem{padding:2.5rem 1.5rem 2rem}.home-totem-title{font-size:1.5rem}}
 /* ── Changelog : section page d'accueil ────────────────────────────────── */
 .home-changelog{margin:3.5rem 0 0;padding-top:0}
 .home-changelog-title{margin:0 0 1.6rem}
