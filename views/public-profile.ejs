@@ -42,7 +42,7 @@
       </section>
     <% } %>
 
-    <% if (pub.showWikiFavorites && wikiFavorites.length) { %>
+    <% if (wikiFavorites.length) { %>
       <section class="pp-section">
         <h2 class="pp-section-title">Favoris Codex<% if (wikiFavTotal > 12) { %> <span class="pp-section-count"><%= wikiFavTotal %></span><% } %></h2>
         <div class="pp-wiki-strip">
@@ -99,7 +99,27 @@
       </section>
     <% } %>
 
-    <% if (!featuredImages.length && !(pub.showWikiFavorites && wikiFavorites.length) && !(pub.showWikiStatus && wikiStatusItems && wikiStatusItems.length)) { %>
+    <% if (pub.showTopRatings && topRatedWiki && topRatedWiki.length) { %>
+      <section class="pp-section">
+        <h2 class="pp-section-title">Coups de coeur <span class="pp-section-count"><%= topRatedWiki.length %></span></h2>
+        <div class="pp-wiki-strip">
+          <% topRatedWiki.forEach(function(page) { %>
+            <% var _cover = page.imagePaths && page.imagePaths[0]; %>
+            <a href="/wiki/<%= page.slug || page.id %>" class="pp-wiki-card pp-wiki-card--rated" title="<%= page.userRating === 5 ? 'Note 5' : 'Note 4' %>">
+              <% if (_cover) { %>
+                <div class="pp-wiki-card-img"><img src="<%= thumbUrl(_cover) %>" alt="" loading="lazy" /></div>
+              <% } else { %>
+                <div class="pp-wiki-card-img pp-wiki-card-img--ph"><svg viewBox="0 0 60 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="30" cy="18" r="10" fill="none" stroke="hsl(220,55%,50%)" stroke-width="0.8" opacity="0.5"/></svg></div>
+              <% } %>
+              <div class="pp-wiki-card-title"><%= page.title %></div>
+              <div class="pp-wiki-card-rating" aria-label="Note <%= page.userRating %>"><% for(var s=0;s<page.userRating;s++){ %><span class="pp-star pp-star--on"></span><% } %></div>
+            </a>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+
+    <% if (!featuredImages.length && !wikiFavorites.length && !(pub.showWikiStatus && wikiStatusItems && wikiStatusItems.length) && !(pub.showTopRatings && topRatedWiki && topRatedWiki.length)) { %>
       <p class="pp-empty">Ce profil est encore vide.</p>
     <% } %>
 

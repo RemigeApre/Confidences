@@ -125,6 +125,7 @@ try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_archetype INTEGER NOT
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_streak INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_coffre INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_wiki_status INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_top_ratings INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 // ── Changelogs ─────────────────────────────────────────────────────────────
 db.exec(`CREATE TABLE IF NOT EXISTS changelogs (
@@ -6043,7 +6044,7 @@ function saveCodexPoll(pageId, { userId, sex, ageRange, fantasme, pratique, prat
 
 function getPublicProfile(userId) {
   const row = db.prepare("SELECT * FROM public_profiles WHERE user_id = ?").get(userId);
-  if (!row) return { showSexe: false, showWikiFavorites: false, showArchetype: false, showStreak: true, showCoffre: true, showWikiStatus: false, featuredImageIds: [] };
+  if (!row) return { showSexe: false, showWikiFavorites: false, showArchetype: false, showStreak: true, showCoffre: true, showWikiStatus: false, showTopRatings: false, featuredImageIds: [] };
   return {
     showSexe: !!row.show_sexe,
     showWikiFavorites: !!row.show_wiki_favorites,
@@ -6051,15 +6052,29 @@ function getPublicProfile(userId) {
     showStreak: row.show_streak !== undefined ? !!row.show_streak : true,
     showCoffre: row.show_coffre !== undefined ? !!row.show_coffre : true,
     showWikiStatus: !!row.show_wiki_status,
+    showTopRatings: !!row.show_top_ratings,
     featuredImageIds: (() => { try { return JSON.parse(row.featured_image_ids || '[]'); } catch (_) { return []; } })(),
   };
 }
 
-function setPublicProfile(userId, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, showWikiStatus, featuredImageIds }) {
+function getTopRatedWikiItems(userId) {
+  const rows = db.prepare(
+    "SELECT item_id, rating FROM content_reactions WHERE user_id = ? AND item_type = 'wiki' AND rating >= 4 ORDER BY rating DESC, item_id DESC"
+  ).all(userId);
+  const pages = [];
+  for (const row of rows) {
+    const page = getWikiPage(row.item_id);
+    if (page && !page.hidden) pages.push(Object.assign({}, page, { userRating: row.rating }));
+    if (pages.length >= 24) break;
+  }
+  return pages;
+}
+
+function setPublicProfile(userId, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, showWikiStatus, showTopRatings, featuredImageIds }) {
   const ids = Array.isArray(featuredImageIds) ? featuredImageIds.slice(0, 5) : [];
   const now = new Date().toISOString();
-  db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, show_archetype, show_streak, show_coffre, show_wiki_status, featured_image_ids, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, show_archetype, show_streak, show_coffre, show_wiki_status, show_top_ratings, featured_image_ids, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
       show_sexe = excluded.show_sexe,
       show_wiki_favorites = excluded.show_wiki_favorites,
@@ -6067,9 +6082,10 @@ function setPublicProfile(userId, { showSexe, showWikiFavorites, showArchetype, 
       show_streak = excluded.show_streak,
       show_coffre = excluded.show_coffre,
       show_wiki_status = excluded.show_wiki_status,
+      show_top_ratings = excluded.show_top_ratings,
       featured_image_ids = excluded.featured_image_ids,
       updated_at = excluded.updated_at`
-  ).run(userId, showSexe ? 1 : 0, showWikiFavorites ? 1 : 0, showArchetype ? 1 : 0, showStreak ? 1 : 0, showCoffre ? 1 : 0, showWikiStatus ? 1 : 0, JSON.stringify(ids), now);
+  ).run(userId, showSexe ? 1 : 0, showWikiFavorites ? 1 : 0, showArchetype ? 1 : 0, showStreak ? 1 : 0, showCoffre ? 1 : 0, showWikiStatus ? 1 : 0, showTopRatings ? 1 : 0, JSON.stringify(ids), now);
 }
 
 function getUserWikiStatus(userId, wikiId) {
@@ -6585,6 +6601,7 @@ module.exports = {
   saveCodexPoll,
   getPublicProfile,
   setPublicProfile,
+  getTopRatedWikiItems,
   getUserCoffreStats,
   getUserStreak,
   getUserWikiStatus,

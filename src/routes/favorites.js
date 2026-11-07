@@ -66,6 +66,7 @@ const {
   getUserCoffreStats,
   getUserStreak,
   getUserWikiStatusList,
+  getTopRatedWikiItems,
   listPendingInvites,
   countPendingInvites,
   setInviteUseStatus,
@@ -442,6 +443,7 @@ function buildFavoritesRouter(config) {
         }
       }
     } catch (_) {}
+    const topRatedWiki = pub.showTopRatings ? getTopRatedWikiItems(req.user.id) : [];
     res.render("profil-public", {
       config,
       roleHue: roleHue(req.user),
@@ -453,6 +455,7 @@ function buildFavoritesRouter(config) {
       featuredImages,
       wikiFavPages,
       wikiFavTotal,
+      topRatedWiki,
       coffreStats,
       streak,
       wikiStatusItems,
@@ -470,6 +473,7 @@ function buildFavoritesRouter(config) {
       const showStreak = req.body.show_streak === "1";
       const showCoffre = req.body.show_coffre === "1";
       const showWikiStatus = req.body.show_wiki_status === "1";
+      const showTopRatings = req.body.show_top_ratings === "1";
       // featured_image_ids comes as comma-separated ref IDs
       const rawIds = String(req.body.featured_image_ids || "")
         .split(",")
@@ -479,7 +483,7 @@ function buildFavoritesRouter(config) {
       const coffre = getUserUnlocks(req.user.id);
       const ownedRefIds = new Set(coffre.map(u => u.refId));
       const featuredImageIds = rawIds.filter(id => ownedRefIds.has(id)).slice(0, 5);
-      setPublicProfile(req.user.id, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, showWikiStatus, featuredImageIds });
+      setPublicProfile(req.user.id, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, showWikiStatus, showTopRatings, featuredImageIds });
       res.redirect("/favoris/profil-public?ok=1");
     } catch (err) {
       console.error("[profil-public POST]", err);

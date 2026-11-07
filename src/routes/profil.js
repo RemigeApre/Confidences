@@ -13,6 +13,7 @@ const {
   getUserCoffreStats,
   getUserStreak,
   getUserWikiStatusList,
+  getTopRatedWikiItems,
 } = require("../db");
 
 const WORLD_META = {
@@ -55,16 +56,17 @@ module.exports = function buildProfilRouter(config) {
         if (featuredImages.length >= 5) break;
       }
 
-      // Wiki favorites
+      // Wiki favorites — toujours affichés
       const _allWikiFavs = listFavoriteRows(user.id).filter(r => r.item_type === "wiki");
       const wikiFavTotal = _allWikiFavs.length;
-      let wikiFavorites = [];
-      if (pub.showWikiFavorites) {
-        for (const row of _allWikiFavs.slice(0, 12)) {
-          const page = getWikiPage(row.item_id);
-          if (page && !page.hidden) wikiFavorites.push(page);
-        }
+      const wikiFavorites = [];
+      for (const row of _allWikiFavs.slice(0, 12)) {
+        const page = getWikiPage(row.item_id);
+        if (page && !page.hidden) wikiFavorites.push(page);
       }
+
+      // Notes 4 et 5 (option)
+      const topRatedWiki = pub.showTopRatings ? getTopRatedWikiItems(user.id) : [];
 
       // Coffre stats + streak
       const coffreStats = getUserCoffreStats(user.id);
@@ -108,6 +110,7 @@ module.exports = function buildProfilRouter(config) {
         featuredImages,
         wikiFavorites,
         wikiFavTotal,
+        topRatedWiki,
         coffreStats,
         streak,
         wikiStatusItems,
