@@ -1,5 +1,5 @@
 const express = require("express");
-const { getAttempt, listWikiPagesLight } = require("../db");
+const { getAttempt, listWikiPagesLight, listChangelogs } = require("../db");
 const { tokenForUser } = require("../auth");
 
 function buildQuizRouter(config) {
@@ -7,7 +7,8 @@ function buildQuizRouter(config) {
 
   router.get("/", (req, res) => {
     const aiNavPages = listWikiPagesLight().map((p) => ({ id: p.id, title: p.title }));
-    res.render("home", { config, aiNavPages });
+    const changelogs = listChangelogs().slice(0, 10);
+    res.render("home", { config, aiNavPages, changelogs });
   });
 
   return router;

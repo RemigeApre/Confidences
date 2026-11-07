@@ -22,6 +22,7 @@
 
     <span class="admin-tabs-sep" aria-hidden="true"></span>
 
+    <button class="admin-tab-btn admin-tab--sys" data-tab="changelog">Changelog</button>
     <button class="admin-tab-btn admin-tab--sys" data-tab="ia">IA</button>
     <button class="admin-tab-btn admin-tab--sys" data-tab="log">Log</button>
 
@@ -1355,6 +1356,63 @@
     }
   })();
   </script>
+
+  </section>
+
+  <%# ═══════════════════════════════════════════════
+      TAB : CHANGELOG
+  ════════════════════════════════════════════════ %>
+  <section class="admin-tab-section" data-tab="changelog" hidden>
+
+    <div class="cl-layout">
+
+      <%# ── Formulaire nouveau changelog ── %>
+      <div class="cl-new-block">
+        <h3 class="cl-block-title">Nouvelle entrée</h3>
+        <form method="POST" action="/ponhgup/changelogs" class="cl-form">
+          <input type="text" name="title" placeholder="Titre (ex : v1.4 — Profil public)" class="cl-input" required maxlength="200" />
+          <div class="cl-form-row">
+            <input type="date" name="published_at" value="<%= new Date().toISOString().slice(0,10) %>" class="cl-date" />
+            <button type="submit" class="cl-btn-submit">Publier</button>
+          </div>
+          <textarea name="body" placeholder="Contenu de la note (Markdown non rendu, texte brut)" class="cl-textarea" rows="6"></textarea>
+        </form>
+      </div>
+
+      <%# ── Liste des entrées existantes ── %>
+      <div class="cl-list-block">
+        <h3 class="cl-block-title">Entrées publiées <span class="cl-count"><%= changelogs.length %></span></h3>
+        <% if (!changelogs.length) { %>
+          <p class="admin-muted">Aucune entr&eacute;e pour l&rsquo;instant.</p>
+        <% } else { %>
+          <div class="cl-list">
+            <% changelogs.forEach(function(cl) { %>
+              <details class="cl-entry">
+                <summary class="cl-entry-summary">
+                  <span class="cl-entry-date"><%= cl.published_at.slice(0,10) %></span>
+                  <span class="cl-entry-title"><%= cl.title %></span>
+                  <svg class="cl-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="cl-entry-edit">
+                  <form method="POST" action="/ponhgup/changelogs/<%= cl.id %>/edit" class="cl-form">
+                    <input type="text" name="title" value="<%= cl.title %>" class="cl-input" required maxlength="200" />
+                    <div class="cl-form-row">
+                      <input type="date" name="published_at" value="<%= cl.published_at.slice(0,10) %>" class="cl-date" />
+                      <button type="submit" class="cl-btn-submit cl-btn-submit--edit">Enregistrer</button>
+                    </div>
+                    <textarea name="body" class="cl-textarea" rows="6"><%= cl.body %></textarea>
+                  </form>
+                  <form method="POST" action="/ponhgup/changelogs/<%= cl.id %>/delete" class="cl-delete-form" onsubmit="return confirm('Supprimer cette entrée ?')">
+                    <button type="submit" class="cl-btn-delete">Supprimer</button>
+                  </form>
+                </div>
+              </details>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
 
   </section>
 

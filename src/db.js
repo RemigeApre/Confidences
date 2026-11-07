@@ -126,6 +126,14 @@ try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_streak INTEGER NOT NU
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_coffre INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE public_profiles ADD COLUMN show_wiki_status INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
+// ── Changelogs ─────────────────────────────────────────────────────────────
+db.exec(`CREATE TABLE IF NOT EXISTS changelogs (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  title        TEXT NOT NULL DEFAULT '',
+  body         TEXT NOT NULL DEFAULT '',
+  published_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`);
+
 // ── Système d'invitation ───────────────────────────────────────────────────
 // invite_tokens : un token permanent par utilisateur (son lien unique).
 // invite_uses   : un enregistrement par inscription via un lien d'invitation.
@@ -6092,6 +6100,26 @@ function getUserWikiStatusList(userId) {
   });
 }
 
+// ── Changelogs ─────────────────────────────────────────────────────────────────
+function listChangelogs() {
+  return db.prepare('SELECT * FROM changelogs ORDER BY published_at DESC').all();
+}
+function getChangelog(id) {
+  return db.prepare('SELECT * FROM changelogs WHERE id = ?').get(id) || null;
+}
+function createChangelog({ title, body, published_at }) {
+  const r = db.prepare('INSERT INTO changelogs (title, body, published_at) VALUES (?, ?, ?)')
+    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10));
+  return r.lastInsertRowid;
+}
+function updateChangelog(id, { title, body, published_at }) {
+  db.prepare('UPDATE changelogs SET title = ?, body = ?, published_at = ? WHERE id = ?')
+    .run(title || '', body || '', published_at || new Date().toISOString().slice(0, 10), id);
+}
+function deleteChangelog(id) {
+  db.prepare('DELETE FROM changelogs WHERE id = ?').run(id);
+}
+
 // ── Invite token (un par utilisateur, créé à la demande) ─────────────────────
 function getOrCreateInviteToken(userId) {
   const row = db.prepare('SELECT token FROM invite_tokens WHERE user_id = ?').get(userId);
@@ -6549,6 +6577,11 @@ module.exports = {
   getUserWikiStatus,
   setUserWikiStatus,
   getUserWikiStatusList,
+  listChangelogs,
+  getChangelog,
+  createChangelog,
+  updateChangelog,
+  deleteChangelog,
   getOrCreateInviteToken,
   getInviteByToken,
   createInviteUse,

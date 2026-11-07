@@ -74,6 +74,60 @@
     </div>
   </section>
 
+  <%# ── Changelog ──────────────────────────────────────────────────────── %>
+  <% if (changelogs && changelogs.length) { %>
+  <section class="home-changelog">
+    <h2 class="home-changelog-title">Notes de version</h2>
+    <div class="home-cl-cards">
+      <% changelogs.forEach(function(cl) { %>
+        <%
+          var versionMatch = cl.title.match(/\b(alpha|bêta|beta)\s*([\d.]+)?/i);
+          var versionTag = versionMatch ? versionMatch[0] : null;
+          var excerpt = cl.body ? cl.body.replace(/<[^>]+>/g,'').slice(0,120) + (cl.body.length > 120 ? '…' : '') : '';
+        %>
+        <button class="home-cl-card" data-cl-id="<%= cl.id %>" type="button"
+          aria-haspopup="dialog">
+          <div class="home-cl-card-top">
+            <% if (versionTag) { %><span class="home-cl-badge"><%= versionTag %></span><% } %>
+            <time class="home-cl-card-date" datetime="<%= cl.published_at.slice(0,10) %>"><%= new Date(cl.published_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) %></time>
+          </div>
+          <span class="home-cl-card-title"><%= cl.title %></span>
+          <% if (excerpt) { %><span class="home-cl-card-excerpt"><%= excerpt %></span><% } %>
+        </button>
+
+        <dialog class="home-cl-dialog" id="cl-dialog-<%= cl.id %>">
+          <div class="home-cl-dialog-inner">
+            <div class="home-cl-dialog-head">
+              <div>
+                <% if (versionTag) { %><span class="home-cl-badge"><%= versionTag %></span><% } %>
+                <time class="home-cl-card-date" datetime="<%= cl.published_at.slice(0,10) %>"><%= new Date(cl.published_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) %></time>
+              </div>
+              <button class="home-cl-close" aria-label="Fermer" autofocus>&#x2715;</button>
+            </div>
+            <h3 class="home-cl-dialog-title"><%= cl.title %></h3>
+            <% if (cl.body) { %><div class="home-cl-dialog-body"><%- cl.body.replace(/\n/g,'<br>') %></div><% } %>
+          </div>
+        </dialog>
+      <% }); %>
+    </div>
+  </section>
+
+  <script>
+  (function(){
+    document.querySelectorAll('.home-cl-card').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var dlg=document.getElementById('cl-dialog-'+btn.dataset.clId);
+        if(dlg) dlg.showModal();
+      });
+    });
+    document.querySelectorAll('.home-cl-dialog').forEach(function(dlg){
+      dlg.querySelector('.home-cl-close').addEventListener('click',function(){dlg.close();});
+      dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close();});
+    });
+  })();
+  </script>
+  <% } %>
+
   <%# ── Charte ─────────────────────────────────────────────────────────── %>
   <section class="home-charter">
     <h2 class="home-charter-title" data-fr="Notre engagement" data-en="Our commitment">Notre engagement</h2>

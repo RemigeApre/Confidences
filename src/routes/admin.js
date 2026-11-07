@@ -120,6 +120,11 @@ const {
   listAccountRequests,
   setAccountRequestContacted,
   countPendingAccountRequests,
+  listChangelogs,
+  getChangelog,
+  createChangelog,
+  updateChangelog,
+  deleteChangelog,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -520,6 +525,31 @@ function buildAdminRouter(config) {
     res.redirect("/ponhgup#tab-demandes-compte");
   });
 
+  // ── Changelogs ──────────────────────────────────────────────────────────────
+  router.post("/changelogs", requireAdmin, (req, res) => {
+    const title = String(req.body.title || "").trim();
+    const body  = String(req.body.body  || "").trim();
+    const date  = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
+    if (title) createChangelog({ title, body, published_at: date });
+    res.redirect("/ponhgup#tab-changelog");
+  });
+
+  router.post("/changelogs/:id/edit", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.redirect("/ponhgup#tab-changelog");
+    const title = String(req.body.title || "").trim();
+    const body  = String(req.body.body  || "").trim();
+    const date  = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
+    updateChangelog(id, { title, body, published_at: date });
+    res.redirect("/ponhgup#tab-changelog");
+  });
+
+  router.post("/changelogs/:id/delete", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (Number.isInteger(id)) deleteChangelog(id);
+    res.redirect("/ponhgup#tab-changelog");
+  });
+
   router.post("/logout", (req, res) => {
     req.session.destroy(() => res.redirect("/ponhgup/85zapnte"));
   });
@@ -618,12 +648,14 @@ function buildAdminRouter(config) {
       .sort((a, b) => a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' }));
     const anonStats = getAnonStats(7, '');
     const accountRequests = listAccountRequests();
+    const changelogs = listChangelogs();
     res.render("admin-dashboard", {
       config, userStates, matrixSections, submissions,
       wikiPages, allWikiPagesSorted, galleryImages, connectionLogs,
       wikiKPIs, galleryKPIs,
       aiProfiles, fantasyWikiPages,
       anonStats, accountRequests,
+      changelogs,
       adminError: adminError || null,
     });
   }
