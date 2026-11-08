@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache p7zip
+RUN apk add --no-cache p7zip python3 make g++
 
 WORKDIR /app
 
