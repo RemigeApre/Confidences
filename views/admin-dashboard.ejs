@@ -125,7 +125,8 @@
           data-edit-email="<%= state.user.email || '' %>"
           data-edit-partner="<%= state.user.partnerId || '' %>"
           data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>"
-          data-account-status="<%= state.user.accountStatus || 'actif' %>">
+          data-account-status="<%= state.user.accountStatus || 'actif' %>"
+          data-invite-count="<%= state.inviteCount %>">
 
           <%# Corps de carte %>
           <div class="admin-utile-body">
@@ -225,47 +226,31 @@
     <div class="adm-drawer" id="adm-drawer" hidden>
       <div class="adm-drawer-inner">
 
-        <%# En-tête : avatar + pseudo + fermer %>
+        <%# En-tête : avatar grand format + pseudo en dessous %>
         <div class="adm-dr-header" id="adm-dr-header">
           <button type="button" class="adm-dr-close" id="adm-drawer-close" aria-label="Fermer">&#215;</button>
           <div class="adm-dr-avatar" id="adm-dr-avatar"></div>
           <div class="adm-dr-identity">
-            <div class="adm-dr-name-row">
-              <span class="adm-dr-name" id="adm-dr-name"></span>
-              <button type="button" class="adm-dr-copy-btn" id="adm-dr-cred-btn" title="Réinitialiser MDP et copier les identifiants">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="11" width="13" height="10" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v2"/></svg>
-              </button>
-            </div>
-            <div class="adm-dr-role" id="adm-dr-role"></div>
+            <span class="adm-dr-name" id="adm-dr-name"></span>
+            <span class="adm-dr-role" id="adm-dr-role"></span>
           </div>
         </div>
 
-        <%# Bouton profil %>
-        <div class="adm-dr-section">
-          <a class="adm-dr-profile-btn" id="adm-dr-profile-link" href="#">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Voir le profil
-          </a>
-        </div>
-
-        <%# Actions %>
+        <%# Actions principales %>
         <div class="adm-dr-section adm-dr-actions" id="adm-dr-actions">
-          <button type="button" class="adm-dr-action" id="adm-dr-reset-pwd">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-            Réinit. mot de passe
-          </button>
-          <button type="button" class="adm-dr-action" id="adm-dr-lootbox">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-            Offrir des lootboxes
-          </button>
+          <a class="adm-dr-action" id="adm-dr-profile-link" href="#">Profil</a>
+          <button type="button" class="adm-dr-action" id="adm-dr-reset-pwd">Mot de passe</button>
           <button type="button" class="adm-dr-action adm-dr-action--warn" id="adm-dr-status-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span id="adm-dr-status-label">Restreindre</span>
           </button>
-          <button type="button" class="adm-dr-action adm-dr-action--danger" id="adm-dr-delete" style="display:none">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-            Supprimer le compte
-          </button>
+          <button type="button" class="adm-dr-action" id="adm-dr-lootbox">Lootboxes</button>
+          <button type="button" class="adm-dr-action adm-dr-action--danger" id="adm-dr-delete" style="display:none">Supprimer</button>
+        </div>
+
+        <%# Nombre d'invités %>
+        <div class="adm-dr-invite-box" id="adm-dr-invite-box">
+          <span class="adm-dr-invite-count" id="adm-dr-invite-count">0</span>
+          <span class="adm-dr-invite-label">invit&eacute;(s)</span>
         </div>
 
         <%# Confirmation suppression %>
@@ -279,15 +264,14 @@
 
         <%# Activité récente %>
         <div class="adm-dr-section">
-          <div class="adm-dr-section-label">Activité récente</div>
           <div class="adm-dr-activity" id="adm-dr-activity">
             <div class="adm-dr-act-loading">Chargement…</div>
           </div>
         </div>
 
-        <%# Dernière connexion — pied du drawer %>
+        <%# Statut / dernière activité — pied du drawer %>
         <div class="adm-dr-footer" id="adm-dr-footer">
-          <div class="adm-dr-footer-label">Dernière activité</div>
+          <div class="adm-dr-footer-label" id="adm-dr-footer-label">Derni&egrave;re activit&eacute;</div>
           <div class="adm-dr-footer-time" id="adm-dr-footer-time">—</div>
           <div class="adm-dr-footer-abs" id="adm-dr-footer-abs"></div>
         </div>
@@ -1795,22 +1779,17 @@
       // Lien profil
       document.getElementById('adm-dr-profile-link').href = '/ponhgup/utilisateur/' + uid;
 
-      // Bouton cred
-      var credBtn = document.getElementById('adm-dr-cred-btn');
-      credBtn.dataset.uid = uid;
-      credBtn.dataset.uname = d.displayName;
-      credBtn.style.color = '';
-      credBtn.title = 'Réinitialiser MDP et copier les identifiants';
-
       // Reset pwd btn
       var resetBtn = document.getElementById('adm-dr-reset-pwd');
       resetBtn.dataset.uid = uid;
       resetBtn.dataset.pwd = '';
-      resetBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> Réinit. mot de passe';
 
       // Lootbox btn
       document.getElementById('adm-dr-lootbox').dataset.grantId = uid;
       document.getElementById('adm-dr-lootbox').dataset.grantName = d.displayName;
+
+      // Invite count
+      document.getElementById('adm-dr-invite-count').textContent = d.inviteCount || '0';
 
       // Status btn
       var statusBtn = document.getElementById('adm-dr-status-btn');
@@ -1830,8 +1809,11 @@
       document.getElementById('adm-dr-confirm').hidden = true;
       document.getElementById('adm-dr-actions').hidden = false;
 
-      // Dernière activité footer
+      // Footer — initialisation rapide depuis les données de la carte
       var lastMs = Number(d.lastActive) || 0;
+      var footer = document.getElementById('adm-dr-footer');
+      footer.classList.remove('adm-dr-footer--online');
+      document.getElementById('adm-dr-footer-label').textContent = 'Dernière activité';
       document.getElementById('adm-dr-footer-time').textContent = lastMs ? relTime(lastMs) : 'Jamais';
       document.getElementById('adm-dr-footer-abs').textContent = absTime(lastMs);
 
@@ -1845,13 +1827,18 @@
           var lastMs2 = data.lastActiveAt ? new Date(data.lastActiveAt).getTime() : 0;
           var isOnline = lastMs2 && (Date.now() - lastMs2) < 15 * 60 * 1000;
           if (isOnline) {
+            // En ligne : le footer prend le relais, l'activité montre juste les pages
+            footer.classList.add('adm-dr-footer--online');
+            document.getElementById('adm-dr-footer-label').textContent = 'En ligne maintenant';
+            document.getElementById('adm-dr-footer-time').textContent = '';
+            document.getElementById('adm-dr-footer-abs').textContent = '';
             html += '<div class="adm-dr-act-row adm-dr-act-row--online"><span class="adm-dr-online-dot"></span>En ligne maintenant</div>';
           }
           if (data.recentPages && data.recentPages.length) {
             data.recentPages.forEach(function(p) {
               html += '<div class="adm-dr-act-row"><span class="adm-dr-act-path">' + p.path + '</span><span class="adm-dr-act-time">' + relTime(new Date(p.at).getTime()) + '</span></div>';
             });
-          } else {
+          } else if (!isOnline) {
             html += '<div class="adm-dr-act-empty">Aucune activité récente</div>';
           }
           actEl.innerHTML = html;
@@ -1919,36 +1906,14 @@
       return pwd;
     }
 
-    // Bouton identifiants (icône copie dans le header)
-    document.getElementById('adm-dr-cred-btn').addEventListener('click', function () {
-      var btn = this;
-      var uid = btn.dataset.uid;
-      var uname = btn.dataset.uname;
-      var pwd = genPwd();
-      btn.style.opacity = '0.4';
-      fetch('/ponhgup/profils/' + uid + '/reset-pwd', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pwd }),
-      }).then(function(r) {
-        btn.style.opacity = '';
-        if (!r.ok) { btn.style.color = '#f87171'; return; }
-        copyText('Site : ' + window.location.origin + '\nIdentifiant : ' + uname + '\nMot de passe : ' + pwd);
-        // Sync reset btn
-        var rb = document.getElementById('adm-dr-reset-pwd');
-        if (rb) { rb.dataset.pwd = pwd; rb.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/></svg> ' + pwd; }
-        btn.style.color = 'hsl(140,65%,55%)';
-        setTimeout(function() { btn.style.color = ''; }, 2500);
-      }).catch(function() { btn.style.opacity = ''; btn.style.color = '#f87171'; });
-    });
-
     // Reset MDP
     document.getElementById('adm-dr-reset-pwd').addEventListener('click', function() {
       var btn = this;
       if (btn.dataset.pwd) {
         copyText(btn.dataset.pwd);
-        var prev = btn.innerHTML;
+        var prev = btn.textContent;
         btn.textContent = 'Copié !';
-        setTimeout(function() { btn.innerHTML = prev; }, 1500);
+        setTimeout(function() { btn.textContent = prev; }, 1500);
         return;
       }
       var pwd = genPwd();
