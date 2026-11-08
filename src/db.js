@@ -3742,6 +3742,7 @@ function pathToLabel(path) {
   // Normalise : retire query string et trailing slash
   const clean = path.split('?')[0].replace(/\/$/, '') || '/';
 
+  if (clean.startsWith('/uploads/')) return null; // asset statique, ne pas logger
   if (clean === '/') return 'Accueil';
   if (clean === '/wiki') return 'Accueil Codex';
   if (clean === '/jeu') return 'Jeu / Arcade';
@@ -3749,6 +3750,14 @@ function pathToLabel(path) {
   if (clean === '/bd') return 'BD';
   if (clean === '/histoires') return 'Histoires';
   if (clean === '/quiz') return 'Quiz';
+  if (clean === '/quizz') return 'Quiz';
+
+  const quizzMatch = clean.match(/^\/quizz\/(\d+)/);
+  if (quizzMatch) {
+    const row = db.prepare("SELECT title FROM custom_quizzes WHERE id = ?").get(Number(quizzMatch[1]));
+    return row ? 'Quiz : ' + row.title : 'Quiz';
+  }
+
   if (clean === '/profil') return 'Profil';
   if (clean === '/favoris') return 'Favoris';
   if (clean === '/favoris/coffre') return 'Coffre';
@@ -3813,6 +3822,7 @@ function recordActivityPing(userId, path) {
     .get(userId);
   const now = Date.now();
   const label = pathToLabel(path);
+  if (!label) return; // asset statique, on ignore
   // Throttle uniquement si c'est la même page que la dernière ; un changement
   // de page est toujours enregistré pour ne pas perdre de transitions.
   if (last &&

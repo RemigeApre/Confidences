@@ -397,7 +397,10 @@ app.use((req, res, next) => {
 // permet de savoir quand un profil est simplement en train de naviguer.
 app.use((req, res, next) => {
   if (req.user) {
-    recordActivityPing(req.user.id, req.path);
+    // Pings uniquement sur GET et pour les vraies pages (pas les assets statiques)
+    if (req.method === 'GET' && !/^\/uploads\/|^\/(public|game-covers)\//i.test(req.path)) {
+      recordActivityPing(req.user.id, req.path);
+    }
     checkAndGrantDailyLoginLootbox(req.user.id);
   }
   next();

@@ -938,14 +938,16 @@ function buildAdminRouter(config) {
     detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki",    label: v.title,    at: v.createdAt,  href: "/wiki/"    + v.pageId }));
     detail.recentGalViews.forEach((v) => feed.push({ type: "gallery",  label: v.title,    at: v.createdAt,  href: "/galerie/" + v.galleryId + "/edit" }));
     detail.recentBdViews.forEach((v)  => feed.push({ type: "bd",       label: v.title,    at: v.createdAt,  href: "/bd/"      + v.bookId }));
-    // Pings de navigation : personnages, parodies, nouvelles, etc.
+    // Pings de navigation : personnages, parodies, quiz, nouvelles, etc.
     listPagePingsForUser(id, 200).forEach((p) => {
-      const isKnown = (
+      const isAlreadyCovered = (
         p.label.startsWith('Codex :') ||
         p.label.startsWith('BD :') ||
         p.label.startsWith('Histoire :')
       );
-      if (!isKnown) feed.push({ type: "nav", label: p.label, at: p.at, href: null });
+      if (isAlreadyCovered) return;
+      const type = p.label.startsWith('Quiz') ? 'quiz' : 'nav';
+      feed.push({ type, label: p.label, at: p.at, href: null });
     });
     feed.sort((a, b) => new Date(b.at) - new Date(a.at));
     res.render("admin-user-activite", { config, detail, feed, roleHue: roleHue(detail.user) });
