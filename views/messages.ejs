@@ -254,22 +254,19 @@
     typingTimer = setTimeout(function () { typingIndicator.hidden = true; }, 3000);
   }
 
-  var evtSource = new EventSource('/messages/events');
-  evtSource.addEventListener('message', function (e) {
-    try {
-      var d = JSON.parse(e.data);
-      if (d.convId === convId) {
-        if (typingIndicator) typingIndicator.hidden = true;
-        loadNewMessages();
-      }
-    } catch (_) {}
-  });
-  evtSource.addEventListener('typing', function (e) {
-    try {
-      var d = JSON.parse(e.data);
-      if (d.fromId === partnerId) showTyping();
-    } catch (_) {}
-  });
+  // Polling toutes les 2s — simple et fiable
+  setInterval(loadNewMessages, 2000);
+
+  // SSE conservé uniquement pour l'indicateur de frappe
+  try {
+    var evtSource = new EventSource('/messages/events');
+    evtSource.addEventListener('typing', function (e) {
+      try {
+        var d = JSON.parse(e.data);
+        if (d.fromId === partnerId) showTyping();
+      } catch (_) {}
+    });
+  } catch (_) {}
 
   async function loadNewMessages() {
     try {
