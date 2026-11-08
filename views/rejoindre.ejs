@@ -13,9 +13,13 @@
   <div class="fo-wrap">
     <div class="fo-card">
 
-      <div class="fo-avatar" style="background:<%= inviter.profileColor || '#6b7280' %>">
-        <%= (inviter.displayName || '?').charAt(0).toUpperCase() %>
-      </div>
+      <% if (inviterThumb) { %>
+        <div class="fo-avatar fo-avatar--img" style="background-image:url('<%= inviterThumb %>')"></div>
+      <% } else { %>
+        <div class="fo-avatar" style="background:<%= inviter.profileColor || '#6b7280' %>">
+          <%= (inviter.displayName || '?').charAt(0).toUpperCase() %>
+        </div>
+      <% } %>
 
       <p class="fo-name"><%= inviter.displayName %></p>
 

@@ -1,4 +1,5 @@
 const express = require("express");
+const { thumbUrl } = require("../thumbs");
 const {
   listFavoriteRows,
   addFavorite,
@@ -840,48 +841,42 @@ function buildFavoritesRouter(config) {
     res.redirect("/favoris/collections");
   });
 
-  // ── Invitations ─────────────────────────────────────────────────────────────
-  router.get("/invitations", requireUser, (req, res) => {
-    const pendingInvites = listPendingInvites(req.user.id);
-    const inviteStats = getUserInviteStats(req.user.id);
-    res.render("favoris-invitations", {
-      config,
-      roleHue: roleHue(req.user),
-      notesCounts: notesCounts(req.user),
-      currentPath: "/favoris/invitations",
-      pendingInvites,
-      inviteStats,
-      csrfToken: null, // formulaires simples, protection via session+requireUser
-    });
-  });
+  // ── Invitations (redirige vers /amis fusionné) ──────────────────────────────
+  router.get("/invitations", requireUser, (req, res) => res.redirect("/favoris/amis"));
 
-  router.get("/amis", requireUser, (req, res) => {
-    const friends = getFriends(req.user.id);
-    const received = getPendingReceivedRequests(req.user.id);
-    const sent = getSentPendingRequests(req.user.id);
-    // Ensure user has a friend code
+  function buildAmisThumb(user) {
+    if (!user.profile_image_id) return null;
+    const img = getGalleryImage(user.profile_image_id);
+    if (!img) return null;
+    const fp = (img.imagePaths && img.imagePaths[0]) || img.filename || null;
+    return fp ? thumbUrl(fp) : null;
+  }
+
+  function renderAmis(req, res, extra = {}) {
+    const friends  = getFriends(req.user.id).map(f => ({ ...f, thumb: buildAmisThumb(f) }));
+    const received = getPendingReceivedRequests(req.user.id).map(r => ({ ...r, thumb: buildAmisThumb(r) }));
+    const sent     = getSentPendingRequests(req.user.id).map(s => ({ ...s, thumb: buildAmisThumb(s) }));
+    const pendingInvites = listPendingInvites(req.user.id);
+    const inviteStats    = getUserInviteStats(req.user.id);
     let { friendCode } = req.user;
-    if (!friendCode) {
-      friendCode = assignFriendCode(req.user.id);
-    }
+    if (!friendCode) friendCode = assignFriendCode(req.user.id);
     res.render("favoris-amis", {
       config,
       roleHue: roleHue(req.user),
       notesCounts: notesCounts(req.user),
       currentPath: "/favoris/amis",
-      friends,
-      received,
-      sent,
-      friendCode,
-      searchResult: null,
-      searchQuery: null,
-      searchError: null,
+      friends, received, sent, friendCode,
+      pendingInvites, inviteStats,
+      searchResult: null, searchQuery: null, searchError: null,
+      ...extra,
     });
-  });
+  }
+
+  router.get("/amis", requireUser, (req, res) => renderAmis(req, res));
 
   router.post("/amis/demande", requireUser, (req, res) => {
     const query = String(req.body.code || "").trim();
-    let friends, received, sent, searchResult = null, searchError = null;
+    let searchResult = null, searchError = null;
 
     const target = findUserByFriendCode(query);
     if (!target) {
@@ -894,26 +889,7 @@ function buildFavoritesRouter(config) {
       else if (result.error === 'already_sent') searchError = "Demande d\u00e9j\u00e0 envoy\u00e9e.";
       else searchResult = { target, autoAccepted: !!result.autoAccepted };
     }
-
-    friends = getFriends(req.user.id);
-    received = getPendingReceivedRequests(req.user.id);
-    sent = getSentPendingRequests(req.user.id);
-    let { friendCode } = req.user;
-    if (!friendCode) friendCode = assignFriendCode(req.user.id);
-
-    res.render("favoris-amis", {
-      config,
-      roleHue: roleHue(req.user),
-      notesCounts: notesCounts(req.user),
-      currentPath: "/favoris/amis",
-      friends,
-      received,
-      sent,
-      friendCode,
-      searchResult,
-      searchQuery: query,
-      searchError,
-    });
+    renderAmis(req, res, { searchResult, searchQuery: query, searchError });
   });
 
   router.post("/amis/:friendId/accepter", requireUser, (req, res) => {

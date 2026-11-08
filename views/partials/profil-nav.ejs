@@ -74,23 +74,18 @@
     <%# ── 4. À lire plus tard ── %>
     <a href="/favoris/a-lire-plus-tard" class="profil-nav-big-title<%= currentPath === '/favoris/a-lire-plus-tard' ? ' active' : '' %>">&Agrave; lire plus tard</a>
 
-    <%# ── 4b. Code invité + Amis ── %>
+    <%# ── 4b. Amis (lien + code invité fusionnés) ── %>
     <% if (locals.inviteToken) { %>
+      <%
+        var _friendAlerts = (locals.pendingInvitesCount || 0) + (locals.pendingFriendRequestsCount || 0);
+        var _amisActive   = currentPath === '/favoris/amis' || currentPath === '/favoris/invitations';
+      %>
       <div class="profil-nav-invite-row">
-        <a href="/favoris/invitations" class="profil-nav-big-title<%= currentPath === '/favoris/invitations' ? ' active' : '' %>">Code invit&eacute;</a>
-        <% if (locals.pendingInvitesCount > 0) { %>
-          <span class="profil-nav-invite-badge" title="<%= locals.pendingInvitesCount %> inscription<%= locals.pendingInvitesCount > 1 ? 's' : '' %> en attente"><%= locals.pendingInvitesCount %></span>
+        <a href="/favoris/amis" class="profil-nav-big-title<%= _amisActive ? ' active' : '' %>">Amis</a>
+        <% if (_friendAlerts > 0) { %>
+          <span class="profil-nav-invite-badge" title="<%= _friendAlerts %> action<%= _friendAlerts > 1 ? 's' : '' %> en attente"><%= _friendAlerts %></span>
         <% } %>
       </div>
-      <nav class="profil-nav-links profil-nav-links--sub">
-        <a href="/favoris/amis" class="profil-nav-link<%= currentPath === '/favoris/amis' ? ' active' : '' %>">
-          <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>Amis</span>
-          <% if (locals.pendingFriendRequestsCount > 0) { %>
-            <span class="profil-nav-count profil-nav-count--alert"><%= locals.pendingFriendRequestsCount %></span>
-          <% } %>
-        </a>
-      </nav>
     <% } %>
 
     <%# ── 5. Lien couple ── %>

@@ -6,6 +6,7 @@ const {
   getUserByUsername,
   getUserByEmail,
   getUserById,
+  getGalleryImage,
   createUser,
   updateOwnProfile,
   logConnection,
@@ -16,6 +17,7 @@ const {
   sendFriendRequest,
   getFriendshipBetween,
 } = require("../db");
+const { thumbUrl } = require("../thumbs");
 const { hashPassword } = require("../passwords");
 const { createThrottle } = require("../loginThrottle");
 
@@ -41,9 +43,18 @@ module.exports = function buildInviteRouter(config) {
       const inviter = getUserById(invite.userId);
       if (!inviter) return res.redirect("/favoris");
       const friendship = getFriendshipBetween(req.user.id, invite.userId);
+      let inviterThumb = null;
+      if (inviter.profileImageId) {
+        const img = getGalleryImage(inviter.profileImageId);
+        if (img) {
+          const fp = (img.imagePaths && img.imagePaths[0]) || img.filename || null;
+          if (fp) inviterThumb = thumbUrl(fp);
+        }
+      }
       return res.render("rejoindre", {
         csrfToken: ensureCsrf(req),
         config,
+        inviterThumb,
         error: null,
         invalid: false,
         isFrench: req.isFrenchVisitor,
