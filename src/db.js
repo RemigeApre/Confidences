@@ -425,6 +425,18 @@ try { db.exec("ALTER TABLE users ADD COLUMN share_notes_with_admin INTEGER NOT N
 // vues elles-mêmes (utilisées ailleurs par les stats admin).
 try { db.exec("ALTER TABLE users ADD COLUMN history_retention TEXT NOT NULL DEFAULT '1mois'"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN hide_invite_cta INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN friend_code INTEGER"); } catch (_) {}
+
+db.exec(`CREATE TABLE IF NOT EXISTS friendships (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user1_id INTEGER NOT NULL,
+  user2_id INTEGER NOT NULL,
+  requester_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user1_id, user2_id)
+)`);
+
 // Mode couple (lié par l'admin uniquement, voir /ponhgup) : relation
 // symétrique 1↔1, stockée en miroir sur les deux comptes pour qu'un simple
 // SELECT suffise à retrouver le/la partenaire de n'importe quel profil, sans
@@ -1054,6 +1066,7 @@ function rowToUser(row) {
     lastPath: row.last_path || null,
     identityChangedAt: row.identity_changed_at || null,
     hideInviteCta: !!row.hide_invite_cta,
+    friendCode: row.friend_code || null,
   };
 }
 
@@ -1084,6 +1097,14 @@ function createUser({ username, displayName, passwordHash, isAdmin, isTest }) {
   const userId = info.lastInsertRowid;
   // Cadeau de bienvenue
   grantLootbox(userId, WELCOME_LOOTBOXES);
+  // Generate unique 4-digit friend code
+  let fc = null;
+  for (let i = 0; i < 50; i++) {
+    const c = Math.floor(Math.random() * 9000) + 1000;
+    if (!db.prepare("SELECT id FROM users WHERE friend_code = ?").get(c)) { fc = c; break; }
+  }
+  if (fc === null) fc = 10000 + userId;
+  db.prepare("UPDATE users SET friend_code = ? WHERE id = ?").run(fc, userId);
   return userId;
 }
 
@@ -6371,6 +6392,126 @@ function getUserStreak(userId) {
   return streak;
 }
 
+// ── Système d'amis ──────────────────────────────────────────────────────────
+
+function assignFriendCode(userId) {
+  for (let i = 0; i < 50; i++) {
+    const c = Math.floor(Math.random() * 9000) + 1000;
+    if (!db.prepare("SELECT id FROM users WHERE friend_code = ?").get(c)) {
+      db.prepare("UPDATE users SET friend_code = ? WHERE id = ?").run(c, userId);
+      return c;
+    }
+  }
+  const fallback = 10000 + userId;
+  db.prepare("UPDATE users SET friend_code = ? WHERE id = ?").run(fallback, userId);
+  return fallback;
+}
+
+function findUserByFriendCode(input) {
+  const idx = input.lastIndexOf('#');
+  if (idx < 1) return null;
+  const name = input.slice(0, idx).trim();
+  const code = parseInt(input.slice(idx + 1), 10);
+  if (!name || isNaN(code)) return null;
+  const row = db.prepare(
+    "SELECT * FROM users WHERE (display_name = ? COLLATE NOCASE OR username = ? COLLATE NOCASE) AND friend_code = ?"
+  ).get(name, name, code);
+  return rowToUser(row);
+}
+
+function _normalizedFriendPair(a, b) {
+  return { u1: Math.min(a, b), u2: Math.max(a, b) };
+}
+
+function autoFriend(userId1, userId2) {
+  if (!userId1 || !userId2 || userId1 === userId2) return;
+  const { u1, u2 } = _normalizedFriendPair(userId1, userId2);
+  db.prepare(`
+    INSERT INTO friendships (user1_id, user2_id, requester_id, status)
+    VALUES (?, ?, ?, 'accepted')
+    ON CONFLICT(user1_id, user2_id) DO UPDATE SET status = 'accepted'
+  `).run(u1, u2, userId1);
+}
+
+function sendFriendRequest(fromId, toId) {
+  if (!fromId || !toId || fromId === toId) return { error: 'invalid' };
+  const { u1, u2 } = _normalizedFriendPair(fromId, toId);
+  const existing = db.prepare("SELECT * FROM friendships WHERE user1_id = ? AND user2_id = ?").get(u1, u2);
+  if (existing) {
+    if (existing.status === 'accepted') return { error: 'already_friends' };
+    if (existing.requester_id === fromId) return { error: 'already_sent' };
+    // Cross-request: auto-accept
+    db.prepare("UPDATE friendships SET status = 'accepted' WHERE user1_id = ? AND user2_id = ?").run(u1, u2);
+    return { ok: true, autoAccepted: true };
+  }
+  db.prepare("INSERT INTO friendships (user1_id, user2_id, requester_id) VALUES (?, ?, ?)").run(u1, u2, fromId);
+  return { ok: true };
+}
+
+function acceptFriendRequest(fromId, toId) {
+  // fromId = the person accepting (receiver), toId = requester
+  const { u1, u2 } = _normalizedFriendPair(fromId, toId);
+  const row = db.prepare("SELECT * FROM friendships WHERE user1_id = ? AND user2_id = ?").get(u1, u2);
+  if (!row || row.status !== 'pending' || row.requester_id !== toId) return false;
+  db.prepare("UPDATE friendships SET status = 'accepted' WHERE user1_id = ? AND user2_id = ?").run(u1, u2);
+  return true;
+}
+
+function rejectFriendRequest(fromId, toId) {
+  const { u1, u2 } = _normalizedFriendPair(fromId, toId);
+  db.prepare("DELETE FROM friendships WHERE user1_id = ? AND user2_id = ? AND status = 'pending'").run(u1, u2);
+}
+
+function removeFriend(userId, otherId) {
+  const { u1, u2 } = _normalizedFriendPair(userId, otherId);
+  db.prepare("DELETE FROM friendships WHERE user1_id = ? AND user2_id = ?").run(u1, u2);
+}
+
+function getFriends(userId) {
+  return db.prepare(`
+    SELECT u.id, u.display_name, u.username, u.profile_color, u.friend_code,
+           u.profile_image_id, u.last_active_at, u.last_login_at
+    FROM friendships f
+    JOIN users u ON u.id = CASE WHEN f.user1_id = ? THEN f.user2_id ELSE f.user1_id END
+    WHERE (f.user1_id = ? OR f.user2_id = ?) AND f.status = 'accepted'
+    ORDER BY u.display_name COLLATE NOCASE ASC
+  `).all(userId, userId, userId);
+}
+
+function getPendingReceivedRequests(userId) {
+  return db.prepare(`
+    SELECT u.id, u.display_name, u.username, u.profile_color, u.friend_code,
+           f.created_at
+    FROM friendships f
+    JOIN users u ON u.id = CASE WHEN f.user1_id = ? THEN f.user2_id ELSE f.user1_id END
+    WHERE (f.user1_id = ? OR f.user2_id = ?) AND f.status = 'pending' AND f.requester_id != ?
+    ORDER BY f.created_at DESC
+  `).all(userId, userId, userId, userId);
+}
+
+function getSentPendingRequests(userId) {
+  return db.prepare(`
+    SELECT u.id, u.display_name, u.username, u.profile_color, u.friend_code,
+           f.created_at
+    FROM friendships f
+    JOIN users u ON u.id = CASE WHEN f.user1_id = ? THEN f.user2_id ELSE f.user1_id END
+    WHERE (f.user1_id = ? OR f.user2_id = ?) AND f.status = 'pending' AND f.requester_id = ?
+    ORDER BY f.created_at DESC
+  `).all(userId, userId, userId, userId);
+}
+
+function getPendingFriendRequestsCount(userId) {
+  const r = db.prepare(
+    "SELECT COUNT(*) as n FROM friendships WHERE (user1_id = ? OR user2_id = ?) AND status = 'pending' AND requester_id != ?"
+  ).get(userId, userId, userId);
+  return r ? r.n : 0;
+}
+
+function getFriendshipBetween(userId1, userId2) {
+  const { u1, u2 } = _normalizedFriendPair(userId1, userId2);
+  return db.prepare("SELECT * FROM friendships WHERE user1_id = ? AND user2_id = ?").get(u1, u2) || null;
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -6777,6 +6918,18 @@ module.exports = {
   countPendingInvites,
   setInviteUseStatus,
   getUserInviteStats,
+  assignFriendCode,
+  findUserByFriendCode,
+  autoFriend,
+  sendFriendRequest,
+  acceptFriendRequest,
+  rejectFriendRequest,
+  removeFriend,
+  getFriends,
+  getPendingReceivedRequests,
+  getSentPendingRequests,
+  getPendingFriendRequestsCount,
+  getFriendshipBetween,
   logAdminAudit,
   listAdminAudit,
 };

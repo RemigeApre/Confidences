@@ -5,25 +5,122 @@
 
   <div class="profil-subpage">
 
-    <h1 class="profil-subpage-title">Amis</h1>
-    <p class="profil-subpage-desc">Personnes ayant rejoint via votre lien d&rsquo;invitation.</p>
-
-    <% if (!amis || !amis.length) { %>
-      <p class="amis-empty">Personne n&rsquo;a encore utilis&eacute; votre lien d&rsquo;invitation.</p>
-    <% } else { %>
-      <div class="amis-list">
-        <% amis.forEach(function(ami) { %>
-          <div class="amis-row">
-            <a href="/profil/<%= ami.username %>" class="amis-row-name"><%= ami.display_name %></a>
-            <span class="amis-row-user">@<%= ami.username %></span>
-            <% var statusLabel = { pending: 'En attente', approved: 'Actif', refused: 'Refus&eacute;', direct: 'Actif' }[ami.status] || ami.status; %>
-            <span class="amis-row-status amis-row-status--<%= ami.status %>"><%- statusLabel %></span>
-            <time class="amis-row-date" datetime="<%= ami.created_at.slice(0,10) %>"><%= new Date(ami.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' }) %></time>
-          </div>
-        <% }); %>
+    <%# ── Mon code ── %>
+    <section class="amis-section">
+      <h2 class="amis-section-title">Mon code</h2>
+      <div class="amis-code-row">
+        <span class="amis-code-display" id="amis-my-code"><%= currentUser.displayName %>#<%= friendCode %></span>
+        <button class="amis-code-copy" id="amis-code-copy-btn" type="button">Copier</button>
       </div>
+      <p class="amis-code-hint">Partagez ce code pour que quelqu'un vous ajoute en ami.</p>
+    </section>
+
+    <%# ── Ajouter un ami ── %>
+    <section class="amis-section">
+      <h2 class="amis-section-title">Ajouter un ami</h2>
+      <form method="POST" action="/favoris/amis/demande" class="amis-search-form">
+        <input class="amis-search-input" type="text" name="code" placeholder="pseudo#1234"
+               value="<%= searchQuery || '' %>" autocomplete="off" maxlength="80" />
+        <button class="amis-search-btn" type="submit">Envoyer une demande</button>
+      </form>
+      <% if (searchError) { %>
+        <p class="amis-search-error"><%= searchError %></p>
+      <% } %>
+      <% if (searchResult) { %>
+        <p class="amis-search-ok">
+          <% if (searchResult.autoAccepted) { %>
+            Demande accept&eacute;e automatiquement : vous &ecirc;tes maintenant amis avec <strong><%= searchResult.target.displayName %></strong>.
+          <% } else { %>
+            Demande envoy&eacute;e &agrave; <strong><%= searchResult.target.displayName %></strong>.
+          <% } %>
+        </p>
+      <% } %>
+    </section>
+
+    <%# ── Demandes reçues ── %>
+    <% if (received && received.length) { %>
+    <section class="amis-section">
+      <h2 class="amis-section-title">Demandes re&ccedil;ues <span class="amis-count-badge"><%= received.length %></span></h2>
+      <ul class="amis-list">
+        <% received.forEach(function(r) { %>
+        <li class="amis-row">
+          <div class="amis-row-avatar" style="background:<%= r.profile_color || '#6b7280' %>"><%= (r.display_name || '?').charAt(0).toUpperCase() %></div>
+          <div class="amis-row-info">
+            <span class="amis-row-name"><%= r.display_name %></span>
+            <span class="amis-row-code">#<%= r.friend_code %></span>
+          </div>
+          <div class="amis-row-actions">
+            <form method="POST" action="/favoris/amis/<%= r.id %>/accepter" class="amis-inline-form">
+              <button class="amis-btn amis-btn--accept" type="submit">Accepter</button>
+            </form>
+            <form method="POST" action="/favoris/amis/<%= r.id %>/refuser" class="amis-inline-form">
+              <button class="amis-btn amis-btn--refuse" type="submit">Refuser</button>
+            </form>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
     <% } %>
+
+    <%# ── Demandes envoyées ── %>
+    <% if (sent && sent.length) { %>
+    <section class="amis-section">
+      <h2 class="amis-section-title">En attente</h2>
+      <ul class="amis-list">
+        <% sent.forEach(function(s) { %>
+        <li class="amis-row">
+          <div class="amis-row-avatar" style="background:<%= s.profile_color || '#6b7280' %>"><%= (s.display_name || '?').charAt(0).toUpperCase() %></div>
+          <div class="amis-row-info">
+            <span class="amis-row-name"><%= s.display_name %></span>
+            <span class="amis-row-code">#<%= s.friend_code %></span>
+          </div>
+          <span class="amis-row-status">En attente...</span>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
+    <%# ── Amis ── %>
+    <section class="amis-section">
+      <h2 class="amis-section-title">Amis <% if (friends && friends.length) { %><span class="amis-count-badge"><%= friends.length %></span><% } %></h2>
+      <% if (!friends || !friends.length) { %>
+        <p class="amis-empty">Aucun ami pour l&rsquo;instant.</p>
+      <% } else { %>
+      <ul class="amis-list">
+        <% friends.forEach(function(f) { %>
+        <li class="amis-row">
+          <div class="amis-row-avatar" style="background:<%= f.profile_color || '#6b7280' %>"><%= (f.display_name || '?').charAt(0).toUpperCase() %></div>
+          <div class="amis-row-info">
+            <a href="/profil/<%= f.username %>" class="amis-row-name"><%= f.display_name %></a>
+            <span class="amis-row-code">#<%= f.friend_code %></span>
+          </div>
+          <form method="POST" action="/favoris/amis/<%= f.id %>/supprimer" class="amis-inline-form"
+                onsubmit="return confirm('Retirer <%= f.display_name %> de vos amis ?')">
+            <button class="amis-btn amis-btn--remove" type="submit">Retirer</button>
+          </form>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </section>
 
   </div>
 </main>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var codeEl = document.getElementById('amis-my-code');
+  var copyBtn = document.getElementById('amis-code-copy-btn');
+  if (copyBtn && codeEl) {
+    copyBtn.addEventListener('click', function () {
+      navigator.clipboard.writeText(codeEl.textContent).catch(function () {});
+      copyBtn.textContent = 'Copi\u00e9 !';
+      setTimeout(function () { copyBtn.textContent = 'Copier'; }, 2000);
+    });
+  }
+})();
+</script>
+
 <%- include('partials/foot') %>

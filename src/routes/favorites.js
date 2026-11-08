@@ -73,6 +73,17 @@ const {
   setInviteUseStatus,
   getUserInviteStats,
   setUserAccountStatus,
+  autoFriend,
+  sendFriendRequest,
+  acceptFriendRequest,
+  rejectFriendRequest,
+  removeFriend,
+  getFriends,
+  getPendingReceivedRequests,
+  getSentPendingRequests,
+  findUserByFriendCode,
+  assignFriendCode,
+  getPendingFriendRequestsCount,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -845,14 +856,82 @@ function buildFavoritesRouter(config) {
   });
 
   router.get("/amis", requireUser, (req, res) => {
-    const amis = listAllInviteUses(req.user.id);
+    const friends = getFriends(req.user.id);
+    const received = getPendingReceivedRequests(req.user.id);
+    const sent = getSentPendingRequests(req.user.id);
+    // Ensure user has a friend code
+    let { friendCode } = req.user;
+    if (!friendCode) {
+      friendCode = assignFriendCode(req.user.id);
+    }
     res.render("favoris-amis", {
       config,
       roleHue: roleHue(req.user),
       notesCounts: notesCounts(req.user),
       currentPath: "/favoris/amis",
-      amis,
+      friends,
+      received,
+      sent,
+      friendCode,
+      searchResult: null,
+      searchQuery: null,
+      searchError: null,
     });
+  });
+
+  router.post("/amis/demande", requireUser, (req, res) => {
+    const query = String(req.body.code || "").trim();
+    let friends, received, sent, searchResult = null, searchError = null;
+
+    const target = findUserByFriendCode(query);
+    if (!target) {
+      searchError = "Utilisateur introuvable. V\u00e9rifiez le code.";
+    } else if (target.id === req.user.id) {
+      searchError = "C'est vous.";
+    } else {
+      const result = sendFriendRequest(req.user.id, target.id);
+      if (result.error === 'already_friends') searchError = "Vous \u00eates d\u00e9j\u00e0 amis.";
+      else if (result.error === 'already_sent') searchError = "Demande d\u00e9j\u00e0 envoy\u00e9e.";
+      else searchResult = { target, autoAccepted: !!result.autoAccepted };
+    }
+
+    friends = getFriends(req.user.id);
+    received = getPendingReceivedRequests(req.user.id);
+    sent = getSentPendingRequests(req.user.id);
+    let { friendCode } = req.user;
+    if (!friendCode) friendCode = assignFriendCode(req.user.id);
+
+    res.render("favoris-amis", {
+      config,
+      roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
+      currentPath: "/favoris/amis",
+      friends,
+      received,
+      sent,
+      friendCode,
+      searchResult,
+      searchQuery: query,
+      searchError,
+    });
+  });
+
+  router.post("/amis/:friendId/accepter", requireUser, (req, res) => {
+    const friendId = parseInt(req.params.friendId, 10);
+    if (Number.isInteger(friendId)) acceptFriendRequest(req.user.id, friendId);
+    res.redirect("/favoris/amis");
+  });
+
+  router.post("/amis/:friendId/refuser", requireUser, (req, res) => {
+    const friendId = parseInt(req.params.friendId, 10);
+    if (Number.isInteger(friendId)) rejectFriendRequest(req.user.id, friendId);
+    res.redirect("/favoris/amis");
+  });
+
+  router.post("/amis/:friendId/supprimer", requireUser, (req, res) => {
+    const friendId = parseInt(req.params.friendId, 10);
+    if (Number.isInteger(friendId)) removeFriend(req.user.id, friendId);
+    res.redirect("/favoris/amis");
   });
 
   router.post("/invitations/:id/approve", requireUser, (req, res) => {
@@ -864,6 +943,7 @@ function buildFavoritesRouter(config) {
     if (inv) {
       setInviteUseStatus(id, "approved");
       setUserAccountStatus(inv.invitee_id, "actif");
+      autoFriend(req.user.id, inv.invitee_id);
     }
     res.redirect("/favoris/invitations");
   });

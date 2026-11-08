@@ -36,6 +36,7 @@ const {
   getSfwSet,
   getOrCreateInviteToken,
   countPendingInvites,
+  getPendingFriendRequestsCount,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -487,20 +488,17 @@ app.use((req, res, next) => {
   return res.redirect('/invitation-attente');
 });
 
-// ── Code invité — injecté dans res.locals pour profil-nav.ejs ────────────────
-// Calculé une fois par requête GET sur les pages /favoris.
+// ── Code invité + compteurs amis — injectés dans res.locals pour profil-nav.ejs ──
 app.use((req, res, next) => {
-  if (req.user && req.method === 'GET' && req.path.startsWith('/favoris')) {
+  res.locals.inviteToken = null;
+  res.locals.pendingInvitesCount = 0;
+  res.locals.pendingFriendRequestsCount = 0;
+  if (req.user && req.method === 'GET') {
     try {
       res.locals.inviteToken = getOrCreateInviteToken(req.user.id);
       res.locals.pendingInvitesCount = countPendingInvites(req.user.id);
-    } catch (_) {
-      res.locals.inviteToken = null;
-      res.locals.pendingInvitesCount = 0;
-    }
-  } else {
-    res.locals.inviteToken = null;
-    res.locals.pendingInvitesCount = 0;
+      res.locals.pendingFriendRequestsCount = getPendingFriendRequestsCount(req.user.id);
+    } catch (_) {}
   }
   next();
 });
