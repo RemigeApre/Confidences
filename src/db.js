@@ -424,6 +424,7 @@ try { db.exec("ALTER TABLE users ADD COLUMN share_notes_with_admin INTEGER NOT N
 // filtre uniquement ce qui s'affiche sur cette page, ne supprime jamais les
 // vues elles-mêmes (utilisées ailleurs par les stats admin).
 try { db.exec("ALTER TABLE users ADD COLUMN history_retention TEXT NOT NULL DEFAULT '1mois'"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN hide_invite_cta INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 // Mode couple (lié par l'admin uniquement, voir /ponhgup) : relation
 // symétrique 1↔1, stockée en miroir sur les deux comptes pour qu'un simple
 // SELECT suffise à retrouver le/la partenaire de n'importe quel profil, sans
@@ -1052,6 +1053,7 @@ function rowToUser(row) {
     lastActiveAt: row.last_active_at || null,
     lastPath: row.last_path || null,
     identityChangedAt: row.identity_changed_at || null,
+    hideInviteCta: !!row.hide_invite_cta,
   };
 }
 
@@ -1128,7 +1130,7 @@ const HISTORY_RETENTION_VALUES = ["3jours", "1semaine", "1mois", "3mois"];
 // Reglages "Goûts"/"Paramètres" (voir /favoris) : mise a jour partielle,
 // chaque champ omis garde sa valeur actuelle (sauvegarde instantanee par
 // champ, pas un gros formulaire soumis d'un coup).
-function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention }) {
+function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, hideInviteCta }) {
   const current = getUserById(id);
   if (!current) return;
   const o  = orientation   !== undefined && ORIENTATION_VALUES.includes(orientation)   ? orientation   : current.orientation;
@@ -1136,9 +1138,10 @@ function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareN
   const im = irrealisteMode !== undefined && SPECIAL_MODE_VALUES.includes(irrealisteMode) ? irrealisteMode : current.irrealisteMode;
   const snwa = shareNotesWithAdmin !== undefined ? (shareNotesWithAdmin ? 1 : 0) : (current.shareNotesWithAdmin ? 1 : 0);
   const hr = historyRetention !== undefined && HISTORY_RETENTION_VALUES.includes(historyRetention) ? historyRetention : current.historyRetention;
+  const hic = hideInviteCta !== undefined ? (hideInviteCta ? 1 : 0) : (current.hideInviteCta ? 1 : 0);
   db.prepare(
-    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ? WHERE id = ?"
-  ).run(o, um, im, snwa, hr, id);
+    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ?, hide_invite_cta = ? WHERE id = ?"
+  ).run(o, um, im, snwa, hr, hic, id);
 }
 
 // COLLATE NOCASE : la casse n'a pas d'importance pour l'identifiant de

@@ -90,6 +90,16 @@
             <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
           </label>
         </div>
+
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Bouton &laquo;&nbsp;Inviter&nbsp;&raquo;</span>
+          </div>
+          <label class="profil-toggle">
+            <input type="checkbox" id="hide-invite-cta-checkbox" <%= currentUser.hideInviteCta ? 'checked' : '' %> />
+            <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
+          </label>
+        </div>
       </div>
 
       <div class="profil-danger-zone">
@@ -136,6 +146,13 @@
   if (shareCheckbox) {
     shareCheckbox.addEventListener("change", function () {
       savePref("shareNotesWithAdmin", shareCheckbox.checked);
+    });
+  }
+
+  var hideInviteCheckbox = document.getElementById("hide-invite-cta-checkbox");
+  if (hideInviteCheckbox) {
+    hideInviteCheckbox.addEventListener("change", function () {
+      savePref("hideInviteCta", hideInviteCheckbox.checked);
     });
   }
 

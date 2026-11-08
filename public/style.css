@@ -954,3 +954,28 @@ body.pub-drawer-open{overflow:hidden}
 .cl-delete-form{display:flex;justify-content:flex-end}
 .cl-btn-delete{background:none;border:none;color:hsl(0,55%,65%);font-size:.78rem;cursor:pointer;padding:.2rem .4rem;transition:opacity .15s}
 .cl-btn-delete:hover{opacity:.7}
+
+/* ── CTA flottant "Inviter" ──────────────────────────────────────── */
+@keyframes invite-fab-pulse {
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+}
+.invite-cta-fab{position:fixed;bottom:1.4rem;right:1.4rem;z-index:400;display:flex;align-items:center;gap:.45rem;padding:.55rem 1rem .55rem .7rem;border-radius:999px;background:var(--accent);color:#111;font-size:.82rem;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);animation:invite-fab-pulse 2.8s ease-in-out infinite}
+.invite-cta-fab svg{width:18px;height:18px;flex-shrink:0}
+.invite-cta-fab:hover{opacity:.88}
+.invite-cta-backdrop{position:fixed;inset:0;z-index:401;background:rgba(0,0,0,.55)}
+.invite-cta-popup{position:fixed;bottom:5rem;right:1.4rem;z-index:402;width:min(340px,calc(100vw - 2.8rem));background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.4rem 1.4rem 1rem;display:flex;flex-direction:column;gap:.75rem}
+.invite-cta-popup-close{position:absolute;top:.6rem;right:.7rem;background:none;border:none;cursor:pointer;color:var(--muted);padding:.25rem;line-height:0}
+.invite-cta-popup-close svg{width:18px;height:18px}
+.invite-cta-popup-title{margin:0;font-size:.95rem;font-weight:700;color:var(--fg)}
+.invite-cta-popup-sub{margin:0;font-size:.8rem;color:var(--muted)}
+.invite-cta-link-row{display:flex;gap:.5rem}
+.invite-cta-link-input{flex:1;min-width:0;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;font-size:.75rem;color:var(--fg);outline:none}
+.invite-cta-copy-btn{flex-shrink:0;background:var(--accent);color:#111;border:none;border-radius:6px;padding:.4rem .85rem;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.invite-cta-copy-btn:hover{opacity:.85}
+.invite-cta-disable-btn{background:none;border:none;color:var(--muted);font-size:.72rem;cursor:pointer;text-align:left;padding:0;text-decoration:underline}
+.invite-cta-disable-btn:hover{color:var(--fg)}
+@media(max-width:640px){
+  .invite-cta-fab{bottom:1rem;right:1rem}
+  .invite-cta-popup{bottom:4.2rem;right:1rem;left:1rem;width:auto}
+}
