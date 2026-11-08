@@ -221,18 +221,77 @@
       <% }) %>
     </div>
 
-    <%# ── Modal : fiche rapide utilisateur ── %>
-    <div class="admin-modal-overlay" id="admin-quick-modal" hidden>
-      <div class="admin-modal admin-quick-modal">
-        <div class="aqm-band" id="aqm-band">
-          <span class="aqm-band-name" id="aqm-name"></span>
-          <button type="button" class="aqm-cred-btn" id="aqm-cred-btn" title="Copier les identifiants de connexion">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="11" width="13" height="10" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v2"/></svg>
-          </button>
-          <button type="button" class="aqm-close" id="admin-quick-modal-close" aria-label="Fermer">&#215;</button>
+    <%# ── Drawer droit : fiche utilisateur ── %>
+    <div class="adm-drawer" id="adm-drawer" hidden>
+      <div class="adm-drawer-inner">
+
+        <%# En-tête : avatar + pseudo + fermer %>
+        <div class="adm-dr-header" id="adm-dr-header">
+          <button type="button" class="adm-dr-close" id="adm-drawer-close" aria-label="Fermer">&#215;</button>
+          <div class="adm-dr-avatar" id="adm-dr-avatar"></div>
+          <div class="adm-dr-identity">
+            <div class="adm-dr-name-row">
+              <span class="adm-dr-name" id="adm-dr-name"></span>
+              <button type="button" class="adm-dr-copy-btn" id="adm-dr-cred-btn" title="Réinitialiser MDP et copier les identifiants">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="11" width="13" height="10" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+            <div class="adm-dr-role" id="adm-dr-role"></div>
+          </div>
         </div>
-        <div class="aqm-activity-line" id="aqm-activity-line"></div>
-        <div class="aqm-actions" id="aqm-actions"></div>
+
+        <%# Bouton profil %>
+        <div class="adm-dr-section">
+          <a class="adm-dr-profile-btn" id="adm-dr-profile-link" href="#">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Voir le profil
+          </a>
+        </div>
+
+        <%# Actions %>
+        <div class="adm-dr-section adm-dr-actions" id="adm-dr-actions">
+          <button type="button" class="adm-dr-action" id="adm-dr-reset-pwd">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+            Réinit. mot de passe
+          </button>
+          <button type="button" class="adm-dr-action" id="adm-dr-lootbox">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            Offrir des lootboxes
+          </button>
+          <button type="button" class="adm-dr-action adm-dr-action--warn" id="adm-dr-status-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="adm-dr-status-label">Restreindre</span>
+          </button>
+          <button type="button" class="adm-dr-action adm-dr-action--danger" id="adm-dr-delete" style="display:none">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Supprimer le compte
+          </button>
+        </div>
+
+        <%# Confirmation suppression %>
+        <div class="adm-dr-section adm-dr-confirm" id="adm-dr-confirm" hidden>
+          <p class="adm-dr-confirm-msg">Supprimer <strong id="adm-dr-confirm-name"></strong> ?<br><span>Cette action est irréversible.</span></p>
+          <div class="adm-dr-confirm-row">
+            <button type="button" class="adm-dr-action adm-dr-action--danger" id="adm-dr-delete-confirm">Confirmer</button>
+            <button type="button" class="adm-dr-action" id="adm-dr-delete-cancel">Annuler</button>
+          </div>
+        </div>
+
+        <%# Activité récente %>
+        <div class="adm-dr-section">
+          <div class="adm-dr-section-label">Activité récente</div>
+          <div class="adm-dr-activity" id="adm-dr-activity">
+            <div class="adm-dr-act-loading">Chargement…</div>
+          </div>
+        </div>
+
+        <%# Dernière connexion — pied du drawer %>
+        <div class="adm-dr-footer" id="adm-dr-footer">
+          <div class="adm-dr-footer-label">Dernière activité</div>
+          <div class="adm-dr-footer-time" id="adm-dr-footer-time">—</div>
+          <div class="adm-dr-footer-abs" id="adm-dr-footer-abs"></div>
+        </div>
+
       </div>
     </div>
 
@@ -1623,7 +1682,28 @@
         return lb - la;
       });
 
-      visible.forEach(function(c) { lib.appendChild(c); });
+      var now90 = Date.now() - 90 * 24 * 3600000;
+      var active   = visible.filter(function(c) {
+        var status = c.dataset.accountStatus || 'actif';
+        if (status === 'restreint' || status === 'bloque') return true; // séparés mais pas "inactifs"
+        var la = Number(c.dataset.lastActive) || 0;
+        return la > now90;
+      });
+      var inactive = visible.filter(function(c) { return !active.includes(c); });
+
+      /* Supprimer l'éventuel séparateur précédent */
+      var oldSep = lib.querySelector('.adm-uf-sep');
+      if (oldSep) oldSep.remove();
+
+      active.forEach(function(c) { lib.appendChild(c); });
+
+      if (inactive.length) {
+        var sep = document.createElement('div');
+        sep.className = 'adm-uf-sep';
+        sep.textContent = 'Inactifs (' + inactive.length + ')';
+        lib.appendChild(sep);
+        inactive.forEach(function(c) { lib.appendChild(c); });
+      }
 
       if (countEl) countEl.textContent = visible.length;
     }
@@ -1650,17 +1730,20 @@
     applyFilters();
   })();
 
-  // ── Fiche rapide utilisateur ─────────────────────────────────────────────
+  // ── Drawer fiche utilisateur ─────────────────────────────────────────────
   (function () {
-    var overlay  = document.getElementById('admin-quick-modal');
-    var closeBtn = document.getElementById('admin-quick-modal-close');
+    var drawer   = document.getElementById('adm-drawer');
+    var closeBtn = document.getElementById('adm-drawer-close');
     var lib      = document.getElementById('admin-user-lib');
 
-    var ROLE_BAND = {
-      admin:  { bg: 'hsl(268,42%,38%)', bd: 'hsl(268,38%,28%)' },
-      test:   { bg: 'hsl(25,62%,44%)',  bd: 'hsl(25,55%,32%)' },
-      normal: { bg: 'hsl(217,45%,26%)', bd: 'hsl(217,40%,18%)' },
+    var ROLE_COLORS = {
+      admin:  { hd: 'hsl(268,42%,30%)', bd: 'hsl(268,38%,22%)' },
+      test:   { hd: 'hsl(25,62%,36%)',  bd: 'hsl(25,55%,26%)' },
+      normal: { hd: 'hsl(0,52%,20%)',   bd: 'hsl(0,46%,14%)' },
     };
+    var ROLE_LABEL = { admin: 'Admin', test: 'Test', normal: 'Membre' };
+
+    var _currentCard = null;
 
     function relTime(ms) {
       if (!ms) return 'jamais';
@@ -1676,75 +1759,115 @@
       return Math.floor(d / 7) + 'sem';
     }
 
-    function cleanPath(p) {
-      if (!p) return '';
-      // Raccourcir les chemins longs
-      var parts = p.replace(/\?.*$/, '').split('/').filter(Boolean);
-      if (parts.length === 0) return 'Accueil';
-      if (parts.length === 1) return '/' + parts[0];
-      return '/' + parts[0] + '/…';
+    function absTime(ms) {
+      if (!ms) return '';
+      var dt = new Date(ms);
+      return dt.toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' })
+        + ' à ' + dt.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
     }
 
-    function openQuick(card) {
+    function openDrawer(card) {
+      _currentCard = card;
       var d = card.dataset;
       var uid = d.id;
       var role = d.role || 'normal';
-      var bandColors = ROLE_BAND[role] || ROLE_BAND.normal;
+      var colors = ROLE_COLORS[role] || ROLE_COLORS.normal;
+      var isSelf = d.self === '1';
+      var status = d.accountStatus || 'actif';
 
-      // Bandeau couleur rôle
-      var band = document.getElementById('aqm-band');
-      band.style.background = bandColors.bg;
-      band.style.borderBottom = '2px solid ' + bandColors.bd;
-      document.getElementById('aqm-name').textContent = d.displayName;
+      // Header couleur rôle
+      var hdr = document.getElementById('adm-dr-header');
+      hdr.style.background = colors.hd;
+      hdr.style.borderBottom = '2px solid ' + colors.bd;
 
-      // Réinitialiser le bouton identifiants
-      var credBtn = document.getElementById('aqm-cred-btn');
+      // Avatar
+      var avEl = document.getElementById('adm-dr-avatar');
+      if (d.thumb) {
+        avEl.innerHTML = '<img src="' + d.thumb + '" alt="" />';
+      } else {
+        avEl.innerHTML = '<span style="--avatar-color:' + (d.color || '#6b7280') + '">' + (d.initial || '?') + '</span>';
+      }
+
+      // Pseudo + rôle
+      document.getElementById('adm-dr-name').textContent = d.displayName;
+      document.getElementById('adm-dr-role').textContent = ROLE_LABEL[role] || role;
+
+      // Lien profil
+      document.getElementById('adm-dr-profile-link').href = '/ponhgup/utilisateur/' + uid;
+
+      // Bouton cred
+      var credBtn = document.getElementById('adm-dr-cred-btn');
       credBtn.dataset.uid = uid;
       credBtn.dataset.uname = d.displayName;
       credBtn.style.color = '';
-      credBtn.title = 'Copier les identifiants de connexion';
+      credBtn.title = 'Réinitialiser MDP et copier les identifiants';
 
-      // Activité — chargement
-      document.getElementById('aqm-activity-line').innerHTML = '<span class="aqm-act-label">…</span>';
+      // Reset pwd btn
+      var resetBtn = document.getElementById('adm-dr-reset-pwd');
+      resetBtn.dataset.uid = uid;
+      resetBtn.dataset.pwd = '';
+      resetBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> Réinit. mot de passe';
 
-      // Fetch activité
+      // Lootbox btn
+      document.getElementById('adm-dr-lootbox').dataset.grantId = uid;
+      document.getElementById('adm-dr-lootbox').dataset.grantName = d.displayName;
+
+      // Status btn
+      var statusBtn = document.getElementById('adm-dr-status-btn');
+      statusBtn.dataset.uid = uid;
+      statusBtn.dataset.status = status;
+      var isRestreint = status === 'restreint';
+      document.getElementById('adm-dr-status-label').textContent = isRestreint ? 'Lever la restriction' : 'Restreindre le compte';
+      statusBtn.className = 'adm-dr-action' + (isRestreint ? '' : ' adm-dr-action--warn');
+
+      // Delete btn
+      var delBtn = document.getElementById('adm-dr-delete');
+      delBtn.style.display = isSelf ? 'none' : '';
+      delBtn.dataset.uid = uid;
+      delBtn.dataset.name = d.displayName;
+
+      // Masquer confirm
+      document.getElementById('adm-dr-confirm').hidden = true;
+      document.getElementById('adm-dr-actions').hidden = false;
+
+      // Dernière activité footer
+      var lastMs = Number(d.lastActive) || 0;
+      document.getElementById('adm-dr-footer-time').textContent = lastMs ? relTime(lastMs) : 'Jamais';
+      document.getElementById('adm-dr-footer-abs').textContent = absTime(lastMs);
+
+      // Activité récente — fetch
+      var actEl = document.getElementById('adm-dr-activity');
+      actEl.innerHTML = '<div class="adm-dr-act-loading">Chargement…</div>';
       fetch('/ponhgup/profils/' + uid + '/recent-activity')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          var lastMs = data.lastActiveAt ? new Date(data.lastActiveAt).getTime() : 0;
-          var isOnline = lastMs && (Date.now() - lastMs) < 15 * 60 * 1000;
-          var lineHtml = '';
-          if (isOnline && data.lastPath) {
-            lineHtml = '<span class="aqm-online-dot"></span><span class="aqm-act-page">' + cleanPath(data.lastPath) + '</span>';
-          } else if (lastMs) {
-            lineHtml = '<span class="aqm-act-label">Derni\u00e8re activit\u00e9</span><span class="aqm-act-val">' + relTime(lastMs) + '</span>';
-          } else {
-            lineHtml = '<span class="aqm-act-label">Jamais connect\u00e9</span>';
+          var html = '';
+          var lastMs2 = data.lastActiveAt ? new Date(data.lastActiveAt).getTime() : 0;
+          var isOnline = lastMs2 && (Date.now() - lastMs2) < 15 * 60 * 1000;
+          if (isOnline) {
+            html += '<div class="adm-dr-act-row adm-dr-act-row--online"><span class="adm-dr-online-dot"></span>En ligne maintenant</div>';
           }
-          document.getElementById('aqm-activity-line').innerHTML = lineHtml;
+          if (data.recentPages && data.recentPages.length) {
+            data.recentPages.forEach(function(p) {
+              html += '<div class="adm-dr-act-row"><span class="adm-dr-act-path">' + p.path + '</span><span class="adm-dr-act-time">' + relTime(new Date(p.at).getTime()) + '</span></div>';
+            });
+          } else {
+            html += '<div class="adm-dr-act-empty">Aucune activité récente</div>';
+          }
+          actEl.innerHTML = html;
         })
         .catch(function() {
-          document.getElementById('aqm-activity-line').innerHTML = '<span class="aqm-act-label">Erreur</span>';
+          actEl.innerHTML = '<div class="adm-dr-act-empty">Erreur de chargement</div>';
         });
 
-      // Boutons
-      var isSelf = d.self === '1';
-      var hasShare = d.share === '1';
-      var name = d.displayName;
-
-      var actHtml =
-        '<a href="/ponhgup/utilisateur/' + uid + '" class="aqm-btn aqm-btn--profile' + (hasShare ? ' aqm-btn--green' : ' aqm-btn--red') + '">Voir le profil</a>' +
-        '<button type="button" class="aqm-btn aqm-btn--neutral" id="aqm-reset-pwd-btn" data-uid="' + uid + '">R&eacute;init. MDP</button>' +
-        '<button type="button" class="aqm-btn aqm-btn--neutral" data-grant-id="' + uid + '" data-grant-name="' + name + '">Offrir des lootboxes</button>';
-      if (!isSelf) {
-        actHtml += '<button type="button" class="aqm-btn aqm-btn--danger" id="aqm-del-btn" data-uid="' + uid + '" data-name="' + name + '">Supprimer</button>';
-      }
-      document.getElementById('aqm-actions').innerHTML = actHtml;
-
-      overlay.hidden = false;
+      drawer.hidden = false;
+      drawer.classList.add('adm-drawer--open');
     }
 
-    function closeQuick() { overlay.hidden = true; }
+    function closeDrawer() {
+      drawer.classList.remove('adm-drawer--open');
+      setTimeout(function() { drawer.hidden = true; }, 220);
+    }
 
     // Changement de statut via le dropdown sur la carte
     lib.addEventListener('change', function (e) {
@@ -1766,145 +1889,135 @@
       }).catch(function () { sel.value = sel.dataset.prev || 'actif'; });
     });
 
-    // Clic sur une carte (pas sur le dropdown de statut ni le menu)
+    // Clic carte → ouvrir drawer
     lib.addEventListener('click', function (e) {
-      var menu = e.target.closest('.admin-utile-menu');
-      var statusWrap = e.target.closest('.admin-utile-status-wrap');
+      if (e.target.closest('.admin-utile-status-wrap')) return;
       var card = e.target.closest('.admin-utile[data-role]');
       if (!card) return;
-      if (menu || statusWrap) return;
-      openQuick(card);
+      openDrawer(card);
     });
 
-    closeBtn.addEventListener('click', closeQuick);
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeQuick(); });
+    closeBtn.addEventListener('click', closeDrawer);
 
-    // Bouton identifiants : génère MDP + copie site/login/mdp
-    document.getElementById('aqm-cred-btn').addEventListener('click', function () {
-      var btn = this;
-      var uid = btn.dataset.uid;
-      var uname = btn.dataset.uname;
-      var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-      var pwd = '';
-      for (var i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
-      btn.style.opacity = '0.4';
-      fetch('/ponhgup/profils/' + uid + '/reset-pwd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pwd }),
-      }).then(function (r) {
-        btn.style.opacity = '';
-        if (!r.ok) { btn.style.color = '#f87171'; return; }
-        var text = 'Site : ' + window.location.origin + '\nIdentifiant : ' + uname + '\nMot de passe : ' + pwd;
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function(){});
+      } else {
         var ta = document.createElement('textarea');
         ta.value = text;
         ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
         document.body.appendChild(ta); ta.focus(); ta.select();
-        try { document.execCommand('copy'); } catch (_) {}
+        try { document.execCommand('copy'); } catch(_) {}
         document.body.removeChild(ta);
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).catch(function () {});
-        }
-        // Met à jour le bouton reset MDP si visible
-        var resetBtn = document.getElementById('aqm-reset-pwd-btn');
-        if (resetBtn) { resetBtn.dataset.pwd = pwd; resetBtn.textContent = pwd; }
-        btn.style.color = 'hsl(140, 65%, 55%)';
-        btn.title = 'Copié ! (' + pwd + ')';
-        setTimeout(function () { btn.style.color = ''; btn.title = 'Copier les identifiants de connexion'; }, 3000);
-      }).catch(function () {
+      }
+    }
+
+    function genPwd() {
+      var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      var pwd = '';
+      for (var i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+      return pwd;
+    }
+
+    // Bouton identifiants (icône copie dans le header)
+    document.getElementById('adm-dr-cred-btn').addEventListener('click', function () {
+      var btn = this;
+      var uid = btn.dataset.uid;
+      var uname = btn.dataset.uname;
+      var pwd = genPwd();
+      btn.style.opacity = '0.4';
+      fetch('/ponhgup/profils/' + uid + '/reset-pwd', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd }),
+      }).then(function(r) {
         btn.style.opacity = '';
-        btn.style.color = '#f87171';
+        if (!r.ok) { btn.style.color = '#f87171'; return; }
+        copyText('Site : ' + window.location.origin + '\nIdentifiant : ' + uname + '\nMot de passe : ' + pwd);
+        // Sync reset btn
+        var rb = document.getElementById('adm-dr-reset-pwd');
+        if (rb) { rb.dataset.pwd = pwd; rb.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/></svg> ' + pwd; }
+        btn.style.color = 'hsl(140,65%,55%)';
+        setTimeout(function() { btn.style.color = ''; }, 2500);
+      }).catch(function() { btn.style.opacity = ''; btn.style.color = '#f87171'; });
+    });
+
+    // Reset MDP
+    document.getElementById('adm-dr-reset-pwd').addEventListener('click', function() {
+      var btn = this;
+      if (btn.dataset.pwd) {
+        copyText(btn.dataset.pwd);
+        var prev = btn.innerHTML;
+        btn.textContent = 'Copié !';
+        setTimeout(function() { btn.innerHTML = prev; }, 1500);
+        return;
+      }
+      var pwd = genPwd();
+      btn.textContent = '…'; btn.disabled = true;
+      fetch('/ponhgup/profils/' + btn.dataset.uid + '/reset-pwd', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd }),
+      }).then(function(r) {
+        btn.disabled = false;
+        if (!r.ok) { btn.textContent = 'Erreur'; return; }
+        btn.dataset.pwd = pwd;
+        btn.textContent = pwd;
+      }).catch(function() { btn.disabled = false; btn.textContent = 'Erreur'; });
+    });
+
+    // Lootboxes
+    document.getElementById('adm-dr-lootbox').addEventListener('click', function() {
+      var uid = this.dataset.grantId;
+      var name = this.dataset.grantName;
+      closeDrawer();
+      var fakeBtn = document.querySelector('[data-grant-id="' + uid + '"]:not(#adm-dr-lootbox)');
+      if (fakeBtn) fakeBtn.click();
+    });
+
+    // Statut (restreindre / lever)
+    document.getElementById('adm-dr-status-btn').addEventListener('click', function() {
+      var uid = this.dataset.uid;
+      var current = this.dataset.status;
+      var newStatus = current === 'restreint' ? 'actif' : 'restreint';
+      fetch('/ponhgup/profils/' + uid + '/status', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      }).then(function(r) {
+        if (!r.ok) return;
+        // Mettre à jour la carte
+        var card = document.querySelector('.admin-utile[data-id="' + uid + '"]');
+        if (card) {
+          card.dataset.accountStatus = newStatus;
+          var sel = card.querySelector('.admin-utile-status-sel');
+          if (sel) { sel.value = newStatus; sel.dataset.prev = newStatus; }
+          var wrap = card.querySelector('.admin-utile-status-wrap');
+          if (wrap) wrap.className = 'admin-utile-status-wrap admin-utile-status-wrap--' + newStatus;
+        }
+        // Mettre à jour le bouton
+        var btn = document.getElementById('adm-dr-status-btn');
+        btn.dataset.status = newStatus;
+        var isRestreint = newStatus === 'restreint';
+        document.getElementById('adm-dr-status-label').textContent = isRestreint ? 'Lever la restriction' : 'Restreindre le compte';
+        btn.className = 'adm-dr-action' + (isRestreint ? '' : ' adm-dr-action--warn');
       });
     });
 
-    // Délégation actions popup
-    document.getElementById('aqm-actions').addEventListener('click', function (e) {
-      var btn = e.target.closest('button, a');
-      if (!btn) return;
+    // Supprimer — afficher confirmation
+    document.getElementById('adm-dr-delete').addEventListener('click', function() {
+      document.getElementById('adm-dr-confirm-name').textContent = this.dataset.name;
+      document.getElementById('adm-dr-actions').hidden = true;
+      document.getElementById('adm-dr-confirm').hidden = false;
+    });
 
-      // Reset MDP : 1er clic = génère + affiche, 2e clic = copie
-      if (btn.id === 'aqm-reset-pwd-btn') {
-        if (btn.dataset.pwd) {
-          var toCopy = btn.dataset.pwd;
-          var prev = btn.textContent;
-          function copyPwd() {
-            var ta = document.createElement('textarea');
-            ta.value = toCopy;
-            ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
-            document.body.appendChild(ta);
-            ta.focus(); ta.select();
-            try { document.execCommand('copy'); } catch(_) {}
-            document.body.removeChild(ta);
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(toCopy).catch(function(){});
-            }
-          }
-          copyPwd();
-          btn.textContent = 'Copié !';
-          setTimeout(function() { btn.textContent = prev; }, 1500);
-          return;
-        }
-        var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-        var pwd = '';
-        for (var i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
-        btn.textContent = '…';
-        btn.disabled = true;
-        fetch('/ponhgup/profils/' + btn.dataset.uid + '/reset-pwd', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: pwd }),
-        }).then(function(r) {
-          btn.disabled = false;
-          if (!r.ok) { btn.textContent = 'Erreur'; return; }
-          btn.dataset.pwd = pwd;
-          btn.textContent = pwd;
-        }).catch(function() {
-          btn.disabled = false;
-          btn.textContent = 'Erreur';
-        });
-        return;
-      }
+    document.getElementById('adm-dr-delete-cancel').addEventListener('click', function() {
+      document.getElementById('adm-dr-confirm').hidden = true;
+      document.getElementById('adm-dr-actions').hidden = false;
+    });
 
-      // Supprimer — confirmation inline
-      if (btn.id === 'aqm-del-btn') {
-        var uid = btn.dataset.uid;
-        var uname = btn.dataset.name;
-        var actEl = document.getElementById('aqm-actions');
-        actEl.innerHTML =
-          '<p class="aqm-confirm-msg">Supprimer <strong>' + uname + '</strong> ?</p>' +
-          '<div class="aqm-confirm-row">' +
-            '<button type="button" class="aqm-btn aqm-btn--danger" id="aqm-del-confirm" data-uid="' + uid + '">Confirmer</button>' +
-            '<button type="button" class="aqm-btn aqm-btn--neutral" id="aqm-del-cancel">Annuler</button>' +
-          '</div>';
-        return;
-      }
-
-      // Confirm delete
-      if (btn.id === 'aqm-del-confirm') {
-        var fakeBtn = document.querySelector('[data-del-id="' + btn.dataset.uid + '"]');
-        closeQuick();
-        if (fakeBtn) fakeBtn.click();
-        return;
-      }
-
-      // Cancel delete — rouvrir la popup sur la même carte
-      if (btn.id === 'aqm-del-cancel') {
-        var card = document.querySelector('.admin-utile[data-id="' + document.getElementById('aqm-name').textContent + '"]');
-        // Simple: recharger les boutons depuis la carte courante
-        // On retrouve la carte via le nom affiché
-        var cards = document.querySelectorAll('.admin-utile[data-role]');
-        var targetCard = null;
-        cards.forEach(function(c) { if (c.dataset.id && document.getElementById('aqm-name').textContent === c.dataset.displayName) targetCard = c; });
-        if (targetCard) openQuick(targetCard);
-        return;
-      }
-
-      // Offrir lootboxes
-      if (btn.dataset.grantId) {
-        var fakeBtn = document.querySelector('[data-grant-id="' + btn.dataset.grantId + '"]');
-        closeQuick();
-        if (fakeBtn) fakeBtn.click();
-      }
+    document.getElementById('adm-dr-delete-confirm').addEventListener('click', function() {
+      var uid = document.getElementById('adm-dr-delete').dataset.uid;
+      closeDrawer();
+      var fakeBtn = document.querySelector('[data-del-id="' + uid + '"]');
+      if (fakeBtn) fakeBtn.click();
     });
   })();
 
