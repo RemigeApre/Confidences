@@ -57,13 +57,11 @@
     ══════════════════════════════════════════ %>
     <div class="syn-hero">
 
-      <div class="syn-hero-avatar">
-        <% if (profileThumb) { %>
-          <img src="<%= profileThumb %>" alt="" class="lq-img-ready" />
-        <% } else { %>
-          <span style="--avatar-color:<%= u.profileColor || '#6b7280' %>"><%= (u.displayName || '?').charAt(0).toUpperCase() %></span>
-        <% } %>
-        <% if (isOnline) { %><span class="syn-online-dot"></span><% } %>
+      <%# Image en background CSS — pas de balise img, donc pas de spinner %>
+      <div class="syn-hero-cover<%= profileThumb ? '' : ' syn-hero-cover--initial' %>"
+           style="<%= profileThumb ? 'background-image:url(\'' + profileThumb + '\')' : '--avatar-color:' + (u.profileColor || '#6b7280') %>">
+        <% if (!profileThumb) { %><span><%= (u.displayName || '?').charAt(0).toUpperCase() %></span><% } %>
+        <% if (isOnline) { %><span class="syn-cover-online-dot"></span><% } %>
       </div>
 
       <div class="syn-hero-body">
@@ -89,12 +87,8 @@
           <% } else if (lastActiveMs) { %>
             <span class="syn-foot-item">Actif il y a <strong><%= relTime(lastActiveMs) %></strong></span>
           <% } %>
-          <% if (u.ultraMode === 'visible') { %>
-            <span class="syn-foot-item syn-foot-ultra">Ultra activé</span>
-          <% } %>
-          <% if (u.shareNotesWithAdmin) { %>
-            <span class="syn-foot-item syn-foot-share">Partage ses notes</span>
-          <% } %>
+          <% if (u.ultraMode === 'visible') { %><span class="syn-foot-item syn-foot-ultra">Ultra activé</span><% } %>
+          <% if (u.shareNotesWithAdmin) { %><span class="syn-foot-item syn-foot-share">Partage ses notes</span><% } %>
         </div>
       </div>
 
