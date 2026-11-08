@@ -49,46 +49,55 @@
 
   <div class="profil-subpage amis-main-content">
 
-    <%# ── Bloc invite : lien + code fusionnés ── %>
-    <section class="amis-invite-block">
-      <div class="amis-invite-top">
-        <div class="amis-invite-col">
-          <span class="amis-connect-label">Lien d&rsquo;invitation</span>
-          <div class="amis-link-row">
-            <input class="amis-link-input" id="amis-inv-link" type="text" readonly />
-            <button class="amis-link-copy-btn" id="amis-inv-copy" type="button">Copier</button>
-          </div>
-          <% if (inviteStats && inviteStats.total > 0) { %>
-            <p class="amis-inv-count-hint"><%= inviteStats.total %> personne<%= inviteStats.total > 1 ? 's ont' : ' a' %> rejoint via votre lien.</p>
-          <% } %>
+    <%# ── Blocs invite : 3 cartes distinctes ── %>
+    <div class="amis-cards-row">
+
+      <%# Carte 1 : Lien d'invitation %>
+      <div class="amis-card">
+        <span class="amis-card-label">Lien d&rsquo;invitation</span>
+        <div class="amis-link-row">
+          <input class="amis-link-input" id="amis-inv-link" type="text" readonly />
+          <button class="amis-link-copy-btn" id="amis-inv-copy" type="button">Copier</button>
         </div>
-        <div class="amis-invite-col amis-invite-col--sep">
-          <span class="amis-connect-label">Mon code</span>
-          <div class="amis-code-row">
-            <span class="amis-code-display" id="amis-my-code"><%= currentUser.displayName %>#<%= friendCode %></span>
-            <button class="amis-link-copy-btn" id="amis-code-copy-btn" type="button">Copier</button>
-          </div>
-          <form method="POST" action="/favoris/amis/demande" class="amis-search-form">
-            <input class="amis-search-input" type="text" name="code" placeholder="pseudo#1234"
-                   value="<%= searchQuery || '' %>" autocomplete="off" maxlength="80" />
-            <button class="amis-search-btn" type="submit">Envoyer une demande</button>
-          </form>
-          <% if (searchError) { %>
-            <p class="amis-feedback amis-feedback--error"><%= searchError %></p>
-          <% } %>
-          <% if (searchResult) { %>
-            <p class="amis-feedback amis-feedback--ok">
-              <% if (searchResult.autoAccepted) { %>
-                Vous &ecirc;tes maintenant amis avec <strong><%= searchResult.target.displayName %></strong>.
-              <% } else { %>
-                Demande envoy&eacute;e &agrave; <strong><%= searchResult.target.displayName %></strong>.
-              <% } %>
-            </p>
-          <% } %>
-        </div>
+        <% if (inviteStats && inviteStats.total > 0) { %>
+          <p class="amis-card-sub"><%= inviteStats.total %> personne<%= inviteStats.total > 1 ? 's ont' : ' a' %> rejoint via votre lien.</p>
+        <% } %>
+        <p class="amis-card-notice">+18&nbsp;ans uniquement. En partageant ce lien vous engagez votre responsabilit&eacute; quant &agrave; la majorit&eacute; de la personne invit&eacute;e.</p>
       </div>
-      <p class="amis-invite-notice">Partagez uniquement &agrave; des personnes majeures (+18&nbsp;ans). En partageant ce lien, vous engagez votre responsabilit&eacute; quant &agrave; l&rsquo;identit&eacute; et &agrave; la majorit&eacute; de la personne invit&eacute;e.</p>
-    </section>
+
+      <%# Carte 2 : Mon code %>
+      <div class="amis-card">
+        <span class="amis-card-label">Mon code</span>
+        <div class="amis-code-row">
+          <span class="amis-code-display" id="amis-my-code"><%= currentUser.displayName %>#<%= friendCode %></span>
+          <button class="amis-link-copy-btn" id="amis-code-copy-btn" type="button">Copier</button>
+        </div>
+        <p class="amis-card-sub">Communiquez ce code pour que quelqu&rsquo;un vous ajoute en ami.</p>
+      </div>
+
+      <%# Carte 3 : Ajouter par code %>
+      <div class="amis-card">
+        <span class="amis-card-label">Ajouter un ami</span>
+        <form method="POST" action="/favoris/amis/demande" class="amis-add-form">
+          <input class="amis-add-input" type="text" name="code" placeholder="pseudo#1234"
+                 value="<%= searchQuery || '' %>" autocomplete="off" maxlength="80" autofocus />
+          <button class="amis-add-btn" type="submit">Envoyer</button>
+        </form>
+        <% if (searchError) { %>
+          <p class="amis-feedback amis-feedback--error"><%= searchError %></p>
+        <% } %>
+        <% if (searchResult) { %>
+          <p class="amis-feedback amis-feedback--ok">
+            <% if (searchResult.autoAccepted) { %>
+              Vous &ecirc;tes amis avec <strong><%= searchResult.target.displayName %></strong>.
+            <% } else { %>
+              Demande envoy&eacute;e &agrave; <strong><%= searchResult.target.displayName %></strong>.
+            <% } %>
+          </p>
+        <% } %>
+      </div>
+
+    </div>
 
     <%# ── Inscriptions à valider (FR) ── %>
     <% if (pendingInvites && pendingInvites.length) { %>

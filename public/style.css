@@ -960,11 +960,11 @@ body.pub-drawer-open{overflow:hidden}
   0%,100%{transform:scale(1)}
   50%{transform:scale(1.08)}
 }
-.invite-cta-fab{position:fixed;bottom:1.4rem;right:1.4rem;z-index:400;display:flex;align-items:center;gap:.45rem;padding:.55rem 1rem .55rem .7rem;border-radius:999px;background:var(--accent);color:#111;font-size:.82rem;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);animation:invite-fab-pulse 2.8s ease-in-out infinite}
+.invite-cta-fab{position:fixed;bottom:5.5rem;right:1.4rem;z-index:400;display:flex;align-items:center;gap:.45rem;padding:.55rem 1rem .55rem .7rem;border-radius:999px;background:var(--accent);color:#111;font-size:.82rem;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);animation:invite-fab-pulse 2.8s ease-in-out infinite}
 .invite-cta-fab svg{width:18px;height:18px;flex-shrink:0}
 .invite-cta-fab:hover{opacity:.88}
 .invite-cta-backdrop{position:fixed;inset:0;z-index:401;background:rgba(0,0,0,.55)}
-.invite-cta-popup{position:fixed;bottom:5rem;right:1.4rem;z-index:402;width:min(340px,calc(100vw - 2.8rem));background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.4rem 1.4rem 1rem;display:flex;flex-direction:column;gap:.75rem}
+.invite-cta-popup{position:fixed;bottom:9rem;right:1.4rem;z-index:402;width:min(340px,calc(100vw - 2.8rem));background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.4rem 1.4rem 1rem;display:flex;flex-direction:column;gap:.75rem}
 .invite-cta-popup-close{position:absolute;top:.6rem;right:.7rem;background:none;border:none;cursor:pointer;color:var(--muted);padding:.25rem;line-height:0}
 .invite-cta-popup-close svg{width:18px;height:18px}
 .invite-cta-popup-title{margin:0;font-size:.95rem;font-weight:700;color:var(--fg)}
@@ -976,8 +976,8 @@ body.pub-drawer-open{overflow:hidden}
 .invite-cta-disable-btn{background:none;border:none;color:var(--muted);font-size:.72rem;cursor:pointer;text-align:left;padding:0;text-decoration:underline}
 .invite-cta-disable-btn:hover{color:var(--fg)}
 @media(max-width:640px){
-  .invite-cta-fab{bottom:1rem;right:1rem}
-  .invite-cta-popup{bottom:4.2rem;right:1rem;left:1rem;width:auto}
+  .invite-cta-fab{bottom:5rem;right:1rem}
+  .invite-cta-popup{bottom:8.5rem;right:1rem;left:1rem;width:auto}
 }
 
 /* ── Page d'offre d'amitié (rejoindre + loggedInOffer) ───────────── */
@@ -1103,13 +1103,19 @@ a.amis-rp-item-name:hover{text-decoration:underline}
 /* Contenu principal décalé pour laisser place au volet */
 .amis-main-content{margin-right:256px}
 
-/* Bloc invite fusionné */
-.amis-invite-block{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.3rem 1rem;margin-bottom:1.75rem}
-.amis-invite-top{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:.85rem}
-.amis-invite-col{display:flex;flex-direction:column;gap:.5rem}
-.amis-invite-col--sep{border-left:1px solid var(--border);padding-left:1.2rem}
-.amis-inv-count-hint{font-size:.75rem;color:var(--muted);margin:0}
-.amis-invite-notice{font-size:.74rem;color:hsl(0,55%,65%);margin:0;padding-top:.7rem;border-top:1px solid var(--border);line-height:1.6}
+/* 3 cartes invite */
+.amis-cards-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;margin-bottom:1.75rem;align-items:start}
+.amis-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.55rem}
+.amis-card-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.amis-card-sub{font-size:.74rem;color:var(--muted);margin:0;line-height:1.5}
+.amis-card-notice{font-size:.72rem;color:hsl(0,50%,62%);margin:0;line-height:1.55;padding-top:.45rem;border-top:1px solid var(--border)}
+.amis-add-form{display:flex;flex-direction:column;gap:.45rem}
+.amis-add-input{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:7px;padding:.5rem .7rem;font-size:.85rem;color:var(--fg);outline:none;width:100%;box-sizing:border-box}
+.amis-add-input:focus{border-color:var(--accent)}
+.amis-add-btn{background:var(--accent);color:#111;border:none;border-radius:7px;padding:.5rem;font-size:.85rem;font-weight:700;cursor:pointer;width:100%}
+.amis-add-btn:hover{opacity:.85}
+@media(max-width:900px){.amis-cards-row{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.amis-cards-row{grid-template-columns:1fr}}
 
 /* Masquer le volet droit sur petits écrans */
 @media(max-width:1100px){
