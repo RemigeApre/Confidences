@@ -941,15 +941,23 @@ function buildAdminRouter(config) {
     detail.recentGalViews.forEach((v) => feed.push({ type: "gallery",  label: v.title,    at: v.createdAt,  href: "/galerie/" + v.galleryId + "/edit" }));
     detail.recentBdViews.forEach((v)  => feed.push({ type: "bd",       label: v.title,    at: v.createdAt,  href: "/bd/"      + v.bookId }));
     // Pings de navigation : personnages, parodies, quiz, nouvelles, etc.
+    // On exclut les chemins déjà couverts par les tables de vues dédiées,
+    // les doublons fallback (Wiki /, Galerie /, Bd /) et les chemins admin.
     listPagePingsForUser(id, 200).forEach((p) => {
-      const isAlreadyCovered = (
-        p.label.startsWith('Codex :') ||
-        p.label.startsWith('BD :') ||
-        p.label.startsWith('Histoire :')
+      const lbl = p.label || '';
+      const skip = (
+        lbl.startsWith('Codex :')    ||
+        lbl.startsWith('BD :')       ||
+        lbl.startsWith('Histoire :') ||
+        lbl.startsWith('Image :')    ||
+        lbl.startsWith('Wiki /')     ||
+        lbl.startsWith('Galerie')    ||
+        lbl.startsWith('Ponhgup')    ||
+        lbl === 'Admin'
       );
-      if (isAlreadyCovered) return;
-      const type = p.label.startsWith('Quiz') ? 'quiz' : 'nav';
-      feed.push({ type, label: p.label, at: p.at, href: null });
+      if (skip) return;
+      const type = lbl.startsWith('Quiz') ? 'quiz' : 'nav';
+      feed.push({ type, label: lbl, at: p.at, href: null });
     });
     feed.sort((a, b) => new Date(b.at) - new Date(a.at));
     res.render("admin-user-activite", { config, detail, feed, roleHue: roleHue(detail.user) });

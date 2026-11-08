@@ -9,11 +9,11 @@
 
     <%
       var TYPE_META = {
-        wiki:    { label: 'Codex',      cls: 'aud-type--wiki'    },
-        gallery: { label: 'Image',      cls: 'aud-type--gallery' },
-        bd:      { label: 'BD',         cls: 'aud-type--bd'      },
-        quiz:    { label: 'Quiz',       cls: 'aud-type--quiz'    },
-        nav:     { label: 'Navigation', cls: 'aud-type--nav'     }
+        wiki:    { label: 'Codex', cls: 'aud-type--wiki'    },
+        gallery: { label: 'Image', cls: 'aud-type--gallery' },
+        bd:      { label: 'BD',    cls: 'aud-type--bd'      },
+        quiz:    { label: 'Quiz',  cls: 'aud-type--quiz'    },
+        nav:     { label: 'Nav',   cls: 'aud-type--nav'     }
       };
     %>
 
@@ -23,7 +23,6 @@
           <% feed.forEach(function(f) { %>
             <% var meta = TYPE_META[f.type] || TYPE_META.nav; %>
             <li class="aud-activity-row">
-              <span class="aud-activity-dot <%= meta.cls %>"></span>
               <span class="aud-activity-type <%= meta.cls %>"><%= meta.label %></span>
               <% if (f.href) { %>
                 <a href="<%= f.href %>" class="aud-activity-title"><%= f.label || '—' %></a>
