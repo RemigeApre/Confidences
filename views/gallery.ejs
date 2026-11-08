@@ -191,7 +191,17 @@
             <% if (item.interested) { %><span class="wiki-card-react-badge" title="Ça m'intéresse">&#10024;</span><% } %>
             <% if (item.partnerReaction) { %><span class="wiki-card-partner-badge" title="Votre partenaire a noté ce contenu">&#127800;</span><% } %>
           </span>
-          <div class="gallery-card-btns"></div>
+          <div class="gallery-card-btns">
+            <% if (currentUser && locals.inviteToken && item.id) { %>
+            <button type="button" class="gallery-card-btn share-trigger-btn"
+              data-share-type="image"
+              data-share-id="<%= item.id %>"
+              data-share-title="<%= (t(item.title, 'gallery', item.id, 'title') || '').replace(/"/g, '') %>"
+              title="Envoyer" aria-label="Envoyer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+            <% } %>
+          </div>
         </div>
 
       </div>
