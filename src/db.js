@@ -6631,6 +6631,23 @@ function insertMessage(convId, senderId, payload, contentRef) {
   return r.lastInsertRowid;
 }
 
+function getMessagesAfter(convId, userId, afterId) {
+  const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
+  if (!conv) return [];
+  const isP1 = conv.p1_id === userId;
+  const delCol = isP1 ? 'del_p1' : 'del_p2';
+  return db.prepare(`
+    SELECT m.*, u.display_name AS sender_name, u.profile_color AS sender_color
+    FROM messages m
+    JOIN users u ON u.id = m.sender_id
+    WHERE m.conv_id = ? AND m.id > ?
+      AND m.${delCol} = 0
+      AND m.created_at >= datetime('now', '-3 months')
+    ORDER BY m.id ASC
+    LIMIT 50
+  `).all(convId, afterId);
+}
+
 function getMessages(convId, userId, limit, beforeId) {
   const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
   if (!conv) return [];
@@ -7161,6 +7178,7 @@ module.exports = {
   setUserKeys,
   getPublicKey,
   getUserWk,
+  getMessagesAfter,
   getOrCreateConversation,
   getConversation,
   getConversations,

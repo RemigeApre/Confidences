@@ -95,6 +95,7 @@
   var privKey    = null;  // CryptoKey RSA-OAEP (decrypt) chargée en mémoire
   var partnerPubKey = null; // CryptoKey RSA-OAEP (encrypt) du destinataire
   var myPubKey   = null;  // CryptoKey RSA-OAEP (encrypt) de soi-même
+  var keysReady  = false; // true quand initKeys() a terminé
 
   // ── Import d'une clé publique JWK ───────────────────────────────────────
   function importPublicKey(jwkStr) {
@@ -220,6 +221,9 @@
       try { partnerPubKey = await importPublicKey(pkStr); } catch (_) {}
     }
 
+    keysReady = true;
+    var sendBtn = document.querySelector('.msg-compose-send');
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ''; }
     decryptAll();
   }
 
@@ -276,7 +280,7 @@
     compose.addEventListener('submit', async function (e) {
       e.preventDefault();
       var text = input.value.trim();
-      if (!text || !privKey) return;
+      if (!text || !keysReady || !privKey) return;
       if (!partnerPubKey) {
         alert('<%= partner.displayName %> n\'a pas encore de clé de chiffrement.');
         return;
@@ -350,36 +354,67 @@
   });
 
   // ── SSE : réception de nouveaux messages ─────────────────────────────────
-  var evtSource = new EventSource('/messages/events');
-  evtSource.addEventListener('message', function (e) {
-    try {
-      var d = JSON.parse(e.data);
-      if (d.convId === convId) {
-        // Recharger les nouveaux messages
-        loadNewMessages();
-      }
-    } catch (_) {}
-  });
-
   var lastMsgId = 0;
   (function () {
     var last = document.querySelector('#msg-thread-messages .msg-bubble:last-child');
     if (last) lastMsgId = parseInt(last.dataset.id, 10) || 0;
   })();
 
+  var evtSource = new EventSource('/messages/events');
+  evtSource.addEventListener('message', function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.convId === convId) loadNewMessages();
+    } catch (_) {}
+  });
+
   async function loadNewMessages() {
     try {
-      var r = await fetch('/messages/load-more/' + convId, {
+      var r = await fetch('/messages/load-new/' + convId, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ beforeId: null }),
+        body: JSON.stringify({ afterId: lastMsgId }),
       });
-      // Simplifié : recharge la page pour afficher les nouveaux messages
-      window.location.reload();
+      var data = await r.json();
+      if (!data.messages || !data.messages.length) return;
+      var container = document.getElementById('msg-thread-messages');
+      for (var i = 0; i < data.messages.length; i++) {
+        var m = data.messages[i];
+        if (m.id <= lastMsgId) continue;
+        lastMsgId = m.id;
+        var el = document.createElement('article');
+        el.className = 'msg-bubble msg-bubble--' + (m.sender_id === myId ? 'me' : 'them');
+        el.dataset.id = String(m.id);
+        el.dataset.sender = String(m.sender_id);
+        el.dataset.payload = encodeURIComponent(m.payload);
+        el.dataset.ts = m.created_at;
+        el.innerHTML =
+          '<div class="msg-bubble-inner">' +
+            '<div class="msg-bubble-text" data-decrypting="1">&#183;&#183;&#183;</div>' +
+            '<div class="msg-bubble-meta">' +
+              '<span class="msg-bubble-time">' +
+                new Date(m.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) +
+              '</span>' +
+              '<button class="msg-bubble-delete" data-id="' + m.id + '" type="button" aria-label="Supprimer" title="Supprimer">' +
+                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+                  '<line x1="12" y1="4" x2="4" y2="12"/><line x1="4" y1="4" x2="12" y2="12"/>' +
+                '</svg>' +
+              '</button>' +
+            '</div>' +
+          '</div>';
+        container.appendChild(el);
+        await decryptBubble(el);
+      }
+      scrollToBottom();
     } catch (_) {}
   }
 
   scrollToBottom();
+  // Désactiver l'envoi pendant l'initialisation des clés
+  (function () {
+    var sendBtn = document.querySelector('.msg-compose-send');
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '0.4'; }
+  })();
   initKeys();
 })();
 </script>

@@ -5,7 +5,7 @@ const {
   requireUser, requireUserJson,
 } = require("../auth");
 const {
-  getUserKeys, setUserKeys, getPublicKey, getUserWk,
+  getUserKeys, setUserKeys, getPublicKey, getUserWk, getMessagesAfter,
   getOrCreateConversation, getConversation, getConversations,
   insertMessage, getMessages, markRead, deleteMessage, getUnreadCount,
   addSharedItem, getSharedItems, removeSharedItem,
@@ -280,6 +280,18 @@ function buildRouter(config) {
     const itemId = parseInt(req.params.itemId, 10);
     const ok = removeSharedItem(itemId, req.user.id);
     res.json({ ok });
+  });
+
+  // POST /messages/load-new/:convId — nouveaux messages après un ID (SSE fallback)
+  router.post("/load-new/:convId", requireUserJson, (req, res) => {
+    const uid = req.user.id;
+    const convId = parseInt(req.params.convId, 10);
+    const afterId = parseInt(req.body.afterId, 10) || 0;
+    const conv = getConversation(convId);
+    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+      return res.status(403).json({ error: 'accès refusé' });
+    const msgs = getMessagesAfter(convId, uid, afterId);
+    res.json({ messages: msgs });
   });
 
   // POST /messages/load-more/:convId — pagination des messages (JSON)
