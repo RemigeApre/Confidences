@@ -168,8 +168,7 @@
       }
     });
 
-    compose.addEventListener('submit', async function (e) {
-      e.preventDefault();
+    async function doSend() {
       var text = input.value.trim();
       if (!text) return;
       input.value = '';
@@ -183,12 +182,17 @@
         var data = await r.json();
         if (data.ok) appendBubble(data.msgId, text, new Date().toISOString(), true);
       } catch (_) {}
+    }
+
+    compose.addEventListener('submit', function (e) {
+      e.preventDefault();
+      doSend();
     });
 
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        compose.dispatchEvent(new Event('submit'));
+        doSend();
       }
     });
   }
