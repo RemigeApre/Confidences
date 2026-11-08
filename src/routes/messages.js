@@ -99,32 +99,34 @@ function buildRouter(config) {
 
   // ── Conversations ────────────────────────────────────────────────────────
 
-  // GET /messages — liste des conversations
-  router.get("/", requireUser, (req, res) => {
-    const uid = req.user.id;
-    const convs = getConversations(uid);
-    const friends = getFriends(uid);
-
-    // Enrichir chaque conversation avec les infos du partenaire
-    const list = convs.map((c) => {
-      const partnerId = convPartner(c, uid);
+  // Helper : enrichit la liste des conversations pour un userId
+  function buildConvList(uid) {
+    return getConversations(uid).map((c) => {
+      const pId = convPartner(c, uid);
       return {
         ...c,
-        partnerId,
+        partnerId: pId,
         partnerName: c.p1_id === uid ? c.p2_name : c.p1_name,
         partnerColor: c.p1_id === uid ? c.p2_color : c.p1_color,
       };
     });
+  }
 
+  // GET /messages — liste des conversations (panneau droit seul)
+  router.get("/", requireUser, (req, res) => {
+    const uid = req.user.id;
     res.render("messages", {
       config,
-      convs: list,
-      friends,
+      convs: buildConvList(uid),
+      friends: getFriends(uid),
+      partner: null,
+      conv: null,
+      messages: [],
       navTitle: "Messages",
     });
   });
 
-  // GET /messages/:userId — conversation avec un utilisateur (ou création)
+  // GET /messages/:userId — conversation avec un utilisateur + liste des convs
   router.get("/:userId", requireUser, (req, res) => {
     const uid = req.user.id;
     const partnerId = parseInt(req.params.userId, 10);
@@ -136,19 +138,13 @@ function buildRouter(config) {
     const conv = getOrCreateConversation(uid, partnerId);
     markRead(conv.id, uid);
 
-    const messages = getMessages(conv.id, uid, 40, null).reverse();
-    const sharedItems = getSharedItems(conv.id, uid);
-    const myKeys = getUserKeys(uid);
-    const partnerPubKey = getPublicKey(partnerId);
-
-    res.render("message-thread", {
+    res.render("messages", {
       config,
+      convs: buildConvList(uid),
+      friends: getFriends(uid),
       conv,
       partner,
-      messages,
-      sharedItems,
-      myKeys: myKeys ? { hasKeys: true, encryptedPrivKey: myKeys.encrypted_priv_key, keyIv: myKeys.key_iv } : { hasKeys: false },
-      partnerPubKey: partnerPubKey || null,
+      messages: getMessages(conv.id, uid, 40, null).reverse(),
       navTitle: partner.displayName,
     });
   });
