@@ -898,6 +898,31 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
     if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
+    const lootboxCount = getLootboxCount(detail.user.id);
+    const inviteCount = getUserInviteStats(detail.user.id).total;
+    const codexNotes = countUserNotes(detail.user.id, 'wiki');
+    const imagesNotees = countUserNotes(detail.user.id, 'gallery');
+    const bdNotees = countUserNotes(detail.user.id, 'bd');
+    const histoiresNotees = countUserNotes(detail.user.id, 'nouvelle');
+    const recentPings = listPagePingsForUser(detail.user.id, 8);
+    const connectionLogs = listConnectionLogsForUser(detail.user.id, 4);
+    let profileThumb = null;
+    if (detail.user.profileImageId) {
+      const img = getGalleryImage(detail.user.profileImageId);
+      if (img) {
+        try {
+          const paths = typeof img.imagePaths === 'string' ? JSON.parse(img.imagePaths) : (img.imagePaths || []);
+          profileThumb = paths[0] || null;
+        } catch (_) {}
+      }
+    }
+    res.render("admin-user-synthese", { config, detail, lootboxCount, inviteCount, codexNotes, imagesNotees, bdNotees, histoiresNotees, recentPings, connectionLogs, profileThumb, roleHue: roleHue(detail.user) });
+  });
+
+  router.get("/utilisateur/:id/quizz", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const attempt = getAttempt(tokenForUser(detail.user));
     const liveScores = attempt ? computeScores(config, attempt.data) : null;
     const matrixSections = config.sections.filter((s) => s.type === "matrix");

@@ -1,0 +1,152 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName, extraCss: ['admin.css'] }) %>
+
+<%- include('partials/admin-nav') %>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <%
+      var u = detail.user;
+      var now = Date.now();
+      var lastActiveMs = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : (u.lastLoginAt ? new Date(u.lastLoginAt).getTime() : 0);
+      var isOnline = lastActiveMs && (now - lastActiveMs) < 15 * 60 * 1000;
+
+      function relTime(ms) {
+        if (!ms) return 'jamais';
+        var diff = now - ms;
+        var s = Math.floor(diff / 1000);
+        if (s < 60) return s + 's';
+        var m = Math.floor(diff / 60000);
+        if (m < 60) return m + ' min';
+        var h = Math.floor(diff / 3600000);
+        if (h < 24) return h + 'h';
+        var d = Math.floor(diff / 86400000);
+        if (d < 7) return d + 'j';
+        return Math.floor(d / 7) + ' sem';
+      }
+
+      var SEXE_LABEL = { femme: 'Femme', homme: 'Homme', autre: 'Autre' };
+      var ORI_LABEL = { hetero: 'Hétéro', gay: 'Gay / Lesbienne', bi: 'Bisexuel·le' };
+
+      var PING_TYPE = {
+        'Codex': 'aud-type--wiki',
+        'Quiz':  'aud-type--quiz',
+        'BD':    'aud-type--bd',
+        'Accueil Codex': 'aud-type--wiki',
+      };
+      function pingCls(label) {
+        if (!label) return 'aud-type--nav';
+        for (var k in PING_TYPE) {
+          if (label.startsWith(k)) return PING_TYPE[k];
+        }
+        if (label.startsWith('Personnage') || label.startsWith('Carte') || label.startsWith('Parodie')) return 'aud-type--gallery';
+        return 'aud-type--nav';
+      }
+    %>
+
+    <%# ── Identité ── %>
+    <div class="syn-identity">
+      <div class="syn-avatar">
+        <% if (profileThumb) { %>
+          <img src="<%= profileThumb %>" alt="" />
+        <% } else { %>
+          <span style="--avatar-color:<%= u.profileColor || '#6b7280' %>"><%= (u.displayName || '?').charAt(0).toUpperCase() %></span>
+        <% } %>
+        <% if (isOnline) { %><span class="syn-online-dot"></span><% } %>
+      </div>
+      <div class="syn-id-body">
+        <div class="syn-name">
+          <%= u.displayName %>
+          <% if (u.isAdmin) { %><span class="admin-badge-admin">Admin</span><% } %>
+          <% if (u.isTest) { %><span class="admin-badge-test">Test</span><% } %>
+          <% if (u.accountStatus === 'restreint') { %><span class="admin-badge-warn">Restreint</span><% } %>
+          <% if (u.accountStatus === 'bloque') { %><span class="admin-badge-danger">Bloqu&eacute;</span><% } %>
+        </div>
+        <div class="syn-sub">
+          <% if (u.email) { %><span><%= u.email %></span><% } %>
+          <% if (u.sexe) { %><span><%= SEXE_LABEL[u.sexe] || u.sexe %></span><% } %>
+          <% if (u.birthYear) { %><span>N&eacute; en <%= u.birthYear %></span><% } %>
+          <% if (u.orientation) { %><span><%= ORI_LABEL[u.orientation] || u.orientation %></span><% } %>
+        </div>
+        <div class="syn-dates">
+          <span>Cr&eacute;&eacute; le <%= new Date(u.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) %></span>
+          <% if (isOnline) { %>
+            <span class="syn-online-label">En ligne maintenant</span>
+          <% } else if (lastActiveMs) { %>
+            <span>Actif il y a <%= relTime(lastActiveMs) %></span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Stats ── %>
+    <div class="syn-stats">
+      <div class="syn-stat">
+        <span class="syn-stat-val"><%= lootboxCount %></span>
+        <span class="syn-stat-key">Coffre</span>
+      </div>
+      <div class="syn-stat">
+        <span class="syn-stat-val"><%= codexNotes %></span>
+        <span class="syn-stat-key">Codex</span>
+      </div>
+      <div class="syn-stat">
+        <span class="syn-stat-val"><%= imagesNotees %></span>
+        <span class="syn-stat-key">Images</span>
+      </div>
+      <div class="syn-stat">
+        <span class="syn-stat-val"><%= bdNotees %></span>
+        <span class="syn-stat-key">BD</span>
+      </div>
+      <div class="syn-stat">
+        <span class="syn-stat-val"><%= histoiresNotees %></span>
+        <span class="syn-stat-key">Histoires</span>
+      </div>
+      <div class="syn-stat">
+        <span class="syn-stat-val"><%= inviteCount %></span>
+        <span class="syn-stat-key">Invit&eacute;s</span>
+      </div>
+    </div>
+
+    <%# ── Activité récente ── %>
+    <% if (recentPings && recentPings.length) { %>
+    <div class="syn-block">
+      <div class="syn-block-title">Activit&eacute; r&eacute;cente</div>
+      <ul class="aud-activity-list">
+        <% recentPings.forEach(function(p) {
+          var label = p.label || '';
+          var shortLabel = label.includes(' : ') ? label.split(' : ').slice(-1)[0] : label;
+          var typeLabel = label.includes(' : ') ? label.split(' : ')[0] :
+                          (label.startsWith('Quiz') ? 'Quiz' : 'Nav');
+        %>
+        <li class="aud-activity-row">
+          <span class="aud-activity-type <%= pingCls(label) %>"><%= typeLabel %></span>
+          <span class="aud-activity-title"><%= shortLabel %></span>
+          <span class="aud-activity-date"><%= new Date(p.at).toLocaleString('fr-FR') %></span>
+        </li>
+        <% }) %>
+      </ul>
+      <a href="/ponhgup/utilisateur/<%= u.id %>/activite" class="syn-more-link">Voir tout &rsaquo;</a>
+    </div>
+    <% } %>
+
+    <%# ── Dernières connexions ── %>
+    <% if (connectionLogs && connectionLogs.length) { %>
+    <div class="syn-block">
+      <div class="syn-block-title">Derni&egrave;res connexions</div>
+      <ul class="syn-conn-list">
+        <% connectionLogs.forEach(function(c) { %>
+        <li class="syn-conn-row">
+          <span class="syn-conn-date"><%= new Date(c.createdAt).toLocaleString('fr-FR') %></span>
+          <% if (c.ip) { %><span class="syn-conn-ip"><%= c.ip %></span><% } %>
+        </li>
+        <% }) %>
+      </ul>
+      <a href="/ponhgup/utilisateur/<%= u.id %>/connexions" class="syn-more-link">Voir tout &rsaquo;</a>
+    </div>
+    <% } %>
+
+  </main>
+</div>
+<%- include('partials/foot') %>
