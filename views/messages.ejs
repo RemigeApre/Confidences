@@ -140,7 +140,6 @@
   };
 
   async function renderContentRef(el, ref) {
-    var typeLabel = { image: 'Image', bd: 'BD', wiki: 'Codex' }[ref.type] || ref.type;
     var href = ref.type === 'image' ? '/galerie/' + ref.id
              : ref.type === 'bd'    ? '/bd/' + ref.id
              : '/wiki/' + ref.id;
@@ -158,16 +157,22 @@
         if (d.title) title = d.title;
       } catch (_) {}
     }
-    var visual = thumb
-      ? '<img class="msg-ref-thumb" src="' + escHtml(thumb) + '" alt="" loading="lazy">'
-      : '<span class="msg-ref-thumb msg-ref-thumb--icon">' + (_refIcons[ref.type] || '') + '</span>';
-    el.innerHTML = '<a class="msg-ref-card" href="' + href + '">' +
-      visual +
-      '<span class="msg-ref-info">' +
-        '<span class="msg-ref-type">' + escHtml(typeLabel) + '</span>' +
+
+    if (ref.type === 'image') {
+      // Image seule, cliquable, sans aucun texte
+      el.innerHTML = thumb
+        ? '<a class="msg-ref-img" href="' + href + '" target="_blank" rel="noopener"><img src="' + escHtml(thumb) + '" alt="" loading="lazy"></a>'
+        : '<a class="msg-ref-card msg-ref-card--noimg" href="' + href + '">' + _refIcons.image + '</a>';
+    } else {
+      // Codex / BD : vignette + titre
+      var icon = thumb
+        ? '<img class="msg-ref-thumb" src="' + escHtml(thumb) + '" alt="" loading="lazy">'
+        : '<span class="msg-ref-thumb msg-ref-thumb--icon">' + (_refIcons[ref.type] || '') + '</span>';
+      el.innerHTML = '<a class="msg-ref-card" href="' + href + '">' +
+        icon +
         '<span class="msg-ref-title">' + escHtml(title) + '</span>' +
-      '</span>' +
-      '</a>';
+        '</a>';
+    }
   }
 
   document.querySelectorAll('.msg-bubble-ref[data-ref]').forEach(function (el) {

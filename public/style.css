@@ -1185,15 +1185,18 @@ a.amis-rp-item-name:hover{text-decoration:underline}
 .msg-bubble-delete svg{width:12px;height:12px}
 .msg-bubble-delete:hover{color:hsl(0,60%,55%)}
 
-/* Carte référence de contenu */
-.msg-ref-card{display:flex;flex-direction:row;align-items:center;gap:.55rem;padding:.35rem .5rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;text-decoration:none;color:var(--fg);margin-top:.35rem;overflow:hidden;max-width:230px;transition:border-color .15s,background .15s}
+/* Référence image : juste l'image cliquable */
+.msg-ref-img{display:block;margin-top:.4rem;border-radius:10px;overflow:hidden;max-width:200px;line-height:0;opacity:.95;transition:opacity .15s}
+.msg-ref-img:hover{opacity:1}
+.msg-ref-img img{display:block;width:100%;height:auto;max-height:180px;object-fit:cover}
+
+/* Référence Codex / BD : vignette + titre */
+.msg-ref-card{display:flex;flex-direction:row;align-items:center;gap:.55rem;padding:.35rem .5rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;text-decoration:none;color:var(--fg);margin-top:.35rem;overflow:hidden;max-width:220px;transition:border-color .15s,background .15s}
 .msg-ref-card:hover{border-color:var(--accent);background:rgba(255,255,255,.07)}
-.msg-ref-thumb{width:46px;height:46px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--card)}
-.msg-ref-thumb--icon{width:46px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0;background:rgba(255,255,255,.07)}
-.msg-ref-thumb--icon svg{width:20px;height:20px;color:var(--muted)}
-.msg-ref-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:.12rem}
-.msg-ref-type{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1}
-.msg-ref-title{font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.msg-ref-thumb{width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--card)}
+.msg-ref-thumb--icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0;background:rgba(255,255,255,.07)}
+.msg-ref-thumb--icon svg{width:18px;height:18px;color:var(--muted)}
+.msg-ref-title{flex:1;min-width:0;font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
 
 /* Saisie */
 .msg-compose{display:flex;align-items:flex-end;gap:.5rem;padding:.6rem 1rem;border-top:1px solid var(--border);flex-shrink:0}
@@ -1212,8 +1215,8 @@ a.amis-rp-item-name:hover{text-decoration:underline}
 }
 
 /* ── Popup "Envoyer à un ami" ────────────────────────────────────────────── */
-.share-popup-backdrop{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55)}
-.share-popup{position:fixed;bottom:1.5rem;right:1.5rem;z-index:601;width:min(300px,calc(100vw - 2rem));background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:.65rem;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.share-popup-backdrop{position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.55)}
+.share-popup{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9101;width:min(300px,calc(100vw - 2rem));background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:.65rem;box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .share-popup-head{display:flex;align-items:center;justify-content:space-between}
 .share-popup-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .share-popup-close{background:none;border:none;cursor:pointer;color:var(--muted);padding:.2rem;line-height:0}
@@ -1233,8 +1236,11 @@ a.amis-rp-item-name:hover{text-decoration:underline}
 .share-popup-status{font-size:.78rem;color:var(--accent);margin:0;padding:.3rem .5rem;background:rgba(255,255,255,.04);border-radius:6px}
 
 /* Bouton partage dans le lightbox gallery */
-.lb-inline-share-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:.3rem;border-radius:5px;line-height:0}
-.lb-inline-share-btn:hover{color:var(--fg)}
+.lb-inline-share-btn{display:inline-flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--fg);padding:.35rem .6rem;font-size:.75rem;font-family:inherit;line-height:1;transition:background .15s,border-color .15s}
+.lb-inline-share-btn:hover{background:rgba(255,255,255,.14);border-color:var(--accent)}
+.lb-share-label{font-size:.75rem;font-weight:600}
+.wiki-share-btn{color:var(--muted)!important}
+.wiki-share-btn:hover{color:var(--accent)!important}
 
 /* Bouton partage BD */
 .bd-reader-share{background:none;border:none;cursor:pointer;color:var(--muted);padding:.3rem;line-height:0;vertical-align:middle}

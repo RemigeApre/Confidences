@@ -1207,6 +1207,14 @@
               <button type="button" class="wiki-react-btn wiki-react-flame wiki-react-iconbtn<%= (page.flame || isFavorite) ? ' active' : '' %>" data-key="flame" data-tooltip="J'adore" data-fr="J'adore" data-en="Love it">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.47-.3 2.98-.93 4.03-1.92.28 1.14.42 2.32.42 3.18C15.75 17.6 13.9 19 11.71 19z"/></svg>
               </button>
+              <% if (locals.inviteToken) { %>
+              <button type="button" class="wiki-react-iconbtn share-trigger-btn wiki-share-btn"
+                      data-tooltip="Envoyer à un ami" title="Envoyer à un ami" aria-label="Envoyer à un ami"
+                      data-share-type="wiki" data-share-id="<%= page.id %>"
+                      data-share-title="<%= (page.title || '').replace(/"/g, '&quot;') %>">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+              <% } %>
             </div>
 
             <%# Ligne 2 : intéressé · masquer · pratiqué %>
