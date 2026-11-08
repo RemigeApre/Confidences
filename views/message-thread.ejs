@@ -27,10 +27,6 @@
        data-key-iv="<%= myKeys.hasKeys ? encodeURIComponent(myKeys.keyIv) : '' %>">
   </div>
 
-  <%# Bandeau si clés manquantes -%>
-  <div class="msg-no-key-banner" id="msg-no-key-banner" hidden>
-    <p>Chiffrement non initialisé. <button class="msg-init-key-btn" id="msg-init-key-btn" type="button">Initialiser</button></p>
-  </div>
   <div class="msg-partner-no-key-banner" id="msg-partner-no-key-banner" hidden>
     <p><%= partner.displayName %> n&rsquo;a pas encore de clé de chiffrement.</p>
   </div>
@@ -151,16 +147,24 @@
 
   // ── Initialisation des clés ─────────────────────────────────────────────
   async function initKeys() {
-    var wkB64 = sessionStorage.getItem('lq_mkwk');
-    if (!wkB64) {
-      document.getElementById('msg-no-key-banner').hidden = false;
-      return;
+    var wkHex = window.lq_msgwk || '';
+    var wkBytes, wkIsNew = false;
+
+    if (!wkHex) {
+      // Pas de WK sur le serveur → générer une nouvelle paire + un nouveau WK
+      var rawWk = crypto.getRandomValues(new Uint8Array(32));
+      wkBytes  = rawWk;
+      wkHex    = Array.from(rawWk).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      wkIsNew  = true;
+      hasKeys  = false; // force la génération d'une nouvelle paire RSA
+    } else {
+      wkBytes = new Uint8Array(wkHex.match(/.{2}/g).map(function (h) { return parseInt(h, 16); }));
     }
-    var wkBytes = b64ToBytes(wkB64);
-    var wk = await crypto.subtle.importKey('raw', wkBytes, { name: 'AES-GCM' }, false, ['unwrapKey', 'wrapKey']);
+
+    var wk = await crypto.subtle.importKey('raw', wkBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 
     if (!hasKeys) {
-      // Générer une nouvelle paire
+      // Générer une nouvelle paire RSA
       var pair = await crypto.subtle.generateKey(
         { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
         true, ['encrypt', 'decrypt']
@@ -168,43 +172,43 @@
       var pubJwk  = await crypto.subtle.exportKey('jwk', pair.publicKey);
       var privJwk = await crypto.subtle.exportKey('jwk', pair.privateKey);
       var iv2 = crypto.getRandomValues(new Uint8Array(12));
-      var enc2 = new TextEncoder();
       var encPriv = await crypto.subtle.encrypt(
         { name: 'AES-GCM', iv: iv2 },
         wk,
-        enc2.encode(JSON.stringify(privJwk))
+        new TextEncoder().encode(JSON.stringify(privJwk))
       );
+      var body = {
+        publicKey: JSON.stringify(pubJwk),
+        encryptedPrivKey: bytesToB64(encPriv),
+        keyIv: bytesToB64(iv2),
+      };
+      if (wkIsNew) body.wkHex = wkHex;
       await fetch('/messages/keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          publicKey: JSON.stringify(pubJwk),
-          encryptedPrivKey: bytesToB64(encPriv),
-          keyIv: bytesToB64(iv2),
-        }),
+        body: JSON.stringify(body),
       });
-      privKey   = pair.privateKey;
-      myPubKey  = pair.publicKey;
-      hasKeys   = true;
+      privKey  = pair.privateKey;
+      myPubKey = pair.publicKey;
+      hasKeys  = true;
     } else {
-      // Charger et déchiffrer la clé privée existante
-      var encPrivB64 = decodeURIComponent(state.encryptedPrivKey);
-      var ivB64      = decodeURIComponent(state.keyIv);
-      var encPrivBytes = b64ToBytes(encPrivB64);
-      var ivBytes      = b64ToBytes(ivB64);
+      // Déchiffrer la clé privée existante avec la WK injectée
+      var encPrivB64   = decodeURIComponent(state.encryptedPrivKey);
+      var ivB64        = decodeURIComponent(state.keyIv);
       try {
-        var dec2 = new TextDecoder();
-        var privJwkBytes = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivBytes }, wk, encPrivBytes);
-        var privJwk2 = JSON.parse(dec2.decode(privJwkBytes));
+        var privJwkBytes = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: b64ToBytes(ivB64) }, wk, b64ToBytes(encPrivB64)
+        );
+        var privJwk2 = JSON.parse(new TextDecoder().decode(privJwkBytes));
         privKey  = await crypto.subtle.importKey('jwk', privJwk2, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']);
-        // Reconstruire la clé publique depuis la JWK privée (supprimer d champs)
         var pubJwk2 = Object.assign({}, privJwk2);
         delete pubJwk2.d; delete pubJwk2.dp; delete pubJwk2.dq; delete pubJwk2.qi; delete pubJwk2.p; delete pubJwk2.q;
         pubJwk2.key_ops = ['encrypt'];
         myPubKey = await crypto.subtle.importKey('jwk', pubJwk2, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
-      } catch (e) {
-        document.getElementById('msg-no-key-banner').hidden = false;
-        return;
+      } catch (_) {
+        // Clé corrompue ou WK invalide : régénérer silencieusement
+        hasKeys = false;
+        return initKeys();
       }
     }
 
@@ -216,7 +220,6 @@
       try { partnerPubKey = await importPublicKey(pkStr); } catch (_) {}
     }
 
-    // Déchiffrer tous les messages visibles
     decryptAll();
   }
 
@@ -375,29 +378,6 @@
       window.location.reload();
     } catch (_) {}
   }
-
-  // ── Init ─────────────────────────────────────────────────────────────────
-  document.getElementById('msg-init-key-btn')?.addEventListener('click', function () {
-    var newPwd = prompt('Entrez votre mot de passe pour initialiser le chiffrement :');
-    if (!newPwd) return;
-    var usr = '<%= currentUser.username %>'.toLowerCase();
-    var enc3 = new TextEncoder();
-    crypto.subtle.importKey('raw', enc3.encode(newPwd), 'PBKDF2', false, ['deriveBits'])
-      .then(function (km) {
-        return crypto.subtle.deriveBits(
-          { name: 'PBKDF2', hash: 'SHA-256', salt: enc3.encode(usr + ':lq-msg'), iterations: 100000 },
-          km, 256
-        );
-      })
-      .then(function (bits) {
-        sessionStorage.setItem('lq_mkwk', btoa(String.fromCharCode.apply(null, new Uint8Array(bits))));
-        document.getElementById('msg-no-key-banner').hidden = true;
-        hasKeys = false; // force re-init
-        state.hasKeys = 'false';
-        initKeys();
-      })
-      .catch(function () { alert('Erreur lors de la dérivation de clé.'); });
-  });
 
   scrollToBottom();
   initKeys();

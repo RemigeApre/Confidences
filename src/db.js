@@ -449,6 +449,10 @@ db.exec(`CREATE TABLE IF NOT EXISTS user_keys (
   encrypted_priv_key TEXT NOT NULL,
   key_iv             TEXT NOT NULL
 )`);
+// Wrapping key (WK) chiffré côté serveur avec la clé maître :
+// permet d'injecter le WK en session sans demander le mot de passe.
+try { db.exec("ALTER TABLE user_keys ADD COLUMN encrypted_wk TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE user_keys ADD COLUMN wk_iv TEXT"); } catch (_) {}
 
 // conversations : toujours p1_id < p2_id (normalisé).
 db.exec(`CREATE TABLE IF NOT EXISTS conversations (
@@ -6573,16 +6577,20 @@ function getFriendshipBetween(userId1, userId2) {
 function getUserKeys(userId) {
   return db.prepare('SELECT * FROM user_keys WHERE user_id = ?').get(userId);
 }
-function setUserKeys(userId, publicKey, encryptedPrivKey, keyIv) {
-  db.prepare(`INSERT INTO user_keys (user_id, public_key, encrypted_priv_key, key_iv)
-              VALUES (?, ?, ?, ?)
+function setUserKeys(userId, publicKey, encryptedPrivKey, keyIv, encryptedWk, wkIv) {
+  db.prepare(`INSERT INTO user_keys (user_id, public_key, encrypted_priv_key, key_iv, encrypted_wk, wk_iv)
+              VALUES (?, ?, ?, ?, ?, ?)
               ON CONFLICT(user_id) DO UPDATE SET public_key=excluded.public_key,
-                encrypted_priv_key=excluded.encrypted_priv_key, key_iv=excluded.key_iv`)
-    .run(userId, publicKey, encryptedPrivKey, keyIv);
+                encrypted_priv_key=excluded.encrypted_priv_key, key_iv=excluded.key_iv,
+                encrypted_wk=excluded.encrypted_wk, wk_iv=excluded.wk_iv`)
+    .run(userId, publicKey, encryptedPrivKey, keyIv, encryptedWk || null, wkIv || null);
 }
 function getPublicKey(userId) {
   const r = db.prepare('SELECT public_key FROM user_keys WHERE user_id = ?').get(userId);
   return r ? r.public_key : null;
+}
+function getUserWk(userId) {
+  return db.prepare('SELECT encrypted_wk, wk_iv FROM user_keys WHERE user_id = ?').get(userId) || null;
 }
 
 function _convPair(a, b) { return a < b ? [a, b] : [b, a]; }
@@ -7152,6 +7160,7 @@ module.exports = {
   getUserKeys,
   setUserKeys,
   getPublicKey,
+  getUserWk,
   getOrCreateConversation,
   getConversation,
   getConversations,

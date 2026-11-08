@@ -19,7 +19,7 @@ const buildCoupleRouter = require("./routes/couple");
 const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
 const buildRacesRouter = require("./routes/races");
-const { buildRouter: buildMessagesRouter } = require("./routes/messages");
+const { buildRouter: buildMessagesRouter, serverDecryptWk } = require("./routes/messages");
 const { attachUser } = require("./auth");
 const { isFrenchIp } = require("./geo");
 const {
@@ -40,6 +40,7 @@ const {
   getPendingFriendRequestsCount,
   getUnreadCount,
   cleanupOldMessages,
+  getUserWk,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -497,6 +498,7 @@ app.use((req, res, next) => {
   res.locals.pendingInvitesCount = 0;
   res.locals.pendingFriendRequestsCount = 0;
   res.locals.unreadMessagesCount = 0;
+  res.locals.msgSessionKey = '';
   if (req.user && req.method === 'GET') {
     try {
       res.locals.inviteToken = getOrCreateInviteToken(req.user.id);
@@ -504,6 +506,16 @@ app.use((req, res, next) => {
       res.locals.pendingFriendRequestsCount = getPendingFriendRequestsCount(req.user.id);
       res.locals.unreadMessagesCount = getUnreadCount(req.user.id);
     } catch (_) {}
+    // Injecter la WK de messagerie dans la session si absent
+    if (!req.session.msgWK) {
+      try {
+        const wkData = getUserWk(req.user.id);
+        if (wkData && wkData.encrypted_wk && wkData.wk_iv) {
+          req.session.msgWK = serverDecryptWk(wkData.encrypted_wk, wkData.wk_iv);
+        }
+      } catch (_) {}
+    }
+    res.locals.msgSessionKey = req.session.msgWK || '';
   }
   next();
 });

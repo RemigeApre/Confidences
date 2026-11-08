@@ -444,9 +444,9 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
 
   async function getMyKeys() {
     if (_privKey && _myPubKey) return { priv: _privKey, pub: _myPubKey };
-    var wkB64 = sessionStorage.getItem('lq_mkwk');
-    if (!wkB64) return null;
-    var wkBytes = b64ToBytes(wkB64);
+    var wkHex = window.lq_msgwk || '';
+    if (!wkHex) return null;
+    var wkBytes = new Uint8Array(wkHex.match(/.{2}/g).map(function (h) { return parseInt(h, 16); }));
     var wk = await crypto.subtle.importKey('raw', wkBytes, { name: 'AES-GCM' }, false, ['decrypt']);
     var r = await fetch('/messages/keys/me', { headers: { 'Accept': 'application/json' } });
     var d = await r.json();
@@ -476,15 +476,12 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
 
   async function encryptForRecipient(text, recipientPubKey, myPubKey) {
     var enc = new TextEncoder();
-    var aesKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, []);
-    // Export raw AES key to wrap it
-    var rawKey = await crypto.subtle.exportKey('raw', aesKey);
-    var encKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
+    var aesKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
     var iv = crypto.getRandomValues(new Uint8Array(12));
-    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, encKey, enc.encode(text));
-    var rawEnc = await crypto.subtle.exportKey('raw', encKey);
-    var kr = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, recipientPubKey, rawEnc);
-    var ks = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, myPubKey, rawEnc);
+    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, aesKey, enc.encode(text));
+    var rawAes = await crypto.subtle.exportKey('raw', aesKey);
+    var kr = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, recipientPubKey, rawAes);
+    var ks = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, myPubKey, rawAes);
     return JSON.stringify({
       iv: bytesToB64(iv),
       ct: bytesToB64(ct),

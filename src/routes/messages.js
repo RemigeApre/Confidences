@@ -1,16 +1,51 @@
 "use strict";
 const express = require("express");
+const crypto = require("crypto");
 const {
   requireUser, requireUserJson,
 } = require("../auth");
 const {
-  getUserKeys, setUserKeys, getPublicKey,
+  getUserKeys, setUserKeys, getPublicKey, getUserWk,
   getOrCreateConversation, getConversation, getConversations,
   insertMessage, getMessages, markRead, deleteMessage, getUnreadCount,
   addSharedItem, getSharedItems, removeSharedItem,
   getFriends, getUserById,
 } = require("../db");
 const { thumbUrl } = require("../thumbs");
+
+// ── Chiffrement côté serveur de la clé de dérivation (WK) ────────────────
+// La clé maître est dérivée de SESSION_SECRET pour éviter de stocker une
+// nouvelle donnée sensible dans l'environnement.
+function _getMasterKey() {
+  const secret = process.env.SESSION_SECRET || 'lq-fallback-secret';
+  return crypto.createHash('sha256').update('lq-msg-wk-v1:' + secret).digest();
+}
+
+function serverEncryptWk(wkHex) {
+  const mk  = _getMasterKey();
+  const iv  = crypto.randomBytes(12);
+  const wk  = Buffer.from(wkHex, 'hex');
+  const cipher = crypto.createCipheriv('aes-256-gcm', mk, iv);
+  const ct  = Buffer.concat([cipher.update(wk), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return {
+    encryptedWk: Buffer.concat([ct, tag]).toString('base64'),
+    wkIv:        iv.toString('base64'),
+  };
+}
+
+function serverDecryptWk(encryptedWk, wkIv) {
+  const mk   = _getMasterKey();
+  const iv   = Buffer.from(wkIv, 'base64');
+  const data = Buffer.from(encryptedWk, 'base64');
+  const tag  = data.slice(-16);
+  const ct   = data.slice(0, -16);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', mk, iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(ct), decipher.final()]).toString('hex');
+}
+module.exports.serverDecryptWk = serverDecryptWk;
+module.exports.getUserWk = getUserWk;
 
 // ── SSE : clients connectés (userId → Set de response) ───────────────────
 const sseClients = new Map();
@@ -79,10 +114,19 @@ function buildRouter(config) {
 
   // POST /messages/keys — sauvegarder ses propres clés
   router.post("/keys", requireUserJson, (req, res) => {
-    const { publicKey, encryptedPrivKey, keyIv } = req.body;
+    const { publicKey, encryptedPrivKey, keyIv, wkHex } = req.body;
     if (!publicKey || !encryptedPrivKey || !keyIv)
       return res.status(400).json({ error: "données manquantes" });
-    setUserKeys(req.user.id, publicKey, encryptedPrivKey, keyIv);
+    let encryptedWk = null, wkIvB64 = null;
+    if (wkHex) {
+      try {
+        const result = serverEncryptWk(wkHex);
+        encryptedWk = result.encryptedWk;
+        wkIvB64     = result.wkIv;
+        req.session.msgWK = wkHex;
+      } catch (_) {}
+    }
+    setUserKeys(req.user.id, publicKey, encryptedPrivKey, keyIv, encryptedWk, wkIvB64);
     res.json({ ok: true });
   });
 
