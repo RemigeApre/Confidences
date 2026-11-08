@@ -23,11 +23,11 @@
   </div>
 
   <div class="adm-sub<%= _activeGroup!=='users' ? ' adm-sub--off' : '' %>" data-grp-panel="users">
-    <a class="adm-si<%= _path==='/ponhgup' ? '' : '' %>" href="/ponhgup#tab-utilisateurs" data-tab="utilisateurs">Gestion</a>
-    <a class="adm-si" href="/ponhgup#tab-demandes-compte" data-tab="demandes-compte">Demandes</a>
+    <a class="adm-si" href="/ponhgup#tab-utilisateurs" data-tab="utilisateurs" data-si-id="utilisateurs">Gestion</a>
+    <a class="adm-si" href="/ponhgup#tab-demandes-compte" data-tab="demandes-compte" data-si-id="demandes-compte">Demandes</a>
     <span class="adm-sep" aria-hidden="true"></span>
-    <a class="adm-si" href="/ponhgup#tab-log" data-tab="log" data-log-panel="conn">Connexions</a>
-    <a class="adm-si" href="/ponhgup#tab-log" data-tab="log" data-log-panel="anon">Activit&eacute;</a>
+    <a class="adm-si" href="/ponhgup#tab-log" data-tab="log" data-log-panel="conn" data-si-id="log-conn">Connexions</a>
+    <a class="adm-si" href="/ponhgup#tab-log" data-tab="log" data-log-panel="anon" data-si-id="log-anon">Activit&eacute;</a>
     <a class="adm-si<%= _path.startsWith('/ponhgup/ip-logs') ? ' active' : '' %>" href="/ponhgup/ip-logs">IP Logs</a>
   </div>
 
@@ -45,12 +45,12 @@
   </div>
 
   <div class="adm-sub<%= _activeGroup!=='versions' ? ' adm-sub--off' : '' %>" data-grp-panel="versions">
-    <a class="adm-si" href="/ponhgup#tab-changelog" data-tab="changelog">Changelog</a>
-    <a class="adm-si" href="/ponhgup#tab-roadmap" data-tab="roadmap">Roadmap</a>
+    <a class="adm-si" href="/ponhgup#tab-changelog" data-tab="changelog" data-si-id="changelog">Changelog</a>
+    <a class="adm-si" href="/ponhgup#tab-roadmap" data-tab="roadmap" data-si-id="roadmap">Roadmap</a>
   </div>
 
   <div class="adm-sub<%= _activeGroup!=='audit' ? ' adm-sub--off' : '' %>" data-grp-panel="audit">
-    <a class="adm-si" href="/ponhgup#tab-audit" data-tab="audit">Journal des actions</a>
+    <a class="adm-si" href="/ponhgup#tab-audit" data-tab="audit" data-si-id="audit">Journal des actions</a>
   </div>
 
 </nav>
@@ -91,6 +91,12 @@
   /* ── Dashboard tab interception ─────────────────── */
   var isDashboard = window.location.pathname === '/ponhgup';
 
+  function activateSi(siId) {
+    nav.querySelectorAll('.adm-si[data-si-id]').forEach(function(s) {
+      s.classList.toggle('active', s.dataset.siId === siId);
+    });
+  }
+
   window.admSwitchTab = function(tabId, logPanel) {
     var sections = document.querySelectorAll('.admin-tab-section');
     sections.forEach(function(s) { s.hidden = s.dataset.tab !== tabId; });
@@ -98,6 +104,7 @@
       var logBtn = document.querySelector('.log-nav-btn[data-panel="' + logPanel + '"]');
       if (logBtn) logBtn.click();
     }
+    activateSi(logPanel ? tabId + '-' + logPanel : tabId);
     try { history.replaceState(null, '', '#tab-' + tabId + (logPanel ? '-' + logPanel : '')); } catch(_) {}
   };
 
@@ -124,10 +131,13 @@
       });
     });
 
-    /* ── Restore from URL hash ────────────────────── */
+    /* ── Restore from URL hash (or default to Gestion) ────────── */
     (function() {
       var hash = location.hash.replace('#tab-', '');
-      if (!hash) return;
+      if (!hash) {
+        activateSi('utilisateurs');
+        return;
+      }
       /* formats: "log-conn", "log-anon", "utilisateurs", etc. */
       var tabId = hash, logPanel = null;
       var logMatch = hash.match(/^log-(.+)$/);

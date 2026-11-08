@@ -1623,9 +1623,7 @@
         return lb - la;
       });
 
-      lib.querySelectorAll('.admin-utile[data-role]').forEach(function(c) {
-        if (!c.hidden) lib.appendChild(c);
-      });
+      visible.forEach(function(c) { lib.appendChild(c); });
 
       if (countEl) countEl.textContent = visible.length;
     }
