@@ -1,31 +1,6 @@
 <%- include('partials/head', { title: 'Admin', extraCss: ['admin.css'] }) %>
 
-<nav class="admin-tabs-nav" id="admin-tabs-nav">
-  <div class="admin-tabs-center">
-
-    <button class="admin-tab-btn admin-tab--sys active" data-tab="utilisateurs">Utilisateurs</button>
-    <button class="admin-tab-btn admin-tab--sys" data-tab="demandes-compte">Demandes de compte<% var _pendingAR = accountRequests.filter(function(r){ return !r.contacted; }).length; %><% if (_pendingAR) { %><span class="admin-tab-badge"><%= _pendingAR %></span><% } %></button>
-    <a href="/ponhgup/recompenses" class="admin-tab-btn admin-tab--sys admin-tab-btn--link">R&eacute;compenses</a>
-
-    <span class="admin-tabs-sep" aria-hidden="true"></span>
-
-    <button class="admin-tab-btn admin-tab--content" data-tab="wiki">Codex</button>
-    <button class="admin-tab-btn admin-tab--content" data-tab="galerie">Galerie</button>
-    <button class="admin-tab-btn admin-tab--content" data-tab="bd">BD</button>
-    <button class="admin-tab-btn admin-tab--content" data-tab="histoires">Histoires</button>
-    <button class="admin-tab-btn admin-tab--content" data-tab="labels">Labels</button>
-    <a href="/ponhgup/jeux" class="admin-tab-btn admin-tab--content admin-tab-btn--link">Jeux</a>
-
-    <span class="admin-tabs-sep" aria-hidden="true"></span>
-
-    <button class="admin-tab-btn admin-tab--sys" data-tab="changelog">Changelog</button>
-    <button class="admin-tab-btn admin-tab--sys" data-tab="roadmap">Roadmap</button>
-    <button class="admin-tab-btn admin-tab--sys" data-tab="ia">IA</button>
-    <button class="admin-tab-btn admin-tab--sys" data-tab="log">Log</button>
-
-  </div>
-  <a href="/" class="admin-tab-home">&#8617; Retour au site</a>
-</nav>
+<%- include('partials/admin-nav') %>
 
 <main class="admin-main">
 
@@ -1526,31 +1501,37 @@
 
   </section>
 
+  <%# ═══════════════════════════════════════════════
+      TAB : LOG ADMIN
+  ════════════════════════════════════════════════ %>
+  <section class="admin-tab-section" data-tab="audit" hidden>
+    <h2 class="admin-section-title">Journal admin</h2>
+    <% if (!adminAudit || !adminAudit.length) { %>
+      <p class="admin-muted">Aucune action enregistr&eacute;e.</p>
+    <% } else { %>
+      <div class="adm-audit-table-wrap">
+        <table class="adm-audit-table">
+          <thead><tr><th>Date</th><th>Admin</th><th>Action</th><th>Type</th><th>&Eacute;l&eacute;ment</th></tr></thead>
+          <tbody>
+            <% adminAudit.forEach(function(row) { %>
+              <tr>
+                <td class="adm-audit-date"><%= new Date(row.created_at).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) %></td>
+                <td class="adm-audit-admin"><%= row.admin_name %></td>
+                <td class="adm-audit-action adm-audit-action--<%= row.action.split(':')[0] %>"><%= row.action %></td>
+                <td class="adm-audit-type"><%= row.entity_type %></td>
+                <td class="adm-audit-label"><%= row.entity_label || (row.entity_id ? '#'+row.entity_id : '') %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
 </main>
 
 <script nonce="<%= nonce %>">
 (function () {
-  // ── Tab switching ──────────────────────────────────
-  var tabBtns = document.querySelectorAll(".admin-tab-btn");
-  var tabSections = document.querySelectorAll(".admin-tab-section");
-
-  function activateTab(name) {
-    tabBtns.forEach(function(b) { b.classList.toggle("active", b.dataset.tab === name); });
-    tabSections.forEach(function(s) { s.hidden = s.dataset.tab !== name; });
-    try { history.replaceState(null, "", "#tab-" + name); } catch(_) {}
-  }
-
-  tabBtns.forEach(function(btn) {
-    if (btn.tagName === "A") return;
-    btn.addEventListener("click", function() { activateTab(btn.dataset.tab); });
-  });
-
-  // Restore tab from URL hash
-  var hash = location.hash.replace("#tab-", "");
-  if (hash && document.querySelector(".admin-tab-btn[data-tab='" + hash + "']")) {
-    activateTab(hash);
-  }
-
   // ── Top 10/20 toggles ────────────────────────────
   document.querySelectorAll(".admin-kpi-limit-toggle").forEach(function(toggle) {
     var tableId = toggle.id.replace("-limit-toggle", "-top-table");

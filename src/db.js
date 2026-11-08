@@ -6229,6 +6229,28 @@ function getUserRoadmapVotes(userId) {
   return new Set(rows.map(r => r.roadmap_id));
 }
 
+// ── Admin audit log ───────────────────────────────────────────────────────────
+db.exec(`CREATE TABLE IF NOT EXISTS admin_audit (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id     INTEGER NOT NULL,
+  admin_name   TEXT NOT NULL DEFAULT '',
+  action       TEXT NOT NULL DEFAULT '',
+  entity_type  TEXT NOT NULL DEFAULT '',
+  entity_id    INTEGER,
+  entity_label TEXT NOT NULL DEFAULT '',
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+)`);
+
+function logAdminAudit(adminId, adminName, action, entityType, entityId, entityLabel) {
+  try {
+    db.prepare('INSERT INTO admin_audit (admin_id,admin_name,action,entity_type,entity_id,entity_label) VALUES (?,?,?,?,?,?)')
+      .run(adminId||0, adminName||'', action||'', entityType||'', entityId||null, entityLabel||'');
+  } catch(_) {}
+}
+function listAdminAudit(limit) {
+  return db.prepare('SELECT * FROM admin_audit ORDER BY created_at DESC LIMIT ?').all(limit||300);
+}
+
 // ── Invite token (un par utilisateur, créé à la demande) ─────────────────────
 function getOrCreateInviteToken(userId) {
   const row = db.prepare('SELECT token FROM invite_tokens WHERE user_id = ?').get(userId);
@@ -6742,6 +6764,8 @@ module.exports = {
   countPendingInvites,
   setInviteUseStatus,
   getUserInviteStats,
+  logAdminAudit,
+  listAdminAudit,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

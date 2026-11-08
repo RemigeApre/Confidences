@@ -1,0 +1,130 @@
+<%
+  /* ── Detect active group from path ───────────────────────────── */
+  var _path = locals.currentPath || '';
+  var _activeGroup = 'users'; // default
+  if (/^\/ponhgup\/(recompenses|jeux|auteurs|races|codex-checklist)/.test(_path)) {
+    _activeGroup = 'resources';
+  } else if (/^\/ponhgup\/(ip-logs|utilisateur\/)/.test(_path)) {
+    _activeGroup = 'users';
+  } else if (/^\/ponhgup$/.test(_path)) {
+    _activeGroup = 'users';
+  }
+%>
+<nav class="adm-nav" id="adm-nav">
+
+  <div class="adm-nav-top">
+    <div class="adm-grps">
+      <button class="adm-grp<%= _activeGroup==='users' ? ' active' : '' %>" data-grp="users">Utilisateurs</button>
+      <button class="adm-grp<%= _activeGroup==='resources' ? ' active' : '' %>" data-grp="resources">Ressources</button>
+      <button class="adm-grp<%= _activeGroup==='versions' ? ' active' : '' %>" data-grp="versions">Versions</button>
+      <button class="adm-grp<%= _activeGroup==='audit' ? ' active' : '' %>" data-grp="audit">Log admin</button>
+    </div>
+    <a href="/" class="adm-home">&#8617; Retour au site</a>
+  </div>
+
+  <div class="adm-sub<%= _activeGroup!=='users' ? ' adm-sub--off' : '' %>" data-grp-panel="users">
+    <a class="adm-si<%= _path==='/ponhgup' ? '' : '' %>" href="/ponhgup#tab-utilisateurs" data-tab="utilisateurs">Gestion</a>
+    <a class="adm-si" href="/ponhgup#tab-demandes-compte" data-tab="demandes-compte">Demandes</a>
+    <span class="adm-sep" aria-hidden="true"></span>
+    <a class="adm-si" href="/ponhgup#tab-log" data-tab="log" data-log-panel="conn">Connexions</a>
+    <a class="adm-si" href="/ponhgup#tab-log" data-tab="log" data-log-panel="anon">Activit&eacute;</a>
+    <a class="adm-si<%= _path.startsWith('/ponhgup/ip-logs') ? ' active' : '' %>" href="/ponhgup/ip-logs">IP Logs</a>
+  </div>
+
+  <div class="adm-sub<%= _activeGroup!=='resources' ? ' adm-sub--off' : '' %>" data-grp-panel="resources">
+    <a class="adm-si" href="/ponhgup#tab-wiki" data-tab="wiki">Codex</a>
+    <a class="adm-si" href="/ponhgup#tab-galerie" data-tab="galerie">Galerie</a>
+    <a class="adm-si" href="/ponhgup#tab-bd" data-tab="bd">BD</a>
+    <a class="adm-si" href="/ponhgup#tab-histoires" data-tab="histoires">Histoires</a>
+    <a class="adm-si" href="/ponhgup#tab-labels" data-tab="labels">Labels</a>
+    <a class="adm-si" href="/ponhgup#tab-ia" data-tab="ia">IA</a>
+    <span class="adm-sep" aria-hidden="true"></span>
+    <a class="adm-si<%= _path.startsWith('/ponhgup/auteurs') ? ' active' : '' %>" href="/ponhgup/auteurs">Auteurs</a>
+    <a class="adm-si<%= _path.startsWith('/ponhgup/jeux') ? ' active' : '' %>" href="/ponhgup/jeux">Jeux</a>
+    <a class="adm-si adm-si--accent<%= _path.startsWith('/ponhgup/recompenses') ? ' active' : '' %>" href="/ponhgup/recompenses">R&eacute;compenses</a>
+  </div>
+
+  <div class="adm-sub<%= _activeGroup!=='versions' ? ' adm-sub--off' : '' %>" data-grp-panel="versions">
+    <a class="adm-si" href="/ponhgup#tab-changelog" data-tab="changelog">Changelog</a>
+    <a class="adm-si" href="/ponhgup#tab-roadmap" data-tab="roadmap">Roadmap</a>
+  </div>
+
+  <div class="adm-sub<%= _activeGroup!=='audit' ? ' adm-sub--off' : '' %>" data-grp-panel="audit">
+    <a class="adm-si" href="/ponhgup#tab-audit" data-tab="audit">Journal des actions</a>
+  </div>
+
+</nav>
+
+<script nonce="<%= locals.nonce %>">
+(function () {
+  var nav = document.getElementById('adm-nav');
+  if (!nav) return;
+
+  /* ── Group switching ──────────────────────────────── */
+  nav.querySelectorAll('.adm-grp').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var grp = btn.dataset.grp;
+      nav.querySelectorAll('.adm-grp').forEach(function(b) {
+        b.classList.toggle('active', b === btn);
+      });
+      nav.querySelectorAll('.adm-sub').forEach(function(panel) {
+        panel.classList.toggle('adm-sub--off', panel.dataset.grpPanel !== grp);
+      });
+    });
+  });
+
+  /* ── Dashboard tab interception ─────────────────── */
+  var isDashboard = window.location.pathname === '/ponhgup';
+
+  window.admSwitchTab = function(tabId, logPanel) {
+    var sections = document.querySelectorAll('.admin-tab-section');
+    sections.forEach(function(s) { s.hidden = s.dataset.tab !== tabId; });
+    if (logPanel) {
+      var logBtn = document.querySelector('.log-nav-btn[data-panel="' + logPanel + '"]');
+      if (logBtn) logBtn.click();
+    }
+    try { history.replaceState(null, '', '#tab-' + tabId + (logPanel ? '-' + logPanel : '')); } catch(_) {}
+  };
+
+  if (isDashboard) {
+    nav.querySelectorAll('.adm-si[data-tab]').forEach(function(item) {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        var tabId = item.dataset.tab;
+        var logPanel = item.dataset.logPanel || null;
+
+        /* activate the correct group visually */
+        var panel = item.closest('.adm-sub');
+        if (panel) {
+          var grp = panel.dataset.grpPanel;
+          nav.querySelectorAll('.adm-grp').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.grp === grp);
+          });
+          nav.querySelectorAll('.adm-sub').forEach(function(p) {
+            p.classList.toggle('adm-sub--off', p.dataset.grpPanel !== grp);
+          });
+        }
+
+        window.admSwitchTab(tabId, logPanel);
+      });
+    });
+
+    /* ── Restore from URL hash ────────────────────── */
+    (function() {
+      var hash = location.hash.replace('#tab-', '');
+      if (!hash) return;
+      /* formats: "log-conn", "log-anon", "utilisateurs", etc. */
+      var tabId = hash, logPanel = null;
+      var logMatch = hash.match(/^log-(.+)$/);
+      if (logMatch) { tabId = 'log'; logPanel = logMatch[1]; }
+      var targetSi = nav.querySelector('.adm-si[data-tab="' + tabId + '"]');
+      if (targetSi) targetSi.click();
+      else {
+        /* try direct section */
+        var section = document.querySelector('.admin-tab-section[data-tab="' + tabId + '"]');
+        if (section) window.admSwitchTab(tabId, logPanel);
+      }
+    })();
+  }
+})();
+</script>

@@ -129,6 +129,8 @@ const {
   createRoadmapItem,
   updateRoadmapItem,
   deleteRoadmapItem,
+  logAdminAudit,
+  listAdminAudit,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -536,7 +538,10 @@ function buildAdminRouter(config) {
     const date       = String(req.body.published_at || "").trim() || new Date().toISOString().slice(0, 10);
     const importance = Number(req.body.importance) || 0;
     const tags       = [].concat(req.body.tags || []);
-    if (title) createChangelog({ title, body, published_at: date, importance, tags });
+    if (title) {
+      createChangelog({ title, body, published_at: date, importance, tags });
+      logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'create', 'changelog', null, title);
+    }
     res.redirect("/ponhgup#tab-changelog");
   });
 
@@ -554,7 +559,10 @@ function buildAdminRouter(config) {
 
   router.post("/changelogs/:id/delete", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
-    if (Number.isInteger(id)) deleteChangelog(id);
+    if (Number.isInteger(id)) {
+      deleteChangelog(id);
+      logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'delete', 'changelog', id, '');
+    }
     res.redirect("/ponhgup#tab-changelog");
   });
 
@@ -564,7 +572,10 @@ function buildAdminRouter(config) {
     const body       = String(req.body.body  || "").trim();
     const importance = Number(req.body.importance) || 0;
     const tags       = [].concat(req.body.tags || []);
-    if (title) createRoadmapItem({ title, body, importance, tags });
+    if (title) {
+      createRoadmapItem({ title, body, importance, tags });
+      logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'create', 'roadmap', null, title);
+    }
     res.redirect("/ponhgup#tab-roadmap");
   });
 
@@ -581,7 +592,10 @@ function buildAdminRouter(config) {
 
   router.post("/roadmap/:id/delete", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
-    if (Number.isInteger(id)) deleteRoadmapItem(id);
+    if (Number.isInteger(id)) {
+      deleteRoadmapItem(id);
+      logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'delete', 'roadmap', id, '');
+    }
     res.redirect("/ponhgup#tab-roadmap");
   });
 
@@ -685,13 +699,14 @@ function buildAdminRouter(config) {
     const accountRequests = listAccountRequests();
     const changelogs = listChangelogs();
     const roadmapItems = listRoadmapAdmin();
+    const adminAudit = listAdminAudit(300);
     res.render("admin-dashboard", {
       config, userStates, matrixSections, submissions,
       wikiPages, allWikiPagesSorted, galleryImages, connectionLogs,
       wikiKPIs, galleryKPIs,
       aiProfiles, fantasyWikiPages,
       anonStats, accountRequests,
-      changelogs, roadmapItems,
+      changelogs, roadmapItems, adminAudit,
       adminError: adminError || null,
     });
   }
@@ -728,6 +743,7 @@ function buildAdminRouter(config) {
       if (orientation) updateUserSettings(newId, { orientation });
     }
 
+    logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'create', 'user', newId, displayName);
     res.redirect("/ponhgup#tab-utilisateurs");
   });
 
@@ -808,7 +824,10 @@ function buildAdminRouter(config) {
   router.post("/profils/:id/delete", requireAdmin, (req, res) => {
     const id = Number(req.params.id);
     if (Number.isInteger(id) && id !== req.session.userId) {
+      const targetUser = getUserById(id);
+      const label = targetUser ? targetUser.displayName : '';
       deleteUser(id);
+      logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'delete', 'user', id, label);
     }
     res.redirect("/ponhgup#tab-utilisateurs");
   });
@@ -820,6 +839,7 @@ function buildAdminRouter(config) {
       return res.status(400).json({ error: 'invalid' });
     }
     setUserAccountStatus(id, status);
+    logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'status:' + status, 'user', id, '');
     res.json({ ok: true });
   });
 
