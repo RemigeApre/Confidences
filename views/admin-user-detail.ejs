@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName, extraCss: ['admin.css'] }) %>
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Quizz', extraCss: ['admin.css'] }) %>
 
 <%- include('partials/admin-nav') %>
 
@@ -7,86 +7,165 @@
 
   <main class="aud-content">
 
-    <%# ── En-tête utilisateur ── %>
-    <div class="aud-header">
-      <div class="aud-identity">
-        <span class="aud-name"><%= detail.user.displayName %></span>
-        <% if (detail.user.shareNotesWithAdmin) { %>
-          <span class="admin-share-badge" title="Partage ses notes et favoris avec l'admin" aria-label="Partage ses notes et favoris avec l'admin">&#128065;</span>
-        <% } %>
-        <span class="aud-username">@<%= detail.user.username %></span>
-        <% if (detail.user.isAdmin) { %><span class="admin-badge-admin">Admin</span><% } %>
-        <% if (detail.user.isTest) { %><span class="admin-badge-test">Test</span><% } %>
+    <% if (!attempt || !liveScores) { %>
+      <p class="admin-muted" style="margin-top:2rem">Aucune r&eacute;ponse enregistr&eacute;e.</p>
+    <% } else { %>
+
+    <%
+      /* ── helpers ── */
+      function pct(sc) { return sc ? sc.percentage : 0; }
+
+      function barColor(p) {
+        if (p >= 70) return '#4ade80';
+        if (p >= 40) return '#facc15';
+        return '#94a3b8';
+      }
+
+      /* Score global (toutes sections matrix) */
+      var totalRaw = 0, totalMax = 0;
+      matrixSections.forEach(function(s) {
+        var sc = liveScores.sections[s.key];
+        if (sc) { totalRaw += sc.raw; totalMax += sc.max; }
+      });
+      var globalPct = totalMax ? Math.round(totalRaw / totalMax * 1000) / 10 : 0;
+
+      /* Section profil corps */
+      var corpsSection = config.sections.find(function(s) { return s.type === 'profile'; });
+      var corpsScore = corpsSection ? liveScores.sections[corpsSection.key] : null;
+    %>
+
+    <%# ── Score global ── %>
+    <div class="qz-global">
+      <div class="qz-global-ring" style="--p:<%= globalPct %>">
+        <svg viewBox="0 0 36 36">
+          <circle class="qz-ring-bg" cx="18" cy="18" r="15.9" fill="none" stroke-width="2.5"/>
+          <circle class="qz-ring-fill" cx="18" cy="18" r="15.9" fill="none" stroke-width="2.5"
+            stroke-dasharray="<%= (globalPct * 100 / 100).toFixed(1) %> 100"
+            stroke="<%= barColor(globalPct) %>"
+            transform="rotate(-90 18 18)"
+            stroke-linecap="round"/>
+        </svg>
+        <span class="qz-global-pct"><%= globalPct %>%</span>
       </div>
-      <div class="aud-meta">
-        <span class="admin-muted">Compte cr&eacute;&eacute; le <%= new Date(detail.user.createdAt).toLocaleDateString('fr-FR') %></span>
-        <% if (detail.user.updatedAt) { %>
-          <span class="admin-muted">Modifi&eacute; le <%= new Date(detail.user.updatedAt).toLocaleDateString('fr-FR') %></span>
-        <% } %>
-        <% if (detail.user.lastLoginAt) { %>
-          <span class="admin-muted">Derni&egrave;re connexion le <%= new Date(detail.user.lastLoginAt).toLocaleDateString('fr-FR') %> &agrave; <%= new Date(detail.user.lastLoginAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
-        <% } %>
-        <% if (attempt) { %>
-          <a href="/ponhgup/live/<%= detail.user.id %>" class="admin-btn-link">D&eacute;tail complet du quizz &#8599;</a>
-        <% } %>
+      <div class="qz-global-body">
+        <div class="qz-global-label">Score global</div>
+        <div class="qz-global-sub">Derni&egrave;re modification : <%= new Date(attempt.updatedAt).toLocaleString('fr-FR') %></div>
+        <a href="/ponhgup/live/<%= detail.user.id %>" class="qz-detail-link">D&eacute;tail complet &rsaquo;</a>
       </div>
-      <% if (detail.user.email || detail.user.sexe || detail.user.birthYear) { %>
-        <div class="aud-meta">
-          <% if (detail.user.email) { %><span class="admin-muted"><%= detail.user.email %></span><% } %>
-          <% if (detail.user.sexe) { %><span class="admin-muted"><%= { femme: 'Femme', homme: 'Homme', autre: 'Autre' }[detail.user.sexe] || detail.user.sexe %></span><% } %>
-          <% if (detail.user.birthYear) { %><span class="admin-muted">N&eacute; en <%= detail.user.birthYear %></span><% } %>
-        </div>
+      <% if (detail.user.ultraMode === 'visible') { %>
+        <span class="qz-ultra-badge">Ultra : affiché</span>
       <% } %>
-      <div class="aud-meta" style="margin-top:.4rem">
-        <span class="aud-pref-badge aud-pref-badge--<%= detail.user.ultraMode === 'visible' ? 'on' : 'off' %>">
-          Ultra : <%= detail.user.ultraMode === 'visible' ? 'affiché' : 'masqué' %>
-        </span>
-      </div>
     </div>
 
-    <%# ── Quizz ── %>
-    <div class="aud-section">
-      <h2 class="aud-section-title">R&eacute;ponses au quizz</h2>
-      <% if (attempt && liveScores) { %>
-        <div class="admin-progress-wrap">
-          <% matrixSections.forEach(function(s) { %>
-            <% var sc = liveScores.sections[s.key]; %>
-            <% if (sc) { %>
-            <div class="admin-progress-row">
-              <span class="admin-progress-label"><%= s.title %></span>
-              <div class="bar admin-bar"><div class="bar-fill" style="width:<%= sc.percentage %>%"></div></div>
-              <span class="admin-progress-pct"><%= sc.percentage %>%</span>
+    <%# ── Barres par section matrix ── %>
+    <div class="qz-sections">
+      <% matrixSections.forEach(function(s) { %>
+        <% var sc = liveScores.sections[s.key]; if (!sc) return; %>
+        <% var p = sc.percentage; %>
+        <div class="qz-section-row">
+          <span class="qz-section-title"><%= s.title %></span>
+          <div class="qz-bar-wrap">
+            <div class="qz-bar-fill" style="width:<%= p %>%;background:<%= barColor(p) %>"></div>
+          </div>
+          <span class="qz-section-pct" style="color:<%= barColor(p) %>"><%= p %>%</span>
+        </div>
+
+        <%# Rankings de cette section %>
+        <% if (s.rankings && s.rankings.length) { %>
+          <% s.rankings.forEach(function(r) { %>
+            <% var items = sc.rankings && sc.rankings[r.id]; %>
+            <% if (items && items.length) { %>
+            <div class="qz-sub-row">
+              <span class="qz-sub-label"><%= r.title || r.id %></span>
+              <div class="qz-chips">
+                <% items.slice(0, 5).forEach(function(it, i) { %>
+                  <span class="qz-chip<%= i === 0 ? ' qz-chip--top' : '' %>"><%= it %></span>
+                <% }) %>
+              </div>
             </div>
             <% } %>
           <% }) %>
-        </div>
-        <p class="admin-muted" style="margin-top:.5rem">
-          Derni&egrave;re modification : <%= new Date(attempt.updatedAt).toLocaleString('fr-FR') %>
-        </p>
-      <% } else { %>
-        <p class="admin-muted">Aucune r&eacute;ponse enregistr&eacute;e.</p>
-      <% } %>
+        <% } %>
+
+        <%# Spectrums de cette section %>
+        <% if (s.spectrums && s.spectrums.length) { %>
+          <% s.spectrums.forEach(function(sp) { %>
+            <% var val = sc.spectrums && sc.spectrums[sp.id]; %>
+            <% if (val) { %>
+            <div class="qz-sub-row">
+              <span class="qz-sub-label"><%= sp.title || sp.id %></span>
+              <span class="qz-spectrum-val"><%= val %></span>
+            </div>
+            <% } %>
+          <% }) %>
+        <% } %>
+
+        <%# Multiselects de cette section %>
+        <% if (s.multiselects && s.multiselects.length) { %>
+          <% s.multiselects.forEach(function(ms) { %>
+            <% var vals = sc.multiselects && sc.multiselects[ms.id]; %>
+            <% if (vals && vals.length) { %>
+            <div class="qz-sub-row">
+              <span class="qz-sub-label"><%= ms.title || ms.id %></span>
+              <div class="qz-chips">
+                <% vals.forEach(function(v) { %><span class="qz-chip"><%= v %></span><% }) %>
+              </div>
+            </div>
+            <% } %>
+          <% }) %>
+        <% } %>
+
+      <% }) %>
     </div>
 
+    <%# ── Section profil corps ── %>
+    <% if (corpsScore && corpsSection) { %>
+    <div class="qz-profile-block">
+      <div class="qz-profile-title">Profil / corps</div>
+      <div class="qz-profile-grid">
+        <% corpsSection.fields.forEach(function(f) { %>
+          <% var val = corpsScore.fields && corpsScore.fields[f.id]; %>
+          <% if (val) { %>
+          <div class="qz-profile-cell">
+            <span class="qz-profile-key"><%= f.id %></span>
+            <span class="qz-profile-val"><%= val %></span>
+          </div>
+          <% } %>
+        <% }) %>
+      </div>
+      <% if (corpsSection.rankings) { %>
+        <% corpsSection.rankings.forEach(function(r) { %>
+          <% var items = corpsScore.rankings && corpsScore.rankings[r.id]; %>
+          <% if (items && items.length) { %>
+          <div class="qz-sub-row" style="margin-top:.5rem">
+            <span class="qz-sub-label"><%= r.title || r.id %></span>
+            <div class="qz-chips">
+              <% items.slice(0,5).forEach(function(it,i){ %>
+                <span class="qz-chip<%= i===0?' qz-chip--top':'' %>"><%= it %></span>
+              <% }) %>
+            </div>
+          </div>
+          <% } %>
+        <% }) %>
+      <% } %>
+    </div>
+    <% } %>
+
     <%# ── Lootboxes ── %>
-    <div class="aud-section">
-      <h2 class="aud-section-title">&#127381; Lootboxes</h2>
-      <p class="admin-muted">
-        En attente d&rsquo;ouverture&nbsp;: <strong><%= lootboxCount %></strong>
-      </p>
-      <form method="POST" action="/ponhgup/profils/<%= detail.user.id %>/grant-lootbox" class="aud-grant-form">
-        <label class="admin-label" for="grant-count-<%= detail.user.id %>">Attribuer</label>
-        <input type="number" id="grant-count-<%= detail.user.id %>" name="count" value="1" min="1" max="20" class="admin-input admin-input--sm" />
+    <div class="qz-lootbox-block">
+      <span class="qz-lootbox-count"><%= lootboxCount %></span>
+      <span class="qz-lootbox-label">lootbox<%= lootboxCount > 1 ? 'es' : '' %> en attente</span>
+      <form method="POST" action="/ponhgup/profils/<%= detail.user.id %>/grant-lootbox" class="qz-lootbox-form">
+        <input type="number" name="count" value="1" min="1" max="20" class="admin-input admin-input--sm" />
         <button type="submit" class="admin-btn-primary">Accorder</button>
       </form>
       <form method="POST" action="/ponhgup/profils/<%= detail.user.id %>/reset-progress"
-        style="margin-top:.75rem"
-        onsubmit="return confirm('Remettre à zéro les pièces, le coffre et les compteurs de <%= detail.user.displayName %> ?\n→ 5 coffres neufs seront accordés.')">
-        <button type="submit" class="admin-btn-danger" style="font-size:.82rem">
-          &#9881; Remettre à zéro (pièces + coffre)
-        </button>
+        onsubmit="return confirm('Remettre à zéro les pièces, le coffre et les compteurs de <%= detail.user.displayName %> ?')">
+        <button type="submit" class="admin-btn-danger" style="font-size:.8rem">RAZ (pièces + coffre)</button>
       </form>
     </div>
+
+    <% } %>
 
   </main>
 </div>
