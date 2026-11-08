@@ -1064,3 +1064,59 @@ a.amis-row-name:hover{text-decoration:underline}
   .amis-row{flex-wrap:wrap}
   .amis-row-actions{width:100%;justify-content:flex-end}
 }
+
+/* ── Page amis : volet droit + bloc invite fusionné ─────────────── */
+
+/* Volet droit */
+.amis-right-panel{position:fixed;right:0;top:var(--topnav-height);bottom:0;width:240px;background:var(--card);border-left:1px solid var(--border);overflow-y:auto;overflow-x:hidden;padding:1rem .9rem 2rem;z-index:5;display:flex;flex-direction:column;gap:.6rem}
+.amis-rp-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-bottom:.6rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.amis-rp-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:flex;align-items:center;gap:.4rem}
+.amis-rp-count{background:rgba(255,255,255,.1);color:var(--fg);border-radius:999px;min-width:18px;height:18px;padding:0 5px;font-size:.68rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.amis-rp-view-toggle{display:flex;gap:2px}
+.amis-rp-view-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;border-radius:4px;line-height:0}
+.amis-rp-view-btn svg{width:14px;height:14px}
+.amis-rp-view-btn--active{color:var(--fg);background:rgba(255,255,255,.08)}
+.amis-rp-view-btn:hover{color:var(--fg)}
+.amis-rp-empty{font-size:.8rem;color:var(--muted);margin:0;padding-top:.25rem}
+
+/* Vue carte (défaut) */
+.amis-rp-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.amis-rp-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.6rem .4rem .5rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;text-align:center}
+.amis-rp-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff;text-transform:uppercase;flex-shrink:0;background-size:cover;background-position:center top}
+.amis-rp-avatar--img{color:transparent}
+.amis-rp-item-info{display:flex;flex-direction:column;gap:.05rem;min-width:0;width:100%}
+.amis-rp-item-name{font-size:.72rem;font-weight:600;color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+a.amis-rp-item-name:hover{text-decoration:underline}
+.amis-rp-item-code{font-size:.62rem;color:var(--muted);font-family:monospace}
+.amis-rp-remove{position:absolute;top:3px;right:3px;background:none;border:none;cursor:pointer;color:transparent;padding:2px;border-radius:3px;line-height:0;transition:color .12s}
+.amis-rp-remove svg{width:10px;height:10px}
+.amis-rp-item:hover .amis-rp-remove{color:var(--muted)}
+.amis-rp-remove:hover{color:hsl(0,60%,65%)!important}
+
+/* Vue liste */
+.amis-rp-grid--list{grid-template-columns:1fr}
+.amis-rp-grid--list .amis-rp-item{flex-direction:row;text-align:left;padding:.45rem .5rem;gap:.55rem}
+.amis-rp-grid--list .amis-rp-avatar{width:28px;height:28px;font-size:.72rem;flex-shrink:0}
+.amis-rp-grid--list .amis-rp-item-info{flex-direction:row;align-items:baseline;gap:.3rem;overflow:hidden}
+.amis-rp-grid--list .amis-rp-item-code{display:none}
+
+/* Contenu principal décalé pour laisser place au volet */
+.amis-main-content{margin-right:256px}
+
+/* Bloc invite fusionné */
+.amis-invite-block{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.3rem 1rem;margin-bottom:1.75rem}
+.amis-invite-top{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:.85rem}
+.amis-invite-col{display:flex;flex-direction:column;gap:.5rem}
+.amis-invite-col--sep{border-left:1px solid var(--border);padding-left:1.2rem}
+.amis-inv-count-hint{font-size:.75rem;color:var(--muted);margin:0}
+.amis-invite-notice{font-size:.74rem;color:hsl(0,55%,65%);margin:0;padding-top:.7rem;border-top:1px solid var(--border);line-height:1.6}
+
+/* Masquer le volet droit sur petits écrans */
+@media(max-width:1100px){
+  .amis-right-panel{display:none}
+  .amis-main-content{margin-right:0}
+}
+@media(max-width:760px){
+  .amis-invite-top{grid-template-columns:1fr}
+  .amis-invite-col--sep{border-left:none;padding-left:0;border-top:1px solid var(--border);padding-top:.85rem}
+}

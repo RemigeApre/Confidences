@@ -1,51 +1,93 @@
 <%- include('partials/head', { title: 'Amis' }) %>
-<main class="container wide profil-page gallery-has-sidebar">
+<main class="container wide profil-page gallery-has-sidebar amis-page">
   <%- include('partials/top-nav', { config: config }) %>
   <%- include('partials/profil-nav', { roleHue: roleHue }) %>
 
-  <div class="profil-subpage">
-
-    <%# ── Inviter + trouver ── %>
-    <section class="amis-connect-section">
-
-      <%# Lien d'invitation %>
-      <% if (locals.inviteToken) { %>
-      <div class="amis-connect-block">
-        <span class="amis-connect-label">Lien d&rsquo;invitation</span>
-        <div class="amis-link-row">
-          <input class="amis-link-input" id="amis-inv-link" type="text" readonly />
-          <button class="amis-link-copy-btn" id="amis-inv-copy" type="button">Copier</button>
-        </div>
-        <p class="amis-connect-hint">Les personnes qui s&rsquo;inscrivent via ce lien deviennent automatiquement vos amis.</p>
+  <%# ── Volet droit : liste des amis ───────────────────────────────── %>
+  <aside class="amis-right-panel" id="amis-right-panel">
+    <div class="amis-rp-head">
+      <span class="amis-rp-title">
+        Mes amis
+        <% if (friends && friends.length) { %><span class="amis-rp-count"><%= friends.length %></span><% } %>
+      </span>
+      <div class="amis-rp-view-toggle">
+        <button class="amis-rp-view-btn amis-rp-view-btn--active" id="amis-view-card" title="Vue carte" aria-label="Vue carte">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        </button>
+        <button class="amis-rp-view-btn" id="amis-view-list" title="Vue liste" aria-label="Vue liste">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="2" width="14" height="2" rx="1"/><rect x="1" y="7" width="14" height="2" rx="1"/><rect x="1" y="12" width="14" height="2" rx="1"/></svg>
+        </button>
       </div>
-      <% } %>
+    </div>
 
-      <%# Mon code + recherche %>
-      <div class="amis-connect-block">
-        <span class="amis-connect-label">Mon code</span>
-        <div class="amis-code-row">
-          <span class="amis-code-display" id="amis-my-code"><%= currentUser.displayName %>#<%= friendCode %></span>
-          <button class="amis-link-copy-btn" id="amis-code-copy-btn" type="button">Copier</button>
+    <% if (!friends || !friends.length) { %>
+      <p class="amis-rp-empty">Aucun ami pour l&rsquo;instant.</p>
+    <% } else { %>
+    <ul class="amis-rp-grid" id="amis-rp-grid">
+      <% friends.forEach(function(f) { %>
+      <li class="amis-rp-item">
+        <% if (f.thumb) { %>
+          <div class="amis-rp-avatar amis-rp-avatar--img" style="background-image:url('<%= f.thumb %>')"></div>
+        <% } else { %>
+          <div class="amis-rp-avatar" style="background:<%= f.profile_color || '#6b7280' %>"><%= (f.display_name || '?').charAt(0).toUpperCase() %></div>
+        <% } %>
+        <div class="amis-rp-item-info">
+          <a href="/profil/<%= f.username %>" class="amis-rp-item-name"><%= f.display_name %></a>
+          <span class="amis-rp-item-code">#<%= f.friend_code %></span>
         </div>
-        <form method="POST" action="/favoris/amis/demande" class="amis-search-form">
-          <input class="amis-search-input" type="text" name="code" placeholder="pseudo#1234"
-                 value="<%= searchQuery || '' %>" autocomplete="off" maxlength="80" />
-          <button class="amis-search-btn" type="submit">Envoyer une demande</button>
+        <form method="POST" action="/favoris/amis/<%= f.id %>/supprimer" class="amis-inline-form"
+              onsubmit="return confirm('Retirer <%= f.display_name %> de vos amis ?')">
+          <button class="amis-rp-remove" type="submit" title="Retirer" aria-label="Retirer <%= f.display_name %>">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="4" x2="4" y2="12"/><line x1="4" y1="4" x2="12" y2="12"/></svg>
+          </button>
         </form>
-        <% if (searchError) { %>
-          <p class="amis-feedback amis-feedback--error"><%= searchError %></p>
-        <% } %>
-        <% if (searchResult) { %>
-          <p class="amis-feedback amis-feedback--ok">
-            <% if (searchResult.autoAccepted) { %>
-              Vous &ecirc;tes maintenant amis avec <strong><%= searchResult.target.displayName %></strong>.
-            <% } else { %>
-              Demande envoy&eacute;e &agrave; <strong><%= searchResult.target.displayName %></strong>.
-            <% } %>
-          </p>
-        <% } %>
-      </div>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </aside>
 
+  <div class="profil-subpage amis-main-content">
+
+    <%# ── Bloc invite : lien + code fusionnés ── %>
+    <section class="amis-invite-block">
+      <div class="amis-invite-top">
+        <div class="amis-invite-col">
+          <span class="amis-connect-label">Lien d&rsquo;invitation</span>
+          <div class="amis-link-row">
+            <input class="amis-link-input" id="amis-inv-link" type="text" readonly />
+            <button class="amis-link-copy-btn" id="amis-inv-copy" type="button">Copier</button>
+          </div>
+          <% if (inviteStats && inviteStats.total > 0) { %>
+            <p class="amis-inv-count-hint"><%= inviteStats.total %> personne<%= inviteStats.total > 1 ? 's ont' : ' a' %> rejoint via votre lien.</p>
+          <% } %>
+        </div>
+        <div class="amis-invite-col amis-invite-col--sep">
+          <span class="amis-connect-label">Mon code</span>
+          <div class="amis-code-row">
+            <span class="amis-code-display" id="amis-my-code"><%= currentUser.displayName %>#<%= friendCode %></span>
+            <button class="amis-link-copy-btn" id="amis-code-copy-btn" type="button">Copier</button>
+          </div>
+          <form method="POST" action="/favoris/amis/demande" class="amis-search-form">
+            <input class="amis-search-input" type="text" name="code" placeholder="pseudo#1234"
+                   value="<%= searchQuery || '' %>" autocomplete="off" maxlength="80" />
+            <button class="amis-search-btn" type="submit">Envoyer une demande</button>
+          </form>
+          <% if (searchError) { %>
+            <p class="amis-feedback amis-feedback--error"><%= searchError %></p>
+          <% } %>
+          <% if (searchResult) { %>
+            <p class="amis-feedback amis-feedback--ok">
+              <% if (searchResult.autoAccepted) { %>
+                Vous &ecirc;tes maintenant amis avec <strong><%= searchResult.target.displayName %></strong>.
+              <% } else { %>
+                Demande envoy&eacute;e &agrave; <strong><%= searchResult.target.displayName %></strong>.
+              <% } %>
+            </p>
+          <% } %>
+        </div>
+      </div>
+      <p class="amis-invite-notice">Partagez uniquement &agrave; des personnes majeures (+18&nbsp;ans). En partageant ce lien, vous engagez votre responsabilit&eacute; quant &agrave; l&rsquo;identit&eacute; et &agrave; la majorit&eacute; de la personne invit&eacute;e.</p>
     </section>
 
     <%# ── Inscriptions à valider (FR) ── %>
@@ -134,64 +176,47 @@
     </section>
     <% } %>
 
-    <%# ── Mes amis ── %>
-    <section class="amis-section">
-      <h2 class="amis-section-title">
-        Mes amis
-        <% if (friends && friends.length) { %><span class="amis-count-badge amis-count-badge--neutral"><%= friends.length %></span><% } %>
-      </h2>
-      <% if (!friends || !friends.length) { %>
-        <p class="amis-empty">Aucun ami pour l&rsquo;instant.</p>
-      <% } else { %>
-      <ul class="amis-list">
-        <% friends.forEach(function(f) { %>
-        <li class="amis-row">
-          <% if (f.thumb) { %>
-            <div class="amis-row-avatar amis-row-avatar--img" style="background-image:url('<%= f.thumb %>')"></div>
-          <% } else { %>
-            <div class="amis-row-avatar" style="background:<%= f.profile_color || '#6b7280' %>"><%= (f.display_name || '?').charAt(0).toUpperCase() %></div>
-          <% } %>
-          <div class="amis-row-info">
-            <a href="/profil/<%= f.username %>" class="amis-row-name"><%= f.display_name %></a>
-            <span class="amis-row-code">#<%= f.friend_code %></span>
-          </div>
-          <form method="POST" action="/favoris/amis/<%= f.id %>/supprimer" class="amis-inline-form"
-                onsubmit="return confirm('Retirer <%= f.display_name %> de vos amis ?')">
-            <button class="amis-btn amis-btn--remove" type="submit">Retirer</button>
-          </form>
-        </li>
-        <% }) %>
-      </ul>
-      <% } %>
-      <% if (inviteStats && inviteStats.total > 0) { %>
-        <p class="amis-inv-stats"><%= inviteStats.total %> personne<%= inviteStats.total > 1 ? 's ont' : ' a' %> rejoint via votre lien.</p>
-      <% } %>
-    </section>
-
   </div>
 </main>
 
 <script nonce="<%= nonce %>">
 (function () {
-  function copyText(text, btn, label) {
+  function copyText(text, btn) {
     navigator.clipboard.writeText(text).catch(function () {});
+    var orig = btn.textContent;
     btn.textContent = 'Copi\u00e9 !';
-    setTimeout(function () { btn.textContent = label; }, 2000);
+    setTimeout(function () { btn.textContent = orig; }, 2000);
   }
 
-  <% if (locals.inviteToken) { %>
-  var invLink  = window.location.origin + '/rejoindre/<%= locals.inviteToken %>';
+  var invLink  = window.location.origin + '/rejoindre/<%= locals.inviteToken || "" %>';
   var invInput = document.getElementById('amis-inv-link');
   var invCopy  = document.getElementById('amis-inv-copy');
   if (invInput) invInput.value = invLink;
-  if (invCopy)  invCopy.addEventListener('click', function () { copyText(invLink, invCopy, 'Copier'); });
-  <% } %>
+  if (invCopy)  invCopy.addEventListener('click', function () { copyText(invLink, invCopy); });
 
   var codeEl   = document.getElementById('amis-my-code');
   var codeCopy = document.getElementById('amis-code-copy-btn');
   if (codeEl && codeCopy) {
-    codeCopy.addEventListener('click', function () { copyText(codeEl.textContent.trim(), codeCopy, 'Copier'); });
+    codeCopy.addEventListener('click', function () { copyText(codeEl.textContent.trim(), codeCopy); });
   }
+
+  // Vue carte / liste
+  var grid     = document.getElementById('amis-rp-grid');
+  var btnCard  = document.getElementById('amis-view-card');
+  var btnList  = document.getElementById('amis-view-list');
+  var VIEW_KEY = 'amis-view';
+
+  function applyView(v) {
+    if (!grid) return;
+    grid.classList.toggle('amis-rp-grid--list', v === 'list');
+    if (btnCard) btnCard.classList.toggle('amis-rp-view-btn--active', v === 'card');
+    if (btnList) btnList.classList.toggle('amis-rp-view-btn--active', v === 'list');
+    localStorage.setItem(VIEW_KEY, v);
+  }
+
+  applyView(localStorage.getItem(VIEW_KEY) || 'card');
+  if (btnCard) btnCard.addEventListener('click', function () { applyView('card'); });
+  if (btnList) btnList.addEventListener('click', function () { applyView('list'); });
 })();
 </script>
 
