@@ -15,36 +15,21 @@
     </a>
   </div>
 
-  <%# État des clés crypto — transmis au JS -%>
-  <div id="msg-crypto-state"
+  <div id="msg-state"
        data-conv-id="<%= conv.id %>"
        data-partner-id="<%= partner.id %>"
-       data-my-id="<%= currentUser.id %>"
-       data-has-keys="<%= myKeys.hasKeys %>"
-       data-partner-has-key="<%= !!partnerPubKey %>"
-       data-partner-pub-key="<%= partnerPubKey ? encodeURIComponent(partnerPubKey) : '' %>"
-       data-encrypted-priv-key="<%= myKeys.hasKeys ? encodeURIComponent(myKeys.encryptedPrivKey) : '' %>"
-       data-key-iv="<%= myKeys.hasKeys ? encodeURIComponent(myKeys.keyIv) : '' %>">
-  </div>
-
-  <div class="msg-partner-no-key-banner" id="msg-partner-no-key-banner" hidden>
-    <p><%= partner.displayName %> n&rsquo;a pas encore de clé de chiffrement.</p>
+       data-my-id="<%= currentUser.id %>">
   </div>
 
   <%# Zone de messages -%>
   <div class="msg-thread-body" id="msg-thread-body">
     <button class="msg-load-more-btn" id="msg-load-more-btn" type="button" hidden>Charger plus</button>
     <div class="msg-thread-messages" id="msg-thread-messages">
-      <%# Messages chargés côté serveur (payloads chiffrés) -%>
       <% messages.forEach(function(m) { %>
       <article class="msg-bubble msg-bubble--<%= m.sender_id === currentUser.id ? 'me' : 'them' %>"
-               data-id="<%= m.id %>"
-               data-sender="<%= m.sender_id %>"
-               data-payload="<%= encodeURIComponent(m.payload) %>"
-               data-content-ref="<%= m.content_ref ? encodeURIComponent(m.content_ref) : '' %>"
-               data-ts="<%= m.created_at %>">
+               data-id="<%= m.id %>">
         <div class="msg-bubble-inner">
-          <div class="msg-bubble-text" data-decrypting="1">&#183;&#183;&#183;</div>
+          <div class="msg-bubble-text"><%- m.payload.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') %></div>
           <% if (m.content_ref) { %>
             <div class="msg-bubble-ref" data-ref="<%= encodeURIComponent(m.content_ref) %>"></div>
           <% } %>
@@ -76,174 +61,16 @@
 (function () {
   'use strict';
 
-  // ── Utilitaires base64 ──────────────────────────────────────────────────
-  function b64ToBytes(b64) {
-    return Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
-  }
-  function bytesToB64(buf) {
-    return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
-  }
+  var state     = document.getElementById('msg-state').dataset;
+  var convId    = parseInt(state.convId, 10);
+  var partnerId = parseInt(state.partnerId, 10);
+  var myId      = parseInt(state.myId, 10);
 
-  // ── State ───────────────────────────────────────────────────────────────
-  var state = document.getElementById('msg-crypto-state').dataset;
-  var convId     = parseInt(state.convId, 10);
-  var partnerId  = parseInt(state.partnerId, 10);
-  var myId       = parseInt(state.myId, 10);
-  var hasKeys    = state.hasKeys === 'true';
-  var partnerHasKey = state.partnerHasKey === 'true';
-
-  var privKey    = null;  // CryptoKey RSA-OAEP (decrypt) chargée en mémoire
-  var partnerPubKey = null; // CryptoKey RSA-OAEP (encrypt) du destinataire
-  var myPubKey   = null;  // CryptoKey RSA-OAEP (encrypt) de soi-même
-  var keysReady  = false; // true quand initKeys() a terminé
-
-  // ── Import d'une clé publique JWK ───────────────────────────────────────
-  function importPublicKey(jwkStr) {
-    var jwk = JSON.parse(jwkStr);
-    return crypto.subtle.importKey('jwk', jwk, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  // ── Déchiffrer un message ───────────────────────────────────────────────
-  async function decryptPayload(payloadStr) {
-    if (!privKey) return null;
-    try {
-      var p = JSON.parse(payloadStr);
-      var iv  = b64ToBytes(p.iv);
-      var ct  = b64ToBytes(p.ct);
-      // kr = AES key enveloppée pour le destinataire, ks = pour l'expéditeur
-      var wrappedKey = b64ToBytes(myId === parseInt(state.partnerId, 10) ? p.kr : (p.sender === myId ? p.ks : p.kr));
-      // Détecter si on est l'expéditeur ou le destinataire
-      var isSender = p.senderId === myId;
-      var wrapped  = b64ToBytes(isSender ? p.ks : p.kr);
-      var aesKey = await crypto.subtle.unwrapKey(
-        'raw', wrapped, privKey,
-        { name: 'RSA-OAEP' },
-        { name: 'AES-GCM' }, false, ['decrypt']
-      );
-      var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, aesKey, ct);
-      return new TextDecoder().decode(plain);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // ── Chiffrer un message ─────────────────────────────────────────────────
-  async function encryptText(text) {
-    if (!partnerPubKey || !myPubKey) return null;
-    var enc = new TextEncoder();
-    var aesKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, aesKey, enc.encode(text));
-    var rawAes = await crypto.subtle.exportKey('raw', aesKey);
-    var kr = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, partnerPubKey, rawAes);
-    var ks = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, myPubKey, rawAes);
-    return JSON.stringify({
-      iv: bytesToB64(iv),
-      ct: bytesToB64(ct),
-      kr: bytesToB64(kr),
-      ks: bytesToB64(ks),
-      senderId: myId,
-    });
-  }
-
-  // ── Initialisation des clés ─────────────────────────────────────────────
-  // La WK est injectée dans la page par le serveur via HMAC(secret, userId) :
-  // toujours disponible, déterministe, zéro stockage côté client.
-  async function initKeys() {
-    var wkHex = window.lq_msgwk || '';
-    if (!wkHex) return; // ne devrait pas arriver si l'utilisateur est connecté
-
-    var wkBytes = new Uint8Array(wkHex.match(/.{2}/g).map(function (h) { return parseInt(h, 16); }));
-    var wk = await crypto.subtle.importKey('raw', wkBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
-
-    if (!hasKeys) {
-      // Première fois : générer une paire RSA, chiffrer la clé privée avec la WK
-      var pair = await crypto.subtle.generateKey(
-        { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
-        true, ['encrypt', 'decrypt']
-      );
-      var pubJwk  = await crypto.subtle.exportKey('jwk', pair.publicKey);
-      var privJwk = await crypto.subtle.exportKey('jwk', pair.privateKey);
-      var iv2     = crypto.getRandomValues(new Uint8Array(12));
-      var encPriv = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: iv2 }, wk,
-        new TextEncoder().encode(JSON.stringify(privJwk))
-      );
-      await fetch('/messages/keys', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          publicKey:       JSON.stringify(pubJwk),
-          encryptedPrivKey: bytesToB64(encPriv),
-          keyIv:           bytesToB64(iv2),
-        }),
-      });
-      privKey  = pair.privateKey;
-      myPubKey = pair.publicKey;
-      hasKeys  = true;
-    } else {
-      // Déchiffrer la clé privée existante avec la WK déterministe
-      var encPrivB64 = decodeURIComponent(state.encryptedPrivKey);
-      var ivB64      = decodeURIComponent(state.keyIv);
-      try {
-        var privJwkBytes = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: b64ToBytes(ivB64) }, wk, b64ToBytes(encPrivB64)
-        );
-        var privJwk2 = JSON.parse(new TextDecoder().decode(privJwkBytes));
-        privKey  = await crypto.subtle.importKey('jwk', privJwk2, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']);
-        var pubJwk2 = Object.assign({}, privJwk2);
-        delete pubJwk2.d; delete pubJwk2.dp; delete pubJwk2.dq; delete pubJwk2.qi; delete pubJwk2.p; delete pubJwk2.q;
-        pubJwk2.key_ops = ['encrypt'];
-        myPubKey = await crypto.subtle.importKey('jwk', pubJwk2, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
-      } catch (_) {
-        // La WK a changé (changement de SESSION_SECRET) → régénérer silencieusement
-        hasKeys = false;
-        return initKeys();
-      }
-    }
-
-    // Charger la clé publique du partenaire
-    if (!partnerHasKey) {
-      document.getElementById('msg-partner-no-key-banner').hidden = false;
-    } else {
-      var pkStr = decodeURIComponent(state.partnerPubKey);
-      try { partnerPubKey = await importPublicKey(pkStr); } catch (_) {}
-    }
-
-    keysReady = true;
-    var sendBtn = document.querySelector('.msg-compose-send');
-    if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ''; }
-    decryptAll();
-  }
-
-  // ── Déchiffrer les bulles affichées ─────────────────────────────────────
-  async function decryptAll() {
-    var bubbles = document.querySelectorAll('.msg-bubble[data-payload]');
-    for (var i = 0; i < bubbles.length; i++) {
-      await decryptBubble(bubbles[i]);
-    }
-  }
-
-  async function decryptBubble(el) {
-    var payloadStr = decodeURIComponent(el.dataset.payload || '');
-    var textEl = el.querySelector('.msg-bubble-text');
-    if (!textEl) return;
-    var plain = await decryptPayload(payloadStr);
-    if (plain !== null) {
-      textEl.textContent = plain;
-      textEl.removeAttribute('data-decrypting');
-    } else {
-      textEl.textContent = '[message chiffré]';
-      textEl.classList.add('msg-bubble-text--locked');
-    }
-    // Référence de contenu
-    var refEl = el.querySelector('.msg-bubble-ref');
-    if (refEl && el.dataset.contentRef) {
-      var ref = JSON.parse(decodeURIComponent(el.dataset.contentRef));
-      renderContentRef(refEl, ref);
-    }
-  }
-
+  // ── Rendu des références de contenu ──────────────────────────────────────
   function renderContentRef(el, ref) {
     var typeLabel = { image: 'Image', bd: 'BD', wiki: 'Codex' }[ref.type] || ref.type;
     var href = ref.type === 'image' ? '/galerie/' + ref.id
@@ -251,16 +78,19 @@
              : '/wiki/' + ref.id;
     el.innerHTML = '<a class="msg-ref-card" href="' + href + '">' +
       '<span class="msg-ref-type">' + typeLabel + '</span>' +
-      '<span class="msg-ref-title">' + (ref.title || '') + '</span>' +
+      '<span class="msg-ref-title">' + escHtml(ref.title || '') + '</span>' +
       '</a>';
   }
+
+  document.querySelectorAll('.msg-bubble-ref[data-ref]').forEach(function (el) {
+    try { renderContentRef(el, JSON.parse(decodeURIComponent(el.dataset.ref))); } catch (_) {}
+  });
 
   // ── Envoi d'un message ───────────────────────────────────────────────────
   var compose = document.getElementById('msg-compose');
   var input   = document.getElementById('msg-compose-input');
 
   if (compose) {
-    // Auto-resize du textarea
     input.addEventListener('input', function () {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 160) + 'px';
@@ -269,27 +99,20 @@
     compose.addEventListener('submit', async function (e) {
       e.preventDefault();
       var text = input.value.trim();
-      if (!text || !keysReady || !privKey) return;
-      if (!partnerPubKey) {
-        alert('<%= partner.displayName %> n\'a pas encore de clé de chiffrement.');
-        return;
-      }
-      var payload = await encryptText(text);
-      if (!payload) return;
+      if (!text) return;
       input.value = '';
       input.style.height = 'auto';
       try {
         var r = await fetch('/messages/' + partnerId, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ payload: payload }),
+          body: JSON.stringify({ text: text }),
         });
         var data = await r.json();
         if (data.ok) appendBubble(data.msgId, text, new Date().toISOString(), true);
       } catch (_) {}
     });
 
-    // Envoi avec Ctrl+Enter ou Cmd+Enter
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
@@ -298,13 +121,18 @@
     });
   }
 
-  function appendBubble(id, text, ts, isMe) {
+  function appendBubble(id, text, ts, isMe, contentRef) {
     var el = document.createElement('article');
     el.className = 'msg-bubble msg-bubble--' + (isMe ? 'me' : 'them');
     el.dataset.id = id;
+    var refHtml = '';
+    if (contentRef) {
+      refHtml = '<div class="msg-bubble-ref"></div>';
+    }
     el.innerHTML =
       '<div class="msg-bubble-inner">' +
-        '<div class="msg-bubble-text">' + escHtml(text) + '</div>' +
+        '<div class="msg-bubble-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>' +
+        refHtml +
         '<div class="msg-bubble-meta">' +
           '<span class="msg-bubble-time">' + new Date(ts).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
           '<button class="msg-bubble-delete" data-id="' + id + '" type="button" aria-label="Supprimer" title="Supprimer">' +
@@ -312,23 +140,14 @@
           '</button>' +
         '</div>' +
       '</div>';
-    var container = document.getElementById('msg-thread-messages');
-    if (container) {
-      container.appendChild(el);
-      scrollToBottom();
+    if (contentRef) {
+      try { renderContentRef(el.querySelector('.msg-bubble-ref'), contentRef); } catch (_) {}
     }
+    var container = document.getElementById('msg-thread-messages');
+    if (container) { container.appendChild(el); scrollToBottom(); }
   }
 
-  function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  function scrollToBottom() {
-    var body = document.getElementById('msg-thread-body');
-    if (body) body.scrollTop = body.scrollHeight;
-  }
-
-  // ── Suppression d'un message ─────────────────────────────────────────────
+  // ── Suppression ──────────────────────────────────────────────────────────
   document.addEventListener('click', async function (e) {
     var btn = e.target.closest('.msg-bubble-delete');
     if (!btn) return;
@@ -366,45 +185,23 @@
       });
       var data = await r.json();
       if (!data.messages || !data.messages.length) return;
-      var container = document.getElementById('msg-thread-messages');
       for (var i = 0; i < data.messages.length; i++) {
         var m = data.messages[i];
         if (m.id <= lastMsgId) continue;
         lastMsgId = m.id;
-        var el = document.createElement('article');
-        el.className = 'msg-bubble msg-bubble--' + (m.sender_id === myId ? 'me' : 'them');
-        el.dataset.id = String(m.id);
-        el.dataset.sender = String(m.sender_id);
-        el.dataset.payload = encodeURIComponent(m.payload);
-        el.dataset.ts = m.created_at;
-        el.innerHTML =
-          '<div class="msg-bubble-inner">' +
-            '<div class="msg-bubble-text" data-decrypting="1">&#183;&#183;&#183;</div>' +
-            '<div class="msg-bubble-meta">' +
-              '<span class="msg-bubble-time">' +
-                new Date(m.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) +
-              '</span>' +
-              '<button class="msg-bubble-delete" data-id="' + m.id + '" type="button" aria-label="Supprimer" title="Supprimer">' +
-                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
-                  '<line x1="12" y1="4" x2="4" y2="12"/><line x1="4" y1="4" x2="12" y2="12"/>' +
-                '</svg>' +
-              '</button>' +
-            '</div>' +
-          '</div>';
-        container.appendChild(el);
-        await decryptBubble(el);
+        var ref = null;
+        if (m.content_ref) { try { ref = JSON.parse(m.content_ref); } catch (_) {} }
+        appendBubble(m.id, m.payload, m.created_at, m.sender_id === myId, ref);
       }
-      scrollToBottom();
     } catch (_) {}
   }
 
+  function scrollToBottom() {
+    var body = document.getElementById('msg-thread-body');
+    if (body) body.scrollTop = body.scrollHeight;
+  }
+
   scrollToBottom();
-  // Désactiver l'envoi pendant l'initialisation des clés
-  (function () {
-    var sendBtn = document.querySelector('.msg-compose-send');
-    if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '0.4'; }
-  })();
-  initKeys();
 })();
 </script>
 

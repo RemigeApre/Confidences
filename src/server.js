@@ -497,7 +497,6 @@ app.use((req, res, next) => {
   res.locals.pendingInvitesCount = 0;
   res.locals.pendingFriendRequestsCount = 0;
   res.locals.unreadMessagesCount = 0;
-  res.locals.msgSessionKey = '';
   if (req.user && req.method === 'GET') {
     try {
       res.locals.inviteToken = getOrCreateInviteToken(req.user.id);
@@ -505,15 +504,6 @@ app.use((req, res, next) => {
       res.locals.pendingFriendRequestsCount = getPendingFriendRequestsCount(req.user.id);
       res.locals.unreadMessagesCount = getUnreadCount(req.user.id);
     } catch (_) {}
-    // WK de messagerie : HMAC(secret serveur, user_id) — déterministe, zéro stockage
-    try {
-      const wkBuf = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'change_me')
-                          .update(String(req.user.id) + ':lq-msg-wk')
-                          .digest();
-      res.locals.msgSessionKey = wkBuf.toString('hex');
-    } catch (_) {
-      res.locals.msgSessionKey = '';
-    }
   }
   next();
 });

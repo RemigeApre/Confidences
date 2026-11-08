@@ -160,23 +160,17 @@ function buildRouter(config) {
     if (!partnerId || partnerId === uid)
       return res.status(400).json({ error: "destinataire invalide" });
 
-    const { payload, contentRef } = req.body;
-    if (!payload) return res.status(400).json({ error: "payload manquant" });
+    const { text, contentRef } = req.body;
+    if (!text || !text.trim()) return res.status(400).json({ error: "message vide" });
 
     const conv = getOrCreateConversation(uid, partnerId);
-    const msgId = insertMessage(conv.id, uid, payload, contentRef ? JSON.stringify(contentRef) : null);
+    const msgId = insertMessage(conv.id, uid, text.trim(), contentRef ? JSON.stringify(contentRef) : null);
 
-    // Si le contenu a une référence, l'ajouter à la bibliothèque partagée
     if (contentRef && contentRef.type && contentRef.id) {
       addSharedItem(conv.id, contentRef.type, contentRef.id, uid);
     }
 
-    // Notifier le destinataire via SSE
-    pushToUser(partnerId, "message", {
-      convId: conv.id,
-      fromId: uid,
-      fromName: req.user.displayName,
-    });
+    pushToUser(partnerId, "message", { convId: conv.id, fromId: uid, fromName: req.user.displayName });
 
     res.json({ ok: true, msgId, convId: conv.id });
   });
@@ -214,19 +208,17 @@ function buildRouter(config) {
     if (!partnerId || partnerId === uid)
       return res.status(400).json({ error: "destinataire invalide" });
 
-    const { type, id, payload } = req.body;
-    if (!type || !id || !payload)
-      return res.status(400).json({ error: "données manquantes" });
+    const { type, id, title } = req.body;
+    if (!type || !id) return res.status(400).json({ error: "données manquantes" });
 
-    const conv = getOrCreateConversation(uid, partnerId);
-    const msgId = insertMessage(conv.id, uid, payload, JSON.stringify({ type, id }));
-    addSharedItem(conv.id, type, id, uid);
+    const label = { image: '📷', bd: '📖', wiki: '📄' }[type] || '';
+    const text  = (label ? label + ' ' : '') + (title || type);
+    const conv  = getOrCreateConversation(uid, partnerId);
+    const refId = parseInt(id, 10);
+    const msgId = insertMessage(conv.id, uid, text, JSON.stringify({ type, id: refId, title: title || '' }));
+    addSharedItem(conv.id, type, refId, uid);
 
-    pushToUser(partnerId, "message", {
-      convId: conv.id,
-      fromId: uid,
-      fromName: req.user.displayName,
-    });
+    pushToUser(partnerId, "message", { convId: conv.id, fromId: uid, fromName: req.user.displayName });
 
     res.json({ ok: true, msgId, convId: conv.id });
   });
