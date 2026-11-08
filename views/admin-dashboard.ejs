@@ -1827,12 +1827,11 @@
           var lastMs2 = data.lastActiveAt ? new Date(data.lastActiveAt).getTime() : 0;
           var isOnline = lastMs2 && (Date.now() - lastMs2) < 15 * 60 * 1000;
           if (isOnline) {
-            // En ligne : le footer prend le relais, l'activité montre juste les pages
+            // En ligne : uniquement dans le footer, pas de doublon dans l'activité
             footer.classList.add('adm-dr-footer--online');
             document.getElementById('adm-dr-footer-label').textContent = 'En ligne maintenant';
             document.getElementById('adm-dr-footer-time').textContent = '';
             document.getElementById('adm-dr-footer-abs').textContent = '';
-            html += '<div class="adm-dr-act-row adm-dr-act-row--online"><span class="adm-dr-online-dot"></span>En ligne maintenant</div>';
           }
           if (data.recentPages && data.recentPages.length) {
             data.recentPages.forEach(function(p) {
