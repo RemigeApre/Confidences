@@ -643,6 +643,7 @@ app.get("/games/:slug/play", (req, res, next) => {
   const game = readGamesJson().find(g => g.slug === req.params.slug);
   if (!game) return res.status(404).end();
   if (game.disabled) return res.status(403).send("Ce jeu est temporairement indisponible.");
+  if (game.adminOnly && !req.user.isAdmin) return res.status(403).end();
   serveGameHtml(req, res, next, game, path.join(GAMES_DIR, game.dir, game.entrypoint));
 });
 
@@ -652,6 +653,7 @@ app.get("/games/:slug/*.html", (req, res, next) => {
   const game = readGamesJson().find(g => g.slug === req.params.slug);
   if (!game) return res.status(404).end();
   if (game.disabled) return res.status(403).send("Ce jeu est temporairement indisponible.");
+  if (game.adminOnly && !req.user.isAdmin) return res.status(403).end();
   const gameDir  = path.resolve(GAMES_DIR, game.dir);
   const filePath = path.resolve(gameDir, req.params[0] + ".html");
   if (!filePath.startsWith(gameDir + path.sep) && filePath !== gameDir) return res.status(403).end();
@@ -667,6 +669,7 @@ app.use("/games/:slug", (req, res, next) => {
   if (!req.user) return res.status(403).end();
   const game = readGamesJson().find(g => g.slug === req.params.slug);
   if (!game) return res.status(404).end();
+  if (game.adminOnly && !req.user.isAdmin) return res.status(403).end();
   if (req.path.endsWith(".wasm")) res.setHeader("Content-Type", "application/wasm");
   express.static(path.join(GAMES_DIR, game.dir), { maxAge: "1d" })(req, res, next);
 });

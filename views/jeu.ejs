@@ -471,7 +471,7 @@
         </aside>
         <div class="arcade-games-grid">
 
-          <% games.forEach(function(game, i) { %>
+          <% games.forEach(function(game, i) { if (game.adminOnly && !(currentUser && currentUser.isAdmin)) return; %>
           <div class="ag-card<%= game.disabled ? ' ag-card--disabled' : '' %>">
             <div class="ag-card-visual">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
