@@ -153,6 +153,16 @@ function buildRouter(config) {
     });
   });
 
+  // POST /messages/:userId/typing — indicateur de frappe (SSE → partenaire)
+  router.post("/:userId/typing", requireUserJson, (req, res) => {
+    const uid = req.user.id;
+    const partnerId = parseInt(req.params.userId, 10);
+    if (partnerId && partnerId !== uid) {
+      pushToUser(partnerId, "typing", { fromId: uid });
+    }
+    res.json({ ok: true });
+  });
+
   // POST /messages/:userId — envoyer un message (JSON)
   router.post("/:userId", requireUserJson, (req, res) => {
     const uid = req.user.id;
