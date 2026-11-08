@@ -9,6 +9,8 @@ const {
   insertMessage, getMessages, markRead, deleteMessage, getUnreadCount,
   addSharedItem, getSharedItems, removeSharedItem,
   getFriends, getUserById,
+  clearConversation,
+  getGalleryImage, getWikiPage, getBdBook,
 } = require("../db");
 const { thumbUrl } = require("../thumbs");
 
@@ -186,6 +188,44 @@ function buildRouter(config) {
     const msgId = parseInt(req.params.msgId, 10);
     const ok = deleteMessage(msgId, req.user.id);
     res.json({ ok });
+  });
+
+  // DELETE /messages/conv/:convId — supprimer toute la discussion (côté utilisateur)
+  router.delete("/conv/:convId", requireUserJson, (req, res) => {
+    const uid = req.user.id;
+    const convId = parseInt(req.params.convId, 10);
+    const conv = getConversation(convId);
+    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+      return res.status(403).json({ error: "accès refusé" });
+    clearConversation(convId, uid);
+    res.json({ ok: true });
+  });
+
+  // GET /messages/ref-card/:type/:id — métadonnées + vignette d'un contenu partagé
+  router.get("/ref-card/:type/:id", requireUserJson, (req, res) => {
+    const { type } = req.params;
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.json({ thumb: null, title: "" });
+
+    if (type === "image") {
+      const img = getGalleryImage(id);
+      if (!img) return res.json({ thumb: null, title: "" });
+      const raw = img.imagePaths && img.imagePaths[0];
+      return res.json({ thumb: raw ? thumbUrl(raw) : null, title: img.title || "" });
+    }
+    if (type === "wiki") {
+      const page = getWikiPage(id);
+      if (!page) return res.json({ thumb: null, title: "" });
+      const raw = page.imagePaths && page.imagePaths[0];
+      return res.json({ thumb: raw ? thumbUrl(raw) : null, title: page.title || "" });
+    }
+    if (type === "bd") {
+      const book = getBdBook(id);
+      if (!book) return res.json({ thumb: null, title: "" });
+      const raw = book.coverPath || (book.imagePaths && book.imagePaths[0]);
+      return res.json({ thumb: raw ? thumbUrl(raw) : null, title: book.title || "" });
+    }
+    res.json({ thumb: null, title: "" });
   });
 
   // GET /messages/:userId/library — bibliothèque partagée

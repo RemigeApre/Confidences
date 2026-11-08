@@ -6693,6 +6693,16 @@ function deleteMessage(msgId, userId) {
   return true;
 }
 
+function clearConversation(convId, userId) {
+  const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
+  if (!conv) return false;
+  if (conv.p1_id !== userId && conv.p2_id !== userId) return false;
+  const delCol = conv.p1_id === userId ? 'del_p1' : 'del_p2';
+  db.prepare(`UPDATE messages SET ${delCol}=1 WHERE conv_id=?`).run(convId);
+  db.prepare(`DELETE FROM messages WHERE conv_id=? AND del_p1=1 AND del_p2=1`).run(convId);
+  return true;
+}
+
 function getUnreadCount(userId) {
   const r = db.prepare(`
     SELECT COUNT(*) AS n FROM messages m
@@ -7186,6 +7196,7 @@ module.exports = {
   getMessages,
   markRead,
   deleteMessage,
+  clearConversation,
   getUnreadCount,
   addSharedItem,
   getSharedItems,
