@@ -6676,20 +6676,14 @@ function markRead(convId, recipientId) {
 
 function deleteMessage(msgId, userId) {
   const conv_row = db.prepare(`
-    SELECT m.id, m.del_p1, m.del_p2, c.p1_id, c.p2_id
+    SELECT m.id, c.p1_id, c.p2_id
     FROM messages m JOIN conversations c ON c.id = m.conv_id
     WHERE m.id = ?
   `).get(msgId);
   if (!conv_row) return false;
   if (conv_row.p1_id !== userId && conv_row.p2_id !== userId) return false;
-  const isP1 = conv_row.p1_id === userId;
-  if (isP1) db.prepare('UPDATE messages SET del_p1=1 WHERE id=?').run(msgId);
-  else       db.prepare('UPDATE messages SET del_p2=1 WHERE id=?').run(msgId);
-  // Hard-delete si les deux ont supprimé
-  const updated = db.prepare('SELECT del_p1, del_p2 FROM messages WHERE id=?').get(msgId);
-  if (updated && updated.del_p1 && updated.del_p2) {
-    db.prepare('DELETE FROM messages WHERE id=?').run(msgId);
-  }
+  // Suppression mutuelle : hard-delete immédiat pour tout le monde
+  db.prepare('DELETE FROM messages WHERE id=?').run(msgId);
   return true;
 }
 
@@ -6697,9 +6691,8 @@ function clearConversation(convId, userId) {
   const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
   if (!conv) return false;
   if (conv.p1_id !== userId && conv.p2_id !== userId) return false;
-  const delCol = conv.p1_id === userId ? 'del_p1' : 'del_p2';
-  db.prepare(`UPDATE messages SET ${delCol}=1 WHERE conv_id=?`).run(convId);
-  db.prepare(`DELETE FROM messages WHERE conv_id=? AND del_p1=1 AND del_p2=1`).run(convId);
+  // Suppression mutuelle : hard-delete immédiat pour tout le monde
+  db.prepare('DELETE FROM messages WHERE conv_id=?').run(convId);
   return true;
 }
 
