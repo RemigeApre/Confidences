@@ -16,31 +16,40 @@
     <%# ── Volet filtres gauche ── %>
     <aside class="adm-uf-panel" id="adm-uf-panel" aria-label="Filtres utilisateurs">
 
-      <div class="adm-uf-search-wrap">
-        <input type="search" class="adm-uf-search" id="adm-uf-search" placeholder="Rechercher&hellip;" autocomplete="off" />
+      <div class="adm-uf-hd">
+        <span class="adm-uf-hd-title">Utilisateurs</span>
+        <span class="adm-uf-hd-count" id="adm-uf-count"></span>
       </div>
 
-      <div class="adm-uf-group">
-        <label class="adm-uf-label" for="adm-uf-role">Type</label>
-        <select class="adm-uf-select" id="adm-uf-role">
-          <option value="">Tous</option>
-          <option value="normal">Utilisateurs</option>
-          <option value="admin">Admins</option>
-          <option value="test">Tests</option>
-        </select>
-      </div>
+      <div class="adm-uf-body">
 
-      <div class="adm-uf-group">
-        <label class="adm-uf-label" for="adm-uf-sort">Trier par</label>
-        <select class="adm-uf-select" id="adm-uf-sort">
-          <option value="activity">Dernière activité</option>
-          <option value="created">Date de création</option>
-          <option value="alpha">Ordre alphabétique</option>
-        </select>
-      </div>
+        <div class="adm-uf-search-wrap">
+          <input type="search" class="adm-uf-search" id="adm-uf-search" placeholder="Rechercher&hellip;" autocomplete="off" />
+        </div>
 
-      <div class="adm-uf-bottom">
-        <button type="button" class="adm-uf-reset" id="adm-uf-reset">Réinitialiser</button>
+        <div class="adm-uf-section">
+          <div class="adm-uf-section-label">Type</div>
+          <div class="adm-uf-chips" id="adm-uf-role-chips">
+            <button type="button" class="adm-uf-chip active" data-role="">Tous</button>
+            <button type="button" class="adm-uf-chip" data-role="normal">Membres</button>
+            <button type="button" class="adm-uf-chip" data-role="admin">Admins</button>
+            <button type="button" class="adm-uf-chip" data-role="test">Tests</button>
+          </div>
+        </div>
+
+        <div class="adm-uf-section">
+          <div class="adm-uf-section-label">Trier par</div>
+          <select class="adm-uf-select" id="adm-uf-sort">
+            <option value="activity">Dernière activité</option>
+            <option value="created">Date de création</option>
+            <option value="alpha">Ordre alphabétique</option>
+          </select>
+        </div>
+
+        <div class="adm-uf-bottom">
+          <button type="button" class="adm-uf-reset" id="adm-uf-reset">Réinitialiser</button>
+        </div>
+
       </div>
 
     </aside>
@@ -1578,18 +1587,23 @@
   });
   // ── Bibliothèque utilisateurs : filtres ─────────────────────────────────
   (function () {
-    var search   = document.getElementById('adm-uf-search');
-    var selRole  = document.getElementById('adm-uf-role');
-    var selSort  = document.getElementById('adm-uf-sort');
-    var resetBtn = document.getElementById('adm-uf-reset');
-    var lib      = document.getElementById('admin-user-lib');
+    var search    = document.getElementById('adm-uf-search');
+    var roleChips = document.querySelectorAll('#adm-uf-role-chips .adm-uf-chip');
+    var selSort   = document.getElementById('adm-uf-sort');
+    var resetBtn  = document.getElementById('adm-uf-reset');
+    var countEl   = document.getElementById('adm-uf-count');
+    var lib       = document.getElementById('admin-user-lib');
+
+    function activeRole() {
+      var active = document.querySelector('#adm-uf-role-chips .adm-uf-chip.active');
+      return active ? active.dataset.role : '';
+    }
 
     function applyFilters() {
       var q    = search.value.trim().toLowerCase();
-      var role = selRole.value;
+      var role = activeRole();
       var sort = selSort.value;
 
-      // Toutes les cartes utilisateurs (pas le bouton +)
       var cards = Array.from(lib.querySelectorAll('.admin-utile[data-role]'));
 
       cards.forEach(function (c) {
@@ -1598,12 +1612,10 @@
         c.hidden = !(nameMatch && roleMatch);
       });
 
-      // Tri : on réinsère les cartes dans l'ordre voulu
       var visible = cards.filter(function (c) { return !c.hidden; });
       visible.sort(function (a, b) {
         if (sort === 'alpha') return a.dataset.name.localeCompare(b.dataset.name, 'fr');
         if (sort === 'created') return Number(b.dataset.created) - Number(a.dataset.created);
-        // activity (défaut) : lastLogin décroissant, 0 en fin
         var la = Number(a.dataset.lastLogin), lb = Number(b.dataset.lastLogin);
         if (lb === 0 && la === 0) return 0;
         if (lb === 0) return -1;
@@ -1611,23 +1623,33 @@
         return lb - la;
       });
 
-      // Réinsérer après le bouton +
-      var createBtn = lib.querySelector('.admin-utile--create');
-      visible.forEach(function (c) { lib.appendChild(c); });
-      _ = createBtn; // keep reference live
+      lib.querySelectorAll('.admin-utile[data-role]').forEach(function(c) {
+        if (!c.hidden) lib.appendChild(c);
+      });
+
+      if (countEl) countEl.textContent = visible.length;
     }
 
     search.addEventListener('input', applyFilters);
-    selRole.addEventListener('change', applyFilters);
     selSort.addEventListener('change', applyFilters);
+
+    roleChips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        roleChips.forEach(function(c) { c.classList.remove('active'); });
+        chip.classList.add('active');
+        applyFilters();
+      });
+    });
+
     resetBtn.addEventListener('click', function () {
       search.value = '';
-      selRole.value = '';
+      roleChips.forEach(function(c) { c.classList.remove('active'); });
+      document.querySelector('#adm-uf-role-chips .adm-uf-chip[data-role=""]').classList.add('active');
       selSort.value = 'activity';
       applyFilters();
     });
 
-    applyFilters(); // tri initial par activité
+    applyFilters();
   })();
 
   // ── Fiche rapide utilisateur ─────────────────────────────────────────────
