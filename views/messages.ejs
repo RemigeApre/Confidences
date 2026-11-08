@@ -1,0 +1,33 @@
+<%- include('partials/head', { title: 'Messages' }) %>
+<main class="container narrow msg-list-page">
+  <%- include('partials/top-nav', { config: config }) %>
+
+  <div class="msg-list-header">
+    <h1 class="msg-list-title">Messages</h1>
+  </div>
+
+  <% if (!convs || !convs.length) { %>
+    <p class="msg-list-empty">Aucune conversation. Envoyez un contenu depuis la galerie ou le codex pour commencer.</p>
+  <% } else { %>
+  <ul class="msg-list">
+    <% convs.forEach(function(c) { %>
+    <li class="msg-list-item<%= c.unread > 0 ? ' msg-list-item--unread' : '' %>">
+      <a href="/messages/<%= c.partnerId %>" class="msg-list-link">
+        <div class="msg-list-avatar" style="background:<%= c.partnerColor || '#6b7280' %>">
+          <%= (c.partnerName || '?').charAt(0).toUpperCase() %>
+        </div>
+        <div class="msg-list-info">
+          <span class="msg-list-name"><%= c.partnerName %></span>
+          <span class="msg-list-date"><%= new Date(c.last_message_at).toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) %></span>
+        </div>
+        <% if (c.unread > 0) { %>
+          <span class="msg-list-unread-badge"><%= c.unread %></span>
+        <% } %>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+</main>
+<%- include('partials/foot') %>

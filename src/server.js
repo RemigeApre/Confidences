@@ -19,6 +19,7 @@ const buildCoupleRouter = require("./routes/couple");
 const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
 const buildRacesRouter = require("./routes/races");
+const { buildRouter: buildMessagesRouter } = require("./routes/messages");
 const { attachUser } = require("./auth");
 const { isFrenchIp } = require("./geo");
 const {
@@ -37,6 +38,8 @@ const {
   getOrCreateInviteToken,
   countPendingInvites,
   getPendingFriendRequestsCount,
+  getUnreadCount,
+  cleanupOldMessages,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -493,11 +496,13 @@ app.use((req, res, next) => {
   res.locals.inviteToken = null;
   res.locals.pendingInvitesCount = 0;
   res.locals.pendingFriendRequestsCount = 0;
+  res.locals.unreadMessagesCount = 0;
   if (req.user && req.method === 'GET') {
     try {
       res.locals.inviteToken = getOrCreateInviteToken(req.user.id);
       res.locals.pendingInvitesCount = countPendingInvites(req.user.id);
       res.locals.pendingFriendRequestsCount = getPendingFriendRequestsCount(req.user.id);
+      res.locals.unreadMessagesCount = getUnreadCount(req.user.id);
     } catch (_) {}
   }
   next();
@@ -1257,6 +1262,7 @@ app.use("/jeu", buildJeuRouter(config));
 app.use("/arcade", buildArcadeRouter(config));
 app.use("/profil", buildProfilRouter(config));
 app.use("/rejoindre", buildInviteRouter(config));
+app.use("/messages", buildMessagesRouter(config));
 
 // Page d'attente pour les comptes FR en attente de validation par l'inviteur
 app.get("/invitation-attente", (req, res) => {
@@ -1428,6 +1434,9 @@ app.get("/llms-full.txt", (req, res) => {
     res.status(500).end();
   }
 });
+
+// Nettoyage nocturne des messages > 3 mois (toutes les 24h)
+setInterval(() => { try { cleanupOldMessages(); } catch (_) {} }, 24 * 60 * 60 * 1000);
 
 if (usingHttps) {
   https

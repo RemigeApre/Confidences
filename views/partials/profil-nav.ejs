@@ -74,7 +74,17 @@
     <%# ── 4. À lire plus tard ── %>
     <a href="/favoris/a-lire-plus-tard" class="profil-nav-big-title<%= currentPath === '/favoris/a-lire-plus-tard' ? ' active' : '' %>">&Agrave; lire plus tard</a>
 
-    <%# ── 4b. Amis (lien + code invité fusionnés) ── %>
+    <%# ── 4b. Messages ── %>
+    <% if (locals.inviteToken) { %>
+      <div class="profil-nav-invite-row">
+        <a href="/messages" class="profil-nav-big-title<%= currentPath && currentPath.startsWith('/messages') ? ' active' : '' %>">Messages</a>
+        <% if (locals.unreadMessagesCount > 0) { %>
+          <span class="profil-nav-invite-badge" title="<%= locals.unreadMessagesCount %> message<%= locals.unreadMessagesCount > 1 ? 's' : '' %> non lu<%= locals.unreadMessagesCount > 1 ? 's' : '' %>"><%= locals.unreadMessagesCount %></span>
+        <% } %>
+      </div>
+    <% } %>
+
+    <%# ── 4c. Amis (lien + code invité fusionnés) ── %>
     <% if (locals.inviteToken) { %>
       <%
         var _friendAlerts = (locals.pendingInvitesCount || 0) + (locals.pendingFriendRequestsCount || 0);

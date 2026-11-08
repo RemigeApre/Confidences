@@ -97,6 +97,12 @@
           <span class="pc-nav-coins-count"><%= currentUser.coins || 0 %></span>
         </div>
         <% } %>
+        <% if (currentUser && locals.inviteToken) { %>
+        <a href="/messages" class="pc-icon-btn pc-msg-btn<%= currentPath === '/messages' || (currentPath || '').startsWith('/messages/') ? ' pc-msg-btn--active' : '' %>" title="Messages" aria-label="Messages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <% if (locals.unreadMessagesCount > 0) { %><span class="pc-msg-badge"><%= locals.unreadMessagesCount %></span><% } %>
+        </a>
+        <% } %>
         <% if (currentUser) { %>
           <% var _roleClass = currentUser.isAdmin ? 'pc-key-admin' : (currentUser.isTest ? 'pc-key-test' : 'pc-key-user'); %>
           <div class="pc-nav-item pc-has-drop pc-hover-menu">

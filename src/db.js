@@ -437,6 +437,62 @@ db.exec(`CREATE TABLE IF NOT EXISTS friendships (
   UNIQUE(user1_id, user2_id)
 )`);
 
+// ── Messagerie E2E ────────────────────────────────────────────────────────
+// user_keys : clés RSA-OAEP par utilisateur.
+//   public_key         : JWK JSON en clair (partagé à tous pour chiffrer)
+//   encrypted_priv_key : clé privée JWK chiffrée via AES-GCM (clé dérivée
+//                        côté navigateur par PBKDF2 sur le mot de passe)
+//   key_iv             : IV base64 de l'enveloppe AES-GCM
+db.exec(`CREATE TABLE IF NOT EXISTS user_keys (
+  user_id            INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  public_key         TEXT NOT NULL,
+  encrypted_priv_key TEXT NOT NULL,
+  key_iv             TEXT NOT NULL
+)`);
+
+// conversations : toujours p1_id < p2_id (normalisé).
+db.exec(`CREATE TABLE IF NOT EXISTS conversations (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  p1_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  p2_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  last_message_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(p1_id, p2_id),
+  CHECK(p1_id < p2_id)
+)`);
+
+// messages : payload = JSON {iv, ct, kr, ks} tous en base64 (AES-GCM).
+//   kr = AES key enveloppée avec la clé publique du destinataire
+//   ks = AES key enveloppée avec la clé publique de l'expéditeur
+//   content_ref = JSON {type, id, title} en clair (pointeur vers un contenu)
+//   del_p1/del_p2 = suppression unilatérale ; hard-delete si les deux à 1
+db.exec(`CREATE TABLE IF NOT EXISTS messages (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  conv_id     INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  payload     TEXT NOT NULL,
+  content_ref TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  read_at     TEXT,
+  del_p1      INTEGER NOT NULL DEFAULT 0,
+  del_p2      INTEGER NOT NULL DEFAULT 0
+)`);
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conv_id, created_at DESC)`); } catch (_) {}
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_msg_unread ON messages(conv_id, read_at) WHERE read_at IS NULL`); } catch (_) {}
+
+// shared_items : bibliothèque partagée par duo (max 100, FIFO).
+//   hidden_p1/hidden_p2 = retiré par ce participant ; hard-delete si les deux
+db.exec(`CREATE TABLE IF NOT EXISTS shared_items (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  conv_id      INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  content_type TEXT NOT NULL,
+  content_id   INTEGER NOT NULL,
+  shared_by    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  hidden_p1    INTEGER NOT NULL DEFAULT 0,
+  hidden_p2    INTEGER NOT NULL DEFAULT 0
+)`);
+
 // Mode couple (lié par l'admin uniquement, voir /ponhgup) : relation
 // symétrique 1↔1, stockée en miroir sur les deux comptes pour qu'un simple
 // SELECT suffise à retrouver le/la partenaire de n'importe quel profil, sans
@@ -6512,6 +6568,167 @@ function getFriendshipBetween(userId1, userId2) {
   return db.prepare("SELECT * FROM friendships WHERE user1_id = ? AND user2_id = ?").get(u1, u2) || null;
 }
 
+// ── Messagerie : fonctions DB ─────────────────────────────────────────────
+
+function getUserKeys(userId) {
+  return db.prepare('SELECT * FROM user_keys WHERE user_id = ?').get(userId);
+}
+function setUserKeys(userId, publicKey, encryptedPrivKey, keyIv) {
+  db.prepare(`INSERT INTO user_keys (user_id, public_key, encrypted_priv_key, key_iv)
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT(user_id) DO UPDATE SET public_key=excluded.public_key,
+                encrypted_priv_key=excluded.encrypted_priv_key, key_iv=excluded.key_iv`)
+    .run(userId, publicKey, encryptedPrivKey, keyIv);
+}
+function getPublicKey(userId) {
+  const r = db.prepare('SELECT public_key FROM user_keys WHERE user_id = ?').get(userId);
+  return r ? r.public_key : null;
+}
+
+function _convPair(a, b) { return a < b ? [a, b] : [b, a]; }
+
+function getOrCreateConversation(uid1, uid2) {
+  const [p1, p2] = _convPair(uid1, uid2);
+  const existing = db.prepare('SELECT * FROM conversations WHERE p1_id=? AND p2_id=?').get(p1, p2);
+  if (existing) return existing;
+  const r = db.prepare('INSERT INTO conversations (p1_id, p2_id) VALUES (?,?)').run(p1, p2);
+  return db.prepare('SELECT * FROM conversations WHERE id=?').get(r.lastInsertRowid);
+}
+function getConversation(id) {
+  return db.prepare('SELECT * FROM conversations WHERE id=?').get(id);
+}
+function getConversations(userId) {
+  return db.prepare(`
+    SELECT c.*,
+      u1.display_name AS p1_name, u1.profile_color AS p1_color,
+      u2.display_name AS p2_name, u2.profile_color AS p2_color,
+      (SELECT COUNT(*) FROM messages m
+       WHERE m.conv_id = c.id AND m.sender_id != ? AND m.read_at IS NULL
+         AND (c.p1_id = ? AND m.del_p1 = 0 OR c.p2_id = ? AND m.del_p2 = 0)) AS unread
+    FROM conversations c
+    JOIN users u1 ON u1.id = c.p1_id
+    JOIN users u2 ON u2.id = c.p2_id
+    WHERE c.p1_id = ? OR c.p2_id = ?
+    ORDER BY c.last_message_at DESC
+  `).all(userId, userId, userId, userId, userId);
+}
+
+function insertMessage(convId, senderId, payload, contentRef) {
+  // Nettoyage des messages > 3 mois sur cette conversation
+  db.prepare(`DELETE FROM messages WHERE conv_id = ?
+              AND created_at < datetime('now', '-3 months')`).run(convId);
+  const r = db.prepare(`INSERT INTO messages (conv_id, sender_id, payload, content_ref)
+                        VALUES (?, ?, ?, ?)`).run(convId, senderId, payload, contentRef || null);
+  db.prepare(`UPDATE conversations SET last_message_at = datetime('now') WHERE id = ?`).run(convId);
+  return r.lastInsertRowid;
+}
+
+function getMessages(convId, userId, limit, beforeId) {
+  const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
+  if (!conv) return [];
+  const isP1 = conv.p1_id === userId;
+  const delCol = isP1 ? 'del_p1' : 'del_p2';
+  const params = beforeId ? [convId, beforeId] : [convId];
+  const beforeClause = beforeId ? 'AND m.id < ?' : '';
+  return db.prepare(`
+    SELECT m.*, u.display_name AS sender_name, u.profile_color AS sender_color
+    FROM messages m
+    JOIN users u ON u.id = m.sender_id
+    WHERE m.conv_id = ? ${beforeClause}
+      AND m.${delCol} = 0
+      AND m.created_at >= datetime('now', '-3 months')
+    ORDER BY m.created_at DESC
+    LIMIT ${Math.min(limit || 40, 100)}
+  `).all(...params);
+}
+
+function markRead(convId, recipientId) {
+  const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
+  if (!conv) return;
+  db.prepare(`UPDATE messages SET read_at = datetime('now')
+              WHERE conv_id = ? AND sender_id != ? AND read_at IS NULL`).run(convId, recipientId);
+}
+
+function deleteMessage(msgId, userId) {
+  const conv_row = db.prepare(`
+    SELECT m.id, m.del_p1, m.del_p2, c.p1_id, c.p2_id
+    FROM messages m JOIN conversations c ON c.id = m.conv_id
+    WHERE m.id = ?
+  `).get(msgId);
+  if (!conv_row) return false;
+  if (conv_row.p1_id !== userId && conv_row.p2_id !== userId) return false;
+  const isP1 = conv_row.p1_id === userId;
+  if (isP1) db.prepare('UPDATE messages SET del_p1=1 WHERE id=?').run(msgId);
+  else       db.prepare('UPDATE messages SET del_p2=1 WHERE id=?').run(msgId);
+  // Hard-delete si les deux ont supprimé
+  const updated = db.prepare('SELECT del_p1, del_p2 FROM messages WHERE id=?').get(msgId);
+  if (updated && updated.del_p1 && updated.del_p2) {
+    db.prepare('DELETE FROM messages WHERE id=?').run(msgId);
+  }
+  return true;
+}
+
+function getUnreadCount(userId) {
+  const r = db.prepare(`
+    SELECT COUNT(*) AS n FROM messages m
+    JOIN conversations c ON c.id = m.conv_id
+    WHERE m.sender_id != ?
+      AND m.read_at IS NULL
+      AND ((c.p1_id = ? AND m.del_p1 = 0) OR (c.p2_id = ? AND m.del_p2 = 0))
+      AND m.created_at >= datetime('now', '-3 months')
+  `).get(userId, userId, userId);
+  return r ? r.n : 0;
+}
+
+const SHARED_ITEMS_LIMIT = 100;
+function addSharedItem(convId, type, id, sharedBy) {
+  const conv = db.prepare('SELECT p1_id FROM conversations WHERE id=?').get(convId);
+  if (!conv) return null;
+  // Vérifier si déjà présent et non supprimé par les deux
+  const exists = db.prepare(`SELECT id FROM shared_items
+    WHERE conv_id=? AND content_type=? AND content_id=?
+      AND NOT (hidden_p1=1 AND hidden_p2=1)`).get(convId, type, id);
+  if (exists) return exists.id;
+  // Appliquer la limite FIFO
+  const count = db.prepare('SELECT COUNT(*) AS n FROM shared_items WHERE conv_id=? AND NOT (hidden_p1=1 AND hidden_p2=1)').get(convId).n;
+  if (count >= SHARED_ITEMS_LIMIT) {
+    const oldest = db.prepare('SELECT id FROM shared_items WHERE conv_id=? AND NOT (hidden_p1=1 AND hidden_p2=1) ORDER BY created_at ASC LIMIT 1').get(convId);
+    if (oldest) db.prepare('DELETE FROM shared_items WHERE id=?').run(oldest.id);
+  }
+  const r = db.prepare('INSERT INTO shared_items (conv_id, content_type, content_id, shared_by) VALUES (?,?,?,?)').run(convId, type, id, sharedBy);
+  return r.lastInsertRowid;
+}
+
+function getSharedItems(convId, userId) {
+  const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
+  if (!conv) return [];
+  const isP1 = conv.p1_id === userId;
+  const hiddenCol = isP1 ? 'hidden_p1' : 'hidden_p2';
+  return db.prepare(`SELECT * FROM shared_items WHERE conv_id=? AND ${hiddenCol}=0 ORDER BY created_at DESC`).all(convId);
+}
+
+function removeSharedItem(itemId, userId) {
+  const item = db.prepare(`
+    SELECT si.*, c.p1_id, c.p2_id FROM shared_items si
+    JOIN conversations c ON c.id = si.conv_id WHERE si.id=?
+  `).get(itemId);
+  if (!item) return false;
+  if (item.p1_id !== userId && item.p2_id !== userId) return false;
+  const isP1 = item.p1_id === userId;
+  if (isP1) db.prepare('UPDATE shared_items SET hidden_p1=1 WHERE id=?').run(itemId);
+  else       db.prepare('UPDATE shared_items SET hidden_p2=1 WHERE id=?').run(itemId);
+  const updated = db.prepare('SELECT hidden_p1, hidden_p2 FROM shared_items WHERE id=?').get(itemId);
+  if (updated && updated.hidden_p1 && updated.hidden_p2) {
+    db.prepare('DELETE FROM shared_items WHERE id=?').run(itemId);
+  }
+  return true;
+}
+
+function cleanupOldMessages() {
+  const r = db.prepare(`DELETE FROM messages WHERE created_at < datetime('now', '-3 months')`).run();
+  return r.changes;
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -6932,6 +7149,21 @@ module.exports = {
   getFriendshipBetween,
   logAdminAudit,
   listAdminAudit,
+  getUserKeys,
+  setUserKeys,
+  getPublicKey,
+  getOrCreateConversation,
+  getConversation,
+  getConversations,
+  insertMessage,
+  getMessages,
+  markRead,
+  deleteMessage,
+  getUnreadCount,
+  addSharedItem,
+  getSharedItems,
+  removeSharedItem,
+  cleanupOldMessages,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
