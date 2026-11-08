@@ -60,10 +60,25 @@
   var nav = document.getElementById('adm-nav');
   if (!nav) return;
 
+  /* ── Group first-page map ─────────────────────────── */
+  var grpFirstUrl = {
+    users:     '/ponhgup',
+    resources: '/ponhgup#tab-wiki',
+    versions:  '/ponhgup#tab-changelog',
+    audit:     '/ponhgup#tab-audit'
+  };
+
   /* ── Group switching ──────────────────────────────── */
   nav.querySelectorAll('.adm-grp').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var grp = btn.dataset.grp;
+
+      /* If not on dashboard, navigate to the group's first page */
+      if (!isDashboard) {
+        window.location.href = grpFirstUrl[grp] || '/ponhgup';
+        return;
+      }
+
       nav.querySelectorAll('.adm-grp').forEach(function(b) {
         b.classList.toggle('active', b === btn);
       });
