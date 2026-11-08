@@ -338,6 +338,12 @@
     <button type="button" class="gallery-lb-panel-handle" aria-label="Remonter voir la photo"></button>
     <div class="gallery-lb-panel-header">
       <div class="gallery-lb-panel-header-actions">
+        <% if (currentUser && locals.inviteToken) { %>
+        <button type="button" class="lb-inline-share-btn" id="gallery-lb-share-btn"
+                title="Envoyer à un ami" aria-label="Envoyer à un ami" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+        <% } %>
         <% if (currentUser && currentUser.isAdmin) { %>
         <button type="button" class="lb-inline-edit-btn" id="gallery-lb-inline-edit-btn"
                 title="Modifier les m&eacute;tadonn&eacute;es" aria-label="Modifier" hidden>
@@ -415,6 +421,36 @@
   </div>
 </div>
 
+<% if (currentUser && locals.inviteToken) { %>
+<script nonce="<%= nonce %>">
+(function () {
+  var shareBtn = document.getElementById('gallery-lb-share-btn');
+  var rating   = document.getElementById('gallery-lb-rating');
+  if (!shareBtn || !rating) return;
+  function updateShareBtn() {
+    var id = Number(rating.dataset.galleryId);
+    var card = id ? document.querySelector('.gallery-card[data-gallery-id="' + id + '"]') : null;
+    if (!id) { shareBtn.hidden = true; return; }
+    var title = card ? (card.dataset.displayTitle || '') : '';
+    shareBtn.dataset.shareType  = 'image';
+    shareBtn.dataset.shareId    = id;
+    shareBtn.dataset.shareTitle = title;
+    shareBtn.hidden = false;
+  }
+  new MutationObserver(function () { setTimeout(updateShareBtn, 0); })
+    .observe(rating, { attributes: true, attributeFilter: ['data-gallery-id'] });
+  shareBtn.addEventListener('click', function () {
+    if (window.openSharePopup) {
+      window.openSharePopup({
+        type:  shareBtn.dataset.shareType,
+        id:    Number(shareBtn.dataset.shareId),
+        title: shareBtn.dataset.shareTitle,
+      });
+    }
+  });
+})();
+</script>
+<% } %>
 <script nonce="<%= nonce %>">
 window.GALLERY_CAN_EDIT = <%= (currentUser && currentUser.isAdmin) ? 'true' : 'false' %>;
 window.GALLERY_PROTAGONISTS = <%- JSON.stringify((allProtagonists || []).reduce(function(m, p) { m[p.id] = p.name; return m; }, {})) %>;

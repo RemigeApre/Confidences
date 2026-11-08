@@ -1206,3 +1206,56 @@ a.amis-rp-item-name:hover{text-decoration:underline}
   .msg-thread-body{padding:.5rem .75rem}
   .msg-compose{padding:.5rem .75rem}
 }
+
+/* ── Popup "Envoyer à un ami" ────────────────────────────────────────────── */
+.share-popup-backdrop{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55)}
+.share-popup{position:fixed;bottom:1.5rem;right:1.5rem;z-index:601;width:min(300px,calc(100vw - 2rem));background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:.65rem;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.share-popup-head{display:flex;align-items:center;justify-content:space-between}
+.share-popup-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.share-popup-close{background:none;border:none;cursor:pointer;color:var(--muted);padding:.2rem;line-height:0}
+.share-popup-close:hover{color:hsl(0,60%,55%)}
+.share-popup-close svg{width:14px;height:14px}
+.share-popup-ref-preview{display:flex;align-items:center;gap:.5rem;font-size:.8rem;padding:.45rem .6rem;background:rgba(255,255,255,.04);border-radius:7px;border:1px solid var(--border)}
+.share-popup-ref-type{font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);flex-shrink:0}
+.share-popup-ref-title{color:var(--fg);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.share-popup-friends{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.3rem;max-height:220px;overflow-y:auto}
+.share-popup-friend{display:flex;align-items:center;gap:.6rem;padding:.4rem .5rem;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:border-color .12s}
+.share-popup-friend:hover{border-color:var(--accent);background:rgba(255,255,255,.04)}
+.share-popup-friend--nokey{opacity:.45;cursor:default}
+.share-popup-avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;color:#fff}
+.share-popup-fname{flex:1;font-size:.85rem}
+.share-popup-nokey{font-size:.65rem;color:var(--muted)}
+.share-popup-loading,.share-popup-empty{font-size:.82rem;color:var(--muted);padding:.4rem .5rem}
+.share-popup-status{font-size:.78rem;color:var(--accent);margin:0;padding:.3rem .5rem;background:rgba(255,255,255,.04);border-radius:6px}
+
+/* Bouton partage dans le lightbox gallery */
+.lb-inline-share-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:.3rem;border-radius:5px;line-height:0}
+.lb-inline-share-btn:hover{color:var(--fg)}
+
+/* Bouton partage BD */
+.bd-reader-share{background:none;border:none;cursor:pointer;color:var(--muted);padding:.3rem;line-height:0;vertical-align:middle}
+.bd-reader-share:hover{color:var(--fg)}
+
+@media(max-width:640px){
+  .share-popup{bottom:1rem;right:1rem;left:1rem;width:auto}
+}
+
+/* Bouton message sur profil public */
+.pp-rp-msg-btn{display:flex;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;padding:.3rem;border-radius:6px;transition:color .15s}
+.pp-rp-msg-btn:hover{color:var(--accent)}
+.pp-rp-actions-row{display:flex;align-items:center;gap:.4rem}
+
+/* Icône message sur carte ami */
+.amis-rp-msg{display:flex;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;padding:.25rem;border-radius:5px;line-height:0;flex-shrink:0}
+.amis-rp-msg svg{width:14px;height:14px}
+.amis-rp-msg:hover{color:var(--accent)}
+
+/* Bandeau "Nouvelle discussion" */
+.msg-new-conv{margin-bottom:1rem;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.msg-new-conv-toggle{display:flex;align-items:center;padding:.65rem 1rem;font-size:.85rem;font-weight:600;color:var(--accent);cursor:pointer;list-style:none;user-select:none}
+.msg-new-conv-toggle::-webkit-details-marker{display:none}
+.msg-new-conv[open] .msg-new-conv-toggle{border-bottom:1px solid var(--border)}
+.msg-new-conv-list{list-style:none;margin:0;padding:.4rem 0;display:flex;flex-direction:column}
+.msg-new-conv-list li{margin:0}
+.msg-new-conv-friend{display:flex;align-items:center;gap:.65rem;padding:.5rem 1rem;text-decoration:none;color:var(--fg);font-size:.88rem;transition:background .12s}
+.msg-new-conv-friend:hover{background:rgba(255,255,255,.05)}

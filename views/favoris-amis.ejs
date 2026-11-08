@@ -35,6 +35,9 @@
           <a href="/profil/<%= f.username %>" class="amis-rp-item-name"><%= f.display_name %></a>
           <span class="amis-rp-item-code">#<%= f.friend_code %></span>
         </div>
+        <a href="/messages/<%= f.id %>" class="amis-rp-msg" title="Message" aria-label="Message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </a>
         <form method="POST" action="/favoris/amis/<%= f.id %>/supprimer" class="amis-inline-form"
               onsubmit="return confirm('Retirer <%= f.display_name %> de vos amis ?')">
           <button class="amis-rp-remove" type="submit" title="Retirer" aria-label="Retirer <%= f.display_name %>">

@@ -69,6 +69,12 @@ if (!_chs.length) {
         <% if (currentUser) { %>
           <button type="button" class="bd-reader-fav link-button<%= isFavorite ? ' active' : '' %>" id="bd-fav-btn" data-item-id="<%= book.id %>" title="Favori">&#128278;</button>
           <button type="button" class="bd-react-btn<%= book.interested ? ' active' : '' %>" id="bd-interested-btn" data-id="<%= book.id %>" title="Ça m&rsquo;int&eacute;resse">&#10024;</button>
+          <% if (locals.inviteToken) { %>
+          <button type="button" class="share-trigger-btn bd-reader-share" title="Envoyer à un ami" aria-label="Envoyer à un ami"
+                  data-share-type="bd" data-share-id="<%= book.id %>" data-share-title="<%= (book.title || '').replace(/"/g, '') %>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+          <% } %>
         <% } %>
         <% if (currentUser && currentUser.isAdmin) { %><a href="/bd/<%= book.id %>/edit" class="bd-reader-edit link-button" title="Modifier">&#9998;</a><% } %>
       </div>

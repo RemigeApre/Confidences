@@ -1289,6 +1289,12 @@
       <div class="wiki-detail-actions wiki-detail-actions-mobile">
         <button type="button" class="wiki-edit-icon-btn wiki-fav-icon-btn<%= isFavorite ? ' active' : '' %>" id="wiki-fav-btn-mobile" data-item-id="<%= page.id %>" title="Favori" aria-label="Favori">&#128278;</button>
         <button type="button" class="wiki-edit-icon-btn wiki-copy-ai-btn-mobile" id="wiki-copy-ai-btn-mobile" title="Copier pour une IA">&#128203;</button>
+        <% if (locals.inviteToken) { %>
+        <button type="button" class="wiki-edit-icon-btn share-trigger-btn" title="Envoyer à un ami" aria-label="Envoyer à un ami"
+                data-share-type="wiki" data-share-id="<%= page.id %>" data-share-title="<%= (page.title || '').replace(/"/g, '') %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+        <% } %>
         <% if (currentUser.isAdmin) { %>
           <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-edit-icon-btn" title="Modifier" aria-label="Modifier">&#9998;</a>
         <% } %>

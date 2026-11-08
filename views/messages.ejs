@@ -6,8 +6,27 @@
     <h1 class="msg-list-title">Messages</h1>
   </div>
 
+  <%# Bandeau "+ Nouvelle discussion" %>
+  <% if (friends && friends.length) { %>
+  <details class="msg-new-conv" id="msg-new-conv">
+    <summary class="msg-new-conv-toggle">+ Nouvelle discussion</summary>
+    <ul class="msg-new-conv-list">
+      <% friends.forEach(function(f) { %>
+      <li>
+        <a href="/messages/<%= f.id %>" class="msg-new-conv-friend">
+          <div class="msg-list-avatar" style="background:<%= f.profile_color || '#6b7280' %>">
+            <%= (f.display_name || '?').charAt(0).toUpperCase() %>
+          </div>
+          <span><%= f.display_name %></span>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+  </details>
+  <% } %>
+
   <% if (!convs || !convs.length) { %>
-    <p class="msg-list-empty">Aucune conversation. Envoyez un contenu depuis la galerie ou le codex pour commencer.</p>
+    <p class="msg-list-empty">Aucune conversation pour l'instant.</p>
   <% } else { %>
   <ul class="msg-list">
     <% convs.forEach(function(c) { %>

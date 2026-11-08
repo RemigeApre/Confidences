@@ -86,6 +86,17 @@ function buildRouter(config) {
     res.json({ ok: true });
   });
 
+  // GET /messages/friends — liste des amis avec leur statut de clé (JSON, pour popup de partage)
+  router.get("/friends", requireUserJson, (req, res) => {
+    const friends = getFriends(req.user.id).map((f) => ({
+      id: f.id,
+      displayName: f.display_name,
+      profileColor: f.profile_color,
+      hasKey: !!getPublicKey(f.id),
+    }));
+    res.json({ friends });
+  });
+
   // ── Conversations ────────────────────────────────────────────────────────
 
   // GET /messages — liste des conversations

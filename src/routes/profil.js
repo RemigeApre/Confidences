@@ -18,6 +18,7 @@ const {
   toggleProfileLike,
   countProfileLikes,
   hasProfileLike,
+  getFriendshipBetween,
 } = require("../db");
 
 const WORLD_META = {
@@ -106,6 +107,8 @@ module.exports = function buildProfilRouter(config) {
 
       const likeCount = countProfileLikes(user.id);
       const isLiked = req.user ? hasProfileLike(req.user.id, user.id) : false;
+      const friendship = req.user ? getFriendshipBetween(req.user.id, user.id) : null;
+      const isFriend = !!(friendship && friendship.status === 'accepted');
 
       res.render("public-profile", {
         config,
@@ -125,6 +128,7 @@ module.exports = function buildProfilRouter(config) {
         quizResult,
         likeCount,
         isLiked,
+        isFriend,
       });
     } catch (err) {
       console.error("[profil]", err);

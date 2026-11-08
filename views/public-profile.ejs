@@ -51,6 +51,11 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             <span class="pp-like-count-sync"><%= likeCount || '' %></span>
           </button>
+          <% if (isFriend) { %>
+          <a href="/messages/<%= profileUser.id %>" class="pp-rp-msg-btn" title="Envoyer un message" aria-label="Envoyer un message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </a>
+          <% } %>
         <% } else if (likeCount > 0) { %>
           <div class="pp-rp-like pp-rp-like--display">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -206,10 +211,17 @@
   <p class="pp-rp-name"><%= profileUser.displayName %></p>
 
   <% if (currentUser && currentUser.id !== profileUser.id) { %>
-    <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %> pp-like-sync" aria-label="J'aime ce profil" data-username="<%= profileUser.username %>" data-liked="<%= isLiked ? '1' : '0' %>">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-      <span class="pp-like-count-sync"><%= likeCount || '' %></span>
-    </button>
+    <div class="pp-rp-actions-row">
+      <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %> pp-like-sync" aria-label="J'aime ce profil" data-username="<%= profileUser.username %>" data-liked="<%= isLiked ? '1' : '0' %>">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span class="pp-like-count-sync"><%= likeCount || '' %></span>
+      </button>
+      <% if (isFriend) { %>
+      <a href="/messages/<%= profileUser.id %>" class="pp-rp-msg-btn" title="Envoyer un message" aria-label="Envoyer un message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </a>
+      <% } %>
+    </div>
   <% } else if (likeCount > 0) { %>
     <div class="pp-rp-like pp-rp-like--display">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>

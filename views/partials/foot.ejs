@@ -409,5 +409,213 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
 <% } %>
 
 <% } %>
+
+<%# ── Popup "Envoyer à un ami" (global, disponible sur toutes les pages) ── %>
+<% if (currentUser && locals.inviteToken) { %>
+<div class="share-popup-backdrop" id="share-popup-backdrop" hidden aria-hidden="true"></div>
+<div class="share-popup" id="share-popup" hidden role="dialog" aria-modal="true" aria-label="Envoyer à un ami">
+  <div class="share-popup-head">
+    <span class="share-popup-title">Envoyer à</span>
+    <button class="share-popup-close" id="share-popup-close" type="button" aria-label="Fermer">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="4" x2="4" y2="12"/><line x1="4" y1="4" x2="12" y2="12"/></svg>
+    </button>
+  </div>
+  <div class="share-popup-ref-preview" id="share-popup-ref-preview"></div>
+  <ul class="share-popup-friends" id="share-popup-friends"></ul>
+  <p class="share-popup-status" id="share-popup-status" hidden></p>
+</div>
+
+<script nonce="<%= nonce %>">
+// ── Popup de partage global ──────────────────────────────────────────────
+(function () {
+  'use strict';
+
+  // ── Utilitaires crypto (dupliqués ici pour être autonomes) ───────────────
+  function b64ToBytes(b64) {
+    return Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
+  }
+  function bytesToB64(buf) {
+    return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+  }
+
+  // Cache de session : clé privée + clé publique déchiffrées
+  var _privKey = null;
+  var _myPubKey = null;
+
+  async function getMyKeys() {
+    if (_privKey && _myPubKey) return { priv: _privKey, pub: _myPubKey };
+    var wkB64 = sessionStorage.getItem('lq_mkwk');
+    if (!wkB64) return null;
+    var wkBytes = b64ToBytes(wkB64);
+    var wk = await crypto.subtle.importKey('raw', wkBytes, { name: 'AES-GCM' }, false, ['decrypt']);
+    var r = await fetch('/messages/keys/me', { headers: { 'Accept': 'application/json' } });
+    var d = await r.json();
+    if (!d.hasKeys) return null;
+    var encPrivBytes = b64ToBytes(d.encryptedPrivKey);
+    var ivBytes = b64ToBytes(d.keyIv);
+    var privJwkBytes = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivBytes }, wk, encPrivBytes);
+    var privJwk = JSON.parse(new TextDecoder().decode(privJwkBytes));
+    _privKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']);
+    var pubJwk = Object.assign({}, privJwk);
+    delete pubJwk.d; delete pubJwk.dp; delete pubJwk.dq; delete pubJwk.qi; delete pubJwk.p; delete pubJwk.q;
+    pubJwk.key_ops = ['encrypt'];
+    _myPubKey = await crypto.subtle.importKey('jwk', pubJwk, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
+    return { priv: _privKey, pub: _myPubKey };
+  }
+
+  var _pubKeyCache = {};
+  async function getRecipientPubKey(userId) {
+    if (_pubKeyCache[userId]) return _pubKeyCache[userId];
+    var r = await fetch('/messages/keys/' + userId, { headers: { 'Accept': 'application/json' } });
+    var d = await r.json();
+    if (!d.hasKey) return null;
+    var k = await crypto.subtle.importKey('jwk', JSON.parse(d.publicKey), { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
+    _pubKeyCache[userId] = k;
+    return k;
+  }
+
+  async function encryptForRecipient(text, recipientPubKey, myPubKey) {
+    var enc = new TextEncoder();
+    var aesKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, []);
+    // Export raw AES key to wrap it
+    var rawKey = await crypto.subtle.exportKey('raw', aesKey);
+    var encKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, encKey, enc.encode(text));
+    var rawEnc = await crypto.subtle.exportKey('raw', encKey);
+    var kr = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, recipientPubKey, rawEnc);
+    var ks = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, myPubKey, rawEnc);
+    return JSON.stringify({
+      iv: bytesToB64(iv),
+      ct: bytesToB64(ct),
+      kr: bytesToB64(kr),
+      ks: bytesToB64(ks),
+      senderId: <%= currentUser.id %>,
+    });
+  }
+
+  // ── State du popup ───────────────────────────────────────────────────────
+  var _currentRef = null; // { type, id, title }
+  var _friends = null;
+
+  async function openSharePopup(ref) {
+    _currentRef = ref;
+    var backdrop = document.getElementById('share-popup-backdrop');
+    var popup    = document.getElementById('share-popup');
+    var preview  = document.getElementById('share-popup-ref-preview');
+    var list     = document.getElementById('share-popup-friends');
+    var status   = document.getElementById('share-popup-status');
+
+    // Aperçu du contenu
+    var typeLabel = { image: 'Image', bd: 'BD', wiki: 'Codex' }[ref.type] || ref.type;
+    preview.innerHTML = '<span class="share-popup-ref-type">' + typeLabel + '</span>' +
+                        '<span class="share-popup-ref-title">' + escHtml(ref.title || '') + '</span>';
+
+    status.hidden = true;
+    list.innerHTML = '<li class="share-popup-loading">Chargement\u2026</li>';
+    backdrop.hidden = false;
+    popup.hidden = false;
+
+    // Charger amis si nécessaire
+    if (!_friends) {
+      var fr = await fetch('/messages/friends', { headers: { 'Accept': 'application/json' } });
+      var fd = await fr.json();
+      _friends = fd.friends;
+    }
+
+    list.innerHTML = '';
+    if (!_friends || !_friends.length) {
+      list.innerHTML = '<li class="share-popup-empty">Aucun ami pour l&rsquo;instant.</li>';
+      return;
+    }
+    _friends.forEach(function (f) {
+      var li = document.createElement('li');
+      li.className = 'share-popup-friend' + (!f.hasKey ? ' share-popup-friend--nokey' : '');
+      li.innerHTML =
+        '<div class="share-popup-avatar" style="background:' + (f.profileColor || '#6b7280') + '">' +
+          escHtml((f.displayName || '?').charAt(0).toUpperCase()) +
+        '</div>' +
+        '<span class="share-popup-fname">' + escHtml(f.displayName) + '</span>' +
+        (!f.hasKey ? '<span class="share-popup-nokey">clé manquante</span>' : '');
+      if (f.hasKey) {
+        li.addEventListener('click', function () { sendShare(f); });
+      }
+      list.appendChild(li);
+    });
+  }
+
+  async function sendShare(friend) {
+    var status = document.getElementById('share-popup-status');
+    var list   = document.getElementById('share-popup-friends');
+    status.hidden = false;
+    status.textContent = 'Chiffrement\u2026';
+    list.querySelectorAll('.share-popup-friend').forEach(function (el) { el.style.pointerEvents = 'none'; });
+
+    try {
+      var keys = await getMyKeys();
+      if (!keys) { status.textContent = 'Clés non disponibles. Ouvrez un fil de message d\'abord.'; return; }
+      var recipPk = await getRecipientPubKey(friend.id);
+      if (!recipPk) { status.textContent = friend.displayName + ' n\'a pas de clé de chiffrement.'; return; }
+
+      var label = { image: '📷 ', bd: '📖 ', wiki: '📄 ' }[_currentRef.type] || '';
+      var text = label + (_currentRef.title || _currentRef.type);
+      var payload = await encryptForRecipient(text, recipPk, keys.pub);
+
+      var r = await fetch('/messages/' + friend.id + '/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: _currentRef.type, id: _currentRef.id, payload: payload }),
+      });
+      var d = await r.json();
+      if (d.ok) {
+        status.textContent = 'Envoy\u00e9 \u00e0 ' + friend.displayName + ' !';
+        setTimeout(closeSharePopup, 1200);
+      } else {
+        status.textContent = 'Erreur lors de l\'envoi.';
+        list.querySelectorAll('.share-popup-friend').forEach(function (el) { el.style.pointerEvents = ''; });
+      }
+    } catch (e) {
+      status.textContent = 'Erreur : ' + e.message;
+      list.querySelectorAll('.share-popup-friend').forEach(function (el) { el.style.pointerEvents = ''; });
+    }
+  }
+
+  function closeSharePopup() {
+    var backdrop = document.getElementById('share-popup-backdrop');
+    var popup    = document.getElementById('share-popup');
+    if (backdrop) backdrop.hidden = true;
+    if (popup) popup.hidden = true;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Fermeture
+  document.getElementById('share-popup-close')?.addEventListener('click', closeSharePopup);
+  document.getElementById('share-popup-backdrop')?.addEventListener('click', closeSharePopup);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSharePopup(); });
+
+  // ── API publique — appelée par les boutons de partage dans les pages ─────
+  window.openSharePopup = openSharePopup;
+})();
+</script>
+<% } %>
+
+<% if (currentUser && locals.inviteToken) { %>
+<script nonce="<%= nonce %>">
+// Délégation des boutons .share-trigger-btn (wiki, bd — pas gallery qui gère seul)
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest('.share-trigger-btn');
+  if (!btn || !window.openSharePopup) return;
+  window.openSharePopup({
+    type:  btn.dataset.shareType,
+    id:    Number(btn.dataset.shareId),
+    title: btn.dataset.shareTitle || '',
+  });
+});
+</script>
+<% } %>
+
 </body>
 </html>
