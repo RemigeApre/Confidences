@@ -19,7 +19,7 @@ const buildCoupleRouter = require("./routes/couple");
 const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
 const buildRacesRouter = require("./routes/races");
-const { buildRouter: buildMessagesRouter, serverDecryptWk } = require("./routes/messages");
+const { buildRouter: buildMessagesRouter } = require("./routes/messages");
 const { attachUser } = require("./auth");
 const { isFrenchIp } = require("./geo");
 const {
@@ -40,7 +40,6 @@ const {
   getPendingFriendRequestsCount,
   getUnreadCount,
   cleanupOldMessages,
-  getUserWk,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -506,16 +505,15 @@ app.use((req, res, next) => {
       res.locals.pendingFriendRequestsCount = getPendingFriendRequestsCount(req.user.id);
       res.locals.unreadMessagesCount = getUnreadCount(req.user.id);
     } catch (_) {}
-    // Injecter la WK de messagerie dans la session si absent
-    if (!req.session.msgWK) {
-      try {
-        const wkData = getUserWk(req.user.id);
-        if (wkData && wkData.encrypted_wk && wkData.wk_iv) {
-          req.session.msgWK = serverDecryptWk(wkData.encrypted_wk, wkData.wk_iv);
-        }
-      } catch (_) {}
+    // WK de messagerie : HMAC(secret serveur, user_id) — déterministe, zéro stockage
+    try {
+      const wkBuf = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'change_me')
+                          .update(String(req.user.id) + ':lq-msg-wk')
+                          .digest();
+      res.locals.msgSessionKey = wkBuf.toString('hex');
+    } catch (_) {
+      res.locals.msgSessionKey = '';
     }
-    res.locals.msgSessionKey = req.session.msgWK || '';
   }
   next();
 });

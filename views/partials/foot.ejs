@@ -445,7 +445,7 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
   async function getMyKeys() {
     if (_privKey && _myPubKey) return { priv: _privKey, pub: _myPubKey };
     var wkHex = window.lq_msgwk || '';
-    if (!wkHex) return null;
+    if (!wkHex) return null; // utilisateur non connecté
     var wkBytes = new Uint8Array(wkHex.match(/.{2}/g).map(function (h) { return parseInt(h, 16); }));
     var wk = await crypto.subtle.importKey('raw', wkBytes, { name: 'AES-GCM' }, false, ['decrypt']);
     var r = await fetch('/messages/keys/me', { headers: { 'Accept': 'application/json' } });

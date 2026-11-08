@@ -147,55 +147,44 @@
   }
 
   // ── Initialisation des clés ─────────────────────────────────────────────
+  // La WK est injectée dans la page par le serveur via HMAC(secret, userId) :
+  // toujours disponible, déterministe, zéro stockage côté client.
   async function initKeys() {
     var wkHex = window.lq_msgwk || '';
-    var wkBytes, wkIsNew = false;
+    if (!wkHex) return; // ne devrait pas arriver si l'utilisateur est connecté
 
-    if (!wkHex) {
-      // Pas de WK sur le serveur → générer une nouvelle paire + un nouveau WK
-      var rawWk = crypto.getRandomValues(new Uint8Array(32));
-      wkBytes  = rawWk;
-      wkHex    = Array.from(rawWk).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
-      wkIsNew  = true;
-      hasKeys  = false; // force la génération d'une nouvelle paire RSA
-    } else {
-      wkBytes = new Uint8Array(wkHex.match(/.{2}/g).map(function (h) { return parseInt(h, 16); }));
-    }
-
+    var wkBytes = new Uint8Array(wkHex.match(/.{2}/g).map(function (h) { return parseInt(h, 16); }));
     var wk = await crypto.subtle.importKey('raw', wkBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 
     if (!hasKeys) {
-      // Générer une nouvelle paire RSA
+      // Première fois : générer une paire RSA, chiffrer la clé privée avec la WK
       var pair = await crypto.subtle.generateKey(
         { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
         true, ['encrypt', 'decrypt']
       );
       var pubJwk  = await crypto.subtle.exportKey('jwk', pair.publicKey);
       var privJwk = await crypto.subtle.exportKey('jwk', pair.privateKey);
-      var iv2 = crypto.getRandomValues(new Uint8Array(12));
+      var iv2     = crypto.getRandomValues(new Uint8Array(12));
       var encPriv = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: iv2 },
-        wk,
+        { name: 'AES-GCM', iv: iv2 }, wk,
         new TextEncoder().encode(JSON.stringify(privJwk))
       );
-      var body = {
-        publicKey: JSON.stringify(pubJwk),
-        encryptedPrivKey: bytesToB64(encPriv),
-        keyIv: bytesToB64(iv2),
-      };
-      if (wkIsNew) body.wkHex = wkHex;
       await fetch('/messages/keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          publicKey:       JSON.stringify(pubJwk),
+          encryptedPrivKey: bytesToB64(encPriv),
+          keyIv:           bytesToB64(iv2),
+        }),
       });
       privKey  = pair.privateKey;
       myPubKey = pair.publicKey;
       hasKeys  = true;
     } else {
-      // Déchiffrer la clé privée existante avec la WK injectée
-      var encPrivB64   = decodeURIComponent(state.encryptedPrivKey);
-      var ivB64        = decodeURIComponent(state.keyIv);
+      // Déchiffrer la clé privée existante avec la WK déterministe
+      var encPrivB64 = decodeURIComponent(state.encryptedPrivKey);
+      var ivB64      = decodeURIComponent(state.keyIv);
       try {
         var privJwkBytes = await crypto.subtle.decrypt(
           { name: 'AES-GCM', iv: b64ToBytes(ivB64) }, wk, b64ToBytes(encPrivB64)
@@ -207,7 +196,7 @@
         pubJwk2.key_ops = ['encrypt'];
         myPubKey = await crypto.subtle.importKey('jwk', pubJwk2, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
       } catch (_) {
-        // Clé corrompue ou WK invalide : régénérer silencieusement
+        // La WK a changé (changement de SESSION_SECRET) → régénérer silencieusement
         hasKeys = false;
         return initKeys();
       }
