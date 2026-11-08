@@ -43,6 +43,7 @@ module.exports = function buildInviteRouter(config) {
       const friendship = getFriendshipBetween(req.user.id, invite.userId);
       return res.render("rejoindre", {
         csrfToken: ensureCsrf(req),
+        config,
         error: null,
         invalid: false,
         isFrench: req.isFrenchVisitor,

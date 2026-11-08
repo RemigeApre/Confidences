@@ -1,66 +1,87 @@
-<%- include('partials/head', { title: 'Rejoindre' }) %>
-<main class="container narrow gate-page">
-  <a href="/" class="gate-back-link" aria-label="Retour &agrave; l'accueil" title="Retour &agrave; l'accueil">&larr;</a>
+<%- include('partials/head', { title: loggedInOffer ? 'Invitation' : 'Rejoindre' }) %>
 
-  <h1 class="gate-title">Rejoindre</h1>
+<% if (loggedInOffer) { %>
+  <%# ── Cas utilisateur connecté : offre d'amitié ── %>
+  <%- include('partials/top-nav', { config: config }) %>
 
-  <% if (invalid) { %>
-    <p class="gate-help">Ce lien d&rsquo;invitation n&rsquo;existe pas ou a &eacute;t&eacute; r&eacute;voqu&eacute;. Demandez &agrave; votre contact de vous en envoyer un nouveau.</p>
-  <% } else if (loggedInOffer) { %>
-    <%# Logged-in user: friend offer %>
-    <% var alreadyFriends = friendship && friendship.status === 'accepted'; %>
-    <% var pendingFromMe = friendship && friendship.status === 'pending' && friendship.requester_id == currentUser.id; %>
-    <% var pendingFromThem = friendship && friendship.status === 'pending' && friendship.requester_id != currentUser.id; %>
+  <%
+    var alreadyFriends  = friendship && friendship.status === 'accepted';
+    var pendingFromMe   = friendship && friendship.status === 'pending' && friendship.requester_id == currentUser.id;
+    var pendingFromThem = friendship && friendship.status === 'pending' && friendship.requester_id != currentUser.id;
+  %>
 
-    <p class="gate-help">
-      <strong><%= inviter.displayName %></strong> vous a envoy&eacute; une invitation.
-    </p>
+  <div class="fo-wrap">
+    <div class="fo-card">
 
-    <% if (alreadyFriends) { %>
-      <p class="gate-help gate-help--notice">Vous &ecirc;tes d&eacute;j&agrave; amis avec <%= inviter.displayName %>.</p>
-      <a href="/favoris/amis" class="gate-link-btn">Voir mes amis</a>
-    <% } else if (pendingFromMe) { %>
-      <p class="gate-help gate-help--notice">Vous avez d&eacute;j&agrave; envoy&eacute; une demande d&rsquo;ami &agrave; <%= inviter.displayName %>.</p>
-      <a href="/favoris/amis" class="gate-link-btn">Voir mes amis</a>
-    <% } else if (pendingFromThem) { %>
-      <p class="gate-help gate-help--notice"><%= inviter.displayName %> vous a d&eacute;j&agrave; envoy&eacute; une demande d&rsquo;ami.</p>
-      <form method="POST" action="/rejoindre/<%= token %>/ami" class="gate-form gate-form--inline">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit" class="gate-submit-btn">Accepter et devenir amis</button>
-      </form>
+      <div class="fo-avatar" style="background:<%= inviter.profileColor || '#6b7280' %>">
+        <%= (inviter.displayName || '?').charAt(0).toUpperCase() %>
+      </div>
+
+      <p class="fo-name"><%= inviter.displayName %></p>
+
+      <% if (alreadyFriends) { %>
+        <p class="fo-label">Vous &ecirc;tes d&eacute;j&agrave; amis.</p>
+        <a href="/favoris/amis" class="fo-btn">Voir mes amis</a>
+
+      <% } else if (pendingFromMe) { %>
+        <p class="fo-label">Demande d&rsquo;ami d&eacute;j&agrave; envoy&eacute;e.</p>
+        <a href="/favoris/amis" class="fo-btn">Voir mes amis</a>
+
+      <% } else if (pendingFromThem) { %>
+        <p class="fo-label">vous a d&eacute;j&agrave; envoy&eacute; une demande d&rsquo;ami.</p>
+        <form method="POST" action="/rejoindre/<%= token %>/ami" class="fo-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="fo-btn">Accepter la demande</button>
+        </form>
+
+      <% } else { %>
+        <p class="fo-label">vous invite &agrave; rejoindre ses amis.</p>
+        <form method="POST" action="/rejoindre/<%= token %>/ami" class="fo-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="fo-btn">Ajouter en ami</button>
+        </form>
+
+      <% } %>
+
+      <a href="/favoris" class="fo-skip">Ignorer</a>
+    </div>
+  </div>
+
+<% } else { %>
+  <%# ── Formulaire d'inscription ── %>
+  <main class="container narrow gate-page">
+    <a href="/" class="gate-back-link" aria-label="Retour &agrave; l'accueil" title="Retour &agrave; l'accueil">&larr;</a>
+
+    <h1 class="gate-title">Rejoindre</h1>
+
+    <% if (invalid) { %>
+      <p class="gate-help">Ce lien d&rsquo;invitation n&rsquo;existe pas ou a &eacute;t&eacute; r&eacute;voqu&eacute;. Demandez &agrave; votre contact de vous en envoyer un nouveau.</p>
     <% } else { %>
-      <form method="POST" action="/rejoindre/<%= token %>/ami" class="gate-form gate-form--inline">
+
+      <% if (isFrench) { %>
+        <p class="gate-help gate-help--notice">Vous &ecirc;tes en France. Votre compte sera cr&eacute;&eacute; mais restera en attente jusqu&rsquo;&agrave; ce que la personne qui vous a invit&eacute;(e) valide votre inscription.</p>
+      <% } %>
+
+      <% if (error) { %>
+        <p class="error gate-error"><%= error %></p>
+      <% } %>
+
+      <form method="POST" action="/rejoindre/<%= token %>" class="gate-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit" class="gate-submit-btn">Devenir ami avec <%= inviter.displayName %></button>
+        <input type="text" name="website" class="gate-honeypot" tabindex="-1" autocomplete="off" />
+        <input type="text" name="nom" placeholder="pseudo" required autofocus autocomplete="username" maxlength="60" />
+        <input type="email" name="email" placeholder="adresse mail" required autocomplete="email" maxlength="254" />
+        <input type="password" name="password" placeholder="mot de passe" required autocomplete="new-password" />
+        <input type="password" name="password2" placeholder="confirmer le mot de passe" required autocomplete="new-password" />
+        <button type="submit" aria-label="Cr&eacute;er mon compte" title="Cr&eacute;er mon compte">&#8594;</button>
       </form>
+
+      <p class="gate-help">L&rsquo;adresse mail sert uniquement &agrave; r&eacute;initialiser votre mot de passe si vous l&rsquo;oubliez.</p>
+
+      <a href="/ponhgup/85zapnte" class="gate-forgot-link">D&eacute;j&agrave; un compte&nbsp;? Se connecter</a>
+
     <% } %>
+  </main>
+<% } %>
 
-    <a href="/favoris" class="gate-forgot-link">Ignorer et aller au site</a>
-
-  <% } else { %>
-    <%# Registration form %>
-    <% if (isFrench) { %>
-      <p class="gate-help gate-help--notice">Vous &ecirc;tes en France. Votre compte sera cr&eacute;&eacute; mais restera en attente jusqu&rsquo;&agrave; ce que la personne qui vous a invit&eacute;(e) valide votre inscription.</p>
-    <% } %>
-
-    <% if (error) { %>
-      <p class="error gate-error"><%= error %></p>
-    <% } %>
-
-    <form method="POST" action="/rejoindre/<%= token %>" class="gate-form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <input type="text" name="website" class="gate-honeypot" tabindex="-1" autocomplete="off" />
-      <input type="text" name="nom" placeholder="pseudo" required autofocus autocomplete="username" maxlength="60" />
-      <input type="email" name="email" placeholder="adresse mail" required autocomplete="email" maxlength="254" />
-      <input type="password" name="password" placeholder="mot de passe" required autocomplete="new-password" />
-      <input type="password" name="password2" placeholder="confirmer le mot de passe" required autocomplete="new-password" />
-      <button type="submit" aria-label="Cr&eacute;er mon compte" title="Cr&eacute;er mon compte">&#8594;</button>
-    </form>
-
-    <p class="gate-help">L&rsquo;adresse mail sert uniquement &agrave; r&eacute;initialiser votre mot de passe si vous l&rsquo;oubliez.</p>
-
-    <a href="/ponhgup/85zapnte" class="gate-forgot-link">D&eacute;j&agrave; un compte&nbsp;? Se connecter</a>
-
-  <% } %>
-</main>
 <%- include('partials/foot') %>
