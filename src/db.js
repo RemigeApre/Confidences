@@ -427,6 +427,10 @@ try { db.exec("ALTER TABLE users ADD COLUMN history_retention TEXT NOT NULL DEFA
 try { db.exec("ALTER TABLE users ADD COLUMN hide_invite_cta INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN newsletter INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN newsletter_token TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN login_streak INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN login_streak_last TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN pity_since_epic INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN pity_since_legendary INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN friend_code INTEGER"); } catch (_) {}
 
 db.exec(`CREATE TABLE IF NOT EXISTS friendships (
@@ -665,6 +669,11 @@ db.prepare("DELETE FROM charms WHERE key IN ('moon', 'eye', 'rose', 'gem')").run
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 // Migration one-shot : gift_data sur user_lootboxes
 try { db.exec("ALTER TABLE user_lootboxes ADD COLUMN gift_data TEXT"); } catch (_) {}
+// Migration one-shot : fusion_copies et is_fused sur user_unlocks
+try { db.exec("ALTER TABLE user_unlocks ADD COLUMN fusion_copies INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_fused INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+// Migration one-shot : bandeau vertical profil public
+try { db.exec("ALTER TABLE users ADD COLUMN profile_banner_ref_id INTEGER"); } catch (_) {}
 
 // ── Sessions de choix (lootbox à choix) ──────────────────────────────────
 db.exec(`CREATE TABLE IF NOT EXISTS lootbox_choice_sessions (
@@ -1131,6 +1140,7 @@ function rowToUser(row) {
     friendCode: row.friend_code || null,
     newsletter: row.newsletter !== 0,
     newsletterToken: row.newsletter_token || null,
+    profileBannerRefId: row.profile_banner_ref_id || null,
   };
 }
 
@@ -4741,7 +4751,53 @@ function getLootboxCount(userId) {
   return row ? row.cnt : 0;
 }
 
-const LOOT_TYPES = ['standard', 'image', 'charm', 'choice'];
+const LOOT_TYPES = ['standard', 'image', 'charm', 'choice', 'rare', 'epic', 'legendary'];
+
+// Poids de rareté par niveau de lootbox
+const TIER_RARITY_WEIGHTS = {
+  standard:  { common: 50, rare: 28, epic: 15, legendary: 5,  mythic: 2  },
+  image:     { common: 50, rare: 28, epic: 15, legendary: 5,  mythic: 2  },
+  rare:      { common: 0,  rare: 50, epic: 30, legendary: 15, mythic: 5  },
+  epic:      { common: 0,  rare: 0,  epic: 50, legendary: 35, mythic: 15 },
+  legendary: { common: 0,  rare: 0,  epic: 0,  legendary: 65, mythic: 35 },
+};
+
+function _pickRarityForTier(tier) {
+  const weights = TIER_RARITY_WEIGHTS[tier] || TIER_RARITY_WEIGHTS.standard;
+  const total = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
+  let r = Math.random() * total;
+  for (const [key, weight] of Object.entries(weights)) {
+    r -= weight;
+    if (r <= 0) return key;
+  }
+  return Object.keys(weights).reverse().find(k => weights[k] > 0) || 'rare';
+}
+
+// Paliers de streak quotidien
+const STREAK_MILESTONES = {
+  7:  { count: 1, type: 'rare'      },
+  14: { count: 1, type: 'epic'      },
+  30: { count: 1, type: 'legendary' },
+  60: { count: 2, type: 'legendary' },
+};
+
+// Paliers de notes posées
+const NOTE_MILESTONES = [
+  { threshold: 10,  count: 1, type: 'rare'      },
+  { threshold: 50,  count: 1, type: 'epic'       },
+  { threshold: 100, count: 1, type: 'legendary'  },
+  { threshold: 250, count: 1, type: 'legendary'  },
+  { threshold: 500, count: 2, type: 'legendary'  },
+];
+
+// Paliers de cœurs reçus sur profil
+const HEARTS_MILESTONES = [
+  { threshold: 5,   count: 1, type: 'standard'  },
+  { threshold: 20,  count: 1, type: 'rare'       },
+  { threshold: 50,  count: 1, type: 'epic'       },
+  { threshold: 100, count: 1, type: 'epic'       },
+  { threshold: 200, count: 1, type: 'legendary'  },
+];
 
 function grantLootbox(userId, count, lootType) {
   const n = Math.max(1, parseInt(count, 10) || 1);
@@ -4753,7 +4809,7 @@ function grantLootbox(userId, count, lootType) {
 
 function getLootboxCountByType(userId) {
   const rows = db.prepare("SELECT loot_type, COUNT(*) as cnt FROM user_lootboxes WHERE user_id = ? AND opened = 0 GROUP BY loot_type").all(userId);
-  const result = { standard: 0, image: 0, charm: 0, choice: 0, total: 0 };
+  const result = { standard: 0, image: 0, charm: 0, choice: 0, rare: 0, epic: 0, legendary: 0, total: 0 };
   for (const r of rows) {
     const k = LOOT_TYPES.includes(r.loot_type) ? r.loot_type : 'standard';
     result[k] += r.cnt;
@@ -4831,7 +4887,28 @@ function checkAndGrantDailyLoginLootbox(userId) {
   const actionType = 'daily_' + today;
   const existing = db.prepare('SELECT granted FROM user_action_lootboxes WHERE user_id = ? AND action_type = ?').get(userId, actionType);
   if (existing && existing.granted >= 1) return 0;
-  grantLootbox(userId, 1, 'standard');
+
+  // Mise à jour du streak de connexion
+  const userRow = db.prepare('SELECT login_streak, login_streak_last FROM users WHERE id = ?').get(userId);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  let streak;
+  if (!userRow || !userRow.login_streak_last) {
+    streak = 1;
+  } else if (userRow.login_streak_last === yesterday) {
+    streak = (userRow.login_streak || 0) + 1;
+  } else {
+    streak = 1; // série cassée
+  }
+  db.prepare('UPDATE users SET login_streak = ?, login_streak_last = ? WHERE id = ?').run(streak, today, userId);
+
+  // Lootbox selon palier ou standard
+  const milestone = STREAK_MILESTONES[streak];
+  if (milestone) {
+    grantLootbox(userId, milestone.count, milestone.type);
+  } else {
+    grantLootbox(userId, 1, 'standard');
+  }
+
   db.prepare('INSERT OR REPLACE INTO user_action_lootboxes (user_id, action_type, granted) VALUES (?, ?, 1)').run(userId, actionType);
   return 1;
 }
@@ -4847,6 +4924,38 @@ function checkAndGrantActionLootbox(userId, actionType, total, threshold) {
     _stmtActionUpsert.run(userId, actionType, shouldHave);
   }
   return toGrant;
+}
+
+/** Accorde des lootboxes rares/épiques/légendaires aux paliers de notes cumulées. */
+function checkAndGrantNoteMilestones(userId, total) {
+  let granted = 0;
+  for (const m of NOTE_MILESTONES) {
+    if (total < m.threshold) continue;
+    const actionType = 'notes_milestone_' + m.threshold;
+    const existing = _stmtActionGranted.get(userId, actionType);
+    if (!existing || existing.granted < 1) {
+      grantLootbox(userId, m.count, m.type);
+      _stmtActionUpsert.run(userId, actionType, 1);
+      granted += m.count;
+    }
+  }
+  return granted;
+}
+
+/** Accorde 5 lootboxes standard à la première complétion d'un test de personnalité. */
+function checkAndGrantProfilQuizLootbox(userId, typeId) {
+  const actionType = 'profil_quiz_' + typeId;
+  const existing = _stmtActionGranted.get(userId, actionType);
+  if (existing && existing.granted >= 1) return 0;
+  grantLootbox(userId, 5, 'standard');
+  _stmtActionUpsert.run(userId, actionType, 1);
+  return 5;
+}
+
+/** Retourne le streak de connexion actuel de l'utilisateur. */
+function getUserLoginStreak(userId) {
+  const row = db.prepare('SELECT login_streak, login_streak_last FROM users WHERE id = ?').get(userId);
+  return row ? { streak: row.login_streak || 0, last: row.login_streak_last || '' } : { streak: 0, last: '' };
 }
 
 // ── Charmes ───────────────────────────────────────────────────────────────
@@ -5003,8 +5112,8 @@ function _buildImagePool(userId) {
   return pool;
 }
 
-function _grantImageReward(userId, boxId) {
-  const rarity = _pickRarity();
+function _grantImageReward(userId, boxId, forcedRarity) {
+  const rarity = forcedRarity || _pickRarity();
   const now = new Date().toISOString();
 
   // Filtres de tag de l'utilisateur
@@ -5025,6 +5134,27 @@ function _grantImageReward(userId, boxId) {
     if (!allowIrrealiste && tags.some(t => irrealisteTags.has(t))) return false;
     return true;
   });
+
+  // Toutes les images de cette rareté sont possédées : donner une copie de fusion
+  if (!candidates.length) {
+    const ownedForFusion = db.prepare(`
+      SELECT u.id as unlock_id, u.ref_id, u.fusion_copies, g.image_paths, g.title
+      FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id
+      WHERE u.user_id = ? AND u.item_type = 'profile_image' AND u.rarity = ? AND u.fusion_copies < 9
+    `).all(userId, rarity);
+    if (ownedForFusion.length) {
+      const fp = ownedForFusion[Math.floor(Math.random() * ownedForFusion.length)];
+      db.prepare("UPDATE user_unlocks SET fusion_copies = fusion_copies + 1 WHERE id = ?").run(fp.unlock_id);
+      if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity=?, opened_at=? WHERE id=?").run(rarity, now, boxId);
+      let fpPaths = []; try { fpPaths = JSON.parse(fp.image_paths || '[]'); } catch (_) {}
+      return { imageId: fp.ref_id, title: fp.title || '', rarity, thumb: fpPaths[0] || null, isFusionCopy: true, fusionCopies: fp.fusion_copies + 1 };
+    }
+    // Toutes les copies au maximum : donner des pièces
+    const coins = COINS_BY_RARITY[rarity] || 30;
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+    if (boxId) db.prepare("UPDATE user_lootboxes SET opened=1, reward_rarity=?, opened_at=? WHERE id=?").run(rarity, now, boxId);
+    return { isCoins: true, coins, rarity };
+  }
 
   // La carte pièces est toujours disponible (infinie) — pool = cartes non possédées + 1 pièces
   const totalOptions = candidates.length + 1;
@@ -5181,21 +5311,36 @@ function openLootbox(userId) {
     return { rewards: [{ isTheme: true, themeKey: theme.key, label: theme.label, rarity: theme.rarity || 'rare', isDuplicate: false }] };
   }
 
-  // ── Lootbox standard / image : récompense (image non possédée ou pièces + chance joker/carte)
+  // ── Lootbox standard / rare / epic / legendary / image ──────────────────
+  const userPity = db.prepare('SELECT pity_since_epic, pity_since_legendary FROM users WHERE id = ?').get(userId) || { pity_since_epic: 0, pity_since_legendary: 0 };
   db.prepare("UPDATE user_lootboxes SET opened=1, opened_at=? WHERE id=?").run(now, box.id);
+
+  let rarity = _pickRarityForTier(type);
+
+  // Pity system : garantie après N ouvertures sans résultat de ce niveau
+  const isEpicPlus = rarity === 'epic' || rarity === 'legendary' || rarity === 'mythic';
+  const isLegPlus  = rarity === 'legendary' || rarity === 'mythic';
+  if (!isEpicPlus && userPity.pity_since_epic >= 40)      rarity = 'epic';
+  if (!isLegPlus  && userPity.pity_since_legendary >= 100) rarity = 'legendary';
+
+  // Mise à jour des compteurs pity
+  const newEpicPlus = rarity === 'epic' || rarity === 'legendary' || rarity === 'mythic';
+  const newLegPlus  = rarity === 'legendary' || rarity === 'mythic';
+  db.prepare(`UPDATE users SET
+    pity_since_epic      = CASE WHEN ? THEN 0 ELSE pity_since_epic + 1      END,
+    pity_since_legendary = CASE WHEN ? THEN 0 ELSE pity_since_legendary + 1 END
+  WHERE id = ?`).run(newEpicPlus ? 1 : 0, newLegPlus ? 1 : 0, userId);
+
   const rewards = [];
-  for (let i = 0; i < 1; i++) {
-    const rarity = _pickRarity();
-    if (rarity === 'mythic'    && Math.random() < 0.40) {
-      rewards.push(_grantJoker(userId, null, 'joker_charm',  'mythic'));
-    } else if (rarity === 'legendary' && Math.random() < 0.08 && type !== 'image') {
-      rewards.push(_grantJoker(userId, null, 'joker_image', 'legendary'));
-    } else if (type !== 'image' && Math.random() < 0.15) {
-      // ~15% chance d'obtenir une carte codex
-      rewards.push(_grantCardReward(userId, rarity));
-    } else {
-      rewards.push(_grantImageReward(userId, null));
-    }
+  if (rarity === 'mythic' && Math.random() < 0.40) {
+    rewards.push(_grantJoker(userId, null, 'joker_charm', 'mythic'));
+  } else if (rarity === 'legendary' && Math.random() < 0.08 && type !== 'image') {
+    rewards.push(_grantJoker(userId, null, 'joker_image', 'legendary'));
+  } else if (type !== 'image' && Math.random() < 0.15) {
+    // ~15% chance d'obtenir une carte codex
+    rewards.push(_grantCardReward(userId, rarity));
+  } else {
+    rewards.push(_grantImageReward(userId, null, rarity));
   }
   return { rewards };
 }
@@ -5255,11 +5400,11 @@ function listUnownedImages(userId, limit) {
 
 function getUserUnlocks(userId) {
   return db.prepare(
-    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
+    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, u.fusion_copies, u.is_fused, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
   ).all(userId).map(r => {
     let imagePaths = [];
     try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
-    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at, isFavorite: !!r.is_favorite };
+    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at, isFavorite: !!r.is_favorite, fusionCopies: r.fusion_copies || 0, isFused: !!r.is_fused };
   });
 }
 
@@ -5272,6 +5417,56 @@ function sellUnlock(userId, unlockId) {
   // Si c'était la photo de profil active, la réinitialiser
   db.prepare("UPDATE users SET coins = coins + ?, profile_image_id = CASE WHEN profile_image_id = ? THEN NULL ELSE profile_image_id END WHERE id = ?").run(coins, row.ref_id, userId);
   return { ok: true, coins };
+}
+
+// ── Fusion d'images de profil ─────────────────────────────────────────────
+// Palier de rareté : common → rare → epic → legendary → (pièces si déjà max)
+const RARITY_FUSION_NEXT = { common: 'rare', rare: 'epic', epic: 'legendary' };
+const COINS_FOR_MAX_FUSION = { common: 100, rare: 300, epic: 600, legendary: 1200 };
+
+// Voie A : 3 exemplaires identiques (1 possédé + 2 copies de fusion)
+function fuseImageIdentique(userId, unlockId) {
+  const row = db.prepare("SELECT id, ref_id, rarity, fusion_copies FROM user_unlocks WHERE id = ? AND user_id = ? AND item_type = 'profile_image'").get(unlockId, userId);
+  if (!row) return { ok: false, error: 'not_found' };
+  if (row.fusion_copies < 2) return { ok: false, error: 'not_enough_copies' };
+  const nextRarity = RARITY_FUSION_NEXT[row.rarity];
+  if (!nextRarity) {
+    const coins = COINS_FOR_MAX_FUSION[row.rarity] || 500;
+    db.prepare("UPDATE user_unlocks SET fusion_copies = 0 WHERE id = ?").run(row.id);
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(coins, userId);
+    return { ok: true, maxRarity: true, coins };
+  }
+  db.prepare("UPDATE user_unlocks SET rarity = ?, fusion_copies = 0, is_fused = 1 WHERE id = ?").run(nextRarity, row.id);
+  return { ok: true, newRarity: nextRarity };
+}
+
+// Voie B : 10 images de même rareté (images différentes) → monte la cible d'un cran
+function fuseImageRarete(userId, sacrificeIds, targetId) {
+  if (!Array.isArray(sacrificeIds) || sacrificeIds.length !== 10) return { ok: false, error: 'need_10_sacrifices' };
+  const target = db.prepare("SELECT id, ref_id, rarity FROM user_unlocks WHERE id = ? AND user_id = ? AND item_type = 'profile_image'").get(targetId, userId);
+  if (!target) return { ok: false, error: 'target_not_found' };
+  const nextRarity = RARITY_FUSION_NEXT[target.rarity];
+  if (!nextRarity) return { ok: false, error: 'target_already_max' };
+  if (sacrificeIds.includes(targetId)) return { ok: false, error: 'cannot_sacrifice_target' };
+  const cleanIds = sacrificeIds.map(n => parseInt(n, 10)).filter(n => !isNaN(n));
+  if (cleanIds.length !== 10) return { ok: false, error: 'invalid_sacrifice_ids' };
+  const placeholders = cleanIds.map(() => '?').join(',');
+  const sacrifices = db.prepare(`SELECT id, ref_id, rarity FROM user_unlocks WHERE id IN (${placeholders}) AND user_id = ? AND item_type = 'profile_image'`).all(...cleanIds, userId);
+  if (sacrifices.length !== 10) return { ok: false, error: 'invalid_sacrifices' };
+  if (!sacrifices.every(s => s.rarity === target.rarity)) return { ok: false, error: 'rarity_mismatch' };
+  const refIds = new Set(sacrifices.map(s => s.ref_id));
+  refIds.add(target.ref_id);
+  if (refIds.size !== 11) return { ok: false, error: 'duplicate_images' };
+  // Exécuter la fusion
+  const activePP = db.prepare("SELECT profile_image_id FROM users WHERE id = ?").get(userId);
+  for (const s of sacrifices) {
+    db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(s.id);
+    if (activePP && activePP.profile_image_id === s.ref_id) {
+      db.prepare("UPDATE users SET profile_image_id = ? WHERE id = ?").run(target.ref_id, userId);
+    }
+  }
+  db.prepare("UPDATE user_unlocks SET rarity = ?, is_fused = 1 WHERE id = ?").run(nextRarity, target.id);
+  return { ok: true, newRarity: nextRarity };
 }
 
 // Revend un charme débloqué → supprime de user_unlocks, réinitialise rating_charm si actif
@@ -5396,6 +5591,21 @@ function setProfileImageCrop(userId, crop) {
   const safe = { x: Number(crop.x) || 50, y: Number(crop.y) || 50, scale: Math.max(1, Math.min(4, Number(crop.scale) || 1)) };
   db.prepare("UPDATE users SET profile_image_crop = ? WHERE id = ?").run(JSON.stringify(safe), userId);
   return true;
+}
+
+// Bandeau vertical : image epic+ affichée en décoration sur le profil public (PC only)
+function setProfileBanner(userId, refId) {
+  if (refId === null || refId === undefined) {
+    db.prepare("UPDATE users SET profile_banner_ref_id = NULL WHERE id = ?").run(userId);
+    return { ok: true };
+  }
+  const id = parseInt(refId, 10);
+  if (isNaN(id)) return { ok: false, error: 'invalid_id' };
+  const unlock = db.prepare("SELECT id, rarity FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image' AND ref_id = ?").get(userId, id);
+  if (!unlock) return { ok: false, error: 'not_owned' };
+  if (!['epic', 'legendary', 'mythic'].includes(unlock.rarity)) return { ok: false, error: 'rarity_too_low' };
+  db.prepare("UPDATE users SET profile_banner_ref_id = ? WHERE id = ?").run(id, userId);
+  return { ok: true };
 }
 
 function setLootboxFilters(userId, { allowUltra, allowIrrealiste }) {
@@ -6201,7 +6411,7 @@ function getTopRatedWikiItems(userId) {
 }
 
 function setPublicProfile(userId, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, showWikiStatus, showTopRatings, featuredImageIds }) {
-  const ids = Array.isArray(featuredImageIds) ? featuredImageIds.slice(0, 5) : [];
+  const ids = Array.isArray(featuredImageIds) ? featuredImageIds.slice(0, 3) : [];
   const now = new Date().toISOString();
   db.prepare(`INSERT INTO public_profiles (user_id, show_sexe, show_wiki_favorites, show_archetype, show_streak, show_coffre, show_wiki_status, show_top_ratings, featured_image_ids, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -6414,13 +6624,33 @@ function listAllInviteUses(inviterId) {
 }
 
 function toggleProfileLike(userId, targetId) {
+  if (userId === targetId) return false; // Anti-triche : pas d'auto-cœur
   const existing = db.prepare('SELECT 1 FROM profile_likes WHERE user_id=? AND target_id=?').get(userId, targetId);
   if (existing) {
     db.prepare('DELETE FROM profile_likes WHERE user_id=? AND target_id=?').run(userId, targetId);
     return false;
   }
   db.prepare("INSERT INTO profile_likes (user_id, target_id, created_at) VALUES (?,?,?)").run(userId, targetId, new Date().toISOString());
+  // Paliers de cœurs reçus pour la cible
+  const total = countProfileLikes(targetId);
+  checkAndGrantHeartsMilestones(targetId, total);
   return true;
+}
+
+/** Accorde des lootboxes aux paliers de cœurs reçus sur profil. */
+function checkAndGrantHeartsMilestones(userId, total) {
+  let granted = 0;
+  for (const m of HEARTS_MILESTONES) {
+    if (total < m.threshold) continue;
+    const actionType = 'hearts_milestone_' + m.threshold;
+    const existing = _stmtActionGranted.get(userId, actionType);
+    if (!existing || existing.granted < 1) {
+      grantLootbox(userId, m.count, m.type);
+      _stmtActionUpsert.run(userId, actionType, 1);
+      granted += m.count;
+    }
+  }
+  return granted;
 }
 
 function countProfileLikes(targetId) {
@@ -7025,6 +7255,8 @@ module.exports = {
   openLootbox,
   pickChoiceReward,
   getUserUnlocks,
+  fuseImageIdentique,
+  fuseImageRarete,
   sellUnlock,
   sellCharmUnlock,
   sellTheme,
@@ -7034,6 +7266,7 @@ module.exports = {
   RARITY_SELL_PRICE,
   setProfileColor,
   setProfileImageId,
+  setProfileBanner,
   setProfileImageCrop,
   setLootboxFilters,
   getMemoryShop,
@@ -7204,6 +7437,10 @@ module.exports = {
   unsubscribeByNewsletterToken,
   listNewsletterSubscribers,
   setUserNewsletter,
+  checkAndGrantNoteMilestones,
+  checkAndGrantProfilQuizLootbox,
+  checkAndGrantHeartsMilestones,
+  getUserLoginStreak,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

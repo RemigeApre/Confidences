@@ -43,6 +43,7 @@ const {
   listBlacklistedTags,
   normalizeParody,
   checkAndGrantActionLootbox,
+  checkAndGrantNoteMilestones,
   countUserRatingsTotal,
   getTranslationsForEntity,
   getFieldTranslationsByEntity,
@@ -1292,9 +1293,11 @@ function buildWikiRouter(config) {
     // J'adore = favori : synchro avec la table favorites
     if (flame) addFavorite(req.user.id, "wiki", id);
     else removeFavorite(req.user.id, "wiki", id);
-    // Lootbox : toutes les 5 notes (wiki + galerie + bd confondus)
+    // Lootbox : toutes les 5 notes (wiki + galerie + bd confondus) + paliers
     if (rating !== undefined) {
-      checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsTotal(req.user.id), 5);
+      const total = countUserRatingsTotal(req.user.id);
+      checkAndGrantActionLootbox(req.user.id, "notes", total, 5);
+      checkAndGrantNoteMilestones(req.user.id, total);
     }
     res.json({ ok: true });
   })

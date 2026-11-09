@@ -26,6 +26,13 @@
 <main class="container wide pp-standalone">
   <%- include('partials/top-nav', { config: config }) %>
 
+  <%# ── Bandeau vertical gauche (PC only, image epic+) ── %>
+  <% if (bannerImage && bannerImage.imagePaths && bannerImage.imagePaths[0]) { %>
+    <div class="pp-left-banner" aria-hidden="true">
+      <img src="<%= bannerImage.imagePaths[0] %>" alt="" class="pp-left-banner-img" />
+    </div>
+  <% } %>
+
   <%# ── En-tête mobile — visible uniquement sur petit écran (≤1199px) ── %>
   <div class="pp-mobile-header" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
     <div class="pp-mh-top">

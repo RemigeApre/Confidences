@@ -104,7 +104,8 @@ function buildProfilQuizRouter(config) {
       resultArchetype: archetype ? archetype.name : code,
       completed: 1
     });
-    res.json({ ok: true, attemptId, code, position, archetype: archetype || null });
+    const lootGranted = db.checkAndGrantProfilQuizLootbox(req.user.id, type.id);
+    res.json({ ok: true, attemptId, code, position, archetype: archetype || null, lootGranted });
   });
 
   // Résultat

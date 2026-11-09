@@ -58,7 +58,7 @@ module.exports = function buildProfilRouter(config) {
         if (!unlockRefIds.has(id)) continue;
         const img = getGalleryImage(id);
         if (img) featuredImages.push(img);
-        if (featuredImages.length >= 5) break;
+        if (featuredImages.length >= 3) break;
       }
 
       // Wiki favorites — toujours affichés
@@ -105,6 +105,13 @@ module.exports = function buildProfilRouter(config) {
         }
       } catch (_) {}
 
+      // Bandeau vertical décoratif (PC only, image epic+)
+      let bannerImage = null;
+      if (user.profileBannerRefId) {
+        const bImg = getGalleryImage(user.profileBannerRefId);
+        if (bImg) bannerImage = bImg;
+      }
+
       const likeCount = countProfileLikes(user.id);
       const isLiked = req.user ? hasProfileLike(req.user.id, user.id) : false;
       const friendship = req.user ? getFriendshipBetween(req.user.id, user.id) : null;
@@ -129,6 +136,7 @@ module.exports = function buildProfilRouter(config) {
         likeCount,
         isLiked,
         isFriend,
+        bannerImage,
       });
     } catch (err) {
       console.error("[profil]", err);

@@ -42,6 +42,7 @@ const {
   getNouvelleById,
   listNouvelles,
   checkAndGrantActionLootbox,
+  checkAndGrantNoteMilestones,
   countUserRatingsTotal,
   getTranslationsForEntity,
   setTranslation,
@@ -684,7 +685,9 @@ function buildGalleryRouter(config) {
     reactGalleryImage(id, req.user.id, payload);
     // Lootbox : toutes les 5 notes (wiki + galerie + bd confondus)
     if (payload.rating !== undefined) {
-      checkAndGrantActionLootbox(req.user.id, "notes", countUserRatingsTotal(req.user.id), 5);
+      const total = countUserRatingsTotal(req.user.id);
+      checkAndGrantActionLootbox(req.user.id, "notes", total, 5);
+      checkAndGrantNoteMilestones(req.user.id, total);
     }
     res.json({ ok: true, hidden: !!req.body.hidden });
   });

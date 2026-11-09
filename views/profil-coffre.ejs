@@ -180,12 +180,13 @@
     <section class="coffre-section">
       <div class="coffre-grid" id="coffre-img-grid">
         <% unlocks.forEach(function(u) { %>
-          <div class="coffre-item coffre-item--owned<%= currentUser.profileImageId === u.refId ? ' coffre-item--active' : '' %>"
+          <div class="coffre-item coffre-item--owned<%= currentUser.profileImageId === u.refId ? ' coffre-item--active' : '' %><%= u.isFused ? ' coffre-item--fused' : '' %>"
                data-unlock-id="<%= u.id %>"
                data-ref-id="<%= u.refId %>"
                data-rarity="<%= u.rarity %>"
                data-owned="1"
                data-fav="<%= u.isFavorite ? '1' : '0' %>"
+               data-fusion-copies="<%= u.fusionCopies %>"
                data-sell-price="<%= RARITY_SELL_PRICE[u.rarity] || 1 %>">
             <div class="coffre-item-img-wrap">
               <% if (u.thumb) { %>
@@ -196,6 +197,12 @@
                 </div>
               <% } %>
               <div class="coffre-item-rarity coffre-item-rarity--<%= u.rarity %>"><%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[u.rarity] || u.rarity %></div>
+              <% if (u.fusionCopies > 0) { %>
+                <span class="coffre-fusion-badge" title="Copies de fusion : <%= u.fusionCopies %>/3"><%= u.fusionCopies %>/3</span>
+              <% } %>
+              <% if (u.isFused) { %>
+                <span class="coffre-fused-mark" title="Image fusionnée">&#9670;</span>
+              <% } %>
               <button class="coffre-fav-btn js-fav-toggle<%= u.isFavorite ? ' coffre-fav-btn--active' : '' %>"
                       data-unlock-id="<%= u.id %>"
                       title="<%= u.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' %>"
@@ -218,6 +225,14 @@
                         title="Recadrer la zone affichée">
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 1v8h8"/><path d="M1 4h8v8"/></svg>
                   Recadrer
+                </button>
+              <% } %>
+              <% if (u.fusionCopies >= 2) { %>
+                <button class="coffre-btn coffre-btn--fusion js-fuse-identique"
+                        data-unlock-id="<%= u.id %>"
+                        data-rarity="<%= u.rarity %>"
+                        title="Fusionner 3 copies identiques pour monter la rareté">
+                  Fusionner
                 </button>
               <% } %>
             </div>
@@ -1043,6 +1058,30 @@
         if (card) card.dataset.fav = d.isFavorite ? '1' : '0';
         applyImgFilters();
       });
+    });
+  });
+
+  // ── Fusion voie A : identique ────────────────────────────────────────
+  var RARITY_NEXT_LBL = { common: 'Rare', rare: 'Épique', epic: 'Légendaire' };
+  document.querySelectorAll('.js-fuse-identique').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var unlockId = parseInt(btn.dataset.unlockId, 10);
+      var rarity = btn.dataset.rarity;
+      var nextLbl = RARITY_NEXT_LBL[rarity] || '?';
+      if (!confirm('Fusionner 3 copies identiques pour obtenir une version ' + nextLbl + ' de cette image ?')) return;
+      btn.disabled = true;
+      fetch('/favoris/coffre/fusion/identique', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unlockId: unlockId }),
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.ok) { alert(d.error || 'Erreur'); btn.disabled = false; return; }
+        if (d.maxRarity) {
+          alert('Rareté déjà maximale. Vous recevez ' + d.coins + ' pièces.');
+          updateCoins(d.newCoins);
+        }
+        window.location.reload();
+      }).catch(function() { btn.disabled = false; });
     });
   });
 

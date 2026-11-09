@@ -37,6 +37,9 @@ const {
   listCollectionsForImagePopup,
   listHiddenBdPages,
   getUserUnlocks,
+  fuseImageIdentique,
+  fuseImageRarete,
+  setProfileBanner,
   getUserJokers,
   getUserUnlockedCharms,
   getShopItems,
@@ -357,6 +360,26 @@ function buildFavoritesRouter(config) {
     res.json({ ok: true, rarity: result.rarity, coinsSpent: result.coinsSpent, newBalance: user.coins });
   });
 
+  // Fusion voie A : 3 exemplaires identiques → monte la rareté d'un cran
+  router.post("/coffre/fusion/identique", requireUserJson, express.json(), (req, res) => {
+    const unlockId = parseInt(req.body.unlockId, 10);
+    if (isNaN(unlockId)) return res.json({ ok: false, error: 'invalid_id' });
+    const result = fuseImageIdentique(req.user.id, unlockId);
+    if (!result.ok) return res.json(result);
+    const user = getUserById(req.user.id);
+    res.json({ ...result, newCoins: user ? user.coins : null });
+  });
+
+  // Fusion voie B : 10 images de même rareté → monte la cible d'un cran
+  router.post("/coffre/fusion/rarete", requireUserJson, express.json(), (req, res) => {
+    const targetId = parseInt(req.body.targetId, 10);
+    const sacrificeIds = Array.isArray(req.body.sacrificeIds)
+      ? req.body.sacrificeIds.map(n => parseInt(n, 10)).filter(n => !isNaN(n))
+      : [];
+    if (isNaN(targetId) || sacrificeIds.length !== 10) return res.json({ ok: false, error: 'invalid_params' });
+    res.json(fuseImageRarete(req.user.id, sacrificeIds, targetId));
+  });
+
   // Toggle favori sur un item du coffre
   router.post("/coffre/favorite", requireUserJson, express.json(), (req, res) => {
     const unlockId = parseInt(req.body.unlockId, 10);
@@ -386,6 +409,13 @@ function buildFavoritesRouter(config) {
     const imageId = raw === null || raw === undefined ? null : parseInt(raw, 10);
     const ok = setProfileImageId(req.user.id, isNaN(imageId) ? null : imageId);
     res.json({ ok });
+  });
+
+  // Choisir le bandeau vertical du profil public (image epic+ uniquement)
+  router.post("/coffre/set-banner", requireUserJson, express.json(), (req, res) => {
+    const raw = req.body.refId;
+    const refId = raw === null || raw === undefined ? null : parseInt(raw, 10);
+    res.json(setProfileBanner(req.user.id, isNaN(refId) ? null : refId));
   });
 
   // Sauvegarde le recadrage de la photo de profil
@@ -495,7 +525,7 @@ function buildFavoritesRouter(config) {
       // Validate: each ID must be an unlock the user actually owns
       const coffre = getUserUnlocks(req.user.id);
       const ownedRefIds = new Set(coffre.map(u => u.refId));
-      const featuredImageIds = rawIds.filter(id => ownedRefIds.has(id)).slice(0, 5);
+      const featuredImageIds = rawIds.filter(id => ownedRefIds.has(id)).slice(0, 3);
       setPublicProfile(req.user.id, { showSexe, showWikiFavorites, showArchetype, showStreak, showCoffre, showWikiStatus, showTopRatings, featuredImageIds });
       res.redirect("/favoris/profil-public?ok=1");
     } catch (err) {
