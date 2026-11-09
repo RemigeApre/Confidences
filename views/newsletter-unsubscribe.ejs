@@ -1,0 +1,14 @@
+<%- include('partials/head', { title: 'Newsletter' }) %>
+<main class="container narrow gate-page">
+  <% if (ok) { %>
+    <h1 class="gate-title">Désinscrit</h1>
+    <p class="gate-intro">Vous ne recevrez plus de newsletter. Vous pouvez vous réinscrire depuis vos paramètres.</p>
+    <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+      <a href="/favoris/parametres" class="gate-forgot-link">Mes paramètres</a>
+    <% } %>
+  <% } else { %>
+    <h1 class="gate-title">Lien invalide</h1>
+    <p class="gate-intro">Ce lien de désinscription est invalide ou a déjà été utilisé.</p>
+  <% } %>
+</main>
+<%- include('partials/foot') %>

@@ -132,6 +132,8 @@ const {
   logAdminAudit,
   listAdminAudit,
   getUserInviteStats,
+  listNewsletterSubscribers,
+  getOrCreateNewsletterToken,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -896,6 +898,40 @@ function buildAdminRouter(config) {
     updateUserPassword(id, hashPassword(password));
     afterPasswordChange(id, req, req.sessionID);
     res.json({ ok: true });
+  });
+
+  // ── Newsletter admin ──────────────────────────────────────────────────────
+  router.get("/newsletter", requireAdmin, (req, res) => {
+    const subscribers = listNewsletterSubscribers();
+    res.render("admin-newsletter", { config, subscribers, sent: req.query.sent || null, error: null });
+  });
+
+  router.post("/newsletter", requireAdmin, express.urlencoded({ extended: false }), async (req, res) => {
+    const subject = String(req.body.subject || "").trim();
+    const body    = String(req.body.body || "").trim();
+    if (!subject || !body) {
+      return res.render("admin-newsletter", {
+        config, subscribers: listNewsletterSubscribers(),
+        sent: null, error: "Objet et corps sont obligatoires.",
+      });
+    }
+    const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+    const subscribers = listNewsletterSubscribers();
+    let ok = 0, fail = 0;
+    for (const sub of subscribers) {
+      const token = getOrCreateNewsletterToken(sub.id);
+      const unsubscribeUrl = siteUrl + "/newsletter/unsubscribe/" + token;
+      const bodyHtml = body.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>').replace(/^/, '<p>').replace(/$/, '</p>');
+      const sent = await sendMail({
+        to: sub.email,
+        subject,
+        text: body + "\n\n--\nSe désinscrire : " + unsubscribeUrl,
+        html: emailHtml({ title: subject, body: bodyHtml, siteUrl, unsubscribeUrl }),
+      });
+      if (sent) ok++; else fail++;
+    }
+    logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'newsletter', 'mail', 0, subject);
+    res.redirect("/ponhgup/newsletter?sent=" + ok);
   });
 
   // Teinte du volet, même logique que src/routes/favorites.js pour le profil

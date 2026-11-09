@@ -100,6 +100,17 @@
             <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
           </label>
         </div>
+
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span>Newsletter</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Recevoir les actualités du site par mail." aria-label="À propos de la newsletter">!</span>
+          </div>
+          <label class="profil-toggle">
+            <input type="checkbox" id="newsletter-checkbox" <%= currentUser.newsletter ? 'checked' : '' %> />
+            <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
+          </label>
+        </div>
       </div>
 
       <div class="profil-danger-zone">
@@ -153,6 +164,13 @@
   if (hideInviteCheckbox) {
     hideInviteCheckbox.addEventListener("change", function () {
       savePref("hideInviteCta", hideInviteCheckbox.checked);
+    });
+  }
+
+  var newsletterCheckbox = document.getElementById("newsletter-checkbox");
+  if (newsletterCheckbox) {
+    newsletterCheckbox.addEventListener("change", function () {
+      savePref("newsletter", newsletterCheckbox.checked);
     });
   }
 

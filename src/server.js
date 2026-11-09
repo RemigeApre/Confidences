@@ -40,6 +40,7 @@ const {
   getPendingFriendRequestsCount,
   getUnreadCount,
   cleanupOldMessages,
+  unsubscribeByNewsletterToken,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
 const { buildTagRegistry } = require("./tagRegistry");
@@ -380,6 +381,7 @@ const _AUTH_PUBLIC = [
   /^\/api\/wiki\/index\.json$/,
   /^\/rejoindre\/.+$/,
   /^\/invitation-attente$/,
+  /^\/newsletter\/unsubscribe\/.+$/,
 ];
 // Contenu NSFW (galerie/BD/nouvelles) : en France, compte obligatoire comme
 // avant ; hors France (voir req.isFrenchVisitor, src/geo.js), laissé passer
@@ -1263,6 +1265,12 @@ app.use("/arcade", buildArcadeRouter(config));
 app.use("/profil", buildProfilRouter(config));
 app.use("/rejoindre", buildInviteRouter(config));
 app.use("/messages", buildMessagesRouter(config));
+
+// Désinscription newsletter (lien public, sans connexion requise)
+app.get("/newsletter/unsubscribe/:token", (req, res) => {
+  const ok = unsubscribeByNewsletterToken(req.params.token);
+  res.render("newsletter-unsubscribe", { ok });
+});
 
 // Page d'attente pour les comptes FR en attente de validation par l'inviteur
 app.get("/invitation-attente", (req, res) => {

@@ -3,7 +3,7 @@
 
 <div class="jeu-viewport">
 
-  <%# ── Vue accueil (catégories + lootbox) ── %>
+  <%# ── Vue accueil (lootbox centrale + catégories en bas) ── %>
   <div id="jeu-home-view">
 
     <%# ── Bouton info (haut droite) ── %>
@@ -19,36 +19,8 @@
     </button>
     </div>
 
-    <%# ── Grille de catégories ── %>
-    <div class="jeu-categories">
-
-      <button class="jeu-cat-btn jeu-cat-btn--arcade" id="jeu-arcade-btn" aria-label="Arcade">
-        <span class="jeu-cat-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M8 12h2m-1-1v2M14 11h.01M16 13h.01"/></svg>
-        </span>
-        <span class="jeu-cat-name">Arcade</span>
-      </button>
-
-      <button class="jeu-cat-btn jeu-cat-btn--casino" id="jeu-casino-btn" aria-label="Casino">
-        <span class="jeu-cat-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1.5"/><rect x="14" y="2" width="8" height="8" rx="1.5"/><rect x="2" y="14" width="8" height="8" rx="1.5"/><rect x="14" y="14" width="8" height="8" rx="1.5"/><circle cx="6" cy="6" r="1.2" fill="currentColor"/><circle cx="18" cy="6" r="1.2" fill="currentColor"/><circle cx="18" cy="10" r="1.2" fill="currentColor"/><circle cx="6" cy="18" r="1.2" fill="currentColor"/><circle cx="18" cy="18" r="1.2" fill="currentColor"/></svg>
-        </span>
-        <span class="jeu-cat-name">Casino</span>
-      </button>
-
-      <button class="jeu-cat-btn jeu-cat-btn--aventure" id="jeu-aventure-btn" aria-label="Aventure">
-        <span class="jeu-cat-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 10.5 L12 3 L9.5 10.5 L3 8 L7.5 14 L3 20 L12 17 L21 20 L16.5 14 L21 8 Z"/></svg>
-        </span>
-        <span class="jeu-cat-name">Aventure</span>
-      </button>
-
-    </div>
-
-  </div><%# /jeu-home-view %>
-
-  <%# ── Lootbox (bas droite, toujours visible) ── %>
-  <div class="jeu-lootbox-area" id="jeu-lootbox-area">
+    <%# ── Lootbox (élément central) ── %>
+    <div class="jeu-lootbox-area" id="jeu-lootbox-area">
     <button class="jeu-lootbox-btn" id="jeu-lootbox-btn" aria-label="Ouvrir une lootbox" disabled>
       <%# Coffre SVG très graphique %>
       <svg class="jeu-chest-svg" viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -97,6 +69,34 @@
       <span class="jeu-lootbox-label" id="jeu-lootbox-label" data-fr="Aucune lootbox" data-en="No lootbox">Aucune lootbox</span>
     </button>
   </div>
+
+    <%# ── Grille de catégories (sous la lootbox) ── %>
+    <div class="jeu-categories">
+
+      <button class="jeu-cat-btn jeu-cat-btn--arcade" id="jeu-arcade-btn" aria-label="Arcade">
+        <span class="jeu-cat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M8 12h2m-1-1v2M14 11h.01M16 13h.01"/></svg>
+        </span>
+        <span class="jeu-cat-name">Arcade</span>
+      </button>
+
+      <button class="jeu-cat-btn jeu-cat-btn--casino" id="jeu-casino-btn" aria-label="Casino">
+        <span class="jeu-cat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1.5"/><rect x="14" y="2" width="8" height="8" rx="1.5"/><rect x="2" y="14" width="8" height="8" rx="1.5"/><rect x="14" y="14" width="8" height="8" rx="1.5"/><circle cx="6" cy="6" r="1.2" fill="currentColor"/><circle cx="18" cy="6" r="1.2" fill="currentColor"/><circle cx="18" cy="10" r="1.2" fill="currentColor"/><circle cx="6" cy="18" r="1.2" fill="currentColor"/><circle cx="18" cy="18" r="1.2" fill="currentColor"/></svg>
+        </span>
+        <span class="jeu-cat-name">Casino</span>
+      </button>
+
+      <button class="jeu-cat-btn jeu-cat-btn--aventure" id="jeu-aventure-btn" aria-label="Aventure">
+        <span class="jeu-cat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 10.5 L12 3 L9.5 10.5 L3 8 L7.5 14 L3 20 L12 17 L21 20 L16.5 14 L21 8 Z"/></svg>
+        </span>
+        <span class="jeu-cat-name">Aventure</span>
+      </button>
+
+    </div>
+
+  </div><%# /jeu-home-view %>
 
   <%# ── Arcade en-page ── %>
   <div id="arcade-modal" class="arcade-inpage" hidden>

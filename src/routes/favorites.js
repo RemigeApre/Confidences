@@ -554,8 +554,8 @@ function buildFavoritesRouter(config) {
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
-    const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention } = req.body;
-    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention });
+    const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, newsletter } = req.body;
+    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, newsletter });
     res.json({ ok: true });
   });
 
@@ -916,7 +916,26 @@ function buildFavoritesRouter(config) {
 
   router.post("/amis/:friendId/accepter", requireUser, (req, res) => {
     const friendId = parseInt(req.params.friendId, 10);
-    if (Number.isInteger(friendId)) acceptFriendRequest(req.user.id, friendId);
+    if (Number.isInteger(friendId)) {
+      acceptFriendRequest(req.user.id, friendId);
+      // Email à celui qui avait envoyé la demande
+      const requester = getUserById(friendId);
+      if (requester && requester.email) {
+        const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+        sendMail({
+          to: requester.email,
+          subject: req.user.displayName + " a accept\u00e9 votre demande d\u2019ami \u2014 Confidences",
+          text: `Bonjour ${requester.displayName},\n\n${req.user.displayName} a accepté votre demande d'ami. Vous êtes maintenant amis.\n${siteUrl}/favoris/amis`,
+          html: emailHtml({
+            title: "Demande accept\u00e9e",
+            body: `<p>Bonjour <strong>${requester.displayName}</strong>,</p><p><strong>${req.user.displayName}</strong> a accept&eacute; votre demande d&rsquo;ami. Vous &ecirc;tes maintenant amis.</p>`,
+            cta: "Voir mes amis",
+            ctaUrl: siteUrl + "/favoris/amis",
+            siteUrl,
+          }),
+        });
+      }
+    }
     res.redirect("/favoris/amis");
   });
 

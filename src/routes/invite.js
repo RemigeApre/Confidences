@@ -16,6 +16,7 @@ const {
   autoFriend,
   sendFriendRequest,
   getFriendshipBetween,
+  setUserNewsletter,
 } = require("../db");
 const { thumbUrl } = require("../thumbs");
 const { hashPassword } = require("../passwords");
@@ -202,6 +203,9 @@ module.exports = function buildInviteRouter(config) {
       isTest: false,
     });
     updateOwnProfile(newId, { displayName, email, sexe: "", birthYear: null });
+    if (!req.body.newsletter) {
+      setUserNewsletter(newId, false);
+    }
 
     if (isFrench) {
       setUserAccountStatus(newId, "pending_invite");

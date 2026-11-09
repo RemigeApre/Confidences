@@ -50,17 +50,20 @@ async function sendMail({ to, subject, text, html }) {
 // ── Template HTML minimaliste ─────────────────────────────────────────────
 // Génère un HTML d'email compatible tous clients (pas de style block, tout
 // inline). opts : { title, body (HTML), cta?, ctaUrl?, siteName?, siteUrl? }
-function emailHtml({ title, body, cta, ctaUrl, siteName = 'Confidences', siteUrl = '' }) {
+function emailHtml({ title, body, cta, ctaUrl, siteName = 'Confidences', siteUrl = '', unsubscribeUrl = '' }) {
   const btn = cta && ctaUrl
     ? `<tr><td style="padding:28px 0 8px;text-align:center">` +
       `<a href="${ctaUrl}" style="display:inline-block;background:#5b4fcf;color:#fff;` +
       `text-decoration:none;font-size:14px;font-weight:600;padding:11px 28px;border-radius:7px;` +
       `letter-spacing:.02em">${cta}</a></td></tr>`
     : '';
+  const unsub = unsubscribeUrl
+    ? `&nbsp;&middot;&nbsp;<a href="${unsubscribeUrl}" style="color:#9ca3af;text-decoration:none">Se d&eacute;sinscrire</a>`
+    : '';
   const footer = siteUrl
     ? `<tr><td style="padding:24px 0 0;text-align:center;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb">` +
-      `<a href="${siteUrl}" style="color:#9ca3af;text-decoration:none">${siteName}</a></td></tr>`
-    : `<tr><td style="padding:24px 0 0;text-align:center;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb">${siteName}</td></tr>`;
+      `<a href="${siteUrl}" style="color:#9ca3af;text-decoration:none">${siteName}</a>${unsub}</td></tr>`
+    : `<tr><td style="padding:24px 0 0;text-align:center;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb">${siteName}${unsub}</td></tr>`;
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/></head>` +
     `<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">` +
     `<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:36px 16px">` +

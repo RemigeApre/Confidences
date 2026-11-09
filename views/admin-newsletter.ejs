@@ -1,0 +1,38 @@
+<%- include('partials/head', { title: 'Newsletter' }) %>
+<main class="container">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Newsletter', navBack: '/ponhgup' }) %>
+
+  <% if (sent) { %>
+    <p class="profil-msg profil-msg-ok">Newsletter envoy&eacute;e &agrave; <%= sent %> abonné<%= sent > 1 ? 's' : '' %>.</p>
+  <% } %>
+  <% if (error) { %>
+    <p class="profil-msg profil-msg-error"><%= error %></p>
+  <% } %>
+
+  <section class="profil-panel">
+    <h2 class="profil-panel-title">Abonnés (<%= subscribers.length %>)</h2>
+    <% if (!subscribers.length) { %>
+      <p class="profil-empty-hint">Aucun abonné pour l'instant.</p>
+    <% } else { %>
+      <ul class="admin-nl-list">
+        <% subscribers.forEach(function(s) { %>
+          <li class="admin-nl-item"><strong><%= s.displayName %></strong> &mdash; <%= s.email %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="profil-panel">
+    <h2 class="profil-panel-title">Envoyer une newsletter</h2>
+    <form method="POST" action="/ponhgup/newsletter" class="admin-nl-form">
+      <input type="text" name="subject" class="guf-title-input" placeholder="Objet&hellip;" required maxlength="150" autocomplete="off" />
+      <textarea name="body" class="admin-nl-textarea" placeholder="Corps du message&#10;&#10;Deux sauts de ligne = nouveau paragraphe." rows="8" required></textarea>
+      <p class="admin-nl-hint">Un lien de d&eacute;sinscription sera automatiquement ajout&eacute; en bas de chaque mail.</p>
+      <button type="submit" class="guf-publish-btn" onclick="return confirm('Envoyer cette newsletter à <%= subscribers.length %> abonné<%= subscribers.length > 1 ? \'s\' : \'\' %> ?')">
+        Envoyer &agrave; <%= subscribers.length %> abonn&eacute;<%= subscribers.length > 1 ? 's' : '' %>
+      </button>
+    </form>
+  </section>
+
+</main>
+<%- include('partials/foot') %>

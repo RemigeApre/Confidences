@@ -425,6 +425,8 @@ try { db.exec("ALTER TABLE users ADD COLUMN share_notes_with_admin INTEGER NOT N
 // vues elles-mêmes (utilisées ailleurs par les stats admin).
 try { db.exec("ALTER TABLE users ADD COLUMN history_retention TEXT NOT NULL DEFAULT '1mois'"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN hide_invite_cta INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN newsletter INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN newsletter_token TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN friend_code INTEGER"); } catch (_) {}
 
 db.exec(`CREATE TABLE IF NOT EXISTS friendships (
@@ -1127,6 +1129,8 @@ function rowToUser(row) {
     identityChangedAt: row.identity_changed_at || null,
     hideInviteCta: !!row.hide_invite_cta,
     friendCode: row.friend_code || null,
+    newsletter: row.newsletter !== 0,
+    newsletterToken: row.newsletter_token || null,
   };
 }
 
@@ -1211,7 +1215,7 @@ const HISTORY_RETENTION_VALUES = ["3jours", "1semaine", "1mois", "3mois"];
 // Reglages "Goûts"/"Paramètres" (voir /favoris) : mise a jour partielle,
 // chaque champ omis garde sa valeur actuelle (sauvegarde instantanee par
 // champ, pas un gros formulaire soumis d'un coup).
-function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, hideInviteCta }) {
+function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, hideInviteCta, newsletter }) {
   const current = getUserById(id);
   if (!current) return;
   const o  = orientation   !== undefined && ORIENTATION_VALUES.includes(orientation)   ? orientation   : current.orientation;
@@ -1220,9 +1224,10 @@ function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareN
   const snwa = shareNotesWithAdmin !== undefined ? (shareNotesWithAdmin ? 1 : 0) : (current.shareNotesWithAdmin ? 1 : 0);
   const hr = historyRetention !== undefined && HISTORY_RETENTION_VALUES.includes(historyRetention) ? historyRetention : current.historyRetention;
   const hic = hideInviteCta !== undefined ? (hideInviteCta ? 1 : 0) : (current.hideInviteCta ? 1 : 0);
+  const nl = newsletter !== undefined ? (newsletter ? 1 : 0) : (current.newsletter ? 1 : 0);
   db.prepare(
-    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ?, hide_invite_cta = ? WHERE id = ?"
-  ).run(o, um, im, snwa, hr, hic, id);
+    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ?, hide_invite_cta = ?, newsletter = ? WHERE id = ?"
+  ).run(o, um, im, snwa, hr, hic, nl, id);
 }
 
 // COLLATE NOCASE : la casse n'a pas d'importance pour l'identifiant de
@@ -7195,6 +7200,10 @@ module.exports = {
   getSharedItems,
   removeSharedItem,
   cleanupOldMessages,
+  getOrCreateNewsletterToken,
+  unsubscribeByNewsletterToken,
+  listNewsletterSubscribers,
+  setUserNewsletter,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────
@@ -7427,4 +7436,31 @@ function updateAiProfile(id, { name, description, fantasmes, age, sexe, physical
 }
 function deleteAiProfile(id) {
   db.prepare(`DELETE FROM ai_profiles WHERE id=?`).run(id);
+}
+
+// ── Newsletter ─────────────────────────────────────────────────────────────
+const crypto_nl = require('crypto');
+
+function getOrCreateNewsletterToken(userId) {
+  const row = db.prepare('SELECT newsletter_token FROM users WHERE id = ?').get(userId);
+  if (row && row.newsletter_token) return row.newsletter_token;
+  const token = crypto_nl.randomBytes(24).toString('hex');
+  db.prepare('UPDATE users SET newsletter_token = ? WHERE id = ?').run(token, userId);
+  return token;
+}
+
+function unsubscribeByNewsletterToken(token) {
+  const row = db.prepare('SELECT id FROM users WHERE newsletter_token = ?').get(token);
+  if (!row) return false;
+  db.prepare('UPDATE users SET newsletter = 0 WHERE id = ?').run(row.id);
+  return true;
+}
+
+function listNewsletterSubscribers() {
+  return db.prepare("SELECT id, display_name, email FROM users WHERE newsletter = 1 AND email != '' AND email IS NOT NULL").all()
+    .map(r => ({ id: r.id, displayName: r.display_name, email: r.email }));
+}
+
+function setUserNewsletter(userId, value) {
+  db.prepare('UPDATE users SET newsletter = ? WHERE id = ?').run(value ? 1 : 0, userId);
 }
