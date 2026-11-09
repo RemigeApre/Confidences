@@ -88,6 +88,18 @@ const {
   findUserByFriendCode,
   assignFriendCode,
   getPendingFriendRequestsCount,
+  giftItem,
+  listOnMarketplace,
+  unlistFromMarketplace,
+  buyFromMarketplace,
+  getMarketplaceListings,
+  getMyMarketplaceListings,
+  proposeExchange,
+  acceptExchange,
+  rejectExchange,
+  cancelExchange,
+  getExchangesReceived,
+  getExchangesSent,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -301,6 +313,10 @@ function buildFavoritesRouter(config) {
       coffreCharms,
       coffreThemes,
       coffreTotal: coffreUnlocks + coffreCharms + coffreThemes,
+      friends: getFriends(req.user.id),
+      exchangesReceived: getExchangesReceived(req.user.id),
+      exchangesSent: getExchangesSent(req.user.id),
+      myListings: getMyMarketplaceListings(req.user.id),
     });
   });
 
@@ -1047,6 +1063,87 @@ function buildFavoritesRouter(config) {
       }
     }
     res.redirect("/favoris/invitations");
+  });
+
+  // ── Cadeau ──────────────────────────────────────────────────────────────
+  router.post("/coffre/gift", requireUserJson, (req, res) => {
+    const unlockId = parseInt(req.body.unlockId, 10);
+    const friendId = parseInt(req.body.friendId, 10);
+    if (!unlockId || !friendId) return res.json({ ok: false, error: 'invalid' });
+    if (friendId === req.user.id) return res.json({ ok: false, error: 'self' });
+    const result = giftItem(req.user.id, unlockId, friendId);
+    res.json(result);
+  });
+
+  // ── Place du marché ─────────────────────────────────────────────────────
+  router.post("/coffre/marche/list", requireUserJson, (req, res) => {
+    const unlockId = parseInt(req.body.unlockId, 10);
+    if (!unlockId) return res.json({ ok: false, error: 'invalid' });
+    const result = listOnMarketplace(req.user.id, unlockId);
+    res.json(result);
+  });
+
+  router.post("/coffre/marche/unlist/:listingId", requireUserJson, (req, res) => {
+    const listingId = parseInt(req.params.listingId, 10);
+    if (!listingId) return res.json({ ok: false, error: 'invalid' });
+    const result = unlistFromMarketplace(req.user.id, listingId);
+    res.json(result);
+  });
+
+  router.get("/marche", requireUser, (req, res) => {
+    const rarity = ['common','rare','epic','legendary','mythic'].includes(req.query.rarity) ? req.query.rarity : null;
+    const listings = getMarketplaceListings({ excludeUserId: req.user.id, rarity });
+    const myListings = getMyMarketplaceListings(req.user.id);
+    res.render("marche", {
+      config,
+      roleHue: roleHue(req.user),
+      notesCounts: notesCounts(req.user),
+      currentPath: '/favoris/marche',
+      listings,
+      myListings,
+      rarity,
+      RARITY_SELL_PRICE,
+    });
+  });
+
+  router.post("/marche/:listingId/buy", requireUserJson, (req, res) => {
+    const listingId = parseInt(req.params.listingId, 10);
+    if (!listingId) return res.json({ ok: false, error: 'invalid' });
+    const result = buyFromMarketplace(req.user.id, listingId);
+    const { getUserById } = require('../db');
+    const newBalance = result.ok ? (getUserById(req.user.id) || {}).coins || 0 : 0;
+    res.json({ ...result, newBalance });
+  });
+
+  // ── Échanges ────────────────────────────────────────────────────────────
+  router.post("/coffre/exchange/propose", requireUserJson, (req, res) => {
+    const unlockId  = parseInt(req.body.unlockId, 10);
+    const toUserId  = parseInt(req.body.toUserId, 10);
+    const wantType  = req.body.wantType === 'item' ? 'item' : 'coins';
+    const wantCoins = parseInt(req.body.wantCoins, 10) || 0;
+    if (!unlockId || !toUserId) return res.json({ ok: false, error: 'invalid' });
+    const result = proposeExchange(req.user.id, unlockId, toUserId, wantType, wantCoins);
+    res.json(result);
+  });
+
+  router.post("/coffre/exchange/:id/accept", requireUserJson, (req, res) => {
+    const proposalId    = parseInt(req.params.id, 10);
+    const offerUnlockId = req.body.offerUnlockId ? parseInt(req.body.offerUnlockId, 10) : null;
+    if (!proposalId) return res.json({ ok: false, error: 'invalid' });
+    const result = acceptExchange(req.user.id, proposalId, offerUnlockId);
+    res.json(result);
+  });
+
+  router.post("/coffre/exchange/:id/reject", requireUserJson, (req, res) => {
+    const proposalId = parseInt(req.params.id, 10);
+    if (!proposalId) return res.json({ ok: false, error: 'invalid' });
+    res.json(rejectExchange(req.user.id, proposalId));
+  });
+
+  router.post("/coffre/exchange/:id/cancel", requireUserJson, (req, res) => {
+    const proposalId = parseInt(req.params.id, 10);
+    if (!proposalId) return res.json({ ok: false, error: 'invalid' });
+    res.json(cancelExchange(req.user.id, proposalId));
   });
 
   return router;

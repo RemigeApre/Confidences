@@ -674,6 +674,31 @@ try { db.exec("ALTER TABLE user_unlocks ADD COLUMN fusion_copies INTEGER NOT NUL
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_fused INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 // Migration one-shot : bandeau vertical profil public
 try { db.exec("ALTER TABLE users ADD COLUMN profile_banner_ref_id INTEGER"); } catch (_) {}
+// Migrations : cadeau / échange / marché
+try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_listed INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+db.exec(`CREATE TABLE IF NOT EXISTS marketplace_listings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  seller_id INTEGER NOT NULL,
+  unlock_id INTEGER NOT NULL,
+  ref_id INTEGER NOT NULL,
+  item_type TEXT NOT NULL DEFAULT 'profile_image',
+  rarity TEXT NOT NULL,
+  price INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  sold_at TEXT,
+  buyer_id INTEGER
+)`);
+db.exec(`CREATE TABLE IF NOT EXISTS exchange_proposals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_user_id INTEGER NOT NULL,
+  to_user_id INTEGER NOT NULL,
+  offer_unlock_id INTEGER NOT NULL,
+  want_type TEXT NOT NULL DEFAULT 'coins',
+  want_coins INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`);
 
 // ── Sessions de choix (lootbox à choix) ──────────────────────────────────
 db.exec(`CREATE TABLE IF NOT EXISTS lootbox_choice_sessions (
@@ -5409,18 +5434,19 @@ function listUnownedImages(userId, limit) {
 
 function getUserUnlocks(userId) {
   return db.prepare(
-    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, u.fusion_copies, u.is_fused, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
+    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, u.fusion_copies, u.is_fused, u.is_listed, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
   ).all(userId).map(r => {
     let imagePaths = [];
     try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
-    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at, isFavorite: !!r.is_favorite, fusionCopies: r.fusion_copies || 0, isFused: !!r.is_fused };
+    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at, isFavorite: !!r.is_favorite, fusionCopies: r.fusion_copies || 0, isFused: !!r.is_fused, isListed: !!r.is_listed };
   });
 }
 
 // Revend un item débloqué → supprime de user_unlocks, crédite les pièces
 function sellUnlock(userId, unlockId) {
-  const row = db.prepare("SELECT id, ref_id, rarity FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, userId);
+  const row = db.prepare("SELECT id, ref_id, rarity, is_listed FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, userId);
   if (!row) return { ok: false, error: 'not_found' };
+  if (row.is_listed) return { ok: false, error: 'listed' };
   const coins = getLootboxConfig().sellPrices[row.rarity] || 1;
   db.prepare("DELETE FROM user_unlocks WHERE id = ?").run(row.id);
   // Si c'était la photo de profil active, la réinitialiser
@@ -5476,6 +5502,146 @@ function fuseImageRarete(userId, sacrificeIds, targetId) {
   }
   db.prepare("UPDATE user_unlocks SET rarity = ?, is_fused = 1 WHERE id = ?").run(nextRarity, target.id);
   return { ok: true, newRarity: nextRarity };
+}
+
+// ── Cadeau entre amis ─────────────────────────────────────────────────────
+function giftItem(fromUserId, unlockId, toUserId) {
+  const row = db.prepare("SELECT id, ref_id, item_type, rarity, is_listed FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, fromUserId);
+  if (!row) return { ok: false, error: 'not_found' };
+  if (row.is_listed) return { ok: false, error: 'listed' };
+  const existing = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = ? AND ref_id = ?").get(toUserId, row.item_type, row.ref_id);
+  if (existing) return { ok: false, error: 'already_owned' };
+  db.prepare("UPDATE user_unlocks SET user_id = ?, is_listed = 0 WHERE id = ?").run(toUserId, unlockId);
+  // Réinitialiser photo de profil / bandeau si c'était cet item
+  db.prepare("UPDATE users SET profile_image_id = CASE WHEN profile_image_id = ? THEN NULL ELSE profile_image_id END, profile_banner_ref_id = CASE WHEN profile_banner_ref_id = ? THEN NULL ELSE profile_banner_ref_id END WHERE id = ?").run(row.ref_id, row.ref_id, fromUserId);
+  return { ok: true };
+}
+
+// ── Place du marché ───────────────────────────────────────────────────────
+function listOnMarketplace(userId, unlockId) {
+  const row = db.prepare("SELECT id, ref_id, item_type, rarity, is_listed FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, userId);
+  if (!row) return { ok: false, error: 'not_found' };
+  if (row.is_listed) return { ok: false, error: 'already_listed' };
+  const price = getLootboxConfig().sellPrices[row.rarity] || 1;
+  const ins = db.prepare("INSERT INTO marketplace_listings (seller_id, unlock_id, ref_id, item_type, rarity, price) VALUES (?,?,?,?,?,?)").run(userId, unlockId, row.ref_id, row.item_type, row.rarity, price);
+  db.prepare("UPDATE user_unlocks SET is_listed = 1 WHERE id = ?").run(unlockId);
+  return { ok: true, listingId: ins.lastInsertRowid, price };
+}
+
+function unlistFromMarketplace(userId, listingId) {
+  const listing = db.prepare("SELECT id, unlock_id FROM marketplace_listings WHERE id = ? AND seller_id = ? AND status = 'active'").get(listingId, userId);
+  if (!listing) return { ok: false, error: 'not_found' };
+  db.prepare("UPDATE marketplace_listings SET status = 'cancelled' WHERE id = ?").run(listingId);
+  db.prepare("UPDATE user_unlocks SET is_listed = 0 WHERE id = ?").run(listing.unlock_id);
+  return { ok: true };
+}
+
+function buyFromMarketplace(buyerId, listingId) {
+  return db.transaction(() => {
+    const listing = db.prepare("SELECT * FROM marketplace_listings WHERE id = ? AND status = 'active'").get(listingId);
+    if (!listing) return { ok: false, error: 'not_found' };
+    if (listing.seller_id === buyerId) return { ok: false, error: 'own_listing' };
+    const existing = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = ? AND ref_id = ?").get(buyerId, listing.item_type, listing.ref_id);
+    if (existing) return { ok: false, error: 'already_owned' };
+    const buyer = db.prepare("SELECT coins FROM users WHERE id = ?").get(buyerId);
+    if (!buyer || buyer.coins < listing.price) return { ok: false, error: 'not_enough_coins' };
+    db.prepare("UPDATE users SET coins = coins - ? WHERE id = ?").run(listing.price, buyerId);
+    db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(listing.price, listing.seller_id);
+    db.prepare("UPDATE user_unlocks SET user_id = ?, is_listed = 0 WHERE id = ?").run(buyerId, listing.unlock_id);
+    db.prepare("UPDATE marketplace_listings SET status = 'sold', sold_at = datetime('now'), buyer_id = ? WHERE id = ?").run(buyerId, listingId);
+    return { ok: true, price: listing.price };
+  })();
+}
+
+function getMarketplaceListings(options) {
+  const { excludeUserId, rarity, limit = 60, offset = 0 } = options || {};
+  const wheres = ["ml.status = 'active'"];
+  const params = [];
+  if (excludeUserId) { wheres.push("ml.seller_id != ?"); params.push(excludeUserId); }
+  if (rarity) { wheres.push("ml.rarity = ?"); params.push(rarity); }
+  params.push(limit, offset);
+  return db.prepare(`SELECT ml.id, ml.seller_id, ml.unlock_id, ml.ref_id, ml.rarity, ml.price, ml.created_at, u.display_name as seller_name, gi.image_paths, gi.title as item_title FROM marketplace_listings ml JOIN users u ON u.id = ml.seller_id JOIN gallery_images gi ON gi.id = ml.ref_id WHERE ${wheres.join(' AND ')} ORDER BY ml.created_at DESC LIMIT ? OFFSET ?`).all(...params).map(r => {
+    let paths = []; try { paths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
+    return { ...r, thumb: paths[0] || null };
+  });
+}
+
+function getMyMarketplaceListings(userId) {
+  return db.prepare(`SELECT ml.id, ml.unlock_id, ml.ref_id, ml.rarity, ml.price, ml.created_at, gi.image_paths, gi.title as item_title FROM marketplace_listings ml JOIN gallery_images gi ON gi.id = ml.ref_id WHERE ml.seller_id = ? AND ml.status = 'active' ORDER BY ml.created_at DESC`).all(userId).map(r => {
+    let paths = []; try { paths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
+    return { ...r, thumb: paths[0] || null };
+  });
+}
+
+// ── Échanges entre utilisateurs ───────────────────────────────────────────
+function proposeExchange(fromUserId, unlockId, toUserId, wantType, wantCoins) {
+  if (fromUserId === toUserId) return { ok: false, error: 'self' };
+  if (!['coins', 'item'].includes(wantType)) return { ok: false, error: 'invalid_type' };
+  const row = db.prepare("SELECT id, is_listed FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, fromUserId);
+  if (!row) return { ok: false, error: 'not_found' };
+  if (row.is_listed) return { ok: false, error: 'listed' };
+  const existing = db.prepare("SELECT id FROM exchange_proposals WHERE offer_unlock_id = ? AND status = 'pending'").get(unlockId);
+  if (existing) return { ok: false, error: 'already_proposed' };
+  const ins = db.prepare("INSERT INTO exchange_proposals (from_user_id, to_user_id, offer_unlock_id, want_type, want_coins) VALUES (?,?,?,?,?)").run(fromUserId, toUserId, unlockId, wantType, wantCoins || 0);
+  return { ok: true, proposalId: ins.lastInsertRowid };
+}
+
+function acceptExchange(acceptorId, proposalId, offerUnlockId) {
+  return db.transaction(() => {
+    const p = db.prepare("SELECT * FROM exchange_proposals WHERE id = ? AND to_user_id = ? AND status = 'pending'").get(proposalId, acceptorId);
+    if (!p) return { ok: false, error: 'not_found' };
+    const theirUnlock = db.prepare("SELECT id, ref_id, item_type, is_listed FROM user_unlocks WHERE id = ? AND user_id = ?").get(p.offer_unlock_id, p.from_user_id);
+    if (!theirUnlock || theirUnlock.is_listed) return { ok: false, error: 'item_unavailable' };
+    const dup = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = ? AND ref_id = ?").get(acceptorId, theirUnlock.item_type, theirUnlock.ref_id);
+    if (dup) return { ok: false, error: 'already_owned' };
+    if (p.want_type === 'coins') {
+      const acc = db.prepare("SELECT coins FROM users WHERE id = ?").get(acceptorId);
+      if (!acc || acc.coins < p.want_coins) return { ok: false, error: 'not_enough_coins' };
+      db.prepare("UPDATE users SET coins = coins - ? WHERE id = ?").run(p.want_coins, acceptorId);
+      db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(p.want_coins, p.from_user_id);
+    } else {
+      if (!offerUnlockId) return { ok: false, error: 'missing_item' };
+      const myUnlock = db.prepare("SELECT id, ref_id, item_type, is_listed FROM user_unlocks WHERE id = ? AND user_id = ?").get(offerUnlockId, acceptorId);
+      if (!myUnlock || myUnlock.is_listed) return { ok: false, error: 'my_item_not_found' };
+      const dup2 = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = ? AND ref_id = ?").get(p.from_user_id, myUnlock.item_type, myUnlock.ref_id);
+      if (dup2) return { ok: false, error: 'they_already_own_it' };
+      db.prepare("UPDATE user_unlocks SET user_id = ? WHERE id = ?").run(p.from_user_id, myUnlock.id);
+      db.prepare("UPDATE users SET profile_image_id = CASE WHEN profile_image_id = ? THEN NULL ELSE profile_image_id END, profile_banner_ref_id = CASE WHEN profile_banner_ref_id = ? THEN NULL ELSE profile_banner_ref_id END WHERE id = ?").run(myUnlock.ref_id, myUnlock.ref_id, acceptorId);
+    }
+    db.prepare("UPDATE user_unlocks SET user_id = ? WHERE id = ?").run(acceptorId, theirUnlock.id);
+    db.prepare("UPDATE users SET profile_image_id = CASE WHEN profile_image_id = ? THEN NULL ELSE profile_image_id END, profile_banner_ref_id = CASE WHEN profile_banner_ref_id = ? THEN NULL ELSE profile_banner_ref_id END WHERE id = ?").run(theirUnlock.ref_id, theirUnlock.ref_id, p.from_user_id);
+    db.prepare("UPDATE exchange_proposals SET status = 'accepted' WHERE id = ?").run(proposalId);
+    db.prepare("UPDATE exchange_proposals SET status = 'cancelled' WHERE offer_unlock_id = ? AND id != ? AND status = 'pending'").run(p.offer_unlock_id, proposalId);
+    return { ok: true };
+  })();
+}
+
+function rejectExchange(userId, proposalId) {
+  const p = db.prepare("SELECT id FROM exchange_proposals WHERE id = ? AND to_user_id = ? AND status = 'pending'").get(proposalId, userId);
+  if (!p) return { ok: false, error: 'not_found' };
+  db.prepare("UPDATE exchange_proposals SET status = 'rejected' WHERE id = ?").run(proposalId);
+  return { ok: true };
+}
+
+function cancelExchange(userId, proposalId) {
+  const p = db.prepare("SELECT id FROM exchange_proposals WHERE id = ? AND from_user_id = ? AND status = 'pending'").get(proposalId, userId);
+  if (!p) return { ok: false, error: 'not_found' };
+  db.prepare("UPDATE exchange_proposals SET status = 'cancelled' WHERE id = ?").run(proposalId);
+  return { ok: true };
+}
+
+function getExchangesReceived(userId) {
+  return db.prepare(`SELECT ep.id, ep.from_user_id, ep.want_type, ep.want_coins, ep.created_at, u.display_name as from_name, gi.image_paths, gi.title as offer_title, uu.rarity as offer_rarity, uu.id as offer_unlock_id FROM exchange_proposals ep JOIN users u ON u.id = ep.from_user_id JOIN user_unlocks uu ON uu.id = ep.offer_unlock_id JOIN gallery_images gi ON gi.id = uu.ref_id WHERE ep.to_user_id = ? AND ep.status = 'pending' ORDER BY ep.created_at DESC`).all(userId).map(r => {
+    let paths = []; try { paths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
+    return { ...r, offerThumb: paths[0] || null };
+  });
+}
+
+function getExchangesSent(userId) {
+  return db.prepare(`SELECT ep.id, ep.to_user_id, ep.want_type, ep.want_coins, ep.created_at, u.display_name as to_name, gi.image_paths, gi.title as offer_title, uu.rarity as offer_rarity FROM exchange_proposals ep JOIN users u ON u.id = ep.to_user_id JOIN user_unlocks uu ON uu.id = ep.offer_unlock_id JOIN gallery_images gi ON gi.id = uu.ref_id WHERE ep.from_user_id = ? AND ep.status = 'pending' ORDER BY ep.created_at DESC`).all(userId).map(r => {
+    let paths = []; try { paths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
+    return { ...r, offerThumb: paths[0] || null };
+  });
 }
 
 // Revend un charme débloqué → supprime de user_unlocks, réinitialise rating_charm si actif
@@ -7451,6 +7617,18 @@ module.exports = {
   checkAndGrantProfilQuizLootbox,
   checkAndGrantHeartsMilestones,
   getUserLoginStreak,
+  giftItem,
+  listOnMarketplace,
+  unlistFromMarketplace,
+  buyFromMarketplace,
+  getMarketplaceListings,
+  getMyMarketplaceListings,
+  proposeExchange,
+  acceptExchange,
+  rejectExchange,
+  cancelExchange,
+  getExchangesReceived,
+  getExchangesSent,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

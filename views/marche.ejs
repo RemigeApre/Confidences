@@ -1,0 +1,534 @@
+<%- include('partials/head', { title: 'Place du march\u00e9' }) %>
+<main class="container wide profil-page gallery-has-sidebar marche-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Place du march\u00e9', navBack: '/favoris' }) %>
+  <%- include('partials/profil-nav', { roleHue: roleHue }) %>
+
+  <div class="profil-subpage marche-subpage">
+
+    <%# ── En-tête ── %>
+    <div class="marche-header">
+      <div class="marche-header-left">
+        <h1 class="marche-title">Place du march&eacute;</h1>
+        <p class="marche-subtitle">Achetez des items mis en vente par les membres.</p>
+      </div>
+      <span class="marche-balance" id="marche-balance-display">
+        <svg class="marche-coin-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M10 6v8M7.5 8.5C7.5 7.1 8.6 6 10 6s2.5 1.1 2.5 2.5-1.1 2.5-2.5 2.5-2.5 1.1-2.5 2.5S8.6 14 10 14s2.5-1.1 2.5-2.5"/></svg>
+        Solde&nbsp;: <strong id="marche-coins-count"><%= currentUser.coins %></strong> pi&egrave;ce<%= currentUser.coins > 1 ? 's' : '' %>
+      </span>
+    </div>
+
+    <%# ── Mes annonces actives ── %>
+    <% if (myListings && myListings.length) { %>
+    <%
+      var RARITY_LABELS = { common: 'Commun', rare: 'Rare', epic: '\u00c9pique', legendary: 'L\u00e9gendaire', mythic: 'Mythique' };
+    %>
+    <section class="marche-my-listings" id="marche-my-listings">
+      <h2 class="marche-section-title">Mes annonces actives (<%= myListings.length %>)</h2>
+      <div class="marche-my-grid">
+        <% myListings.forEach(function(l) { %>
+          <div class="marche-my-card" id="marche-my-card-<%= l.id %>">
+            <div class="marche-my-thumb">
+              <% if (l.thumb) { %>
+                <img src="<%= l.thumb %>" alt="<%= l.item_title || '' %>" loading="lazy" />
+              <% } else { %>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <% } %>
+            </div>
+            <span class="coffre-item-rarity coffre-item-rarity--<%= l.rarity %>"><%= RARITY_LABELS[l.rarity] || l.rarity %></span>
+            <span class="marche-my-price">
+              <svg class="marche-coin-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="8"/></svg>
+              <%= l.price %>
+            </span>
+            <button type="button" class="marche-btn-unlist js-unlist-btn" data-listing-id="<%= l.id %>">Retirer</button>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <%# ── Filtres par rareté ── %>
+    <%
+      var RARITY_FILTERS = [
+        { key: 'common',    label: 'Commun',     color: 'hsl(220,8%,55%)' },
+        { key: 'rare',      label: 'Rare',        color: 'hsl(212,65%,58%)' },
+        { key: 'epic',      label: '\u00c9pique', color: 'hsl(270,62%,65%)' },
+        { key: 'legendary', label: 'L\u00e9gendaire', color: 'hsl(40,80%,58%)' },
+        { key: 'mythic',    label: 'Mythique',    color: 'hsl(0,65%,58%)' },
+      ];
+    %>
+    <div class="marche-filter-bar">
+      <a href="/favoris/marche" class="marche-filter-btn<%= !rarity ? ' marche-filter-btn--active' : '' %>">Tout</a>
+      <% RARITY_FILTERS.forEach(function(f) { %>
+        <a href="/favoris/marche?rarity=<%= f.key %>"
+           class="marche-filter-btn<%= rarity === f.key ? ' marche-filter-btn--active' : '' %>"
+           style="--rarity-color: <%= f.color %>">
+          <%= f.label %>
+        </a>
+      <% }) %>
+    </div>
+
+    <%# ── Grille des annonces ── %>
+    <% if (!listings || !listings.length) { %>
+      <p class="marche-empty">Aucune annonce disponible pour le moment.</p>
+    <% } else { %>
+    <%
+      var RARITY_LABELS2 = { common: 'Commun', rare: 'Rare', epic: '\u00c9pique', legendary: 'L\u00e9gendaire', mythic: 'Mythique' };
+    %>
+    <div class="marche-grid" id="marche-grid">
+      <% listings.forEach(function(l) { %>
+        <%
+          var canBuy = currentUser.coins >= l.price;
+          var rarLabel = RARITY_LABELS2[l.rarity] || l.rarity;
+        %>
+        <article class="marche-card" id="marche-card-<%= l.id %>">
+          <div class="marche-card-thumb">
+            <% if (l.thumb) { %>
+              <img src="<%= l.thumb %>" alt="<%= l.item_title || '' %>" loading="lazy" />
+            <% } else { %>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <% } %>
+            <span class="coffre-item-rarity coffre-item-rarity--<%= l.rarity %> marche-rarity-badge"><%= rarLabel %></span>
+          </div>
+          <div class="marche-card-body">
+            <p class="marche-card-title"><%= l.item_title || 'Item sans titre' %></p>
+            <p class="marche-card-seller">Par&nbsp;: <span><%= l.seller_name %></span></p>
+            <div class="marche-card-footer">
+              <span class="marche-card-price">
+                <svg class="marche-coin-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="8"/></svg>
+                <%= l.price %> pi&egrave;ce<%= l.price > 1 ? 's' : '' %>
+              </span>
+              <button type="button"
+                      class="marche-btn-buy js-buy-btn"
+                      data-listing-id="<%= l.id %>"
+                      data-price="<%= l.price %>"
+                      <%= !canBuy ? 'disabled title="Pas assez de pi\u00e8ces"' : '' %>>
+                Acheter
+              </button>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+    <% } %>
+
+  </div><%# /profil-subpage %>
+
+</main>
+
+<style>
+/* ── Place du marché ──────────────────────────────────────────────────── */
+
+.marche-subpage {
+  padding: 1.5rem 0;
+}
+
+/* En-tête */
+.marche-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.marche-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary, #e2e8f0);
+  margin: 0 0 .25rem;
+}
+.marche-subtitle {
+  font-size: .88rem;
+  color: var(--text-muted, #94a3b8);
+  margin: 0;
+}
+.marche-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .88rem;
+  color: var(--text-secondary, #cbd5e1);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  padding: .4rem .75rem;
+  white-space: nowrap;
+}
+.marche-balance strong {
+  color: hsl(44,85%,60%);
+}
+.marche-coin-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  color: hsl(44,85%,60%);
+}
+
+/* Section titre commun */
+.marche-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+  margin: 0 0 .9rem;
+}
+
+/* Mes annonces */
+.marche-my-listings {
+  margin-bottom: 2rem;
+  padding: 1rem 1.1rem;
+  background: rgba(255,255,255,.025);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+}
+.marche-my-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+.marche-my-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  padding: .6rem .7rem;
+  width: 100px;
+}
+.marche-my-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255,255,255,.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.marche-my-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.marche-my-thumb svg {
+  width: 28px;
+  height: 28px;
+  color: rgba(255,255,255,.25);
+}
+.marche-my-price {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  font-size: .78rem;
+  font-weight: 600;
+  color: hsl(44,85%,60%);
+}
+.marche-btn-unlist {
+  font-size: .73rem;
+  padding: .25rem .55rem;
+  background: rgba(239,68,68,.12);
+  color: hsl(0,72%,65%);
+  border: 1px solid rgba(239,68,68,.22);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background .15s;
+  line-height: 1;
+}
+.marche-btn-unlist:hover {
+  background: rgba(239,68,68,.22);
+}
+
+/* Barre de filtres */
+.marche-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: 1.25rem;
+}
+.marche-filter-btn {
+  font-size: .8rem;
+  font-weight: 500;
+  padding: .3rem .75rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: var(--text-secondary, #cbd5e1);
+  text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.marche-filter-btn:hover {
+  background: rgba(255,255,255,.08);
+  color: var(--text-primary, #e2e8f0);
+}
+.marche-filter-btn--active {
+  background: rgba(255,255,255,.1);
+  border-color: var(--rarity-color, rgba(255,255,255,.3));
+  color: var(--rarity-color, var(--text-primary, #e2e8f0));
+}
+
+/* Message vide */
+.marche-empty {
+  color: var(--text-muted, #94a3b8);
+  font-size: .9rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+/* Grille principale */
+.marche-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+/* Carte annonce */
+.marche-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .15s;
+}
+.marche-card:hover {
+  border-color: rgba(255,255,255,.16);
+}
+.marche-card-thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: rgba(255,255,255,.05);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.marche-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.marche-card-thumb svg {
+  width: 40px;
+  height: 40px;
+  color: rgba(255,255,255,.2);
+}
+.marche-rarity-badge {
+  position: absolute;
+  bottom: .4rem;
+  left: .4rem;
+}
+.marche-card-body {
+  padding: .7rem .8rem .8rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  flex: 1;
+}
+.marche-card-title {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.35;
+}
+.marche-card-seller {
+  font-size: .75rem;
+  color: var(--text-muted, #94a3b8);
+  margin: 0;
+}
+.marche-card-seller span {
+  color: var(--text-secondary, #cbd5e1);
+}
+.marche-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-top: auto;
+  padding-top: .5rem;
+}
+.marche-card-price {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: hsl(44,85%,60%);
+  white-space: nowrap;
+}
+.marche-btn-buy {
+  font-size: .78rem;
+  font-weight: 600;
+  padding: .32rem .7rem;
+  background: hsl(var(--accent-hue, 265), 60%, 52%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s, opacity .15s;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.marche-btn-buy:hover:not(:disabled) {
+  background: hsl(var(--accent-hue, 265), 60%, 60%);
+}
+.marche-btn-buy:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .marche-header {
+    flex-direction: column;
+    gap: .75rem;
+  }
+  .marche-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: .75rem;
+  }
+  .marche-my-card {
+    width: 88px;
+  }
+  .marche-my-thumb {
+    width: 54px;
+    height: 54px;
+  }
+}
+</style>
+
+<script nonce="<%= nonce %>">
+(function () {
+  'use strict';
+
+  /* ── Utilitaires ── */
+  function showToast(msg, isError) {
+    var t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = [
+      'position:fixed', 'bottom:1.25rem', 'right:1.25rem', 'z-index:9000',
+      'background:' + (isError ? 'hsl(0,55%,30%)' : 'hsl(145,45%,28%)'),
+      'color:#e2e8f0', 'font-size:.85rem', 'padding:.55rem 1rem',
+      'border-radius:8px', 'box-shadow:0 4px 16px rgba(0,0,0,.4)',
+      'pointer-events:none', 'opacity:1', 'transition:opacity .3s',
+    ].join(';');
+    document.body.appendChild(t);
+    setTimeout(function () {
+      t.style.opacity = '0';
+      setTimeout(function () { t.remove(); }, 320);
+    }, 2800);
+  }
+
+  function updateBalanceDisplay(newCoins) {
+    var el = document.getElementById('marche-coins-count');
+    if (el) el.textContent = newCoins;
+    /* Met aussi à jour les boutons désactivés en cas de solde insuffisant */
+    document.querySelectorAll('.js-buy-btn:not([disabled])').forEach(function (btn) {
+      if (parseInt(btn.dataset.price, 10) > newCoins) {
+        btn.disabled = true;
+        btn.title = 'Pas assez de pi\u00e8ces';
+      }
+    });
+    document.querySelectorAll('.js-buy-btn[disabled]').forEach(function (btn) {
+      if (parseInt(btn.dataset.price, 10) <= newCoins) {
+        btn.disabled = false;
+        btn.removeAttribute('title');
+      }
+    });
+  }
+
+  /* ── Achat d'une annonce ── */
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.js-buy-btn');
+    if (!btn || btn.disabled) return;
+
+    var id    = btn.dataset.listingId;
+    var price = parseInt(btn.dataset.price, 10);
+
+    btn.disabled = true;
+    btn.textContent = '\u2026';
+
+    fetch('/favoris/marche/' + id + '/buy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          /* Retirer la carte de la grille */
+          var card = document.getElementById('marche-card-' + id);
+          if (card) card.remove();
+          /* Mettre à jour le solde */
+          var newCoins = typeof d.coins === 'number' ? d.coins : (parseInt(document.getElementById('marche-coins-count').textContent, 10) - price);
+          updateBalanceDisplay(newCoins);
+          showToast('Achat r\u00e9ussi !');
+        } else if (d.code === 'already_owned') {
+          showToast('Vous poss\u00e9dez d\u00e9j\u00e0 cet item.', true);
+          btn.disabled = false;
+          btn.textContent = 'Acheter';
+        } else {
+          showToast(d.error || 'Erreur lors de l\'achat.', true);
+          btn.disabled = false;
+          btn.textContent = 'Acheter';
+        }
+      })
+      .catch(function () {
+        showToast('Erreur r\u00e9seau.', true);
+        btn.disabled = false;
+        btn.textContent = 'Acheter';
+      });
+  });
+
+  /* ── Retrait d'une annonce ── */
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.js-unlist-btn');
+    if (!btn) return;
+
+    var id = btn.dataset.listingId;
+    btn.disabled = true;
+
+    fetch('/favoris/coffre/marche/unlist/' + id, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          var card = document.getElementById('marche-my-card-' + id);
+          if (card) card.remove();
+          /* Mettre à jour le compteur si présent */
+          var section = document.getElementById('marche-my-listings');
+          if (section) {
+            var remaining = section.querySelectorAll('.marche-my-card').length;
+            var titleEl = section.querySelector('.marche-section-title');
+            if (remaining === 0) {
+              section.remove();
+            } else if (titleEl) {
+              titleEl.textContent = 'Mes annonces actives (' + remaining + ')';
+            }
+          }
+        } else {
+          btn.disabled = false;
+          showToast(d.error || 'Impossible de retirer l\'annonce.', true);
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        showToast('Erreur r\u00e9seau.', true);
+      });
+  });
+
+})();
+</script>
+
+<%- include('partials/foot') %>

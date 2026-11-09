@@ -177,6 +177,68 @@
       </div>
     </section>
     <% } %>
+    <%# ── Échanges reçus ── %>
+    <% if (exchangesReceived && exchangesReceived.length) { %>
+    <section class="coffre-exchanges-section">
+      <h3 class="coffre-section-title">Échanges reçus <span class="coffre-count-badge"><%= exchangesReceived.length %></span></h3>
+      <ul class="coffre-exchange-list">
+        <% exchangesReceived.forEach(function(ex) { %>
+        <li class="coffre-exchange-item" id="exchange-<%= ex.id %>">
+          <div class="coffre-ex-img">
+            <% if (ex.offerThumb) { %><img src="<%= ex.offerThumb %>" alt=""><% } else { %><span class="coffre-ex-placeholder"></span><% } %>
+          </div>
+          <div class="coffre-ex-info">
+            <span class="coffre-ex-from"><%= ex.from_name %> offre :</span>
+            <strong class="coffre-ex-title"><%= ex.offer_title %></strong>
+            <span class="coffre-ex-rarity coffre-item-rarity--<%= ex.offer_rarity %>"><%= ex.offer_rarity %></span>
+            <% if (ex.want_type === 'coins') { %>
+              <span class="coffre-ex-want">veut <strong><%= ex.want_coins %> pièce(s)</strong></span>
+            <% } else { %>
+              <span class="coffre-ex-want">veut <strong>un de vos items</strong></span>
+            <% } %>
+          </div>
+          <div class="coffre-ex-actions">
+            <% if (ex.want_type === 'item') { %>
+              <button class="coffre-btn coffre-btn--accept js-exchange-accept-item" data-proposal-id="<%= ex.id %>">Accepter</button>
+            <% } else { %>
+              <button class="coffre-btn coffre-btn--accept js-exchange-accept-coins" data-proposal-id="<%= ex.id %>" data-coins="<%= ex.want_coins %>">Accepter (<%= ex.want_coins %>p)</button>
+            <% } %>
+            <button class="coffre-btn coffre-btn--refuse js-exchange-reject" data-proposal-id="<%= ex.id %>">Refuser</button>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
+    <%# ── Échanges envoyés ── %>
+    <% if (exchangesSent && exchangesSent.length) { %>
+    <section class="coffre-exchanges-section">
+      <h3 class="coffre-section-title">Échanges en attente</h3>
+      <ul class="coffre-exchange-list">
+        <% exchangesSent.forEach(function(ex) { %>
+        <li class="coffre-exchange-item" id="exchange-sent-<%= ex.id %>">
+          <div class="coffre-ex-img">
+            <% if (ex.offerThumb) { %><img src="<%= ex.offerThumb %>" alt=""><% } else { %><span class="coffre-ex-placeholder"></span><% } %>
+          </div>
+          <div class="coffre-ex-info">
+            <span class="coffre-ex-from">Envoyé à : <%= ex.to_name %></span>
+            <strong class="coffre-ex-title"><%= ex.offer_title %></strong>
+            <% if (ex.want_type === 'coins') { %>
+              <span class="coffre-ex-want">contre <strong><%= ex.want_coins %> pièce(s)</strong></span>
+            <% } else { %>
+              <span class="coffre-ex-want">contre <strong>un item</strong></span>
+            <% } %>
+          </div>
+          <div class="coffre-ex-actions">
+            <button class="coffre-btn coffre-btn--refuse js-exchange-cancel" data-proposal-id="<%= ex.id %>">Annuler</button>
+          </div>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
     <section class="coffre-section">
       <div class="coffre-grid" id="coffre-img-grid">
         <% unlocks.forEach(function(u) { %>
@@ -234,6 +296,13 @@
                         title="Fusionner 3 copies identiques pour monter la rareté">
                   Fusionner
                 </button>
+              <% } %>
+              <% if (!u.isListed) { %>
+                <button class="coffre-btn coffre-btn--sm js-gift-btn" data-unlock-id="<%= u.id %>" title="Offrir à un ami">Offrir</button>
+                <button class="coffre-btn coffre-btn--sm js-exchange-btn" data-unlock-id="<%= u.id %>" title="Proposer un échange">Échanger</button>
+                <button class="coffre-btn coffre-btn--sm coffre-btn--market js-list-btn" data-unlock-id="<%= u.id %>" data-price="<%= RARITY_SELL_PRICE[u.rarity] || 1 %>" title="Mettre en vente">Marché</button>
+              <% } else { %>
+                <span class="coffre-listed-badge">En vente</span>
               <% } %>
             </div>
           </div>
@@ -801,6 +870,270 @@
 <template id="tpl-sell-tick">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
 </template>
+
+<%# ── Modal Cadeau ── %>
+<div class="coffre-modal" id="modal-gift" hidden role="dialog" aria-modal="true" aria-label="Offrir un item">
+  <div class="coffre-modal-box">
+    <h3 class="coffre-modal-title">Offrir à un ami</h3>
+    <input type="hidden" id="gift-unlock-id" value="">
+    <% if (friends && friends.length) { %>
+    <ul class="coffre-modal-friends">
+      <% friends.forEach(function(f) { %>
+      <li>
+        <button class="coffre-modal-friend-btn js-gift-friend" data-friend-id="<%= f.id %>">
+          <span class="coffre-modal-friend-avatar" style="background:<%= f.profile_color || '#6b7280' %>"><%= (f.display_name || '?').charAt(0).toUpperCase() %></span>
+          <%= f.display_name %>
+        </button>
+      </li>
+      <% }) %>
+    </ul>
+    <% } else { %>
+    <p class="coffre-modal-empty">Vous n&rsquo;avez pas d&rsquo;amis pour le moment.</p>
+    <% } %>
+    <button class="coffre-modal-close" id="modal-gift-close">Fermer</button>
+  </div>
+</div>
+
+<%# ── Modal Échange ── %>
+<div class="coffre-modal" id="modal-exchange" hidden role="dialog" aria-modal="true" aria-label="Proposer un échange">
+  <div class="coffre-modal-box">
+    <h3 class="coffre-modal-title">Proposer un échange</h3>
+    <input type="hidden" id="exchange-unlock-id" value="">
+    <div class="coffre-modal-field">
+      <label class="coffre-modal-label">Ami</label>
+      <select class="coffre-modal-select" id="exchange-friend-select">
+        <option value="">Choisir un ami...</option>
+        <% if (friends) { friends.forEach(function(f) { %>
+        <option value="<%= f.id %>"><%= f.display_name %></option>
+        <% }); } %>
+      </select>
+    </div>
+    <div class="coffre-modal-field">
+      <label class="coffre-modal-label">En échange</label>
+      <div class="coffre-modal-toggle">
+        <button class="coffre-toggle-btn coffre-toggle-btn--active" id="ex-want-coins-btn" data-want="coins">Pièces</button>
+        <button class="coffre-toggle-btn" id="ex-want-item-btn" data-want="item">Un item</button>
+      </div>
+    </div>
+    <div class="coffre-modal-field" id="ex-coins-field">
+      <label class="coffre-modal-label">Nombre de pièces souhaitées</label>
+      <input type="number" class="coffre-modal-input" id="exchange-coins" min="1" max="<%= Math.max(...Object.values(RARITY_SELL_PRICE || {1:1})) %>" value="1">
+    </div>
+    <div class="coffre-modal-field" id="ex-item-field" hidden>
+      <p class="coffre-modal-hint">Votre ami choisira l&rsquo;item qu&rsquo;il vous offre au moment d&rsquo;accepter.</p>
+    </div>
+    <div class="coffre-modal-actions">
+      <button class="coffre-btn coffre-btn--primary" id="exchange-submit-btn">Proposer</button>
+      <button class="coffre-modal-close" id="modal-exchange-close">Annuler</button>
+    </div>
+    <p class="coffre-modal-feedback" id="exchange-feedback" hidden></p>
+  </div>
+</div>
+
+<%# ── Modal Accepter échange (item contre item) ── %>
+<div class="coffre-modal" id="modal-accept-item" hidden role="dialog" aria-modal="true" aria-label="Choisir un item à donner">
+  <div class="coffre-modal-box coffre-modal-box--wide">
+    <h3 class="coffre-modal-title">Choisissez l&rsquo;item à donner</h3>
+    <input type="hidden" id="accept-proposal-id" value="">
+    <div class="coffre-modal-grid" id="accept-item-grid">
+      <% unlocks.forEach(function(u) { %>
+      <% if (!u.isListed) { %>
+      <button class="coffre-modal-item js-pick-offer-item" data-unlock-id="<%= u.id %>">
+        <% if (u.thumb) { %><img src="<%= u.thumb %>" alt="<%= u.title %>"><% } else { %><span class="coffre-item-placeholder"></span><% } %>
+        <span class="coffre-modal-item-label"><%= u.title || '' %></span>
+      </button>
+      <% } %>
+      <% }) %>
+    </div>
+    <button class="coffre-modal-close" id="modal-accept-item-close">Annuler</button>
+  </div>
+</div>
+
+<%# ── Overlay de fond ── %>
+<div class="coffre-modal-overlay" id="coffre-modal-overlay" hidden></div>
+
+<script nonce="<%= nonce %>">
+(function() {
+  var overlay = document.getElementById('coffre-modal-overlay');
+
+  function openModal(id) {
+    document.getElementById(id).hidden = false;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(id) {
+    document.getElementById(id).hidden = true;
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+  }
+  function closeAllModals() {
+    ['modal-gift','modal-exchange','modal-accept-item'].forEach(closeModal);
+  }
+  if (overlay) overlay.addEventListener('click', closeAllModals);
+  document.querySelectorAll('.coffre-modal-close').forEach(function(btn) {
+    btn.addEventListener('click', function() { closeAllModals(); });
+  });
+
+  // ── Cadeau ──────────────────────────────────────────────────────────────
+  document.querySelectorAll('.js-gift-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById('gift-unlock-id').value = this.dataset.unlockId;
+      openModal('modal-gift');
+    });
+  });
+  document.querySelectorAll('.js-gift-friend').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var unlockId = document.getElementById('gift-unlock-id').value;
+      var friendId = this.dataset.friendId;
+      var r = await fetch('/favoris/coffre/gift', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ unlockId: parseInt(unlockId), friendId: parseInt(friendId) }) });
+      var d = await r.json();
+      if (d.ok) {
+        var card = document.querySelector('.coffre-item[data-unlock-id="' + unlockId + '"]');
+        if (card) card.remove();
+        closeAllModals();
+        alert('Item offert avec succès.');
+      } else {
+        var msgs = { already_owned: 'Cet ami possède déjà cet item.', not_found: 'Item introuvable.', listed: 'Cet item est en vente sur le marché.' };
+        alert(msgs[d.error] || 'Erreur.');
+      }
+    });
+  });
+
+  // ── Échange — ouvrir modal ───────────────────────────────────────────────
+  document.querySelectorAll('.js-exchange-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById('exchange-unlock-id').value = this.dataset.unlockId;
+      document.getElementById('exchange-feedback').hidden = true;
+      openModal('modal-exchange');
+    });
+  });
+
+  // Toggle pièces/item dans le modal échange
+  var exWantType = 'coins';
+  document.querySelectorAll('.coffre-toggle-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      exWantType = this.dataset.want;
+      document.querySelectorAll('.coffre-toggle-btn').forEach(function(b) { b.classList.toggle('coffre-toggle-btn--active', b.dataset.want === exWantType); });
+      document.getElementById('ex-coins-field').hidden = exWantType !== 'coins';
+      document.getElementById('ex-item-field').hidden  = exWantType !== 'item';
+    });
+  });
+
+  document.getElementById('exchange-submit-btn') && document.getElementById('exchange-submit-btn').addEventListener('click', async function() {
+    var unlockId = document.getElementById('exchange-unlock-id').value;
+    var toUserId = document.getElementById('exchange-friend-select').value;
+    var wantCoins = parseInt(document.getElementById('exchange-coins').value, 10) || 0;
+    if (!toUserId) { alert('Choisissez un ami.'); return; }
+    var r = await fetch('/favoris/coffre/exchange/propose', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ unlockId: parseInt(unlockId), toUserId: parseInt(toUserId), wantType: exWantType, wantCoins: wantCoins }) });
+    var d = await r.json();
+    var fb = document.getElementById('exchange-feedback');
+    if (d.ok) {
+      fb.textContent = 'Proposition envoyée.';
+      fb.style.color = '#4ade80';
+      fb.hidden = false;
+      setTimeout(closeAllModals, 1200);
+    } else {
+      var msgs = { already_proposed: 'Une proposition est déjà en cours pour cet item.', listed: 'Cet item est en vente sur le marché.', not_found: 'Item introuvable.' };
+      fb.textContent = msgs[d.error] || 'Erreur.';
+      fb.style.color = '#f87171';
+      fb.hidden = false;
+    }
+  });
+
+  // ── Échange — accepter (pièces) ──────────────────────────────────────────
+  document.querySelectorAll('.js-exchange-accept-coins').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var pId = this.dataset.proposalId;
+      var coins = parseInt(this.dataset.coins, 10);
+      if (!confirm('Accepter cet échange ? ' + coins + ' pièce(s) seront déduites de votre solde.')) return;
+      var r = await fetch('/favoris/coffre/exchange/' + pId + '/accept', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+      var d = await r.json();
+      if (d.ok) {
+        var el = document.getElementById('exchange-' + pId);
+        if (el) el.remove();
+        alert('Échange accepté.');
+        location.reload();
+      } else {
+        var msgs = { not_enough_coins: 'Solde insuffisant.', item_unavailable: 'L\'item n\'est plus disponible.', already_owned: 'Vous possédez déjà cet item.' };
+        alert(msgs[d.error] || 'Erreur.');
+      }
+    });
+  });
+
+  // ── Échange — accepter (item contre item) ────────────────────────────────
+  document.querySelectorAll('.js-exchange-accept-item').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById('accept-proposal-id').value = this.dataset.proposalId;
+      openModal('modal-accept-item');
+    });
+  });
+
+  document.querySelectorAll('.js-pick-offer-item').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var pId = document.getElementById('accept-proposal-id').value;
+      var offerUnlockId = parseInt(this.dataset.unlockId, 10);
+      if (!confirm('Échanger cet item ?')) return;
+      var r = await fetch('/favoris/coffre/exchange/' + pId + '/accept', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ offerUnlockId: offerUnlockId }) });
+      var d = await r.json();
+      if (d.ok) {
+        closeAllModals();
+        alert('Échange effectué.');
+        location.reload();
+      } else {
+        var msgs = { item_unavailable: 'L\'item de votre partenaire n\'est plus disponible.', my_item_not_found: 'Item invalide.', they_already_own_it: 'Votre partenaire possède déjà cet item.' };
+        alert(msgs[d.error] || 'Erreur.');
+      }
+    });
+  });
+
+  // ── Échange — refuser / annuler ──────────────────────────────────────────
+  document.querySelectorAll('.js-exchange-reject').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var pId = this.dataset.proposalId;
+      var r = await fetch('/favoris/coffre/exchange/' + pId + '/reject', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+      var d = await r.json();
+      if (d.ok) { var el = document.getElementById('exchange-' + pId); if (el) el.remove(); }
+    });
+  });
+
+  document.querySelectorAll('.js-exchange-cancel').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var pId = this.dataset.proposalId;
+      var r = await fetch('/favoris/coffre/exchange/' + pId + '/cancel', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+      var d = await r.json();
+      if (d.ok) { var el = document.getElementById('exchange-sent-' + pId); if (el) el.remove(); }
+    });
+  });
+
+  // ── Marché — mettre en vente ─────────────────────────────────────────────
+  document.querySelectorAll('.js-list-btn').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      var unlockId = this.dataset.unlockId;
+      var price = this.dataset.price;
+      if (!confirm('Mettre cet item en vente pour ' + price + ' pièce(s) ?')) return;
+      var r = await fetch('/favoris/coffre/marche/list', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ unlockId: parseInt(unlockId) }) });
+      var d = await r.json();
+      if (d.ok) {
+        var card = document.querySelector('.coffre-item[data-unlock-id="' + unlockId + '"]');
+        if (card) {
+          var actions = card.querySelector('.coffre-item-actions');
+          if (actions) {
+            var oldBtns = actions.querySelectorAll('.js-gift-btn,.js-exchange-btn,.js-list-btn');
+            oldBtns.forEach(function(b) { b.remove(); });
+            var badge = document.createElement('span');
+            badge.className = 'coffre-listed-badge';
+            badge.textContent = 'En vente';
+            actions.appendChild(badge);
+          }
+        }
+      } else {
+        var msgs = { already_listed: 'Déjà en vente.', not_found: 'Item introuvable.', listed: 'Déjà listé.' };
+        alert(msgs[d.error] || 'Erreur.');
+      }
+    });
+  });
+})();
+</script>
 
 <%- include('partials/foot') %>
 
