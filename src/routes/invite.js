@@ -203,7 +203,7 @@ module.exports = function buildInviteRouter(config) {
       isTest: false,
     });
     updateOwnProfile(newId, { displayName, email, sexe: "", birthYear: null });
-    if (!req.body.newsletter) {
+    if (req.body.newsletter) {
       setUserNewsletter(newId, false);
     }
 

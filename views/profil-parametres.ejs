@@ -104,10 +104,10 @@
         <div class="profil-card">
           <div class="profil-card-head">
             <span>Newsletter</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Recevoir les actualités du site par mail." aria-label="À propos de la newsletter">!</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Cochez pour ne plus recevoir les actualités du site par mail." aria-label="À propos de la newsletter">!</span>
           </div>
           <label class="profil-toggle">
-            <input type="checkbox" id="newsletter-checkbox" <%= currentUser.newsletter ? 'checked' : '' %> />
+            <input type="checkbox" id="newsletter-checkbox" <%= !currentUser.newsletter ? 'checked' : '' %> />
             <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
           </label>
         </div>
@@ -170,7 +170,7 @@
   var newsletterCheckbox = document.getElementById("newsletter-checkbox");
   if (newsletterCheckbox) {
     newsletterCheckbox.addEventListener("change", function () {
-      savePref("newsletter", newsletterCheckbox.checked);
+      savePref("newsletter", !newsletterCheckbox.checked);
     });
   }
 
