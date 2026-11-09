@@ -892,9 +892,11 @@ function buildFavoritesRouter(config) {
       const td = THEME_DEFINITIONS.find(t => t.key === (f.active_theme || 'default'));
       const th = td && td.hue;
       const ts = (td && td.sat) || 55;
+      const isBlanc = td && td.key === 'blanc';
       return { ...f, thumb,
-        themeBg:     th ? `hsl(${th},${ts}%,16%)` : null,
-        themeBorder: th ? `hsl(${th},${ts}%,34%)` : null,
+        themeBg:     th ? `hsl(${th},${ts}%,16%)` : isBlanc ? 'hsl(220,8%,89%)' : null,
+        themeBorder: th ? `hsl(${th},${ts}%,34%)` : isBlanc ? 'hsl(220,8%,72%)' : null,
+        themeLight:  isBlanc,
       };
     });
     const received = getPendingReceivedRequests(req.user.id).map(r => ({ ...r, thumb: buildAmisThumb(r) }));

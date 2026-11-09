@@ -5,15 +5,22 @@
 
   var _themeHue = themeDef && themeDef.hue;
   var _themeSat = (themeDef && themeDef.sat) || 55;
-  var _sidebarBg, _sidebarBorder, _sidebarAccent;
+  var _sidebarBg, _sidebarBorder, _sidebarAccent, _isLightPanel;
   if (_themeHue) {
     _sidebarBg     = 'hsl(' + _themeHue + ',' + _themeSat + '%,16%)';
     _sidebarBorder = 'hsl(' + _themeHue + ',' + _themeSat + '%,34%)';
     _sidebarAccent = 'hsl(' + _themeHue + ',' + _themeSat + '%,78%)';
+    _isLightPanel  = false;
   } else if (themeDef && themeDef.key === 'blanc') {
-    _sidebarBg = 'hsl(220,8%,16%)'; _sidebarBorder = 'hsl(220,8%,28%)'; _sidebarAccent = 'hsl(220,8%,70%)';
+    _sidebarBg     = 'hsl(220,8%,89%)';
+    _sidebarBorder = 'hsl(220,8%,72%)';
+    _sidebarAccent = 'hsl(220,15%,18%)';
+    _isLightPanel  = true;
   } else {
-    _sidebarBg = 'hsl(220,10%,11%)'; _sidebarBorder = 'hsl(220,10%,20%)'; _sidebarAccent = 'hsl(220,8%,55%)';
+    _sidebarBg     = 'hsl(220,10%,11%)';
+    _sidebarBorder = 'hsl(220,10%,20%)';
+    _sidebarAccent = 'hsl(220,8%,55%)';
+    _isLightPanel  = false;
   }
 
   var _crop = avatarCrop;
@@ -39,7 +46,7 @@
   <% } %>
 
   <%# ── En-tête mobile — visible uniquement sur petit écran (≤1199px) ── %>
-  <div class="pp-mobile-header" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
+  <div class="pp-mobile-header<%= _isLightPanel ? ' pp-panel--light' : '' %>" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
     <div class="pp-mh-top">
       <% if (avatarThumb) { %>
         <div class="pp-mh-avatar pp-mh-avatar--img">
@@ -208,7 +215,7 @@
 </main>
 
 <%# ── Volet droit — hors du flux, dans la gouttière droite ── %>
-<aside class="pp-right-panel" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
+<aside class="pp-right-panel<%= _isLightPanel ? ' pp-panel--light' : '' %>" style="--pp-bg:<%= _sidebarBg %>;--pp-border:<%= _sidebarBorder %>;--pp-accent:<%= _sidebarAccent %>">
 
   <% if (avatarThumb) { %>
     <div class="pp-rp-avatar pp-rp-avatar--img">
