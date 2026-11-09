@@ -88,7 +88,7 @@ const {
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
-const { sendMail } = require("../mailer");
+const { sendMail, emailHtml } = require("../mailer");
 
 const WIKI_CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -567,11 +567,12 @@ function buildFavoritesRouter(config) {
     if (req.user.email) {
       sendMail({
         to: req.user.email,
-        subject: "Compte réinitialisé — Confidences",
-        text: "Bonjour,\n\nLe contenu personnel du profil \"" + req.user.displayName + "\" (notes, étoiles, j'adore/intéressé, contenus masqués, commentaires et favoris) vient d'être réinitialisé.\n"
-            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
-        html: "<p>Bonjour,</p><p>Le contenu personnel du profil &laquo;&nbsp;" + req.user.displayName + "&nbsp;&raquo; (notes, &eacute;toiles, j&rsquo;adore/int&eacute;ress&eacute;, contenus masqu&eacute;s, commentaires et favoris) vient d'&ecirc;tre r&eacute;initialis&eacute;.</p>"
-            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+        subject: "Contenu réinitialisé — Confidences",
+        text: "Bonjour " + req.user.displayName + ",\n\nLe contenu personnel de votre profil (notes, étoiles, j'adore, contenus masqués, commentaires et favoris) vient d'être réinitialisé.\nSi ce n'est pas vous, contactez la personne qui gère le site.",
+        html: emailHtml({
+          title: "Contenu réinitialisé",
+          body: "<p>Bonjour <strong>" + req.user.displayName + "</strong>,</p><p>Le contenu personnel de votre profil (notes, &eacute;toiles, j&rsquo;adore, contenus masqu&eacute;s, commentaires et favoris) vient d&rsquo;&ecirc;tre r&eacute;initialis&eacute;.</p><p style=\"color:#6b7280\">Si ce n&rsquo;est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+        }),
       });
     }
     res.redirect("/favoris/parametres?reset=1");
@@ -595,10 +596,11 @@ function buildFavoritesRouter(config) {
       sendMail({
         to: email,
         subject: "Compte supprimé — Confidences",
-        text: "Bonjour,\n\nLe compte \"" + displayName + "\" vient d'être définitivement supprimé.\n"
-            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
-        html: "<p>Bonjour,</p><p>Le compte &laquo;&nbsp;" + displayName + "&nbsp;&raquo; vient d'&ecirc;tre d&eacute;finitivement supprim&eacute;.</p>"
-            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+        text: "Bonjour " + displayName + ",\n\nVotre compte a été définitivement supprimé à votre demande.",
+        html: emailHtml({
+          title: "Compte supprimé",
+          body: "<p>Bonjour <strong>" + displayName + "</strong>,</p><p>Votre compte a &eacute;t&eacute; d&eacute;finitivement supprim&eacute; &agrave; votre demande.</p>",
+        }),
       });
     }
     req.session.destroy(() => res.redirect("/"));
@@ -649,10 +651,11 @@ function buildFavoritesRouter(config) {
       sendMail({
         to: user.email,
         subject: "Adresse mail modifiée — Confidences",
-        text: "Bonjour,\n\nL'adresse mail associée au profil \"" + user.displayName + "\" vient d'être changée.\n"
-            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
-        html: "<p>Bonjour,</p><p>L'adresse mail associ&eacute;e au profil &laquo;&nbsp;" + user.displayName + "&nbsp;&raquo; vient d'&ecirc;tre chang&eacute;e.</p>"
-            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+        text: "Bonjour " + user.displayName + ",\n\nL'adresse mail de votre profil vient d'être changée.\nSi ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
+        html: emailHtml({
+          title: "Adresse mail modifiée",
+          body: "<p>Bonjour <strong>" + user.displayName + "</strong>,</p><p>L&rsquo;adresse mail de votre profil vient d&rsquo;&ecirc;tre modifi&eacute;e.</p><p style=\"color:#6b7280\">Si ce n&rsquo;est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+        }),
       });
     }
     res.redirect("/favoris/identite?ok=1");
@@ -677,11 +680,12 @@ function buildFavoritesRouter(config) {
     if (req.user.email) {
       sendMail({
         to: req.user.email,
-        subject: "Votre mot de passe a été modifié — Confidences",
-        text: "Bonjour,\n\nLe mot de passe du profil \"" + req.user.displayName + "\" vient d'être modifié.\n"
-            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
-        html: "<p>Bonjour,</p><p>Le mot de passe du profil &laquo;&nbsp;" + req.user.displayName + "&nbsp;&raquo; vient d'&ecirc;tre modifi&eacute;.</p>"
-            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+        subject: "Mot de passe modifié — Confidences",
+        text: "Bonjour " + req.user.displayName + ",\n\nVotre mot de passe a été modifié.\nSi ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
+        html: emailHtml({
+          title: "Mot de passe modifié",
+          body: "<p>Bonjour <strong>" + req.user.displayName + "</strong>,</p><p>Votre mot de passe vient d&rsquo;&ecirc;tre modifi&eacute;.</p><p style=\"color:#6b7280\">Si ce n&rsquo;est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+        }),
       });
     }
     res.redirect("/favoris/mot-de-passe?ok=1");
@@ -887,7 +891,25 @@ function buildFavoritesRouter(config) {
       const result = sendFriendRequest(req.user.id, target.id);
       if (result.error === 'already_friends') searchError = "Vous \u00eates d\u00e9j\u00e0 amis.";
       else if (result.error === 'already_sent') searchError = "Demande d\u00e9j\u00e0 envoy\u00e9e.";
-      else searchResult = { target, autoAccepted: !!result.autoAccepted };
+      else {
+        searchResult = { target, autoAccepted: !!result.autoAccepted };
+        // Email à la cible si pas d'auto-accept
+        if (!result.autoAccepted && target.email) {
+          const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+          sendMail({
+            to: target.email,
+            subject: req.user.displayName + " vous a envoyé une demande d'ami — Confidences",
+            text: `Bonjour ${target.displayName},\n\n${req.user.displayName} vous a envoyé une demande d'ami sur Confidences.\nRendez-vous sur ${siteUrl}/favoris/amis pour accepter ou refuser.`,
+            html: emailHtml({
+              title: "Demande d\u2019ami",
+              body: `<p>Bonjour <strong>${target.displayName}</strong>,</p><p><strong>${req.user.displayName}</strong> vous a envoy&eacute; une demande d&rsquo;ami.</p>`,
+              cta: "Voir la demande",
+              ctaUrl: siteUrl + "/favoris/amis",
+              siteUrl,
+            }),
+          });
+        }
+      }
     }
     renderAmis(req, res, { searchResult, searchQuery: query, searchError });
   });
@@ -913,13 +935,29 @@ function buildFavoritesRouter(config) {
   router.post("/invitations/:id/approve", requireUser, (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.redirect("/favoris/invitations");
-    // Charge l'invite et vérifie que c'est bien l'inviteur qui agit
     const rows = listPendingInvites(req.user.id);
     const inv = rows.find(r => r.id === id);
     if (inv) {
       setInviteUseStatus(id, "approved");
       setUserAccountStatus(inv.invitee_id, "actif");
       autoFriend(req.user.id, inv.invitee_id);
+      // Email au candidat accepté
+      const invitee = getUserById(inv.invitee_id);
+      if (invitee && invitee.email) {
+        const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+        sendMail({
+          to: invitee.email,
+          subject: "Votre accès est confirmé — Confidences",
+          text: `Bonjour ${invitee.displayName},\n\nVotre candidature a été acceptée. Votre compte est maintenant actif.\nPseudo : ${invitee.displayName}\n\n${siteUrl}`,
+          html: emailHtml({
+            title: "Accès confirmé",
+            body: `<p>Bonjour <strong>${invitee.displayName}</strong>,</p><p>Votre candidature a &eacute;t&eacute; accept&eacute;e. Votre compte est maintenant actif.</p><p>Pseudo&nbsp;: <strong>${invitee.displayName}</strong></p>`,
+            cta: "Accéder au site",
+            ctaUrl: siteUrl,
+            siteUrl,
+          }),
+        });
+      }
     }
     res.redirect("/favoris/invitations");
   });
@@ -932,6 +970,21 @@ function buildFavoritesRouter(config) {
     if (inv) {
       setInviteUseStatus(id, "refused");
       setUserAccountStatus(inv.invitee_id, "bloque");
+      // Email au candidat refusé
+      const invitee = getUserById(inv.invitee_id);
+      if (invitee && invitee.email) {
+        const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+        sendMail({
+          to: invitee.email,
+          subject: "Candidature non retenue — Confidences",
+          text: `Bonjour ${invitee.displayName},\n\nVotre candidature n'a pas été retenue. Si vous pensez qu'il s'agit d'une erreur, prenez contact directement avec la personne qui vous a invité.`,
+          html: emailHtml({
+            title: "Candidature non retenue",
+            body: `<p>Bonjour <strong>${invitee.displayName}</strong>,</p><p>Votre candidature n&rsquo;a pas &eacute;t&eacute; retenue.</p><p style="color:#6b7280">Si vous pensez qu&rsquo;il s&rsquo;agit d&rsquo;une erreur, prenez contact directement avec la personne qui vous a invit&eacute;.</p>`,
+            siteUrl,
+          }),
+        });
+      }
     }
     res.redirect("/favoris/invitations");
   });

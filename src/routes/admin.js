@@ -135,7 +135,7 @@ const {
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
-const { sendMail } = require("../mailer");
+const { sendMail, emailHtml } = require("../mailer");
 const { createThrottle } = require("../loginThrottle");
 const crypto = require("crypto");
 const { slugify, computeScores, flattenItemsRaw } = require("../scoring");
@@ -220,13 +220,16 @@ function buildAdminRouter(config) {
     logSecurityEvent(userId, "password_changed", req.ip, req.headers["user-agent"] || "");
     const u = getUserById(userId);
     if (u && u.email) {
+      const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
       sendMail({
         to: u.email,
-        subject: "Votre mot de passe a été modifié — Confidences",
-        text: "Bonjour,\n\nLe mot de passe du profil \"" + u.displayName + "\" vient d'être modifié.\n"
-            + "Si ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
-        html: "<p>Bonjour,</p><p>Le mot de passe du profil &laquo;&nbsp;" + u.displayName + "&nbsp;&raquo; vient d'&ecirc;tre modifi&eacute;.</p>"
-            + "<p>Si ce n'est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+        subject: "Mot de passe modifié — Confidences",
+        text: "Bonjour " + u.displayName + ",\n\nVotre mot de passe vient d'être modifié.\nSi ce n'est pas vous, contactez la personne qui gère le site au plus vite.",
+        html: emailHtml({
+          title: "Mot de passe modifié",
+          body: "<p>Bonjour <strong>" + u.displayName + "</strong>,</p><p>Votre mot de passe vient d&rsquo;&ecirc;tre modifi&eacute;.</p><p style=\"color:#6b7280\">Si ce n&rsquo;est pas vous, contactez la personne qui g&egrave;re le site au plus vite.</p>",
+          siteUrl,
+        }),
       });
     }
   }
@@ -347,12 +350,14 @@ function buildAdminRouter(config) {
     sendMail({
       to: user.email,
       subject: "Réinitialisation de votre mot de passe — Confidences",
-      text: "Bonjour,\n\nVous avez demandé à réinitialiser le mot de passe du profil \"" + user.displayName + "\".\n"
-          + "Cliquez sur ce lien (valable 1h) pour choisir un nouveau mot de passe :\n" + resetUrl + "\n\n"
-          + "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.",
-      html: "<p>Bonjour,</p><p>Vous avez demand&eacute; &agrave; r&eacute;initialiser le mot de passe du profil &laquo;&nbsp;" + user.displayName + "&nbsp;&raquo;.</p>"
-          + "<p><a href=\"" + resetUrl + "\">Cliquez ici pour choisir un nouveau mot de passe</a> (lien valable 1h).</p>"
-          + "<p>Si vous n'&ecirc;tes pas &agrave; l'origine de cette demande, ignorez ce message.</p>",
+      text: "Bonjour " + user.displayName + ",\n\nCliquez sur ce lien (valable 1h) pour choisir un nouveau mot de passe :\n" + resetUrl + "\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.",
+      html: emailHtml({
+        title: "Réinitialisation du mot de passe",
+        body: "<p>Bonjour <strong>" + user.displayName + "</strong>,</p><p>Vous avez demand&eacute; &agrave; r&eacute;initialiser votre mot de passe. Ce lien est valable <strong>1&nbsp;heure</strong>.</p><p style=\"color:#6b7280\">Si vous n&rsquo;&ecirc;tes pas &agrave; l&rsquo;origine de cette demande, ignorez ce message.</p>",
+        cta: "Choisir un nouveau mot de passe",
+        ctaUrl: resetUrl,
+        siteUrl: res.locals.siteUrl,
+      }),
     });
 
     res.render("mot-de-passe-oublie", { csrfToken: ensureCsrf(req), error: null,
@@ -828,6 +833,19 @@ function buildAdminRouter(config) {
     if (Number.isInteger(id) && id !== req.session.userId) {
       const targetUser = getUserById(id);
       const label = targetUser ? targetUser.displayName : '';
+      if (targetUser && targetUser.email) {
+        const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+        sendMail({
+          to: targetUser.email,
+          subject: "Votre compte a été supprimé — Confidences",
+          text: `Bonjour ${targetUser.displayName},\n\nVotre compte a été supprimé par un administrateur.\nSi vous pensez qu'il s'agit d'une erreur, contactez la personne qui gère le site.`,
+          html: emailHtml({
+            title: "Compte supprimé",
+            body: `<p>Bonjour <strong>${targetUser.displayName}</strong>,</p><p>Votre compte a &eacute;t&eacute; supprim&eacute; par un administrateur.</p><p style="color:#6b7280">Si vous pensez qu&rsquo;il s&rsquo;agit d&rsquo;une erreur, contactez la personne qui g&egrave;re le site.</p>`,
+            siteUrl,
+          }),
+        });
+      }
       deleteUser(id);
       logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'delete', 'user', id, label);
     }
@@ -840,8 +858,28 @@ function buildAdminRouter(config) {
     if (!Number.isInteger(id) || !['actif', 'restreint', 'bloque'].includes(status)) {
       return res.status(400).json({ error: 'invalid' });
     }
+    const targetUser = getUserById(id);
     setUserAccountStatus(id, status);
     logAdminAudit(req.session?.userId, req.user?.displayName || 'admin', 'status:' + status, 'user', id, '');
+    // Email si restriction ou blocage
+    if (targetUser && targetUser.email && status !== 'actif') {
+      const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+      const isBloque = status === 'bloque';
+      sendMail({
+        to: targetUser.email,
+        subject: (isBloque ? "Compte suspendu" : "Compte restreint") + " — Confidences",
+        text: isBloque
+          ? `Bonjour ${targetUser.displayName},\n\nVotre compte a été suspendu par un administrateur. Vous ne pouvez plus vous connecter.\nSi vous pensez qu'il s'agit d'une erreur, contactez la personne qui gère le site.`
+          : `Bonjour ${targetUser.displayName},\n\nVotre compte a été restreint par un administrateur. Certaines fonctionnalités peuvent être limitées.\nSi vous pensez qu'il s'agit d'une erreur, contactez la personne qui gère le site.`,
+        html: emailHtml({
+          title: isBloque ? "Compte suspendu" : "Compte restreint",
+          body: isBloque
+            ? `<p>Bonjour <strong>${targetUser.displayName}</strong>,</p><p>Votre compte a &eacute;t&eacute; <strong>suspendu</strong> par un administrateur. Vous ne pouvez plus vous connecter.</p><p style="color:#6b7280">Si vous pensez qu&rsquo;il s&rsquo;agit d&rsquo;une erreur, contactez la personne qui g&egrave;re le site.</p>`
+            : `<p>Bonjour <strong>${targetUser.displayName}</strong>,</p><p>Votre compte a &eacute;t&eacute; <strong>restreint</strong> par un administrateur. Certaines fonctionnalit&eacute;s peuvent &ecirc;tre limit&eacute;es.</p><p style="color:#6b7280">Si vous pensez qu&rsquo;il s&rsquo;agit d&rsquo;une erreur, contactez la personne qui g&egrave;re le site.</p>`,
+          siteUrl,
+        }),
+      });
+    }
     res.json({ ok: true });
   });
 

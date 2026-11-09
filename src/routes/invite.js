@@ -20,6 +20,7 @@ const {
 const { thumbUrl } = require("../thumbs");
 const { hashPassword } = require("../passwords");
 const { createThrottle } = require("../loginThrottle");
+const { sendMail, emailHtml } = require("../mailer");
 
 const signupThrottle = createThrottle();
 
@@ -213,6 +214,46 @@ module.exports = function buildInviteRouter(config) {
     // Auto-ami pour les inscriptions directes (non-FR)
     if (!isFrench) {
       autoFriend(invite.userId, newId);
+    }
+
+    // ── Emails ───────────────────────────────────────────────────────────
+    const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+    const inviter = getUserById(invite.userId);
+
+    // Candidat : confirmation de réception
+    if (email) {
+      sendMail({
+        to: email,
+        subject: "Votre candidature a été reçue — Confidences",
+        text: isFrench
+          ? `Bonjour ${displayName},\n\nVotre candidature a bien été reçue. L'invitation est en attente de validation par la personne qui vous a invité.\nVous recevrez un mail dès qu'elle aura accepté ou refusé votre demande.\n\n${siteUrl}`
+          : `Bonjour ${displayName},\n\nBienvenue sur Confidences ! Votre compte est actif.\nPseudo : ${displayName}\n\n${siteUrl}`,
+        html: emailHtml({
+          title: isFrench ? "Candidature reçue" : "Bienvenue sur Confidences",
+          body: isFrench
+            ? `<p>Bonjour <strong>${displayName}</strong>,</p><p>Votre candidature a bien &eacute;t&eacute; re&ccedil;ue. L&rsquo;invitation est en attente de validation par la personne qui vous a invit&eacute;.</p><p style="color:#6b7280">Vous recevrez un mail d&egrave;s qu&rsquo;elle aura accept&eacute; ou refus&eacute; votre demande.</p>`
+            : `<p>Bonjour <strong>${displayName}</strong>,</p><p>Bienvenue sur Confidences&nbsp;! Votre compte est actif.</p><p>Pseudo&nbsp;: <strong>${displayName}</strong></p>`,
+          cta: "Accéder au site",
+          ctaUrl: isFrench ? null : siteUrl,
+          siteUrl,
+        }),
+      });
+    }
+
+    // Inviteur : notification qu'une candidature est arrivée (mode FR uniquement)
+    if (isFrench && inviter && inviter.email) {
+      sendMail({
+        to: inviter.email,
+        subject: "Nouvelle candidature via votre lien — Confidences",
+        text: `Bonjour ${inviter.displayName},\n\n${displayName} vient de s'inscrire via votre lien d'invitation et attend votre validation.\nRendez-vous sur ${siteUrl}/favoris/invitations pour accepter ou refuser.`,
+        html: emailHtml({
+          title: "Nouvelle candidature",
+          body: `<p>Bonjour <strong>${inviter.displayName}</strong>,</p><p><strong>${displayName}</strong> vient de s&rsquo;inscrire via votre lien d&rsquo;invitation et attend votre validation.</p>`,
+          cta: "Voir la candidature",
+          ctaUrl: siteUrl + "/favoris/invitations",
+          siteUrl,
+        }),
+      });
     }
 
     if (isFrench) {
