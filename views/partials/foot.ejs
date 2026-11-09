@@ -69,7 +69,13 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
     });
   }
   // Observe future class changes (toggling filled/unfilled when user rates)
-  document.addEventListener('click', function() {
+  document.addEventListener('click', function(ev) {
+    var star = ev.target.closest(SEL);
+    if (star) {
+      star.classList.remove('charm-pop');
+      void star.offsetWidth; // reflow to restart animation
+      star.classList.add('charm-pop');
+    }
     requestAnimationFrame(function() {
       document.querySelectorAll(SEL).forEach(function(el) {
         el.textContent = el.classList.contains('filled') ? sym : symE;

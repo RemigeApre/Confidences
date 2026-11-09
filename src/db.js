@@ -1248,6 +1248,15 @@ function getUserByUsername(username) {
   return rowToUser(row);
 }
 
+// Résolution du slug de profil public : displayName en priorité, username en fallback.
+// Garantit que /profil/pseudo fonctionne même si pseudo != identifiant de connexion.
+function getUserByProfileSlug(slug) {
+  const byDisplay = db.prepare("SELECT * FROM users WHERE display_name = ? COLLATE NOCASE").get(slug);
+  if (byDisplay) return rowToUser(byDisplay);
+  const byUsername = db.prepare("SELECT * FROM users WHERE username = ? COLLATE NOCASE").get(slug);
+  return rowToUser(byUsername);
+}
+
 // Renvoie le hash : reserve a la verification de mot de passe au login,
 // jamais expose au reste de l'app (rowToUser ne le contient pas).
 function getUserCredentials(username) {
@@ -7059,6 +7068,7 @@ module.exports = {
   reactBdPage,
   listHiddenBdPages,
   getUserByUsername,
+  getUserByProfileSlug,
   getUserCredentials,
   getUserById,
   listUsers,

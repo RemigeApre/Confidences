@@ -10,6 +10,9 @@
   var _cs = (_crop && _crop.scale != null && _crop.scale >= 1) ? _crop.scale : 1;
   var _imgStyle = 'object-position:' + _cx + '% ' + _cy + '%;transform:scale(' + _cs + ');transform-origin:' + _cx + '% ' + _cy + '%;';
 
+  var _cmap = { star:'★', heart:'♥', diamond:'◆', bolt:'⚡', flower:'✿', sparkle:'✦', crown:'♛', clover:'♣', spade:'♠', drop:'▼', sun:'☀', square:'■', triangle:'▲', pentagon:'⬟', skull:'☠' };
+  var _mySym = _cmap[currentUser.ratingCharm] || '';
+
   var _themeHue = themeDef && themeDef.hue;
   var _themeSat = (themeDef && themeDef.sat) || 55;
   var _rpBg, _rpBorder, _rpAccent;
@@ -44,7 +47,7 @@
         </div>
       <% } %>
       <div class="pub-topbar-left">
-        <span class="pub-topbar-name"><%= currentUser.displayName %></span>
+        <span class="pub-topbar-name"><%= currentUser.displayName %><% if (_mySym) { %><span class="charm-mark" aria-hidden="true"><%= _mySym %></span><% } %></span>
         <a href="/profil/<%= currentUser.displayName %>" class="pub-topbar-link" target="_blank">/profil/<%= currentUser.displayName %> &nearr;</a>
       </div>
       <button type="button" class="profil-btn-secondary pub-edit-btn">Modifier</button>
@@ -139,7 +142,7 @@
       </div>
     <% } %>
 
-    <p class="pp-rp-name"><%= currentUser.displayName %></p>
+    <p class="pp-rp-name"><%= currentUser.displayName %><% if (_mySym) { %><span class="charm-mark" aria-hidden="true"><%= _mySym %></span><% } %></p>
 
     <% if (pub.showStreak && streak > 0) { %>
       <div class="pp-rp-streak"><span class="pp-rp-streak-flame">🔥</span><span class="pp-rp-streak-count"><%= streak %></span><span class="pp-rp-streak-label">jour<%= streak > 1 ? 's' : '' %></span></div>

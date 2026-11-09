@@ -32,7 +32,7 @@
           <div class="amis-rp-avatar" style="background:<%= f.profile_color || '#6b7280' %>"><%= (f.display_name || '?').charAt(0).toUpperCase() %></div>
         <% } %>
         <div class="amis-rp-item-info">
-          <a href="/profil/<%= f.username %>" class="amis-rp-item-name"><%= f.display_name %></a>
+          <a href="/profil/<%= f.display_name || f.username %>" class="amis-rp-item-name"><%= f.display_name %></a>
           <span class="amis-rp-item-code">#<%= f.friend_code %></span>
         </div>
         <a href="/messages/<%= f.id %>" class="amis-rp-msg" title="Message" aria-label="Message">

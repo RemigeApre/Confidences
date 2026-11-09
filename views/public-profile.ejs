@@ -21,6 +21,11 @@
   var _cy = (_crop && _crop.y  != null) ? _crop.y  : 50;
   var _cs = (_crop && _crop.scale != null && _crop.scale >= 1) ? _crop.scale : 1;
   var _imgStyle = 'object-position:' + _cx + '% ' + _cy + '%;transform:scale(' + _cs + ');transform-origin:' + _cx + '% ' + _cy + '%;';
+
+  var _cmap  = { star:'★', heart:'♥', diamond:'◆', bolt:'⚡', flower:'✿', sparkle:'✦', crown:'♛', clover:'♣', spade:'♠', drop:'▼', sun:'☀', square:'■', triangle:'▲', pentagon:'⬟', skull:'☠' };
+  var _cmapE = { star:'☆', heart:'♡', diamond:'◇', bolt:'✧', flower:'✾', sparkle:'✧', crown:'♕', clover:'♧', spade:'♤', drop:'▽', sun:'☼', square:'□', triangle:'△', pentagon:'⬠', skull:'⊗' };
+  var _pcs  = _cmap[profileUser.ratingCharm]  || '♥';
+  var _pcse = _cmapE[profileUser.ratingCharm] || '♡';
 %>
 <%- include('partials/head', { title: profileUser.displayName + ' — Profil' }) %>
 <main class="container wide pp-standalone">
@@ -46,7 +51,7 @@
         </div>
       <% } %>
       <div class="pp-mh-identity">
-        <p class="pp-rp-name"><%= profileUser.displayName %></p>
+        <p class="pp-rp-name"><%= profileUser.displayName %><span class="charm-mark" aria-hidden="true"><%= _pcs %></span></p>
         <% if (pub.showSexe && profileUser.sexe) { %>
           <span class="pp-rp-sexe" style="color:<%= SEXE_COLOR[profileUser.sexe] || '#888' %>">
             <span aria-hidden="true"><%= SEXE_SYMBOL[profileUser.sexe] %></span>
@@ -54,8 +59,8 @@
           </span>
         <% } %>
         <% if (currentUser && currentUser.id !== profileUser.id) { %>
-          <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %> pp-like-sync" aria-label="J'aime ce profil" data-username="<%= profileUser.username %>" data-liked="<%= isLiked ? '1' : '0' %>">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %> pp-like-sync" aria-label="J'aime ce profil" data-username="<%= profileUser.displayName %>" data-liked="<%= isLiked ? '1' : '0' %>">
+            <span class="pp-like-sym" aria-hidden="true"><%= isLiked ? _pcs : _pcse %></span>
             <span class="pp-like-count-sync"><%= likeCount || '' %></span>
           </button>
           <% if (isFriend) { %>
@@ -65,7 +70,7 @@
           <% } %>
         <% } else if (likeCount > 0) { %>
           <div class="pp-rp-like pp-rp-like--display">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="pp-like-sym" aria-hidden="true"><%= _pcs %></span>
             <span><%= likeCount %></span>
           </div>
         <% } %>
@@ -215,12 +220,12 @@
     </div>
   <% } %>
 
-  <p class="pp-rp-name"><%= profileUser.displayName %></p>
+  <p class="pp-rp-name"><%= profileUser.displayName %><span class="charm-mark" aria-hidden="true"><%= _pcs %></span></p>
 
   <% if (currentUser && currentUser.id !== profileUser.id) { %>
     <div class="pp-rp-actions-row">
-      <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %> pp-like-sync" aria-label="J'aime ce profil" data-username="<%= profileUser.username %>" data-liked="<%= isLiked ? '1' : '0' %>">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <button class="pp-rp-like<%= isLiked ? ' pp-rp-like--on' : '' %> pp-like-sync" aria-label="J'aime ce profil" data-username="<%= profileUser.displayName %>" data-liked="<%= isLiked ? '1' : '0' %>">
+        <span class="pp-like-sym" aria-hidden="true"><%= isLiked ? _pcs : _pcse %></span>
         <span class="pp-like-count-sync"><%= likeCount || '' %></span>
       </button>
       <% if (isFriend) { %>
@@ -231,7 +236,7 @@
     </div>
   <% } else if (likeCount > 0) { %>
     <div class="pp-rp-like pp-rp-like--display">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span class="pp-like-sym" aria-hidden="true"><%= _pcs %></span>
       <span><%= likeCount %></span>
     </div>
   <% } %>
@@ -240,12 +245,15 @@
     var btns = document.querySelectorAll('.pp-like-sync');
     if (!btns.length) return;
     var username = btns[0].dataset.username;
+    var SYM_ON  = '<%= _pcs %>';
+    var SYM_OFF = '<%= _pcse %>';
     function sync(liked, count) {
       btns.forEach(function(b){
         b.disabled = false;
         b.dataset.liked = liked ? '1' : '0';
         b.classList.toggle('pp-rp-like--on', liked);
-        b.querySelector('svg').setAttribute('fill', liked ? 'currentColor' : 'none');
+        var sym = b.querySelector('.pp-like-sym');
+        if (sym) sym.textContent = liked ? SYM_ON : SYM_OFF;
       });
       document.querySelectorAll('.pp-like-count-sync').forEach(function(el){
         el.textContent = count || '';

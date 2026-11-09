@@ -1,7 +1,7 @@
 const express = require("express");
 const { requireUserJson } = require("../auth");
 const {
-  getUserByUsername,
+  getUserByProfileSlug,
   getPublicProfile,
   getUserUnlocks,
   listFavoriteRows,
@@ -31,10 +31,11 @@ const WORLD_META = {
 module.exports = function buildProfilRouter(config) {
   const router = express.Router();
 
-  // GET /profil/:username — public profile page (no auth required)
-  router.get("/:username", (req, res) => {
+  // GET /profil/:slug — public profile page (no auth required)
+  // Le slug est d'abord résolu par displayName, puis par username en fallback.
+  router.get("/:slug", (req, res) => {
     try {
-      const user = getUserByUsername(req.params.username);
+      const user = getUserByProfileSlug(req.params.slug);
       if (!user || user.accountStatus === "suspended") {
         return res.status(404).end();
       }
@@ -144,10 +145,10 @@ module.exports = function buildProfilRouter(config) {
     }
   });
 
-  // POST /profil/:username/like — toggle heart (JSON, auth required)
-  router.post("/:username/like", requireUserJson, (req, res) => {
+  // POST /profil/:slug/like — toggle heart (JSON, auth required)
+  router.post("/:slug/like", requireUserJson, (req, res) => {
     try {
-      const user = getUserByUsername(req.params.username);
+      const user = getUserByProfileSlug(req.params.slug);
       if (!user) return res.status(404).json({ error: 'not found' });
       if (user.id === req.user.id) return res.status(400).json({ error: 'cannot like yourself' });
       const liked = toggleProfileLike(req.user.id, user.id);

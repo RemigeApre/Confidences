@@ -10,7 +10,11 @@
       <a href="/favoris" class="mm-identity" aria-label="Voir mon profil">
         <div class="mm-identity-avatar"><%- include('partials/profile-avatar') %></div>
         <div class="mm-identity-info">
-          <span class="mm-identity-name"><%= currentUser.displayName %></span>
+          <%
+            var _mmCharmMap = { star:'★', heart:'♥', diamond:'◆', bolt:'⚡', flower:'✿', sparkle:'✦', crown:'♛', clover:'♣', spade:'♠', drop:'▼', sun:'☀', square:'■', triangle:'▲', pentagon:'⬟', skull:'☠' };
+            var _mmSym = _mmCharmMap[currentUser.ratingCharm] || '';
+          %>
+          <span class="mm-identity-name"><%= currentUser.displayName %><% if (_mmSym) { %><span class="charm-mark" aria-hidden="true"><%= _mmSym %></span><% } %></span>
         </div>
         <svg class="mm-identity-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
