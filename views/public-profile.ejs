@@ -31,8 +31,9 @@
 
   var _cmap  = { star:'★', heart:'♥', diamond:'◆', bolt:'⚡', flower:'✿', sparkle:'✦', crown:'♛', clover:'♣', spade:'♠', drop:'▼', sun:'☀', square:'■', triangle:'▲', pentagon:'⬟', skull:'☠' };
   var _cmapE = { star:'☆', heart:'♡', diamond:'◇', bolt:'✧', flower:'✾', sparkle:'✧', crown:'♕', clover:'♧', spade:'♤', drop:'▽', sun:'☼', square:'□', triangle:'△', pentagon:'⬠', skull:'⊗' };
-  var _pcs  = _cmap[profileUser.ratingCharm]  || '♥';
-  var _pcse = _cmapE[profileUser.ratingCharm] || '♡';
+  var _charmKey = profileUser.ratingCharm && profileUser.ratingCharm !== 'star' ? profileUser.ratingCharm : null;
+  var _pcs  = _charmKey ? (_cmap[_charmKey]  || '♥') : '';
+  var _pcse = _charmKey ? (_cmapE[_charmKey] || '♡') : '';
 %>
 <%- include('partials/head', { title: profileUser.displayName + ' — Profil' }) %>
 <main class="container wide pp-standalone">

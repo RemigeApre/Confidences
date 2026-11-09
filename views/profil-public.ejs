@@ -11,7 +11,8 @@
   var _imgStyle = 'object-position:' + _cx + '% ' + _cy + '%;transform:scale(' + _cs + ');transform-origin:' + _cx + '% ' + _cy + '%;';
 
   var _cmap = { star:'★', heart:'♥', diamond:'◆', bolt:'⚡', flower:'✿', sparkle:'✦', crown:'♛', clover:'♣', spade:'♠', drop:'▼', sun:'☀', square:'■', triangle:'▲', pentagon:'⬟', skull:'☠' };
-  var _mySym = _cmap[currentUser.ratingCharm] || '';
+  var _myCharmKey = currentUser.ratingCharm && currentUser.ratingCharm !== 'star' ? currentUser.ratingCharm : null;
+  var _mySym = _myCharmKey ? (_cmap[_myCharmKey] || '') : '';
 
   var _themeHue = themeDef && themeDef.hue;
   var _themeSat = (themeDef && themeDef.sat) || 55;

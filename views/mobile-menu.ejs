@@ -12,7 +12,8 @@
         <div class="mm-identity-info">
           <%
             var _mmCharmMap = { star:'★', heart:'♥', diamond:'◆', bolt:'⚡', flower:'✿', sparkle:'✦', crown:'♛', clover:'♣', spade:'♠', drop:'▼', sun:'☀', square:'■', triangle:'▲', pentagon:'⬟', skull:'☠' };
-            var _mmSym = _mmCharmMap[currentUser.ratingCharm] || '';
+            var _mmKey = currentUser.ratingCharm && currentUser.ratingCharm !== 'star' ? currentUser.ratingCharm : null;
+            var _mmSym = _mmKey ? (_mmCharmMap[_mmKey] || '') : '';
           %>
           <span class="mm-identity-name"><%= currentUser.displayName %><% if (_mmSym) { %><span class="charm-mark" aria-hidden="true"><%= _mmSym %></span><% } %></span>
         </div>
