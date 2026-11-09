@@ -887,7 +887,16 @@ function buildFavoritesRouter(config) {
   }
 
   function renderAmis(req, res, extra = {}) {
-    const friends  = getFriends(req.user.id).map(f => ({ ...f, thumb: buildAmisThumb(f) }));
+    const friends  = getFriends(req.user.id).map(f => {
+      const thumb = buildAmisThumb(f);
+      const td = THEME_DEFINITIONS.find(t => t.key === (f.active_theme || 'default'));
+      const th = td && td.hue;
+      const ts = (td && td.sat) || 55;
+      return { ...f, thumb,
+        themeBg:     th ? `hsl(${th},${ts}%,16%)` : null,
+        themeBorder: th ? `hsl(${th},${ts}%,34%)` : null,
+      };
+    });
     const received = getPendingReceivedRequests(req.user.id).map(r => ({ ...r, thumb: buildAmisThumb(r) }));
     const sent     = getSentPendingRequests(req.user.id).map(s => ({ ...s, thumb: buildAmisThumb(s) }));
     const pendingInvites = listPendingInvites(req.user.id);
