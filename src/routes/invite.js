@@ -202,7 +202,9 @@ module.exports = function buildInviteRouter(config) {
       isAdmin: false,
       isTest: false,
     });
-    updateOwnProfile(newId, { displayName, email, sexe: "", birthYear: null });
+    const rawBirthYear = Number(req.body.birth_year);
+    const birthYear = Number.isInteger(rawBirthYear) && rawBirthYear >= 1930 && rawBirthYear <= new Date().getFullYear() - 16 ? rawBirthYear : null;
+    updateOwnProfile(newId, { displayName, email, sexe: "", birthYear });
     if (req.body.newsletter) {
       setUserNewsletter(newId, false);
     }

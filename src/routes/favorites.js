@@ -706,10 +706,17 @@ function buildFavoritesRouter(config) {
       }
     }
 
-    // Année de naissance : plus modifiable par le profil lui-même, voir
-    // routes/admin.js pour le changement côté admin.
+    // Année de naissance : modifiable une seule fois si pas encore renseignée.
+    // Une fois définie, seul l'admin peut la changer.
+    let birthYear = user.birthYear;
+    if (!birthYear && req.body.birth_year) {
+      const parsed = Number(req.body.birth_year);
+      if (Number.isInteger(parsed) && parsed >= 1930 && parsed <= new Date().getFullYear() - 16) {
+        birthYear = parsed;
+      }
+    }
     const nom = String(req.body.nom || "").trim().slice(0, 100);
-    updateOwnProfile(req.user.id, { displayName, email, sexe, birthYear: user.birthYear, nom });
+    updateOwnProfile(req.user.id, { displayName, email, sexe, birthYear, nom });
     updateUserSettings(req.user.id, { orientation });
     if (identityChanged) touchIdentityChange(req.user.id);
     if (emailChanged && user.email) {

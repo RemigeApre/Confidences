@@ -40,7 +40,12 @@
 
           <label class="profil-field">
             <span class="profil-field-label">Ann&eacute;e de naissance</span>
-            <input type="text" value="<%= user.birthYear || 'Non renseign&eacute;e' %>" disabled class="profil-field-input" />
+            <% if (user.birthYear) { %>
+              <input type="text" value="<%= user.birthYear %>" disabled class="profil-field-input" />
+            <% } else { %>
+              <input type="number" name="birth_year" value="" min="1930" max="<%= new Date().getFullYear() - 16 %>" placeholder="ex. 1990" class="profil-field-input" autocomplete="bday-year" />
+              <span class="profil-field-hint">Une fois renseign&eacute;e, la date ne peut plus &ecirc;tre modifi&eacute;e.</span>
+            <% } %>
           </label>
         </div>
 
