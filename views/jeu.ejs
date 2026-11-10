@@ -767,6 +767,58 @@
   </div><%# /jeu-info-inner %>
 </div>
 
+<%# ── Modal de bienvenue (première visite) ── %>
+<div class="jwm-overlay" id="jwm-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="jwm-title">
+  <div class="jwm-box">
+    <h2 class="jwm-title" id="jwm-title">Bienvenue dans les jeux</h2>
+
+    <div class="jwm-section">
+      <div class="jwm-section-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="3"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+      </div>
+      <div class="jwm-section-body">
+        <p class="jwm-section-title">Comment obtenir des coffres</p>
+        <ul class="jwm-list">
+          <li>En jouant : chaque partie vous rapporte de l'expérience, et certains paliers débloquent un coffre.</li>
+          <li>Via les défis et succès de la plateforme.</li>
+          <li>Offerts par l'administrateur ou par un ami.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="jwm-section">
+      <div class="jwm-section-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <div class="jwm-section-body">
+        <p class="jwm-section-title">Ce que vous pouvez gagner</p>
+        <ul class="jwm-list">
+          <li><span class="jwm-rarity jwm-rarity--common">Commun</span> <span class="jwm-rarity jwm-rarity--rare">Rare</span> <span class="jwm-rarity jwm-rarity--epic">Épique</span> <span class="jwm-rarity jwm-rarity--legendary">Légendaire</span> <span class="jwm-rarity jwm-rarity--mythic">Mythique</span> : des illustrations à collectionner.</li>
+          <li>Des <strong>charmes</strong> pour personnaliser le symbole affiché à côté de votre pseudo.</li>
+          <li>Des <strong>thèmes</strong> visuels pour changer les couleurs de votre profil.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="jwm-section jwm-section--ultra">
+      <div class="jwm-section-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="jwm-section-body">
+        <p class="jwm-section-title">Contenu Ultra</p>
+        <p class="jwm-section-desc">Certaines illustrations sont réservées aux adultes. Elles n'apparaissent jamais par défaut. Activez-les uniquement si vous êtes majeur(e) et que vous souhaitez les recevoir dans vos coffres.</p>
+        <label class="jwm-ultra-toggle">
+          <input type="checkbox" id="jwm-ultra-chk" <% if (currentUser.lootboxAllowUltra) { %>checked<% } %> />
+          <span class="jwm-ultra-track"><span class="jwm-ultra-thumb"></span></span>
+          <span class="jwm-ultra-label">Activer le contenu Ultra</span>
+        </label>
+      </div>
+    </div>
+
+    <button class="jwm-cta" id="jwm-cta">Commencer</button>
+  </div>
+</div>
+
 <%- include('partials/foot') %>
 
 <script nonce="<%= nonce %>">
@@ -787,6 +839,33 @@
 
   ultraChk      && ultraChk.addEventListener('change',      saveSettings);
   irrealisteChk && irrealisteChk.addEventListener('change', saveSettings);
+
+  // ── Modal première visite ───────────────────────────────────────────────
+  var JWM_KEY = 'jeu-welcomed-<%= currentUser.id %>';
+  if (!localStorage.getItem(JWM_KEY)) {
+    var jwmOverlay = document.getElementById('jwm-overlay');
+    var jwmCta     = document.getElementById('jwm-cta');
+    var jwmUltraChk = document.getElementById('jwm-ultra-chk');
+
+    function closeWelcome() {
+      localStorage.setItem(JWM_KEY, '1');
+      jwmOverlay.setAttribute('hidden', '');
+    }
+
+    jwmOverlay.removeAttribute('hidden');
+    jwmCta && jwmCta.addEventListener('click', closeWelcome);
+    jwmOverlay.addEventListener('click', function(e) {
+      if (e.target === jwmOverlay) closeWelcome();
+    });
+
+    if (jwmUltraChk) {
+      jwmUltraChk.addEventListener('change', function() {
+        // Sync with the actual settings checkbox and save
+        if (ultraChk) ultraChk.checked = jwmUltraChk.checked;
+        saveSettings();
+      });
+    }
+  }
 
   var infoBtn   = document.getElementById('jeu-info-btn');
   var infoPop   = document.getElementById('jeu-info-popover');
