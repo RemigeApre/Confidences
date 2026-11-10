@@ -3896,6 +3896,18 @@ function pathToLabel(path) {
   const clean = path.split('?')[0].replace(/\/$/, '') || '/';
 
   if (clean.startsWith('/uploads/')) return null; // asset statique, ne pas logger
+
+  // ── Endpoints API / background — jamais de vraies pages, ne pas logger ────
+  if (clean === '/lootbox/status') return null;
+  if (clean.startsWith('/lootbox/')) return null;
+  if (clean === '/set-lang') return null;
+  if (clean.startsWith('/messages/friends')) return null;
+  if (clean.startsWith('/favoris/parametres')) return null;
+  if (clean.startsWith('/favoris/bienvenue')) return null;
+  if (clean.startsWith('/ponhgup/')) return null;   // actions admin
+  if (/\/(save|flag|status|autosave|settings)(\/|$)/.test(clean)) return null;
+  // ─────────────────────────────────────────────────────────────────────────
+
   if (clean === '/') return 'Accueil';
   if (clean === '/wiki') return 'Accueil Codex';
   if (clean === '/jeu') return 'Jeu / Arcade';
