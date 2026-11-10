@@ -242,11 +242,12 @@
     <section class="coffre-section">
       <div class="coffre-grid" id="coffre-img-grid">
         <% unlocks.forEach(function(u) { %>
-          <div class="coffre-item coffre-item--owned<%= currentUser.profileImageId === u.refId ? ' coffre-item--active' : '' %><%= u.isFused ? ' coffre-item--fused' : '' %>"
+          <div class="coffre-item coffre-item--owned<%= currentUser.profileImageId === u.refId ? ' coffre-item--active' : '' %><%= u.isFused ? ' coffre-item--fused' : '' %><%= u.isNew ? ' coffre-item--new' : '' %>"
                data-unlock-id="<%= u.id %>"
                data-ref-id="<%= u.refId %>"
                data-rarity="<%= u.rarity %>"
                data-owned="1"
+               data-new="<%= u.isNew ? '1' : '0' %>"
                data-fav="<%= u.isFavorite ? '1' : '0' %>"
                data-fusion-copies="<%= u.fusionCopies %>"
                data-sell-price="<%= RARITY_SELL_PRICE[u.rarity] || 1 %>">
@@ -259,6 +260,9 @@
                 </div>
               <% } %>
               <div class="coffre-item-rarity coffre-item-rarity--<%= u.rarity %>"><%= { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' }[u.rarity] || u.rarity %></div>
+              <% if (u.isNew) { %>
+                <span class="coffre-gift-badge">Cadeau</span>
+              <% } %>
               <% if (u.fusionCopies > 0) { %>
                 <span class="coffre-fusion-badge" title="Copies de fusion : <%= u.fusionCopies %>/3"><%= u.fusionCopies %>/3</span>
               <% } %>
@@ -1871,4 +1875,31 @@
 })();
 </script>
 
+<% } %>
+
+<%# ── Marquer les cadeaux comme vus au premier clic sur l'item ── %>
+<% if (newGiftCount > 0) { %>
+<script nonce="<%= nonce %>">
+(function () {
+  var giftNavBadge = document.querySelector('.profil-nav-gift-badge');
+
+  document.getElementById('coffre-img-grid').addEventListener('click', function (e) {
+    var card = e.target.closest('.coffre-item--new');
+    if (!card) return;
+    var unlockId = card.dataset.unlockId;
+    if (!unlockId) return;
+    card.classList.remove('coffre-item--new');
+    card.dataset.new = '0';
+    var badge = card.querySelector('.coffre-gift-badge');
+    if (badge) badge.remove();
+    fetch('/favoris/coffre/seen/' + unlockId, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      .catch(function () {});
+    if (giftNavBadge) {
+      var n = parseInt(giftNavBadge.textContent, 10) - 1;
+      if (n <= 0) giftNavBadge.remove();
+      else giftNavBadge.textContent = n;
+    }
+  });
+})();
+</script>
 <% } %>

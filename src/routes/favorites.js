@@ -89,6 +89,8 @@ const {
   assignFriendCode,
   getPendingFriendRequestsCount,
   giftItem,
+  countNewGiftedItems,
+  markGiftItemSeen,
   listOnMarketplace,
   unlistFromMarketplace,
   buyFromMarketplace,
@@ -318,7 +320,14 @@ function buildFavoritesRouter(config) {
       exchangesReceived: getExchangesReceived(req.user.id),
       exchangesSent: getExchangesSent(req.user.id),
       myListings: getMyMarketplaceListings(req.user.id),
+      newGiftCount: countNewGiftedItems(req.user.id),
     });
+  });
+
+  // Marquer un item reçu en cadeau comme vu (appelé au clic dans le coffre)
+  router.post("/coffre/seen/:id", requireUserJson, (req, res) => {
+    markGiftItemSeen(req.user.id, Number(req.params.id));
+    res.json({ ok: true });
   });
 
   // Revente d'un ou plusieurs items débloqués

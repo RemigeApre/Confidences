@@ -15,7 +15,12 @@
 
     <%# ── 2. Coffre (non réductible) ── %>
     <% var _cofreView = locals.view || null; %>
-    <div class="profil-nav-section-title">Coffre</div>
+    <div class="profil-nav-section-title">
+      Coffre
+      <% if (locals.newGiftCount > 0) { %>
+        <span class="profil-nav-gift-badge" title="Cadeau(x) re&ccedil;u(s)"><%= locals.newGiftCount %></span>
+      <% } %>
+    </div>
     <nav class="profil-nav-links profil-nav-links--sub">
       <a href="/favoris/coffre?view=images" class="profil-nav-link<%= _cofreView === 'images' ? ' active' : '' %>">
         <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>

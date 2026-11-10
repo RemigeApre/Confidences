@@ -678,6 +678,7 @@ try { db.exec("ALTER TABLE users ADD COLUMN profile_public INTEGER NOT NULL DEFA
 try { db.exec("ALTER TABLE users ADD COLUMN onboarding_done INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 // Migrations : cadeau / échange / marché
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_listed INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_new INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 db.exec(`CREATE TABLE IF NOT EXISTS marketplace_listings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   seller_id INTEGER NOT NULL,
@@ -5540,11 +5541,11 @@ function getAllCustomQuizAnswersForUser(userId) {
 
 function getUserUnlocks(userId) {
   return db.prepare(
-    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, u.fusion_copies, u.is_fused, u.is_listed, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
+    "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, u.fusion_copies, u.is_fused, u.is_listed, u.is_new, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
   ).all(userId).map(r => {
     let imagePaths = [];
     try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
-    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at, isFavorite: !!r.is_favorite, fusionCopies: r.fusion_copies || 0, isFused: !!r.is_fused, isListed: !!r.is_listed };
+    return { id: r.id, refId: r.ref_id, rarity: r.rarity, thumb: imagePaths[0] || null, title: r.title || '', obtainedAt: r.obtained_at, isFavorite: !!r.is_favorite, fusionCopies: r.fusion_copies || 0, isFused: !!r.is_fused, isListed: !!r.is_listed, isNew: !!r.is_new };
   });
 }
 
@@ -5617,10 +5618,17 @@ function giftItem(fromUserId, unlockId, toUserId) {
   if (row.is_listed) return { ok: false, error: 'listed' };
   const existing = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = ? AND ref_id = ?").get(toUserId, row.item_type, row.ref_id);
   if (existing) return { ok: false, error: 'already_owned' };
-  db.prepare("UPDATE user_unlocks SET user_id = ?, is_listed = 0 WHERE id = ?").run(toUserId, unlockId);
+  db.prepare("UPDATE user_unlocks SET user_id = ?, is_listed = 0, is_new = 1 WHERE id = ?").run(toUserId, unlockId);
   // Réinitialiser photo de profil / bandeau si c'était cet item
   db.prepare("UPDATE users SET profile_image_id = CASE WHEN profile_image_id = ? THEN NULL ELSE profile_image_id END, profile_banner_ref_id = CASE WHEN profile_banner_ref_id = ? THEN NULL ELSE profile_banner_ref_id END WHERE id = ?").run(row.ref_id, row.ref_id, fromUserId);
   return { ok: true };
+}
+
+function countNewGiftedItems(userId) {
+  return db.prepare("SELECT COUNT(*) as n FROM user_unlocks WHERE user_id = ? AND is_new = 1").get(userId).n;
+}
+function markGiftItemSeen(userId, unlockId) {
+  db.prepare("UPDATE user_unlocks SET is_new = 0 WHERE id = ? AND user_id = ?").run(unlockId, userId);
 }
 
 // ── Place du marché ───────────────────────────────────────────────────────
@@ -7728,6 +7736,8 @@ module.exports = {
   checkAndGrantHeartsMilestones,
   getUserLoginStreak,
   giftItem,
+  countNewGiftedItems,
+  markGiftItemSeen,
   listOnMarketplace,
   unlistFromMarketplace,
   buyFromMarketplace,

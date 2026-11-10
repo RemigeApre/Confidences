@@ -39,6 +39,7 @@ const {
   countPendingInvites,
   getPendingFriendRequestsCount,
   getUnreadCount,
+  countNewGiftedItems,
   cleanupOldMessages,
   unsubscribeByNewsletterToken,
 } = require("./db");
@@ -499,12 +500,14 @@ app.use((req, res, next) => {
   res.locals.pendingInvitesCount = 0;
   res.locals.pendingFriendRequestsCount = 0;
   res.locals.unreadMessagesCount = 0;
+  res.locals.newGiftCount = 0;
   if (req.user && req.method === 'GET') {
     try {
       res.locals.inviteToken = getOrCreateInviteToken(req.user.id);
       res.locals.pendingInvitesCount = countPendingInvites(req.user.id);
       res.locals.pendingFriendRequestsCount = getPendingFriendRequestsCount(req.user.id);
       res.locals.unreadMessagesCount = getUnreadCount(req.user.id);
+      res.locals.newGiftCount = countNewGiftedItems(req.user.id);
     } catch (_) {}
   }
   next();
