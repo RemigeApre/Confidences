@@ -7,6 +7,19 @@
 
   <main class="aud-content">
 
+    <%# ── Onglets ── %>
+    <div class="aud-tabs" style="margin-bottom:1.2rem">
+      <button class="aud-tab aud-tab--active" id="qztab-main" onclick="qzTab('main')">Quiz principal</button>
+      <button class="aud-tab" id="qztab-custom" onclick="qzTab('custom')">
+        Quizz perso
+        <% if (customQuizAnswers && customQuizAnswers.length) { %>
+          <span class="aud-tab-badge"><%= customQuizAnswers.length %></span>
+        <% } %>
+      </button>
+    </div>
+
+    <%# ══ PANNEAU QUIZ PRINCIPAL ══ %>
+    <div id="qzpanel-main">
     <% if (!attempt || !liveScores) { %>
       <p class="admin-muted" style="margin-top:2rem">Aucune r&eacute;ponse enregistr&eacute;e.</p>
     <% } else { %>
@@ -166,6 +179,83 @@
     </div>
 
     <% } %>
+    </div><%# /qzpanel-main %>
+
+    <%# ══ PANNEAU QUIZZ PERSO ══ %>
+    <div id="qzpanel-custom" hidden>
+    <%
+      function answerLabel(q) {
+        var a = q.answer;
+        if (a === undefined || a === null || a === '') return null;
+        if (q.type === 'gradient') {
+          var num = Number(a);
+          return isNaN(num) ? String(a) : num + '\u00a0/ 10';
+        }
+        if (q.type === 'single') return String(a);
+        if (q.type === 'multiple' || q.type === 'ranking') {
+          return Array.isArray(a) ? a.join(', ') : String(a);
+        }
+        if (q.type === 'points' && typeof a === 'object') {
+          return Object.entries(a).map(function(e){ return e[0]+'\u00a0: '+e[1]; }).join(' | ');
+        }
+        return JSON.stringify(a);
+      }
+    %>
+    <% if (!customQuizAnswers || !customQuizAnswers.length) { %>
+      <p class="admin-muted" style="margin-top:2rem">Aucun quizz personnalis&eacute; effectu&eacute;.</p>
+    <% } else { %>
+      <% customQuizAnswers.forEach(function(cqa) { %>
+      <div class="cqa-block">
+        <div class="cqa-block-head">
+          <span class="cqa-block-title"><%= cqa.quizTitle %></span>
+          <span class="cqa-block-meta">
+            <% if (cqa.completed) { %>
+              <span class="cqa-badge cqa-badge--done">Termin&eacute;</span>
+            <% } else { %>
+              <span class="cqa-badge cqa-badge--wip"><%= cqa.answeredCount %>&thinsp;/&thinsp;<%= cqa.totalCount %> r&eacute;pondu</span>
+            <% } %>
+            <span class="cqa-date"><%= new Date(cqa.updatedAt * 1000).toLocaleDateString('fr-FR') %></span>
+          </span>
+        </div>
+        <% if (cqa.questions && cqa.questions.length) { %>
+        <ul class="cqa-q-list">
+          <% cqa.questions.forEach(function(q) { %>
+          <% var lbl = answerLabel(q); if (!lbl) return; %>
+          <li class="cqa-q-row">
+            <span class="cqa-q-text"><%= q.text %></span>
+            <span class="cqa-q-answer<%= q.type === 'gradient' ? ' cqa-q-answer--num' : '' %>">
+              <% if (q.type === 'gradient') { %>
+                <% var pct = Math.round(Number(q.answer) * 10); %>
+                <span class="cqa-bar-wrap"><span class="cqa-bar-fill" style="width:<%= pct %>%"></span></span>
+                <span class="cqa-bar-val"><%= lbl %></span>
+              <% } else { %><%= lbl %><% } %>
+            </span>
+            <% if (q.practiced || q.interested) { %>
+              <span class="cqa-flags">
+                <% if (q.practiced) { %><span class="cqa-flag cqa-flag--done" title="Pratiqué">P</span><% } %>
+                <% if (q.interested) { %><span class="cqa-flag cqa-flag--int" title="Intéressé">I</span><% } %>
+              </span>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+        <% } %>
+      </div>
+      <% }) %>
+    <% } %>
+    </div><%# /qzpanel-custom %>
+
+    <script>
+    function qzTab(name) {
+      ['main','custom'].forEach(function(n) {
+        var panel = document.getElementById('qzpanel-' + n);
+        var btn   = document.getElementById('qztab-'   + n);
+        if (!panel || !btn) return;
+        if (n === name) { panel.removeAttribute('hidden'); btn.classList.add('aud-tab--active'); }
+        else            { panel.setAttribute('hidden',''); btn.classList.remove('aud-tab--active'); }
+      });
+    }
+    </script>
 
   </main>
 </div>

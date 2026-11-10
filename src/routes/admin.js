@@ -136,6 +136,7 @@ const {
   getOrCreateNewsletterToken,
   listUserWikiNotes,
   getAllUserCoffreAdmin,
+  getAllCustomQuizAnswersForUser,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -1003,7 +1004,8 @@ function buildAdminRouter(config) {
     const liveScores = attempt ? computeScores(config, attempt.data) : null;
     const matrixSections = config.sections.filter((s) => s.type === "matrix");
     const lootboxCount = getLootboxCount(detail.user.id);
-    res.render("admin-user-detail", { config, detail, attempt, liveScores, matrixSections, lootboxCount, roleHue: roleHue(detail.user) });
+    const customQuizAnswers = getAllCustomQuizAnswersForUser(id);
+    res.render("admin-user-detail", { config, detail, attempt, liveScores, matrixSections, lootboxCount, customQuizAnswers, roleHue: roleHue(detail.user) });
   });
 
   router.get("/utilisateur/:id/codex", requireAdmin, (req, res) => {

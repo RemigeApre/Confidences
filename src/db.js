@@ -5480,6 +5480,52 @@ function getAllUserCoffreAdmin(userId) {
   return { images, charms, themes };
 }
 
+// Toutes les tentatives custom quiz d'un utilisateur, avec questions et réponses
+function getAllCustomQuizAnswersForUser(userId) {
+  const rows = db.prepare(
+    `SELECT a.quiz_id, a.answers, a.practiced, a.interested, a.completed, a.updated_at,
+            q.title AS quiz_title, q.status AS quiz_status
+     FROM custom_quiz_answers a
+     JOIN custom_quizzes q ON q.id = a.quiz_id
+     WHERE a.user_id = ?
+     ORDER BY a.updated_at DESC`
+  ).all(userId);
+
+  return rows.map(a => {
+    let answers = {}, practiced = {}, interested = {};
+    try { answers   = JSON.parse(a.answers   || '{}'); } catch (_) {}
+    try { practiced = JSON.parse(a.practiced || '{}'); } catch (_) {}
+    try { interested = JSON.parse(a.interested || '{}'); } catch (_) {}
+
+    const questions = db.prepare(
+      `SELECT id, text, type, options, position, part_id FROM custom_quiz_questions WHERE quiz_id = ? ORDER BY position`
+    ).all(a.quiz_id).map(q => {
+      let opts = [];
+      try { opts = JSON.parse(q.options || '[]'); } catch (_) {}
+      return {
+        id: q.id,
+        text: q.text,
+        type: q.type,
+        options: opts,
+        answer: answers[String(q.id)],
+        practiced: !!practiced[String(q.id)],
+        interested: !!interested[String(q.id)],
+      };
+    });
+
+    return {
+      quizId: a.quiz_id,
+      quizTitle: a.quiz_title,
+      quizStatus: a.quiz_status,
+      completed: !!a.completed,
+      updatedAt: a.updated_at,
+      answeredCount: Object.keys(answers).length,
+      totalCount: questions.length,
+      questions,
+    };
+  });
+}
+
 function getUserUnlocks(userId) {
   return db.prepare(
     "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, u.fusion_copies, u.is_fused, u.is_listed, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
@@ -7314,6 +7360,7 @@ module.exports = {
   countUserNotes,
   listUserWikiNotes,
   getAllUserCoffreAdmin,
+  getAllCustomQuizAnswersForUser,
   getUserReactionsMap,
   mergeUserReactions,
   mergePartnerReaction,
