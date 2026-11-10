@@ -634,12 +634,13 @@ function serveGameHtml(req, res, next, game, filePath) {
     `media-src 'self'; ` +
     `object-src 'none'; ` +
     `base-uri 'self'; ` +
-    `frame-ancestors 'none';`
+    `frame-ancestors 'self';`
   );
   const inject = buildGameInject(req.user.id, game, gameNonce);
   if (html.includes("<head>")) html = html.replace("<head>", "<head>" + inject);
   else if (/<html/i.test(html)) html = html.replace(/(<html[^>]*>)/i, "$1" + inject);
   else html = inject + html;
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.send(html);
