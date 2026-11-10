@@ -14,6 +14,7 @@
       <button class="aud-tab" data-tab="interested">Int&eacute;ress&eacute; (<%= interested.length %>)</button>
       <button class="aud-tab" data-tab="practiced">D&eacute;j&agrave; fait (<%= practiced.length %>)</button>
       <button class="aud-tab" data-tab="comments">Commentaires (<%= notes.length %>)</button>
+      <button class="aud-tab" data-tab="pour-toi" id="tab-pour-toi">Pour toi <% if (featuredIds.size > 0) { %><span class="aud-tab-badge"><%= featuredIds.size %></span><% } %></button>
     </div>
 
     <%# ── Tab: Notes & favoris ── %>
@@ -127,6 +128,53 @@
       <% } %>
     </div>
 
+    <%# ── Tab: Pour toi ── %>
+    <div class="aud-tab-panel" id="aud-tab-pour-toi" hidden>
+
+      <% if (featuredIds.size > 0) { %>
+        <div class="aud-section-header">
+          <h2 class="aud-section-title">Pages promu&eacute;es (<%= featuredIds.size %>)</h2>
+        </div>
+        <div class="aud-card-grid aud-pour-toi-grid">
+          <% allPages.filter(function(p) { return featuredIds.has(p.id); }).forEach(function(p) { %>
+            <div class="aud-grant-wrap">
+              <%- include('partials/admin-content-card', {
+                href: '/wiki/' + p.id,
+                coverImg: p.imagePaths && p.imagePaths[0],
+                title: p.title,
+                viewCount: undefined,
+                rating: 0,
+                flame: false,
+                placeholderIcon: '&#128214;',
+              }) %>
+              <form method="POST" action="/ponhgup/utilisateur/<%= detail.user.id %>/codex-featured/remove" class="aud-grant-form">
+                <input type="hidden" name="pageId" value="<%= p.id %>">
+                <button type="submit" class="aud-grant-btn aud-grant-btn--remove">Retirer</button>
+              </form>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <div class="aud-section-header">
+        <h2 class="aud-section-title">Ajouter une page</h2>
+        <input type="search" id="aud-pour-toi-search" class="aud-pour-toi-search" placeholder="Rechercher&hellip;" autocomplete="off">
+      </div>
+      <ul class="aud-pour-toi-list" id="aud-pour-toi-list">
+        <% allPages.forEach(function(p) { %>
+          <% if (!featuredIds.has(p.id)) { %>
+          <li class="aud-pour-toi-row" data-title="<%= (p.title || '').toLowerCase().replace(/"/g,'') %>">
+            <span class="aud-pour-toi-title"><%= p.title %></span>
+            <form method="POST" action="/ponhgup/utilisateur/<%= detail.user.id %>/codex-featured/add" style="display:inline">
+              <input type="hidden" name="pageId" value="<%= p.id %>">
+              <button type="submit" class="aud-pour-toi-add-btn">+</button>
+            </form>
+          </li>
+          <% } %>
+        <% }) %>
+      </ul>
+    </div>
+
 <script nonce="<%= nonce %>">
 (function () {
   // Onglets
@@ -155,6 +203,17 @@
     if (grd) grd.hidden = !open;
     if (lbl) lbl.textContent = open ? "Masquer les vues" : "Voir les vues";
   });
+  // Recherche dans la liste "Pour toi"
+  var ptSearch = document.getElementById('aud-pour-toi-search');
+  var ptList   = document.getElementById('aud-pour-toi-list');
+  if (ptSearch && ptList) {
+    ptSearch.addEventListener('input', function() {
+      var q = ptSearch.value.toLowerCase().trim();
+      ptList.querySelectorAll('.aud-pour-toi-row').forEach(function(row) {
+        row.hidden = q && (row.dataset.title || '').indexOf(q) === -1;
+      });
+    });
+  }
 })();
 </script>
 

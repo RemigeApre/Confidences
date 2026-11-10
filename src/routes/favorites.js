@@ -103,6 +103,7 @@ const {
   getExchangesReceived,
   getExchangesSent,
   setOnboardingDone,
+  getCodexFeatured,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -786,7 +787,11 @@ function buildFavoritesRouter(config) {
     const tagSet = new Set();
     all.forEach((p) => (p.tags || []).forEach((t) => tagSet.add(t)));
     const allTags = [...tagSet].sort();
-    res.render("profil-notes-wiki", { config, pages: all, allTags, categories: WIKI_CATEGORIES, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
+    const featuredPageIds = getCodexFeatured(req.user.id);
+    const allPages = featuredPageIds.length
+      ? mergeUserReactions(listWikiPages(), req.user.id, "wiki").filter(p => featuredPageIds.includes(p.id))
+      : [];
+    res.render("profil-notes-wiki", { config, pages: all, allTags, categories: WIKI_CATEGORIES, featuredPages: allPages, roleHue: roleHue(req.user), notesCounts: notesCounts(req.user) });
   });
 
   // ── "À lire plus tard" (Codex uniquement) — strictement personnel : voir

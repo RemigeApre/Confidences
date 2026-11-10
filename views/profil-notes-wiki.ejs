@@ -45,6 +45,18 @@
     </div>
   </aside>
 
+  <%# ─── POUR TOI ────────────────────────────────────────────────────── %>
+  <% if (locals.featuredPages && featuredPages.length) { %>
+  <section class="codex-pour-toi" aria-label="Pour toi">
+    <h2 class="codex-pour-toi-title" data-fr="Pour toi" data-en="For you">Pour toi</h2>
+    <div class="codex-pour-toi-grid">
+      <% featuredPages.forEach(function(page) { %>
+        <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
   <%# ─── GRILLE ───────────────────────────────────────────────────────── %>
   <div class="profil-empty" id="noteswiki-empty"<%= pages.length ? ' hidden' : '' %>>
     <div class="profil-empty-icon">&#10024;</div>

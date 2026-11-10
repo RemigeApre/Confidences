@@ -58,6 +58,9 @@ const {
   grantGiftLootbox,
   grantSpecificImageToUser,
   getUserOwnedImageIds,
+  getCodexFeatured,
+  addCodexFeatured,
+  removeCodexFeatured,
   listCharms,
   THEME_DEFINITIONS,
   setThemeRarity,
@@ -1032,7 +1035,23 @@ function buildAdminRouter(config) {
     const practiced  = allWikiWithReactions.filter(p => p.practiced);
     const notes      = listUserWikiNotes(id);
     const topViews   = withViewCounts(detail.wikiViewCounts, "pageId", id, "wiki", listWikiPages);
-    res.render("admin-user-codex", { config, detail, items, topViews, readLater, interested, practiced, notes, roleHue: roleHue(detail.user) });
+    const featuredIds = new Set(getCodexFeatured(id));
+    const allPages   = listWikiPages().sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
+    res.render("admin-user-codex", { config, detail, items, topViews, readLater, interested, practiced, notes, featuredIds, allPages, roleHue: roleHue(detail.user) });
+  });
+
+  router.post("/utilisateur/:id/codex-featured/add", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const pageId = Number(req.body.pageId);
+    if (Number.isInteger(id) && Number.isInteger(pageId) && pageId > 0) addCodexFeatured(id, pageId);
+    res.redirect(`/ponhgup/utilisateur/${id}/codex#tab-pour-toi`);
+  });
+
+  router.post("/utilisateur/:id/codex-featured/remove", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const pageId = Number(req.body.pageId);
+    if (Number.isInteger(id) && Number.isInteger(pageId)) removeCodexFeatured(id, pageId);
+    res.redirect(`/ponhgup/utilisateur/${id}/codex#tab-pour-toi`);
   });
 
   router.get("/utilisateur/:id/images", requireAdmin, (req, res) => {

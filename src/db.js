@@ -679,6 +679,16 @@ try { db.exec("ALTER TABLE users ADD COLUMN onboarding_done INTEGER NOT NULL DEF
 // Migrations : cadeau / échange / marché
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_listed INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_new INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+
+// Migration : pour toi (codex promu par l'admin pour un utilisateur)
+db.exec(`CREATE TABLE IF NOT EXISTS user_codex_featured (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  page_id INTEGER NOT NULL,
+  added_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, page_id)
+)`);
+
 db.exec(`CREATE TABLE IF NOT EXISTS marketplace_listings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   seller_id INTEGER NOT NULL,
@@ -5631,6 +5641,17 @@ function markGiftItemSeen(userId, unlockId) {
   db.prepare("UPDATE user_unlocks SET is_new = 0 WHERE id = ? AND user_id = ?").run(unlockId, userId);
 }
 
+// ── Pour toi (codex promu par l'admin) ───────────────────────────────────
+function getCodexFeatured(userId) {
+  return db.prepare("SELECT page_id FROM user_codex_featured WHERE user_id = ? ORDER BY added_at ASC").all(userId).map(r => r.page_id);
+}
+function addCodexFeatured(userId, pageId) {
+  db.prepare("INSERT OR IGNORE INTO user_codex_featured (user_id, page_id) VALUES (?, ?)").run(userId, pageId);
+}
+function removeCodexFeatured(userId, pageId) {
+  db.prepare("DELETE FROM user_codex_featured WHERE user_id = ? AND page_id = ?").run(userId, pageId);
+}
+
 function getUserOwnedImageIds(userId) {
   return db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").all(userId).map(r => r.ref_id);
 }
@@ -7557,6 +7578,9 @@ module.exports = {
   grantGiftLootbox,
   grantSpecificImageToUser,
   getUserOwnedImageIds,
+  getCodexFeatured,
+  addCodexFeatured,
+  removeCodexFeatured,
   getLootboxCountByType,
   listCharms,
   getCharmByKey,
