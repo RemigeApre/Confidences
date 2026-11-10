@@ -64,6 +64,13 @@
         <% if (isOnline) { %><span class="syn-cover-online-dot"></span><% } %>
       </div>
 
+      <% if (u.shareNotesWithAdmin) { %>
+      <div class="syn-share-alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Cette personne partage son activit&eacute; avec l&rsquo;admin
+      </div>
+      <% } %>
+
       <div class="syn-hero-body">
         <div class="syn-hero-name">
           <%= u.displayName %>
@@ -88,7 +95,6 @@
             <span class="syn-foot-item">Actif il y a <strong><%= relTime(lastActiveMs) %></strong></span>
           <% } %>
           <% if (u.ultraMode === 'visible') { %><span class="syn-foot-item syn-foot-ultra">Ultra activé</span><% } %>
-          <% if (u.shareNotesWithAdmin) { %><span class="syn-foot-item syn-foot-share">Partage ses notes</span><% } %>
           <% if (!u.profilePublic) { %><span class="syn-foot-item syn-foot-private">Compte priv&eacute;</span><% } else { %><span class="syn-foot-item syn-foot-public">Compte public</span><% } %>
           <% if (!u.newsletter) { %><span class="syn-foot-item syn-foot-nonl">Sans newsletter</span><% } %>
         </div>
