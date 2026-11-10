@@ -5631,6 +5631,22 @@ function markGiftItemSeen(userId, unlockId) {
   db.prepare("UPDATE user_unlocks SET is_new = 0 WHERE id = ? AND user_id = ?").run(unlockId, userId);
 }
 
+// Admin : donner une image spécifique directement à un utilisateur (sans lootbox aléatoire)
+function grantSpecificImageToUser(userId, galleryImageId) {
+  const img = db.prepare("SELECT id, rarity FROM gallery_images WHERE id = ?").get(galleryImageId);
+  if (!img) return { ok: false, error: 'not_found' };
+  const now = new Date().toISOString();
+  const rarity = img.rarity || 'common';
+  const existing = db.prepare("SELECT id, fusion_copies FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image' AND ref_id = ?").get(userId, galleryImageId);
+  if (existing) {
+    if (existing.fusion_copies >= 9) return { ok: false, error: 'max_fusion' };
+    db.prepare("UPDATE user_unlocks SET fusion_copies = fusion_copies + 1, is_new = 1 WHERE id = ?").run(existing.id);
+    return { ok: true, isFusionCopy: true, fusionCopies: existing.fusion_copies + 1, rarity };
+  }
+  db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at, is_new) VALUES (?, 'profile_image', ?, ?, ?, 1)").run(userId, galleryImageId, rarity, now);
+  return { ok: true, rarity };
+}
+
 // ── Place du marché ───────────────────────────────────────────────────────
 function listOnMarketplace(userId, unlockId) {
   const row = db.prepare("SELECT id, ref_id, item_type, rarity, is_listed FROM user_unlocks WHERE id = ? AND user_id = ?").get(unlockId, userId);
@@ -7535,6 +7551,7 @@ module.exports = {
   setCharmRarity,
   toggleUnlockFavorite,
   grantGiftLootbox,
+  grantSpecificImageToUser,
   getLootboxCountByType,
   listCharms,
   getCharmByKey,

@@ -56,6 +56,7 @@ const {
   setImageTitle,
   setCharmRarity,
   grantGiftLootbox,
+  grantSpecificImageToUser,
   listCharms,
   THEME_DEFINITIONS,
   setThemeRarity,
@@ -831,6 +832,16 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     if (Number.isInteger(id)) resetUserLootboxProgress(id);
     res.redirect(`/ponhgup/utilisateur/${id}`);
+  });
+
+  router.post("/utilisateur/:id/grant-image", requireAdmin, (req, res) => {
+    const userId = Number(req.params.id);
+    const imageId = Number(req.body.imageId);
+    if (!Number.isInteger(userId) || !Number.isInteger(imageId) || imageId <= 0) {
+      return res.redirect(`/ponhgup/utilisateur/${userId}/images`);
+    }
+    grantSpecificImageToUser(userId, imageId);
+    res.redirect(`/ponhgup/utilisateur/${userId}/images`);
   });
 
   router.post("/profils/:id/delete", requireAdmin, (req, res) => {

@@ -16,15 +16,21 @@
         <p class="admin-muted">Aucune note ni favori image.</p>
       <% } %>
       <% items.forEach(function(img) { %>
-        <%- include('partials/admin-content-card', {
-          href: '/galerie/' + img.id + '/edit',
-          coverImg: (img.imagePaths && img.imagePaths[0]) || img.filename,
-          title: img.title || 'Sans titre',
-          viewCount: undefined,
-          rating: img.rating || 0,
-          flame: !!img.flame,
-          placeholderIcon: '&#128247;',
-        }) %>
+        <div class="aud-grant-wrap">
+          <%- include('partials/admin-content-card', {
+            href: '/galerie/' + img.id + '/edit',
+            coverImg: (img.imagePaths && img.imagePaths[0]) || img.filename,
+            title: img.title || 'Sans titre',
+            viewCount: undefined,
+            rating: img.rating || 0,
+            flame: !!img.flame,
+            placeholderIcon: '&#128247;',
+          }) %>
+          <form method="POST" action="/ponhgup/utilisateur/<%= detail.user.id %>/grant-image" class="aud-grant-form">
+            <input type="hidden" name="imageId" value="<%= img.id %>">
+            <button type="submit" class="aud-grant-btn" title="Donner cette image au coffre">Donner</button>
+          </form>
+        </div>
       <% }) %>
     </div>
 
