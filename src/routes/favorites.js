@@ -100,6 +100,7 @@ const {
   cancelExchange,
   getExchangesReceived,
   getExchangesSent,
+  setOnboardingDone,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
@@ -602,6 +603,14 @@ function buildFavoritesRouter(config) {
   router.post("/parametres", requireUserJson, (req, res) => {
     const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, newsletter, profilePublic } = req.body;
     updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, newsletter, profilePublic });
+    res.json({ ok: true });
+  });
+
+  // ── Popup de bienvenue (première connexion) ──────────────────────────────
+  router.post("/bienvenue", requireUserJson, (req, res) => {
+    const { ultraMode, shareNotesWithAdmin, profilePublic } = req.body;
+    updateUserSettings(req.user.id, { ultraMode, shareNotesWithAdmin, profilePublic });
+    setOnboardingDone(req.user.id);
     res.json({ ok: true });
   });
 

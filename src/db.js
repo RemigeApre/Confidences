@@ -675,6 +675,7 @@ try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_fused INTEGER NOT NULL DEF
 // Migration one-shot : bandeau vertical profil public
 try { db.exec("ALTER TABLE users ADD COLUMN profile_banner_ref_id INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN profile_public INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN onboarding_done INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 // Migrations : cadeau / échange / marché
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_listed INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 db.exec(`CREATE TABLE IF NOT EXISTS marketplace_listings (
@@ -1168,6 +1169,7 @@ function rowToUser(row) {
     newsletterToken: row.newsletter_token || null,
     profileBannerRefId: row.profile_banner_ref_id || null,
     profilePublic: row.profile_public !== 0,
+    onboardingDone: row.onboarding_done !== 0,
   };
 }
 
@@ -1192,7 +1194,7 @@ const WELCOME_LOOTBOXES = 5;
 function createUser({ username, displayName, passwordHash, isAdmin, isTest }) {
   const info = db
     .prepare(
-      "INSERT INTO users (username, display_name, password_hash, is_admin, is_test, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO users (username, display_name, password_hash, is_admin, is_test, created_at, onboarding_done) VALUES (?, ?, ?, ?, ?, ?, 0)"
     )
     .run(username, displayName, passwordHash, isAdmin ? 1 : 0, isTest ? 1 : 0, new Date().toISOString());
   const userId = info.lastInsertRowid;
@@ -7661,6 +7663,7 @@ module.exports = {
   unsubscribeByNewsletterToken,
   listNewsletterSubscribers,
   setUserNewsletter,
+  setOnboardingDone,
   checkAndGrantNoteMilestones,
   checkAndGrantProfilQuizLootbox,
   checkAndGrantHeartsMilestones,
@@ -7936,4 +7939,8 @@ function listNewsletterSubscribers() {
 
 function setUserNewsletter(userId, value) {
   db.prepare('UPDATE users SET newsletter = ? WHERE id = ?').run(value ? 1 : 0, userId);
+}
+
+function setOnboardingDone(userId) {
+  db.prepare('UPDATE users SET onboarding_done = 1 WHERE id = ?').run(userId);
 }

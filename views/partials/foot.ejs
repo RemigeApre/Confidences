@@ -416,6 +416,106 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
 
 <% } %>
 
+<%# ── Popup de bienvenue (première connexion seulement) ──────────────────── %>
+<% if (currentUser && !currentUser.onboardingDone) { %>
+<div class="onb-backdrop" id="onb-backdrop"></div>
+<div class="onb-popup" id="onb-popup" role="dialog" aria-modal="true" aria-label="Bienvenue">
+  <div class="onb-header">
+    <svg class="onb-logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="onbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="hsl(44,95%,62%)"/><stop offset="100%" stop-color="hsl(38,85%,40%)"/></linearGradient>
+      </defs>
+      <rect x="2" y="22" width="44" height="22" rx="3" fill="url(#onbg)" stroke="hsl(38,70%,32%)" stroke-width="1.5"/>
+      <path d="M2 24 Q2 8 24 8 Q46 8 46 24 Z" fill="hsl(28,65%,38%)" stroke="hsl(44,80%,42%)" stroke-width="1.5"/>
+      <rect x="1" y="21" width="46" height="5" rx="2" fill="url(#onbg)" stroke="hsl(38,70%,32%)" stroke-width="1.2"/>
+      <rect x="19" y="21" width="10" height="8" rx="2" fill="url(#onbg)" stroke="hsl(38,70%,32%)" stroke-width="1.2"/>
+      <path d="M21 21 Q21 16 24 16 Q27 16 27 21" fill="none" stroke="url(#onbg)" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="24" cy="26" r="2" fill="hsl(28,55%,18%)"/>
+    </svg>
+    <div class="onb-header-text">
+      <h2 class="onb-title">Bienvenue !</h2>
+      <p class="onb-sub">Quelques r&eacute;glages pour personnaliser votre exp&eacute;rience.</p>
+    </div>
+  </div>
+
+  <div class="onb-philosophy">
+    Votre plaisir et vos d&eacute;couvertes sont au centre de ce site. Pas de pub, pas d&rsquo;abonnement payant : gratuit, pour vous.
+  </div>
+
+  <div class="onb-settings">
+
+    <div class="onb-setting-row">
+      <div class="onb-setting-info">
+        <span class="onb-setting-label">Contenu Ultra</span>
+        <span class="onb-setting-hint">Certains contenus peuvent perturber ou choquer. Activez pour les recevoir dans vos coffres.</span>
+      </div>
+      <label class="profil-toggle">
+        <input type="checkbox" id="onb-ultra-check" />
+        <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
+      </label>
+    </div>
+
+    <div class="onb-setting-row">
+      <div class="onb-setting-info">
+        <span class="onb-setting-label">S&rsquo;exposer aux admins</span>
+        <span class="onb-setting-hint">Permettez-nous de voir votre activit&eacute; pour am&eacute;liorer le site.</span>
+      </div>
+      <label class="profil-toggle">
+        <input type="checkbox" id="onb-share-check" />
+        <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
+      </label>
+    </div>
+
+    <div class="onb-setting-row">
+      <div class="onb-setting-info">
+        <span class="onb-setting-label">Profil public</span>
+        <span class="onb-setting-hint">Visible par tous et dans les classements. Priv&eacute; : visible uniquement par vos amis.</span>
+      </div>
+      <label class="profil-toggle">
+        <input type="checkbox" id="onb-public-check" checked />
+        <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
+      </label>
+    </div>
+
+  </div>
+
+  <p class="onb-invite">Pensez &agrave; inviter vos amis pour partager l&rsquo;aventure avec eux.</p>
+
+  <button class="onb-cta" id="onb-cta">Commencer</button>
+</div>
+<script nonce="<%= nonce %>">
+(function () {
+  var ultraCheck  = document.getElementById('onb-ultra-check');
+  var shareCheck  = document.getElementById('onb-share-check');
+  var publicCheck = document.getElementById('onb-public-check');
+  var cta         = document.getElementById('onb-cta');
+  var backdrop    = document.getElementById('onb-backdrop');
+
+  function close() {
+    var popup = document.getElementById('onb-popup');
+    if (popup) popup.setAttribute('hidden', '');
+    if (backdrop) backdrop.setAttribute('hidden', '');
+  }
+
+  if (cta) {
+    cta.addEventListener('click', function () {
+      var body = {
+        ultraMode:          ultraCheck  && ultraCheck.checked  ? 'visible' : 'hidden',
+        shareNotesWithAdmin: !!(shareCheck  && shareCheck.checked),
+        profilePublic:       !!(publicCheck && publicCheck.checked),
+      };
+      fetch('/favoris/bienvenue', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      }).catch(function () {});
+      close();
+    });
+  }
+})();
+</script>
+<% } %>
+
 <%# ── Popup "Envoyer à un ami" (global, disponible sur toutes les pages) ── %>
 <% if (currentUser && locals.inviteToken) { %>
 <div class="share-popup-backdrop" id="share-popup-backdrop" hidden aria-hidden="true"></div>
