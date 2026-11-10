@@ -184,21 +184,69 @@
     <%# ══ PANNEAU QUIZZ PERSO ══ %>
     <div class="aud-tab-panel" id="aud-tab-custom" hidden>
     <%
-      function answerLabel(q) {
+      var SIDE_LABEL = { give: 'Donner', receive: 'Recevoir', both: 'Les deux', observe: 'Observer' };
+
+      /* Résout un index ou une valeur vers le texte de l'option */
+      function optText(opts, v) {
+        var i = Number(v);
+        if (!isNaN(i) && opts[i] !== undefined) {
+          var o = opts[i];
+          return (typeof o === 'object' && o !== null) ? (o.text || o.label || JSON.stringify(o)) : String(o);
+        }
+        return String(v);
+      }
+
+      /* Renvoie un tableau de {side?, value, pct?} à afficher pour une question */
+      function parseAnswer(q) {
         var a = q.answer;
-        if (a === undefined || a === null || a === '') return null;
-        if (q.type === 'gradient') {
-          var num = Number(a);
-          return isNaN(num) ? String(a) : num + '\u00a0/ 10';
+        if (a === undefined || a === null || a === '') return [];
+        /* "Je ne sais pas" */
+        if (a === '?') return [{ text: 'Je ne sais pas' }];
+
+        var opts = q.options || [];
+
+        /* has_sides : objet { side, give?, receive? } */
+        if (typeof a === 'object' && !Array.isArray(a) && a.side !== undefined) {
+          var rows = [];
+          var sideKey = a.side || 'both';
+          if (sideKey !== 'both') rows.push({ text: SIDE_LABEL[sideKey] || sideKey, muted: true });
+          function pushSide(label, val) {
+            if (val === undefined || val === null) return;
+            if (Array.isArray(val)) {
+              var txt = val.map(function(v){ return optText(opts, v); }).join(', ');
+              if (txt) rows.push({ label: label, text: txt });
+            } else {
+              var num = Number(val);
+              if (!isNaN(num)) rows.push({ label: label, num: num, pct: Math.round(num * 10) });
+              else if (val !== undefined && val !== '') rows.push({ label: label, text: String(val) });
+            }
+          }
+          if (sideKey === 'both' || sideKey === 'give')    pushSide('Donner',   a.give);
+          if (sideKey === 'both' || sideKey === 'receive') pushSide('Recevoir', a.receive);
+          return rows;
         }
-        if (q.type === 'single') return String(a);
-        if (q.type === 'multiple' || q.type === 'ranking') {
-          return Array.isArray(a) ? a.join(', ') : String(a);
+
+        /* Tableau (multiple / ranking) */
+        if (Array.isArray(a)) {
+          var txt = a.map(function(v){ return optText(opts, v); }).join(', ');
+          return txt ? [{ text: txt }] : [];
         }
-        if (q.type === 'points' && typeof a === 'object') {
-          return Object.entries(a).map(function(e){ return e[0]+'\u00a0: '+e[1]; }).join(' | ');
+
+        /* Points : { 0: X, 1: Y, … } */
+        if (typeof a === 'object' && a !== null) {
+          var parts = Object.entries(a).map(function(e){
+            return optText(opts, e[0]) + '\u00a0: ' + e[1];
+          }).join(' | ');
+          return parts ? [{ text: parts }] : [];
         }
-        return JSON.stringify(a);
+
+        /* Gradient simple */
+        var num = Number(a);
+        if (!isNaN(num)) return [{ num: num, pct: Math.round(num * 10) }];
+
+        /* Single / fallback */
+        var s = String(a);
+        return s ? [{ text: s }] : [];
       }
     %>
     <% if (!customQuizAnswers || !customQuizAnswers.length) { %>
@@ -220,20 +268,31 @@
         <% if (cqa.questions && cqa.questions.length) { %>
         <ul class="cqa-q-list">
           <% cqa.questions.forEach(function(q) { %>
-          <% var lbl = answerLabel(q); if (!lbl) return; %>
+          <%   var rows = parseAnswer(q); if (!rows.length) return; %>
           <li class="cqa-q-row">
             <span class="cqa-q-text"><%= q.text %></span>
-            <span class="cqa-q-answer<%= q.type === 'gradient' ? ' cqa-q-answer--num' : '' %>">
-              <% if (q.type === 'gradient') { %>
-                <% var pct = Math.round(Number(q.answer) * 10); %>
-                <span class="cqa-bar-wrap"><span class="cqa-bar-fill" style="width:<%= pct %>%"></span></span>
-                <span class="cqa-bar-val"><%= lbl %></span>
-              <% } else { %><%= lbl %><% } %>
-            </span>
+            <div class="cqa-q-answer">
+              <% rows.forEach(function(r) { %>
+                <% if (r.muted) { %>
+                  <span class="cqa-side-label"><%= r.text %></span>
+                <% } else if (r.pct !== undefined) { %>
+                  <span class="cqa-answer-row">
+                    <% if (r.label) { %><span class="cqa-side-mini"><%= r.label %></span><% } %>
+                    <span class="cqa-bar-wrap"><span class="cqa-bar-fill" style="width:<%= r.pct %>%"></span></span>
+                    <span class="cqa-bar-val"><%= r.num %>&thinsp;/ 10</span>
+                  </span>
+                <% } else { %>
+                  <span class="cqa-answer-row">
+                    <% if (r.label) { %><span class="cqa-side-mini"><%= r.label %></span><% } %>
+                    <span class="cqa-text-val"><%= r.text %></span>
+                  </span>
+                <% } %>
+              <% }) %>
+            </div>
             <% if (q.practiced || q.interested) { %>
               <span class="cqa-flags">
-                <% if (q.practiced) { %><span class="cqa-flag cqa-flag--done" title="Pratiqué">P</span><% } %>
-                <% if (q.interested) { %><span class="cqa-flag cqa-flag--int" title="Intéressé">I</span><% } %>
+                <% if (q.practiced)  { %><span class="cqa-flag cqa-flag--done" title="Pratiqu&eacute;">P</span><% } %>
+                <% if (q.interested) { %><span class="cqa-flag cqa-flag--int"  title="Int&eacute;ress&eacute;">I</span><% } %>
               </span>
             <% } %>
           </li>
