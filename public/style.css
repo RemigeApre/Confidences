@@ -1396,32 +1396,38 @@ a.amis-rp-item-name:hover{text-decoration:underline}
 .marche-empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.88rem}
 @media(max-width:640px){.marche-grid{grid-template-columns:repeat(2,1fr)}.coffre-modal-box{padding:1.1rem}.coffre-exchange-item{flex-wrap:wrap}.coffre-ex-actions{flex-direction:row;width:100%}}
 
-.jwm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:1rem}
+
+.jwm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem}
 .jwm-overlay[hidden]{display:none}
-.jwm-box{background:hsl(220,12%,13%);border:1px solid hsl(220,10%,24%);border-radius:16px;padding:1.75rem 1.75rem 1.5rem;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:1.1rem}
-.jwm-title{font-size:1.15rem;font-weight:800;color:var(--fg);margin:0;text-align:center}
-.jwm-section{display:flex;gap:.85rem;align-items:flex-start}
-.jwm-section--ultra{background:rgba(255,180,0,.05);border:1px solid rgba(255,180,0,.18);border-radius:10px;padding:.85rem}
-.jwm-section-icon{width:28px;height:28px;flex-shrink:0;color:var(--accent,hsl(220,60%,60%));margin-top:.1rem}
-.jwm-section-icon svg{width:100%;height:100%}
-.jwm-section--ultra .jwm-section-icon{color:hsl(40,80%,60%)}
-.jwm-section-body{display:flex;flex-direction:column;gap:.4rem;flex:1}
-.jwm-section-title{font-size:.88rem;font-weight:700;color:var(--fg);margin:0}
-.jwm-section-desc{font-size:.8rem;color:var(--muted);margin:0;line-height:1.5}
-.jwm-list{margin:.1rem 0 0 1rem;padding:0;display:flex;flex-direction:column;gap:.3rem;font-size:.8rem;color:var(--muted);line-height:1.5}
-.jwm-rarity{font-size:.68rem;font-weight:700;border-radius:4px;padding:.1rem .4rem;white-space:nowrap}
+.jwm-box{background:hsl(220,12%,12%);border:1px solid hsl(220,10%,22%);border-radius:18px;padding:1.5rem 1.5rem 1.25rem;max-width:440px;width:100%;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:1rem}
+.jwm-header{display:flex;flex-direction:column;align-items:center;gap:.45rem;padding-bottom:.75rem;border-bottom:1px solid hsl(220,10%,20%)}
+.jwm-header-icon{width:52px;height:42px}
+.jwm-title{font-size:1.1rem;font-weight:800;color:var(--fg);margin:0;text-align:center}
+.jwm-subtitle{font-size:.8rem;color:var(--muted);margin:0;text-align:center}
+.jwm-blocks{display:flex;flex-direction:column;gap:.65rem}
+.jwm-block{background:rgba(255,255,255,.04);border:1px solid hsl(220,10%,20%);border-radius:10px;padding:.8rem .9rem;display:flex;flex-direction:column;gap:.5rem}
+.jwm-block-label{display:flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:700;color:var(--fg);margin:0}
+.jwm-block-label svg{width:14px;height:14px;flex-shrink:0;opacity:.7}
+.jwm-list{margin:.05rem 0 0 1rem;padding:0;display:flex;flex-direction:column;gap:.2rem;font-size:.78rem;color:var(--muted);line-height:1.5}
+.jwm-rarities{display:flex;flex-wrap:wrap;gap:.3rem}
+.jwm-rarity{font-size:.67rem;font-weight:700;border-radius:4px;padding:.12rem .45rem;white-space:nowrap}
 .jwm-rarity--common{background:rgba(148,163,184,.15);color:hsl(215,20%,70%)}
 .jwm-rarity--rare{background:rgba(96,165,250,.12);color:hsl(210,85%,70%)}
 .jwm-rarity--epic{background:rgba(167,139,250,.12);color:hsl(260,75%,72%)}
 .jwm-rarity--legendary{background:rgba(251,191,36,.12);color:hsl(44,90%,65%)}
 .jwm-rarity--mythic{background:rgba(239,68,68,.12);color:hsl(0,80%,70%)}
-.jwm-ultra-toggle{display:flex;align-items:center;gap:.6rem;cursor:pointer;margin-top:.3rem}
+.jwm-block-desc{font-size:.78rem;color:var(--muted);margin:0;line-height:1.5}
+.jwm-ultra-block{background:rgba(255,160,0,.06);border:1px solid rgba(255,160,0,.22);border-radius:10px;padding:.8rem .9rem;display:flex;flex-direction:column;gap:.5rem}
+.jwm-ultra-head{display:flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:700;color:hsl(40,80%,62%)}
+.jwm-ultra-head svg{width:14px;height:14px;flex-shrink:0}
+.jwm-ultra-desc{font-size:.78rem;color:var(--muted);margin:0;line-height:1.5}
+.jwm-ultra-toggle{display:flex;align-items:center;gap:.6rem;cursor:pointer;margin-top:.15rem}
 .jwm-ultra-toggle input{position:absolute;opacity:0;width:0;height:0}
-.jwm-ultra-track{position:relative;width:38px;height:22px;background:rgba(255,255,255,.12);border-radius:999px;border:1px solid rgba(255,255,255,.18);flex-shrink:0;transition:background .2s,border-color .2s}
+.jwm-ultra-track{position:relative;width:36px;height:20px;background:rgba(255,255,255,.1);border-radius:999px;border:1px solid rgba(255,255,255,.18);flex-shrink:0;transition:background .2s,border-color .2s}
 .jwm-ultra-toggle input:checked~.jwm-ultra-track{background:hsl(40,75%,40%);border-color:hsl(40,75%,55%)}
-.jwm-ultra-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s}
+.jwm-ultra-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;background:#fff;border-radius:50%;transition:transform .2s}
 .jwm-ultra-toggle input:checked~.jwm-ultra-track .jwm-ultra-thumb{transform:translateX(16px)}
-.jwm-ultra-label{font-size:.82rem;font-weight:600;color:var(--fg)}
-.jwm-cta{width:100%;padding:.65rem;background:hsl(var(--ch-hue,220),55%,30%);border:1px solid hsl(var(--ch-hue,220),55%,45%);border-radius:10px;color:#fff;cursor:pointer;font-size:.95rem;font-weight:700;margin-top:.35rem;transition:background .12s}
-.jwm-cta:hover{background:hsl(var(--ch-hue,220),55%,38%)}
-@media(max-width:640px){.jwm-box{padding:1.25rem 1.1rem}.jwm-section{flex-direction:column;gap:.5rem}.jwm-section-icon{width:22px;height:22px}}
+.jwm-ultra-label{font-size:.8rem;font-weight:600;color:var(--fg)}
+.jwm-cta{width:100%;padding:.6rem;background:hsl(var(--ch-hue,220),55%,30%);border:1px solid hsl(var(--ch-hue,220),55%,45%);border-radius:10px;color:#fff;cursor:pointer;font-size:.9rem;font-weight:700;transition:background .12s}
+.jwm-cta:hover{background:hsl(var(--ch-hue,220),55%,37%)}
+@media(max-width:640px){.jwm-box{padding:1.1rem}.jwm-header-icon{width:40px;height:32px}}
