@@ -40,6 +40,21 @@ module.exports = function buildProfilRouter(config) {
         return res.status(404).end();
       }
 
+      // Compte privé : seuls le propriétaire et ses amis peuvent voir le profil
+      if (!user.profilePublic) {
+        const isOwner = req.user && req.user.id === user.id;
+        if (!isOwner) {
+          const friendship = req.user ? getFriendshipBetween(req.user.id, user.id) : null;
+          const isFriend = !!(friendship && friendship.status === 'accepted');
+          if (!isFriend) {
+            return res.status(403).render("profil-prive", {
+              config,
+              currentUser: req.user || null,
+            });
+          }
+        }
+      }
+
       const pub = getPublicProfile(user.id);
 
       // Avatar

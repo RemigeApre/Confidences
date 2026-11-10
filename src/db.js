@@ -674,6 +674,7 @@ try { db.exec("ALTER TABLE user_unlocks ADD COLUMN fusion_copies INTEGER NOT NUL
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_fused INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 // Migration one-shot : bandeau vertical profil public
 try { db.exec("ALTER TABLE users ADD COLUMN profile_banner_ref_id INTEGER"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN profile_public INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 // Migrations : cadeau / échange / marché
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_listed INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 db.exec(`CREATE TABLE IF NOT EXISTS marketplace_listings (
@@ -1166,6 +1167,7 @@ function rowToUser(row) {
     newsletter: row.newsletter !== 0,
     newsletterToken: row.newsletter_token || null,
     profileBannerRefId: row.profile_banner_ref_id || null,
+    profilePublic: row.profile_public !== 0,
   };
 }
 
@@ -1250,7 +1252,7 @@ const HISTORY_RETENTION_VALUES = ["3jours", "1semaine", "1mois", "3mois"];
 // Reglages "Goûts"/"Paramètres" (voir /favoris) : mise a jour partielle,
 // chaque champ omis garde sa valeur actuelle (sauvegarde instantanee par
 // champ, pas un gros formulaire soumis d'un coup).
-function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, hideInviteCta, newsletter }) {
+function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, hideInviteCta, newsletter, profilePublic }) {
   const current = getUserById(id);
   if (!current) return;
   const o  = orientation   !== undefined && ORIENTATION_VALUES.includes(orientation)   ? orientation   : current.orientation;
@@ -1260,9 +1262,10 @@ function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareN
   const hr = historyRetention !== undefined && HISTORY_RETENTION_VALUES.includes(historyRetention) ? historyRetention : current.historyRetention;
   const hic = hideInviteCta !== undefined ? (hideInviteCta ? 1 : 0) : (current.hideInviteCta ? 1 : 0);
   const nl = newsletter !== undefined ? (newsletter ? 1 : 0) : (current.newsletter ? 1 : 0);
+  const pp = profilePublic !== undefined ? (profilePublic ? 1 : 0) : (current.profilePublic ? 1 : 0);
   db.prepare(
-    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ?, hide_invite_cta = ?, newsletter = ? WHERE id = ?"
-  ).run(o, um, im, snwa, hr, hic, nl, id);
+    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ?, hide_invite_cta = ?, newsletter = ?, profile_public = ? WHERE id = ?"
+  ).run(o, um, im, snwa, hr, hic, nl, pp, id);
 }
 
 // COLLATE NOCASE : la casse n'a pas d'importance pour l'identifiant de

@@ -1,0 +1,18 @@
+<%- include('partials/head', { title: 'Profil privé' }) %>
+<% if (currentUser) { %><%- include('partials/top-nav', { config: config }) %><% } %>
+
+<div class="gate-page container narrow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:1rem">
+  <svg style="width:48px;height:48px;color:var(--muted);opacity:.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="3" y="11" width="18" height="11" rx="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+  <h1 style="font-size:1.1rem;font-weight:700;color:var(--fg);margin:0">Ce profil est privé</h1>
+  <p style="font-size:.85rem;color:var(--muted);margin:0;max-width:280px">Seuls les amis de cet utilisateur peuvent consulter son profil.</p>
+  <% if (currentUser) { %>
+    <a href="/favoris" style="font-size:.82rem;color:var(--accent,hsl(220,60%,60%));text-decoration:none">&larr; Retour</a>
+  <% } else { %>
+    <a href="/ponhgup/85zapnte" style="font-size:.82rem;color:var(--accent,hsl(220,60%,60%));text-decoration:none">Se connecter</a>
+  <% } %>
+</div>
+
+<%- include('partials/foot') %>

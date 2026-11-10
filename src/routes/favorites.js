@@ -600,8 +600,8 @@ function buildFavoritesRouter(config) {
   });
 
   router.post("/parametres", requireUserJson, (req, res) => {
-    const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, newsletter } = req.body;
-    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, newsletter });
+    const { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, newsletter, profilePublic } = req.body;
+    updateUserSettings(req.user.id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, newsletter, profilePublic });
     res.json({ ok: true });
   });
 

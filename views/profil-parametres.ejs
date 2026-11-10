@@ -65,6 +65,23 @@
     </section>
 
     <section class="profil-panel">
+      <h2 class="profil-panel-title">Visibilit&eacute; du profil</h2>
+      <div class="profil-panel-grid">
+        <div class="profil-card profil-card--wide">
+          <div class="profil-card-head">
+            <span>Compte public</span>
+            <span class="profil-info-icon" tabindex="0" data-tip="Public : n'importe quel utilisateur peut voir votre profil et vous apparaîtrez dans les recherches et classements. Privé : seuls vos amis peuvent voir votre profil." aria-label="Différence entre compte public et privé">!</span>
+          </div>
+          <label class="profil-toggle">
+            <input type="checkbox" id="profile-public-checkbox" <%= currentUser.profilePublic ? 'checked' : '' %> />
+            <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
+          </label>
+        </div>
+      </div>
+      <p class="profil-panel-hint"><% if (currentUser.profilePublic) { %>Votre profil est <strong>public</strong> : il est visible par tous et pourra apparaître dans les recherches et classements.<% } else { %>Votre profil est <strong>priv&eacute;</strong> : seuls vos amis peuvent le consulter.<% } %></p>
+    </section>
+
+    <section class="profil-panel">
       <h2 class="profil-panel-title">Gestion du compte</h2>
       <div class="profil-panel-grid">
         <div class="profil-card">
@@ -171,6 +188,20 @@
   if (newsletterCheckbox) {
     newsletterCheckbox.addEventListener("change", function () {
       savePref("newsletter", !newsletterCheckbox.checked);
+    });
+  }
+
+  var profilePublicCheckbox = document.getElementById("profile-public-checkbox");
+  if (profilePublicCheckbox) {
+    profilePublicCheckbox.addEventListener("change", function () {
+      savePref("profilePublic", profilePublicCheckbox.checked);
+      // Mettre à jour le texte d'état sans recharger la page
+      var hint = document.querySelector(".profil-panel-hint");
+      if (hint) {
+        hint.innerHTML = profilePublicCheckbox.checked
+          ? "Votre profil est <strong>public</strong>\u00a0: il est visible par tous et pourra appara\u00eetre dans les recherches et classements."
+          : "Votre profil est <strong>priv\u00e9</strong>\u00a0: seuls vos amis peuvent le consulter.";
+      }
     });
   }
 
