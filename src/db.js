@@ -1522,6 +1522,21 @@ function setUserReaction(userId, itemType, itemId, { rating, flame, interested, 
   touchLastActive(userId);
 }
 
+function listUserWikiNotes(userId) {
+  return db.prepare(
+    `SELECT wpun.page_id, wpun.content, wpun.updated_at, wp.title
+     FROM wiki_page_user_notes wpun
+     JOIN wiki_pages wp ON wp.id = wpun.page_id
+     WHERE wpun.user_id = ?
+     ORDER BY wpun.updated_at DESC`
+  ).all(userId).map(r => ({
+    pageId: r.page_id,
+    title: r.title || '',
+    content: r.content || '',
+    updatedAt: r.updated_at,
+  }));
+}
+
 function getUserNote(pageId, userId) {
   const row = db.prepare("SELECT content FROM wiki_page_user_notes WHERE page_id = ? AND user_id = ?").get(pageId, userId);
   return row ? row.content : "";
@@ -5435,6 +5450,34 @@ function listUnownedImages(userId, limit) {
   });
 }
 
+function getAllUserCoffreAdmin(userId) {
+  const images = db.prepare(
+    `SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, u.fusion_copies, u.is_fused, u.is_listed,
+            g.image_paths, g.title
+     FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id
+     WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC`
+  ).all(userId).map(r => {
+    let imagePaths = [];
+    try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch (_) {}
+    return { type: 'image', id: r.id, refId: r.ref_id, rarity: r.rarity, obtainedAt: r.obtained_at,
+             isFavorite: !!r.is_favorite, fusionCopies: r.fusion_copies || 0, isFused: !!r.is_fused,
+             isListed: !!r.is_listed, thumb: imagePaths[0] || null, title: r.title || '' };
+  });
+  const charms = db.prepare(
+    `SELECT u.id, u.ref_id, u.rarity, u.obtained_at, c.key, c.label, c.symbol
+     FROM user_unlocks u LEFT JOIN charms c ON c.id = u.ref_id
+     WHERE u.user_id = ? AND u.item_type = 'charm' ORDER BY u.obtained_at DESC`
+  ).all(userId).map(r => ({
+    type: 'charm', id: r.id, refId: r.ref_id, rarity: r.rarity, obtainedAt: r.obtained_at,
+    charmKey: r.key || '', label: r.label || '', symbol: r.symbol || '?'
+  }));
+  const ownedThemeKeys = new Set(db.prepare("SELECT theme_key FROM user_themes WHERE user_id = ?").all(userId).map(r => r.theme_key));
+  const themes = THEME_DEFINITIONS.filter(t => ownedThemeKeys.has(t.key)).map(t => ({
+    type: 'theme', key: t.key, label: t.label || t.key, hue: t.hue || null
+  }));
+  return { images, charms, themes };
+}
+
 function getUserUnlocks(userId) {
   return db.prepare(
     "SELECT u.id, u.ref_id, u.rarity, u.obtained_at, u.is_favorite, u.fusion_copies, u.is_fused, u.is_listed, g.image_paths, g.title FROM user_unlocks u LEFT JOIN gallery_images g ON g.id = u.ref_id WHERE u.user_id = ? AND u.item_type = 'profile_image' ORDER BY u.obtained_at DESC"
@@ -7267,6 +7310,8 @@ module.exports = {
   getUserReaction,
   getUserReactionStats,
   countUserNotes,
+  listUserWikiNotes,
+  getAllUserCoffreAdmin,
   getUserReactionsMap,
   mergeUserReactions,
   mergePartnerReaction,

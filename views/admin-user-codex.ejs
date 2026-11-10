@@ -7,69 +7,157 @@
 
   <main class="aud-content">
 
-    <div class="aud-section-header">
-      <h2 class="aud-section-title">Notes &amp; favoris codex (<%= items.length %>)</h2>
+    <%# ── Onglets ── %>
+    <div class="aud-tabs" id="aud-codex-tabs">
+      <button class="aud-tab active" data-tab="notes">Notes &amp; favoris (<%= items.length %>)</button>
+      <button class="aud-tab" data-tab="read-later">&Agrave; lire plus tard (<%= readLater.length %>)</button>
+      <button class="aud-tab" data-tab="interested">Int&eacute;ress&eacute; (<%= interested.length %>)</button>
+      <button class="aud-tab" data-tab="practiced">D&eacute;j&agrave; fait (<%= practiced.length %>)</button>
+      <button class="aud-tab" data-tab="comments">Commentaires (<%= notes.length %>)</button>
     </div>
 
-    <div class="aud-card-grid" id="aud-codex-items">
-      <% if (!items.length) { %>
-        <p class="admin-muted">Aucune note ni favori codex.</p>
-      <% } %>
-      <% items.forEach(function(p) { %>
-        <%- include('partials/admin-content-card', {
-          href: '/wiki/' + p.id,
-          coverImg: p.imagePaths && p.imagePaths[0],
-          title: p.title,
-          viewCount: undefined,
-          rating: p.rating || 0,
-          flame: !!p.flame,
-          placeholderIcon: '&#128214;',
-        }) %>
-      <% }) %>
-    </div>
-
-    <% if (topViews.length) { %>
-      <div class="aud-section-header" id="aud-codex-views-header" hidden>
-        <h2 class="aud-section-title">Pages les plus visit&eacute;es</h2>
-      </div>
-      <div class="aud-card-grid" id="aud-codex-views" hidden>
-        <% topViews.forEach(function(p) { %>
+    <%# ── Tab: Notes & favoris ── %>
+    <div class="aud-tab-panel active" id="aud-tab-notes">
+      <div class="aud-card-grid">
+        <% if (!items.length) { %><p class="admin-muted">Aucune note ni favori codex.</p><% } %>
+        <% items.forEach(function(p) { %>
           <%- include('partials/admin-content-card', {
             href: '/wiki/' + p.id,
             coverImg: p.imagePaths && p.imagePaths[0],
             title: p.title,
-            viewCount: p.viewCount,
+            viewCount: undefined,
             rating: p.rating || 0,
             flame: !!p.flame,
             placeholderIcon: '&#128214;',
           }) %>
         <% }) %>
       </div>
-      <button type="button" class="aud-view-toggle" id="aud-codex-toggle-views">
-        <span aria-hidden="true">&#128065;</span>
-        <span id="aud-codex-toggle-label">Voir les vues</span>
-      </button>
-    <% } %>
+      <% if (topViews.length) { %>
+        <div class="aud-section-header" id="aud-codex-views-header" hidden>
+          <h2 class="aud-section-title">Pages les plus visit&eacute;es</h2>
+        </div>
+        <div class="aud-card-grid" id="aud-codex-views" hidden>
+          <% topViews.forEach(function(p) { %>
+            <%- include('partials/admin-content-card', {
+              href: '/wiki/' + p.id,
+              coverImg: p.imagePaths && p.imagePaths[0],
+              title: p.title,
+              viewCount: p.viewCount,
+              rating: p.rating || 0,
+              flame: !!p.flame,
+              placeholderIcon: '&#128214;',
+            }) %>
+          <% }) %>
+        </div>
+        <button type="button" class="aud-view-toggle" id="aud-codex-toggle-views">
+          <span aria-hidden="true">&#128065;</span>
+          <span id="aud-codex-toggle-label">Voir les vues</span>
+        </button>
+      <% } %>
+    </div>
 
-  </main>
-</div>
+    <%# ── Tab: À lire plus tard ── %>
+    <div class="aud-tab-panel" id="aud-tab-read-later" hidden>
+      <div class="aud-card-grid">
+        <% if (!readLater.length) { %><p class="admin-muted">Aucune page marqu&eacute;e "à lire plus tard".</p><% } %>
+        <% readLater.forEach(function(p) { %>
+          <%- include('partials/admin-content-card', {
+            href: '/wiki/' + p.id,
+            coverImg: p.imagePaths && p.imagePaths[0],
+            title: p.title,
+            viewCount: undefined,
+            rating: p.rating || 0,
+            flame: !!p.flame,
+            placeholderIcon: '&#128214;',
+          }) %>
+        <% }) %>
+      </div>
+    </div>
+
+    <%# ── Tab: Intéressé ── %>
+    <div class="aud-tab-panel" id="aud-tab-interested" hidden>
+      <div class="aud-card-grid">
+        <% if (!interested.length) { %><p class="admin-muted">Aucune page marqu&eacute;e "int&eacute;ress&eacute;".</p><% } %>
+        <% interested.forEach(function(p) { %>
+          <%- include('partials/admin-content-card', {
+            href: '/wiki/' + p.id,
+            coverImg: p.imagePaths && p.imagePaths[0],
+            title: p.title,
+            viewCount: undefined,
+            rating: p.rating || 0,
+            flame: !!p.flame,
+            placeholderIcon: '&#128214;',
+          }) %>
+        <% }) %>
+      </div>
+    </div>
+
+    <%# ── Tab: Déjà fait ── %>
+    <div class="aud-tab-panel" id="aud-tab-practiced" hidden>
+      <div class="aud-card-grid">
+        <% if (!practiced.length) { %><p class="admin-muted">Aucune page marqu&eacute;e "d&eacute;j&agrave; fait".</p><% } %>
+        <% practiced.forEach(function(p) { %>
+          <%- include('partials/admin-content-card', {
+            href: '/wiki/' + p.id,
+            coverImg: p.imagePaths && p.imagePaths[0],
+            title: p.title,
+            viewCount: undefined,
+            rating: p.rating || 0,
+            flame: !!p.flame,
+            placeholderIcon: '&#128214;',
+          }) %>
+        <% }) %>
+      </div>
+    </div>
+
+    <%# ── Tab: Commentaires (notes texte) ── %>
+    <div class="aud-tab-panel" id="aud-tab-comments" hidden>
+      <% if (!notes.length) { %>
+        <p class="admin-muted">Aucun commentaire.</p>
+      <% } else { %>
+      <ul class="aud-notes-list">
+        <% notes.forEach(function(n) { %>
+        <li class="aud-note-row">
+          <a href="/wiki/<%= n.pageId %>" class="aud-note-title" target="_blank"><%= n.title %></a>
+          <p class="aud-note-content"><%= n.content %></p>
+          <span class="aud-note-date"><%= new Date(n.updatedAt).toLocaleString('fr-FR') %></span>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </div>
 
 <script nonce="<%= nonce %>">
 (function () {
+  // Onglets
+  var tabs    = document.querySelectorAll('.aud-tab');
+  var panels  = document.querySelectorAll('.aud-tab-panel');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var target = tab.dataset.tab;
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      panels.forEach(function(p) { p.hidden = true; p.classList.remove('active'); });
+      tab.classList.add('active');
+      var panel = document.getElementById('aud-tab-' + target);
+      if (panel) { panel.hidden = false; panel.classList.add('active'); }
+    });
+  });
+  // Toggle vues
   var btn = document.getElementById("aud-codex-toggle-views");
   if (!btn) return;
-  var items = document.getElementById("aud-codex-items");
-  var viewsHeader = document.getElementById("aud-codex-views-header");
-  var views = document.getElementById("aud-codex-views");
-  var label = document.getElementById("aud-codex-toggle-label");
-  var showingViews = false;
+  var hd  = document.getElementById("aud-codex-views-header");
+  var grd = document.getElementById("aud-codex-views");
+  var lbl = document.getElementById("aud-codex-toggle-label");
+  var open = false;
   btn.addEventListener("click", function () {
-    showingViews = !showingViews;
-    items.hidden = showingViews;
-    viewsHeader.hidden = !showingViews;
-    views.hidden = !showingViews;
-    label.textContent = showingViews ? "Voir notes & favoris" : "Voir les vues";
+    open = !open;
+    if (hd)  hd.hidden  = !open;
+    if (grd) grd.hidden = !open;
+    if (lbl) lbl.textContent = open ? "Masquer les vues" : "Voir les vues";
   });
 })();
 </script>
+
+  </main>
+</div>
 <%- include('partials/foot') %>

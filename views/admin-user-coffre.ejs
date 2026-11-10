@@ -1,0 +1,74 @@
+<%- include('partials/head', { title: 'Admin : ' + detail.user.displayName + ' : Coffre', extraCss: ['admin.css'] }) %>
+<%- include('partials/admin-nav') %>
+
+<div class="aud-layout">
+  <%- include('partials/admin-user-nav', { detail: detail, roleHue: roleHue }) %>
+
+  <main class="aud-content">
+
+    <%# ── Images ── %>
+    <div class="aud-section-header">
+      <h2 class="aud-section-title">Images (<%= coffre.images.length %>)</h2>
+    </div>
+    <% if (!coffre.images.length) { %>
+      <p class="admin-muted">Aucune image.</p>
+    <% } else { %>
+    <div class="aud-coffre-grid">
+      <% coffre.images.forEach(function(img) { %>
+      <div class="aud-coffre-item aud-coffre-item--<%= img.rarity %>">
+        <% if (img.thumb) { %>
+          <img src="<%= img.thumb %>" alt="<%= img.title %>" class="aud-coffre-img" loading="lazy" />
+        <% } else { %>
+          <div class="aud-coffre-img aud-coffre-img--placeholder">?</div>
+        <% } %>
+        <div class="aud-coffre-meta">
+          <span class="aud-coffre-rarity"><%= img.rarity %></span>
+          <% if (img.isFavorite) { %><span class="aud-coffre-fav" title="Favori">&#9733;</span><% } %>
+          <% if (img.isFused) { %><span class="aud-coffre-fused" title="Fusionné">&#9889;</span><% } %>
+          <% if (img.isListed) { %><span class="aud-coffre-listed" title="En vente">&#127991;</span><% } %>
+          <% if (img.fusionCopies > 0) { %><span class="aud-coffre-copies">+<%= img.fusionCopies %></span><% } %>
+        </div>
+        <% if (img.title) { %><p class="aud-coffre-title" title="<%= img.title %>"><%= img.title %></p><% } %>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <%# ── Charmes ── %>
+    <div class="aud-section-header" style="margin-top:1.75rem">
+      <h2 class="aud-section-title">Charmes (<%= coffre.charms.length %>)</h2>
+    </div>
+    <% if (!coffre.charms.length) { %>
+      <p class="admin-muted">Aucun charme.</p>
+    <% } else { %>
+    <div class="aud-charm-list">
+      <% coffre.charms.forEach(function(c) { %>
+      <div class="aud-charm-item aud-charm-item--<%= c.rarity %>">
+        <span class="aud-charm-symbol"><%= c.symbol %></span>
+        <span class="aud-charm-label"><%= c.label %></span>
+        <span class="aud-charm-rarity"><%= c.rarity %></span>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <%# ── Thèmes ── %>
+    <div class="aud-section-header" style="margin-top:1.75rem">
+      <h2 class="aud-section-title">Thèmes (<%= coffre.themes.length %>)</h2>
+    </div>
+    <% if (!coffre.themes.length) { %>
+      <p class="admin-muted">Aucun thème.</p>
+    <% } else { %>
+    <div class="aud-charm-list">
+      <% coffre.themes.forEach(function(t) { %>
+      <div class="aud-charm-item" style="<%= t.hue ? '--th:' + t.hue : '' %>">
+        <span class="aud-charm-symbol" style="<%= t.hue ? 'color:hsl(' + t.hue + ',70%,65%)' : '' %>">&#9689;</span>
+        <span class="aud-charm-label"><%= t.label %></span>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+
+  </main>
+</div>
+<%- include('partials/foot') %>

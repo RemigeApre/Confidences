@@ -134,6 +134,8 @@ const {
   getUserInviteStats,
   listNewsletterSubscribers,
   getOrCreateNewsletterToken,
+  listUserWikiNotes,
+  getAllUserCoffreAdmin,
 } = require("../db");
 const { verifyLogin, requireAdmin, tokenForUser } = require("../auth");
 const { hashPassword } = require("../passwords");
@@ -1008,9 +1010,15 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     const detail = Number.isInteger(id) ? getUserDetail(id) : null;
     if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
-    const items = ratedOrFavorited(id, "wiki", listWikiPages);
-    const topViews = withViewCounts(detail.wikiViewCounts, "pageId", id, "wiki", listWikiPages);
-    res.render("admin-user-codex", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
+    const allWikiWithReactions = mergeUserReactions(listWikiPages(), id, "wiki");
+    const favIds = new Set(listFavoriteRows(id).filter(r => r.item_type === "wiki").map(r => r.item_id));
+    const items     = allWikiWithReactions.filter(p => p.rating > 0 || p.flame || favIds.has(p.id));
+    const readLater = allWikiWithReactions.filter(p => p.readLater);
+    const interested = allWikiWithReactions.filter(p => p.interested);
+    const practiced  = allWikiWithReactions.filter(p => p.practiced);
+    const notes      = listUserWikiNotes(id);
+    const topViews   = withViewCounts(detail.wikiViewCounts, "pageId", id, "wiki", listWikiPages);
+    res.render("admin-user-codex", { config, detail, items, topViews, readLater, interested, practiced, notes, roleHue: roleHue(detail.user) });
   });
 
   router.get("/utilisateur/:id/images", requireAdmin, (req, res) => {
@@ -1069,6 +1077,14 @@ function buildAdminRouter(config) {
     const connectionLogs = listConnectionLogsForUser(id, 30);
     const sessions = listActivitySessions(id, 30);
     res.render("admin-user-connexions", { config, detail, connectionLogs, sessions, roleHue: roleHue(detail.user) });
+  });
+
+  router.get("/utilisateur/:id/coffre", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const detail = Number.isInteger(id) ? getUserDetail(id) : null;
+    if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
+    const coffre = getAllUserCoffreAdmin(id);
+    res.render("admin-user-coffre", { config, detail, coffre, roleHue: roleHue(detail.user) });
   });
 
   // ── "À lire plus tard" (Codex) d'un profil, réservé à l'admin — lecture
