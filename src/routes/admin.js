@@ -97,6 +97,7 @@ const {
   countCompletedQuizzes,
   countUserNotes,
   setUserAccountStatus,
+  setAdminTag,
   recordLoginFailure,
   getLoginFailureCount,
   resetLoginFailures,
@@ -900,6 +901,14 @@ function buildAdminRouter(config) {
         }),
       });
     }
+    res.json({ ok: true });
+  });
+
+  router.post("/profils/:id/admin-tag", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid' });
+    const { tag, note } = req.body;
+    setAdminTag(id, tag, note || '');
     res.json({ ok: true });
   });
 

@@ -126,7 +126,9 @@
           data-edit-partner="<%= state.user.partnerId || '' %>"
           data-edit-owned="<%= state.user.canSeeOwned ? '1' : '0' %>"
           data-account-status="<%= state.user.accountStatus || 'actif' %>"
-          data-invite-count="<%= state.inviteCount %>">
+          data-invite-count="<%= state.inviteCount %>"
+          data-admin-tag="<%= state.user.adminTag || '' %>"
+          data-admin-note="<%= (state.user.adminNote || '').replace(/"/g, '&quot;') %>">
 
           <%# Corps de carte %>
           <div class="admin-utile-body">
@@ -147,6 +149,11 @@
             <%# Badge inactivité (affiché uniquement si inactif) %>
             <% if (!uLoginActive) { %>
               <span class="admin-utile-badge admin-utile-badge--inactive"><%= uLoginLabel %></span>
+            <% } %>
+
+            <%# Tag admin (safe / douteux / fake) %>
+            <% if (state.user.adminTag) { %>
+              <span class="admin-utile-atag admin-utile-atag--<%= state.user.adminTag %>" title="<%= state.user.adminNote || state.user.adminTag %>"><%= state.user.adminTag %></span>
             <% } %>
 
             <%# Indicateur "partage avec l'admin" %>
@@ -252,6 +259,17 @@
           </button>
           <button type="button" class="adm-dr-action" id="adm-dr-lootbox">Lootboxes</button>
           <button type="button" class="adm-dr-action adm-dr-action--danger" id="adm-dr-delete" style="display:none">Supprimer</button>
+        </div>
+
+        <%# Tag admin %>
+        <div class="adm-dr-section adm-dr-atag-section" id="adm-dr-atag-section">
+          <div class="adm-dr-atag-chips" id="adm-dr-atag-chips">
+            <button type="button" class="adm-dr-atag-chip" data-tag="">—</button>
+            <button type="button" class="adm-dr-atag-chip adm-dr-atag-chip--safe" data-tag="safe">safe</button>
+            <button type="button" class="adm-dr-atag-chip adm-dr-atag-chip--douteux" data-tag="douteux">douteux</button>
+            <button type="button" class="adm-dr-atag-chip adm-dr-atag-chip--fake" data-tag="fake">fake</button>
+          </div>
+          <input type="text" class="adm-dr-atag-note" id="adm-dr-atag-note" placeholder="Note courte…" maxlength="200" autocomplete="off">
         </div>
 
         <%# Nombre d'invités %>
@@ -1816,6 +1834,17 @@
       delBtn.dataset.uid = uid;
       delBtn.dataset.name = d.displayName;
 
+      // Tag admin
+      var curTag  = d.adminTag  || '';
+      var curNote = d.adminNote || '';
+      document.querySelectorAll('.adm-dr-atag-chip').forEach(function(c) {
+        c.classList.toggle('adm-dr-atag-chip--active', c.dataset.tag === curTag);
+      });
+      var noteEl = document.getElementById('adm-dr-atag-note');
+      noteEl.value = curNote;
+      noteEl.dataset.uid = uid;
+      document.getElementById('adm-dr-atag-chips').dataset.uid = uid;
+
       // Masquer confirm
       document.getElementById('adm-dr-confirm').hidden = true;
       document.getElementById('adm-dr-actions').hidden = false;
@@ -1895,6 +1924,53 @@
     });
 
     closeBtn.addEventListener('click', closeDrawer);
+
+    // Tag admin — chips + note
+    function saveAdminTag(uid, tag, note) {
+      fetch('/ponhgup/profils/' + uid + '/admin-tag', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tag: tag, note: note }),
+      }).then(function(r) {
+        if (!r.ok) return;
+        // Mettre à jour la carte
+        var card = lib.querySelector('.admin-utile[data-id="' + uid + '"]');
+        if (!card) return;
+        card.dataset.adminTag  = tag;
+        card.dataset.adminNote = note;
+        var existing = card.querySelector('.admin-utile-atag');
+        if (existing) existing.remove();
+        if (tag) {
+          var badge = document.createElement('span');
+          badge.className = 'admin-utile-atag admin-utile-atag--' + tag;
+          badge.title = note || tag;
+          badge.textContent = tag;
+          var shareEl = card.querySelector('.admin-utile-share-dot');
+          if (shareEl) card.querySelector('.admin-utile-body').insertBefore(badge, shareEl);
+          else card.querySelector('.admin-utile-name-btn').insertAdjacentElement('beforebegin', badge);
+        }
+      });
+    }
+
+    document.getElementById('adm-dr-atag-chips').addEventListener('click', function(e) {
+      var chip = e.target.closest('.adm-dr-atag-chip');
+      if (!chip) return;
+      var uid  = this.dataset.uid;
+      var tag  = chip.dataset.tag;
+      var note = document.getElementById('adm-dr-atag-note').value.trim();
+      document.querySelectorAll('.adm-dr-atag-chip').forEach(function(c) { c.classList.remove('adm-dr-atag-chip--active'); });
+      chip.classList.add('adm-dr-atag-chip--active');
+      saveAdminTag(uid, tag, note);
+    });
+
+    var _noteTimer;
+    document.getElementById('adm-dr-atag-note').addEventListener('input', function() {
+      var uid  = this.dataset.uid;
+      var note = this.value.trim();
+      var tag  = (document.querySelector('.adm-dr-atag-chip.adm-dr-atag-chip--active') || {}).dataset || {};
+      clearTimeout(_noteTimer);
+      _noteTimer = setTimeout(function() { saveAdminTag(uid, tag.tag || '', note); }, 800);
+    });
 
     function copyText(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {

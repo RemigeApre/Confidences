@@ -368,6 +368,8 @@ db.exec(`
 // Compte "test" : un utilisateur normal en tout point, juste marque a part
 // pour le distinguer des vrais profils lors du dev/de la maintenance.
 try { db.exec("ALTER TABLE users ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN admin_tag TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN admin_note TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 
 // Champs d'identite du compte (facultatifs, renseignes par l'utilisateur
 // et/ou l'admin selon le champ) et journal technique automatique.
@@ -1181,6 +1183,8 @@ function rowToUser(row) {
     profileBannerRefId: row.profile_banner_ref_id || null,
     profilePublic: row.profile_public !== 0,
     onboardingDone: row.onboarding_done !== 0,
+    adminTag: row.admin_tag || null,
+    adminNote: row.admin_note || '',
   };
 }
 
@@ -1409,6 +1413,13 @@ const VALID_ACCOUNT_STATUSES = ['actif', 'restreint', 'bloque'];
 function setUserAccountStatus(userId, status) {
   if (!VALID_ACCOUNT_STATUSES.includes(status)) return;
   db.prepare("UPDATE users SET account_status = ? WHERE id = ?").run(status, userId);
+}
+
+const VALID_ADMIN_TAGS = ['safe', 'douteux', 'fake'];
+function setAdminTag(userId, tag, note) {
+  const cleanTag  = VALID_ADMIN_TAGS.includes(tag) ? tag : null;
+  const cleanNote = typeof note === 'string' ? note.trim().slice(0, 200) : '';
+  db.prepare("UPDATE users SET admin_tag = ?, admin_note = ? WHERE id = ?").run(cleanTag, cleanNote, userId);
 }
 
 function addFavorite(userId, itemType, itemId) {
@@ -7325,6 +7336,7 @@ function cleanupOldMessages() {
 module.exports = {
   db,
   setUserAccountStatus,
+  setAdminTag,
   touchLastActive,
   insertSubmission,
   listSubmissions,
