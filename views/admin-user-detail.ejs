@@ -8,9 +8,9 @@
   <main class="aud-content">
 
     <%# ── Onglets ── %>
-    <div class="aud-tabs" style="margin-bottom:1.2rem">
-      <button class="aud-tab aud-tab--active" id="qztab-main" onclick="qzTab('main')">Quiz principal</button>
-      <button class="aud-tab" id="qztab-custom" onclick="qzTab('custom')">
+    <div class="aud-tabs" id="qz-tabs" style="margin-bottom:1.2rem">
+      <button class="aud-tab active" data-tab="main">Quiz principal</button>
+      <button class="aud-tab" data-tab="custom">
         Quizz perso
         <% if (customQuizAnswers && customQuizAnswers.length) { %>
           <span class="aud-tab-badge"><%= customQuizAnswers.length %></span>
@@ -19,7 +19,7 @@
     </div>
 
     <%# ══ PANNEAU QUIZ PRINCIPAL ══ %>
-    <div id="qzpanel-main">
+    <div class="aud-tab-panel active" id="aud-tab-main">
     <% if (!attempt || !liveScores) { %>
       <p class="admin-muted" style="margin-top:2rem">Aucune r&eacute;ponse enregistr&eacute;e.</p>
     <% } else { %>
@@ -179,10 +179,10 @@
     </div>
 
     <% } %>
-    </div><%# /qzpanel-main %>
+    </div><%# /aud-tab-main %>
 
     <%# ══ PANNEAU QUIZZ PERSO ══ %>
-    <div id="qzpanel-custom" hidden>
+    <div class="aud-tab-panel" id="aud-tab-custom" hidden>
     <%
       function answerLabel(q) {
         var a = q.answer;
@@ -243,18 +243,22 @@
       </div>
       <% }) %>
     <% } %>
-    </div><%# /qzpanel-custom %>
+    </div><%# /aud-tab-custom %>
 
-    <script>
-    function qzTab(name) {
-      ['main','custom'].forEach(function(n) {
-        var panel = document.getElementById('qzpanel-' + n);
-        var btn   = document.getElementById('qztab-'   + n);
-        if (!panel || !btn) return;
-        if (n === name) { panel.removeAttribute('hidden'); btn.classList.add('aud-tab--active'); }
-        else            { panel.setAttribute('hidden',''); btn.classList.remove('aud-tab--active'); }
+    <script nonce="<%= nonce %>">
+    (function () {
+      var tabs   = document.querySelectorAll('#qz-tabs .aud-tab');
+      var panels = document.querySelectorAll('.aud-tab-panel');
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          tabs.forEach(function (t) { t.classList.remove('active'); });
+          panels.forEach(function (p) { p.hidden = true; p.classList.remove('active'); });
+          tab.classList.add('active');
+          var panel = document.getElementById('aud-tab-' + tab.dataset.tab);
+          if (panel) { panel.hidden = false; panel.classList.add('active'); }
+        });
       });
-    }
+    })();
     </script>
 
   </main>
