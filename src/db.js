@@ -1415,7 +1415,7 @@ function setUserAccountStatus(userId, status) {
   db.prepare("UPDATE users SET account_status = ? WHERE id = ?").run(status, userId);
 }
 
-const VALID_ADMIN_TAGS = ['safe', 'douteux', 'fake'];
+const VALID_ADMIN_TAGS = ['safe', 'douteux', 'fake', 'technique'];
 function setAdminTag(userId, tag, note) {
   const cleanTag  = VALID_ADMIN_TAGS.includes(tag) ? tag : null;
   const cleanNote = typeof note === 'string' ? note.trim().slice(0, 200) : '';
