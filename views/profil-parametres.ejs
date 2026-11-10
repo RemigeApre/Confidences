@@ -10,67 +10,73 @@
     <% if (notice) { %><p class="profil-msg profil-msg-ok"><%= notice %></p><% } %>
 
     <section class="profil-panel">
-      <h2 class="profil-panel-title">Nature des contenus</h2>
+      <h2 class="profil-panel-title" data-fr="Nature des contenus" data-en="Content types">Nature des contenus</h2>
       <div class="profil-panel-grid">
         <div class="profil-card">
           <div class="profil-card-head">
             <span>Ultra</span>
           </div>
           <select class="profil-select" id="ultra-mode-select">
-            <option value="hidden">Masqu&eacute; (bascule)</option>
-            <option value="visible">Visible</option>
-            <option value="off">D&eacute;sactiv&eacute;</option>
+            <option value="hidden" data-fr="Masqu&eacute; (bascule)" data-en="Hidden (toggle)">Masqu&eacute; (bascule)</option>
+            <option value="visible" data-fr="Visible" data-en="Visible">Visible</option>
+            <option value="off" data-fr="D&eacute;sactiv&eacute;" data-en="Disabled">D&eacute;sactiv&eacute;</option>
           </select>
         </div>
 
         <div class="profil-card">
           <div class="profil-card-head">
-            <span>Irr&eacute;aliste</span>
+            <span data-fr="Irr&eacute;aliste" data-en="Unrealistic">Irr&eacute;aliste</span>
           </div>
           <select class="profil-select" id="irrealiste-mode-select">
-            <option value="hidden">Masqu&eacute; (bascule)</option>
-            <option value="visible">Visible</option>
-            <option value="off">D&eacute;sactiv&eacute;</option>
+            <option value="hidden" data-fr="Masqu&eacute; (bascule)" data-en="Hidden (toggle)">Masqu&eacute; (bascule)</option>
+            <option value="visible" data-fr="Visible" data-en="Visible">Visible</option>
+            <option value="off" data-fr="D&eacute;sactiv&eacute;" data-en="Disabled">D&eacute;sactiv&eacute;</option>
           </select>
         </div>
 
-        <a href="/favoris/masques" class="profil-card profil-card--plain-btn">Contenus masqu&eacute;s</a>
+        <a href="/favoris/masques" class="profil-card profil-card--plain-btn" data-fr="Contenus masqu&eacute;s" data-en="Hidden content">Contenus masqu&eacute;s</a>
       </div>
     </section>
 
     <section class="profil-panel">
-      <h2 class="profil-panel-title">Comportement du site</h2>
+      <h2 class="profil-panel-title" data-fr="Comportement du site" data-en="Site behaviour">Comportement du site</h2>
       <div class="profil-panel-grid">
         <div class="profil-card">
           <div class="profil-card-head">
-            <span>Filtrage des tags</span>
+            <span data-fr="Filtrage des tags" data-en="Tag filtering">Filtrage des tags</span>
           </div>
           <select class="profil-select" id="tag-logic-select">
-            <option value="and">ET (tous les tags)</option>
-            <option value="or">OU (au moins un)</option>
+            <option value="and" data-fr="ET (tous les tags)" data-en="AND (all tags)">ET (tous les tags)</option>
+            <option value="or" data-fr="OU (au moins un)" data-en="OR (at least one)">OU (au moins un)</option>
           </select>
         </div>
 
         <div class="profil-card">
           <div class="profil-card-head">
-            <span>Clic sur un tag</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Choisissez ce qui se passe quand vous cliquez sur un badge de tag : afficher un résumé, ou aller directement à sa page." aria-label="Comment fonctionne le clic sur un tag ?">!</span>
+            <span data-fr="Clic sur un tag" data-en="Click on a tag">Clic sur un tag</span>
+            <span class="profil-info-icon" tabindex="0"
+              data-tip="Choisissez ce qui se passe quand vous cliquez sur un badge de tag : afficher un résumé, ou aller directement à sa page."
+              data-tip-en="Choose what happens when you click a tag badge: show a summary, or go directly to its page."
+              aria-label="Comment fonctionne le clic sur un tag ?">!</span>
           </div>
           <select class="profil-select" id="tag-click-select">
-            <option value="popup">Aper&ccedil;u (popup)</option>
-            <option value="direct">Acc&egrave;s direct (codex ou images)</option>
+            <option value="popup" data-fr="Aper&ccedil;u (popup)" data-en="Preview (popup)">Aper&ccedil;u (popup)</option>
+            <option value="direct" data-fr="Acc&egrave;s direct (codex ou images)" data-en="Direct access (codex or images)">Acc&egrave;s direct (codex ou images)</option>
           </select>
         </div>
       </div>
     </section>
 
     <section class="profil-panel">
-      <h2 class="profil-panel-title">Visibilit&eacute; du profil</h2>
+      <h2 class="profil-panel-title" data-fr="Visibilit&eacute; du profil" data-en="Profile visibility">Visibilit&eacute; du profil</h2>
       <div class="profil-panel-grid">
         <div class="profil-card profil-card--wide">
           <div class="profil-card-head">
-            <span>Compte public</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Public : n'importe quel utilisateur peut voir votre profil et vous apparaîtrez dans les recherches et classements. Privé : seuls vos amis peuvent voir votre profil." aria-label="Différence entre compte public et privé">!</span>
+            <span data-fr="Compte public" data-en="Public account">Compte public</span>
+            <span class="profil-info-icon" tabindex="0"
+              data-tip="Public : n'importe quel utilisateur peut voir votre profil et vous apparaîtrez dans les recherches et classements. Privé : seuls vos amis peuvent voir votre profil."
+              data-tip-en="Public: any user can see your profile and you will appear in searches and rankings. Private: only your friends can see your profile."
+              aria-label="Différence entre compte public et privé">!</span>
           </div>
           <label class="profil-toggle">
             <input type="checkbox" id="profile-public-checkbox" <%= currentUser.profilePublic ? 'checked' : '' %> />
@@ -78,29 +84,41 @@
           </label>
         </div>
       </div>
-      <p class="profil-panel-hint"><% if (currentUser.profilePublic) { %>Votre profil est <strong>public</strong> : il est visible par tous et pourra apparaître dans les recherches et classements.<% } else { %>Votre profil est <strong>priv&eacute;</strong> : seuls vos amis peuvent le consulter.<% } %></p>
+      <p class="profil-panel-hint">
+        <% if (currentUser.profilePublic) { %>
+          <span data-fr="Votre profil est <strong>public</strong>&nbsp;: il est visible par tous et pourra appara&icirc;tre dans les recherches et classements." data-en="Your profile is <strong>public</strong>&nbsp;: it is visible to everyone and may appear in searches and rankings.">Votre profil est <strong>public</strong>&nbsp;: il est visible par tous et pourra appara&icirc;tre dans les recherches et classements.</span>
+        <% } else { %>
+          <span data-fr="Votre profil est <strong>priv&eacute;</strong>&nbsp;: seuls vos amis peuvent le consulter." data-en="Your profile is <strong>private</strong>&nbsp;: only your friends can view it.">Votre profil est <strong>priv&eacute;</strong>&nbsp;: seuls vos amis peuvent le consulter.</span>
+        <% } %>
+      </p>
     </section>
 
     <section class="profil-panel">
-      <h2 class="profil-panel-title">Gestion du compte</h2>
+      <h2 class="profil-panel-title" data-fr="Gestion du compte" data-en="Account management">Gestion du compte</h2>
       <div class="profil-panel-grid">
         <div class="profil-card">
           <div class="profil-card-head">
-            <span>Historique</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Durée pendant laquelle vos consultations récentes (codex, images, BD) restent visibles dans Profil > Historique." aria-label="Que fait ce réglage ?">!</span>
+            <span data-fr="Historique" data-en="History">Historique</span>
+            <span class="profil-info-icon" tabindex="0"
+              data-tip="Durée pendant laquelle vos consultations récentes (codex, images, BD) restent visibles dans Profil > Historique."
+              data-tip-en="How long your recent views (codex, images, comics) remain visible in Profile > History."
+              aria-label="Que fait ce réglage ?">!</span>
           </div>
           <select class="profil-select" id="history-retention-select">
-            <option value="3jours">3 jours</option>
-            <option value="1semaine">1 semaine</option>
-            <option value="1mois">1 mois</option>
-            <option value="3mois">3 mois</option>
+            <option value="3jours" data-fr="3 jours" data-en="3 days">3 jours</option>
+            <option value="1semaine" data-fr="1 semaine" data-en="1 week">1 semaine</option>
+            <option value="1mois" data-fr="1 mois" data-en="1 month">1 mois</option>
+            <option value="3mois" data-fr="3 mois" data-en="3 months">3 mois</option>
           </select>
         </div>
 
         <div class="profil-card">
           <div class="profil-card-head">
-            <span>S&rsquo;exposer aux admins</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Pour nous aider à améliorer le site, et aussi pour que vous fantasmiez qu'on observe votre activité. Prenez plaisir." aria-label="Que fait cette option ?">!</span>
+            <span data-fr="S&rsquo;exposer aux admins" data-en="Share with admins">S&rsquo;exposer aux admins</span>
+            <span class="profil-info-icon" tabindex="0"
+              data-tip="Pour nous aider à améliorer le site, et aussi pour que vous fantasmiez qu'on observe votre activité. Prenez plaisir."
+              data-tip-en="To help us improve the site, and also so you can fantasise that we're watching your activity. Enjoy."
+              aria-label="Que fait cette option ?">!</span>
           </div>
           <label class="profil-toggle">
             <input type="checkbox" id="share-notes-checkbox" <%= currentUser.shareNotesWithAdmin ? 'checked' : '' %> />
@@ -110,7 +128,7 @@
 
         <div class="profil-card">
           <div class="profil-card-head">
-            <span>Bouton &laquo;&nbsp;Inviter&nbsp;&raquo;</span>
+            <span data-fr="Bouton &laquo;&nbsp;Inviter&nbsp;&raquo;" data-en="&ldquo;Invite&rdquo; button">Bouton &laquo;&nbsp;Inviter&nbsp;&raquo;</span>
           </div>
           <label class="profil-toggle">
             <input type="checkbox" id="hide-invite-cta-checkbox" <%= currentUser.hideInviteCta ? 'checked' : '' %> />
@@ -120,8 +138,11 @@
 
         <div class="profil-card">
           <div class="profil-card-head">
-            <span>Newsletter</span>
-            <span class="profil-info-icon" tabindex="0" data-tip="Cochez pour ne plus recevoir les actualités du site par mail." aria-label="À propos de la newsletter">!</span>
+            <span data-fr="Newsletter" data-en="Newsletter">Newsletter</span>
+            <span class="profil-info-icon" tabindex="0"
+              data-tip="Cochez pour ne plus recevoir les actualités du site par mail."
+              data-tip-en="Check to stop receiving site news by email."
+              aria-label="À propos de la newsletter">!</span>
           </div>
           <label class="profil-toggle">
             <input type="checkbox" id="newsletter-checkbox" <%= !currentUser.newsletter ? 'checked' : '' %> />
@@ -132,10 +153,10 @@
 
       <div class="profil-danger-zone">
         <form method="POST" action="/favoris/parametres/reinitialiser" id="reset-account-form" class="profil-danger-row">
-          <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">R&eacute;initialiser le compte</button>
+          <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger" data-fr="R&eacute;initialiser le compte" data-en="Reset account">R&eacute;initialiser le compte</button>
         </form>
         <form method="POST" action="/favoris/parametres/supprimer" id="delete-account-form" class="profil-danger-row">
-          <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger">Supprimer le compte</button>
+          <button type="submit" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger" data-fr="Supprimer le compte" data-en="Delete account">Supprimer le compte</button>
         </form>
       </div>
     </section>
@@ -146,6 +167,8 @@
 
 <script nonce="<%= nonce %>">
 (function () {
+  var isEn = localStorage.getItem('slang') === 'en';
+
   // ── Ultra / Irréaliste / Historique (sauvegarde serveur) ─────────────────
   function savePref(field, value) {
     var body = {};
@@ -195,12 +218,17 @@
   if (profilePublicCheckbox) {
     profilePublicCheckbox.addEventListener("change", function () {
       savePref("profilePublic", profilePublicCheckbox.checked);
-      // Mettre à jour le texte d'état sans recharger la page
-      var hint = document.querySelector(".profil-panel-hint");
+      var hint = document.querySelector(".profil-panel-hint span");
       if (hint) {
-        hint.innerHTML = profilePublicCheckbox.checked
-          ? "Votre profil est <strong>public</strong>\u00a0: il est visible par tous et pourra appara\u00eetre dans les recherches et classements."
-          : "Votre profil est <strong>priv\u00e9</strong>\u00a0: seuls vos amis peuvent le consulter.";
+        if (profilePublicCheckbox.checked) {
+          hint.innerHTML = isEn
+            ? "Your profile is <strong>public</strong>\u00a0: it is visible to everyone and may appear in searches and rankings."
+            : "Votre profil est <strong>public</strong>\u00a0: il est visible par tous et pourra appara\u00eetre dans les recherches et classements.";
+        } else {
+          hint.innerHTML = isEn
+            ? "Your profile is <strong>private</strong>\u00a0: only your friends can view it."
+            : "Votre profil est <strong>priv\u00e9</strong>\u00a0: seuls vos amis peuvent le consulter.";
+        }
       }
     });
   }
@@ -218,11 +246,28 @@
   wireLocalSelect("tag-logic-select", "wiki-tag-logic", "and");
   wireLocalSelect("tag-click-select", "tag-click-mode", "popup");
 
-  // ── Zone dangereuse : double confirmation avant envoi, actions irréversibles ──
+  // ── Tooltips bilingues ────────────────────────────────────────────────────
+  document.querySelectorAll('.profil-info-icon[data-tip-en]').forEach(function (el) {
+    if (isEn) el.setAttribute('data-tip', el.getAttribute('data-tip-en'));
+  });
+
+  // ── Zone dangereuse : double confirmation avant envoi ─────────────────────
+  var MSG = {
+    resetConfirm: isEn
+      ? "Reset account? Your notes, stars, liked/interested, hidden content, comments and favourites will be permanently deleted."
+      : "R\u00e9initialiser le compte\u00a0? Vos notes, \u00e9toiles, j\u2019adore/int\u00e9ress\u00e9, contenus masqu\u00e9s, commentaires et favoris seront d\u00e9finitivement supprim\u00e9s.",
+    deleteConfirm1: isEn
+      ? "Permanently delete this account? This action is irreversible."
+      : "Supprimer d\u00e9finitivement ce compte\u00a0? Cette action est irr\u00e9versible.",
+    deleteConfirm2: isEn
+      ? "Final confirmation: the account and all its content will be lost forever. Continue?"
+      : "Derni\u00e8re confirmation\u00a0: le compte et tout son contenu seront perdus pour toujours. Continuer\u00a0?",
+  };
+
   var resetForm = document.getElementById("reset-account-form");
   if (resetForm) {
     resetForm.addEventListener("submit", function (e) {
-      if (!window.confirm("Réinitialiser le compte ? Vos notes, étoiles, j'adore/intéressé, contenus masqués, commentaires et favoris seront définitivement supprimés.")) {
+      if (!window.confirm(MSG.resetConfirm)) {
         e.preventDefault();
       }
     });
@@ -230,11 +275,11 @@
   var deleteForm = document.getElementById("delete-account-form");
   if (deleteForm) {
     deleteForm.addEventListener("submit", function (e) {
-      if (!window.confirm("Supprimer définitivement ce compte ? Cette action est irréversible.")) {
+      if (!window.confirm(MSG.deleteConfirm1)) {
         e.preventDefault();
         return;
       }
-      if (!window.confirm("Dernière confirmation : le compte et tout son contenu seront perdus pour toujours. Continuer ?")) {
+      if (!window.confirm(MSG.deleteConfirm2)) {
         e.preventDefault();
       }
     });
