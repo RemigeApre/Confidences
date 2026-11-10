@@ -57,6 +57,7 @@ const {
   setCharmRarity,
   grantGiftLootbox,
   grantSpecificImageToUser,
+  getUserOwnedImageIds,
   listCharms,
   THEME_DEFINITIONS,
   setThemeRarity,
@@ -1040,7 +1041,8 @@ function buildAdminRouter(config) {
     if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const items = ratedOrFavorited(id, "gallery", listGalleryImages);
     const topViews = withViewCounts(detail.galViewCounts, "galleryId", id, "gallery", listGalleryImages);
-    res.render("admin-user-images", { config, detail, items, topViews, roleHue: roleHue(detail.user) });
+    const ownedImageIds = new Set(getUserOwnedImageIds(id));
+    res.render("admin-user-images", { config, detail, items, topViews, ownedImageIds, roleHue: roleHue(detail.user) });
   });
 
   router.get("/utilisateur/:id/bd", requireAdmin, (req, res) => {

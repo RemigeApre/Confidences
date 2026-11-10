@@ -5631,6 +5631,10 @@ function markGiftItemSeen(userId, unlockId) {
   db.prepare("UPDATE user_unlocks SET is_new = 0 WHERE id = ? AND user_id = ?").run(unlockId, userId);
 }
 
+function getUserOwnedImageIds(userId) {
+  return db.prepare("SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'").all(userId).map(r => r.ref_id);
+}
+
 // Admin : donner une image spécifique directement à un utilisateur (sans lootbox aléatoire)
 function grantSpecificImageToUser(userId, galleryImageId) {
   const img = db.prepare("SELECT id, rarity FROM gallery_images WHERE id = ?").get(galleryImageId);
@@ -7552,6 +7556,7 @@ module.exports = {
   toggleUnlockFavorite,
   grantGiftLootbox,
   grantSpecificImageToUser,
+  getUserOwnedImageIds,
   getLootboxCountByType,
   listCharms,
   getCharmByKey,

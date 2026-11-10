@@ -26,9 +26,14 @@
             flame: !!img.flame,
             placeholderIcon: '&#128247;',
           }) %>
+          <% var _owned = ownedImageIds.has(img.id); %>
           <form method="POST" action="/ponhgup/utilisateur/<%= detail.user.id %>/grant-image" class="aud-grant-form">
             <input type="hidden" name="imageId" value="<%= img.id %>">
-            <button type="submit" class="aud-grant-btn" title="Donner cette image au coffre">Donner</button>
+            <button type="submit" class="aud-grant-btn<%= _owned ? ' aud-grant-btn--owned' : '' %>"
+                    title="<%= _owned ? 'Déjà dans le coffre' : 'Donner cette image au coffre' %>"
+                    <%= _owned ? 'disabled' : '' %>>
+              <%= _owned ? 'Déjà obtenue' : 'Donner' %>
+            </button>
           </form>
         </div>
       <% }) %>
