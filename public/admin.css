@@ -116,3 +116,86 @@
 .aud-pour-toi-title{font-size:.82rem;color:var(--fg);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aud-pour-toi-add-btn{flex-shrink:0;width:26px;height:26px;border-radius:5px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:hsl(140,60%,65%);font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .aud-pour-toi-add-btn:hover{background:rgba(74,222,128,.22)}
+
+/* Burger et menu mobile : toujours cachés sur desktop */
+.adm-burger{display:none}
+.adm-mob-menu{display:none}
+
+/* ══════════════════════════════════════════════════════════════
+   ADMIN MOBILE  @media(max-width:640px)
+   Toutes les règles ci-dessous n'affectent QUE le mobile.
+   Aucun impact sur desktop ni sur le côté utilisateur
+   (admin.css n'est chargé que sur les pages /ponhgup).
+══════════════════════════════════════════════════════════════ */
+@media(max-width:640px){
+
+  /* ── Variable hauteur nav ── */
+  body{--adm-nav-h:52px}
+
+  /* ── Burger button (caché sur desktop) ── */
+  .adm-burger{display:flex;flex-direction:column;justify-content:center;gap:5px;width:38px;height:38px;padding:7px 6px;background:none;border:none;cursor:pointer;flex-shrink:0;border-radius:6px}
+  .adm-burger span{display:block;height:2px;background:#fff;border-radius:2px;transition:transform .22s,opacity .15s,transform .22s}
+  .adm-nav--mob-open .adm-burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .adm-nav--mob-open .adm-burger span:nth-child(2){opacity:0;transform:scaleX(0)}
+  .adm-nav--mob-open .adm-burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+  /* ── Nav : compacte par défaut, plein écran quand ouverte ── */
+  .adm-nav{overflow:hidden;height:52px}
+  .adm-nav--mob-open{position:fixed;inset:0;height:100dvh;overflow-y:auto;z-index:999;background:#2d0505}
+  .adm-nav-top{padding:0 .6rem;gap:.5rem}
+  .adm-grps{display:none}
+  .adm-home{position:static;transform:none;font-size:.8rem;padding:.28rem .65rem}
+  .adm-sub{display:none!important}
+
+  /* ── Menu mobile ── */
+  .adm-mob-menu{display:none;flex-direction:column;padding:.75rem .9rem 2rem;gap:.1rem}
+  .adm-nav--mob-open .adm-mob-menu{display:flex}
+  .adm-mob-section{display:flex;flex-direction:column;margin-bottom:.75rem}
+  .adm-mob-section-label{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);padding:.35rem .1rem .2rem}
+  .adm-mob-link{padding:.6rem .75rem;color:#ffcccc;text-decoration:none;font-size:.9rem;font-weight:600;border-radius:7px;border-bottom:1px solid rgba(255,255,255,.05);transition:background .12s,color .12s}
+  .adm-mob-link:hover,.adm-mob-link--active{background:rgba(248,113,113,.14);color:#fff}
+  .adm-mob-home{margin-top:1rem;padding:.6rem .75rem;color:rgba(255,255,255,.45);text-decoration:none;font-size:.82rem;border-top:1px solid rgba(255,255,255,.1)}
+
+  /* ── Dashboard : grille 2 colonnes ── */
+  .admin-user-lib{grid-template-columns:repeat(2,1fr);gap:.45rem}
+  .admin-utile{aspect-ratio:auto;padding-top:.8rem}
+  .admin-main{padding:1rem .65rem 3rem}
+  .adm-uf-panel{margin-bottom:1rem}
+
+  /* ── Drawer : plein écran sur mobile ── */
+  .adm-drawer{width:100%;left:0}
+
+  /* ── User detail : sidebar → barre horizontale ── */
+  .aud-layout{flex-direction:column}
+  .aud-nav{position:static!important;width:100%;border-radius:0;margin-bottom:0;padding-bottom:0;border-bottom:1px solid rgba(255,255,255,.1)}
+  .aud-nav-header{display:none}
+  .aud-nav-links{flex-direction:row;overflow-x:auto;padding:.4rem .5rem;gap:.2rem;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  .aud-nav-links::-webkit-scrollbar{display:none}
+  .aud-nav-link{flex-direction:column;align-items:center;gap:.2rem;padding:.45rem .55rem;border-radius:8px;font-size:.58rem;letter-spacing:.01em;white-space:nowrap;flex-shrink:0;min-width:0}
+  .aud-nav-icon{width:1.25rem;height:1.25rem;opacity:1}
+  .aud-content{padding:1rem .65rem 3rem}
+
+  /* ── Onglets horizontaux scrollables ── */
+  .aud-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:.1rem}
+  .aud-tabs::-webkit-scrollbar{display:none}
+
+  /* ── Tables overflow ── */
+  .adm-audit-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* ── Modals plein écran ── */
+  .admin-modal{width:calc(100vw - 2rem);border-radius:12px}
+
+  /* ── Filter panel : compact ── */
+  .adm-uf-hd{padding:.75rem 1rem .65rem}
+  .adm-uf-body{padding:.75rem .9rem 1.5rem;gap:.75rem}
+
+  /* ── Vue toggle button : repositionné ── */
+  .aud-view-toggle{right:.75rem;bottom:.75rem;padding:.55rem .9rem;font-size:.8rem}
+
+  /* ── Synthèse utilisateur ── */
+  .aud-section-header{flex-direction:column;align-items:flex-start;gap:.4rem}
+  .admin-kpi-grid{grid-template-columns:repeat(2,1fr)}
+
+  /* ── Grant wrap ── */
+  .aud-grant-wrap{break-inside:avoid}
+}

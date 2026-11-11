@@ -13,6 +13,9 @@
 <nav class="adm-nav" id="adm-nav">
 
   <div class="adm-nav-top">
+    <button class="adm-burger" id="adm-burger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
     <div class="adm-grps">
       <button class="adm-grp<%= _activeGroup==='users' ? ' active' : '' %>" data-grp="users">Utilisateurs</button>
       <button class="adm-grp<%= _activeGroup==='resources' ? ' active' : '' %>" data-grp="resources">Ressources</button>
@@ -20,6 +23,32 @@
       <button class="adm-grp<%= _activeGroup==='audit' ? ' active' : '' %>" data-grp="audit">Log admin</button>
     </div>
     <a href="/" class="adm-home">&#8617; Retour au site</a>
+  </div>
+
+  <%# ── Menu mobile (caché sur desktop, visible via burger) ── %>
+  <div class="adm-mob-menu" id="adm-mob-menu" aria-hidden="true">
+    <div class="adm-mob-section">
+      <span class="adm-mob-section-label">Utilisateurs</span>
+      <a class="adm-mob-link<%= _activeGroup==='users' ? ' adm-mob-link--active' : '' %>" href="/ponhgup">Gestion</a>
+      <a class="adm-mob-link" href="/ponhgup#tab-demandes-compte">Demandes</a>
+      <a class="adm-mob-link" href="/ponhgup#tab-log">Connexions</a>
+      <a class="adm-mob-link" href="/ponhgup/ip-logs">IP Logs</a>
+    </div>
+    <div class="adm-mob-section">
+      <span class="adm-mob-section-label">Ressources</span>
+      <a class="adm-mob-link<%= _activeGroup==='resources' ? ' adm-mob-link--active' : '' %>" href="/ponhgup#tab-wiki">Codex</a>
+      <a class="adm-mob-link" href="/ponhgup#tab-galerie">Galerie</a>
+      <a class="adm-mob-link" href="/ponhgup#tab-bd">BD</a>
+      <a class="adm-mob-link" href="/ponhgup#tab-histoires">Histoires</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses">R&eacute;compenses</a>
+      <a class="adm-mob-link" href="/ponhgup/jeux">Jeux</a>
+    </div>
+    <div class="adm-mob-section">
+      <span class="adm-mob-section-label">Suivi</span>
+      <a class="adm-mob-link" href="/ponhgup#tab-changelog">Changelog</a>
+      <a class="adm-mob-link" href="/ponhgup#tab-audit">Log admin</a>
+    </div>
+    <a href="/" class="adm-mob-home">&larr; Retour au site</a>
   </div>
 
   <div class="adm-sub<%= _activeGroup!=='users' ? ' adm-sub--off' : '' %>" data-grp-panel="users">
@@ -150,6 +179,26 @@
         if (section) window.admSwitchTab(tabId, logPanel);
       }
     })();
+  }
+  // ── Burger mobile ─────────────────────────────────────────────
+  var burger = document.getElementById('adm-burger');
+  var mobMenu = document.getElementById('adm-mob-menu');
+  if (burger && mobMenu) {
+    burger.addEventListener('click', function() {
+      var open = nav.classList.toggle('adm-nav--mob-open');
+      burger.setAttribute('aria-expanded', open);
+      mobMenu.setAttribute('aria-hidden', !open);
+      document.body.style.overflow = open ? 'hidden' : '';
+    });
+    // Fermer sur clic sur un lien du menu mobile
+    mobMenu.addEventListener('click', function(e) {
+      if (e.target.closest('a')) {
+        nav.classList.remove('adm-nav--mob-open');
+        burger.setAttribute('aria-expanded', 'false');
+        mobMenu.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+    });
   }
 })();
 </script>
