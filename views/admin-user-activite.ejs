@@ -24,7 +24,11 @@
             <% var meta = TYPE_META[f.type] || TYPE_META.nav; %>
             <li class="aud-activity-row">
               <span class="aud-activity-type <%= meta.cls %>"><%= meta.label %></span>
-              <% if (f.href) { %>
+              <% if (f.type === 'gallery' && f.imagePath) { %>
+                <button type="button" class="aud-activity-title aud-activity-img-btn link-button"
+                        data-img-src="<%= f.imagePath %>"
+                        data-img-title="<%= (f.label || '').replace(/"/g,'&quot;') %>"><%= f.label || '—' %></button>
+              <% } else if (f.href) { %>
                 <a href="<%= f.href %>" class="aud-activity-title"><%= f.label || '—' %></a>
               <% } else { %>
                 <span class="aud-activity-title"><%= f.label || '—' %></span>
@@ -40,4 +44,43 @@
 
   </main>
 </div>
+<%# ── Lightbox admin activité ── %>
+<div class="adm-img-lb" id="adm-act-lb" hidden>
+  <button class="adm-img-lb-close" id="adm-act-lb-close" aria-label="Fermer">&#215;</button>
+  <img class="adm-img-lb-img" id="adm-act-lb-img" src="" alt="" />
+  <div class="adm-img-lb-title" id="adm-act-lb-title"></div>
+</div>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var lb      = document.getElementById('adm-act-lb');
+  var lbImg   = document.getElementById('adm-act-lb-img');
+  var lbTitle = document.getElementById('adm-act-lb-title');
+  var lbClose = document.getElementById('adm-act-lb-close');
+  if (!lb) return;
+
+  function open(src, title) {
+    lbImg.src = src;
+    lbImg.alt = title || '';
+    lbTitle.textContent = title || '';
+    lb.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lb.hidden = true;
+    lbImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  lbClose.addEventListener('click', close);
+  lb.addEventListener('click', function(e) { if (e.target === lb) close(); });
+  document.addEventListener('keydown', function(e) { if (!lb.hidden && e.key === 'Escape') close(); });
+
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.aud-activity-img-btn');
+    if (!btn) return;
+    open(btn.dataset.imgSrc, btn.dataset.imgTitle);
+  });
+})();
+</script>
 <%- include('partials/foot') %>

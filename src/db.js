@@ -2609,11 +2609,12 @@ function getUserDetail(id) {
     return { pageId: r.page_id, title: r.title, viewCount: r.view_count };
   });
   const recentGalViews = db.prepare(
-    `SELECT gv.created_at, gi.id AS gallery_id, gi.title
+    `SELECT gv.created_at, gi.id AS gallery_id, gi.title, gi.image_paths
      FROM gallery_views gv JOIN gallery_images gi ON gi.id = gv.gallery_id
      WHERE gv.user_id = ? ORDER BY gv.id DESC LIMIT 30`
   ).all(id).map(function(r) {
-    return { createdAt: r.created_at, galleryId: r.gallery_id, title: r.title };
+    const paths = JSON.parse(r.image_paths || '[]');
+    return { createdAt: r.created_at, galleryId: r.gallery_id, title: r.title, imagePath: paths[0] || null };
   });
   // Top gallery items by view count for this user
   const galViewCounts = db.prepare(

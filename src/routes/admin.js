@@ -1088,7 +1088,7 @@ function buildAdminRouter(config) {
     if (!detail) return res.redirect("/ponhgup#tab-utilisateurs");
     const feed = [];
     detail.recentWikiViews.forEach((v) => feed.push({ type: "wiki",    label: v.title,    at: v.createdAt,  href: "/wiki/"    + v.pageId }));
-    detail.recentGalViews.forEach((v) => feed.push({ type: "gallery",  label: v.title,    at: v.createdAt,  href: "/galerie/" + v.galleryId + "/edit" }));
+    detail.recentGalViews.forEach((v) => feed.push({ type: "gallery",  label: v.title,    at: v.createdAt,  href: null, imagePath: v.imagePath || null, galleryId: v.galleryId }));
     detail.recentBdViews.forEach((v)  => feed.push({ type: "bd",       label: v.title,    at: v.createdAt,  href: "/bd/"      + v.bookId }));
     // Pings de navigation : personnages, parodies, quiz, nouvelles, etc.
     // On exclut les chemins déjà couverts par les tables de vues dédiées,
