@@ -7185,8 +7185,8 @@ function getConversation(id) {
 function getConversations(userId) {
   return db.prepare(`
     SELECT c.*,
-      u1.display_name AS p1_name, u1.profile_color AS p1_color,
-      u2.display_name AS p2_name, u2.profile_color AS p2_color,
+      u1.display_name AS p1_name, u1.profile_color AS p1_color, u1.is_admin AS p1_is_admin,
+      u2.display_name AS p2_name, u2.profile_color AS p2_color, u2.is_admin AS p2_is_admin,
       (SELECT COUNT(*) FROM messages m
        WHERE m.conv_id = c.id AND m.sender_id != ? AND m.read_at IS NULL
          AND (c.p1_id = ? AND m.del_p1 = 0 OR c.p2_id = ? AND m.del_p2 = 0)) AS unread

@@ -9,7 +9,8 @@
       <div id="msg-state"
            data-conv-id="<%= conv.id %>"
            data-partner-id="<%= partner.id %>"
-           data-my-id="<%= currentUser.id %>">
+           data-my-id="<%= currentUser.id %>"
+           data-partner-is-admin="<%= partner.isAdmin ? '1' : '' %>">
       </div>
 
       <div class="msg-thread-header">
@@ -19,7 +20,10 @@
         <div class="msg-thread-avatar" style="background:<%= partner.profileColor || '#6b7280' %>">
           <%= (partner.displayName || '?').charAt(0).toUpperCase() %>
         </div>
-        <a href="/profil/<%= partner.displayName || partner.username %>" class="msg-thread-name"><%= partner.displayName %></a>
+        <a href="/profil/<%= partner.displayName || partner.username %>" class="msg-thread-name">
+          <%= partner.displayName %>
+          <% if (partner.isAdmin) { %><span class="msg-admin-badge">admin</span><% } %>
+        </a>
         <a href="/messages/<%= partner.id %>/library" class="msg-thread-library-btn" title="Bibliothèque partagée" aria-label="Bibliothèque partagée">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
         </a>
@@ -35,6 +39,9 @@
           <article class="msg-bubble msg-bubble--<%= m.sender_id === currentUser.id ? 'me' : 'them' %>"
                    data-id="<%= m.id %>">
             <div class="msg-bubble-inner">
+              <% if (m.sender_id !== currentUser.id && partner.isAdmin) { %>
+                <span class="msg-bubble-admin-badge">admin</span>
+              <% } %>
               <div class="msg-bubble-text"><%- m.payload.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') %></div>
               <% if (m.content_ref) { %>
                 <div class="msg-bubble-ref" data-ref="<%= encodeURIComponent(m.content_ref) %>"></div>
@@ -101,7 +108,10 @@
             <%= (c.partnerName || '?').charAt(0).toUpperCase() %>
           </div>
           <div class="msg-list-info">
-            <span class="msg-list-name"><%= c.partnerName %></span>
+            <span class="msg-list-name">
+              <%= c.partnerName %>
+              <% if (c.partnerIsAdmin) { %><span class="msg-admin-badge">admin</span><% } %>
+            </span>
             <span class="msg-list-date"><%= new Date(c.last_message_at).toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) %></span>
           </div>
           <% if (c.unread > 0) { %>
@@ -121,10 +131,11 @@
 (function () {
   'use strict';
 
-  var state     = document.getElementById('msg-state').dataset;
-  var convId    = parseInt(state.convId, 10);
-  var partnerId = parseInt(state.partnerId, 10);
-  var myId      = parseInt(state.myId, 10);
+  var state          = document.getElementById('msg-state').dataset;
+  var convId         = parseInt(state.convId, 10);
+  var partnerId      = parseInt(state.partnerId, 10);
+  var myId           = parseInt(state.myId, 10);
+  var partnerIsAdmin = !!state.partnerIsAdmin;
 
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -243,6 +254,7 @@
     }
     el.innerHTML =
       '<div class="msg-bubble-inner">' +
+        (!isMe && partnerIsAdmin ? '<span class="msg-bubble-admin-badge">admin</span>' : '') +
         '<div class="msg-bubble-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>' +
         refHtml +
         '<div class="msg-bubble-meta">' +
@@ -347,6 +359,10 @@
 <% } %>
 
 <style>
+/* ── Badge admin ── */
+.msg-admin-badge{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:hsl(220,80%,38%);color:#fff;border-radius:4px;padding:.1rem .4rem;margin-left:.45rem;vertical-align:middle;line-height:1.5}
+.msg-bubble-admin-badge{display:block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:hsl(220,70%,65%);margin-bottom:.15rem;line-height:1}
+
 /* ── Bouton supprimer discussion ── */
 .msg-thread-delete-conv-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:.3rem;border-radius:6px;display:flex;align-items:center;line-height:0;transition:color .15s}
 .msg-thread-delete-conv-btn:hover{color:hsl(0,60%,55%)}

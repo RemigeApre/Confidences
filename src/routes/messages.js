@@ -110,6 +110,7 @@ function buildRouter(config) {
         partnerId: pId,
         partnerName: c.p1_id === uid ? c.p2_name : c.p1_name,
         partnerColor: c.p1_id === uid ? c.p2_color : c.p1_color,
+        partnerIsAdmin: !!(c.p1_id === uid ? c.p2_is_admin : c.p1_is_admin),
       };
     });
   }
