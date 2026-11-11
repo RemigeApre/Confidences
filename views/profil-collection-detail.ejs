@@ -28,10 +28,13 @@
     </div>
 
     <div class="gallery-grid" id="collection-items-grid"<%= items.length ? '' : ' hidden' %>>
-      <% items.forEach(function (img) { %>
+      <% items.forEach(function (img, _lbIdx) { %>
         <div class="gallery-card" data-collection-item data-gallery-id="<%= img.id %>">
           <% if (img.imagePaths && img.imagePaths[0]) { %>
-            <a href="/galerie/<%= img.id %>/edit">
+            <a href="/galerie/<%= img.id %>/edit" class="coll-lb-trigger"
+               data-lb-idx="<%= _lbIdx %>"
+               data-lb-src="<%= img.imagePaths[0] %>"
+               data-lb-title="<%= (img.title || '').replace(/"/g,'&quot;') %>">
               <img src="<%= thumbUrl(img.imagePaths[0]) %>" alt="<%= img.title || '' %>" class="gallery-img" loading="lazy" />
             </a>
           <% } %>
@@ -54,6 +57,18 @@
         <button type="button" class="filter-profile-modal-confirm" id="collection-edit-confirm">Enregistrer</button>
       </div>
     </div>
+  </div>
+
+  <%# ── Lightbox ──────────────────────────────────────────────────────────── %>
+  <div class="coll-lb" id="coll-lb" hidden aria-modal="true" role="dialog">
+    <button class="coll-lb-close" id="coll-lb-close" aria-label="Fermer">&#215;</button>
+    <button class="coll-lb-nav coll-lb-nav--prev" id="coll-lb-prev" aria-label="Pr&eacute;c&eacute;dent">&#8249;</button>
+    <div class="coll-lb-img-wrap">
+      <img class="coll-lb-img" id="coll-lb-img" src="" alt="" />
+    </div>
+    <button class="coll-lb-nav coll-lb-nav--next" id="coll-lb-next" aria-label="Suivant">&#8250;</button>
+    <div class="coll-lb-title" id="coll-lb-title"></div>
+    <div class="coll-lb-counter" id="coll-lb-counter"></div>
   </div>
 
 </main>
@@ -88,6 +103,73 @@
         })
         .catch(function () { btn.disabled = false; });
     });
+  }
+
+  // ── Lightbox ──────────────────────────────────────────────────────────────
+  var lb       = document.getElementById('coll-lb');
+  var lbImg    = document.getElementById('coll-lb-img');
+  var lbTitle  = document.getElementById('coll-lb-title');
+  var lbCount  = document.getElementById('coll-lb-counter');
+  var lbClose  = document.getElementById('coll-lb-close');
+  var lbPrev   = document.getElementById('coll-lb-prev');
+  var lbNext   = document.getElementById('coll-lb-next');
+  var lbItems  = [];
+  var lbIdx    = 0;
+
+  function buildLbItems() {
+    lbItems = Array.from(document.querySelectorAll('.coll-lb-trigger'));
+  }
+
+  function lbShow(idx) {
+    buildLbItems();
+    if (!lbItems.length) return;
+    lbIdx = (idx + lbItems.length) % lbItems.length;
+    var el = lbItems[lbIdx];
+    lbImg.src = el.dataset.lbSrc;
+    lbImg.alt = el.dataset.lbTitle || '';
+    lbTitle.textContent = el.dataset.lbTitle || '';
+    lbCount.textContent = (lbIdx + 1) + ' / ' + lbItems.length;
+    lbPrev.hidden = lbItems.length <= 1;
+    lbNext.hidden = lbItems.length <= 1;
+    lb.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function lbClose_() {
+    lb.hidden = true;
+    lbImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  if (lb) {
+    // Clic déclencheur
+    if (grid) {
+      grid.addEventListener('click', function(e) {
+        var trigger = e.target.closest('.coll-lb-trigger');
+        if (!trigger) return;
+        e.preventDefault();
+        lbShow(Number(trigger.dataset.lbIdx));
+      });
+    }
+    // Boutons
+    lbClose.addEventListener('click', lbClose_);
+    lbPrev.addEventListener('click', function() { lbShow(lbIdx - 1); });
+    lbNext.addEventListener('click', function() { lbShow(lbIdx + 1); });
+    lb.addEventListener('click', function(e) { if (e.target === lb) lbClose_(); });
+    // Clavier
+    document.addEventListener('keydown', function(e) {
+      if (lb.hidden) return;
+      if (e.key === 'Escape') lbClose_();
+      if (e.key === 'ArrowLeft')  lbShow(lbIdx - 1);
+      if (e.key === 'ArrowRight') lbShow(lbIdx + 1);
+    });
+    // Swipe tactile
+    var _tx = 0;
+    lb.addEventListener('touchstart', function(e) { _tx = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener('touchend', function(e) {
+      var dx = e.changedTouches[0].clientX - _tx;
+      if (Math.abs(dx) > 50) lbShow(dx < 0 ? lbIdx + 1 : lbIdx - 1);
+    }, { passive: true });
   }
 
   // ── Modifier titre/description/tags ──────────────────────────────────────

@@ -16,7 +16,7 @@
         <p class="admin-muted">Aucune note ni favori image.</p>
       <% } %>
       <% items.forEach(function(img) { %>
-        <div class="aud-grant-wrap">
+        <div class="aud-grant-wrap" data-full-src="<%= (img.imagePaths && img.imagePaths[0]) || '' %>" data-img-title="<%= (img.title || '').replace(/"/g,'&quot;') %>">
           <%- include('partials/admin-content-card', {
             href: '/galerie/' + img.id + '/edit',
             coverImg: (img.imagePaths && img.imagePaths[0]) || img.filename,
@@ -45,15 +45,17 @@
       </div>
       <div class="aud-card-grid" id="aud-images-views" hidden>
         <% topViews.forEach(function(img) { %>
-          <%- include('partials/admin-content-card', {
-            href: '/galerie/' + img.id + '/edit',
-            coverImg: (img.imagePaths && img.imagePaths[0]) || img.filename,
-            title: img.title || 'Sans titre',
-            viewCount: img.viewCount,
-            rating: img.rating || 0,
-            flame: !!img.flame,
-            placeholderIcon: '&#128247;',
-          }) %>
+          <div data-full-src="<%= (img.imagePaths && img.imagePaths[0]) || '' %>" data-img-title="<%= (img.title || '').replace(/"/g,'&quot;') %>">
+            <%- include('partials/admin-content-card', {
+              href: '/galerie/' + img.id + '/edit',
+              coverImg: (img.imagePaths && img.imagePaths[0]) || img.filename,
+              title: img.title || 'Sans titre',
+              viewCount: img.viewCount,
+              rating: img.rating || 0,
+              flame: !!img.flame,
+              placeholderIcon: '&#128247;',
+            }) %>
+          </div>
         <% }) %>
       </div>
       <button type="button" class="aud-view-toggle" id="aud-images-toggle-views">
@@ -65,8 +67,50 @@
   </main>
 </div>
 
+<%# ── Lightbox admin (simple : image + fermer) ── %>
+<div class="adm-img-lb" id="adm-img-lb" hidden>
+  <button class="adm-img-lb-close" id="adm-img-lb-close" aria-label="Fermer">&#215;</button>
+  <img class="adm-img-lb-img" id="adm-img-lb-img" src="" alt="" />
+  <div class="adm-img-lb-title" id="adm-img-lb-title"></div>
+</div>
+
 <script nonce="<%= nonce %>">
 (function () {
+  // ── Lightbox ──────────────────────────────────────────────────────────────
+  var aLb     = document.getElementById('adm-img-lb');
+  var aLbImg  = document.getElementById('adm-img-lb-img');
+  var aLbTtl  = document.getElementById('adm-img-lb-title');
+  var aLbClose= document.getElementById('adm-img-lb-close');
+
+  function aLbOpen(src, title) {
+    aLbImg.src = src;
+    aLbImg.alt = title || '';
+    aLbTtl.textContent = title || '';
+    aLb.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function aLbCloseF() {
+    aLb.hidden = true;
+    aLbImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  if (aLb) {
+    aLbClose.addEventListener('click', aLbCloseF);
+    aLb.addEventListener('click', function(e) { if (e.target === aLb) aLbCloseF(); });
+    document.addEventListener('keydown', function(e) { if (!aLb.hidden && e.key === 'Escape') aLbCloseF(); });
+
+    document.addEventListener('click', function(e) {
+      var card = e.target.closest('.aud-card');
+      if (!card) return;
+      var wrap = card.closest('[data-full-src]');
+      if (!wrap || !wrap.dataset.fullSrc) return;
+      e.preventDefault();
+      aLbOpen(wrap.dataset.fullSrc, wrap.dataset.imgTitle);
+    });
+  }
+
+  // ── Toggle vues ───────────────────────────────────────────────────────────
   var btn = document.getElementById("aud-images-toggle-views");
   if (!btn) return;
   var items = document.getElementById("aud-images-items");
