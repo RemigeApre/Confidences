@@ -3559,15 +3559,22 @@ function getCardStats() {
 function listWikiPagesForCards() {
   const placeholders = CARD_EXCLUDED_CATEGORIES.map(() => '?').join(',');
   const pages = db.prepare(
-    `SELECT id, title, category, card_rarity, card_summary, image_paths FROM wiki_pages
-     WHERE category NOT IN (${placeholders})
-     ORDER BY category, title`
+    `SELECT w.id, w.title, w.category, w.card_rarity, w.card_summary, w.image_paths,
+            w.classeur_id, c.name AS classeur_name, c.color AS classeur_color
+     FROM wiki_pages w
+     LEFT JOIN classeurs c ON c.id = w.classeur_id
+     WHERE w.category NOT IN (${placeholders})
+     ORDER BY w.category, w.title`
   ).all(...CARD_EXCLUDED_CATEGORIES).map(r => {
     let imagePaths = []; try { imagePaths = JSON.parse(r.image_paths || '[]'); } catch(_) {}
     const variants = db.prepare(
       "SELECT id, title, card_summary, card_rarity FROM wiki_card_variants WHERE wiki_page_id = ? ORDER BY id"
     ).all(r.id);
-    return { id: r.id, title: r.title, category: r.category, cardRarity: r.card_rarity || 'rare', cardSummary: r.card_summary || null, thumb: imagePaths[0] || null, variants };
+    return {
+      id: r.id, title: r.title, category: r.category, cardRarity: r.card_rarity || 'rare',
+      cardSummary: r.card_summary || null, thumb: imagePaths[0] || null, variants,
+      classeurId: r.classeur_id || null, classeurName: r.classeur_name || null, classeurColor: r.classeur_color || null,
+    };
   });
   return pages;
 }
@@ -6268,6 +6275,79 @@ function setPersonnageCollection(protagonisteId, collectionId) {
     .run(collectionId || null, protagonisteId);
 }
 
+// ── Classeurs (albums à collectionner, type Panini) : regroupent des cartes
+// Codex (wiki_pages). Une carte n'appartient qu'à un seul classeur à la fois
+// — simple colonne nullable classeur_id sur wiki_pages (même principe que
+// protagonistes.collection_id ci-dessus), pas de table de liaison nécessaire.
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS classeurs (
+      id          INTEGER PRIMARY KEY,
+      name        TEXT    NOT NULL DEFAULT '',
+      slug        TEXT    NOT NULL DEFAULT '',
+      description TEXT    NOT NULL DEFAULT '',
+      color       TEXT    NOT NULL DEFAULT '#6366f1',
+      banner_path TEXT    NOT NULL DEFAULT '',
+      sort_order  INTEGER NOT NULL DEFAULT 0,
+      is_published INTEGER NOT NULL DEFAULT 1,
+      created_at  INTEGER DEFAULT (unixepoch())
+    )
+  `);
+} catch(_) {}
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN classeur_id INTEGER REFERENCES classeurs(id)"); } catch(_) {}
+
+function listClasseurs() {
+  return db.prepare(
+    `SELECT c.*, COUNT(w.id) as card_count
+     FROM classeurs c
+     LEFT JOIN wiki_pages w ON w.classeur_id = c.id
+     GROUP BY c.id
+     ORDER BY c.sort_order, c.name COLLATE NOCASE`
+  ).all();
+}
+
+function getClasseur(id) {
+  return db.prepare("SELECT * FROM classeurs WHERE id=?").get(id);
+}
+
+function createClasseur({ name, slug, description, color, sortOrder, isPublished }) {
+  const r = db.prepare(
+    "INSERT INTO classeurs (name,slug,description,color,sort_order,is_published) VALUES (?,?,?,?,?,?)"
+  ).run(
+    String(name||'').trim(),
+    String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
+    String(description||'').trim(),
+    String(color||'#6366f1').trim(),
+    Number(sortOrder)||0,
+    isPublished ? 1 : 0
+  );
+  return r.lastInsertRowid;
+}
+
+function updateClasseur(id, { name, slug, description, color, sortOrder, isPublished }) {
+  db.prepare(
+    "UPDATE classeurs SET name=?,slug=?,description=?,color=?,sort_order=?,is_published=? WHERE id=?"
+  ).run(
+    String(name||'').trim(),
+    String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
+    String(description||'').trim(),
+    String(color||'#6366f1').trim(),
+    Number(sortOrder)||0,
+    isPublished ? 1 : 0,
+    id
+  );
+}
+
+function deleteClasseur(id) {
+  db.prepare("UPDATE wiki_pages SET classeur_id=NULL WHERE classeur_id=?").run(id);
+  db.prepare("DELETE FROM classeurs WHERE id=?").run(id);
+}
+
+function setWikiCardClasseur(wikiPageId, classeurId) {
+  db.prepare("UPDATE wiki_pages SET classeur_id=? WHERE id=?")
+    .run(classeurId || null, wikiPageId);
+}
+
 // ── Sécurité login : suivi des échecs par username ───────────────────────
 db.exec(`
   CREATE TABLE IF NOT EXISTS login_failures (
@@ -7803,6 +7883,7 @@ module.exports = {
   updateCardCollection,
   deleteCardCollection,
   setPersonnageCollection,
+  listClasseurs, getClasseur, createClasseur, updateClasseur, deleteClasseur, setWikiCardClasseur,
   listRaces, getRace, createRace, updateRace, deleteRace,
   listClansForRace, createClan, updateClan, deleteClan,
   setProtagonisteRace,

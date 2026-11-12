@@ -84,6 +84,12 @@ const {
   updateCardCollection,
   deleteCardCollection,
   setPersonnageCollection,
+  listClasseurs,
+  getClasseur,
+  createClasseur,
+  updateClasseur,
+  deleteClasseur,
+  setWikiCardClasseur,
   listRaces, getRace, createRace, updateRace, deleteRace,
   listClansForRace, createClan, updateClan, deleteClan,
   createCardVariant,
@@ -1181,8 +1187,9 @@ function buildAdminRouter(config) {
     const personnageCards = listProtagonistesForCards();
     const personnageCardStatsByRarity = Object.fromEntries(rarities.map(r => [r, personnageCards.filter(c => c.cardRarity === r).length]));
     const cardCollections = listCardCollections();
+    const classeurs = listClasseurs();
     const races = listRaces();
-    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity, passifs: PASSIFS, actionEffets: ACTION_EFFETS, cardCollections, races });
+    res.render("admin-recompenses", { config, lootboxConfig, charms, section, images, themeDefs: THEME_DEFINITIONS, imageStats, charmStats, themeStats, themeAlways, wikiCards, cardStats, cardStatsByRarity, personnageCards, personnageCardStatsByRarity, passifs: PASSIFS, actionEffets: ACTION_EFFETS, cardCollections, classeurs, races });
   });
 
   router.post("/recompenses/config", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
@@ -1388,6 +1395,41 @@ function buildAdminRouter(config) {
     const id = Number(req.params.id);
     if (!id) return res.json({ ok: false });
     deleteCardCollection(id);
+    res.json({ ok: true });
+  });
+
+  // ── Cartes Codex — classeur (une carte = un seul classeur à la fois) ──────
+  router.post("/recompenses/cards/:id/classeur", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    const classeurId = req.body.classeurId ? Number(req.body.classeurId) : null;
+    setWikiCardClasseur(id, classeurId);
+    res.json({ ok: true });
+  });
+
+  // ── Classeurs — CRUD ───────────────────────────────────────────────────────
+  router.get("/recompenses/classeurs", requireAdmin, (req, res) => {
+    res.json({ ok: true, classeurs: listClasseurs() });
+  });
+
+  router.post("/recompenses/classeurs", requireAdmin, express.json(), (req, res) => {
+    const { name, slug, description, color, sortOrder, isPublished } = req.body;
+    if (!name) return res.json({ ok: false, error: 'Nom requis' });
+    const id = createClasseur({ name, slug: slug || name, description, color, sortOrder, isPublished: isPublished !== false });
+    res.json({ ok: true, id, classeur: getClasseur(id) });
+  });
+
+  router.put("/recompenses/classeurs/:id", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    updateClasseur(id, req.body);
+    res.json({ ok: true, classeur: getClasseur(id) });
+  });
+
+  router.delete("/recompenses/classeurs/:id", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    deleteClasseur(id);
     res.json({ ok: true });
   });
 

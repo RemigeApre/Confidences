@@ -304,6 +304,11 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       <span class="obj-nav-count"><%= (wikiCards || []).length %></span>
     </button>
 
+    <button class="obj-nav-link" data-section="classeurs">
+      <span style="font-size:1.1rem">&#128194;</span> Classeurs
+      <span class="obj-nav-count"><%= (classeurs || []).length %></span>
+    </button>
+
     <button class="obj-nav-link" data-section="personnages">
       <span style="font-size:1.1rem">&#128100;</span> Personnages
       <span class="obj-nav-count"><%= (personnageCards || []).length %></span>
@@ -699,6 +704,15 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
                 </option>
               <% }) %>
             </select>
+            <% if ((classeurs||[]).length > 0) { %>
+            <select class="charm-rarity-select no-arrow js-card-classeur" data-card-id="<%= wc.id %>"
+                    style="<% if (wc.classeurColor) { %>border-color:<%= wc.classeurColor %>;color:<%= wc.classeurColor %><% } %>">
+              <option value="">Sans classeur</option>
+              <% classeurs.forEach(function (cl) { %>
+                <option value="<%= cl.id %>" data-color="<%= cl.color %>"<%= wc.classeurId === cl.id ? ' selected' : '' %>><%= cl.name %></option>
+              <% }) %>
+            </select>
+            <% } %>
             <textarea class="js-card-summary" data-card-id="<%= wc.id %>" rows="2"
               placeholder="Résumé (dos de carte)…"
               style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;border-radius:5px;padding:.3rem .45rem;font-size:.72rem;resize:vertical;outline:none;font-family:inherit"><%= wc.cardSummary || '' %></textarea>
@@ -850,6 +864,78 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           </div>
         </div>
         <% }) %>
+      </div>
+    </div>
+
+    <%/* ── Classeurs (albums de cartes Codex, type Panini) ── */%>
+    <div class="obj-section" data-section="classeurs">
+      <div class="obj-section-toolbar" style="justify-content:flex-end">
+        <button class="ari-save-btn" id="cls-new-btn" style="font-size:.78rem;padding:.3rem .8rem">
+          + Nouveau classeur
+        </button>
+      </div>
+
+      <div id="cls-list" style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem">
+        <% if (!(classeurs||[]).length) { %>
+          <p style="color:#475569;font-size:.82rem">Aucun classeur. Créez-en un pour regrouper des cartes Codex à collectionner.</p>
+        <% } %>
+        <% (classeurs||[]).forEach(function(cls) { %>
+        <div class="cls-item" data-cls-id="<%= cls.id %>"
+             style="background:#1e293b;border-radius:10px;border:2px solid <%= cls.color || '#6366f1' %>33;padding:.65rem .85rem;display:flex;align-items:center;gap:.75rem">
+          <div class="cls-item-dot" style="width:14px;height:14px;border-radius:50%;background:<%= cls.color || '#6366f1' %>;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <strong style="color:#f1f5f9;font-size:.88rem"><%= cls.name %></strong>
+            <% if (cls.description) { %><span style="color:#64748b;font-size:.72rem;display:block;margin-top:.1rem"><%= cls.description %></span><% } %>
+          </div>
+          <span style="font-size:.72rem;color:#64748b;flex-shrink:0">
+            <%= cls.card_count %> carte<%= cls.card_count !== 1 ? 's' : '' %>
+          </span>
+          <button class="js-cls-edit ari-save-btn" data-cls='<%- JSON.stringify(cls) %>'
+            style="font-size:.72rem;padding:.2rem .55rem;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#94a3b8">
+            &#9998; Modifier
+          </button>
+          <button class="js-cls-delete" data-cls-id="<%= cls.id %>" data-cls-name="<%= cls.name %>"
+            style="background:none;border:none;color:#f87171;cursor:pointer;font-size:.8rem;padding:.2rem .35rem">
+            &#10005;
+          </button>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <%/* ── Modal classeur ── */%>
+    <div class="pc-modal-overlay" id="clsModal" hidden>
+      <div style="background:#1e293b;border-radius:14px;width:min(95vw,480px);display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;align-items:center;padding:.7rem 1rem;background:#162032;border-bottom:1px solid rgba(255,255,255,.08)">
+          <strong id="clsModalTitle" style="flex:1;color:#f1f5f9;font-size:.95rem">Nouveau classeur</strong>
+          <button id="clsModalClose" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:1rem;padding:.2rem">&#10005;</button>
+        </div>
+        <div style="padding:1rem;display:flex;flex-direction:column;gap:.65rem">
+          <input type="hidden" id="clsModalId">
+          <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em">
+            Nom
+            <input type="text" id="clsModalName" class="pc-modal-input" placeholder="Ex: Scénarios interdits, Monstres...">
+          </label>
+          <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em">
+            Description
+            <input type="text" id="clsModalDesc" class="pc-modal-input" placeholder="Courte description (optionnel)">
+          </label>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:1">
+              Couleur
+              <input type="color" id="clsModalColor" value="#6366f1"
+                style="width:100%;height:32px;border-radius:5px;border:1px solid rgba(255,255,255,.12);background:#0f172a;cursor:pointer;padding:.1rem .2rem;margin-top:.25rem">
+            </label>
+            <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:1">
+              Ordre d'affichage
+              <input type="number" id="clsModalOrder" class="pc-modal-input" min="0" value="0">
+            </label>
+          </div>
+          <div style="display:flex;justify-content:center;gap:.6rem;margin-top:.2rem">
+            <button id="clsModalSave" class="ari-save-btn" style="font-size:.82rem;padding:.38rem 1.4rem">Enregistrer</button>
+            <span id="clsModalStatus" style="font-size:.72rem;color:#4ade80;align-self:center"></span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2143,6 +2229,31 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     });
   });
 
+  // Classeur change
+  document.querySelectorAll('.js-card-classeur').forEach(function(sel) {
+    sel.addEventListener('change', async function() {
+      const cardId = sel.dataset.cardId;
+      const classeurId = sel.value;
+      const opt = sel.options[sel.selectedIndex];
+      const color = classeurId ? (opt.dataset.color || '#6366f1') : null;
+      sel.style.color = color || '#94a3b8';
+      sel.style.borderColor = color || 'rgba(255,255,255,.2)';
+      const statusEl = sel.parentElement.querySelector('.js-card-save-status');
+      if (statusEl) { statusEl.textContent = '…'; statusEl.style.color = '#94a3b8'; }
+      try {
+        const r = await fetch('/ponhgup/recompenses/cards/' + cardId + '/classeur', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ classeurId: classeurId || null }),
+        });
+        const json = await r.json();
+        if (statusEl) {
+          statusEl.textContent = json.ok ? '✓' : '✗';
+          statusEl.style.color = json.ok ? '#4ade80' : '#f87171';
+          setTimeout(function() { if (statusEl) statusEl.textContent = ' '; }, 1500);
+        }
+      } catch(e) { if (statusEl) { statusEl.textContent = '✗'; statusEl.style.color = '#f87171'; } }
+    });
+  });
+
   // Summary auto-save
   const _summaryTimers = {};
   document.querySelectorAll('.js-card-summary').forEach(function(ta) {
@@ -2519,6 +2630,85 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       modalStatsStatus.style.color = ok ? '#4ade80' : '#f87171';
       setTimeout(function() { modalStatsStatus.textContent = ''; }, 2000);
     } catch(e) { modalStatsStatus.textContent = '✗ Erreur réseau'; modalStatsStatus.style.color = '#f87171'; }
+  });
+})();
+</script>
+
+<!-- ── Classeurs JS ── -->
+<script nonce="<%= nonce %>">
+(function() {
+  var modal     = document.getElementById('clsModal');
+  var closeBtn  = document.getElementById('clsModalClose');
+  var saveBtn   = document.getElementById('clsModalSave');
+  var titleEl   = document.getElementById('clsModalTitle');
+  var idInp     = document.getElementById('clsModalId');
+  var nameInp   = document.getElementById('clsModalName');
+  var descInp   = document.getElementById('clsModalDesc');
+  var colorInp  = document.getElementById('clsModalColor');
+  var orderInp  = document.getElementById('clsModalOrder');
+  var statusEl  = document.getElementById('clsModalStatus');
+  if (!modal) return;
+
+  function openModal(cls) {
+    idInp.value    = cls ? cls.id    : '';
+    nameInp.value  = cls ? cls.name  : '';
+    descInp.value  = cls ? cls.description : '';
+    colorInp.value = cls ? (cls.color || '#6366f1') : '#6366f1';
+    orderInp.value = cls ? (cls.sort_order || 0) : 0;
+    titleEl.textContent = cls ? 'Modifier le classeur' : 'Nouveau classeur';
+    statusEl.textContent = '';
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() { modal.hidden = true; document.body.style.overflow = ''; }
+
+  closeBtn && closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+
+  document.getElementById('cls-new-btn') && document.getElementById('cls-new-btn').addEventListener('click', function() {
+    openModal(null);
+  });
+
+  document.querySelectorAll('.js-cls-edit').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      try { openModal(JSON.parse(btn.dataset.cls)); } catch(e) {}
+    });
+  });
+
+  document.querySelectorAll('.js-cls-delete').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm('Supprimer le classeur "' + btn.dataset.clsName + '" ? Les cartes qu\'il contenait ne seront pas supprimées.')) return;
+      fetch('/ponhgup/recompenses/classeurs/' + btn.dataset.clsId, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { if (d.ok) location.reload(); else alert('Erreur'); });
+    });
+  });
+
+  saveBtn && saveBtn.addEventListener('click', async function() {
+    const id   = idInp.value;
+    const body = {
+      name:        nameInp.value.trim(),
+      description: descInp.value.trim(),
+      color:       colorInp.value,
+      sortOrder:   parseInt(orderInp.value) || 0,
+      isPublished: true,
+    };
+    if (!body.name) { statusEl.textContent = 'Nom requis'; statusEl.style.color = '#f87171'; return; }
+    statusEl.textContent = '…'; statusEl.style.color = '#94a3b8';
+
+    const url    = id ? '/ponhgup/recompenses/classeurs/' + id : '/ponhgup/recompenses/classeurs';
+    const method = id ? 'PUT' : 'POST';
+    try {
+      const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (d.ok) {
+        statusEl.textContent = '✓ Enregistré'; statusEl.style.color = '#4ade80';
+        setTimeout(function() { location.reload(); }, 600);
+      } else {
+        statusEl.textContent = d.error || 'Erreur'; statusEl.style.color = '#f87171';
+      }
+    } catch(e) { statusEl.textContent = 'Erreur réseau'; statusEl.style.color = '#f87171'; }
   });
 })();
 </script>
