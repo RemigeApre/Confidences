@@ -36,12 +36,9 @@
         <button class="msg-load-more-btn" id="msg-load-more-btn" type="button" hidden>Charger plus</button>
         <div class="msg-thread-messages" id="msg-thread-messages">
           <% messages.forEach(function(m) { %>
-          <article class="msg-bubble msg-bubble--<%= m.sender_id === currentUser.id ? 'me' : 'them' %>"
+          <article class="msg-bubble msg-bubble--<%= m.sender_id === currentUser.id ? 'me' : 'them' %><%= (m.sender_id !== currentUser.id && partner.isAdmin) ? ' msg-bubble--admin' : '' %>"
                    data-id="<%= m.id %>">
             <div class="msg-bubble-inner">
-              <% if (m.sender_id !== currentUser.id && partner.isAdmin) { %>
-                <span class="msg-bubble-admin-badge">admin</span>
-              <% } %>
               <div class="msg-bubble-text"><%- m.payload.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') %></div>
               <% if (m.content_ref) { %>
                 <div class="msg-bubble-ref" data-ref="<%= encodeURIComponent(m.content_ref) %>"></div>
@@ -250,7 +247,7 @@
   function appendBubble(id, text, ts, isMe, contentRef) {
     if (document.querySelector('#msg-thread-messages .msg-bubble[data-id="' + id + '"]')) return;
     var el = document.createElement('article');
-    el.className = 'msg-bubble msg-bubble--' + (isMe ? 'me' : 'them');
+    el.className = 'msg-bubble msg-bubble--' + (isMe ? 'me' : 'them') + (!isMe && partnerIsAdmin ? ' msg-bubble--admin' : '');
     el.dataset.id = id;
     var refHtml = '';
     if (contentRef) {
@@ -258,7 +255,6 @@
     }
     el.innerHTML =
       '<div class="msg-bubble-inner">' +
-        (!isMe && partnerIsAdmin ? '<span class="msg-bubble-admin-badge">admin</span>' : '') +
         '<div class="msg-bubble-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>' +
         refHtml +
         '<div class="msg-bubble-meta">' +
@@ -369,7 +365,6 @@
 <style>
 /* ── Badge admin ── */
 .msg-admin-badge{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:hsl(220,80%,38%);color:#fff;border-radius:4px;padding:.1rem .4rem;margin-left:.45rem;vertical-align:middle;line-height:1.5}
-.msg-bubble-admin-badge{display:block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:hsl(220,70%,65%);margin-bottom:.15rem;line-height:1}
 
 /* ── Bouton supprimer discussion ── */
 .msg-thread-delete-conv-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:.3rem;border-radius:6px;display:flex;align-items:center;line-height:0;transition:color .15s}
@@ -429,7 +424,10 @@
 /* Better bubble readability */
 .msg-bubble-text{font-size:.9rem;line-height:1.6}
 .msg-bubble-inner{padding:.6rem .9rem}
-.msg-bubble--me .msg-bubble-inner{background:hsl(250,35%,22%);border-color:hsl(250,35%,32%)}
+/* ── Couleurs des bulles : envoyé / reçu / reçu d'un admin ── */
+.msg-bubble--me .msg-bubble-inner{background:hsl(250,55%,32%);border-color:hsl(250,55%,46%)}
+.msg-bubble--them .msg-bubble-inner{background:hsl(220,14%,24%);border-color:hsl(220,14%,36%)}
+.msg-bubble--admin .msg-bubble-inner{background:hsl(42,55%,22%);border-color:hsl(42,60%,42%)}
 
 /* Active conv highlight */
 .msg-list-item--active,.msg-list-item--active:hover{background:hsl(250,30%,16%);border-color:var(--accent)!important}
