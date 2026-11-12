@@ -1,0 +1,22 @@
+<%
+  // Un élément de la liste des discussions — réutilisé pour la section
+  // "Administration" (pastille non lue et épingle masquées : toujours en
+  // haut, pas besoin de ces indicateurs) et pour la liste normale.
+  var _showUnread = c.unread > 0 && !c.muted && !c.partnerIsAdmin;
+%>
+<li class="msg-list-item<%= _showUnread ? ' msg-list-item--unread' : '' %><%= (currentPartnerId && c.partnerId === currentPartnerId) ? ' msg-list-item--active' : '' %>">
+  <a href="/messages/<%= c.partnerId %>" class="msg-list-link">
+    <%- include('msg-avatar', { avatarClass: 'msg-list-avatar', thumb: c.partnerAvatarThumb, crop: c.partnerAvatarCrop, color: c.partnerColor, initial: c.partnerName }) %>
+    <div class="msg-list-info">
+      <span class="msg-list-name">
+        <% if (c.pinned && !c.partnerIsAdmin) { %><svg class="msg-list-pin-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.5 5.5L19 9l-5 3.5.5 6-2.5-3-2.5 3 .5-6-5-3.5 5.5-1.5z"/></svg><% } %>
+        <%= c.partnerName %>
+        <% if (c.partnerIsAdmin) { %><span class="msg-admin-badge">admin</span><% } %>
+      </span>
+      <span class="msg-list-date"><%= new Date(c.last_message_at).toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) %></span>
+    </div>
+    <% if (_showUnread) { %>
+      <span class="msg-list-unread-badge"><%= c.unread %></span>
+    <% } %>
+  </a>
+</li>

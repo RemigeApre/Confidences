@@ -189,6 +189,12 @@ function buildRouter(config) {
     // (indicateur "Vu" sous son dernier message — voir messages.ejs).
     pushToUser(partnerId, "seen", { convId: conv.id });
     const partnerAvatar = resolveAvatar(partner);
+    // Rappel affiché en haut du fil quand on écrit à un admin sans être déjà
+    // ami avec lui/elle (voir canMessage : l'admin peut toujours être
+    // contacté, mais ce rappel ne concerne pas les admins déjà amis).
+    const friendship = getFriendshipBetween(uid, partnerId);
+    const isFriendWithPartner = !!(friendship && friendship.status === "accepted");
+    const showAdminNotice = !!partner.isAdmin && !isFriendWithPartner;
 
     res.render("messages", {
       config,
@@ -198,6 +204,7 @@ function buildRouter(config) {
       partner,
       partnerAvatarThumb: partnerAvatar.thumb,
       partnerAvatarCrop: partnerAvatar.crop,
+      showAdminNotice,
       convPinned: !!(conv.p1_id === uid ? conv.pinned_p1 : conv.pinned_p2),
       convMuted: !!(conv.p1_id === uid ? conv.muted_p1 : conv.muted_p2),
       messages: getMessages(conv.id, uid, 40, null).reverse(),

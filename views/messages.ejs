@@ -67,6 +67,9 @@
       <div class="msg-thread-body" id="msg-thread-body">
         <button class="msg-load-more-btn" id="msg-load-more-btn" type="button" hidden>Charger plus</button>
         <div class="msg-thread-messages" id="msg-thread-messages">
+          <% if (showAdminNotice) { %>
+            <div class="msg-system-banner">&Eacute;vitez le spam ou tout comportement d&eacute;plac&eacute;. Parlez-nous de vos id&eacute;es, de vos critiques et de vos probl&egrave;mes.</div>
+          <% } %>
           <% var _prevTs = null; %>
           <% messages.forEach(function(m) { %>
           <% var _ts = new Date(m.created_at).getTime(); %>
@@ -127,30 +130,30 @@
     </details>
     <% } %>
 
+    <% var _currentPartnerId = partner ? partner.id : null; %>
+    <% var _adminConvs = (convs || []).filter(function (c) { return c.partnerIsAdmin; }); %>
+    <% var _normalConvs = (convs || []).filter(function (c) { return !c.partnerIsAdmin; }); %>
+
     <% if (!convs || !convs.length) { %>
       <p class="msg-list-empty">Aucune conversation pour l'instant.</p>
     <% } else { %>
-    <ul class="msg-list">
-      <% convs.forEach(function(c) { %>
-      <% var _showUnread = c.unread > 0 && !c.muted; %>
-      <li class="msg-list-item<%= _showUnread ? ' msg-list-item--unread' : '' %><%= (partner && c.partnerId === partner.id) ? ' msg-list-item--active' : '' %>">
-        <a href="/messages/<%= c.partnerId %>" class="msg-list-link">
-          <%- include('partials/msg-avatar', { avatarClass: 'msg-list-avatar', thumb: c.partnerAvatarThumb, crop: c.partnerAvatarCrop, color: c.partnerColor, initial: c.partnerName }) %>
-          <div class="msg-list-info">
-            <span class="msg-list-name">
-              <% if (c.pinned) { %><svg class="msg-list-pin-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.5 5.5L19 9l-5 3.5.5 6-2.5-3-2.5 3 .5-6-5-3.5 5.5-1.5z"/></svg><% } %>
-              <%= c.partnerName %>
-              <% if (c.partnerIsAdmin) { %><span class="msg-admin-badge">admin</span><% } %>
-            </span>
-            <span class="msg-list-date"><%= new Date(c.last_message_at).toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) %></span>
-          </div>
-          <% if (_showUnread) { %>
-            <span class="msg-list-unread-badge"><%= c.unread %></span>
-          <% } %>
-        </a>
-      </li>
-      <% }) %>
-    </ul>
+      <% if (_adminConvs.length) { %>
+      <div class="msg-admin-section">
+        <div class="msg-admin-section-label">Administration</div>
+        <ul class="msg-list">
+          <% _adminConvs.forEach(function (c) { %>
+            <%- include('partials/msg-conv-item', { c: c, currentPartnerId: _currentPartnerId }) %>
+          <% }) %>
+        </ul>
+      </div>
+      <% } %>
+      <% if (_normalConvs.length) { %>
+      <ul class="msg-list">
+        <% _normalConvs.forEach(function (c) { %>
+          <%- include('partials/msg-conv-item', { c: c, currentPartnerId: _currentPartnerId }) %>
+        <% }) %>
+      </ul>
+      <% } %>
     <% } %>
   </div>
 
