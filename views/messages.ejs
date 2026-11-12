@@ -227,7 +227,10 @@
           body: JSON.stringify({ text: text }),
         });
         var data = await r.json();
-        if (data.ok) appendBubble(data.msgId, text, new Date().toISOString(), true);
+        if (data.ok) {
+          if (data.msgId > lastMsgId) lastMsgId = data.msgId;
+          appendBubble(data.msgId, text, new Date().toISOString(), true);
+        }
       } catch (_) {}
     }
 
@@ -245,6 +248,7 @@
   }
 
   function appendBubble(id, text, ts, isMe, contentRef) {
+    if (document.querySelector('#msg-thread-messages .msg-bubble[data-id="' + id + '"]')) return;
     var el = document.createElement('article');
     el.className = 'msg-bubble msg-bubble--' + (isMe ? 'me' : 'them');
     el.dataset.id = id;
@@ -300,8 +304,12 @@
   // ── SSE ──────────────────────────────────────────────────────────────────
   var lastMsgId = 0;
   (function () {
-    var last = document.querySelector('#msg-thread-messages .msg-bubble:last-child');
-    if (last) lastMsgId = parseInt(last.dataset.id, 10) || 0;
+    // Pas de :last-child ici : le dernier enfant réel de #msg-thread-messages
+    // est #msg-typing-indicator (après toutes les bulles), donc ce sélecteur
+    // ne matchait jamais et lastMsgId restait bloqué à 0 — cause du doublon
+    // de tout l'historique au premier sondage (voir loadNewMessages).
+    var bubbles = document.querySelectorAll('#msg-thread-messages .msg-bubble');
+    if (bubbles.length) lastMsgId = parseInt(bubbles[bubbles.length - 1].dataset.id, 10) || 0;
   })();
 
   var typingIndicator = document.getElementById('msg-typing-indicator');
