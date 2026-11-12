@@ -6310,6 +6310,10 @@ try {
   `);
 } catch(_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN classeur_id INTEGER REFERENCES classeurs(id)"); } catch(_) {}
+// Maturité du classeur : '' (normal) | 'ultra' | 'irrealiste' — même
+// convention que protagonistes.special, permet de le filtrer comme le reste
+// du site (voir window.ULTRA_MODE/IRREALISTE_MODE, public/wiki.js).
+try { db.exec("ALTER TABLE classeurs ADD COLUMN special TEXT NOT NULL DEFAULT ''"); } catch(_) {}
 
 function listClasseurs() {
   return db.prepare(
@@ -6325,23 +6329,10 @@ function getClasseur(id) {
   return db.prepare("SELECT * FROM classeurs WHERE id=?").get(id);
 }
 
-function createClasseur({ name, slug, description, color, sortOrder, isPublished }) {
+function createClasseur({ name, slug, description, color, sortOrder, isPublished, special }) {
+  const validSpecial = ['', 'ultra', 'irrealiste'];
   const r = db.prepare(
-    "INSERT INTO classeurs (name,slug,description,color,sort_order,is_published) VALUES (?,?,?,?,?,?)"
-  ).run(
-    String(name||'').trim(),
-    String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
-    String(description||'').trim(),
-    String(color||'#6366f1').trim(),
-    Number(sortOrder)||0,
-    isPublished ? 1 : 0
-  );
-  return r.lastInsertRowid;
-}
-
-function updateClasseur(id, { name, slug, description, color, sortOrder, isPublished }) {
-  db.prepare(
-    "UPDATE classeurs SET name=?,slug=?,description=?,color=?,sort_order=?,is_published=? WHERE id=?"
+    "INSERT INTO classeurs (name,slug,description,color,sort_order,is_published,special) VALUES (?,?,?,?,?,?,?)"
   ).run(
     String(name||'').trim(),
     String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
@@ -6349,6 +6340,23 @@ function updateClasseur(id, { name, slug, description, color, sortOrder, isPubli
     String(color||'#6366f1').trim(),
     Number(sortOrder)||0,
     isPublished ? 1 : 0,
+    validSpecial.includes(special) ? special : ''
+  );
+  return r.lastInsertRowid;
+}
+
+function updateClasseur(id, { name, slug, description, color, sortOrder, isPublished, special }) {
+  const validSpecial = ['', 'ultra', 'irrealiste'];
+  db.prepare(
+    "UPDATE classeurs SET name=?,slug=?,description=?,color=?,sort_order=?,is_published=?,special=? WHERE id=?"
+  ).run(
+    String(name||'').trim(),
+    String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
+    String(description||'').trim(),
+    String(color||'#6366f1').trim(),
+    Number(sortOrder)||0,
+    isPublished ? 1 : 0,
+    validSpecial.includes(special) ? special : '',
     id
   );
 }

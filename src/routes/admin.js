@@ -1413,9 +1413,9 @@ function buildAdminRouter(config) {
   });
 
   router.post("/recompenses/classeurs", requireAdmin, express.json(), (req, res) => {
-    const { name, slug, description, color, sortOrder, isPublished } = req.body;
+    const { name, slug, description, color, sortOrder, isPublished, special } = req.body;
     if (!name) return res.json({ ok: false, error: 'Nom requis' });
-    const id = createClasseur({ name, slug: slug || name, description, color, sortOrder, isPublished: isPublished !== false });
+    const id = createClasseur({ name, slug: slug || name, description, color, sortOrder, isPublished: isPublished !== false, special });
     res.json({ ok: true, id, classeur: getClasseur(id) });
   });
 

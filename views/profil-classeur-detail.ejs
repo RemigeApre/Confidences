@@ -7,7 +7,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
     </a>
     <div class="cls-detail-identity">
-      <h1 class="cls-detail-title"><%= classeur.name %></h1>
+      <h1 class="cls-detail-title">
+        <%= classeur.name %>
+        <% if (classeur.special === 'ultra') { %><span class="cls-detail-special cls-detail-special--ultra">Ultra</span><% } %>
+        <% if (classeur.special === 'irrealiste') { %><span class="cls-detail-special cls-detail-special--irrealiste">Irr&eacute;aliste</span><% } %>
+      </h1>
       <% if (classeur.description) { %><p class="cls-detail-desc"><%= classeur.description %></p><% } %>
     </div>
   </div>
@@ -53,6 +57,9 @@
 .cls-detail-identity{flex:1;min-width:0}
 .cls-detail-title{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:1.3rem;margin:0;color:var(--cls-color, var(--fg))}
 .cls-detail-desc{margin:.25rem 0 0;font-size:.85rem;color:var(--muted)}
+.cls-detail-special{display:inline-block;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:.15rem .4rem;border-radius:4px;vertical-align:middle;margin-left:.4rem}
+.cls-detail-special--ultra{background:hsl(0,65%,32%);color:#ffd4d4}
+.cls-detail-special--irrealiste{background:hsl(150,55%,22%);color:#c8ffe0}
 .cls-detail-progress{margin-bottom:1.3rem}
 .cls-detail-progress-label{font-size:.82rem;color:var(--muted)}
 .cls-detail-progress-label strong{color:hsl(44,90%,60%)}

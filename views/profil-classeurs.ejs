@@ -29,6 +29,11 @@
             <button type="button" id="cls-incomplete-toggle" class="wiki-ultra-btn" data-fr="En cours" data-en="In progress">En cours</button>
           </div>
 
+          <div class="wiki-filter-section wiki-filter-toggles">
+            <button type="button" id="cls-ultra-toggle" class="wiki-ultra-btn" data-fr="Ultra" data-en="Ultra">Ultra</button>
+            <button type="button" id="cls-irrealiste-toggle" class="wiki-ultra-btn" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
+          </div>
+
         </div>
       </details>
 
@@ -48,8 +53,11 @@
         <% var pct = c.total > 0 ? Math.round((c.owned / c.total) * 100) : 0; %>
         <a href="/favoris/classeurs/<%= c.id %>" class="cls-book<%= c.complete ? ' cls-book--complete' : '' %>"
            data-name="<%= (c.name || '').toLowerCase() %>" data-progress="<%= pct %>" data-complete="<%= c.complete ? '1' : '0' %>"
+           data-special="<%= c.special || '' %>"
            style="background:linear-gradient(160deg, <%= c.color %>, color-mix(in srgb, <%= c.color %> 55%, black))">
           <% if (c.complete) { %><span class="cls-book-badge">&#10003; Complet</span><% } %>
+          <% if (c.special === 'ultra') { %><span class="cls-book-special cls-book-special--ultra">Ultra</span><% } %>
+          <% if (c.special === 'irrealiste') { %><span class="cls-book-special cls-book-special--irrealiste">Irr&eacute;aliste</span><% } %>
           <span class="cls-book-title"><%= c.name %></span>
           <span class="cls-book-progress"><%= c.owned %> / <%= c.total %></span>
           <span class="cls-book-bar"><span class="cls-book-bar-fill" style="width:<%= pct %>%"></span></span>
@@ -70,9 +78,19 @@
   var sortSelect  = document.getElementById('cls-sort-select');
   var completeBtn = document.getElementById('cls-complete-toggle');
   var incompleteBtn = document.getElementById('cls-incomplete-toggle');
+  var ultraBtn    = document.getElementById('cls-ultra-toggle');
+  var irrealisteBtn = document.getElementById('cls-irrealiste-toggle');
   var resetBtn    = document.getElementById('cls-reset-filters');
 
-  var state = { q: '', status: 'all', sort: 'alpha-asc' };
+  // Mêmes préférences de compte que partout ailleurs sur le site (Codex,
+  // Galerie…) : masqué par défaut uniquement si explicitement "hidden" —
+  // le bouton de la section permet de passer outre pour la session en cours.
+  var ultraDefaultHidden = (window.ULTRA_MODE || 'hidden') === 'hidden';
+  var irrealisteDefaultHidden = (window.IRREALISTE_MODE || 'visible') === 'hidden';
+
+  var state = { q: '', status: 'all', sort: 'alpha-asc', showUltra: !ultraDefaultHidden, showIrrealiste: !irrealisteDefaultHidden };
+  if (ultraBtn) ultraBtn.classList.toggle('active', state.showUltra);
+  if (irrealisteBtn) irrealisteBtn.classList.toggle('active', state.showIrrealiste);
 
   function apply() {
     books.forEach(function (b) {
@@ -80,7 +98,10 @@
       var matchStatus = state.status === 'all'
         || (state.status === 'complete' && b.dataset.complete === '1')
         || (state.status === 'incomplete' && b.dataset.complete === '0');
-      b.hidden = !(matchQ && matchStatus);
+      var matchSpecial = (b.dataset.special === 'ultra' && !state.showUltra) ? false
+        : (b.dataset.special === 'irrealiste' && !state.showIrrealiste) ? false
+        : true;
+      b.hidden = !(matchQ && matchStatus && matchSpecial);
     });
     var sorted = books.slice().sort(function (a, b) {
       if (state.sort === 'progress-desc') return parseInt(b.dataset.progress, 10) - parseInt(a.dataset.progress, 10);
@@ -109,16 +130,34 @@
   }
   if (completeBtn) completeBtn.addEventListener('click', function () { setStatus('complete'); });
   if (incompleteBtn) incompleteBtn.addEventListener('click', function () { setStatus('incomplete'); });
+  if (ultraBtn) {
+    ultraBtn.addEventListener('click', function () {
+      state.showUltra = !state.showUltra;
+      ultraBtn.classList.toggle('active', state.showUltra);
+      apply();
+    });
+  }
+  if (irrealisteBtn) {
+    irrealisteBtn.addEventListener('click', function () {
+      state.showIrrealiste = !state.showIrrealiste;
+      irrealisteBtn.classList.toggle('active', state.showIrrealiste);
+      apply();
+    });
+  }
   if (resetBtn) {
     resetBtn.addEventListener('click', function () {
-      state = { q: '', status: 'all', sort: 'alpha-asc' };
+      state = { q: '', status: 'all', sort: 'alpha-asc', showUltra: !ultraDefaultHidden, showIrrealiste: !irrealisteDefaultHidden };
       if (searchInput) searchInput.value = '';
       if (sortSelect) sortSelect.value = 'alpha-asc';
       completeBtn.classList.remove('active');
       incompleteBtn.classList.remove('active');
+      if (ultraBtn) ultraBtn.classList.toggle('active', state.showUltra);
+      if (irrealisteBtn) irrealisteBtn.classList.toggle('active', state.showIrrealiste);
       apply();
     });
   }
+
+  apply();
 })();
 </script>
 
@@ -136,6 +175,9 @@
 .cls-book--complete{box-shadow:-3px 0 0 rgba(0,0,0,.25) inset, 0 0 0 2px hsl(44,90%,60%), 0 6px 16px rgba(0,0,0,.4)}
 .cls-book--complete:hover{box-shadow:-3px 0 0 rgba(0,0,0,.25) inset, 0 0 0 2px hsl(44,90%,60%), 0 10px 24px rgba(0,0,0,.5)}
 .cls-book-badge{position:absolute;top:.6rem;right:.6rem;background:hsl(44,90%,55%);color:#111;font-size:.6rem;font-weight:800;padding:.15rem .45rem;border-radius:999px;letter-spacing:.02em}
+.cls-book-special{position:absolute;top:.6rem;left:.6rem;font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:.15rem .4rem;border-radius:4px}
+.cls-book-special--ultra{background:hsl(0,65%,32%);color:#ffd4d4}
+.cls-book-special--irrealiste{background:hsl(150,55%,22%);color:#c8ffe0}
 .cls-book-title{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:1.05rem;line-height:1.25;text-shadow:0 1px 3px rgba(0,0,0,.45)}
 .cls-book-progress{margin-top:.5rem;font-size:.72rem;font-weight:600;opacity:.9}
 .cls-book-bar{display:block;height:4px;border-radius:999px;background:rgba(0,0,0,.3);margin-top:.3rem;overflow:hidden}
