@@ -961,6 +961,13 @@ db.exec(`
 `);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_anon_visits_path ON anon_page_visits (path)`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_anon_visits_date ON anon_page_visits (created_at)`);
+// Correctif rétroactif : des User-Agent contenant du HTML (ex. "<span...",
+// jamais envoyés par un vrai navigateur) avaient été classés "human" avant
+// que classifyUA() ne les détecte — on les repasse en bot une bonne fois.
+try {
+  db.exec(`UPDATE anon_page_visits SET visitor_type = 'bot_unknown'
+           WHERE visitor_type = 'human' AND (user_agent LIKE '%<%' OR user_agent LIKE '%&lt;%')`);
+} catch (_) {}
 
 // Pings de présence discrets (voir recordActivityPing) : contrairement à
 // connection_logs (uniquement à la saisie du mot de passe), permet de savoir
@@ -3593,6 +3600,9 @@ function anonVisitorId(ip, userAgent) {
 // Classifie un user-agent en catégorie de visiteur.
 function classifyUA(ua) {
   if (!ua) return 'bot_unknown';
+  // User-Agent contenant du HTML (ex. "<span...") : jamais envoyé par un
+  // vrai navigateur, signe quasi certain d'un bot/scanner mal configuré.
+  if (/<[a-z]|&lt;/i.test(ua)) return 'bot_unknown';
   // AI crawlers
   if (/GPTBot|ChatGPT-User|Claude-Web|ClaudeBot|Anthropic|PerplexityBot|YouBot|cohere-ai|Bytespider/i.test(ua)) return 'bot_ai';
   // SEO/indexing bots
