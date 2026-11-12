@@ -90,6 +90,7 @@ const {
   updateClasseur,
   deleteClasseur,
   setWikiCardClasseur,
+  setPersonnageClasseur,
   listRaces, getRace, createRace, updateRace, deleteRace,
   listClansForRace, createClan, updateClan, deleteClan,
   createCardVariant,
@@ -1369,6 +1370,15 @@ function buildAdminRouter(config) {
     if (!id) return res.json({ ok: false });
     const collectionId = req.body.collectionId ? Number(req.body.collectionId) : null;
     setPersonnageCollection(id, collectionId);
+    res.json({ ok: true });
+  });
+
+  // ── Cartes Personnages — classeur ─────────────────────────────────────────
+  router.post("/recompenses/personnages/:id/classeur", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    const classeurId = req.body.classeurId ? Number(req.body.classeurId) : null;
+    setPersonnageClasseur(id, classeurId);
     res.json({ ok: true });
   });
 

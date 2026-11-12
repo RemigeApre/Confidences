@@ -22,31 +22,46 @@
     <span class="cls-detail-progress-bar"><span class="cls-detail-progress-fill" style="width:<%= pct %>%"></span></span>
   </div>
 
-  <% if (!classeur.cards.length) { %>
+  <% if (!classeur.total) { %>
     <p class="intro">Ce classeur ne contient pas encore de carte.</p>
   <% } else { %>
     <% var rarityColors = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' }; %>
-    <div class="cls-slot-grid">
-      <% classeur.cards.forEach(function (card) { %>
-        <% if (card.owned) { %>
-          <div class="cls-slot cls-slot--owned" style="--rarity-color: <%= rarityColors[card.rarity] || '#94a3b8' %>">
-            <div class="cls-slot-thumb">
-              <% if (card.thumb) { %><img src="<%= thumbUrl(card.thumb) %>" alt="" loading="lazy" /><% } else { %>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              <% } %>
-            </div>
-            <span class="cls-slot-title"><%= card.title %></span>
-          </div>
-        <% } else { %>
-          <div class="cls-slot cls-slot--missing">
-            <div class="cls-slot-thumb cls-slot-thumb--missing">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            </div>
-            <span class="cls-slot-title"><%= card.title %></span>
-          </div>
-        <% } %>
-      <% }) %>
-    </div>
+    <%
+      var escHtml = function (s) {
+        return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      };
+      var renderSlot = function (card) {
+        var out = '';
+        var safeTitle = escHtml(card.title);
+        if (card.owned) {
+          out += '<div class="cls-slot cls-slot--owned" style="--rarity-color: ' + (rarityColors[card.rarity] || '#94a3b8') + '">';
+          out += '<div class="cls-slot-thumb">';
+          out += card.thumb
+            ? '<img src="' + escHtml(thumbUrl(card.thumb)) + '" alt="" loading="lazy" />'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+          out += '</div><span class="cls-slot-title">' + safeTitle + '</span></div>';
+        } else {
+          out += '<div class="cls-slot cls-slot--missing"><div class="cls-slot-thumb cls-slot-thumb--missing">';
+          out += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+          out += '</div><span class="cls-slot-title">' + safeTitle + '</span></div>';
+        }
+        return out;
+      };
+    %>
+
+    <% if (classeur.codexCards.length) { %>
+      <h2 class="cls-chapter-title">Chapitre Codex</h2>
+      <div class="cls-slot-grid">
+        <% classeur.codexCards.forEach(function (card) { %><%- renderSlot(card) %><% }) %>
+      </div>
+    <% } %>
+
+    <% if (classeur.personnageCards.length) { %>
+      <h2 class="cls-chapter-title">Chapitre Personnages</h2>
+      <div class="cls-slot-grid">
+        <% classeur.personnageCards.forEach(function (card) { %><%- renderSlot(card) %><% }) %>
+      </div>
+    <% } %>
   <% } %>
 
 </main>
@@ -66,6 +81,8 @@
 .cls-detail-progress-bar{display:block;height:6px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:.4rem;overflow:hidden}
 .cls-detail-progress-fill{display:block;height:100%;background:var(--cls-color, var(--accent));border-radius:999px}
 
+.cls-chapter-title{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:1rem;color:var(--muted);margin:1.6rem 0 .9rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+.cls-chapter-title:first-of-type{margin-top:0}
 .cls-slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:1rem}
 .cls-slot{display:flex;flex-direction:column;align-items:center;gap:.4rem;text-align:center}
 .cls-slot-thumb{width:100%;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center}

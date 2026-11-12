@@ -3483,10 +3483,12 @@ function listProtagonistesForCards() {
             p.action_prelim_name, p.action_prelim_power, p.action_prelim_effet,
             p.action_acte_name, p.action_acte_power, p.action_acte_effet,
             p.action_finition_name, p.action_finition_power, p.action_finition_effet,
-            p.is_base_deck, p.is_ultra,
-            p.collection_id, cc.name AS collection_name, cc.color AS collection_color
+            p.is_base_deck, p.is_ultra, p.card_rarity,
+            p.collection_id, cc.name AS collection_name, cc.color AS collection_color,
+            p.classeur_id, cl.name AS classeur_name, cl.color AS classeur_color
      FROM protagonistes p
      LEFT JOIN card_collections cc ON cc.id = p.collection_id
+     LEFT JOIN classeurs cl ON cl.id = p.classeur_id
      ORDER BY p.name COLLATE NOCASE`
   ).all().map(r => {
     let affinites = [];
@@ -3507,6 +3509,10 @@ function listProtagonistesForCards() {
       collectionId: r.collection_id || null,
       collectionName: r.collection_name || '',
       collectionColor: r.collection_color || '',
+      cardRarity: r.card_rarity || 'rare',
+      classeurId: r.classeur_id || null,
+      classeurName: r.classeur_name || '',
+      classeurColor: r.classeur_color || '',
     };
   });
 }
@@ -6310,6 +6316,10 @@ try {
   `);
 } catch(_) {}
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN classeur_id INTEGER REFERENCES classeurs(id)"); } catch(_) {}
+// Un classeur peut aussi contenir des cartes personnages, affichées dans un
+// chapitre dédié (distinct des cartes Codex) sur la page du classeur — même
+// principe "une carte = un seul classeur" que wiki_pages.classeur_id.
+try { db.exec("ALTER TABLE protagonistes ADD COLUMN classeur_id INTEGER REFERENCES classeurs(id)"); } catch(_) {}
 // Maturité du classeur : '' (normal) | 'ultra' | 'irrealiste' — même
 // convention que protagonistes.special, permet de le filtrer comme le reste
 // du site (voir window.ULTRA_MODE/IRREALISTE_MODE, public/wiki.js).
@@ -6317,12 +6327,12 @@ try { db.exec("ALTER TABLE classeurs ADD COLUMN special TEXT NOT NULL DEFAULT ''
 
 function listClasseurs() {
   return db.prepare(
-    `SELECT c.*, COUNT(w.id) as card_count
+    `SELECT c.*,
+       (SELECT COUNT(*) FROM wiki_pages w WHERE w.classeur_id = c.id) as codex_card_count,
+       (SELECT COUNT(*) FROM protagonistes p WHERE p.classeur_id = c.id) as personnage_card_count
      FROM classeurs c
-     LEFT JOIN wiki_pages w ON w.classeur_id = c.id
-     GROUP BY c.id
      ORDER BY c.sort_order, c.name COLLATE NOCASE`
-  ).all();
+  ).all().map((c) => ({ ...c, card_count: c.codex_card_count + c.personnage_card_count }));
 }
 
 function getClasseur(id) {
@@ -6363,6 +6373,7 @@ function updateClasseur(id, { name, slug, description, color, sortOrder, isPubli
 
 function deleteClasseur(id) {
   db.prepare("UPDATE wiki_pages SET classeur_id=NULL WHERE classeur_id=?").run(id);
+  db.prepare("UPDATE protagonistes SET classeur_id=NULL WHERE classeur_id=?").run(id);
   db.prepare("DELETE FROM classeurs WHERE id=?").run(id);
 }
 
@@ -6371,45 +6382,74 @@ function setWikiCardClasseur(wikiPageId, classeurId) {
     .run(classeurId || null, wikiPageId);
 }
 
+function setPersonnageClasseur(protagonisteId, classeurId) {
+  db.prepare("UPDATE protagonistes SET classeur_id=? WHERE id=?")
+    .run(classeurId || null, protagonisteId);
+}
+
 // Classeurs publiés avec la progression d'un joueur (owned/total) — page
 // liste (views/profil-classeurs.ejs). "Possédé" = au moins une ligne dans
 // user_cards pour cette page Codex, peu importe la déclinaison obtenue.
 function listClasseursWithProgress(userId) {
-  const ownedIds = new Set(
+  const ownedCodexIds = new Set(
     db.prepare("SELECT DISTINCT wiki_page_id FROM user_cards WHERE user_id=?").all(userId).map((r) => r.wiki_page_id)
+  );
+  const ownedPersonnageIds = new Set(
+    db.prepare("SELECT DISTINCT protagoniste_id FROM user_personnage_cards WHERE user_id=?").all(userId).map((r) => r.protagoniste_id)
   );
   const classeurs = db.prepare(
     "SELECT * FROM classeurs WHERE is_published=1 ORDER BY sort_order, name COLLATE NOCASE"
   ).all();
-  const members = db.prepare("SELECT id, classeur_id FROM wiki_pages WHERE classeur_id IS NOT NULL").all();
-  const byClasseur = {};
-  members.forEach((m) => { (byClasseur[m.classeur_id] = byClasseur[m.classeur_id] || []).push(m.id); });
+  const codexMembers = db.prepare("SELECT id, classeur_id FROM wiki_pages WHERE classeur_id IS NOT NULL").all();
+  const personnageMembers = db.prepare("SELECT id, classeur_id FROM protagonistes WHERE classeur_id IS NOT NULL").all();
+  const byClasseurCodex = {};
+  codexMembers.forEach((m) => { (byClasseurCodex[m.classeur_id] = byClasseurCodex[m.classeur_id] || []).push(m.id); });
+  const byClasseurPersonnage = {};
+  personnageMembers.forEach((m) => { (byClasseurPersonnage[m.classeur_id] = byClasseurPersonnage[m.classeur_id] || []).push(m.id); });
   return classeurs.map((c) => {
-    const ids = byClasseur[c.id] || [];
-    const owned = ids.filter((id) => ownedIds.has(id)).length;
-    return { ...c, owned, total: ids.length, complete: ids.length > 0 && owned >= ids.length };
+    const codexIds = byClasseurCodex[c.id] || [];
+    const personnageIds = byClasseurPersonnage[c.id] || [];
+    const owned = codexIds.filter((id) => ownedCodexIds.has(id)).length
+      + personnageIds.filter((id) => ownedPersonnageIds.has(id)).length;
+    const total = codexIds.length + personnageIds.length;
+    return { ...c, owned, total, complete: total > 0 && owned >= total };
   });
 }
 
 // Détail d'un classeur avec ses cartes et leur statut possédé/manquant pour
-// ce joueur — page détail (views/profil-classeur-detail.ejs).
+// ce joueur — page détail (views/profil-classeur-detail.ejs). Deux chapitres
+// séparés (codexCards / personnageCards), chacun des deux systèmes de cartes
+// du site ayant son propre suivi de possession (user_cards / user_personnage_cards).
 function getClasseurWithCards(classeurId, userId) {
   const classeur = db.prepare("SELECT * FROM classeurs WHERE id=?").get(classeurId);
   if (!classeur) return null;
-  const ownedIds = new Set(
+
+  const ownedCodexIds = new Set(
     db.prepare("SELECT DISTINCT wiki_page_id FROM user_cards WHERE user_id=?").all(userId).map((r) => r.wiki_page_id)
   );
-  const cards = db.prepare(
+  const codexCards = db.prepare(
     "SELECT id, title, card_rarity, card_summary, image_paths FROM wiki_pages WHERE classeur_id=? ORDER BY title"
   ).all(classeurId).map((w) => {
     let imagePaths = []; try { imagePaths = JSON.parse(w.image_paths || "[]"); } catch (_) {}
     return {
       id: w.id, title: w.title, rarity: w.card_rarity || "rare", summary: w.card_summary || null,
-      thumb: imagePaths[0] || null, owned: ownedIds.has(w.id),
+      thumb: imagePaths[0] || null, owned: ownedCodexIds.has(w.id),
     };
   });
-  const owned = cards.filter((c) => c.owned).length;
-  return { ...classeur, cards, owned, total: cards.length };
+
+  const ownedPersonnageIds = new Set(
+    db.prepare("SELECT DISTINCT protagoniste_id FROM user_personnage_cards WHERE user_id=?").all(userId).map((r) => r.protagoniste_id)
+  );
+  const personnageCards = db.prepare(
+    "SELECT id, name, card_rarity, image_path FROM protagonistes WHERE classeur_id=? ORDER BY name COLLATE NOCASE"
+  ).all(classeurId).map((p) => ({
+    id: p.id, title: p.name, rarity: p.card_rarity || "rare", summary: null,
+    thumb: p.image_path || null, owned: ownedPersonnageIds.has(p.id),
+  }));
+
+  const owned = codexCards.filter((c) => c.owned).length + personnageCards.filter((c) => c.owned).length;
+  const total = codexCards.length + personnageCards.length;
+  return { ...classeur, codexCards, personnageCards, owned, total };
 }
 
 // ── Sécurité login : suivi des échecs par username ───────────────────────
@@ -7948,6 +7988,7 @@ module.exports = {
   deleteCardCollection,
   setPersonnageCollection,
   listClasseurs, getClasseur, createClasseur, updateClasseur, deleteClasseur, setWikiCardClasseur,
+  setPersonnageClasseur,
   listClasseursWithProgress, getClasseurWithCards,
   listRaces, getRace, createRace, updateRace, deleteRace,
   listClansForRace, createClan, updateClan, deleteClan,

@@ -251,6 +251,13 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   font-size:.46rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
   padding:.12rem .35rem; border-radius:3px; color:#fff; opacity:.92; max-width:90%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
+/* Badge classeur sur carte (même recette, côté droit pour coexister avec
+   le badge collection) */
+.pc-admin-classeur-badge {
+  position:absolute; bottom:.38rem; right:.42rem;
+  font-size:.46rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
+  padding:.12rem .35rem; border-radius:3px; color:#fff; opacity:.92; max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 </style>
 
 
@@ -830,7 +837,8 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
                actionActeName: pc.actionActeName, actionActePower: pc.actionActePower, actionActeEffet: pc.actionActeEffet,
                actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower, actionFinitionEffet: pc.actionFinitionEffet,
                isBaseDeck: pc.isBaseDeck, isUltra: pc.isUltra,
-               collectionId: pc.collectionId, collectionName: pc.collectionName, collectionColor: pc.collectionColor
+               collectionId: pc.collectionId, collectionName: pc.collectionName, collectionColor: pc.collectionColor,
+               classeurId: pc.classeurId, classeurName: pc.classeurName, classeurColor: pc.classeurColor
              }) %>'>
           <div class="coffre-card-flip-wrap js-coffre-card-flip-admin">
             <%/* ── Recto Gwent ── */%>
@@ -853,6 +861,9 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
               <% if (pc.isUltra) { %><span class="pc-admin-ultra-badge">ULTRA</span><% } %>
               <% if (pc.collectionName) { %>
                 <span class="pc-admin-collection-badge" style="background:<%= pc.collectionColor || '#6366f1' %>"><%= pc.collectionName %></span>
+              <% } %>
+              <% if (pc.classeurName) { %>
+                <span class="pc-admin-classeur-badge" style="background:<%= pc.classeurColor || '#6366f1' %>"><%= pc.classeurName %></span>
               <% } %>
             </div>
             <%/* ── Verso (admin) ── */%>
@@ -1053,6 +1064,14 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
               <option value="">Sans collection</option>
               <% (cardCollections||[]).forEach(function(col) { %>
                 <option value="<%= col.id %>" data-color="<%= col.color %>"><%= col.name %></option>
+              <% }) %>
+            </select>
+            <% } %>
+            <% if ((classeurs||[]).length > 0) { %>
+            <select id="pcSelClasseur" class="pc-modal-input" style="width:100%">
+              <option value="">Sans classeur</option>
+              <% (classeurs||[]).forEach(function(cls) { %>
+                <option value="<%= cls.id %>" data-color="<%= cls.color %>"><%= cls.name %></option>
               <% }) %>
             </select>
             <% } %>
@@ -1519,7 +1538,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 (function() {
   var links = document.querySelectorAll('.obj-nav-link[data-section]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
-  var VALID = ['accueil','images','charms','themes','speciaux','cartes','personnages','collections','races'];
+  var VALID = ['accueil','images','charms','themes','speciaux','cartes','classeurs','personnages','collections','races'];
 
   function activate(key) {
     links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });
@@ -2445,6 +2464,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   const pcSelStatut      = document.getElementById('pcSelStatut');
   const pcSelVisibilite  = document.getElementById('pcSelVisibilite');
   const pcSelCollection  = document.getElementById('pcSelCollection');
+  const pcSelClasseur    = document.getElementById('pcSelClasseur');
   let activePcId = null;
 
   const passifDescs = <%- JSON.stringify(Object.fromEntries(passifs.map(p => [p.id, p.desc || '']))) %>;
@@ -2497,6 +2517,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     if (pcSelStatut)     pcSelStatut.value     = (pc.isBaseDeck != null ? pc.isBaseDeck : 1) ? 'base' : 'gagner';
     if (pcSelVisibilite) pcSelVisibilite.value  = pc.isUltra ? 'ultra' : 'normal';
     if (pcSelCollection) pcSelCollection.value  = pc.collectionId || '';
+    if (pcSelClasseur)   pcSelClasseur.value    = pc.classeurId || '';
 
     modalDesc.value = pc.description || '';
 
@@ -2584,14 +2605,16 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       const base = '/ponhgup/recompenses/personnages/' + activePcId;
       const opts = (body) => ({ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
       const collectionId = pcSelCollection ? (pcSelCollection.value || null) : null;
-      const [r1, r2, r3, r4] = await Promise.all([
+      const classeurId = pcSelClasseur ? (pcSelClasseur.value || null) : null;
+      const [r1, r2, r3, r4, r5] = await Promise.all([
         fetch(base + '/flags',       opts(flags)),
         fetch(base + '/description', opts({ description })),
         fetch(base + '/stats',       opts(statsPayload)),
         fetch(base + '/collection',  opts({ collectionId })),
+        fetch(base + '/classeur',    opts({ classeurId })),
       ]);
-      const [d1, d2, d3, d4] = await Promise.all([r1.json(), r2.json(), r3.json(), r4.json()]);
-      const ok = d1.ok && d2.ok && d3.ok && d4.ok;
+      const [d1, d2, d3, d4, d5] = await Promise.all([r1.json(), r2.json(), r3.json(), r4.json(), r5.json()]);
+      const ok = d1.ok && d2.ok && d3.ok && d4.ok && d5.ok;
       // Mettre à jour le dataset de la tuile
       const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
       if (tile && ok) {
@@ -2629,6 +2652,19 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
             tile.querySelector('.lb-codex-flip-front').appendChild(cb);
           }
         } else if (colBadgeEl) { colBadgeEl.remove(); }
+        // Badge classeur
+        const clsBadgeEl = tile.querySelector('.pc-admin-classeur-badge');
+        if (classeurId && pcSelClasseur) {
+          const opt = pcSelClasseur.options[pcSelClasseur.selectedIndex];
+          const clsColor = opt ? (opt.dataset.color || '#6366f1') : '#6366f1';
+          const clsName  = opt ? opt.textContent : '';
+          if (clsBadgeEl) { clsBadgeEl.textContent = clsName; clsBadgeEl.style.background = clsColor; }
+          else {
+            const cb = document.createElement('span');
+            cb.className = 'pc-admin-classeur-badge'; cb.textContent = clsName; cb.style.background = clsColor;
+            tile.querySelector('.lb-codex-flip-front').appendChild(cb);
+          }
+        } else if (clsBadgeEl) { clsBadgeEl.remove(); }
         // Mettre à jour la description dans le footer de la carte
         const quoteEl = tile.querySelector('.pc-gwent-quote');
         if (description && !quoteEl) {
