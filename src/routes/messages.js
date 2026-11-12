@@ -6,7 +6,7 @@ const {
 const {
   getMessagesAfter,
   getOrCreateConversation, getConversation, getConversations,
-  insertMessage, getMessages, markRead, getUnreadCount,
+  insertMessage, getMessages, markRead, getUnreadCount, setMessageReaction,
   setConversationPinned, setConversationMuted, markConversationUnread,
   addSharedItem, getSharedItems, removeSharedItem,
   getFriends, getUserById, getFriendshipBetween,
@@ -95,6 +95,10 @@ function resolveAvatar(src) {
   return { thumb: path ? thumbUrl(path) : null, crop: crop || null };
 }
 
+// Palette fixe de réactions autorisées (évite d'accepter n'importe quelle
+// chaîne comme "emoji" côté serveur).
+const ALLOWED_REACTIONS = ["❤️", "😂", "👍", "😮", "😢", "🙏"];
+
 function buildRouter(config) {
   const router = express.Router();
 
@@ -127,6 +131,52 @@ function buildRouter(config) {
       profileColor: f.profile_color,
     }));
     res.json({ friends });
+  });
+
+  // ── Widget flottant (popup "Messages" accessible depuis toutes les pages,
+  //    voir partials/foot.ejs) : versions compactes et JSON des mêmes
+  //    données/actions que la page /messages, sans naviguer hors de la page.
+
+  // GET /messages/widget/list — liste compacte des conversations
+  router.get("/widget/list", requireUserJson, (req, res) => {
+    const convs = buildConvList(req.user.id).map((c) => ({
+      partnerId: c.partnerId,
+      partnerName: c.partnerName,
+      partnerColor: c.partnerColor,
+      partnerIsAdmin: c.partnerIsAdmin,
+      partnerAvatarThumb: c.partnerAvatarThumb,
+      partnerAvatarCrop: c.partnerAvatarCrop,
+      unread: c.unread,
+      pinned: !!c.pinned,
+      muted: !!c.muted,
+    }));
+    res.json({ convs });
+  });
+
+  // GET /messages/widget/thread/:userId — mini-fil (ouvre/marque lu une conv)
+  router.get("/widget/thread/:userId", requireUserJson, (req, res) => {
+    const uid = req.user.id;
+    const partnerId = parseInt(req.params.userId, 10);
+    const partner = getUserById(partnerId);
+    if (!partner || !canMessage(uid, partnerId))
+      return res.status(403).json({ error: "accès refusé" });
+
+    const conv = getOrCreateConversation(uid, partnerId);
+    markRead(conv.id, uid);
+    pushToUser(partnerId, "seen", { convId: conv.id });
+    const avatar = resolveAvatar(partner);
+    const msgs = getMessages(conv.id, uid, 30, null).reverse();
+    res.json({
+      convId: conv.id,
+      partner: {
+        id: partner.id, name: partner.displayName, color: partner.profileColor,
+        isAdmin: !!partner.isAdmin, avatarThumb: avatar.thumb, avatarCrop: avatar.crop,
+      },
+      messages: msgs.map((m) => ({
+        id: m.id, senderId: m.sender_id, text: m.payload,
+        createdAt: m.created_at, reaction: m.reaction || null,
+      })),
+    });
   });
 
   // ── Conversations ────────────────────────────────────────────────────────
@@ -244,6 +294,20 @@ function buildRouter(config) {
     pushToUser(partnerId, "message", { convId: conv.id, fromId: uid, fromName: req.user.displayName });
 
     res.json({ ok: true, msgId, convId: conv.id });
+  });
+
+  // POST /messages/msg/:msgId/react — réagir (ou retirer sa réaction) à un
+  // message, notifié à l'autre comme un nouveau message (SSE "reaction").
+  router.post("/msg/:msgId/react", requireUserJson, (req, res) => {
+    const uid = req.user.id;
+    const msgId = parseInt(req.params.msgId, 10);
+    const emoji = typeof req.body.emoji === "string" ? req.body.emoji.trim() : "";
+    if (emoji && !ALLOWED_REACTIONS.includes(emoji))
+      return res.status(400).json({ error: "emoji invalide" });
+    const result = setMessageReaction(msgId, uid, emoji || null);
+    if (!result) return res.status(403).json({ error: "accès refusé" });
+    pushToUser(result.partnerId, "reaction", { convId: result.convId, msgId, emoji: emoji || null });
+    res.json({ ok: true });
   });
 
   // DELETE /messages/conv/:convId — supprimer toute la discussion (côté utilisateur)

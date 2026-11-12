@@ -14,21 +14,28 @@
       </div>
 
       <%
-        // "Vu pour la dernière fois" : last_active_at est une chaîne SQLite
-        // naïve (sans fuseau) — même correctif que pour les horodatages de
-        // messages, sinon la comparaison avec Date.now() est faussée.
+        // "Vu pour la dernière fois" : last_active_at est tantôt une chaîne
+        // SQLite naïve "YYYY-MM-DD HH:MM:SS" (sans fuseau, ex. created_at),
+        // tantôt un vrai ISO déjà tagué "...Z" (touchLastActive utilise
+        // new Date().toISOString()) — lui rajouter un "Z" à l'aveugle donne
+        // "...ZZ" et une Invalid Date. On ne retague que si aucun "T" n'est
+        // déjà présent (donc format SQLite naïf).
         var _lastActiveLabel = null;
         if (partner.lastActiveAt) {
-          var _lastActiveDate = new Date(partner.lastActiveAt.replace(' ', 'T') + 'Z');
-          var _lastActiveDiff = Date.now() - _lastActiveDate.getTime();
-          if (_lastActiveDiff < 2 * 60 * 1000) {
-            _lastActiveLabel = 'En ligne';
-          } else {
-            var _now = new Date();
-            var _sameDay = _lastActiveDate.toDateString() === _now.toDateString();
-            _lastActiveLabel = _sameDay
-              ? 'Vu à ' + _lastActiveDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-              : 'Vu le ' + _lastActiveDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+          var _rawLastActive = partner.lastActiveAt;
+          var _isoLastActive = _rawLastActive.indexOf('T') === -1 ? _rawLastActive.replace(' ', 'T') + 'Z' : _rawLastActive;
+          var _lastActiveDate = new Date(_isoLastActive);
+          if (!isNaN(_lastActiveDate.getTime())) {
+            var _lastActiveDiff = Date.now() - _lastActiveDate.getTime();
+            if (_lastActiveDiff < 2 * 60 * 1000) {
+              _lastActiveLabel = 'En ligne';
+            } else {
+              var _now = new Date();
+              var _sameDay = _lastActiveDate.toDateString() === _now.toDateString();
+              _lastActiveLabel = _sameDay
+                ? 'Vu à ' + _lastActiveDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                : 'Vu le ' + _lastActiveDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+            }
           }
         }
       %>
@@ -65,6 +72,11 @@
       </div>
 
       <div class="msg-thread-body" id="msg-thread-body">
+        <div class="msg-reaction-picker" id="msg-reaction-picker" hidden>
+          <% ['❤️','😂','👍','😮','😢','🙏'].forEach(function (e) { %>
+            <button type="button" class="msg-reaction-picker-opt" data-emoji="<%= e %>"><%= e %></button>
+          <% }) %>
+        </div>
         <button class="msg-load-more-btn" id="msg-load-more-btn" type="button" hidden>Charger plus</button>
         <div class="msg-thread-messages" id="msg-thread-messages">
           <% if (showAdminNotice) { %>
@@ -84,7 +96,11 @@
               <% if (m.content_ref) { %>
                 <div class="msg-bubble-ref" data-ref="<%= encodeURIComponent(m.content_ref) %>"></div>
               <% } %>
+              <% if (m.reaction) { %><span class="msg-bubble-reaction" data-id="<%= m.id %>"><%= m.reaction %></span><% } %>
             </div>
+            <button type="button" class="msg-bubble-react-btn" data-id="<%= m.id %>" aria-label="Réagir" title="Réagir">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M6.5 12c.8 1.2 2 2 3.5 2s2.7-.8 3.5-2"/><circle cx="7.3" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="12.7" cy="8" r=".9" fill="currentColor" stroke="none"/></svg>
+            </button>
           </article>
           <% }) %>
           <% var _lastMsg = messages.length ? messages[messages.length - 1] : null; %>
@@ -262,7 +278,7 @@
         var data = await r.json();
         if (data.ok) {
           if (data.msgId > lastMsgId) lastMsgId = data.msgId;
-          appendBubble(data.msgId, text, new Date().toISOString(), true);
+          appendBubble(data.msgId, text, new Date().toISOString(), true, null, null);
         }
       } catch (_) {}
     }
@@ -291,7 +307,7 @@
     }
   })();
 
-  function appendBubble(id, text, ts, isMe, contentRef) {
+  function appendBubble(id, text, ts, isMe, contentRef, reaction) {
     if (document.querySelector('#msg-thread-messages .msg-bubble[data-id="' + id + '"]')) return;
     var container = document.getElementById('msg-thread-messages');
     if (!container) return;
@@ -318,16 +334,93 @@
     if (contentRef) {
       refHtml = '<div class="msg-bubble-ref"></div>';
     }
+    var reactionHtml = reaction ? '<span class="msg-bubble-reaction" data-id="' + id + '">' + reaction + '</span>' : '';
     el.innerHTML =
       '<div class="msg-bubble-inner">' +
         '<div class="msg-bubble-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>' +
         refHtml +
-      '</div>';
+        reactionHtml +
+      '</div>' +
+      '<button type="button" class="msg-bubble-react-btn" data-id="' + id + '" aria-label="Réagir" title="Réagir">' +
+        '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path d="M6.5 12c.8 1.2 2 2 3.5 2s2.7-.8 3.5-2"/><circle cx="7.3" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="12.7" cy="8" r=".9" fill="currentColor" stroke="none"/></svg>' +
+      '</button>';
     if (contentRef) {
       try { renderContentRef(el.querySelector('.msg-bubble-ref'), contentRef); } catch (_) {}
     }
     container.insertBefore(el, anchor);
     scrollToBottom();
+  }
+
+  // ── Réactions emoji ──────────────────────────────────────────────────────
+  var reactionPicker = document.getElementById('msg-reaction-picker');
+  var reactionTargetId = null;
+
+  function closeReactionPicker() {
+    if (reactionPicker) reactionPicker.hidden = true;
+    reactionTargetId = null;
+  }
+
+  function applyReaction(id, emoji) {
+    var bubble = document.querySelector('.msg-bubble[data-id="' + id + '"]');
+    if (!bubble) return;
+    var inner = bubble.querySelector('.msg-bubble-inner');
+    var existing = bubble.querySelector('.msg-bubble-reaction');
+    if (!emoji) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) {
+      existing.textContent = emoji;
+    } else {
+      var span = document.createElement('span');
+      span.className = 'msg-bubble-reaction';
+      span.dataset.id = id;
+      span.textContent = emoji;
+      inner.appendChild(span);
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.msg-bubble-react-btn');
+    if (btn) {
+      var id = parseInt(btn.dataset.id, 10);
+      if (reactionTargetId === id && reactionPicker && !reactionPicker.hidden) {
+        closeReactionPicker();
+        return;
+      }
+      reactionTargetId = id;
+      if (reactionPicker) {
+        var rect = btn.getBoundingClientRect();
+        reactionPicker.style.top = Math.max(8, rect.top - 44) + 'px';
+        reactionPicker.style.left = Math.max(8, rect.left - 20) + 'px';
+        reactionPicker.hidden = false;
+      }
+      return;
+    }
+    if (reactionPicker && !reactionPicker.hidden && !reactionPicker.contains(e.target)) {
+      closeReactionPicker();
+    }
+  });
+
+  if (reactionPicker) {
+    reactionPicker.querySelectorAll('.msg-reaction-picker-opt').forEach(function (opt) {
+      opt.addEventListener('click', async function () {
+        var id = reactionTargetId;
+        var emoji = opt.dataset.emoji;
+        closeReactionPicker();
+        if (!id) return;
+        var bubble = document.querySelector('.msg-bubble[data-id="' + id + '"]');
+        var existing = bubble ? bubble.querySelector('.msg-bubble-reaction') : null;
+        var next = (existing && existing.textContent === emoji) ? '' : emoji;
+        applyReaction(id, next);
+        try {
+          await fetch('/messages/msg/' + id + '/react', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emoji: next }),
+          });
+        } catch (_) {}
+      });
+    });
   }
 
   // ── Suppression de la discussion ──────────────────────────────────────────
@@ -440,6 +533,14 @@
     // "Vu" : le serveur pousse cet événement quand le partenaire ouvre la
     // discussion (markRead), sous réserve que mon dernier message soit
     // bien le mien (sinon rien à confirmer).
+    // Réaction posée/retirée par le partenaire sur un de mes messages déjà
+    // affichés — mise à jour ciblée de la bulle, pas de rechargement complet.
+    evtSource.addEventListener('reaction', function (e) {
+      try {
+        var d = JSON.parse(e.data);
+        if (d.convId === convId) applyReaction(d.msgId, d.emoji);
+      } catch (_) {}
+    });
     evtSource.addEventListener('seen', function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -469,7 +570,7 @@
         lastMsgId = m.id;
         var ref = null;
         if (m.content_ref) { try { ref = JSON.parse(m.content_ref); } catch (_) {} }
-        appendBubble(m.id, m.payload, m.created_at, m.sender_id === myId, ref);
+        appendBubble(m.id, m.payload, m.created_at, m.sender_id === myId, ref, m.reaction || null);
       }
     } catch (_) {}
   }

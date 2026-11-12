@@ -503,6 +503,9 @@ db.exec(`CREATE TABLE IF NOT EXISTS messages (
 )`);
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conv_id, created_at DESC)`); } catch (_) {}
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_msg_unread ON messages(conv_id, read_at) WHERE read_at IS NULL`); } catch (_) {}
+// Réaction emoji sur un message (une seule par message, remplace la
+// précédente) — voir setMessageReaction().
+try { db.exec("ALTER TABLE messages ADD COLUMN reaction TEXT"); } catch (_) {}
 
 // shared_items : bibliothèque partagée par duo (max 100, FIFO).
 //   hidden_p1/hidden_p2 = retiré par ce participant ; hard-delete si les deux
@@ -7314,6 +7317,20 @@ function clearConversation(convId, userId) {
   return true;
 }
 
+// Pose/retire/remplace la réaction emoji d'un message. Retourne
+// {convId, partnerId} pour notifier l'autre participant, ou null si le
+// message n'existe pas ou que userId n'est pas participant de sa conversation.
+function setMessageReaction(msgId, userId, emoji) {
+  const row = db.prepare(`
+    SELECT m.id, m.conv_id, c.p1_id, c.p2_id
+    FROM messages m JOIN conversations c ON c.id = m.conv_id
+    WHERE m.id = ?
+  `).get(msgId);
+  if (!row || (row.p1_id !== userId && row.p2_id !== userId)) return null;
+  db.prepare('UPDATE messages SET reaction = ? WHERE id = ?').run(emoji || null, msgId);
+  return { convId: row.conv_id, partnerId: row.p1_id === userId ? row.p2_id : row.p1_id };
+}
+
 function getUnreadCount(userId) {
   const r = db.prepare(`
     SELECT COUNT(*) AS n FROM messages m
@@ -7877,6 +7894,7 @@ module.exports = {
   insertMessage,
   getMessages,
   markRead,
+  setMessageReaction,
   setConversationPinned,
   setConversationMuted,
   markConversationUnread,

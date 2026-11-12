@@ -414,6 +414,187 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
 </script>
 <% } %>
 
+<%# ── Widget flottant "Messages" (PC uniquement) : popup de messagerie sans
+     quitter la page en cours, à côté du bouton "Inviter". ─────────────── %>
+<% var _msgFabHide = _fabHidePath || (currentPath && currentPath.indexOf('/messages') === 0); %>
+<% if (!_msgFabHide) { %>
+<button class="msg-widget-fab" id="msg-widget-fab" aria-label="Messages" title="Messages">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+  <span class="msg-widget-fab-badge" id="msg-widget-fab-badge"<%= (Number(locals.unreadMessagesCount) || 0) > 0 ? '' : ' hidden' %>><%= locals.unreadMessagesCount %></span>
+</button>
+
+<div class="msg-widget-panel" id="msg-widget-panel" hidden>
+  <div class="msg-widget-header">
+    <button type="button" class="msg-widget-back" id="msg-widget-back" hidden aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="msg-widget-title" id="msg-widget-title">Messages</span>
+    <a href="/messages" class="msg-widget-expand" id="msg-widget-expand" title="Ouvrir en grand" aria-label="Ouvrir en grand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+    </a>
+    <button type="button" class="msg-widget-close" id="msg-widget-close" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="msg-widget-body" id="msg-widget-body">
+    <ul class="msg-widget-list" id="msg-widget-list"></ul>
+    <p class="msg-widget-empty" id="msg-widget-empty" hidden>Aucune conversation.</p>
+    <div class="msg-widget-thread" id="msg-widget-thread" hidden></div>
+  </div>
+
+  <form class="msg-widget-compose" id="msg-widget-compose" hidden autocomplete="off">
+    <input type="text" class="msg-widget-compose-input" id="msg-widget-compose-input" placeholder="Votre message…" maxlength="4000" />
+    <button type="submit" class="msg-widget-send" aria-label="Envoyer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </form>
+</div>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var fab = document.getElementById('msg-widget-fab');
+  if (!fab) return;
+  var panel       = document.getElementById('msg-widget-panel');
+  var closeBtn    = document.getElementById('msg-widget-close');
+  var backBtn     = document.getElementById('msg-widget-back');
+  var expandBtn   = document.getElementById('msg-widget-expand');
+  var titleEl     = document.getElementById('msg-widget-title');
+  var list        = document.getElementById('msg-widget-list');
+  var emptyMsg    = document.getElementById('msg-widget-empty');
+  var threadView  = document.getElementById('msg-widget-thread');
+  var compose     = document.getElementById('msg-widget-compose');
+  var composeInput = document.getElementById('msg-widget-compose-input');
+  var badge       = document.getElementById('msg-widget-fab-badge');
+
+  var myId = <%- JSON.stringify(currentUser.id) %>;
+  var activePartnerId = null;
+  var pollTimer = null;
+  var lastRenderedId = 0;
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function updateBadge(n) {
+    if (!badge) return;
+    if (n > 0) { badge.textContent = n > 99 ? '99+' : String(n); badge.hidden = false; }
+    else { badge.hidden = true; }
+  }
+
+  function showList() {
+    stopPolling();
+    activePartnerId = null;
+    backBtn.hidden = true;
+    expandBtn.setAttribute('href', '/messages');
+    titleEl.textContent = 'Messages';
+    threadView.hidden = true;
+    compose.hidden = true;
+    list.hidden = false;
+    loadList();
+  }
+
+  async function loadList() {
+    try {
+      var r = await fetch('/messages/widget/list');
+      var data = await r.json();
+      renderList(data.convs || []);
+    } catch (_) {}
+  }
+
+  function renderList(convs) {
+    list.innerHTML = '';
+    emptyMsg.hidden = !!convs.length;
+    var totalUnread = 0;
+    convs.forEach(function (c) {
+      totalUnread += (c.unread || 0);
+      var li = document.createElement('li');
+      li.className = 'msg-widget-list-item';
+      var avatarHtml = c.partnerAvatarThumb
+        ? '<span class="msg-widget-avatar msg-widget-avatar--img"><img src="' + escHtml(c.partnerAvatarThumb) + '" alt=""></span>'
+        : '<span class="msg-widget-avatar" style="background:' + escHtml(c.partnerColor || '#6b7280') + '">' + escHtml((c.partnerName || '?').charAt(0).toUpperCase()) + '</span>';
+      li.innerHTML = avatarHtml +
+        '<span class="msg-widget-list-name">' + escHtml(c.partnerName) + '</span>' +
+        (c.unread > 0 ? '<span class="msg-widget-list-badge">' + c.unread + '</span>' : '');
+      li.addEventListener('click', function () { openThread(c.partnerId, c.partnerName); });
+      list.appendChild(li);
+    });
+    updateBadge(totalUnread);
+  }
+
+  async function openThread(partnerId, partnerName) {
+    activePartnerId = partnerId;
+    lastRenderedId = 0;
+    backBtn.hidden = false;
+    expandBtn.setAttribute('href', '/messages/' + partnerId);
+    titleEl.textContent = partnerName || '…';
+    list.hidden = true;
+    threadView.hidden = false;
+    compose.hidden = false;
+    await loadThread();
+    stopPolling();
+    pollTimer = setInterval(loadThread, 5000);
+  }
+
+  async function loadThread() {
+    if (!activePartnerId) return;
+    try {
+      var r = await fetch('/messages/widget/thread/' + activePartnerId);
+      var data = await r.json();
+      if (!data.messages) return;
+      var lastId = data.messages.length ? data.messages[data.messages.length - 1].id : 0;
+      if (lastId === lastRenderedId && threadView.childElementCount) return;
+      lastRenderedId = lastId;
+      threadView.innerHTML = '';
+      data.messages.forEach(function (m) {
+        var bubble = document.createElement('div');
+        bubble.className = 'msg-widget-bubble ' + (m.senderId === myId ? 'msg-widget-bubble--me' : 'msg-widget-bubble--them');
+        bubble.innerHTML = escHtml(m.text).replace(/\n/g, '<br>') + (m.reaction ? ' <span class="msg-widget-bubble-reaction">' + m.reaction + '</span>' : '');
+        threadView.appendChild(bubble);
+      });
+      threadView.scrollTop = threadView.scrollHeight;
+    } catch (_) {}
+  }
+
+  if (compose) {
+    compose.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var text = composeInput.value.trim();
+      if (!text || !activePartnerId) return;
+      composeInput.value = '';
+      try {
+        await fetch('/messages/' + activePartnerId, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text }),
+        });
+      } catch (_) {}
+      lastRenderedId = 0;
+      await loadThread();
+    });
+  }
+
+  function openPanel() { panel.hidden = false; showList(); }
+  function closePanel() { panel.hidden = true; stopPolling(); }
+
+  fab.addEventListener('click', function () {
+    if (panel.hidden) openPanel(); else closePanel();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closePanel);
+  if (backBtn) backBtn.addEventListener('click', showList);
+
+  document.addEventListener('click', function (e) {
+    if (panel.hidden) return;
+    if (panel.contains(e.target) || fab.contains(e.target)) return;
+    closePanel();
+  });
+})();
+</script>
+<% } %>
+
 <% } %>
 
 <%# ── Popup de bienvenue (première connexion seulement) ──────────────────── %>
