@@ -7,6 +7,7 @@ const {
   getUserKeys, setUserKeys, getPublicKey, getMessagesAfter,
   getOrCreateConversation, getConversation, getConversations,
   insertMessage, getMessages, markRead, getUnreadCount,
+  setConversationPinned, setConversationMuted, markConversationUnread,
   addSharedItem, getSharedItems, removeSharedItem,
   getFriends, getUserById,
   clearConversation,
@@ -31,6 +32,22 @@ module.exports.pushToUser = pushToUser;
 
 function convPartner(conv, userId) {
   return conv.p1_id === userId ? conv.p2_id : conv.p1_id;
+}
+
+// Résout profileImageId (FK vers gallery_images) → une vraie URL de vignette,
+// et parse profileImageCrop si besoin. Accepte aussi bien un user "camelCase"
+// (getUserById) qu'une ligne SQL brute "snake_case" (getConversations,
+// getFriends) — voir partials/msg-avatar.ejs pour le rendu.
+function resolveAvatar(src) {
+  const imgId = src.profileImageId != null ? src.profileImageId : src.profile_image_id;
+  if (!imgId) return { thumb: null, crop: null };
+  const img = getGalleryImage(imgId);
+  const path = img && img.imagePaths && img.imagePaths[0];
+  let crop = src.profileImageCrop !== undefined ? src.profileImageCrop : src.profile_image_crop;
+  if (typeof crop === "string") {
+    try { crop = JSON.parse(crop); } catch (_) { crop = null; }
+  }
+  return { thumb: path ? thumbUrl(path) : null, crop: crop || null };
 }
 
 function buildRouter(config) {
@@ -105,13 +122,28 @@ function buildRouter(config) {
   function buildConvList(uid) {
     return getConversations(uid).map((c) => {
       const pId = convPartner(c, uid);
+      const isP1 = c.p1_id === uid;
+      const avatar = resolveAvatar({
+        profile_image_id: isP1 ? c.p2_image_id : c.p1_image_id,
+        profile_image_crop: isP1 ? c.p2_image_crop : c.p1_image_crop,
+      });
       return {
         ...c,
         partnerId: pId,
-        partnerName: c.p1_id === uid ? c.p2_name : c.p1_name,
-        partnerColor: c.p1_id === uid ? c.p2_color : c.p1_color,
-        partnerIsAdmin: !!(c.p1_id === uid ? c.p2_is_admin : c.p1_is_admin),
+        partnerName: isP1 ? c.p2_name : c.p1_name,
+        partnerColor: isP1 ? c.p2_color : c.p1_color,
+        partnerIsAdmin: !!(isP1 ? c.p2_is_admin : c.p1_is_admin),
+        partnerAvatarThumb: avatar.thumb,
+        partnerAvatarCrop: avatar.crop,
       };
+    });
+  }
+
+  // Helper : liste d'amis enrichie avec leur avatar résolu (popup "+ Nouvelle discussion")
+  function buildFriendsList(uid) {
+    return getFriends(uid).map((f) => {
+      const avatar = resolveAvatar(f);
+      return { ...f, avatarThumb: avatar.thumb, avatarCrop: avatar.crop };
     });
   }
 
@@ -121,7 +153,7 @@ function buildRouter(config) {
     res.render("messages", {
       config,
       convs: buildConvList(uid),
-      friends: getFriends(uid),
+      friends: buildFriendsList(uid),
       partner: null,
       conv: null,
       messages: [],
@@ -140,13 +172,18 @@ function buildRouter(config) {
 
     const conv = getOrCreateConversation(uid, partnerId);
     markRead(conv.id, uid);
+    const partnerAvatar = resolveAvatar(partner);
 
     res.render("messages", {
       config,
       convs: buildConvList(uid),
-      friends: getFriends(uid),
+      friends: buildFriendsList(uid),
       conv,
       partner,
+      partnerAvatarThumb: partnerAvatar.thumb,
+      partnerAvatarCrop: partnerAvatar.crop,
+      convPinned: !!(conv.p1_id === uid ? conv.pinned_p1 : conv.pinned_p2),
+      convMuted: !!(conv.p1_id === uid ? conv.muted_p1 : conv.muted_p2),
       messages: getMessages(conv.id, uid, 40, null).reverse(),
       navTitle: partner.displayName,
     });
@@ -192,6 +229,39 @@ function buildRouter(config) {
     if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
       return res.status(403).json({ error: "accès refusé" });
     clearConversation(convId, uid);
+    res.json({ ok: true });
+  });
+
+  // POST /messages/conv/:convId/pin — épingler/désépingler (menu ⋮)
+  router.post("/conv/:convId/pin", requireUserJson, (req, res) => {
+    const uid = req.user.id;
+    const convId = parseInt(req.params.convId, 10);
+    const conv = getConversation(convId);
+    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+      return res.status(403).json({ error: "accès refusé" });
+    setConversationPinned(convId, uid, !!req.body.pinned);
+    res.json({ ok: true });
+  });
+
+  // POST /messages/conv/:convId/mute — sourdine/réactiver (menu ⋮)
+  router.post("/conv/:convId/mute", requireUserJson, (req, res) => {
+    const uid = req.user.id;
+    const convId = parseInt(req.params.convId, 10);
+    const conv = getConversation(convId);
+    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+      return res.status(403).json({ error: "accès refusé" });
+    setConversationMuted(convId, uid, !!req.body.muted);
+    res.json({ ok: true });
+  });
+
+  // POST /messages/conv/:convId/mark-unread — pense-bête (menu ⋮)
+  router.post("/conv/:convId/mark-unread", requireUserJson, (req, res) => {
+    const uid = req.user.id;
+    const convId = parseInt(req.params.convId, 10);
+    const conv = getConversation(convId);
+    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+      return res.status(403).json({ error: "accès refusé" });
+    markConversationUnread(convId, uid);
     res.json({ ok: true });
   });
 

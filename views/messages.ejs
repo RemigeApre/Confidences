@@ -17,9 +17,7 @@
         <a href="/messages" class="msg-thread-back" aria-label="Retour aux messages">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
         </a>
-        <div class="msg-thread-avatar" style="background:<%= partner.profileColor || '#6b7280' %>">
-          <%= (partner.displayName || '?').charAt(0).toUpperCase() %>
-        </div>
+        <%- include('partials/msg-avatar', { avatarClass: 'msg-thread-avatar', thumb: partnerAvatarThumb, crop: partnerAvatarCrop, color: partner.profileColor, initial: partner.displayName }) %>
         <a href="/profil/<%= partner.displayName || partner.username %>" class="msg-thread-name">
           <%= partner.displayName %>
           <% if (partner.isAdmin) { %><span class="msg-admin-badge">admin</span><% } %>
@@ -27,9 +25,21 @@
         <a href="/messages/<%= partner.id %>/library" class="msg-thread-library-btn" title="Bibliothèque partagée" aria-label="Bibliothèque partagée">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
         </a>
-        <button class="msg-thread-delete-conv-btn" id="msg-delete-conv-btn" data-conv-id="<%= conv.id %>" type="button" title="Supprimer la discussion" aria-label="Supprimer la discussion">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-        </button>
+        <details class="pc-hover-menu msg-thread-options" id="msg-thread-options">
+          <summary class="msg-thread-options-btn" title="Options" aria-label="Options">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </summary>
+          <div class="msg-thread-options-menu">
+            <button type="button" class="msg-thread-options-item" id="msg-pin-btn" data-conv-id="<%= conv.id %>" data-pinned="<%= convPinned ? '1' : '0' %>">
+              <span class="msg-pin-label"><%= convPinned ? 'Désépingler' : 'Épingler' %></span>
+            </button>
+            <button type="button" class="msg-thread-options-item" id="msg-mute-btn" data-conv-id="<%= conv.id %>" data-muted="<%= convMuted ? '1' : '0' %>">
+              <span class="msg-mute-label"><%= convMuted ? 'Réactiver les notifications' : 'Mettre en sourdine' %></span>
+            </button>
+            <button type="button" class="msg-thread-options-item" id="msg-unread-btn" data-conv-id="<%= conv.id %>">Marquer comme non lu</button>
+            <button type="button" class="msg-thread-options-item msg-thread-options-item--danger" id="msg-delete-conv-btn" data-conv-id="<%= conv.id %>">Supprimer la discussion</button>
+          </div>
+        </details>
       </div>
 
       <div class="msg-thread-body" id="msg-thread-body">
@@ -38,7 +48,7 @@
           <% var _prevTs = null; %>
           <% messages.forEach(function(m) { %>
           <% var _ts = new Date(m.created_at).getTime(); %>
-          <% if (_prevTs === null || (_ts - _prevTs) >= 5 * 60 * 1000) { %>
+          <% if (_prevTs === null || (_ts - _prevTs) >= 2 * 60 * 60 * 1000) { %>
             <div class="msg-time-divider"><%= new Date(m.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) %></div>
           <% } %>
           <% _prevTs = _ts; %>
@@ -83,9 +93,7 @@
         <% friends.forEach(function(f) { %>
         <li>
           <a href="/messages/<%= f.id %>" class="msg-new-conv-friend">
-            <div class="msg-list-avatar" style="background:<%= f.profile_color || '#6b7280' %>">
-              <%= (f.display_name || '?').charAt(0).toUpperCase() %>
-            </div>
+            <%- include('partials/msg-avatar', { avatarClass: 'msg-list-avatar', thumb: f.avatarThumb, crop: f.avatarCrop, color: f.profile_color, initial: f.display_name }) %>
             <span><%= f.display_name %></span>
           </a>
         </li>
@@ -99,19 +107,19 @@
     <% } else { %>
     <ul class="msg-list">
       <% convs.forEach(function(c) { %>
-      <li class="msg-list-item<%= c.unread > 0 ? ' msg-list-item--unread' : '' %><%= (partner && c.partnerId === partner.id) ? ' msg-list-item--active' : '' %>">
+      <% var _showUnread = c.unread > 0 && !c.muted; %>
+      <li class="msg-list-item<%= _showUnread ? ' msg-list-item--unread' : '' %><%= (partner && c.partnerId === partner.id) ? ' msg-list-item--active' : '' %>">
         <a href="/messages/<%= c.partnerId %>" class="msg-list-link">
-          <div class="msg-list-avatar" style="background:<%= c.partnerColor || '#6b7280' %>">
-            <%= (c.partnerName || '?').charAt(0).toUpperCase() %>
-          </div>
+          <%- include('partials/msg-avatar', { avatarClass: 'msg-list-avatar', thumb: c.partnerAvatarThumb, crop: c.partnerAvatarCrop, color: c.partnerColor, initial: c.partnerName }) %>
           <div class="msg-list-info">
             <span class="msg-list-name">
+              <% if (c.pinned) { %><svg class="msg-list-pin-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.5 5.5L19 9l-5 3.5.5 6-2.5-3-2.5 3 .5-6-5-3.5 5.5-1.5z"/></svg><% } %>
               <%= c.partnerName %>
               <% if (c.partnerIsAdmin) { %><span class="msg-admin-badge">admin</span><% } %>
             </span>
             <span class="msg-list-date"><%= new Date(c.last_message_at).toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) %></span>
           </div>
-          <% if (c.unread > 0) { %>
+          <% if (_showUnread) { %>
             <span class="msg-list-unread-badge"><%= c.unread %></span>
           <% } %>
         </a>
@@ -263,7 +271,7 @@
     // du conteneur (sinon tout ajout ultérieur atterrit visuellement au-dessus).
     var anchor = document.getElementById('msg-typing-indicator') || null;
     var tsMs = Date.parse(ts);
-    if (lastRenderedTs === null || (tsMs - lastRenderedTs) >= 5 * 60 * 1000) {
+    if (lastRenderedTs === null || (tsMs - lastRenderedTs) >= 2 * 60 * 60 * 1000) {
       var divider = document.createElement('div');
       divider.className = 'msg-time-divider';
       divider.textContent = new Date(ts).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
@@ -298,6 +306,57 @@
       var r = await fetch('/messages/conv/' + cid, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
       var data = await r.json();
       if (data.ok) window.location.href = '/messages';
+    });
+  }
+
+  // ── Épingler / sourdine / marquer non lu (menu ⋮) ─────────────────────────
+  // Pas de fermeture programmatique ici : le menu ⋮ réutilise le script
+  // générique .pc-hover-menu (voir nav.js), qui garde son propre état
+  // ouvert/fermé — le ré-ouvrir/fermer nous-mêmes le désynchroniserait.
+  // Un clic ailleurs sur la page le referme déjà (comportement générique).
+  var pinBtn = document.getElementById('msg-pin-btn');
+  if (pinBtn) {
+    pinBtn.addEventListener('click', async function () {
+      var cid = parseInt(this.dataset.convId, 10);
+      var nowPinned = this.dataset.pinned !== '1';
+      try {
+        await fetch('/messages/conv/' + cid + '/pin', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pinned: nowPinned }),
+        });
+      } catch (_) {}
+      this.dataset.pinned = nowPinned ? '1' : '0';
+      this.querySelector('.msg-pin-label').textContent = nowPinned ? 'Désépingler' : 'Épingler';
+    });
+  }
+
+  var muteBtn = document.getElementById('msg-mute-btn');
+  if (muteBtn) {
+    muteBtn.addEventListener('click', async function () {
+      var cid = parseInt(this.dataset.convId, 10);
+      var nowMuted = this.dataset.muted !== '1';
+      try {
+        await fetch('/messages/conv/' + cid + '/mute', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ muted: nowMuted }),
+        });
+      } catch (_) {}
+      this.dataset.muted = nowMuted ? '1' : '0';
+      this.querySelector('.msg-mute-label').textContent = nowMuted ? 'Réactiver les notifications' : 'Mettre en sourdine';
+    });
+  }
+
+  var unreadBtn = document.getElementById('msg-unread-btn');
+  if (unreadBtn) {
+    unreadBtn.addEventListener('click', async function () {
+      var cid = parseInt(this.dataset.convId, 10);
+      try {
+        var r = await fetch('/messages/conv/' + cid + '/mark-unread', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+        });
+        var data = await r.json();
+        if (data.ok) window.location.href = '/messages';
+      } catch (_) {}
     });
   }
 
@@ -371,9 +430,18 @@
 .msg-admin-badge{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:hsl(220,80%,38%);color:#fff;border-radius:4px;padding:.1rem .4rem;margin-left:.45rem;vertical-align:middle;line-height:1.5}
 
 /* ── Bouton supprimer discussion ── */
-.msg-thread-delete-conv-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:.3rem;border-radius:6px;display:flex;align-items:center;line-height:0;transition:color .15s}
-.msg-thread-delete-conv-btn:hover{color:hsl(0,60%,55%)}
-.msg-thread-delete-conv-btn svg{width:17px;height:17px}
+/* ── Menu ⋮ (options du fil) ── */
+.msg-thread-options{position:relative}
+.msg-thread-options-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:.3rem;border-radius:6px;display:flex;align-items:center;line-height:0;list-style:none;transition:color .15s,background .15s}
+.msg-thread-options-btn::-webkit-details-marker{display:none}
+.msg-thread-options-btn:hover{color:var(--fg);background:#ffffff0f}
+.msg-thread-options-btn svg{width:18px;height:18px}
+.msg-thread-options-menu{position:absolute;right:0;top:calc(100% + .4rem);min-width:210px;background:var(--surface, #1e1e2e);border:1px solid var(--border);border-radius:10px;padding:.35rem;box-shadow:0 8px 24px #0006;z-index:300;display:flex;flex-direction:column;gap:.1rem}
+.msg-thread-options-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--fg);font-size:.85rem;padding:.55rem .7rem;border-radius:7px;cursor:pointer}
+.msg-thread-options-item:hover{background:#ffffff12}
+.msg-thread-options-item--danger{color:hsl(0,65%,62%)}
+.msg-thread-options-item--danger:hover{background:hsla(0,65%,45%,.14)}
+.msg-list-pin-icon{width:12px;height:12px;color:var(--wiki-gold, #c9a227);vertical-align:-1px;margin-right:.2rem}
 
 /* ── Typing animation ── */
 .msg-typing-indicator{display:flex;padding:.25rem 1rem .5rem}
@@ -394,8 +462,9 @@
   border-right:1px solid var(--border);
 }
 
-/* Left: conversations list */
+/* Left: conversations list (order:1 — avant le fil, visuellement à gauche) */
 .msg-panel-list{
+  order:1;
   width:260px;
   flex-shrink:0;
   display:flex;
@@ -406,8 +475,9 @@
   gap:.25rem;
 }
 
-/* Right: thread */
+/* Right: thread (order:2 — après la liste, visuellement à droite) */
 .msg-panel-thread{
+  order:2;
   flex:1;
   display:flex;
   flex-direction:column;

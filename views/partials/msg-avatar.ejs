@@ -1,0 +1,21 @@
+<%
+  // Avatar réutilisable pour la messagerie (fil, liste de discussions,
+  // popup "+ Nouvelle discussion") : vraie photo si disponible (thumb +
+  // crop résolus côté route via resolveAvatar(), voir routes/messages.js),
+  // sinon le cercle de couleur + initiale déjà utilisé partout ailleurs.
+  var _maThumb = typeof thumb !== 'undefined' ? thumb : null;
+  var _maCrop  = typeof crop  !== 'undefined' ? crop  : null;
+  var _maCx = (_maCrop && _maCrop.x != null) ? _maCrop.x : 50;
+  var _maCy = (_maCrop && _maCrop.y != null) ? _maCrop.y : 50;
+  var _maCs = (_maCrop && _maCrop.scale != null && _maCrop.scale >= 1) ? _maCrop.scale : 1;
+%>
+<% if (_maThumb) { %>
+  <div class="<%= avatarClass %> <%= avatarClass %>--img">
+    <img src="<%= _maThumb %>" alt="" loading="lazy"
+         style="object-position:<%= _maCx %>% <%= _maCy %>%;transform:scale(<%= _maCs %>);transform-origin:<%= _maCx %>% <%= _maCy %>%;" />
+  </div>
+<% } else { %>
+  <div class="<%= avatarClass %>" style="background:<%= color || '#6b7280' %>">
+    <%= (initial || '?').charAt(0).toUpperCase() %>
+  </div>
+<% } %>

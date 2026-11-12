@@ -472,6 +472,14 @@ db.exec(`CREATE TABLE IF NOT EXISTS conversations (
   UNIQUE(p1_id, p2_id),
   CHECK(p1_id < p2_id)
 )`);
+// Épinglé / en sourdine / marqué non lu : par profil (p1 ≠ p2), voir le menu
+// "⋮" du fil de discussion (partials/messages.ejs).
+try { db.exec("ALTER TABLE conversations ADD COLUMN pinned_p1 INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE conversations ADD COLUMN pinned_p2 INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE conversations ADD COLUMN muted_p1 INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE conversations ADD COLUMN muted_p2 INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE conversations ADD COLUMN unread_override_p1 INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
+try { db.exec("ALTER TABLE conversations ADD COLUMN unread_override_p2 INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 
 // messages : payload = JSON {iv, ct, kr, ks} tous en base64 (AES-GCM).
 //   kr = AES key enveloppée avec la clé publique du destinataire
@@ -7107,7 +7115,7 @@ function removeFriend(userId, otherId) {
 function getFriends(userId) {
   return db.prepare(`
     SELECT u.id, u.display_name, u.username, u.profile_color, u.friend_code,
-           u.profile_image_id, u.last_active_at, u.last_login_at
+           u.profile_image_id, u.profile_image_crop, u.last_active_at, u.last_login_at
     FROM friendships f
     JOIN users u ON u.id = CASE WHEN f.user1_id = ? THEN f.user2_id ELSE f.user1_id END
     WHERE (f.user1_id = ? OR f.user2_id = ?) AND f.status = 'accepted'
@@ -7186,16 +7194,63 @@ function getConversations(userId) {
   return db.prepare(`
     SELECT c.*,
       u1.display_name AS p1_name, u1.profile_color AS p1_color, u1.is_admin AS p1_is_admin,
+      u1.profile_image_id AS p1_image_id, u1.profile_image_crop AS p1_image_crop,
       u2.display_name AS p2_name, u2.profile_color AS p2_color, u2.is_admin AS p2_is_admin,
+      u2.profile_image_id AS p2_image_id, u2.profile_image_crop AS p2_image_crop,
       (SELECT COUNT(*) FROM messages m
        WHERE m.conv_id = c.id AND m.sender_id != ? AND m.read_at IS NULL
-         AND (c.p1_id = ? AND m.del_p1 = 0 OR c.p2_id = ? AND m.del_p2 = 0)) AS unread
+         AND (c.p1_id = ? AND m.del_p1 = 0 OR c.p2_id = ? AND m.del_p2 = 0)) AS unread,
+      CASE WHEN c.p1_id = ? THEN c.pinned_p1 ELSE c.pinned_p2 END AS pinned,
+      CASE WHEN c.p1_id = ? THEN c.muted_p1 ELSE c.muted_p2 END AS muted,
+      CASE WHEN c.p1_id = ? THEN c.unread_override_p1 ELSE c.unread_override_p2 END AS unreadOverride
     FROM conversations c
     JOIN users u1 ON u1.id = c.p1_id
     JOIN users u2 ON u2.id = c.p2_id
     WHERE c.p1_id = ? OR c.p2_id = ?
-    ORDER BY c.last_message_at DESC
-  `).all(userId, userId, userId, userId, userId);
+    ORDER BY pinned DESC, c.last_message_at DESC
+  `).all(userId, userId, userId, userId, userId, userId, userId, userId)
+    .map((c) => ({ ...c, unread: c.unread > 0 ? c.unread : (c.unreadOverride ? 1 : 0) }));
+}
+
+// Épingle/désépingle une discussion pour un profil (l'autre n'est pas affecté).
+function setConversationPinned(convId, userId, pinned) {
+  const conv = getConversation(convId);
+  if (!conv) return false;
+  const col = conv.p1_id === userId ? 'pinned_p1' : 'pinned_p2';
+  db.prepare(`UPDATE conversations SET ${col} = ? WHERE id = ?`).run(pinned ? 1 : 0, convId);
+  return true;
+}
+
+// Met en sourdine/réactive une discussion pour un profil (voir aussi
+// getUnreadCount, qui exclut les discussions en sourdine du badge global).
+function setConversationMuted(convId, userId, muted) {
+  const conv = getConversation(convId);
+  if (!conv) return false;
+  const col = conv.p1_id === userId ? 'muted_p1' : 'muted_p2';
+  db.prepare(`UPDATE conversations SET ${col} = ? WHERE id = ?`).run(muted ? 1 : 0, convId);
+  return true;
+}
+
+// Marque une discussion comme non lue pour un profil, même si tous les
+// messages ont déjà été lus — purement un pense-bête, effacé automatiquement
+// dès que ce profil rouvre la discussion (voir markRead).
+function markConversationUnread(convId, userId) {
+  const conv = getConversation(convId);
+  if (!conv) return false;
+  const col = conv.p1_id === userId ? 'unread_override_p1' : 'unread_override_p2';
+  db.prepare(`UPDATE conversations SET ${col} = 1 WHERE id = ?`).run(convId);
+  return true;
+}
+
+// SQLite datetime('now') renvoie "YYYY-MM-DD HH:MM:SS" (UTC, sans indicateur
+// de fuseau) — new Date(...) interprète ce format comme une heure LOCALE,
+// contrairement à new Date().toISOString() (utilisé côté client pour l'envoi
+// optimiste d'un message) qui est sans ambiguïté. Sans ce correctif, comparer
+// un created_at venu de la base à un timestamp fraîchement créé côté client
+// fausse l'écart calculé — cause du séparateur d'heure qui réapparaissait à
+// tort juste après l'envoi d'un message (voir messages.ejs).
+function toIsoUtc(sqliteDt) {
+  return sqliteDt ? sqliteDt.replace(' ', 'T') + 'Z' : sqliteDt;
 }
 
 function insertMessage(convId, senderId, payload, contentRef) {
@@ -7222,7 +7277,7 @@ function getMessagesAfter(convId, userId, afterId) {
       AND m.created_at >= datetime('now', '-3 months')
     ORDER BY m.id ASC
     LIMIT 50
-  `).all(convId, afterId);
+  `).all(convId, afterId).map((m) => ({ ...m, created_at: toIsoUtc(m.created_at) }));
 }
 
 function getMessages(convId, userId, limit, beforeId) {
@@ -7241,7 +7296,7 @@ function getMessages(convId, userId, limit, beforeId) {
       AND m.created_at >= datetime('now', '-3 months')
     ORDER BY m.created_at DESC
     LIMIT ${Math.min(limit || 40, 100)}
-  `).all(...params);
+  `).all(...params).map((m) => ({ ...m, created_at: toIsoUtc(m.created_at) }));
 }
 
 function markRead(convId, recipientId) {
@@ -7249,6 +7304,8 @@ function markRead(convId, recipientId) {
   if (!conv) return;
   db.prepare(`UPDATE messages SET read_at = datetime('now')
               WHERE conv_id = ? AND sender_id != ? AND read_at IS NULL`).run(convId, recipientId);
+  const col = conv.p1_id === recipientId ? 'unread_override_p1' : 'unread_override_p2';
+  db.prepare(`UPDATE conversations SET ${col} = 0 WHERE id = ?`).run(convId);
 }
 
 function clearConversation(convId, userId) {
@@ -7268,7 +7325,8 @@ function getUnreadCount(userId) {
       AND m.read_at IS NULL
       AND ((c.p1_id = ? AND m.del_p1 = 0) OR (c.p2_id = ? AND m.del_p2 = 0))
       AND m.created_at >= datetime('now', '-3 months')
-  `).get(userId, userId, userId);
+      AND NOT ((c.p1_id = ? AND c.muted_p1 = 1) OR (c.p2_id = ? AND c.muted_p2 = 1))
+  `).get(userId, userId, userId, userId, userId);
   return r ? r.n : 0;
 }
 
@@ -7765,6 +7823,9 @@ module.exports = {
   insertMessage,
   getMessages,
   markRead,
+  setConversationPinned,
+  setConversationMuted,
+  markConversationUnread,
   clearConversation,
   getUnreadCount,
   addSharedItem,
