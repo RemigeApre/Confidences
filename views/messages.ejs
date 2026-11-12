@@ -71,6 +71,13 @@
         </details>
       </div>
 
+      <div class="msg-lightbox" id="msg-lightbox" hidden role="dialog" aria-modal="true" aria-label="Image en grand">
+        <button type="button" class="msg-lightbox-close" id="msg-lightbox-close" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <img class="msg-lightbox-img" id="msg-lightbox-img" src="" alt="" />
+      </div>
+
       <div class="msg-thread-body" id="msg-thread-body">
         <div class="msg-reaction-picker" id="msg-reaction-picker" hidden>
           <% ['❤️','😂','👍','😮','😢','🙏'].forEach(function (e) { %>
@@ -92,7 +99,9 @@
           <article class="msg-bubble msg-bubble--<%= m.sender_id === currentUser.id ? 'me' : 'them' %><%= (m.sender_id !== currentUser.id && partner.isAdmin) ? ' msg-bubble--admin' : '' %>"
                    data-id="<%= m.id %>" data-ts="<%= m.created_at %>">
             <div class="msg-bubble-inner">
-              <div class="msg-bubble-text"><%- m.payload.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') %></div>
+              <% if (!m.content_ref) { %>
+                <div class="msg-bubble-text"><%- m.payload.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') %></div>
+              <% } %>
               <% if (m.content_ref) { %>
                 <div class="msg-bubble-ref" data-ref="<%= encodeURIComponent(m.content_ref) %>"></div>
               <% } %>
@@ -203,11 +212,12 @@
     var href = ref.type === 'image' ? '/galerie/' + ref.id
              : ref.type === 'bd'    ? '/bd/' + ref.id
              : '/wiki/' + ref.id;
-    var thumb = null, title = ref.title || '';
+    var thumb = null, title = ref.title || '', full = null;
     var cacheKey = ref.type + ':' + ref.id;
     if (_refCache[cacheKey]) {
       thumb = _refCache[cacheKey].thumb;
       title = _refCache[cacheKey].title || title;
+      full = _refCache[cacheKey].full || null;
     } else {
       try {
         var r = await fetch('/messages/ref-card/' + ref.type + '/' + ref.id);
@@ -215,13 +225,14 @@
         _refCache[cacheKey] = d;
         if (d.thumb) thumb = d.thumb;
         if (d.title) title = d.title;
+        full = d.full || null;
       } catch (_) {}
     }
 
     if (ref.type === 'image') {
-      // Image seule, cliquable, sans aucun texte
+      // Image seule, sans cadre ni titre — clic = visionneuse plein écran
       el.innerHTML = thumb
-        ? '<a class="msg-ref-img" href="' + href + '" target="_blank" rel="noopener"><img src="' + escHtml(thumb) + '" alt="" loading="lazy"></a>'
+        ? '<a class="msg-ref-img" href="' + escHtml(full || thumb) + '" data-full="' + escHtml(full || thumb) + '"><img src="' + escHtml(thumb) + '" alt="" loading="lazy"></a>'
         : '<a class="msg-ref-card msg-ref-card--noimg" href="' + href + '">' + _refIcons.image + '</a>';
     } else {
       // Codex / BD : vignette + titre
@@ -237,6 +248,34 @@
 
   document.querySelectorAll('.msg-bubble-ref[data-ref]').forEach(function (el) {
     try { renderContentRef(el, JSON.parse(decodeURIComponent(el.dataset.ref))); } catch (_) {}
+  });
+
+  // ── Visionneuse d'image (remplace la navigation vers /galerie/:id au clic
+  // sur une image partagée) ─────────────────────────────────────────────────
+  var lightbox    = document.getElementById('msg-lightbox');
+  var lightboxImg = document.getElementById('msg-lightbox-img');
+  var lightboxClose = document.getElementById('msg-lightbox-close');
+
+  function openLightbox(src) {
+    if (!lightbox || !lightboxImg || !src) return;
+    lightboxImg.src = src;
+    lightbox.hidden = false;
+  }
+  function closeLightbox() {
+    if (!lightbox) return;
+    lightbox.hidden = true;
+    lightboxImg.src = '';
+  }
+  if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+  if (lightbox) {
+    lightbox.addEventListener('click', function (e) { if (e.target === lightbox) closeLightbox(); });
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
+  document.addEventListener('click', function (e) {
+    var imgLink = e.target.closest('.msg-ref-img[data-full]');
+    if (!imgLink) return;
+    e.preventDefault();
+    openLightbox(imgLink.dataset.full);
   });
 
   // ── Envoi d'un message ───────────────────────────────────────────────────
@@ -334,10 +373,13 @@
     if (contentRef) {
       refHtml = '<div class="msg-bubble-ref"></div>';
     }
+    // Texte masqué si contenu partagé (le payload n'est alors qu'un libellé
+    // auto-généré redondant avec le titre déjà affiché par la vignette).
+    var textHtml = contentRef ? '' : '<div class="msg-bubble-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>';
     var reactionHtml = reaction ? '<span class="msg-bubble-reaction" data-id="' + id + '">' + reaction + '</span>' : '';
     el.innerHTML =
       '<div class="msg-bubble-inner">' +
-        '<div class="msg-bubble-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>' +
+        textHtml +
         refHtml +
         reactionHtml +
       '</div>' +

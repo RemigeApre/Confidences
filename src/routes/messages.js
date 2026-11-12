@@ -62,7 +62,7 @@ function resolveContentRef(type, id) {
     const img = getGalleryImage(id);
     if (!img) return null;
     const raw = img.imagePaths && img.imagePaths[0];
-    return { thumb: raw ? thumbUrl(raw) : null, title: img.title || "", href: "/galerie/" + id };
+    return { thumb: raw ? thumbUrl(raw) : null, full: raw || null, title: img.title || "", href: "/galerie/" + id };
   }
   if (type === "wiki") {
     const page = getWikiPage(id);
@@ -359,7 +359,7 @@ function buildRouter(config) {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.json({ thumb: null, title: "" });
     const ref = resolveContentRef(req.params.type, id);
-    res.json(ref ? { thumb: ref.thumb, title: ref.title } : { thumb: null, title: "" });
+    res.json(ref ? { thumb: ref.thumb, full: ref.full || null, title: ref.title } : { thumb: null, title: "" });
   });
 
   // GET /messages/:userId/library — bibliothèque partagée
@@ -379,6 +379,7 @@ function buildRouter(config) {
           type: it.content_type,
           href: ref.href,
           thumb: ref.thumb,
+          full: ref.full || null,
           title: ref.title,
           sharedByMe: it.shared_by === uid,
         };

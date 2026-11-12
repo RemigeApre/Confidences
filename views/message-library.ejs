@@ -9,17 +9,34 @@
     <h1 class="msg-library-title">Partag&eacute; avec <%= partner.displayName %></h1>
   </div>
 
+  <% var libImages = items.filter(function (it) { return it.type === 'image'; }); %>
+  <% var libPages  = items.filter(function (it) { return it.type !== 'image'; }); %>
+
   <% if (!items.length) { %>
     <p class="msg-list-empty">Rien de partag&eacute; pour l&rsquo;instant.</p>
   <% } else { %>
-    <div class="msg-library-grid">
-      <% items.forEach(function (it) { %>
-        <div class="msg-library-item" data-id="<%= it.id %>">
-          <% if (it.type === 'image') { %>
+
+    <% if (libImages.length) { %>
+      <h2 class="msg-library-section-title">Images</h2>
+      <div class="msg-library-grid msg-library-grid--images">
+        <% libImages.forEach(function (it) { %>
+          <div class="msg-library-item" data-id="<%= it.id %>">
             <a class="msg-ref-img msg-library-img" href="<%= it.href %>" target="_blank" rel="noopener">
               <% if (it.thumb) { %><img src="<%= it.thumb %>" alt="" loading="lazy" /><% } %>
             </a>
-          <% } else { %>
+            <button type="button" class="msg-library-remove" data-id="<%= it.id %>" aria-label="Retirer" title="Retirer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <% if (libPages.length) { %>
+      <h2 class="msg-library-section-title">Pages Codex &amp; BD</h2>
+      <div class="msg-library-grid msg-library-grid--pages">
+        <% libPages.forEach(function (it) { %>
+          <div class="msg-library-item" data-id="<%= it.id %>">
             <a class="msg-ref-card msg-library-card" href="<%= it.href %>">
               <% if (it.thumb) { %>
                 <img class="msg-ref-thumb" src="<%= it.thumb %>" alt="" loading="lazy" />
@@ -30,11 +47,14 @@
               <% } %>
               <span class="msg-ref-title"><%= it.title %></span>
             </a>
-          <% } %>
-          <button type="button" class="msg-library-remove" data-id="<%= it.id %>" aria-label="Retirer" title="Retirer">&times;</button>
-        </div>
-      <% }) %>
-    </div>
+            <button type="button" class="msg-library-remove" data-id="<%= it.id %>" aria-label="Retirer" title="Retirer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
   <% } %>
 </main>
 
@@ -61,18 +81,23 @@
 .msg-library-page{max-width:720px;margin:0 auto;padding:1rem 1.25rem 3rem}
 .msg-library-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem}
 .msg-library-title{font-size:1.1rem;font-weight:700;margin:0}
-.msg-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.9rem}
+.msg-library-section-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:1.6rem 0 .75rem}
+.msg-library-section-title:first-of-type{margin-top:0}
+.msg-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1.1rem}
 .msg-library-item{position:relative}
 .msg-library-img{max-width:none;margin-top:0}
 .msg-library-img img{height:140px}
 .msg-library-card{max-width:none;margin-top:0}
-.msg-library-remove{position:absolute;top:.3rem;right:.3rem;width:22px;height:22px;border-radius:50%;border:none;background:#000000a0;color:#fff;font-size:.9rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.msg-library-remove:hover{background:hsl(0,65%,45%)}
+/* Croix rouge nue : pas de cercle, pas de fond, pas de contour. */
+.msg-library-remove{position:absolute;top:.35rem;right:.35rem;width:24px;height:24px;border:none;background:none;padding:0;color:hsl(0,80%,62%);cursor:pointer;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+.msg-library-remove svg{width:15px;height:15px}
+.msg-library-remove:hover{color:hsl(0,85%,70%)}
 @media(max-width:640px){
   .msg-library-page{padding:.85rem .9rem 2.5rem}
-  .msg-library-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.7rem}
+  .msg-library-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.8rem}
   /* Cible agrandie (pas de hover tactile) pour une action irréversible. */
-  .msg-library-remove{width:30px;height:30px;font-size:1.05rem;top:.25rem;right:.25rem}
+  .msg-library-remove{width:32px;height:32px;top:.25rem;right:.25rem}
+  .msg-library-remove svg{width:17px;height:17px}
 }
 </style>
 
