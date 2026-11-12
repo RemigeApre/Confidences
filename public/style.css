@@ -980,13 +980,15 @@ body.pub-drawer-open{overflow:hidden}
   .invite-cta-popup{bottom:8.5rem;right:1rem;left:1rem;width:auto}
 }
 
-/* ── Widget flottant "Messages" (PC) : à côté du bouton Inviter, ouvre une
-   mini-fenêtre de messagerie sans quitter la page. ── */
-.msg-widget-fab{position:fixed;bottom:5.5rem;right:7.6rem;z-index:400;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:hsl(250,55%,46%);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+/* ── Widget flottant "Messages" (PC) : empilé au-dessus du bouton Inviter,
+   même recette visuelle (pastille + icône + libellé) pour que les deux se
+   lisent comme une seule famille de boutons, ouvre une mini-fenêtre de
+   messagerie sans quitter la page. ── */
+.msg-widget-fab{position:fixed;bottom:9.3rem;right:1.4rem;z-index:400;display:flex;align-items:center;gap:.45rem;padding:.55rem 1rem .55rem .7rem;border-radius:999px;background:hsl(250,65%,56%);color:#fff;font-size:.82rem;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35)}
 .msg-widget-fab:hover{opacity:.88}
-.msg-widget-fab svg{width:22px;height:22px}
-.msg-widget-fab-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:999px;background:hsl(0,70%,55%);color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 .3rem;border:2px solid var(--bg,#111)}
-.msg-widget-panel{position:fixed;bottom:9.3rem;right:1.4rem;width:320px;max-height:460px;background:var(--surface,#1e1e2e);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.5);z-index:401;display:flex;flex-direction:column;overflow:hidden}
+.msg-widget-fab svg{width:18px;height:18px;flex-shrink:0}
+.msg-widget-fab-badge{position:absolute;top:-.4rem;right:-.4rem;min-width:19px;height:19px;border-radius:999px;background:hsl(0,70%,55%);color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 .3rem;border:2px solid var(--bg,#111)}
+.msg-widget-panel{position:fixed;bottom:12.8rem;right:1.4rem;width:320px;max-height:460px;background:var(--surface,#1e1e2e);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.5);z-index:401;display:flex;flex-direction:column;overflow:hidden}
 .msg-widget-header{display:flex;align-items:center;gap:.4rem;padding:.6rem .7rem;border-bottom:1px solid var(--border);flex-shrink:0}
 .msg-widget-back,.msg-widget-close,.msg-widget-expand{background:none;border:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;padding:.2rem;border-radius:6px;flex-shrink:0;text-decoration:none}
 .msg-widget-back svg,.msg-widget-close svg,.msg-widget-expand svg{width:16px;height:16px}
