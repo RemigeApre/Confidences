@@ -68,6 +68,12 @@
 .msg-library-card{max-width:none;margin-top:0}
 .msg-library-remove{position:absolute;top:.3rem;right:.3rem;width:22px;height:22px;border-radius:50%;border:none;background:#000000a0;color:#fff;font-size:.9rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .msg-library-remove:hover{background:hsl(0,65%,45%)}
+@media(max-width:640px){
+  .msg-library-page{padding:.85rem .9rem 2.5rem}
+  .msg-library-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.7rem}
+  /* Cible agrandie (pas de hover tactile) pour une action irréversible. */
+  .msg-library-remove{width:30px;height:30px;font-size:1.05rem;top:.25rem;right:.25rem}
+}
 </style>
 
 <%- include('partials/foot') %>

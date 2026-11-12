@@ -391,9 +391,17 @@
       reactionTargetId = id;
       if (reactionPicker) {
         var rect = btn.getBoundingClientRect();
-        reactionPicker.style.top = Math.max(8, rect.top - 44) + 'px';
-        reactionPicker.style.left = Math.max(8, rect.left - 20) + 'px';
         reactionPicker.hidden = false;
+        // Dimensions réelles connues seulement une fois visible (hidden ne
+        // les donne pas) — on les lit après avoir affiché le panneau, pour
+        // le recaler avant qu'il ne déborde de l'écran (important en
+        // téléphone, où la bulle peut être tout contre un bord).
+        var pw = reactionPicker.offsetWidth || 220;
+        var ph = reactionPicker.offsetHeight || 44;
+        var top = Math.min(Math.max(8, rect.top - ph - 8), window.innerHeight - ph - 8);
+        var left = Math.min(Math.max(8, rect.left - pw / 2 + 16), window.innerWidth - pw - 8);
+        reactionPicker.style.top = top + 'px';
+        reactionPicker.style.left = left + 'px';
       }
       return;
     }

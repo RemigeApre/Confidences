@@ -1245,8 +1245,14 @@ a.amis-rp-item-name:hover{text-decoration:underline}
 .msg-reaction-picker-opt{background:none;border:none;cursor:pointer;font-size:1.05rem;padding:.1rem .25rem;border-radius:999px;line-height:1.3;transition:background .15s,transform .1s}
 .msg-reaction-picker-opt:hover{background:#ffffff14;transform:scale(1.15)}
 @media(max-width:640px){
-  .msg-bubble-react-btn{opacity:1;position:static;transform:none;margin-left:.3rem;align-self:flex-end}
+  /* Pas de hover sur tactile : bouton toujours visible, et cible agrandie
+     (recommandation 44px minimum — ici ~38px, meilleur compromis dans une
+     ligne de bulle déjà étroite). */
+  .msg-bubble-react-btn{opacity:1;position:static;transform:none;margin-left:.2rem;align-self:flex-end;width:38px;height:38px;justify-content:center;padding:0}
+  .msg-bubble-react-btn svg{width:18px;height:18px}
   .msg-bubble--me .msg-bubble-react-btn,.msg-bubble--them .msg-bubble-react-btn,.msg-bubble--admin .msg-bubble-react-btn{left:auto;right:auto}
+  .msg-reaction-picker{gap:.3rem;padding:.35rem}
+  .msg-reaction-picker-opt{min-width:38px;min-height:38px;display:flex;align-items:center;justify-content:center;font-size:1.15rem}
 }
 
 /* Saisie */
@@ -1526,3 +1532,30 @@ a.amis-rp-item-name:hover{text-decoration:underline}
 .coll-lb-nav--next{right:.75rem}
 .coll-lb-title{color:rgba(255,255,255,.65);font-size:.85rem;margin-top:.6rem;text-align:center;max-width:80vw}
 .coll-lb-counter{color:rgba(255,255,255,.35);font-size:.72rem;margin-top:.2rem}
+
+/* ── Codex téléphone : volet "Catégorie" du sommaire jugé peu utile en
+   mobile (la grille de tuiles juste en dessous joue déjà ce rôle) — masqué
+   uniquement <640px, le desktop le garde. ── */
+@media(max-width:640px){
+  #wiki-index-cat-details{display:none}
+}
+
+/* ── Bouton "Inviter" (et widget Messages) masqués pendant que le tiroir de
+   filtres mobile est ouvert (burger "Filtres") : sinon ils flottent par-dessus
+   le tiroir et se chevauchent avec son contenu. ── */
+body.nav-drawer-locked .invite-cta-fab,
+body.nav-drawer-locked .msg-widget-fab{display:none}
+
+/* ── Lien "Messages" dans la navigation téléphone principale (favoris.ejs),
+   juste après le Coffre — même carte .ph-card que le reste du hub. ── */
+.ph-messages-link{display:flex;align-items:center;justify-content:center;gap:.6rem;padding:1rem 1.1rem;text-decoration:none;color:var(--fg)}
+.ph-messages-link svg{width:20px;height:20px;color:var(--accent);flex-shrink:0}
+.ph-messages-link:hover{background:#ffffff08}
+.ph-messages-text{font-weight:700;font-size:.92rem}
+.ph-messages-badge{background:hsl(0,70%,55%);color:#fff;font-size:.72rem;font-weight:700;border-radius:999px;padding:.1rem .55rem;line-height:1.5}
+
+/* ── Menu mobile : groupe "Tags" replié par défaut (details/summary) ── */
+.mm-group>summary.mm-group-header{cursor:pointer;list-style:none}
+.mm-group>summary.mm-group-header::-webkit-details-marker{display:none}
+.mm-group-chevron{width:.95rem;height:.95rem;opacity:.3;flex-shrink:0;transition:transform .15s}
+.mm-group[open] .mm-group-chevron{transform:rotate(90deg)}

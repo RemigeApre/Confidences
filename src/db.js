@@ -3964,7 +3964,7 @@ function pathToLabel(path) {
   }
 
   if (clean === '/profil') return 'Profil';
-  if (clean === '/favoris') return 'Favoris';
+  if (clean === '/favoris') return 'Navigation téléphone principal';
   if (clean === '/favoris/coffre') return 'Coffre';
   if (clean === '/ponhgup') return 'Admin';
 

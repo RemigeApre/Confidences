@@ -6,20 +6,6 @@
 
     <% if (currentUser) { %>
 
-      <%# ── Bloc identité — toute la carte est cliquable vers le profil ── %>
-      <a href="/favoris" class="mm-identity" aria-label="Voir mon profil">
-        <div class="mm-identity-avatar"><%- include('partials/profile-avatar') %></div>
-        <div class="mm-identity-info">
-          <%
-            var _mmCharmMap = { star:'★', heart:'♥', diamond:'◆', bolt:'⚡', flower:'✿', sparkle:'✦', crown:'♛', clover:'♣', spade:'♠', drop:'▼', sun:'☀', square:'■', triangle:'▲', pentagon:'⬟', skull:'☠' };
-            var _mmKey = currentUser.ratingCharm && currentUser.ratingCharm !== 'star' ? currentUser.ratingCharm : null;
-            var _mmSym = _mmKey ? (_mmCharmMap[_mmKey] || '') : '';
-          %>
-          <span class="mm-identity-name"><%= currentUser.displayName %><% if (_mmSym) { %><span class="charm-mark" aria-hidden="true"><%= _mmSym %></span><% } %></span>
-        </div>
-        <svg class="mm-identity-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-
       <%# ── Navigation principale ── %>
       <nav class="mm-nav" aria-label="Menu principal">
 
@@ -41,14 +27,15 @@
           </a>
         <% } %>
 
-        <%# Tags : groupe avec 3 sous-liens %>
-        <div class="mm-group">
-          <div class="mm-group-header mm-item--tags">
+        <%# Tags : réduit par défaut, un clic déplie les 3 sous-liens %>
+        <details class="mm-group">
+          <summary class="mm-group-header mm-item--tags">
             <span class="mm-item-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             </span>
             <span class="mm-item-label">Tags</span>
-          </div>
+            <svg class="mm-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+          </summary>
           <div class="mm-group-body">
             <a href="/tags" class="mm-subitem mm-subitem--labels">
               <span class="mm-subitem-dot"></span>Labels
@@ -60,7 +47,7 @@
               <span class="mm-subitem-dot"></span>Personnages
             </a>
           </div>
-        </div>
+        </details>
 
         <% if (locals.partnerUser) { %>
           <a href="/couple" class="mm-item mm-item--couple">
@@ -92,34 +79,6 @@
 
       </nav>
 
-      <%# ── Paramètres Ultra / Irréaliste ── %>
-      <div class="mm-settings-block">
-        <div class="mm-settings-heading">Ultra</div>
-        <div class="mm-setting-options" id="mm-ultra-options">
-          <label class="mm-setting-radio" data-val="hidden">
-            <input type="radio" name="mm-ultra" value="hidden" /> Masqu&eacute;
-          </label>
-          <label class="mm-setting-radio" data-val="visible">
-            <input type="radio" name="mm-ultra" value="visible" /> Visible
-          </label>
-          <label class="mm-setting-radio" data-val="off">
-            <input type="radio" name="mm-ultra" value="off" /> D&eacute;sactiv&eacute;
-          </label>
-        </div>
-        <div class="mm-settings-heading">Irr&eacute;aliste</div>
-        <div class="mm-setting-options" id="mm-irrealiste-options">
-          <label class="mm-setting-radio" data-val="hidden">
-            <input type="radio" name="mm-irrealiste" value="hidden" /> Masqu&eacute;
-          </label>
-          <label class="mm-setting-radio" data-val="visible">
-            <input type="radio" name="mm-irrealiste" value="visible" /> Visible
-          </label>
-          <label class="mm-setting-radio" data-val="off">
-            <input type="radio" name="mm-irrealiste" value="off" /> D&eacute;sactiv&eacute;
-          </label>
-        </div>
-      </div>
-
       <%# ── Déconnexion ── %>
       <form method="POST" action="/ponhgup/logout" class="mm-logout-form">
         <button type="submit" class="mm-item mm-item--logout">
@@ -143,43 +102,4 @@
   </div>
 
 </main>
-<% if (currentUser) { %>
-<script nonce="<%= nonce %>">
-(function () {
-  function savePref(field, value) {
-    var body = {};
-    body[field] = value;
-    fetch("/favoris/parametres", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }).catch(function () {});
-  }
-
-  function wireServerRadio(containerId, field, initial) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-    var labels = Array.prototype.slice.call(container.querySelectorAll(".mm-setting-radio"));
-    var current = initial;
-    function sync() {
-      labels.forEach(function (lbl) { lbl.classList.toggle("active", lbl.dataset.val === current); });
-    }
-    sync();
-    labels.forEach(function (lbl) {
-      var radio = lbl.querySelector("input");
-      if (radio.value === current) radio.checked = true;
-      radio.addEventListener("change", function () {
-        if (!radio.checked) return;
-        current = radio.value;
-        sync();
-        savePref(field, current);
-      });
-    });
-  }
-
-  wireServerRadio("mm-ultra-options",      "ultraMode",      window.ULTRA_MODE      || "hidden");
-  wireServerRadio("mm-irrealiste-options", "irrealisteMode", window.IRREALISTE_MODE || "visible");
-})();
-</script>
-<% } %>
 <%- include('partials/foot') %>
