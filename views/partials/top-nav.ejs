@@ -97,17 +97,17 @@
           <span class="pc-nav-coins-count"><%= currentUser.coins || 0 %></span>
         </div>
         <% } %>
-        <% if (currentUser && locals.inviteToken) { %>
-        <a href="/messages" class="pc-icon-btn pc-msg-btn<%= currentPath === '/messages' || (currentPath || '').startsWith('/messages/') ? ' pc-msg-btn--active' : '' %>" title="Messages" aria-label="Messages">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <% if (locals.unreadMessagesCount > 0) { %><span class="pc-msg-badge"><%= locals.unreadMessagesCount %></span><% } %>
-        </a>
-        <% } %>
         <% if (currentUser) { %>
           <% var _roleClass = currentUser.isAdmin ? 'pc-key-admin' : (currentUser.isTest ? 'pc-key-test' : 'pc-key-user'); %>
           <div class="pc-nav-item pc-has-drop pc-hover-menu">
             <button type="button" class="pc-icon-btn pc-avatar-btn <%= _roleClass %>" title="<%= currentUser.displayName %>"><%- include('profile-avatar') %></button>
             <div class="pc-drop pc-drop-right">
+              <% var _onMessages = (currentPath || '').indexOf('/messages') === 0; %>
+              <a href="/messages" class="pc-drop-link pc-drop-link--messages" data-fr="Messages" data-en="Messages">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Messages
+                <% if (!_onMessages && locals.unreadMessagesCount > 0) { %><span class="pc-drop-badge"><%= locals.unreadMessagesCount %></span><% } %>
+              </a>
               <a href="/favoris" class="pc-drop-link" data-fr="Profil" data-en="Profile">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
                 Profil
