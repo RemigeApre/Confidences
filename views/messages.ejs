@@ -683,7 +683,10 @@
   .msg-app--thread-open .msg-panel-list{display:none}
   .msg-thread-header{padding:.5rem .75rem}
   .msg-thread-body{padding:.5rem .75rem}
-  .msg-compose{padding:.5rem .75rem}
+  /* Fond opaque + au-dessus du reste + marge pour l'encoche (sinon le champ
+     de saisie pouvait se retrouver visuellement couvert, ex. par le bouton
+     "Inviter" flottant) et toujours entièrement cliquable en bas d'écran. */
+  .msg-compose{padding:.5rem .75rem;padding-bottom:calc(.5rem + env(safe-area-inset-bottom));position:relative;z-index:5;background:var(--bg)}
   .msg-bubble{max-width:88%}
 }
 </style>
