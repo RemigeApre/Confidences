@@ -1,0 +1,136 @@
+<%
+  // Popup d'intro par section — une seule fois par profil, à la première
+  // visite de la page d'accueil de chaque section (pas sur les sous-pages).
+  // Contenu centralisé ici : chaque page hôte n'a rien à faire, ce partial
+  // se déclenche tout seul selon currentPath (inclus une fois dans foot.ejs).
+  var _SECTION_BY_PATH = {
+    '/wiki': 'codex',
+    '/galerie': 'galerie',
+    '/bd': 'bd',
+    '/protagonistes': 'personnages',
+    '/quizz': 'quizz',
+  };
+  var _pathNoQuery = (currentPath || '').split('?')[0];
+  var _introSection = currentUser ? _SECTION_BY_PATH[_pathNoQuery] : null;
+  var _introAlreadySeen = _introSection && currentUser.sectionIntrosSeen && currentUser.sectionIntrosSeen.indexOf(_introSection) !== -1;
+
+  var _SECTION_CONTENT = {
+    codex: {
+      icon: '&#128214;',
+      title: 'Le Codex',
+      points: [
+        { icon: '&#128218;', label: 'Catégories', text: 'Positions, Lieux, Partenaires, Scénarios, Tenues, Objets, Pratiques, Fantasmes… explorez par thème ou utilisez la recherche.' },
+        { icon: '&#9733;', label: 'Noter', text: 'Donnez une note de 1 à 5 à chaque fiche qui vous parle.' },
+        { icon: '&#128293;', label: 'J’adore', text: 'Marquez vos coups de cœur — ils remontent dans vos favoris.' },
+        { icon: '&#10024;', label: 'Intéressé(e)', text: 'Ce qui vous attire sans l’avoir encore exploré.' },
+        { icon: '&#9888;', label: 'Ultra / Irréaliste', text: 'Deux tags à part pour les contenus plus extrêmes ou plus fantasmés — masquables dans les paramètres.' },
+      ],
+      importance: 'C’est la base de tout le site : vos notes et réactions alimentent les récompenses (cartes à collectionner, classeurs) et aident votre partenaire à vous découvrir.',
+    },
+    galerie: {
+      icon: '&#128247;',
+      title: 'La Galerie',
+      points: [
+        { icon: '&#128269;', label: 'Parcourir', text: 'Filtrez les images par catégorie et par tags selon vos envies.' },
+        { icon: '&#128293;', label: 'Réagir', text: 'J’adore / Intéressé(e), et mettez en favoris celles qui vous marquent.' },
+        { icon: '&#9993;', label: 'Partager', text: 'Envoyez une image à votre partenaire ou un(e) ami(e) directement depuis sa fiche.' },
+        { icon: '&#127873;', label: 'Déblocage', text: 'De nouvelles images s’ajoutent aussi en ouvrant des lootboxes depuis le Jeu.' },
+      ],
+      importance: 'Vos réactions ici nourrissent aussi vos classeurs et aident à affiner ce qui vous est proposé.',
+    },
+    bd: {
+      icon: '&#128214;',
+      title: 'Les BD',
+      points: [
+        { icon: '&#128214;', label: 'Lecture', text: 'Des bandes dessinées à lire en ligne, organisées en chapitres.' },
+        { icon: '&#128269;', label: 'Filtres', text: 'Par langue, par tags, et notez vos lectures.' },
+        { icon: '&#128149;', label: 'À deux', text: 'Les réactions de votre partenaire sont visibles sur chaque BD.' },
+      ],
+      importance: 'Une autre façon de découvrir des scénarios, en images.',
+    },
+    personnages: {
+      icon: '&#128100;',
+      title: 'Les Personnages',
+      points: [
+        { icon: '&#128214;', label: 'Fiches', text: 'Bio, évolutions, races & clans des personnages récurrents du site.' },
+        { icon: '&#127183;', label: 'Cartes', text: 'Débloquez leur carte à collectionner via les lootboxes, avec des stats pour le mini-jeu.' },
+        { icon: '&#128194;', label: 'Classeurs', text: 'Rangez-les dans vos classeurs une fois obtenus.' },
+      ],
+      importance: 'Ils relient le Codex, les BD et la Galerie autour d’une même identité.',
+    },
+    quizz: {
+      icon: '&#10067;',
+      title: 'Les Quizz',
+      points: [
+        { icon: '&#10067;', label: 'Thèmes', text: 'Des quiz variés pour mieux vous connaître ou découvrir vos préférences.' },
+        { icon: '&#128149;', label: 'À deux', text: 'Comparez vos résultats avec votre partenaire si vous en avez un(e).' },
+      ],
+      importance: 'Un bon point de départ pour lancer une discussion à deux.',
+    },
+  };
+%>
+<% if (_introSection && !_introAlreadySeen) { %>
+<% var _sic = _SECTION_CONTENT[_introSection]; %>
+<div class="sec-intro-backdrop" id="sec-intro-backdrop"></div>
+<div class="sec-intro-popup" id="sec-intro-popup" role="dialog" aria-modal="true" aria-label="<%= _sic.title %>">
+  <div class="sec-intro-header">
+    <span class="sec-intro-icon" aria-hidden="true"><%- _sic.icon %></span>
+    <h2 class="sec-intro-title"><%= _sic.title %></h2>
+  </div>
+  <div class="sec-intro-points">
+    <% _sic.points.forEach(function (p) { %>
+      <div class="sec-intro-point">
+        <span class="sec-intro-point-icon" aria-hidden="true"><%- p.icon %></span>
+        <div class="sec-intro-point-text">
+          <strong><%= p.label %></strong>
+          <span><%= p.text %></span>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+  <p class="sec-intro-importance"><%- _sic.importance %></p>
+  <button type="button" class="sec-intro-close-btn" id="sec-intro-close-btn">Compris</button>
+</div>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var backdrop = document.getElementById('sec-intro-backdrop');
+  var popup = document.getElementById('sec-intro-popup');
+  var closeBtn = document.getElementById('sec-intro-close-btn');
+  if (!backdrop || !popup || !closeBtn) return;
+
+  function dismiss() {
+    backdrop.remove();
+    popup.remove();
+    fetch('/favoris/intro-seen', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section: <%- JSON.stringify(_introSection) %> }),
+    }).catch(function () {});
+  }
+
+  closeBtn.addEventListener('click', dismiss);
+  backdrop.addEventListener('click', dismiss);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dismiss(); });
+})();
+</script>
+
+<style>
+.sec-intro-backdrop{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.65)}
+.sec-intro-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:601;width:min(420px,calc(100vw - 2rem));max-height:calc(100vh - 3rem);overflow-y:auto;background:var(--card,#1c1c1c);border:1px solid var(--border);border-radius:16px;padding:1.4rem 1.4rem 1.2rem;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.sec-intro-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem}
+.sec-intro-icon{font-size:1.6rem;line-height:1}
+.sec-intro-title{margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:1.25rem;color:var(--fg)}
+.sec-intro-points{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.1rem}
+.sec-intro-point{display:flex;align-items:flex-start;gap:.65rem}
+.sec-intro-point-icon{font-size:1.05rem;line-height:1.4;flex-shrink:0;width:1.4rem;text-align:center}
+.sec-intro-point-text{display:flex;flex-direction:column;gap:.1rem;font-size:.85rem;line-height:1.45}
+.sec-intro-point-text strong{color:var(--fg);font-size:.86rem}
+.sec-intro-point-text span{color:var(--muted)}
+.sec-intro-importance{font-size:.8rem;font-style:italic;color:var(--muted);border-top:1px solid var(--border);padding-top:.85rem;margin:0 0 1.1rem;line-height:1.5}
+.sec-intro-close-btn{display:block;width:100%;background:var(--accent);color:#111;border:none;border-radius:10px;padding:.6rem;font-size:.9rem;font-weight:700;cursor:pointer}
+.sec-intro-close-btn:hover{opacity:.9}
+@media(max-width:640px){
+  .sec-intro-popup{padding:1.2rem 1.1rem 1rem}
+}
+</style>
+<% } %>

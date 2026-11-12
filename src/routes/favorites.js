@@ -105,6 +105,7 @@ const {
   getExchangesReceived,
   getExchangesSent,
   setOnboardingDone,
+  markSectionIntroSeen,
   getCodexFeatured,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
@@ -640,6 +641,12 @@ function buildFavoritesRouter(config) {
     updateUserSettings(req.user.id, { ultraMode, shareNotesWithAdmin, profilePublic });
     setOnboardingDone(req.user.id);
     res.json({ ok: true });
+  });
+
+  // ── Popups d'intro par section (Codex/Galerie/BD/Personnages/Quizz) ──────
+  router.post("/intro-seen", requireUserJson, (req, res) => {
+    const ok = markSectionIntroSeen(req.user.id, String(req.body.section || ''));
+    res.json({ ok });
   });
 
   // ── Réinitialiser le compte : vide le contenu personnel (notes/étoiles/

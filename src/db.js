@@ -693,6 +693,10 @@ try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_fused INTEGER NOT NULL DEF
 try { db.exec("ALTER TABLE users ADD COLUMN profile_banner_ref_id INTEGER"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN profile_public INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN onboarding_done INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
+// Popups d'intro par section (Codex/Galerie/BD/Personnages/Quizz) : clés des
+// sections déjà vues par ce profil, affichées une seule fois chacune à la
+// première visite — voir partials/section-intro.ejs.
+try { db.exec("ALTER TABLE users ADD COLUMN section_intros_seen TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
 // Migrations : cadeau / échange / marché
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_listed INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_new INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
@@ -1199,6 +1203,7 @@ function rowToUser(row) {
     profileBannerRefId: row.profile_banner_ref_id || null,
     profilePublic: row.profile_public !== 0,
     onboardingDone: row.onboarding_done !== 0,
+    sectionIntrosSeen: (() => { try { return JSON.parse(row.section_intros_seen || '[]'); } catch(_) { return []; } })(),
     adminTag: row.admin_tag || null,
     adminNote: row.admin_note || '',
   };
@@ -8036,6 +8041,7 @@ module.exports = {
   listNewsletterSubscribers,
   setUserNewsletter,
   setOnboardingDone,
+  markSectionIntroSeen,
   checkAndGrantNoteMilestones,
   checkAndGrantProfilQuizLootbox,
   checkAndGrantHeartsMilestones,
@@ -8317,4 +8323,15 @@ function setUserNewsletter(userId, value) {
 
 function setOnboardingDone(userId) {
   db.prepare('UPDATE users SET onboarding_done = 1 WHERE id = ?').run(userId);
+}
+
+const VALID_INTRO_SECTIONS = ['codex', 'galerie', 'bd', 'personnages', 'quizz'];
+function markSectionIntroSeen(userId, section) {
+  if (!VALID_INTRO_SECTIONS.includes(section)) return false;
+  const row = db.prepare('SELECT section_intros_seen FROM users WHERE id = ?').get(userId);
+  if (!row) return false;
+  let seen = []; try { seen = JSON.parse(row.section_intros_seen || '[]'); } catch (_) {}
+  if (!seen.includes(section)) seen.push(section);
+  db.prepare('UPDATE users SET section_intros_seen = ? WHERE id = ?').run(JSON.stringify(seen), userId);
+  return true;
 }
