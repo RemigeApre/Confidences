@@ -6,7 +6,7 @@ const {
 const {
   getUserKeys, setUserKeys, getPublicKey, getMessagesAfter,
   getOrCreateConversation, getConversation, getConversations,
-  insertMessage, getMessages, markRead, deleteMessage, getUnreadCount,
+  insertMessage, getMessages, markRead, getUnreadCount,
   addSharedItem, getSharedItems, removeSharedItem,
   getFriends, getUserById,
   clearConversation,
@@ -182,13 +182,6 @@ function buildRouter(config) {
     pushToUser(partnerId, "message", { convId: conv.id, fromId: uid, fromName: req.user.displayName });
 
     res.json({ ok: true, msgId, convId: conv.id });
-  });
-
-  // DELETE /messages/msg/:msgId — supprimer un message
-  router.delete("/msg/:msgId", requireUserJson, (req, res) => {
-    const msgId = parseInt(req.params.msgId, 10);
-    const ok = deleteMessage(msgId, req.user.id);
-    res.json({ ok });
   });
 
   // DELETE /messages/conv/:convId — supprimer toute la discussion (côté utilisateur)

@@ -35,20 +35,20 @@
       <div class="msg-thread-body" id="msg-thread-body">
         <button class="msg-load-more-btn" id="msg-load-more-btn" type="button" hidden>Charger plus</button>
         <div class="msg-thread-messages" id="msg-thread-messages">
+          <% var _prevTs = null; %>
           <% messages.forEach(function(m) { %>
+          <% var _ts = new Date(m.created_at).getTime(); %>
+          <% if (_prevTs === null || (_ts - _prevTs) >= 5 * 60 * 1000) { %>
+            <div class="msg-time-divider"><%= new Date(m.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) %></div>
+          <% } %>
+          <% _prevTs = _ts; %>
           <article class="msg-bubble msg-bubble--<%= m.sender_id === currentUser.id ? 'me' : 'them' %><%= (m.sender_id !== currentUser.id && partner.isAdmin) ? ' msg-bubble--admin' : '' %>"
-                   data-id="<%= m.id %>">
+                   data-id="<%= m.id %>" data-ts="<%= m.created_at %>">
             <div class="msg-bubble-inner">
               <div class="msg-bubble-text"><%- m.payload.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') %></div>
               <% if (m.content_ref) { %>
                 <div class="msg-bubble-ref" data-ref="<%= encodeURIComponent(m.content_ref) %>"></div>
               <% } %>
-              <div class="msg-bubble-meta">
-                <span class="msg-bubble-time"><%= new Date(m.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) %></span>
-                <button class="msg-bubble-delete" data-id="<%= m.id %>" type="button" aria-label="Supprimer" title="Supprimer">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="4" x2="4" y2="12"/><line x1="4" y1="4" x2="12" y2="12"/></svg>
-                </button>
-              </div>
             </div>
           </article>
           <% }) %>
@@ -244,8 +244,32 @@
     });
   }
 
+  // Pas d'heure sur chaque bulle (trop lourd) : juste un séparateur discret
+  // quand l'écart avec le message précédent dépasse 5 minutes.
+  var lastRenderedTs = null;
+  (function () {
+    var bubbles = document.querySelectorAll('#msg-thread-messages .msg-bubble');
+    if (bubbles.length) {
+      var t = Date.parse(bubbles[bubbles.length - 1].dataset.ts);
+      if (!isNaN(t)) lastRenderedTs = t;
+    }
+  })();
+
   function appendBubble(id, text, ts, isMe, contentRef) {
     if (document.querySelector('#msg-thread-messages .msg-bubble[data-id="' + id + '"]')) return;
+    var container = document.getElementById('msg-thread-messages');
+    if (!container) return;
+    // insertBefore l'indicateur de frappe, qui reste le dernier enfant fixe
+    // du conteneur (sinon tout ajout ultérieur atterrit visuellement au-dessus).
+    var anchor = document.getElementById('msg-typing-indicator') || null;
+    var tsMs = Date.parse(ts);
+    if (lastRenderedTs === null || (tsMs - lastRenderedTs) >= 5 * 60 * 1000) {
+      var divider = document.createElement('div');
+      divider.className = 'msg-time-divider';
+      divider.textContent = new Date(ts).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+      container.insertBefore(divider, anchor);
+    }
+    lastRenderedTs = tsMs;
     var el = document.createElement('article');
     el.className = 'msg-bubble msg-bubble--' + (isMe ? 'me' : 'them') + (!isMe && partnerIsAdmin ? ' msg-bubble--admin' : '');
     el.dataset.id = id;
@@ -257,33 +281,13 @@
       '<div class="msg-bubble-inner">' +
         '<div class="msg-bubble-text">' + escHtml(text).replace(/\n/g, '<br>') + '</div>' +
         refHtml +
-        '<div class="msg-bubble-meta">' +
-          '<span class="msg-bubble-time">' + new Date(ts).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
-          '<button class="msg-bubble-delete" data-id="' + id + '" type="button" aria-label="Supprimer" title="Supprimer">' +
-            '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="4" x2="4" y2="12"/><line x1="4" y1="4" x2="12" y2="12"/></svg>' +
-          '</button>' +
-        '</div>' +
       '</div>';
     if (contentRef) {
       try { renderContentRef(el.querySelector('.msg-bubble-ref'), contentRef); } catch (_) {}
     }
-    var container = document.getElementById('msg-thread-messages');
-    if (container) { container.appendChild(el); scrollToBottom(); }
+    container.insertBefore(el, anchor);
+    scrollToBottom();
   }
-
-  // ── Suppression d'un message ─────────────────────────────────────────────
-  document.addEventListener('click', async function (e) {
-    var btn = e.target.closest('.msg-bubble-delete');
-    if (!btn) return;
-    var id = parseInt(btn.dataset.id, 10);
-    if (!id) return;
-    var r = await fetch('/messages/msg/' + id, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
-    var data = await r.json();
-    if (data.ok) {
-      var bubble = document.querySelector('.msg-bubble[data-id="' + id + '"]');
-      if (bubble) bubble.remove();
-    }
-  });
 
   // ── Suppression de la discussion ──────────────────────────────────────────
   var deleteConvBtn = document.getElementById('msg-delete-conv-btn');

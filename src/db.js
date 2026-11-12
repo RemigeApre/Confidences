@@ -7251,19 +7251,6 @@ function markRead(convId, recipientId) {
               WHERE conv_id = ? AND sender_id != ? AND read_at IS NULL`).run(convId, recipientId);
 }
 
-function deleteMessage(msgId, userId) {
-  const conv_row = db.prepare(`
-    SELECT m.id, c.p1_id, c.p2_id
-    FROM messages m JOIN conversations c ON c.id = m.conv_id
-    WHERE m.id = ?
-  `).get(msgId);
-  if (!conv_row) return false;
-  if (conv_row.p1_id !== userId && conv_row.p2_id !== userId) return false;
-  // Suppression mutuelle : hard-delete immédiat pour tout le monde
-  db.prepare('DELETE FROM messages WHERE id=?').run(msgId);
-  return true;
-}
-
 function clearConversation(convId, userId) {
   const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
   if (!conv) return false;
@@ -7778,7 +7765,6 @@ module.exports = {
   insertMessage,
   getMessages,
   markRead,
-  deleteMessage,
   clearConversation,
   getUnreadCount,
   addSharedItem,
