@@ -1,0 +1,76 @@
+<%- include('partials/head', { title: classeur.name }) %>
+<main class="container wide cls-detail-page">
+  <%- include('partials/top-nav', { config: config, navTitle: classeur.name, navBack: '/favoris/classeurs' }) %>
+
+  <div class="cls-detail-header" style="--cls-color: <%= classeur.color %>">
+    <a href="/favoris/classeurs" class="msg-thread-back" aria-label="Retour aux classeurs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div class="cls-detail-identity">
+      <h1 class="cls-detail-title"><%= classeur.name %></h1>
+      <% if (classeur.description) { %><p class="cls-detail-desc"><%= classeur.description %></p><% } %>
+    </div>
+  </div>
+
+  <% var pct = classeur.total > 0 ? Math.round((classeur.owned / classeur.total) * 100) : 0; %>
+  <div class="cls-detail-progress">
+    <span class="cls-detail-progress-label"><%= classeur.owned %> / <%= classeur.total %> cartes<% if (classeur.total > 0 && classeur.owned >= classeur.total) { %> &mdash; <strong>Classeur complet&nbsp;!</strong><% } %></span>
+    <span class="cls-detail-progress-bar"><span class="cls-detail-progress-fill" style="width:<%= pct %>%"></span></span>
+  </div>
+
+  <% if (!classeur.cards.length) { %>
+    <p class="intro">Ce classeur ne contient pas encore de carte.</p>
+  <% } else { %>
+    <% var rarityColors = { common:'#94a3b8', rare:'#60a5fa', epic:'#a78bfa', legendary:'#fbbf24', mythic:'#f87171' }; %>
+    <div class="cls-slot-grid">
+      <% classeur.cards.forEach(function (card) { %>
+        <% if (card.owned) { %>
+          <div class="cls-slot cls-slot--owned" style="--rarity-color: <%= rarityColors[card.rarity] || '#94a3b8' %>">
+            <div class="cls-slot-thumb">
+              <% if (card.thumb) { %><img src="<%= thumbUrl(card.thumb) %>" alt="" loading="lazy" /><% } else { %>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <% } %>
+            </div>
+            <span class="cls-slot-title"><%= card.title %></span>
+          </div>
+        <% } else { %>
+          <div class="cls-slot cls-slot--missing">
+            <div class="cls-slot-thumb cls-slot-thumb--missing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <span class="cls-slot-title"><%= card.title %></span>
+          </div>
+        <% } %>
+      <% }) %>
+    </div>
+  <% } %>
+
+</main>
+
+<style>
+.cls-detail-page{max-width:900px}
+.cls-detail-header{display:flex;align-items:center;gap:.8rem;margin:.5rem 0 1rem}
+.cls-detail-identity{flex:1;min-width:0}
+.cls-detail-title{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:1.3rem;margin:0;color:var(--cls-color, var(--fg))}
+.cls-detail-desc{margin:.25rem 0 0;font-size:.85rem;color:var(--muted)}
+.cls-detail-progress{margin-bottom:1.3rem}
+.cls-detail-progress-label{font-size:.82rem;color:var(--muted)}
+.cls-detail-progress-label strong{color:hsl(44,90%,60%)}
+.cls-detail-progress-bar{display:block;height:6px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:.4rem;overflow:hidden}
+.cls-detail-progress-fill{display:block;height:100%;background:var(--cls-color, var(--accent));border-radius:999px}
+
+.cls-slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:1rem}
+.cls-slot{display:flex;flex-direction:column;align-items:center;gap:.4rem;text-align:center}
+.cls-slot-thumb{width:100%;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center}
+.cls-slot--owned .cls-slot-thumb{border:2px solid var(--rarity-color, #94a3b8);box-shadow:0 0 10px color-mix(in srgb, var(--rarity-color, #94a3b8) 45%, transparent)}
+.cls-slot-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.cls-slot-thumb svg{width:34%;height:34%;color:var(--muted)}
+.cls-slot-thumb--missing{border:2px dashed rgba(255,255,255,.12);opacity:.5}
+.cls-slot-title{font-size:.72rem;line-height:1.3;color:var(--fg)}
+.cls-slot--missing .cls-slot-title{color:var(--muted)}
+@media(max-width:640px){
+  .cls-slot-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:.75rem}
+}
+</style>
+
+<%- include('partials/foot') %>

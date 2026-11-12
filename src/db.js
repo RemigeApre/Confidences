@@ -6348,6 +6348,47 @@ function setWikiCardClasseur(wikiPageId, classeurId) {
     .run(classeurId || null, wikiPageId);
 }
 
+// Classeurs publiés avec la progression d'un joueur (owned/total) — page
+// liste (views/profil-classeurs.ejs). "Possédé" = au moins une ligne dans
+// user_cards pour cette page Codex, peu importe la déclinaison obtenue.
+function listClasseursWithProgress(userId) {
+  const ownedIds = new Set(
+    db.prepare("SELECT DISTINCT wiki_page_id FROM user_cards WHERE user_id=?").all(userId).map((r) => r.wiki_page_id)
+  );
+  const classeurs = db.prepare(
+    "SELECT * FROM classeurs WHERE is_published=1 ORDER BY sort_order, name COLLATE NOCASE"
+  ).all();
+  const members = db.prepare("SELECT id, classeur_id FROM wiki_pages WHERE classeur_id IS NOT NULL").all();
+  const byClasseur = {};
+  members.forEach((m) => { (byClasseur[m.classeur_id] = byClasseur[m.classeur_id] || []).push(m.id); });
+  return classeurs.map((c) => {
+    const ids = byClasseur[c.id] || [];
+    const owned = ids.filter((id) => ownedIds.has(id)).length;
+    return { ...c, owned, total: ids.length, complete: ids.length > 0 && owned >= ids.length };
+  });
+}
+
+// Détail d'un classeur avec ses cartes et leur statut possédé/manquant pour
+// ce joueur — page détail (views/profil-classeur-detail.ejs).
+function getClasseurWithCards(classeurId, userId) {
+  const classeur = db.prepare("SELECT * FROM classeurs WHERE id=?").get(classeurId);
+  if (!classeur) return null;
+  const ownedIds = new Set(
+    db.prepare("SELECT DISTINCT wiki_page_id FROM user_cards WHERE user_id=?").all(userId).map((r) => r.wiki_page_id)
+  );
+  const cards = db.prepare(
+    "SELECT id, title, card_rarity, card_summary, image_paths FROM wiki_pages WHERE classeur_id=? ORDER BY title"
+  ).all(classeurId).map((w) => {
+    let imagePaths = []; try { imagePaths = JSON.parse(w.image_paths || "[]"); } catch (_) {}
+    return {
+      id: w.id, title: w.title, rarity: w.card_rarity || "rare", summary: w.card_summary || null,
+      thumb: imagePaths[0] || null, owned: ownedIds.has(w.id),
+    };
+  });
+  const owned = cards.filter((c) => c.owned).length;
+  return { ...classeur, cards, owned, total: cards.length };
+}
+
 // ── Sécurité login : suivi des échecs par username ───────────────────────
 db.exec(`
   CREATE TABLE IF NOT EXISTS login_failures (
@@ -7884,6 +7925,7 @@ module.exports = {
   deleteCardCollection,
   setPersonnageCollection,
   listClasseurs, getClasseur, createClasseur, updateClasseur, deleteClasseur, setWikiCardClasseur,
+  listClasseursWithProgress, getClasseurWithCards,
   listRaces, getRace, createRace, updateRace, deleteRace,
   listClansForRace, createClan, updateClan, deleteClan,
   setProtagonisteRace,

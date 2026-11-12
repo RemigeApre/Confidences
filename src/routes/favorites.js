@@ -62,6 +62,8 @@ const {
   THEME_DEFINITIONS,
   getUserCards,
   getUserPersonnageCards,
+  listClasseursWithProgress,
+  getClasseurWithCards,
   getPublicProfile,
   setPublicProfile,
   listProfilQuizAttempts,
@@ -323,6 +325,22 @@ function buildFavoritesRouter(config) {
       myListings: getMyMarketplaceListings(req.user.id),
       newGiftCount: countNewGiftedItems(req.user.id),
     });
+  });
+
+  // ── Classeurs ────────────────────────────────────────────────────────────
+  router.get("/classeurs", requireUser, (req, res) => {
+    res.render("profil-classeurs", {
+      config,
+      roleHue: roleHue(req.user),
+      classeurs: listClasseursWithProgress(req.user.id),
+    });
+  });
+
+  router.get("/classeurs/:id", requireUser, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const classeur = id ? getClasseurWithCards(id, req.user.id) : null;
+    if (!classeur || !classeur.is_published) return res.redirect("/favoris/classeurs");
+    res.render("profil-classeur-detail", { config, roleHue: roleHue(req.user), classeur });
   });
 
   // Marquer un item reçu en cadeau comme vu (appelé au clic dans le coffre)

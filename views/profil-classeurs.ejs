@@ -1,0 +1,149 @@
+<%- include('partials/head', { title: 'Classeurs' }) %>
+<main class="container wide gallery-has-sidebar">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Classeurs', navBack: '/favoris' }) %>
+
+  <%- include('partials/mobile-filter-toggle') %>
+
+  <%# ─── SIDEBAR GAUCHE : filtres ───────────────────────────────────────── %>
+  <aside class="wiki-cat-sidebar gallery-sidebar" id="mobile-filter-sidebar">
+    <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer les filtres">&times;</button>
+    <%- include('partials/sidebar-hero', { title: 'Classeurs', hue: 250, count: classeurs.length, countId: 'cls-count-hero' }) %>
+
+    <div class="wiki-sidebar-body">
+
+      <%- include('partials/search-bar', { searchId: 'cls-search', placeholder: 'Chercher un classeur' }) %>
+
+      <details class="wiki-sidebar-filter-details">
+        <summary class="wiki-sidebar-filter-summary" data-fr="Filtres" data-en="Filters">Filtres</summary>
+        <div class="wiki-sidebar-filters">
+
+          <div class="wiki-filter-section wiki-sort-cols-row">
+            <select id="cls-sort-select" class="wiki-sort-select" style="flex:1">
+              <option value="alpha-asc" data-fr="Ordre alphabétique" data-en="Alphabetical">Ordre alphab&eacute;tique</option>
+              <option value="progress-desc" data-fr="Progression" data-en="Progress">Progression</option>
+            </select>
+          </div>
+
+          <div class="wiki-filter-section wiki-filter-toggles">
+            <button type="button" id="cls-complete-toggle" class="wiki-ultra-btn" data-fr="Terminés" data-en="Completed">Termin&eacute;s</button>
+            <button type="button" id="cls-incomplete-toggle" class="wiki-ultra-btn" data-fr="En cours" data-en="In progress">En cours</button>
+          </div>
+
+        </div>
+      </details>
+
+      <div class="wiki-filter-section wiki-filter-bottom-actions">
+        <button type="button" id="cls-reset-filters" class="wiki-filter-reset-btn wiki-filter-reset-btn--danger" data-fr="Réinitialiser les filtres" data-en="Reset filters">R&eacute;initialiser les filtres</button>
+      </div>
+
+    </div>
+  </aside>
+
+  <%# ─── ÉTAGÈRE : les classeurs, en livres ────────────────────────────── %>
+  <% if (!classeurs.length) { %>
+    <p class="intro">Aucun classeur pour l&rsquo;instant.</p>
+  <% } else { %>
+    <div class="cls-shelf" id="cls-shelf">
+      <% classeurs.forEach(function (c) { %>
+        <% var pct = c.total > 0 ? Math.round((c.owned / c.total) * 100) : 0; %>
+        <a href="/favoris/classeurs/<%= c.id %>" class="cls-book<%= c.complete ? ' cls-book--complete' : '' %>"
+           data-name="<%= (c.name || '').toLowerCase() %>" data-progress="<%= pct %>" data-complete="<%= c.complete ? '1' : '0' %>"
+           style="background:linear-gradient(160deg, <%= c.color %>, color-mix(in srgb, <%= c.color %> 55%, black))">
+          <% if (c.complete) { %><span class="cls-book-badge">&#10003; Complet</span><% } %>
+          <span class="cls-book-title"><%= c.name %></span>
+          <span class="cls-book-progress"><%= c.owned %> / <%= c.total %></span>
+          <span class="cls-book-bar"><span class="cls-book-bar-fill" style="width:<%= pct %>%"></span></span>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+
+</main>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var shelf = document.getElementById('cls-shelf');
+  if (!shelf) return;
+  var books = Array.prototype.slice.call(shelf.querySelectorAll('.cls-book'));
+
+  var searchInput = document.getElementById('cls-search');
+  var sortSelect  = document.getElementById('cls-sort-select');
+  var completeBtn = document.getElementById('cls-complete-toggle');
+  var incompleteBtn = document.getElementById('cls-incomplete-toggle');
+  var resetBtn    = document.getElementById('cls-reset-filters');
+
+  var state = { q: '', status: 'all', sort: 'alpha-asc' };
+
+  function apply() {
+    books.forEach(function (b) {
+      var matchQ = !state.q || b.dataset.name.indexOf(state.q) !== -1;
+      var matchStatus = state.status === 'all'
+        || (state.status === 'complete' && b.dataset.complete === '1')
+        || (state.status === 'incomplete' && b.dataset.complete === '0');
+      b.hidden = !(matchQ && matchStatus);
+    });
+    var sorted = books.slice().sort(function (a, b) {
+      if (state.sort === 'progress-desc') return parseInt(b.dataset.progress, 10) - parseInt(a.dataset.progress, 10);
+      return a.dataset.name.localeCompare(b.dataset.name);
+    });
+    sorted.forEach(function (b) { shelf.appendChild(b); });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      state.q = searchInput.value.trim().toLowerCase();
+      apply();
+    });
+  }
+  if (sortSelect) {
+    sortSelect.addEventListener('change', function () {
+      state.sort = sortSelect.value;
+      apply();
+    });
+  }
+  function setStatus(val) {
+    state.status = state.status === val ? 'all' : val;
+    completeBtn.classList.toggle('active', state.status === 'complete');
+    incompleteBtn.classList.toggle('active', state.status === 'incomplete');
+    apply();
+  }
+  if (completeBtn) completeBtn.addEventListener('click', function () { setStatus('complete'); });
+  if (incompleteBtn) incompleteBtn.addEventListener('click', function () { setStatus('incomplete'); });
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      state = { q: '', status: 'all', sort: 'alpha-asc' };
+      if (searchInput) searchInput.value = '';
+      if (sortSelect) sortSelect.value = 'alpha-asc';
+      completeBtn.classList.remove('active');
+      incompleteBtn.classList.remove('active');
+      apply();
+    });
+  }
+})();
+</script>
+
+<style>
+.cls-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1.6rem 1.2rem;padding:.5rem .1rem 2rem}
+.cls-book{
+  position:relative;display:flex;flex-direction:column;justify-content:flex-end;
+  aspect-ratio:3/4;border-radius:4px 10px 10px 4px;text-decoration:none;color:#fff;
+  padding:1.1rem .9rem;overflow:hidden;
+  box-shadow:-3px 0 0 rgba(0,0,0,.25) inset, 0 6px 16px rgba(0,0,0,.4);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.cls-book:hover{transform:translateY(-4px) rotate(-1deg);box-shadow:-3px 0 0 rgba(0,0,0,.25) inset, 0 10px 24px rgba(0,0,0,.5)}
+.cls-book::before{content:'';position:absolute;inset:9px;border:1px solid rgba(255,255,255,.25);border-radius:3px 8px 8px 3px;pointer-events:none}
+.cls-book--complete{box-shadow:-3px 0 0 rgba(0,0,0,.25) inset, 0 0 0 2px hsl(44,90%,60%), 0 6px 16px rgba(0,0,0,.4)}
+.cls-book--complete:hover{box-shadow:-3px 0 0 rgba(0,0,0,.25) inset, 0 0 0 2px hsl(44,90%,60%), 0 10px 24px rgba(0,0,0,.5)}
+.cls-book-badge{position:absolute;top:.6rem;right:.6rem;background:hsl(44,90%,55%);color:#111;font-size:.6rem;font-weight:800;padding:.15rem .45rem;border-radius:999px;letter-spacing:.02em}
+.cls-book-title{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:1.05rem;line-height:1.25;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.cls-book-progress{margin-top:.5rem;font-size:.72rem;font-weight:600;opacity:.9}
+.cls-book-bar{display:block;height:4px;border-radius:999px;background:rgba(0,0,0,.3);margin-top:.3rem;overflow:hidden}
+.cls-book-bar-fill{display:block;height:100%;background:#fff;border-radius:999px}
+#cls-complete-toggle.active,#cls-incomplete-toggle.active{background:var(--accent);color:#111;border-color:var(--accent)}
+@media(max-width:640px){
+  .cls-shelf{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1.1rem .85rem}
+}
+</style>
+
+<%- include('partials/foot') %>
