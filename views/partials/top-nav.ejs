@@ -101,16 +101,23 @@
           <% var _roleClass = currentUser.isAdmin ? 'pc-key-admin' : (currentUser.isTest ? 'pc-key-test' : 'pc-key-user'); %>
           <div class="pc-nav-item pc-has-drop pc-hover-menu">
             <button type="button" class="pc-icon-btn pc-avatar-btn <%= _roleClass %>" title="<%= currentUser.displayName %>"><%- include('profile-avatar') %></button>
+            <% if ((Number(locals.unreadMessagesCount) || 0) + (Number(locals.pendingLootboxes) || 0) > 0) { %><span class="pc-avatar-badge"></span><% } %>
             <div class="pc-drop pc-drop-right">
+              <a href="/favoris" class="pc-drop-link" data-fr="Profil" data-en="Profile">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+                Profil
+              </a>
               <% var _onMessages = (currentPath || '').indexOf('/messages') === 0; %>
               <a href="/messages" class="pc-drop-link pc-drop-link--messages" data-fr="Messages" data-en="Messages">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 Messages
                 <% if (!_onMessages && locals.unreadMessagesCount > 0) { %><span class="pc-drop-badge"><%= locals.unreadMessagesCount %></span><% } %>
               </a>
-              <a href="/favoris" class="pc-drop-link" data-fr="Profil" data-en="Profile">
-                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
-                Profil
+              <% var _onCoffre = (currentPath || '').indexOf('/favoris/coffre') === 0; %>
+              <a href="/favoris/coffre" class="pc-drop-link pc-drop-link--coffre" data-fr="Coffre" data-en="Chest">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15" aria-hidden="true"><rect x="2" y="12" width="20" height="10" rx="2"/><path d="M2 12 Q2 6 12 6 Q22 6 22 12"/><rect x="9" y="9" width="6" height="5" rx="1.5"/><circle cx="12" cy="17" r="1.5"/></svg>
+                Coffre
+                <% if (!_onCoffre && locals.pendingLootboxes > 0) { %><span class="pc-drop-badge"><%= locals.pendingLootboxes %></span><% } %>
               </a>
               <% if (locals.partnerUser) { %>
                 <a href="/couple" class="pc-drop-link pc-drop-link--partner" data-fr="Profil de <%= partnerUser.displayName %>" data-en="<%= partnerUser.displayName %>'s profile">
@@ -118,10 +125,6 @@
                   <%= partnerUser.displayName %>
                 </a>
               <% } %>
-              <a href="/liens" class="pc-drop-link" data-fr="Liens" data-en="Links">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15" aria-hidden="true"><path d="M8 11a4 4 0 0 0 5.6.4l2-2A4 4 0 0 0 10 3.9L8.9 5"/><path d="M12 9a4 4 0 0 0-5.6-.4l-2 2A4 4 0 0 0 10 16.1l1-.9"/></svg>
-                Liens
-              </a>
               <% if (currentUser.isAdmin) { %>
                 <hr class="pc-drop-sep">
                 <a href="/ponhgup" class="pc-drop-link pc-drop-link--admin" rel="nofollow" data-fr="Admin" data-en="Admin">
@@ -129,6 +132,10 @@
                   Admin
                 </a>
               <% } %>
+              <a href="/favoris/parametres" class="pc-drop-link" data-fr="Param&egrave;tres" data-en="Settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Param&egrave;tres
+              </a>
               <hr class="pc-drop-sep">
               <form method="POST" action="/ponhgup/logout" style="margin:0">
                 <button type="submit" class="pc-drop-link pc-drop-link-btn pc-drop-link--logout" data-fr="Déconnexion" data-en="Sign out">

@@ -20,6 +20,7 @@ const buildNouvellesRouter = require("./routes/nouvelles");
 const buildProtagonistesRouter = require("./routes/protagonistes");
 const buildRacesRouter = require("./routes/races");
 const { buildRouter: buildMessagesRouter } = require("./routes/messages");
+const { sendRecapEmails } = require("./recap");
 const { attachUser } = require("./auth");
 const { isFrenchIp } = require("./geo");
 const {
@@ -41,6 +42,8 @@ const {
   getUnreadCount,
   countNewGiftedItems,
   cleanupOldMessages,
+  getUserByRecapUnsubToken,
+  updateUserSettings,
   unsubscribeByNewsletterToken,
 } = require("./db");
 const { thumbUrl, backfillThumbs } = require("./thumbs");
@@ -1449,6 +1452,19 @@ app.get("/llms-full.txt", (req, res) => {
 
 // Nettoyage nocturne des messages > 3 mois (toutes les 24h)
 setInterval(() => { try { cleanupOldMessages(); } catch (_) {} }, 24 * 60 * 60 * 1000);
+
+// Récap mail quotidien (messages/coffres non vus depuis 24h, voir src/recap.js)
+setInterval(() => { sendRecapEmails().catch(() => {}); }, 24 * 60 * 60 * 1000);
+
+// Lien de désinscription du récap mail — pas de login requis (cliqué depuis
+// un mail, potentiellement sur un autre appareil) : le token identifie le
+// compte à lui seul. Réversible depuis /favoris/parametres.
+app.get("/notifications/desinscription", (req, res) => {
+  const token = String(req.query.token || "");
+  const user = token ? getUserByRecapUnsubToken(token) : null;
+  if (user) updateUserSettings(user.id, { notifyRecapEmail: false });
+  res.render("notifications-desinscription", { config, ok: !!user });
+});
 
 if (usingHttps) {
   https

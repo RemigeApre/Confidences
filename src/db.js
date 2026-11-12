@@ -78,6 +78,10 @@ try { db.exec("ALTER TABLE users ADD COLUMN last_path TEXT"); } catch (_) {}
 // Dernier changement de pseudo/sexe/orientation par le profil lui-même
 // (voir /favoris/identite) : limité à une fois par semaine.
 try { db.exec("ALTER TABLE users ADD COLUMN identity_changed_at TEXT"); } catch (_) {}
+// Récap mail (messages/coffre non vus depuis 24h) — voir sendRecapEmails().
+try { db.exec("ALTER TABLE users ADD COLUMN notify_recap_email INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN recap_unsub_token TEXT"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN last_recap_sent_at TEXT"); } catch (_) {}
 
 // Migrations non destructives
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN meta TEXT NOT NULL DEFAULT '{}'"); } catch (_) {}
@@ -1184,6 +1188,7 @@ function rowToUser(row) {
     lastActiveAt: row.last_active_at || null,
     lastPath: row.last_path || null,
     identityChangedAt: row.identity_changed_at || null,
+    notifyRecapEmail: row.notify_recap_email == null ? true : !!row.notify_recap_email,
     hideInviteCta: !!row.hide_invite_cta,
     friendCode: row.friend_code || null,
     newsletter: row.newsletter !== 0,
@@ -1277,7 +1282,7 @@ const HISTORY_RETENTION_VALUES = ["3jours", "1semaine", "1mois", "3mois"];
 // Reglages "Goûts"/"Paramètres" (voir /favoris) : mise a jour partielle,
 // chaque champ omis garde sa valeur actuelle (sauvegarde instantanee par
 // champ, pas un gros formulaire soumis d'un coup).
-function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, hideInviteCta, newsletter, profilePublic }) {
+function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareNotesWithAdmin, historyRetention, hideInviteCta, newsletter, profilePublic, notifyRecapEmail }) {
   const current = getUserById(id);
   if (!current) return;
   const o  = orientation   !== undefined && ORIENTATION_VALUES.includes(orientation)   ? orientation   : current.orientation;
@@ -1288,9 +1293,10 @@ function updateUserSettings(id, { orientation, ultraMode, irrealisteMode, shareN
   const hic = hideInviteCta !== undefined ? (hideInviteCta ? 1 : 0) : (current.hideInviteCta ? 1 : 0);
   const nl = newsletter !== undefined ? (newsletter ? 1 : 0) : (current.newsletter ? 1 : 0);
   const pp = profilePublic !== undefined ? (profilePublic ? 1 : 0) : (current.profilePublic ? 1 : 0);
+  const nre = notifyRecapEmail !== undefined ? (notifyRecapEmail ? 1 : 0) : (current.notifyRecapEmail ? 1 : 0);
   db.prepare(
-    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ?, hide_invite_cta = ?, newsletter = ?, profile_public = ? WHERE id = ?"
-  ).run(o, um, im, snwa, hr, hic, nl, pp, id);
+    "UPDATE users SET orientation = ?, ultra_mode = ?, irrealiste_mode = ?, share_notes_with_admin = ?, history_retention = ?, hide_invite_cta = ?, newsletter = ?, profile_public = ?, notify_recap_email = ? WHERE id = ?"
+  ).run(o, um, im, snwa, hr, hic, nl, pp, nre, id);
 }
 
 // COLLATE NOCASE : la casse n'a pas d'importance pour l'identifiant de
@@ -7330,6 +7336,66 @@ function getUnreadCount(userId) {
   return r ? r.n : 0;
 }
 
+// ── Récap mail (messages + coffre non vus depuis 24h) ───────────────────────
+// Voir src/mailer.js#sendRecapEmails et le toggle dans /favoris/parametres.
+
+function ensureRecapUnsubToken(userId) {
+  const row = db.prepare('SELECT recap_unsub_token FROM users WHERE id = ?').get(userId);
+  if (row && row.recap_unsub_token) return row.recap_unsub_token;
+  const token = crypto.randomBytes(24).toString('hex');
+  db.prepare('UPDATE users SET recap_unsub_token = ? WHERE id = ?').run(token, userId);
+  return token;
+}
+
+function getUserByRecapUnsubToken(token) {
+  if (!token) return null;
+  const row = db.prepare('SELECT * FROM users WHERE recap_unsub_token = ?').get(token);
+  return rowToUser(row);
+}
+
+function touchLastRecapSent(userId) {
+  db.prepare("UPDATE users SET last_recap_sent_at = datetime('now') WHERE id = ?").run(userId);
+}
+
+// Renvoie les comptes à qui envoyer un récap : mail renseigné, option activée,
+// pas déjà recapé dans les ~20 dernières heures (cadence ~quotidienne sans
+// doublon si la tâche tourne plus souvent), et au moins un message non lu OU
+// un coffre non ouvert vieux d'au moins 24h.
+function findUsersNeedingRecap() {
+  const rows = db.prepare(`
+    SELECT u.id AS userId, u.email AS email, u.display_name AS displayName,
+      (SELECT COUNT(*) FROM messages m JOIN conversations c ON c.id = m.conv_id
+       WHERE m.sender_id != u.id AND m.read_at IS NULL
+         AND ((c.p1_id = u.id AND m.del_p1 = 0) OR (c.p2_id = u.id AND m.del_p2 = 0))
+         AND m.created_at >= datetime('now', '-3 months')
+         AND NOT ((c.p1_id = u.id AND c.muted_p1 = 1) OR (c.p2_id = u.id AND c.muted_p2 = 1))
+      ) AS unreadCount,
+      (SELECT MIN(m.created_at) FROM messages m JOIN conversations c ON c.id = m.conv_id
+       WHERE m.sender_id != u.id AND m.read_at IS NULL
+         AND ((c.p1_id = u.id AND m.del_p1 = 0) OR (c.p2_id = u.id AND m.del_p2 = 0))
+         AND m.created_at >= datetime('now', '-3 months')
+         AND NOT ((c.p1_id = u.id AND c.muted_p1 = 1) OR (c.p2_id = u.id AND c.muted_p2 = 1))
+      ) AS oldestUnreadAt,
+      (SELECT COUNT(*) FROM user_lootboxes WHERE user_id = u.id AND opened = 0) AS giftCount,
+      (SELECT MIN(created_at) FROM user_lootboxes WHERE user_id = u.id AND opened = 0) AS oldestGiftAt
+    FROM users u
+    WHERE u.notify_recap_email = 1
+      AND u.email IS NOT NULL AND u.email != ''
+      AND (u.last_recap_sent_at IS NULL OR u.last_recap_sent_at <= datetime('now', '-20 hours'))
+  `).all();
+
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const asMs = (sqliteDt) => sqliteDt ? Date.parse(toIsoUtc(sqliteDt)) : NaN;
+
+  return rows
+    .filter((r) => {
+      const unreadOld = r.unreadCount > 0 && asMs(r.oldestUnreadAt) <= cutoff;
+      const giftOld = r.giftCount > 0 && asMs(r.oldestGiftAt) <= cutoff;
+      return unreadOld || giftOld;
+    })
+    .map((r) => ({ userId: r.userId, email: r.email, displayName: r.displayName, unreadCount: r.unreadCount, giftCount: r.giftCount }));
+}
+
 const SHARED_ITEMS_LIMIT = 100;
 function addSharedItem(convId, type, id, sharedBy) {
   const conv = db.prepare('SELECT p1_id FROM conversations WHERE id=?').get(convId);
@@ -7828,6 +7894,10 @@ module.exports = {
   markConversationUnread,
   clearConversation,
   getUnreadCount,
+  ensureRecapUnsubToken,
+  getUserByRecapUnsubToken,
+  touchLastRecapSent,
+  findUsersNeedingRecap,
   addSharedItem,
   getSharedItems,
   removeSharedItem,

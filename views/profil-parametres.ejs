@@ -149,6 +149,20 @@
             <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
           </label>
         </div>
+
+        <div class="profil-card">
+          <div class="profil-card-head">
+            <span data-fr="R&eacute;cap mail" data-en="Recap email">R&eacute;cap mail</span>
+            <span class="profil-info-icon" tabindex="0"
+              data-tip="Un mail vous est envoyé si un message ou un coffre reste non vu depuis plus d'une journée."
+              data-tip-en="An email is sent if a message or a chest stays unseen for more than a day."
+              aria-label="À propos du récap mail">!</span>
+          </div>
+          <label class="profil-toggle">
+            <input type="checkbox" id="recap-email-checkbox" <%= currentUser.notifyRecapEmail ? 'checked' : '' %> />
+            <span class="profil-toggle-track"><span class="profil-toggle-thumb"></span></span>
+          </label>
+        </div>
       </div>
 
       <div class="profil-danger-zone">
@@ -211,6 +225,13 @@
   if (newsletterCheckbox) {
     newsletterCheckbox.addEventListener("change", function () {
       savePref("newsletter", !newsletterCheckbox.checked);
+    });
+  }
+
+  var recapCheckbox = document.getElementById("recap-email-checkbox");
+  if (recapCheckbox) {
+    recapCheckbox.addEventListener("change", function () {
+      savePref("notifyRecapEmail", recapCheckbox.checked);
     });
   }
 
