@@ -113,11 +113,11 @@
                 Messages
                 <% if (!_onMessages && locals.unreadMessagesCount > 0) { %><span class="pc-drop-badge"><%= locals.unreadMessagesCount %></span><% } %>
               </a>
-              <% var _onCoffre = (currentPath || '').indexOf('/favoris/coffre') === 0; %>
-              <a href="/favoris/coffre" class="pc-drop-link pc-drop-link--coffre" data-fr="Coffre" data-en="Chest">
+              <% var _onFavorisHome = currentPath === '/favoris'; %>
+              <a href="/favoris#ph-coffre-section" class="pc-drop-link pc-drop-link--coffre" data-fr="Coffre" data-en="Chest">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15" aria-hidden="true"><rect x="2" y="12" width="20" height="10" rx="2"/><path d="M2 12 Q2 6 12 6 Q22 6 22 12"/><rect x="9" y="9" width="6" height="5" rx="1.5"/><circle cx="12" cy="17" r="1.5"/></svg>
                 Coffre
-                <% if (!_onCoffre && locals.pendingLootboxes > 0) { %><span class="pc-drop-badge"><%= locals.pendingLootboxes %></span><% } %>
+                <% if (!_onFavorisHome && locals.pendingLootboxes > 0) { %><span class="pc-drop-badge"><%= locals.pendingLootboxes %></span><% } %>
               </a>
               <% if (locals.partnerUser) { %>
                 <a href="/couple" class="pc-drop-link pc-drop-link--partner" data-fr="Profil de <%= partnerUser.displayName %>" data-en="<%= partnerUser.displayName %>'s profile">
