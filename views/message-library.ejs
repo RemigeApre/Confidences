@@ -1,0 +1,73 @@
+<%- include('partials/head', { title: navTitle }) %>
+<main class="msg-library-page">
+  <%- include('partials/top-nav', { config: config, navBack: '/messages/' + partner.id, navTitle: navTitle }) %>
+
+  <div class="msg-library-header">
+    <a href="/messages/<%= partner.id %>" class="msg-thread-back" aria-label="Retour à la discussion">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <h1 class="msg-library-title">Partag&eacute; avec <%= partner.displayName %></h1>
+  </div>
+
+  <% if (!items.length) { %>
+    <p class="msg-list-empty">Rien de partag&eacute; pour l&rsquo;instant.</p>
+  <% } else { %>
+    <div class="msg-library-grid">
+      <% items.forEach(function (it) { %>
+        <div class="msg-library-item" data-id="<%= it.id %>">
+          <% if (it.type === 'image') { %>
+            <a class="msg-ref-img msg-library-img" href="<%= it.href %>" target="_blank" rel="noopener">
+              <% if (it.thumb) { %><img src="<%= it.thumb %>" alt="" loading="lazy" /><% } %>
+            </a>
+          <% } else { %>
+            <a class="msg-ref-card msg-library-card" href="<%= it.href %>">
+              <% if (it.thumb) { %>
+                <img class="msg-ref-thumb" src="<%= it.thumb %>" alt="" loading="lazy" />
+              <% } else { %>
+                <span class="msg-ref-thumb--icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </span>
+              <% } %>
+              <span class="msg-ref-title"><%= it.title %></span>
+            </a>
+          <% } %>
+          <button type="button" class="msg-library-remove" data-id="<%= it.id %>" aria-label="Retirer" title="Retirer">&times;</button>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</main>
+
+<script nonce="<%= nonce %>">
+(function () {
+  document.querySelectorAll('.msg-library-remove').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      var id = parseInt(btn.dataset.id, 10);
+      if (!id) return;
+      try {
+        var r = await fetch('/messages/shared/' + id, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
+        var data = await r.json();
+        if (data.ok) {
+          var item = btn.closest('.msg-library-item');
+          if (item) item.remove();
+        }
+      } catch (_) {}
+    });
+  });
+})();
+</script>
+
+<style>
+.msg-library-page{max-width:720px;margin:0 auto;padding:1rem 1.25rem 3rem}
+.msg-library-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem}
+.msg-library-title{font-size:1.1rem;font-weight:700;margin:0}
+.msg-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.9rem}
+.msg-library-item{position:relative}
+.msg-library-img{max-width:none;margin-top:0}
+.msg-library-img img{height:140px}
+.msg-library-card{max-width:none;margin-top:0}
+.msg-library-remove{position:absolute;top:.3rem;right:.3rem;width:22px;height:22px;border-radius:50%;border:none;background:#000000a0;color:#fff;font-size:.9rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.msg-library-remove:hover{background:hsl(0,65%,45%)}
+</style>
+
+<%- include('partials/foot') %>

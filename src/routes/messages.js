@@ -4,12 +4,12 @@ const {
   requireUser, requireUserJson,
 } = require("../auth");
 const {
-  getUserKeys, setUserKeys, getPublicKey, getMessagesAfter,
+  getMessagesAfter,
   getOrCreateConversation, getConversation, getConversations,
   insertMessage, getMessages, markRead, getUnreadCount,
   setConversationPinned, setConversationMuted, markConversationUnread,
   addSharedItem, getSharedItems, removeSharedItem,
-  getFriends, getUserById,
+  getFriends, getUserById, getFriendshipBetween,
   clearConversation,
   getGalleryImage, getWikiPage, getBdBook,
 } = require("../db");
@@ -32,6 +32,51 @@ module.exports.pushToUser = pushToUser;
 
 function convPartner(conv, userId) {
   return conv.p1_id === userId ? conv.p2_id : conv.p1_id;
+}
+
+// true si userId est bien p1 ou p2 de cette conversation — remplace les 6
+// copies du même if(!conv || (conv.p1_id!==uid && conv.p2_id!==uid)) qui
+// traînaient dans ce fichier.
+function isConvParticipant(conv, userId) {
+  return !!conv && (conv.p1_id === userId || conv.p2_id === userId);
+}
+
+// Autorise la messagerie entre deux comptes : soit ils sont amis (acceptée),
+// soit l'un des deux est admin (l'admin crée les comptes à la main, hors du
+// circuit d'invitation/ami automatique — voir db.js#autoFriend). Sans ce
+// contrôle, deux comptes non-amis pouvaient s'écrire en devinant un id.
+function canMessage(uid, partnerId) {
+  if (!partnerId || partnerId === uid) return false;
+  const u = getUserById(uid);
+  const p = getUserById(partnerId);
+  if (!u || !p) return false;
+  if (u.isAdmin || p.isAdmin) return true;
+  const f = getFriendshipBetween(uid, partnerId);
+  return !!(f && f.status === "accepted");
+}
+
+// Résout un content_ref {type, id} → {thumb, title, href}, partagé entre la
+// popup de la bulle de chat (GET /ref-card) et la page bibliothèque.
+function resolveContentRef(type, id) {
+  if (type === "image") {
+    const img = getGalleryImage(id);
+    if (!img) return null;
+    const raw = img.imagePaths && img.imagePaths[0];
+    return { thumb: raw ? thumbUrl(raw) : null, title: img.title || "", href: "/galerie/" + id };
+  }
+  if (type === "wiki") {
+    const page = getWikiPage(id);
+    if (!page) return null;
+    const raw = page.imagePaths && page.imagePaths[0];
+    return { thumb: raw ? thumbUrl(raw) : null, title: page.title || "", href: "/wiki/" + id };
+  }
+  if (type === "bd") {
+    const book = getBdBook(id);
+    if (!book) return null;
+    const raw = book.coverPath || (book.imagePaths && book.imagePaths[0]);
+    return { thumb: raw ? thumbUrl(raw) : null, title: book.title || "", href: "/bd/" + id };
+  }
+  return null;
 }
 
 // Résout profileImageId (FK vers gallery_images) → une vraie URL de vignette,
@@ -74,44 +119,12 @@ function buildRouter(config) {
     });
   });
 
-  // ── Clés crypto ─────────────────────────────────────────────────────────
-
-  // GET /messages/keys/me — clé privée chiffrée (pour le navigateur du propriétaire)
-  router.get("/keys/me", requireUser, (req, res) => {
-    const keys = getUserKeys(req.user.id);
-    if (!keys) return res.json({ hasKeys: false });
-    res.json({
-      hasKeys: true,
-      encryptedPrivKey: keys.encrypted_priv_key,
-      keyIv: keys.key_iv,
-    });
-  });
-
-  // GET /messages/keys/:userId — clé publique d'un utilisateur
-  router.get("/keys/:userId", requireUser, (req, res) => {
-    const targetId = parseInt(req.params.userId, 10);
-    if (!targetId) return res.status(400).json({ error: "id invalide" });
-    const pk = getPublicKey(targetId);
-    if (!pk) return res.json({ hasKey: false });
-    res.json({ hasKey: true, publicKey: pk });
-  });
-
-  // POST /messages/keys — sauvegarder ses propres clés
-  router.post("/keys", requireUserJson, (req, res) => {
-    const { publicKey, encryptedPrivKey, keyIv } = req.body;
-    if (!publicKey || !encryptedPrivKey || !keyIv)
-      return res.status(400).json({ error: "données manquantes" });
-    setUserKeys(req.user.id, publicKey, encryptedPrivKey, keyIv);
-    res.json({ ok: true });
-  });
-
-  // GET /messages/friends — liste des amis avec leur statut de clé (JSON, pour popup de partage)
+  // GET /messages/friends — liste des amis (JSON, pour popup de partage)
   router.get("/friends", requireUserJson, (req, res) => {
     const friends = getFriends(req.user.id).map((f) => ({
       id: f.id,
       displayName: f.display_name,
       profileColor: f.profile_color,
-      hasKey: !!getPublicKey(f.id),
     }));
     res.json({ friends });
   });
@@ -168,10 +181,13 @@ function buildRouter(config) {
     if (!partnerId || partnerId === uid) return res.redirect("/messages");
 
     const partner = getUserById(partnerId);
-    if (!partner) return res.redirect("/messages");
+    if (!partner || !canMessage(uid, partnerId)) return res.redirect("/messages");
 
     const conv = getOrCreateConversation(uid, partnerId);
     markRead(conv.id, uid);
+    // Prévient l'expéditeur, en direct, que ses messages viennent d'être lus
+    // (indicateur "Vu" sous son dernier message — voir messages.ejs).
+    pushToUser(partnerId, "seen", { convId: conv.id });
     const partnerAvatar = resolveAvatar(partner);
 
     res.render("messages", {
@@ -193,7 +209,7 @@ function buildRouter(config) {
   router.post("/:userId/typing", requireUserJson, (req, res) => {
     const uid = req.user.id;
     const partnerId = parseInt(req.params.userId, 10);
-    if (partnerId && partnerId !== uid) {
+    if (canMessage(uid, partnerId)) {
       pushToUser(partnerId, "typing", { fromId: uid });
     }
     res.json({ ok: true });
@@ -203,14 +219,16 @@ function buildRouter(config) {
   router.post("/:userId", requireUserJson, (req, res) => {
     const uid = req.user.id;
     const partnerId = parseInt(req.params.userId, 10);
-    if (!partnerId || partnerId === uid)
-      return res.status(400).json({ error: "destinataire invalide" });
+    if (!canMessage(uid, partnerId))
+      return res.status(403).json({ error: "destinataire invalide" });
 
     const { text, contentRef } = req.body;
-    if (!text || !text.trim()) return res.status(400).json({ error: "message vide" });
+    const trimmed = typeof text === "string" ? text.trim() : "";
+    if (!trimmed) return res.status(400).json({ error: "message vide" });
+    if (trimmed.length > 4000) return res.status(400).json({ error: "message trop long" });
 
     const conv = getOrCreateConversation(uid, partnerId);
-    const msgId = insertMessage(conv.id, uid, text.trim(), contentRef ? JSON.stringify(contentRef) : null);
+    const msgId = insertMessage(conv.id, uid, trimmed, contentRef ? JSON.stringify(contentRef) : null);
 
     if (contentRef && contentRef.type && contentRef.id) {
       addSharedItem(conv.id, contentRef.type, contentRef.id, uid);
@@ -226,7 +244,7 @@ function buildRouter(config) {
     const uid = req.user.id;
     const convId = parseInt(req.params.convId, 10);
     const conv = getConversation(convId);
-    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+    if (!isConvParticipant(conv, uid))
       return res.status(403).json({ error: "accès refusé" });
     clearConversation(convId, uid);
     res.json({ ok: true });
@@ -237,7 +255,7 @@ function buildRouter(config) {
     const uid = req.user.id;
     const convId = parseInt(req.params.convId, 10);
     const conv = getConversation(convId);
-    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+    if (!isConvParticipant(conv, uid))
       return res.status(403).json({ error: "accès refusé" });
     setConversationPinned(convId, uid, !!req.body.pinned);
     res.json({ ok: true });
@@ -248,7 +266,7 @@ function buildRouter(config) {
     const uid = req.user.id;
     const convId = parseInt(req.params.convId, 10);
     const conv = getConversation(convId);
-    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+    if (!isConvParticipant(conv, uid))
       return res.status(403).json({ error: "accès refusé" });
     setConversationMuted(convId, uid, !!req.body.muted);
     res.json({ ok: true });
@@ -259,7 +277,7 @@ function buildRouter(config) {
     const uid = req.user.id;
     const convId = parseInt(req.params.convId, 10);
     const conv = getConversation(convId);
-    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+    if (!isConvParticipant(conv, uid))
       return res.status(403).json({ error: "accès refusé" });
     markConversationUnread(convId, uid);
     res.json({ ok: true });
@@ -267,40 +285,34 @@ function buildRouter(config) {
 
   // GET /messages/ref-card/:type/:id — métadonnées + vignette d'un contenu partagé
   router.get("/ref-card/:type/:id", requireUserJson, (req, res) => {
-    const { type } = req.params;
     const id = parseInt(req.params.id, 10);
     if (!id) return res.json({ thumb: null, title: "" });
-
-    if (type === "image") {
-      const img = getGalleryImage(id);
-      if (!img) return res.json({ thumb: null, title: "" });
-      const raw = img.imagePaths && img.imagePaths[0];
-      return res.json({ thumb: raw ? thumbUrl(raw) : null, title: img.title || "" });
-    }
-    if (type === "wiki") {
-      const page = getWikiPage(id);
-      if (!page) return res.json({ thumb: null, title: "" });
-      const raw = page.imagePaths && page.imagePaths[0];
-      return res.json({ thumb: raw ? thumbUrl(raw) : null, title: page.title || "" });
-    }
-    if (type === "bd") {
-      const book = getBdBook(id);
-      if (!book) return res.json({ thumb: null, title: "" });
-      const raw = book.coverPath || (book.imagePaths && book.imagePaths[0]);
-      return res.json({ thumb: raw ? thumbUrl(raw) : null, title: book.title || "" });
-    }
-    res.json({ thumb: null, title: "" });
+    const ref = resolveContentRef(req.params.type, id);
+    res.json(ref ? { thumb: ref.thumb, title: ref.title } : { thumb: null, title: "" });
   });
 
   // GET /messages/:userId/library — bibliothèque partagée
   router.get("/:userId/library", requireUser, (req, res) => {
     const uid = req.user.id;
     const partnerId = parseInt(req.params.userId, 10);
-    if (!partnerId) return res.redirect("/messages");
+    if (!canMessage(uid, partnerId)) return res.redirect("/messages");
 
     const conv = getOrCreateConversation(uid, partnerId);
-    const items = getSharedItems(conv.id, uid);
     const partner = getUserById(partnerId);
+    const items = getSharedItems(conv.id, uid)
+      .map((it) => {
+        const ref = resolveContentRef(it.content_type, it.content_id);
+        if (!ref) return null;
+        return {
+          id: it.id,
+          type: it.content_type,
+          href: ref.href,
+          thumb: ref.thumb,
+          title: ref.title,
+          sharedByMe: it.shared_by === uid,
+        };
+      })
+      .filter(Boolean);
 
     res.render("message-library", {
       config,
@@ -315,8 +327,8 @@ function buildRouter(config) {
   router.post("/:userId/share", requireUserJson, (req, res) => {
     const uid = req.user.id;
     const partnerId = parseInt(req.params.userId, 10);
-    if (!partnerId || partnerId === uid)
-      return res.status(400).json({ error: "destinataire invalide" });
+    if (!canMessage(uid, partnerId))
+      return res.status(403).json({ error: "destinataire invalide" });
 
     const { type, id, title } = req.body;
     if (!type || !id) return res.status(400).json({ error: "données manquantes" });
@@ -346,7 +358,7 @@ function buildRouter(config) {
     const convId = parseInt(req.params.convId, 10);
     const afterId = parseInt(req.body.afterId, 10) || 0;
     const conv = getConversation(convId);
-    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+    if (!isConvParticipant(conv, uid))
       return res.status(403).json({ error: 'accès refusé' });
     const msgs = getMessagesAfter(convId, uid, afterId);
     res.json({ messages: msgs });
@@ -359,7 +371,7 @@ function buildRouter(config) {
     const beforeId = parseInt(req.body.beforeId, 10) || null;
 
     const conv = getConversation(convId);
-    if (!conv || (conv.p1_id !== uid && conv.p2_id !== uid))
+    if (!isConvParticipant(conv, uid))
       return res.status(403).json({ error: "accès refusé" });
 
     const msgs = getMessages(convId, uid, 40, beforeId).reverse();

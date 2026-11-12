@@ -7164,25 +7164,9 @@ function getFriendshipBetween(userId1, userId2) {
 }
 
 // ── Messagerie : fonctions DB ─────────────────────────────────────────────
-
-function getUserKeys(userId) {
-  return db.prepare('SELECT * FROM user_keys WHERE user_id = ?').get(userId);
-}
-function setUserKeys(userId, publicKey, encryptedPrivKey, keyIv, encryptedWk, wkIv) {
-  db.prepare(`INSERT INTO user_keys (user_id, public_key, encrypted_priv_key, key_iv, encrypted_wk, wk_iv)
-              VALUES (?, ?, ?, ?, ?, ?)
-              ON CONFLICT(user_id) DO UPDATE SET public_key=excluded.public_key,
-                encrypted_priv_key=excluded.encrypted_priv_key, key_iv=excluded.key_iv,
-                encrypted_wk=excluded.encrypted_wk, wk_iv=excluded.wk_iv`)
-    .run(userId, publicKey, encryptedPrivKey, keyIv, encryptedWk || null, wkIv || null);
-}
-function getPublicKey(userId) {
-  const r = db.prepare('SELECT public_key FROM user_keys WHERE user_id = ?').get(userId);
-  return r ? r.public_key : null;
-}
-function getUserWk(userId) {
-  return db.prepare('SELECT encrypted_wk, wk_iv FROM user_keys WHERE user_id = ?').get(userId) || null;
-}
+// (le volet "clés crypto" / E2E jamais branché côté client a été retiré ;
+// la table user_keys reste en base, inoffensive et inutilisée, plutôt que
+// de toucher au schéma)
 
 function _convPair(a, b) { return a < b ? [a, b] : [b, a]; }
 
@@ -7314,12 +7298,19 @@ function markRead(convId, recipientId) {
   db.prepare(`UPDATE conversations SET ${col} = 0 WHERE id = ?`).run(convId);
 }
 
+// Supprime une discussion côté d'un seul profil — l'autre garde son
+// historique tant qu'il ne l'a pas aussi supprimée de son côté (même
+// principe que removeSharedItem/hidden_p1-p2). Hard-delete réel uniquement
+// une fois les deux del_p1/del_p2 à 1. Le texte du bouton ("définitif pour
+// vous") promet déjà ce comportement par profil ; avant ce correctif, le
+// DELETE était inconditionnel et effaçait aussi l'historique de l'autre.
 function clearConversation(convId, userId) {
   const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
   if (!conv) return false;
   if (conv.p1_id !== userId && conv.p2_id !== userId) return false;
-  // Suppression mutuelle : hard-delete immédiat pour tout le monde
-  db.prepare('DELETE FROM messages WHERE conv_id=?').run(convId);
+  const delCol = conv.p1_id === userId ? 'del_p1' : 'del_p2';
+  db.prepare(`UPDATE messages SET ${delCol} = 1 WHERE conv_id = ?`).run(convId);
+  db.prepare('DELETE FROM messages WHERE conv_id = ? AND del_p1 = 1 AND del_p2 = 1').run(convId);
   return true;
 }
 
@@ -7418,6 +7409,7 @@ function addSharedItem(convId, type, id, sharedBy) {
 function getSharedItems(convId, userId) {
   const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
   if (!conv) return [];
+  if (conv.p1_id !== userId && conv.p2_id !== userId) return [];
   const isP1 = conv.p1_id === userId;
   const hiddenCol = isP1 ? 'hidden_p1' : 'hidden_p2';
   return db.prepare(`SELECT * FROM shared_items WHERE conv_id=? AND ${hiddenCol}=0 ORDER BY created_at DESC`).all(convId);
@@ -7878,10 +7870,6 @@ module.exports = {
   getFriendshipBetween,
   logAdminAudit,
   listAdminAudit,
-  getUserKeys,
-  setUserKeys,
-  getPublicKey,
-  getUserWk,
   getMessagesAfter,
   getOrCreateConversation,
   getConversation,

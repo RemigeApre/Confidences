@@ -13,15 +13,37 @@
            data-partner-is-admin="<%= partner.isAdmin ? '1' : '' %>">
       </div>
 
+      <%
+        // "Vu pour la dernière fois" : last_active_at est une chaîne SQLite
+        // naïve (sans fuseau) — même correctif que pour les horodatages de
+        // messages, sinon la comparaison avec Date.now() est faussée.
+        var _lastActiveLabel = null;
+        if (partner.lastActiveAt) {
+          var _lastActiveDate = new Date(partner.lastActiveAt.replace(' ', 'T') + 'Z');
+          var _lastActiveDiff = Date.now() - _lastActiveDate.getTime();
+          if (_lastActiveDiff < 2 * 60 * 1000) {
+            _lastActiveLabel = 'En ligne';
+          } else {
+            var _now = new Date();
+            var _sameDay = _lastActiveDate.toDateString() === _now.toDateString();
+            _lastActiveLabel = _sameDay
+              ? 'Vu à ' + _lastActiveDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+              : 'Vu le ' + _lastActiveDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+          }
+        }
+      %>
       <div class="msg-thread-header">
         <a href="/messages" class="msg-thread-back" aria-label="Retour aux messages">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
         </a>
         <%- include('partials/msg-avatar', { avatarClass: 'msg-thread-avatar', thumb: partnerAvatarThumb, crop: partnerAvatarCrop, color: partner.profileColor, initial: partner.displayName }) %>
-        <a href="/profil/<%= partner.displayName || partner.username %>" class="msg-thread-name">
-          <%= partner.displayName %>
-          <% if (partner.isAdmin) { %><span class="msg-admin-badge">admin</span><% } %>
-        </a>
+        <div class="msg-thread-identity">
+          <a href="/profil/<%= partner.displayName || partner.username %>" class="msg-thread-name">
+            <%= partner.displayName %>
+            <% if (partner.isAdmin) { %><span class="msg-admin-badge">admin</span><% } %>
+          </a>
+          <% if (_lastActiveLabel) { %><span class="msg-thread-lastseen"><%= _lastActiveLabel %></span><% } %>
+        </div>
         <a href="/messages/<%= partner.id %>/library" class="msg-thread-library-btn" title="Bibliothèque partagée" aria-label="Bibliothèque partagée">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
         </a>
@@ -62,6 +84,9 @@
             </div>
           </article>
           <% }) %>
+          <% var _lastMsg = messages.length ? messages[messages.length - 1] : null; %>
+          <% var _showSeen = _lastMsg && _lastMsg.sender_id === currentUser.id && _lastMsg.read_at; %>
+          <div class="msg-seen-indicator" id="msg-seen-indicator"<%= _showSeen ? '' : ' hidden' %>>Vu</div>
           <div class="msg-typing-indicator" id="msg-typing-indicator" hidden aria-live="polite">
             <div class="msg-typing-dots"><span></span><span></span><span></span></div>
           </div>
@@ -267,9 +292,14 @@
     if (document.querySelector('#msg-thread-messages .msg-bubble[data-id="' + id + '"]')) return;
     var container = document.getElementById('msg-thread-messages');
     if (!container) return;
-    // insertBefore l'indicateur de frappe, qui reste le dernier enfant fixe
-    // du conteneur (sinon tout ajout ultérieur atterrit visuellement au-dessus).
-    var anchor = document.getElementById('msg-typing-indicator') || null;
+    // insertBefore l'indicateur "Vu" (ou à défaut celui de frappe), qui reste
+    // en fin de conteneur (sinon tout ajout ultérieur atterrit au-dessus).
+    var seenIndicator = document.getElementById('msg-seen-indicator');
+    var anchor = seenIndicator || document.getElementById('msg-typing-indicator') || null;
+    // Un nouveau message rend l'état "Vu" précédent obsolète — il ne
+    // concernait que l'ancien dernier message. Il réapparaîtra si/quand le
+    // nouveau dernier message (le mien) est lu, via l'événement SSE "seen".
+    if (seenIndicator) seenIndicator.hidden = true;
     var tsMs = Date.parse(ts);
     if (lastRenderedTs === null || (tsMs - lastRenderedTs) >= 2 * 60 * 60 * 1000) {
       var divider = document.createElement('div');
@@ -381,16 +411,42 @@
     typingTimer = setTimeout(function () { typingIndicator.hidden = true; }, 3000);
   }
 
-  // Polling toutes les 2s — simple et fiable
-  setInterval(loadNewMessages, 2000);
+  // Filet de secours : le SSE ci-dessous livre les nouveaux messages quasi
+  // instantanément dans l'immense majorité des cas, mais une connexion SSE
+  // peut se couper silencieusement (proxy, veille mobile…) — ce polling,
+  // bien plus espacé que par le passé, rattrape ce cas sans spammer le serveur.
+  setInterval(loadNewMessages, 20000);
 
-  // SSE conservé uniquement pour l'indicateur de frappe
   try {
     var evtSource = new EventSource('/messages/events');
     evtSource.addEventListener('typing', function (e) {
       try {
         var d = JSON.parse(e.data);
         if (d.fromId === partnerId) showTyping();
+      } catch (_) {}
+    });
+    // Livraison en direct : le serveur pousse déjà cet événement à l'envoi
+    // (voir pushToUser(partnerId, "message", ...) dans routes/messages.js) ;
+    // on ne l'utilisait jusqu'ici que pour déclencher l'indicateur de frappe.
+    evtSource.addEventListener('message', function (e) {
+      try {
+        var d = JSON.parse(e.data);
+        if (d.convId === convId) loadNewMessages();
+      } catch (_) {}
+    });
+    // "Vu" : le serveur pousse cet événement quand le partenaire ouvre la
+    // discussion (markRead), sous réserve que mon dernier message soit
+    // bien le mien (sinon rien à confirmer).
+    evtSource.addEventListener('seen', function (e) {
+      try {
+        var d = JSON.parse(e.data);
+        if (d.convId !== convId) return;
+        var bubbles = document.querySelectorAll('#msg-thread-messages .msg-bubble');
+        var last = bubbles[bubbles.length - 1];
+        var seenIndicator = document.getElementById('msg-seen-indicator');
+        if (last && last.classList.contains('msg-bubble--me') && seenIndicator) {
+          seenIndicator.hidden = false;
+        }
       } catch (_) {}
     });
   } catch (_) {}
