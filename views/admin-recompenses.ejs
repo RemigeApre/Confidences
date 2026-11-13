@@ -684,6 +684,11 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
             <option value="<%= cat %>"><%= _wcCatLabels[cat] || cat %></option>
           <% }) %>
         </select>
+        <select id="card-sort-sel" class="admin-filter-select">
+          <option value="alpha">Alphab&eacute;tique</option>
+          <option value="newest">Nouveaut&eacute;</option>
+          <option value="updated">Derni&egrave;re modification</option>
+        </select>
         <input type="text" id="card-search-input" placeholder="Chercher&hellip;"
           style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
       </div>
@@ -694,6 +699,8 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           var wcRarityColor = wc.cardRarity === 'mythic' ? '#f87171' : wc.cardRarity === 'legendary' ? '#fbbf24' : wc.cardRarity === 'epic' ? '#a78bfa' : wc.cardRarity === 'rare' ? '#60a5fa' : '#94a3b8';
         %>
         <div class="card-wiki-item" data-card-id="<%= wc.id %>" data-rarity="<%= wc.cardRarity %>" data-cat="<%= wc.category %>"
+          data-title="<%= (wc.title || '').toLowerCase() %>"
+          data-created="<%= wc.createdAt || '' %>" data-updated="<%= wc.updatedAt || wc.createdAt || '' %>"
           style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
           <% if (wc.thumb) { %>
           <div style="height:80px;overflow:hidden;flex-shrink:0">
@@ -2254,9 +2261,12 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   // Filter selects
   const cardFilterSel = document.getElementById('card-filter-sel');
   const cardCatFilterSel = document.getElementById('card-cat-filter-sel');
+  const cardSortSel = document.getElementById('card-sort-sel');
   const searchInput = document.getElementById('card-search-input');
+  const cardGrid = document.getElementById('card-wiki-grid');
   cardFilterSel && cardFilterSel.addEventListener('change', applyCardFilters);
   cardCatFilterSel && cardCatFilterSel.addEventListener('change', applyCardFilters);
+  cardSortSel && cardSortSel.addEventListener('change', applyCardFilters);
   searchInput && searchInput.addEventListener('input', applyCardFilters);
 
   function applyCardFilters() {
@@ -2269,6 +2279,14 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       const textMatch = !q || c.dataset.cat.toLowerCase().includes(q) || c.querySelector('[style*="font-size:.8rem"]').textContent.toLowerCase().includes(q);
       c.hidden = !(rarityMatch && catMatch && textMatch);
     });
+
+    const sort = cardSortSel ? cardSortSel.value : 'alpha';
+    const sorted = cardItems.slice().sort((a, b) => {
+      if (sort === 'newest') return (b.dataset.created || '').localeCompare(a.dataset.created || '');
+      if (sort === 'updated') return (b.dataset.updated || '').localeCompare(a.dataset.updated || '');
+      return (a.dataset.title || '').localeCompare(b.dataset.title || '');
+    });
+    sorted.forEach(c => cardGrid.appendChild(c));
   }
 
   // Rarity change
@@ -2450,6 +2468,8 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       } catch(e) {}
     });
   });
+
+  applyCardFilters();
 })();
 </script>
 

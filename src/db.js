@@ -3588,7 +3588,8 @@ function listWikiPagesForCards() {
   const placeholders = CARD_EXCLUDED_CATEGORIES.map(() => '?').join(',');
   const pages = db.prepare(
     `SELECT w.id, w.title, w.category, w.card_rarity, w.card_summary, w.image_paths,
-            w.classeur_id, c.name AS classeur_name, c.color AS classeur_color
+            w.classeur_id, c.name AS classeur_name, c.color AS classeur_color,
+            w.created_at, w.updated_at
      FROM wiki_pages w
      LEFT JOIN classeurs c ON c.id = w.classeur_id
      WHERE w.category NOT IN (${placeholders})
@@ -3602,6 +3603,7 @@ function listWikiPagesForCards() {
       id: r.id, title: r.title, category: r.category, cardRarity: r.card_rarity || 'rare',
       cardSummary: r.card_summary || null, thumb: imagePaths[0] || null, variants,
       classeurId: r.classeur_id || null, classeurName: r.classeur_name || null, classeurColor: r.classeur_color || null,
+      createdAt: r.created_at || null, updatedAt: r.updated_at || null,
     };
   });
   return pages;
