@@ -502,83 +502,24 @@
   <%# ═══════════════════════════════════════════════
       TAB : WIKI
   ═══════════════════════════════════════════════ %>
-  <section class="admin-tab-section" data-tab="wiki" hidden>
+  <%# ═══════════════════════════════════════════════
+      TAB : CONTENU DIVERS (Codex/Galerie/BD/Histoires/Labels — géré
+      directement depuis les pages du site en tant qu'admin ; ici, juste des
+      raccourcis + les réglages qui n'ont pas d'équivalent côté site)
+  ═══════════════════════════════════════════════ %>
+  <section class="admin-tab-section" data-tab="contenu" hidden>
 
-    <%# ── KPI ── %>
-    <div class="admin-kpi-grid">
-      <div class="admin-kpi-card">
-        <span class="admin-kpi-value"><%= wikiKPIs.totalViews.toLocaleString('fr-FR') %></span>
-        <span class="admin-kpi-label">Vues totales</span>
-        <span class="admin-kpi-sub">tous temps</span>
-      </div>
-      <div class="admin-kpi-card">
-        <span class="admin-kpi-value"><%= wikiKPIs.monthViews.toLocaleString('fr-FR') %></span>
-        <span class="admin-kpi-label">Ce mois</span>
-        <span class="admin-kpi-sub">depuis le 1<sup>er</sup></span>
-      </div>
-      <div class="admin-kpi-card">
-        <span class="admin-kpi-value"><%= wikiKPIs.weekViews.toLocaleString('fr-FR') %></span>
-        <span class="admin-kpi-label">7 derniers jours</span>
-        <span class="admin-kpi-sub">glissants</span>
-      </div>
+    <h2 class="admin-section-title">Contenu divers</h2>
+    <p class="admin-muted" style="margin-bottom:.9rem">G&eacute;r&eacute; directement depuis les pages du site, connect&eacute;&middot;e en admin.</p>
+    <div class="admin-content-links">
+      <a href="/wiki" class="admin-content-link">Codex</a>
+      <a href="/galerie" class="admin-content-link">Galerie</a>
+      <a href="/bd" class="admin-content-link">BD</a>
+      <a href="/nouvelles" class="admin-content-link">Histoires</a>
+      <a href="/tags" class="admin-content-link">Labels</a>
     </div>
 
-    <%# ── Top pages ── %>
-    <% if (wikiKPIs.topPages.length) { %>
-    <div class="admin-kpi-top-section">
-      <div class="admin-kpi-top-header">
-        <span class="admin-kpi-top-title">Pages les plus consult&eacute;es</span>
-        <div class="admin-kpi-limit-toggle" id="wiki-limit-toggle">
-          <button class="active" data-limit="10">10</button>
-          <button data-limit="20">20</button>
-        </div>
-      </div>
-      <table class="admin-table admin-kpi-top-table" id="wiki-top-table">
-        <thead><tr><th>#</th><th>Page</th><th>Cat&eacute;gorie</th><th style="text-align:right">Vues</th></tr></thead>
-        <tbody>
-          <% wikiKPIs.topPages.forEach(function(p, i) { %>
-          <tr data-rank="<%= i + 1 %>"<%= i >= 10 ? ' class="admin-rank-hidden"' : '' %>>
-            <td class="admin-kpi-rank"><%= i + 1 %></td>
-            <td><a href="/wiki/<%= p.id %>"><%= p.title %></a></td>
-            <td class="admin-muted"><%= p.category %></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums"><%= p.views %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-    <% } %>
-
-    <%# ── Par utilisateur ── %>
-    <% if (wikiKPIs.perUser.length) { %>
-    <div class="admin-kpi-users">
-      <h3 class="admin-kpi-users-title">Par utilisateur</h3>
-      <% var wikiMax = wikiKPIs.perUser[0] ? wikiKPIs.perUser[0].views : 1; %>
-      <% wikiKPIs.perUser.forEach(function(u) { %>
-      <details class="admin-kpi-user-row">
-        <summary class="admin-kpi-user-summary">
-          <span class="admin-kpi-user-name<%= u.userId === null ? ' admin-kpi-anon' : '' %>"><%= u.displayName %></span>
-          <div class="admin-kpi-bar-wrap">
-            <div class="admin-kpi-bar" style="width:<%= Math.round((u.views / wikiMax) * 100) %>%"></div>
-          </div>
-          <span class="admin-kpi-user-count"><%= u.views.toLocaleString('fr-FR') %></span>
-        </summary>
-        <% if (u.topPages.length) { %>
-        <ul class="admin-kpi-top-list">
-          <% u.topPages.forEach(function(p) { %>
-          <li class="admin-kpi-top-item">
-            <a href="/wiki/<%= p.pageId %>" class="admin-btn-link"><%= p.title %></a>
-            <span class="admin-kpi-top-count"><%= p.views %> vue<%= p.views > 1 ? 's' : '' %></span>
-          </li>
-          <% }) %>
-        </ul>
-        <% } %>
-      </details>
-      <% }) %>
-    </div>
-    <% } %>
-
-    <h2 class="admin-section-title">Mise en avant</h2>
+    <h2 class="admin-section-title">Mise en avant — Codex</h2>
     <p class="admin-muted" style="margin-bottom:.75rem">Ces pages apparaissent dans &laquo;&nbsp;Ce qui pourrait t&apos;int&eacute;resser&nbsp;&raquo; sur l&apos;accueil.</p>
     <ul class="admin-featured-list" id="wiki-featured-list">
       <% allWikiPagesSorted.forEach(function(p) { %>
@@ -594,103 +535,7 @@
       <% }) %>
     </ul>
 
-    <h2 class="admin-section-title" style="margin-top:2rem">Top pages (vues)</h2>
-    <div class="table-scroll">
-      <table class="admin-table">
-        <thead><tr><th>Page</th><th>Cat&eacute;gorie</th><th style="text-align:right">Vues</th><th></th></tr></thead>
-        <tbody>
-          <% wikiPages.slice(0, 30).forEach(function(p) { %>
-            <tr>
-              <td><a href="/wiki/<%= p.id %>"><%= p.title %></a></td>
-              <td><%= p.category %></td>
-              <td style="text-align:right;font-variant-numeric:tabular-nums"><%= p.views %></td>
-              <td><a href="/wiki/<%= p.id %>/edit" class="admin-btn-link">Éditer</a></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <%# ═══════════════════════════════════════════════
-      TAB : GALERIE
-  ═══════════════════════════════════════════════ %>
-  <section class="admin-tab-section" data-tab="galerie" hidden>
-
-    <%# ── KPI ── %>
-    <div class="admin-kpi-grid">
-      <div class="admin-kpi-card">
-        <span class="admin-kpi-value"><%= galleryKPIs.totalViews.toLocaleString('fr-FR') %></span>
-        <span class="admin-kpi-label">Consultations</span>
-        <span class="admin-kpi-sub">depuis le suivi</span>
-      </div>
-      <div class="admin-kpi-card">
-        <span class="admin-kpi-value"><%= galleryKPIs.monthViews.toLocaleString('fr-FR') %></span>
-        <span class="admin-kpi-label">Ce mois</span>
-        <span class="admin-kpi-sub">depuis le 1<sup>er</sup></span>
-      </div>
-      <div class="admin-kpi-card">
-        <span class="admin-kpi-value"><%= galleryKPIs.weekViews.toLocaleString('fr-FR') %></span>
-        <span class="admin-kpi-label">7 derniers jours</span>
-        <span class="admin-kpi-sub">glissants</span>
-      </div>
-    </div>
-
-    <%# ── Top images ── %>
-    <% if (galleryKPIs.topImages.length) { %>
-    <div class="admin-kpi-top-section">
-      <div class="admin-kpi-top-header">
-        <span class="admin-kpi-top-title">Images les plus consult&eacute;es<% if (galleryKPIs.topImagesFallback) { %> <span class="admin-kpi-fallback-label">(par note, suivi pas encore actif)</span><% } %></span>
-        <div class="admin-kpi-limit-toggle" id="gal-img-limit-toggle">
-          <button class="active" data-limit="10">10</button>
-          <button data-limit="20">20</button>
-        </div>
-      </div>
-      <table class="admin-table admin-kpi-top-table" id="gal-img-top-table">
-        <thead><tr><th>#</th><th>Image</th><th style="text-align:right">Vues</th></tr></thead>
-        <tbody>
-          <% galleryKPIs.topImages.forEach(function(img, i) { %>
-          <tr data-rank="<%= i + 1 %>"<%= i >= 10 ? ' class="admin-rank-hidden"' : '' %>>
-            <td class="admin-kpi-rank"><%= i + 1 %></td>
-            <td><a href="/galerie/<%= img.id %>/edit"><%= img.title || 'N/A' %></a></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums"><%= img.views %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-    <% } %>
-
-    <%# ── Par utilisateur ── %>
-    <% if (galleryKPIs.perUser.length) { %>
-    <div class="admin-kpi-users">
-      <h3 class="admin-kpi-users-title">Par utilisateur</h3>
-      <% var galMax = galleryKPIs.perUser[0] ? galleryKPIs.perUser[0].views : 1; %>
-      <% galleryKPIs.perUser.forEach(function(u) { %>
-      <details class="admin-kpi-user-row">
-        <summary class="admin-kpi-user-summary">
-          <span class="admin-kpi-user-name<%= u.userId === null ? ' admin-kpi-anon' : '' %>"><%= u.displayName %></span>
-          <div class="admin-kpi-bar-wrap">
-            <div class="admin-kpi-bar" style="width:<%= Math.round((u.views / galMax) * 100) %>%"></div>
-          </div>
-          <span class="admin-kpi-user-count"><%= u.views.toLocaleString('fr-FR') %></span>
-        </summary>
-        <% if (u.topImages.length) { %>
-        <ul class="admin-kpi-top-list">
-          <% u.topImages.forEach(function(img) { %>
-          <li class="admin-kpi-top-item">
-            <a href="/galerie/<%= img.galleryId %>/edit" class="admin-btn-link"><%= img.title || '#' + img.galleryId %></a>
-            <span class="admin-kpi-top-count"><%= img.views %> vue<%= img.views > 1 ? 's' : '' %></span>
-          </li>
-          <% }) %>
-        </ul>
-        <% } %>
-      </details>
-      <% }) %>
-    </div>
-    <% } %>
-
-    <h2 class="admin-section-title">Top images (note)</h2>
+    <h2 class="admin-section-title" style="margin-top:2rem">Mise en avant — Galerie</h2>
     <div class="admin-gallery-grid" id="admin-gallery-grid">
       <% galleryImages.slice(0, 40).forEach(function(img) { %>
         <div class="admin-gallery-card" data-id="<%= img.id %>">

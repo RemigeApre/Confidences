@@ -26,8 +26,6 @@ const {
   logSecurityEvent,
   listConnectionLogs,
   getAnonStats,
-  getWikiKPIs,
-  getGalleryKPIs,
   getUserDetail,
   mergeUserReactions,
   touchLastLogin,
@@ -697,7 +695,6 @@ function buildAdminRouter(config) {
       const inviteCount = getUserInviteStats(u.id).total;
       return { user: u, attempt, liveScores, livePercentage, favorites, reactionStats, completedQuizzes, profileThumb, coffreCount, codexNotes, imagesNotees, bdNotees, histoiresNotees, inviteCount };
     });
-    const wikiPages = listWikiPages().sort((a, b) => b.views - a.views);
     const allWikiPagesSorted = listWikiPages().sort((a, b) =>
       a.title.localeCompare(b.title, "fr", { sensitivity: "base" })
     );
@@ -705,8 +702,6 @@ function buildAdminRouter(config) {
       .sort((a, b) => (b.rating - a.rating) || b.id - a.id);
     const connectionLogs = listConnectionLogs(200);
     const submissions = listSubmissions();
-    const wikiKPIs = getWikiKPIs();
-    const galleryKPIs = getGalleryKPIs();
     const aiProfiles = listAiProfiles().map((p) => {
       let phys = {};
       try { phys = p.physical_desc ? JSON.parse(p.physical_desc) : {}; } catch(_) { phys = { extras: p.physical_desc || '' }; }
@@ -728,8 +723,7 @@ function buildAdminRouter(config) {
     const adminAudit = listAdminAudit(300);
     res.render("admin-dashboard", {
       config, userStates, matrixSections, submissions,
-      wikiPages, allWikiPagesSorted, galleryImages, connectionLogs,
-      wikiKPIs, galleryKPIs,
+      allWikiPagesSorted, galleryImages, connectionLogs,
       aiProfiles, fantasyWikiPages,
       anonStats, accountRequests,
       changelogs, roadmapItems, adminAudit,
@@ -1202,14 +1196,6 @@ function buildAdminRouter(config) {
       if (req.body[`sell_${tier}`]   !== undefined) setLootboxConfigKey(`sell_${tier}`,   req.body[`sell_${tier}`]);
     }
     res.redirect("/ponhgup/recompenses?section=config");
-  });
-
-  router.get("/recompenses/images-profil", requireAdmin, (req, res) => {
-    const images = listGalleryImages().map(img => {
-      const imagePaths = img.imagePaths || [];
-      return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null, imagePaths };
-    });
-    res.render("admin-recompenses-images", { config, images });
   });
 
   router.post("/recompenses/charms/:id/rarity", requireAdmin, express.json(), (req, res) => {
