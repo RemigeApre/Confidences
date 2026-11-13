@@ -486,13 +486,6 @@ function buildGalleryRouter(config) {
     res.json({ ok: true });
   });
 
-  // Séries d'une image galerie (pour lightbox / formulaire)
-  router.get("/image-series/:galleryId", (req, res) => {
-    const galleryId = Number(req.params.galleryId);
-    if (!galleryId) return res.json([]);
-    res.json(getImageSeries(galleryId));
-  });
-
   // ── "Explorer l'inconnu" : pioche une image (pas BD) jamais notée ni en
   // favori — voir gallery.ejs (le bouton) et public/gallery.js (le mode
   // exploration du lightbox, avec son historique de session). Même logique

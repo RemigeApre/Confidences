@@ -120,16 +120,8 @@
 .obj-tools { display:flex; gap:.4rem; margin-left:auto; }
 
 /* ── Personnages — tuiles visuelles ── */
-.pc-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.65rem; margin-top:.75rem; }
 .pc-card-tile { border-radius:10px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,.07); transition:border-color .15s, transform .12s; display:flex; flex-direction:column; background:#0f172a; }
 .pc-card-tile:hover { transform:scale(1.03); border-color:rgba(255,255,255,.28); }
-.pc-card-tile-img { position:relative; aspect-ratio:3/4; overflow:hidden; flex-shrink:0; }
-.pc-card-tile-img img { width:100%; height:100%; object-fit:cover; display:block; }
-.pc-card-tile-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2.2rem; background:#0f172a; color:#334155; }
-.pc-card-tile-rarity { position:absolute; bottom:0; left:0; right:0; font-size:.58rem; font-weight:800; text-align:center; padding:.15rem; letter-spacing:.06em; text-transform:uppercase; background:rgba(0,0,0,.65); }
-.pc-card-tile-footer { padding:.35rem .45rem .4rem; display:flex; flex-direction:column; gap:.1rem; }
-.pc-card-tile-name { font-size:.72rem; font-weight:700; color:#f1f5f9; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.pc-card-tile-parody { font-size:.6rem; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* ── Style carte à jouer (admin mirror de style.css) ── */
 .lb-codex-flip-front.pc-gwent-front {
@@ -775,13 +767,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       <div class="cartes-sub" data-sub="personnages">
       <div class="coffre-cards-grid" id="pc-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem">
         <% (personnageCards || []).forEach(function(pc) { %>
-        <%
-          var _pcRL = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire', mythic:'Mythique' };
-          var _pcRarityLabel = _pcRL[pc.cardRarity] || pc.cardRarity;
-          var _pcCatLabel = [pc.parody, pc.nature && pc.nature !== 'humain' ? (_pcNatLabels[pc.nature] || pc.nature) : ''].filter(Boolean).join(' · ');
-          var _pcDs = pc.domSub || 0;
-          var _pcDsLabel = _pcDs < -15 ? 'Soumis' : _pcDs > 15 ? 'Dominant' : 'Switch';
-        %>
         <div class="coffre-card-item pc-card-tile"
              data-card-id="<%= pc.id %>"
              data-deck="<%= pc.isUltra ? 'ultra' : pc.isBaseDeck ? 'base' : 'combat' %>"

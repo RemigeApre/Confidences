@@ -301,6 +301,14 @@
                   Fusionner
                 </button>
               <% } %>
+              <% if (['common','rare','epic'].includes(u.rarity)) { %>
+                <button class="coffre-btn coffre-btn--fusion coffre-btn--sm js-fuse-rarete"
+                        data-unlock-id="<%= u.id %>"
+                        data-rarity="<%= u.rarity %>"
+                        title="Sacrifier 10 images différentes de même rareté pour monter celle-ci">
+                  Fusion (10)
+                </button>
+              <% } %>
               <% if (!u.isListed) { %>
                 <button class="coffre-btn coffre-btn--sm js-gift-btn" data-unlock-id="<%= u.id %>" title="Offrir à un ami">Offrir</button>
                 <button class="coffre-btn coffre-btn--sm js-exchange-btn" data-unlock-id="<%= u.id %>" title="Proposer un échange">Échanger</button>
@@ -953,6 +961,22 @@
   </div>
 </div>
 
+<%# ── Modal Fusion par rareté (voie B : 10 images de même rareté → cible) ── %>
+<div class="coffre-modal" id="modal-fusion-rarete" hidden role="dialog" aria-modal="true" aria-label="Fusion par rareté">
+  <div class="coffre-modal-box coffre-modal-box--wide">
+    <h3 class="coffre-modal-title">Fusion par rareté</h3>
+    <p class="coffre-modal-hint">Sacrifiez 10 images <strong id="fusion-rarete-target-rarity"></strong> différentes de la cible pour la faire monter d&rsquo;un cran.</p>
+    <input type="hidden" id="fusion-rarete-target-id" value="">
+    <div class="coffre-modal-grid" id="fusion-rarete-grid"></div>
+    <p class="coffre-modal-hint" id="fusion-rarete-count">0 / 10 sélectionnée(s)</p>
+    <div class="coffre-modal-actions">
+      <button class="coffre-btn coffre-btn--fusion" id="fusion-rarete-confirm" disabled>Fusionner</button>
+      <button class="coffre-modal-close" id="modal-fusion-rarete-close">Annuler</button>
+    </div>
+    <p class="coffre-modal-feedback" id="fusion-rarete-feedback" hidden></p>
+  </div>
+</div>
+
 <%# ── Overlay de fond ── %>
 <div class="coffre-modal-overlay" id="coffre-modal-overlay" hidden></div>
 
@@ -971,7 +995,7 @@
     document.body.style.overflow = '';
   }
   function closeAllModals() {
-    ['modal-gift','modal-exchange','modal-accept-item'].forEach(closeModal);
+    ['modal-gift','modal-exchange','modal-accept-item','modal-fusion-rarete'].forEach(closeModal);
   }
   if (overlay) overlay.addEventListener('click', closeAllModals);
   document.querySelectorAll('.coffre-modal-close').forEach(function(btn) {
@@ -1419,6 +1443,94 @@
         }
         window.location.reload();
       }).catch(function() { btn.disabled = false; });
+    });
+  });
+
+  // ── Fusion voie B : par rareté (10 images différentes → cible) ──────────
+  var fusionRareteGrid = document.getElementById('fusion-rarete-grid');
+  var fusionRareteCountEl = document.getElementById('fusion-rarete-count');
+  var fusionRareteConfirm = document.getElementById('fusion-rarete-confirm');
+  var fusionRareteFeedback = document.getElementById('fusion-rarete-feedback');
+  var fusionRareteSelected = [];
+  var RARITY_LBL_FR = { common: 'communes', rare: 'rares', epic: 'épiques' };
+
+  function updateFusionRareteCount() {
+    fusionRareteCountEl.textContent = fusionRareteSelected.length + ' / 10 sélectionnée(s)';
+    fusionRareteConfirm.disabled = fusionRareteSelected.length !== 10;
+  }
+
+  function renderFusionRareteGrid(targetId, rarity) {
+    fusionRareteGrid.innerHTML = '';
+    fusionRareteSelected = [];
+    updateFusionRareteCount();
+    var candidates = Array.from(document.querySelectorAll('.coffre-item[data-owned="1"][data-rarity="' + rarity + '"]'))
+      .filter(function(el) { return el.dataset.unlockId !== targetId; });
+    candidates.forEach(function(el) {
+      var img = el.querySelector('.coffre-item-img');
+      var titleEl = el.querySelector('.coffre-item-title');
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'coffre-modal-item js-pick-sacrifice';
+      item.dataset.unlockId = el.dataset.unlockId;
+      item.innerHTML = (img ? '<img src="' + img.src + '" alt="">' : '<span class="coffre-item-placeholder"></span>')
+        + '<span class="coffre-modal-item-label">' + (titleEl ? titleEl.textContent : '') + '</span>';
+      item.addEventListener('click', function() {
+        var id = item.dataset.unlockId;
+        var idx = fusionRareteSelected.indexOf(id);
+        if (idx !== -1) {
+          fusionRareteSelected.splice(idx, 1);
+          item.classList.remove('coffre-modal-item--selected');
+        } else {
+          if (fusionRareteSelected.length >= 10) return;
+          fusionRareteSelected.push(id);
+          item.classList.add('coffre-modal-item--selected');
+        }
+        updateFusionRareteCount();
+      });
+      fusionRareteGrid.appendChild(item);
+    });
+  }
+
+  document.querySelectorAll('.js-fuse-rarete').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var rarity = btn.dataset.rarity;
+      document.getElementById('fusion-rarete-target-id').value = btn.dataset.unlockId;
+      document.getElementById('fusion-rarete-target-rarity').textContent = RARITY_LBL_FR[rarity] || rarity;
+      fusionRareteFeedback.hidden = true;
+      renderFusionRareteGrid(btn.dataset.unlockId, rarity);
+      openModal('modal-fusion-rarete');
+    });
+  });
+
+  fusionRareteConfirm && fusionRareteConfirm.addEventListener('click', function() {
+    var targetId = parseInt(document.getElementById('fusion-rarete-target-id').value, 10);
+    var sacrificeIds = fusionRareteSelected.map(function(n) { return parseInt(n, 10); });
+    if (sacrificeIds.length !== 10) return;
+    fusionRareteConfirm.disabled = true;
+    fetch('/favoris/coffre/fusion/rarete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetId: targetId, sacrificeIds: sacrificeIds }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (!d.ok) {
+        var msgs = {
+          need_10_sacrifices: 'Il faut exactement 10 images à sacrifier.',
+          target_not_found: 'Image cible introuvable.',
+          target_already_max: 'Cette image a déjà la rareté maximale pour cette fusion.',
+          cannot_sacrifice_target: 'Vous ne pouvez pas sacrifier la cible elle-même.',
+          rarity_mismatch: 'Toutes les images sacrifiées doivent avoir la même rareté que la cible.',
+          duplicate_images: 'La cible et les sacrifices doivent toutes être des images différentes.',
+        };
+        fusionRareteFeedback.textContent = msgs[d.error] || 'Erreur.';
+        fusionRareteFeedback.hidden = false;
+        fusionRareteConfirm.disabled = false;
+        return;
+      }
+      window.location.reload();
+    }).catch(function() {
+      fusionRareteFeedback.textContent = 'Erreur réseau.';
+      fusionRareteFeedback.hidden = false;
+      fusionRareteConfirm.disabled = false;
     });
   });
 

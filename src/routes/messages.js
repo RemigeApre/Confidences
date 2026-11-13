@@ -246,6 +246,7 @@ function buildRouter(config) {
     const isFriendWithPartner = !!(friendship && friendship.status === "accepted");
     const showAdminNotice = !!partner.isAdmin && !isFriendWithPartner;
 
+    const recentMessages = getMessages(conv.id, uid, 40, null);
     res.render("messages", {
       config,
       convs: buildConvList(uid),
@@ -257,7 +258,8 @@ function buildRouter(config) {
       showAdminNotice,
       convPinned: !!(conv.p1_id === uid ? conv.pinned_p1 : conv.pinned_p2),
       convMuted: !!(conv.p1_id === uid ? conv.muted_p1 : conv.muted_p2),
-      messages: getMessages(conv.id, uid, 40, null).reverse(),
+      messages: recentMessages.slice().reverse(),
+      hasMoreMessages: recentMessages.length === 40,
       navTitle: partner.displayName,
     });
   });

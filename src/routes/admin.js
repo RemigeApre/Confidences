@@ -70,7 +70,6 @@ const {
   getCardStats,
   listWikiPagesForCards,
   getUserPersonnageCards,
-  setPersonnageCardRarity,
   listProtagonistesForCards,
   setPersonnageDescription,
   setPersonnageCardStats,
@@ -1315,14 +1314,6 @@ function buildAdminRouter(config) {
     const summary = String(req.body.summary || '').trim();
     updateWikiCardSummary(id, summary || null);
     res.json({ ok: true });
-  });
-
-  // ── Cartes Personnages — rareté ───────────────────────────────────────────
-  router.post("/recompenses/personnages/:id/rarity", requireAdmin, express.json(), (req, res) => {
-    const id = Number(req.params.id);
-    const rarity = String(req.body.rarity || '');
-    const ok = setPersonnageCardRarity(id, rarity);
-    res.json({ ok });
   });
 
   // ── Cartes Personnages — description ─────────────────────────────────────

@@ -1,18 +1,12 @@
 const express = require("express");
 const db = require("../db");
-const { requireUser, requireUserJson, requireAdmin } = require("../auth");
+const { requireUser } = require("../auth");
 const { thumbUrl } = require("../thumbs");
 const { touchLastActive } = require("../db");
 
 function buildLootboxRouter(config) {
   const router = express.Router();
   router.use(requireUser);
-
-  // ── Comptage ───────────────────────────────────────────────────────────────
-  router.get("/count", (req, res) => {
-    const counts = db.getLootboxCountByType(req.user.id);
-    res.json({ count: counts.total, byType: counts });
-  });
 
   // ── Statut combiné (lootboxes + pièces) — pour polling léger ───────────────
   router.get("/status", (req, res) => {
@@ -73,13 +67,6 @@ function buildLootboxRouter(config) {
   });
 
   // ── Charmes ────────────────────────────────────────────────────────────────
-  router.get("/charms", (req, res) => {
-    res.json({
-      charms: db.getUserUnlockedCharms(req.user.id),
-      activeCharm: req.user.ratingCharm || 'star',
-    });
-  });
-
   router.post("/set-charm", express.json(), (req, res) => {
     res.json(db.setUserCharm(req.user.id, String(req.body.charmKey || '')));
   });
@@ -116,21 +103,10 @@ function buildLootboxRouter(config) {
   });
 
   // ── Profil ─────────────────────────────────────────────────────────────────
-  router.post("/set-profile-color", express.json(), (req, res) => {
-    res.json({ ok: db.setProfileColor(req.user.id, String(req.body.color || "")) });
-  });
-
   router.post("/set-profile-image", express.json(), (req, res) => {
     const raw = req.body.imageId;
     const imageId = raw === null || raw === undefined ? null : parseInt(raw, 10);
     res.json({ ok: db.setProfileImageId(req.user.id, isNaN(imageId) ? null : imageId) });
-  });
-
-  // ── Unlocks & boutique ────────────────────────────────────────────────────
-  router.get("/unlocks", (req, res) => {
-    res.json({
-      unlocks: db.getUserUnlocks(req.user.id).map(u => ({ ...u, thumb: u.thumb ? thumbUrl(u.thumb) : null })),
-    });
   });
 
   // ── Paramètres filtres ────────────────────────────────────────────────────
@@ -139,16 +115,6 @@ function buildLootboxRouter(config) {
     const allowIrrealiste = req.body.allowIrrealiste !== undefined ? !!req.body.allowIrrealiste : undefined;
     db.setLootboxFilters(req.user.id, { allowUltra, allowIrrealiste });
     res.json({ ok: true });
-  });
-
-  // ── Admin ─────────────────────────────────────────────────────────────────
-  router.post("/admin/grant", requireAdmin, express.json(), (req, res) => {
-    const targetUserId = parseInt(req.body.userId, 10);
-    const count    = parseInt(req.body.count,    10) || 1;
-    const lootType = String(req.body.lootType || 'standard');
-    if (!targetUserId) return res.json({ ok: false, error: "userId manquant" });
-    db.grantLootbox(targetUserId, count, lootType);
-    res.json({ ok: true, count, lootType });
   });
 
   return router;

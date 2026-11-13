@@ -84,7 +84,7 @@
             <button type="button" class="msg-reaction-picker-opt" data-emoji="<%= e %>"><%= e %></button>
           <% }) %>
         </div>
-        <button class="msg-load-more-btn" id="msg-load-more-btn" type="button" hidden>Charger plus</button>
+        <button class="msg-load-more-btn" id="msg-load-more-btn" type="button"<%= hasMoreMessages ? '' : ' hidden' %>>Charger plus</button>
         <div class="msg-thread-messages" id="msg-thread-messages">
           <% if (showAdminNotice) { %>
             <div class="msg-system-banner">&Eacute;vitez le spam ou tout comportement d&eacute;plac&eacute;. Parlez-nous de vos id&eacute;es, de vos critiques et de vos probl&egrave;mes.</div>
@@ -346,29 +346,11 @@
     }
   })();
 
-  function appendBubble(id, text, ts, isMe, contentRef, reaction) {
-    if (document.querySelector('#msg-thread-messages .msg-bubble[data-id="' + id + '"]')) return;
-    var container = document.getElementById('msg-thread-messages');
-    if (!container) return;
-    // insertBefore l'indicateur "Vu" (ou à défaut celui de frappe), qui reste
-    // en fin de conteneur (sinon tout ajout ultérieur atterrit au-dessus).
-    var seenIndicator = document.getElementById('msg-seen-indicator');
-    var anchor = seenIndicator || document.getElementById('msg-typing-indicator') || null;
-    // Un nouveau message rend l'état "Vu" précédent obsolète — il ne
-    // concernait que l'ancien dernier message. Il réapparaîtra si/quand le
-    // nouveau dernier message (le mien) est lu, via l'événement SSE "seen".
-    if (seenIndicator) seenIndicator.hidden = true;
-    var tsMs = Date.parse(ts);
-    if (lastRenderedTs === null || (tsMs - lastRenderedTs) >= 2 * 60 * 60 * 1000) {
-      var divider = document.createElement('div');
-      divider.className = 'msg-time-divider';
-      divider.textContent = new Date(ts).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
-      container.insertBefore(divider, anchor);
-    }
-    lastRenderedTs = tsMs;
+  function buildBubbleEl(id, text, ts, isMe, contentRef, reaction) {
     var el = document.createElement('article');
     el.className = 'msg-bubble msg-bubble--' + (isMe ? 'me' : 'them') + (!isMe && partnerIsAdmin ? ' msg-bubble--admin' : '');
     el.dataset.id = id;
+    el.dataset.ts = ts;
     var refHtml = '';
     if (contentRef) {
       refHtml = '<div class="msg-bubble-ref"></div>';
@@ -389,8 +371,86 @@
     if (contentRef) {
       try { renderContentRef(el.querySelector('.msg-bubble-ref'), contentRef); } catch (_) {}
     }
-    container.insertBefore(el, anchor);
+    return el;
+  }
+
+  function appendBubble(id, text, ts, isMe, contentRef, reaction) {
+    if (document.querySelector('#msg-thread-messages .msg-bubble[data-id="' + id + '"]')) return;
+    var container = document.getElementById('msg-thread-messages');
+    if (!container) return;
+    // insertBefore l'indicateur "Vu" (ou à défaut celui de frappe), qui reste
+    // en fin de conteneur (sinon tout ajout ultérieur atterrit au-dessus).
+    var seenIndicator = document.getElementById('msg-seen-indicator');
+    var anchor = seenIndicator || document.getElementById('msg-typing-indicator') || null;
+    // Un nouveau message rend l'état "Vu" précédent obsolète — il ne
+    // concernait que l'ancien dernier message. Il réapparaîtra si/quand le
+    // nouveau dernier message (le mien) est lu, via l'événement SSE "seen".
+    if (seenIndicator) seenIndicator.hidden = true;
+    var tsMs = Date.parse(ts);
+    if (lastRenderedTs === null || (tsMs - lastRenderedTs) >= 2 * 60 * 60 * 1000) {
+      var divider = document.createElement('div');
+      divider.className = 'msg-time-divider';
+      divider.textContent = new Date(ts).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+      container.insertBefore(divider, anchor);
+    }
+    lastRenderedTs = tsMs;
+    container.insertBefore(buildBubbleEl(id, text, ts, isMe, contentRef, reaction), anchor);
     scrollToBottom();
+  }
+
+  // ── Pagination : charger les messages plus anciens ────────────────────────
+  var loadMoreBtn = document.getElementById('msg-load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function () {
+      var container = document.getElementById('msg-thread-messages');
+      var firstBubble = container && container.querySelector('.msg-bubble');
+      if (!container || !firstBubble) return;
+      var beforeId = firstBubble.dataset.id;
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.textContent = 'Chargement…';
+      fetch('/messages/load-more/' + convId, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ beforeId: beforeId }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        var msgs = (d && d.messages) || [];
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = 'Charger plus';
+        loadMoreBtn.hidden = msgs.length < 40;
+        if (!msgs.length) return;
+        var scrollEl = document.getElementById('msg-thread-body');
+        var prevScrollHeight = scrollEl ? scrollEl.scrollHeight : 0;
+        var prevScrollTop = scrollEl ? scrollEl.scrollTop : 0;
+        var frag = document.createDocumentFragment();
+        var prevTs = null;
+        msgs.forEach(function (m) {
+          var ts = m.created_at;
+          var tsMs = Date.parse(ts);
+          if (prevTs === null || (tsMs - prevTs) >= 2 * 60 * 60 * 1000) {
+            var divider = document.createElement('div');
+            divider.className = 'msg-time-divider';
+            divider.textContent = new Date(ts).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+            frag.appendChild(divider);
+          }
+          prevTs = tsMs;
+          var isMe = m.sender_id === myId;
+          frag.appendChild(buildBubbleEl(m.id, m.payload, ts, isMe, m.content_ref || null, m.reaction || null));
+        });
+        // Séparateur entre le dernier message chargé et le premier déjà affiché,
+        // si l'écart dépasse le même seuil que partout ailleurs sur le fil.
+        var nextTsMs = Date.parse(firstBubble.dataset.ts);
+        if (prevTs !== null && !isNaN(nextTsMs) && (nextTsMs - prevTs) >= 2 * 60 * 60 * 1000) {
+          var divider2 = document.createElement('div');
+          divider2.className = 'msg-time-divider';
+          divider2.textContent = new Date(firstBubble.dataset.ts).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+          frag.appendChild(divider2);
+        }
+        container.insertBefore(frag, container.firstChild);
+        if (scrollEl) scrollEl.scrollTop = prevScrollTop + (scrollEl.scrollHeight - prevScrollHeight);
+      }).catch(function () {
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = 'Charger plus';
+      });
+    });
   }
 
   // ── Réactions emoji ──────────────────────────────────────────────────────

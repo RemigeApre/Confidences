@@ -123,14 +123,6 @@ function buildProfilQuizRouter(config) {
     res.render("profil-quiz-result", { config, type, attempt, axes, archetype, archetypes, scores, history });
   });
 
-  // Historique
-  router.get("/:slug/history", (req, res) => {
-    const type = db.getProfilQuizType(req.params.slug);
-    if (!type) return res.redirect("/quizz/profil");
-    const attempts = db.listProfilQuizAttempts(type.id, req.user.id);
-    res.render("profil-quiz-history", { config, type, attempts });
-  });
-
   // Admin : éditer questions
   router.get("/:slug/admin", requireAdmin, (req, res) => {
     const type = db.getProfilQuizType(req.params.slug);

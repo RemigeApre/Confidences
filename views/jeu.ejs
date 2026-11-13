@@ -2479,8 +2479,23 @@
   }
 
   // ── Événements ─────────────────────────────────────────────────────
+  // Reprise d'une partie en cours : si une session active existe déjà
+  // côté serveur, on rouvre directement le plateau au lieu de repasser
+  // par la sélection de personnage.
+  function openCardGame() {
+    api('/card-game/state').then(function(d) {
+      if (d.ok && d.session && d.session.state) {
+        cgSessionId = d.session.id;
+        updateState(d.session.state);
+        showScreen(screenBoard);
+      } else {
+        openPickScreen();
+      }
+    }).catch(openPickScreen);
+  }
+
   var playBtnCg=document.getElementById('arcade-cg-play-btn');
-  if(playBtnCg) playBtnCg.addEventListener('click', openPickScreen);
+  if(playBtnCg) playBtnCg.addEventListener('click', openCardGame);
 
   document.querySelectorAll('.cg-drop-zone-btn:not(.cg-drop-zone-btn--cancel)').forEach(function(btn) {
     btn.addEventListener('click', function() { sendPlayCard(btn.dataset.zone); });

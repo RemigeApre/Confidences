@@ -1484,10 +1484,6 @@ function listFavoriteIdsByType(userId, itemType) {
   );
 }
 
-function countFavorites() {
-  return db.prepare("SELECT COUNT(*) AS c FROM favorites").get().c;
-}
-
 const REACTION_DEFAULT = { rating: 0, flame: false, interested: false, readLater: false, hidden: false, practiced: false };
 
 function getUserReaction(userId, itemType, itemId) {
@@ -2078,19 +2074,6 @@ db.prepare("SELECT id, extra_categories FROM wiki_pages WHERE extra_categories L
   } catch (_) {}
 });
 
-function insertSubmission(userId, answers, scores) {
-  const stmt = db.prepare(
-    "INSERT INTO submissions (created_at, answers, scores, user_id) VALUES (?, ?, ?, ?)"
-  );
-  const info = stmt.run(
-    new Date().toISOString(),
-    JSON.stringify(answers),
-    JSON.stringify(scores),
-    userId || null
-  );
-  return info.lastInsertRowid;
-}
-
 function listSubmissions() {
   const rows = db
     .prepare(
@@ -2131,17 +2114,6 @@ function getAttempt(token) {
   const row = db.prepare("SELECT data, next_section, updated_at FROM attempts WHERE token = ?").get(token);
   if (!row) return null;
   return { data: JSON.parse(row.data), nextSection: row.next_section, updatedAt: row.updated_at };
-}
-
-function saveAttempt(token, data, nextSection) {
-  db.prepare(
-    `INSERT INTO attempts (token, data, next_section, updated_at) VALUES (?, ?, ?, ?)
-     ON CONFLICT(token) DO UPDATE SET data = excluded.data, next_section = excluded.next_section, updated_at = excluded.updated_at`
-  ).run(token, JSON.stringify(data), nextSection, new Date().toISOString());
-}
-
-function deleteAttempt(token) {
-  db.prepare("DELETE FROM attempts WHERE token = ?").run(token);
 }
 
 function insertLink({ url, title, description, type, tags }) {
@@ -2221,10 +2193,6 @@ function setWikiPageMaturity(id, level) {
   const now = new Date().toISOString();
   const setAt = level === 5 ? now : null;
   db.prepare("UPDATE wiki_pages SET maturity = ?, maturity_set_at = ? WHERE id = ?").run(level, setAt, id);
-}
-
-function listFeaturedWikiPages() {
-  return db.prepare("SELECT * FROM wiki_pages WHERE featured = 1").all().map(rowToWikiPage);
 }
 
 function insertWikiPage({ title, category, content, tags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, slug: rawSlug }) {
@@ -2480,15 +2448,6 @@ function getPagesForQuestion(sectionKey, questionId) {
   `).all(sectionKey, questionId);
 }
 
-// Pour une section entière : quelles questions ont au moins un lien, afin
-// d'afficher le bouton "?" différemment sans faire un aller-retour par
-// question au chargement de la page.
-function getLinkedQuestionIds(sectionKey) {
-  return db.prepare("SELECT DISTINCT question_id FROM wiki_question_links WHERE section_key = ?")
-    .all(sectionKey)
-    .map((r) => r.question_id);
-}
-
 function incrementWikiViews(id, userId) {
   db.prepare("UPDATE wiki_pages SET views = views + 1 WHERE id = ?").run(id);
   db.prepare("INSERT INTO wiki_page_views (page_id, user_id, created_at) VALUES (?, ?, ?)").run(id, userId || null, new Date().toISOString());
@@ -2500,99 +2459,6 @@ function logGalleryView(galleryId, userId) {
 
 function logBdView(bookId, userId) {
   db.prepare("INSERT INTO bd_views (book_id, user_id, created_at) VALUES (?, ?, ?)").run(bookId, userId || null, new Date().toISOString());
-}
-
-function getWikiKPIs() {
-  const totalViews = db.prepare("SELECT COALESCE(SUM(views), 0) AS v FROM wiki_pages").get().v;
-  const monthViews = db.prepare(
-    "SELECT COUNT(*) AS v FROM wiki_page_views WHERE created_at >= strftime('%Y-%m-01T00:00:00', 'now')"
-  ).get().v;
-  const weekViews = db.prepare(
-    "SELECT COUNT(*) AS v FROM wiki_page_views WHERE created_at >= datetime('now', '-7 days')"
-  ).get().v;
-  // Top pages all-time via compteur historique (toujours disponible)
-  const topPages = db.prepare(
-    "SELECT id, title, category, views FROM wiki_pages ORDER BY views DESC LIMIT 20"
-  ).all();
-  // Top pages par utilisateur (depuis le suivi)
-  const topRows = db.prepare(
-    `SELECT wpv.user_id, wp.title, wp.id AS page_id, COUNT(*) AS cnt
-     FROM wiki_page_views wpv JOIN wiki_pages wp ON wp.id = wpv.page_id
-     GROUP BY wpv.user_id, wpv.page_id ORDER BY cnt DESC`
-  ).all();
-  const topByUser = {};
-  topRows.forEach(function(r) {
-    const k = String(r.user_id);
-    if (!topByUser[k]) topByUser[k] = [];
-    if (topByUser[k].length < 5) topByUser[k].push({ title: r.title, pageId: r.page_id, views: r.cnt });
-  });
-  // Tous les utilisateurs connus + vues depuis le suivi (LEFT JOIN = 0 si aucune vue)
-  const knownRows = db.prepare(
-    `SELECT u.id, u.display_name, COUNT(wpv.id) AS views
-     FROM users u LEFT JOIN wiki_page_views wpv ON wpv.user_id = u.id
-     GROUP BY u.id ORDER BY views DESC`
-  ).all();
-  const anonViews = db.prepare("SELECT COUNT(*) AS c FROM wiki_page_views WHERE user_id IS NULL").get().c;
-  const perUser = knownRows.map(function(r) {
-    return { userId: r.id, displayName: r.display_name, views: r.views, topPages: topByUser[String(r.id)] || [] };
-  });
-  if (anonViews > 0) perUser.push({ userId: null, displayName: "Anonyme", views: anonViews, topPages: topByUser["null"] || [] });
-  return { totalViews, monthViews, weekViews, topPages, perUser };
-}
-
-function getGalleryKPIs() {
-  const totalViews = db.prepare("SELECT COUNT(*) AS v FROM gallery_views").get().v;
-  const monthViews = db.prepare(
-    "SELECT COUNT(*) AS v FROM gallery_views WHERE created_at >= strftime('%Y-%m-01T00:00:00', 'now')"
-  ).get().v;
-  const weekViews = db.prepare(
-    "SELECT COUNT(*) AS v FROM gallery_views WHERE created_at >= datetime('now', '-7 days')"
-  ).get().v;
-  // Top images par consultation
-  const topImages = db.prepare(
-    `SELECT gi.id, gi.title, COUNT(*) AS views
-     FROM gallery_views gv JOIN gallery_images gi ON gi.id = gv.gallery_id
-     GROUP BY gv.gallery_id ORDER BY views DESC LIMIT 20`
-  ).all();
-  // Si pas encore de consultations enregistrées, fallback par somme des
-  // notes (content_reactions, tous profils confondus — vue admin agrégée,
-  // contrairement aux listes "mes notes" qui restent propres à chaque profil).
-  const topImagesFallback = topImages.length === 0
-    ? db.prepare(
-        `SELECT gi.id, gi.title, SUM(cr.rating) AS views
-         FROM gallery_images gi JOIN content_reactions cr ON cr.item_type = 'gallery' AND cr.item_id = gi.id
-         GROUP BY gi.id HAVING SUM(cr.rating) > 0 ORDER BY views DESC LIMIT 20`
-      ).all()
-    : null;
-  // Top images par utilisateur
-  const topRows = db.prepare(
-    `SELECT gv.user_id, gi.title, gi.id AS gallery_id, COUNT(*) AS cnt
-     FROM gallery_views gv JOIN gallery_images gi ON gi.id = gv.gallery_id
-     GROUP BY gv.user_id, gv.gallery_id ORDER BY cnt DESC`
-  ).all();
-  const topByUser = {};
-  topRows.forEach(function(r) {
-    const k = String(r.user_id);
-    if (!topByUser[k]) topByUser[k] = [];
-    if (topByUser[k].length < 5) topByUser[k].push({ title: r.title, galleryId: r.gallery_id, views: r.cnt });
-  });
-  // Tous les utilisateurs connus + consultations depuis le suivi
-  const knownRows = db.prepare(
-    `SELECT u.id, u.display_name, COUNT(gv.id) AS views
-     FROM users u LEFT JOIN gallery_views gv ON gv.user_id = u.id
-     GROUP BY u.id ORDER BY views DESC`
-  ).all();
-  const anonViews = db.prepare("SELECT COUNT(*) AS c FROM gallery_views WHERE user_id IS NULL").get().c;
-  const perUser = knownRows.map(function(r) {
-    return { userId: r.id, displayName: r.display_name, views: r.views, topImages: topByUser[String(r.id)] || [] };
-  });
-  if (anonViews > 0) perUser.push({ userId: null, displayName: "Anonyme", views: anonViews, topImages: topByUser["null"] || [] });
-  return {
-    totalViews, monthViews, weekViews,
-    topImages: topImages.length ? topImages : (topImagesFallback || []),
-    topImagesFallback: !!topImagesFallback,
-    perUser,
-  };
 }
 
 function getUserDetail(id) {
@@ -3194,7 +3060,6 @@ function setTagParent(tag, parent) {
 }
 
 const VALID_SUBCATEGORIES = new Set(["physique", "ethnie", "fantastique", "vetements", "autre", ""]);
-const CATS_WITH_SUBCATS   = new Set(["femme", "homme"]);
 
 function getAllTagSubcategories() {
   const rows = db.prepare("SELECT tag, subcategory FROM tag_meta WHERE subcategory != ''").all();
@@ -3476,13 +3341,6 @@ function getUserPersonnageCards(userId) {
     actionActeName: r.action_acte_name || '', actionActePower: r.action_acte_power ?? 7,
     actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20,
   }));
-}
-
-function setPersonnageCardRarity(protagonisteId, rarity) {
-  const valid = ['common','rare','epic','legendary','mythic'];
-  if (!valid.includes(rarity)) return false;
-  db.prepare("UPDATE protagonistes SET card_rarity = ? WHERE id = ?").run(rarity, protagonisteId);
-  return true;
 }
 
 function listProtagonistesForCards() {
@@ -4635,11 +4493,6 @@ function updateCustomQuizQuestion(id, text, type, options, hasSides, tendency, s
 function deleteCustomQuizQuestion(id) {
   db.prepare(`DELETE FROM custom_quiz_questions WHERE id=?`).run(id);
 }
-function updateCustomQuizQuestionsOrder(quizId, orderedIds) {
-  const stmt = db.prepare(`UPDATE custom_quiz_questions SET position=? WHERE id=? AND quiz_id=?`);
-  const tx = db.transaction(() => { orderedIds.forEach((qid, i) => stmt.run(i, qid, quizId)); });
-  tx();
-}
 function getCustomQuizAnswer(quizId, userId) {
   return db.prepare(`SELECT * FROM custom_quiz_answers WHERE quiz_id=? AND user_id=?`).get(quizId, userId);
 }
@@ -4696,13 +4549,6 @@ function saveQuizFlag(quizId, userId, flag, questionId, value) {
   }
 }
 
-function listQuizzesNotCompleted(userId) {
-  return db.prepare(`SELECT q.*,
-    (SELECT COUNT(*) FROM custom_quiz_questions WHERE quiz_id = q.id) as question_count
-    FROM custom_quizzes q
-    WHERE q.id NOT IN (SELECT quiz_id FROM custom_quiz_answers WHERE user_id=? AND completed=1)
-    ORDER BY q.updated_at DESC`).all(userId);
-}
 function countCompletedQuizzes(userId) {
   const row = db.prepare(`SELECT COUNT(*) as n FROM custom_quiz_answers WHERE user_id=? AND completed=1`).get(userId);
   return row ? row.n : 0;
@@ -4785,20 +4631,6 @@ function setImageLootboxExcluded(id, excluded) {
   db.prepare("UPDATE gallery_images SET lootbox_excluded = ? WHERE id = ?").run(excluded ? 1 : 0, id);
 }
 
-function grantJokerToUser(userId, jokerType) {
-  const type = jokerType === 'charm' ? 'joker_charm' : 'joker_image';
-  const now = new Date().toISOString();
-  // Use INSERT (not IGNORE) so multiple jokers can stack
-  db.prepare("INSERT INTO user_unlocks (user_id, item_type, ref_id, rarity, obtained_at) VALUES (?, ?, 0, 'legendary', ?)").run(userId, type, now);
-  return { ok: true };
-}
-
-function grantCoinsToUser(userId, amount) {
-  const n = Math.max(1, parseInt(amount, 10) || 1);
-  db.prepare("UPDATE users SET coins = coins + ? WHERE id = ?").run(n, userId);
-  return { ok: true };
-}
-
 function _pickRarity() {
   const cfg = getLootboxConfig().weights;
   const weights = { common: cfg.common, rare: cfg.rare, epic: cfg.epic, legendary: cfg.legendary, mythic: cfg.mythic };
@@ -4870,15 +4702,6 @@ function buyTheme(userId, key) {
   db.prepare("UPDATE users SET coins = coins - ? WHERE id = ?").run(price, userId);
   const newCoins = db.prepare("SELECT coins FROM users WHERE id = ?").get(userId).coins;
   return { ok: true, rarity, coinsSpent: price, newBalance: newCoins };
-}
-
-function grantTheme(userId, key) {
-  const def = THEME_DEFINITIONS.find(t => t.key === key);
-  if (!def || def.always) return { ok: false, error: 'invalid_key' };
-  const now = new Date().toISOString();
-  const ins = db.prepare("INSERT OR IGNORE INTO user_themes (user_id, theme_key, obtained_at) VALUES (?, ?, ?)").run(userId, key, now);
-  const isDuplicate = ins.changes === 0;
-  return { ok: true, isDuplicate, key, label: def.label, rarity: def.rarity || 'rare' };
 }
 
 function setThemeRarity(key, rarity) {
@@ -4981,27 +4804,10 @@ const _stmtActionUpsert = db.prepare(
    ON CONFLICT(user_id, action_type) DO UPDATE SET granted = excluded.granted`
 );
 
-/** Compte les notes (rating > 0) posées sur wiki + galerie par un utilisateur. */
-function countUserRatingsAll(userId) {
-  const row = db.prepare(
-    `SELECT COUNT(*) AS n FROM content_reactions
-     WHERE user_id = ? AND item_type IN ('wiki','gallery') AND rating > 0`
-  ).get(userId);
-  return row ? row.n : 0;
-}
-
 /** Compte les favoris totaux d'un utilisateur (toutes origines). */
 function countUserFavoritesAll(userId) {
   const row = db.prepare(
     "SELECT COUNT(*) AS n FROM favorites WHERE user_id = ?"
-  ).get(userId);
-  return row ? row.n : 0;
-}
-
-/** Compte les pages BD notées (rating > 0) par un utilisateur. */
-function countUserBdRatings(userId) {
-  const row = db.prepare(
-    "SELECT COUNT(*) AS n FROM bd_page_reactions WHERE user_id = ? AND rating > 0"
   ).get(userId);
   return row ? row.n : 0;
 }
@@ -5095,12 +4901,6 @@ function checkAndGrantProfilQuizLootbox(userId, typeId) {
   grantLootbox(userId, 5, 'standard');
   _stmtActionUpsert.run(userId, actionType, 1);
   return 5;
-}
-
-/** Retourne le streak de connexion actuel de l'utilisateur. */
-function getUserLoginStreak(userId) {
-  const row = db.prepare('SELECT login_streak, login_streak_last FROM users WHERE id = ?').get(userId);
-  return row ? { streak: row.login_streak || 0, last: row.login_streak_last || '' } : { streak: 0, last: '' };
 }
 
 // ── Charmes ───────────────────────────────────────────────────────────────
@@ -5967,12 +5767,6 @@ function getShopItems(userId) {
     });
 }
 
-function setProfileColor(userId, color) {
-  if (!/^#[0-9a-fA-F]{3,8}$/.test(color)) return false;
-  db.prepare("UPDATE users SET profile_color = ? WHERE id = ?").run(color, userId);
-  return true;
-}
-
 function setProfileImageId(userId, imageId) {
   if (imageId === null || imageId === undefined) {
     db.prepare("UPDATE users SET profile_image_id = NULL WHERE id = ?").run(userId);
@@ -6703,9 +6497,6 @@ function listCodexAuthors() {
 function getCodexAuthorBySlug(slug) {
   return db.prepare(`SELECT * FROM codex_authors WHERE slug=?`).get(slug);
 }
-function getCodexAuthorById(id) {
-  return db.prepare(`SELECT * FROM codex_authors WHERE id=?`).get(id);
-}
 function createCodexAuthor({ slug, name, credentials, bio, avatar_url }) {
   const r = db.prepare(`INSERT INTO codex_authors (slug, name, credentials, bio, avatar_url) VALUES (?,?,?,?,?)`)
     .run(slug, name || '', credentials || '', bio || '', avatar_url || '');
@@ -6755,34 +6546,6 @@ function saveProfilQuizAttempt({ typeId, userId, answers, scores, resultCode, re
     "INSERT INTO profil_quiz_attempts (type_id, user_id, answers, scores, result_code, result_position, result_archetype, completed, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)"
   ).run(typeId, userId, JSON.stringify(answers||{}), JSON.stringify(scores||{}), resultCode||'', resultPosition||'', resultArchetype||'', completed?1:0, now, now);
   return info.lastInsertRowid;
-}
-
-function updateProfilQuizAttempt(id, { answers, scores, resultCode, resultPosition, resultArchetype, completed }) {
-  const now = new Date().toISOString();
-  db.prepare(
-    "UPDATE profil_quiz_attempts SET answers=?, scores=?, result_code=?, result_position=?, result_archetype=?, completed=?, updated_at=? WHERE id=?"
-  ).run(JSON.stringify(answers||{}), JSON.stringify(scores||{}), resultCode||'', resultPosition||'', resultArchetype||'', completed?1:0, now, id);
-}
-
-function createProfilQuizType({ slug, name, description }) {
-  const now = new Date().toISOString();
-  return db.prepare("INSERT INTO profil_quiz_types (slug, name, description, created_at) VALUES (?,?,?,?)").run(slug, name, description||'', now).lastInsertRowid;
-}
-
-function updateProfilQuizType(id, { name, description }) {
-  db.prepare("UPDATE profil_quiz_types SET name=?, description=? WHERE id=?").run(name, description||'', id);
-}
-
-function createProfilQuizAxis({ typeId, slug, name, pole1Code, pole1Label, pole2Code, pole2Label, isPosition, sortOrder }) {
-  return db.prepare("INSERT INTO profil_quiz_axes (type_id, slug, name, pole1_code, pole1_label, pole2_code, pole2_label, is_position, sort_order) VALUES (?,?,?,?,?,?,?,?,?)").run(typeId, slug, name, pole1Code, pole1Label, pole2Code, pole2Label, isPosition?1:0, sortOrder||0).lastInsertRowid;
-}
-
-function updateProfilQuizAxis(id, { name, pole1Code, pole1Label, pole2Code, pole2Label, isPosition, sortOrder }) {
-  db.prepare("UPDATE profil_quiz_axes SET name=?, pole1_code=?, pole1_label=?, pole2_code=?, pole2_label=?, is_position=?, sort_order=? WHERE id=?").run(name, pole1Code, pole1Label, pole2Code, pole2Label, isPosition?1:0, sortOrder||0, id);
-}
-
-function deleteProfilQuizAxis(id) {
-  db.prepare("DELETE FROM profil_quiz_axes WHERE id=?").run(id);
 }
 
 function createProfilQuizQuestion({ typeId, axisId, pole, text, sortOrder }) {
@@ -7087,10 +6850,6 @@ function getInviteByToken(token) {
 function createInviteUse(inviterId, inviteeId, country, status) {
   db.prepare('INSERT OR IGNORE INTO invite_uses (inviter_id, invitee_id, country, status) VALUES (?, ?, ?, ?)')
     .run(inviterId, inviteeId, country || '', status || 'pending');
-}
-
-function getInviteUseByInvitee(inviteeId) {
-  return db.prepare('SELECT * FROM invite_uses WHERE invitee_id = ?').get(inviteeId) || null;
 }
 
 function listPendingInvites(inviterId) {
@@ -7658,12 +7417,9 @@ module.exports = {
   setUserAccountStatus,
   setAdminTag,
   touchLastActive,
-  insertSubmission,
   listSubmissions,
   getSubmission,
   getAttempt,
-  saveAttempt,
-  deleteAttempt,
   insertLink,
   listLinks,
   deleteLink,
@@ -7687,7 +7443,6 @@ module.exports = {
   addWikiQuestionLink,
   removeWikiQuestionLink,
   getPagesForQuestion,
-  getLinkedQuestionIds,
   incrementWikiViews,
   getImageLinks,
   addImageLink,
@@ -7710,7 +7465,6 @@ module.exports = {
   updateGalleryImageMeta,
   setWikiPageFeatured,
   setWikiPageMaturity,
-  listFeaturedWikiPages,
   listBdBooks,
   getBdBook,
   insertBdBook,
@@ -7747,7 +7501,6 @@ module.exports = {
   isFavorite,
   listFavoriteRows,
   listFavoriteIdsByType,
-  countFavorites,
   getUserReaction,
   getUserReactionStats,
   countUserNotes,
@@ -7769,7 +7522,6 @@ module.exports = {
   setTagParent,
   getAllTagSubcategories,
   setTagSubcategory,
-  CATS_WITH_SUBCATS,
   getAllCategories,
   getAllSubcategoriesList,
   getAllSubcategoriesByCategory,
@@ -7808,8 +7560,6 @@ module.exports = {
   setGalleryLinks,
   logGalleryView,
   logBdView,
-  getWikiKPIs,
-  getGalleryKPIs,
   getUserDetail,
   createSeries,
   deleteSeries,
@@ -7842,12 +7592,10 @@ module.exports = {
   addCustomQuizQuestion,
   updateCustomQuizQuestion,
   deleteCustomQuizQuestion,
-  updateCustomQuizQuestionsOrder,
   getCustomQuizAnswer,
   saveCustomQuizAnswer,
   saveOneQuizAnswer,
   clearCustomQuizAnswer,
-  listQuizzesNotCompleted,
   getQuizParts,
   createQuizPart,
   updateQuizPart,
@@ -7881,7 +7629,6 @@ module.exports = {
   listNouvellesBySerie,
   listNouvellesTags,
   listAiProfiles,
-  getAiProfile,
   createAiProfile,
   updateAiProfile,
   deleteAiProfile,
@@ -7895,17 +7642,13 @@ module.exports = {
   resetUserLootboxProgress,
   grantCharmDirect,
   checkAndGrantActionLootbox,
-  countUserRatingsAll,
   countUserRatingsTotal,
   countUserFavoritesAll,
-  countUserBdRatings,
   getLootboxConfig,
   setLootboxConfigKey,
   setImageRarity,
   setImageTitle,
   setImageLootboxExcluded,
-  grantJokerToUser,
-  grantCoinsToUser,
   setCharmRarity,
   toggleUnlockFavorite,
   grantGiftLootbox,
@@ -7936,7 +7679,6 @@ module.exports = {
   getShopItems,
   RARITY_BUY_PRICE,
   RARITY_SELL_PRICE,
-  setProfileColor,
   setProfileImageId,
   setProfileBanner,
   setProfileImageCrop,
@@ -7952,7 +7694,6 @@ module.exports = {
   getFrenchDate,
   getUserThemes,
   setActiveTheme,
-  grantTheme,
   buyTheme,
   setThemeRarity,
   THEME_DEFINITIONS,
@@ -7984,7 +7725,6 @@ module.exports = {
   getCardStats,
   listWikiPagesForCards,
   getUserPersonnageCards,
-  setPersonnageCardRarity,
   listProtagonistesForCards,
   setPersonnageDescription,
   setPersonnageCardStats,
@@ -8010,7 +7750,6 @@ module.exports = {
   deleteCardVariant,
   listCodexAuthors,
   getCodexAuthorBySlug,
-  getCodexAuthorById,
   createCodexAuthor,
   updateCodexAuthor,
   deleteCodexAuthor,
@@ -8022,12 +7761,6 @@ module.exports = {
   getProfilQuizAttempt,
   listProfilQuizAttempts,
   saveProfilQuizAttempt,
-  updateProfilQuizAttempt,
-  createProfilQuizType,
-  updateProfilQuizType,
-  createProfilQuizAxis,
-  updateProfilQuizAxis,
-  deleteProfilQuizAxis,
   createProfilQuizQuestion,
   updateProfilQuizQuestion,
   deleteProfilQuizQuestion,
@@ -8065,7 +7798,6 @@ module.exports = {
   getOrCreateInviteToken,
   getInviteByToken,
   createInviteUse,
-  getInviteUseByInvitee,
   listPendingInvites,
   countPendingInvites,
   setInviteUseStatus,
@@ -8116,7 +7848,6 @@ module.exports = {
   checkAndGrantNoteMilestones,
   checkAndGrantProfilQuizLootbox,
   checkAndGrantHeartsMilestones,
-  getUserLoginStreak,
   giftItem,
   countNewGiftedItems,
   markGiftItemSeen,
@@ -8348,9 +8079,6 @@ function listNouvellesTags() {
 // ── AI Profiles ────────────────────────────────────────────────────────────
 function listAiProfiles() {
   return db.prepare(`SELECT * FROM ai_profiles ORDER BY updated_at DESC`).all();
-}
-function getAiProfile(id) {
-  return db.prepare(`SELECT * FROM ai_profiles WHERE id=?`).get(id);
 }
 function createAiProfile({ name, description, fantasmes, age, sexe, physical_desc, relation_type, sex_fantasmes, sex_practiced, sex_details }) {
   const r = db.prepare(`INSERT INTO ai_profiles (name, description, fantasmes, age, sexe, physical_desc, relation_type, sex_fantasmes, sex_practiced, sex_details) VALUES (?,?,?,?,?,?,?,?,?,?)`)
