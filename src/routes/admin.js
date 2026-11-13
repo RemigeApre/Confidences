@@ -54,6 +54,7 @@ const {
   setLootboxConfigKey,
   setImageRarity,
   setImageTitle,
+  setImageLootboxExcluded,
   setCharmRarity,
   grantGiftLootbox,
   grantSpecificImageToUser,
@@ -1175,7 +1176,7 @@ function buildAdminRouter(config) {
     const section = ['accueil', 'images', 'charms', 'themes', 'config'].includes(req.query.section) ? req.query.section : 'accueil';
     const images = listGalleryImages().map(img => {
       const imagePaths = img.imagePaths || [];
-      return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null };
+      return { id: img.id, title: img.title || '', rarity: img.rarity || 'common', thumb: imagePaths[0] || null, lootboxExcluded: img.lootboxExcluded };
     });
     const rarities = ['common','rare','epic','legendary','mythic'];
     const imageStats = Object.fromEntries(rarities.map(r => [r, images.filter(i => i.rarity === r).length]));
@@ -1237,6 +1238,13 @@ function buildAdminRouter(config) {
     if (!VALID.includes(rarity)) return res.json({ ok: false });
     setImageRarity(id, rarity);
     res.json({ ok: true, rarity });
+  });
+
+  router.post("/recompenses/images-profil/:id/lootbox-excluded", requireAdmin, express.json(), (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ ok: false });
+    setImageLootboxExcluded(id, !!req.body.excluded);
+    res.json({ ok: true });
   });
 
   // ── Liste utilisateurs pour le sélecteur de cadeau ────────────────────────

@@ -21,6 +21,7 @@ const buildProtagonistesRouter = require("./routes/protagonistes");
 const buildRacesRouter = require("./routes/races");
 const { buildRouter: buildMessagesRouter } = require("./routes/messages");
 const { sendRecapEmails } = require("./recap");
+const { sendAdminMessageAlerts } = require("./adminMsgAlert");
 const { attachUser } = require("./auth");
 const { isFrenchIp } = require("./geo");
 const {
@@ -1455,6 +1456,12 @@ setInterval(() => { try { cleanupOldMessages(); } catch (_) {} }, 24 * 60 * 60 *
 
 // Récap mail quotidien (messages/coffres non vus depuis 24h, voir src/recap.js)
 setInterval(() => { sendRecapEmails().catch(() => {}); }, 24 * 60 * 60 * 1000);
+
+// Alerte mail message admin non lu depuis 1h (hors nuit, voir
+// src/adminMsgAlert.js) — vérifié toutes les 15 min pour rester réactif par
+// rapport au seuil d'1h, et lancé une première fois au démarrage.
+sendAdminMessageAlerts().catch(() => {});
+setInterval(() => { sendAdminMessageAlerts().catch(() => {}); }, 15 * 60 * 1000);
 
 // Lien de désinscription du récap mail — pas de login requis (cliqué depuis
 // un mail, potentiellement sur un autre appareil) : le token identifie le

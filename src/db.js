@@ -82,6 +82,11 @@ try { db.exec("ALTER TABLE users ADD COLUMN identity_changed_at TEXT"); } catch 
 try { db.exec("ALTER TABLE users ADD COLUMN notify_recap_email INTEGER NOT NULL DEFAULT 1"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN recap_unsub_token TEXT"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN last_recap_sent_at TEXT"); } catch (_) {}
+// Alerte mail si un message envoyé par un admin reste non lu plus d'1h (hors
+// nuit) — voir sendAdminMessageAlerts(), src/adminMsgAlert.js. Réutilise le
+// même interrupteur que le récap (notify_recap_email) et le même lien de
+// désinscription.
+try { db.exec("ALTER TABLE users ADD COLUMN last_admin_msg_alert_sent_at TEXT"); } catch (_) {}
 
 // Migrations non destructives
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN meta TEXT NOT NULL DEFAULT '{}'"); } catch (_) {}
@@ -295,6 +300,10 @@ try { db.exec("ALTER TABLE gallery_images ADD COLUMN wiki_synced INTEGER NOT NUL
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN title_visible INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN protagonist_evos TEXT NOT NULL DEFAULT '{}'"); } catch(_) {}
 try { db.exec("ALTER TABLE gallery_images ADD COLUMN rarity TEXT NOT NULL DEFAULT 'common'"); } catch(_) {}
+// Exclue du tirage aléatoire des lootboxes (image "réservée", ex. future
+// photo de profil admin) — reste gifiable manuellement par l'admin via
+// l'outil "Offrir" (grantGiftLootbox), qui ne consulte jamais ce flag.
+try { db.exec("ALTER TABLE gallery_images ADD COLUMN lootbox_excluded INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS gallery_links (
@@ -2856,6 +2865,7 @@ function rowToGalleryImage(row) {
     aiSuspected: !!row.ai_suspected,
     safe: !!row.safe,
     rarity: row.rarity || 'common',
+    lootboxExcluded: !!row.lootbox_excluded,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -4774,6 +4784,10 @@ function setImageTitle(id, title) {
   db.prepare("UPDATE gallery_images SET title = ? WHERE id = ?").run(String(title || '').trim(), id);
 }
 
+function setImageLootboxExcluded(id, excluded) {
+  db.prepare("UPDATE gallery_images SET lootbox_excluded = ? WHERE id = ?").run(excluded ? 1 : 0, id);
+}
+
 function grantJokerToUser(userId, jokerType) {
   const type = jokerType === 'charm' ? 'joker_charm' : 'joker_image';
   const now = new Date().toISOString();
@@ -5201,8 +5215,9 @@ function getUserJokers(userId) {
 function useJokerImage(userId, targetImageId) {
   const joker = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'joker_image' ORDER BY obtained_at ASC LIMIT 1").get(userId);
   if (!joker) return { ok: false, error: 'no_joker' };
-  const imgRow = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images WHERE id = ?").get(targetImageId);
+  const imgRow = db.prepare("SELECT id, image_paths, title, rarity, lootbox_excluded FROM gallery_images WHERE id = ?").get(targetImageId);
   if (!imgRow) return { ok: false, error: 'image_not_found' };
+  if (imgRow.lootbox_excluded) return { ok: false, error: 'image_excluded' };
   const already = db.prepare("SELECT id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image' AND ref_id = ?").get(userId, targetImageId);
   if (already) return { ok: false, error: 'already_owned' };
   const now = new Date().toISOString();
@@ -5234,7 +5249,7 @@ function _buildImagePool(userId) {
   const allowIrrealiste = user ? !!user.lootbox_allow_irrealiste : true;
   const ultraTags      = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'ultra'").all().map(r => r.tag));
   const irrealisteTags = new Set(db.prepare("SELECT tag FROM tag_meta WHERE type = 'irrealiste'").all().map(r => r.tag));
-  let pool = db.prepare("SELECT id, image_paths, title, tags, rarity FROM gallery_images ORDER BY RANDOM() LIMIT 200").all();
+  let pool = db.prepare("SELECT id, image_paths, title, tags, rarity FROM gallery_images WHERE lootbox_excluded = 0 ORDER BY RANDOM() LIMIT 200").all();
   pool = pool.filter(img => {
     let tags = [];
     try { tags = JSON.parse(img.tags || '[]'); } catch (_) {}
@@ -5242,7 +5257,7 @@ function _buildImagePool(userId) {
     if (!allowIrrealiste && tags.some(t => irrealisteTags.has(t))) return false;
     return true;
   });
-  if (!pool.length) pool = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images ORDER BY RANDOM() LIMIT 30").all();
+  if (!pool.length) pool = db.prepare("SELECT id, image_paths, title, rarity FROM gallery_images WHERE lootbox_excluded = 0 ORDER BY RANDOM() LIMIT 30").all();
   return pool;
 }
 
@@ -5260,7 +5275,7 @@ function _grantImageReward(userId, boxId, forcedRarity) {
   // Images de cette rareté non encore possédées par l'utilisateur
   const candidates = db.prepare(`
     SELECT id, image_paths, title, rarity, tags FROM gallery_images
-    WHERE rarity = ?
+    WHERE rarity = ? AND lootbox_excluded = 0
     AND id NOT IN (SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image')
   `).all(rarity, userId).filter(img => {
     let tags = []; try { tags = JSON.parse(img.tags || '[]'); } catch (_) {}
@@ -5521,7 +5536,7 @@ function listUnownedImages(userId, limit) {
     FROM gallery_images gi
     LEFT JOIN content_reactions cr ON cr.user_id = ? AND cr.item_type = 'gallery' AND cr.item_id = gi.id
     LEFT JOIN favorites f ON f.user_id = ? AND f.item_type = 'gallery' AND f.item_id = gi.id
-    WHERE gi.id NOT IN (
+    WHERE gi.lootbox_excluded = 0 AND gi.id NOT IN (
       SELECT ref_id FROM user_unlocks WHERE user_id = ? AND item_type = 'profile_image'
     )
     ORDER BY is_fav DESC, user_rating DESC, gi.id DESC
@@ -7588,6 +7603,57 @@ function findUsersNeedingRecap() {
     .map((r) => ({ userId: r.userId, email: r.email, displayName: r.displayName, unreadCount: r.unreadCount, giftCount: r.giftCount }));
 }
 
+// Profils ayant une conversation où le DERNIER message vient d'un admin et
+// date de plus d'1h, sans réponse depuis — voir sendAdminMessageAlerts()
+// (src/adminMsgAlert.js). On regarde "dernier message = admin" plutôt que
+// "non lu" : ouvrir le fil marque lu (markRead) sans forcément répondre, et
+// la demande couvre les deux cas ("pas vu OU répondu"). Un seul mail par
+// épisode : last_admin_msg_alert_sent_at >= le message concerné bloque le
+// renvoi tant qu'aucun message plus récent n'apparaît.
+function findUsersNeedingAdminMessageAlert() {
+  const candidateUsers = db.prepare(`
+    SELECT id AS userId, email, display_name AS displayName, last_admin_msg_alert_sent_at
+    FROM users
+    WHERE notify_recap_email = 1 AND email IS NOT NULL AND email != ''
+  `).all();
+
+  const cutoff = Date.now() - 60 * 60 * 1000;
+  const asMs = (sqliteDt) => sqliteDt ? Date.parse(toIsoUtc(sqliteDt)) : NaN;
+  const result = [];
+
+  for (const u of candidateUsers) {
+    const convs = db.prepare(
+      "SELECT id, p1_id, p2_id, muted_p1, muted_p2 FROM conversations WHERE p1_id = ? OR p2_id = ?"
+    ).all(u.userId, u.userId);
+
+    let oldestStale = null;
+    for (const c of convs) {
+      const muted = (c.p1_id === u.userId && !!c.muted_p1) || (c.p2_id === u.userId && !!c.muted_p2);
+      if (muted) continue;
+      const lastMsg = db.prepare(
+        `SELECT m.sender_id, m.created_at, sender.is_admin AS senderIsAdmin
+         FROM messages m JOIN users sender ON sender.id = m.sender_id
+         WHERE m.conv_id = ? ORDER BY m.id DESC LIMIT 1`
+      ).get(c.id);
+      if (!lastMsg || lastMsg.sender_id === u.userId || !lastMsg.senderIsAdmin) continue;
+      const ms = asMs(lastMsg.created_at);
+      if (isNaN(ms) || ms > cutoff) continue;
+      if (oldestStale === null || ms < oldestStale) oldestStale = ms;
+    }
+
+    if (oldestStale === null) continue;
+    const lastAlertMs = asMs(u.last_admin_msg_alert_sent_at);
+    if (!isNaN(lastAlertMs) && lastAlertMs >= oldestStale) continue;
+    result.push({ userId: u.userId, email: u.email, displayName: u.displayName });
+  }
+
+  return result;
+}
+
+function touchLastAdminMsgAlertSent(userId) {
+  db.prepare("UPDATE users SET last_admin_msg_alert_sent_at = datetime('now') WHERE id = ?").run(userId);
+}
+
 const SHARED_ITEMS_LIMIT = 100;
 function addSharedItem(convId, type, id, sharedBy) {
   const conv = db.prepare('SELECT p1_id FROM conversations WHERE id=?').get(convId);
@@ -7888,6 +7954,7 @@ module.exports = {
   setLootboxConfigKey,
   setImageRarity,
   setImageTitle,
+  setImageLootboxExcluded,
   grantJokerToUser,
   grantCoinsToUser,
   setCharmRarity,
@@ -8091,6 +8158,8 @@ module.exports = {
   getUserByRecapUnsubToken,
   touchLastRecapSent,
   findUsersNeedingRecap,
+  findUsersNeedingAdminMessageAlert,
+  touchLastAdminMsgAlertSent,
   addSharedItem,
   getSharedItems,
   removeSharedItem,
