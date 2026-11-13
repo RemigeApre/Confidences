@@ -2,7 +2,9 @@
   /* ── Detect active group from path ───────────────────────────── */
   var _path = locals.currentPath || '';
   var _activeGroup = 'users'; // default
-  if (/^\/ponhgup\/(recompenses|jeux|auteurs|races|codex-checklist)/.test(_path)) {
+  if (/^\/ponhgup\/recompenses/.test(_path)) {
+    _activeGroup = 'recompenses';
+  } else if (/^\/ponhgup\/(jeux|auteurs|races|codex-checklist)/.test(_path)) {
     _activeGroup = 'resources';
   } else if (/^\/ponhgup\/(ip-logs|utilisateur\/)/.test(_path)) {
     _activeGroup = 'users';
@@ -19,6 +21,7 @@
     <div class="adm-grps">
       <button class="adm-grp<%= _activeGroup==='users' ? ' active' : '' %>" data-grp="users">Utilisateurs</button>
       <button class="adm-grp<%= _activeGroup==='resources' ? ' active' : '' %>" data-grp="resources">Ressources</button>
+      <button class="adm-grp<%= _activeGroup==='recompenses' ? ' active' : '' %>" data-grp="recompenses">R&eacute;compenses</button>
       <button class="adm-grp<%= _activeGroup==='versions' ? ' active' : '' %>" data-grp="versions">Versions</button>
       <button class="adm-grp<%= _activeGroup==='audit' ? ' active' : '' %>" data-grp="audit">Log admin</button>
     </div>
@@ -37,10 +40,20 @@
     <div class="adm-mob-section">
       <span class="adm-mob-section-label">Ressources</span>
       <a class="adm-mob-link<%= _activeGroup==='resources' ? ' adm-mob-link--active' : '' %>" href="/ponhgup#tab-contenu">Contenu divers</a>
-      <a class="adm-mob-link" href="/ponhgup#tab-ia">IA</a>
-      <a class="adm-mob-link" href="/ponhgup/auteurs">Auteurs</a>
-      <a class="adm-mob-link" href="/ponhgup/recompenses">R&eacute;compenses</a>
       <a class="adm-mob-link" href="/ponhgup/jeux">Jeux</a>
+    </div>
+    <div class="adm-mob-section">
+      <span class="adm-mob-section-label">R&eacute;compenses</span>
+      <a class="adm-mob-link<%= _activeGroup==='recompenses' ? ' adm-mob-link--active' : '' %>" href="/ponhgup/recompenses">Accueil</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#images">Images</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#charms">Charmes</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#themes">Th&egrave;mes</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#speciaux">Sp&eacute;ciaux</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#cartes">Cartes</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#classeurs">Classeurs</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#personnages">Personnages</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#collections">Collections</a>
+      <a class="adm-mob-link" href="/ponhgup/recompenses#races">Races</a>
     </div>
     <div class="adm-mob-section">
       <span class="adm-mob-section-label">Suivi</span>
@@ -61,11 +74,21 @@
 
   <div class="adm-sub<%= _activeGroup!=='resources' ? ' adm-sub--off' : '' %>" data-grp-panel="resources">
     <a class="adm-si" href="/ponhgup#tab-contenu" data-tab="contenu">Contenu divers</a>
-    <a class="adm-si" href="/ponhgup#tab-ia" data-tab="ia">IA</a>
     <span class="adm-sep" aria-hidden="true"></span>
-    <a class="adm-si<%= _path.startsWith('/ponhgup/auteurs') ? ' active' : '' %>" href="/ponhgup/auteurs">Auteurs</a>
     <a class="adm-si<%= _path.startsWith('/ponhgup/jeux') ? ' active' : '' %>" href="/ponhgup/jeux">Jeux</a>
-    <a class="adm-si adm-si--accent<%= _path.startsWith('/ponhgup/recompenses') ? ' active' : '' %>" href="/ponhgup/recompenses">R&eacute;compenses</a>
+  </div>
+
+  <div class="adm-sub<%= _activeGroup!=='recompenses' ? ' adm-sub--off' : '' %>" data-grp-panel="recompenses">
+    <a class="adm-si" href="/ponhgup/recompenses" data-rec-tab="accueil">Accueil</a>
+    <a class="adm-si" href="/ponhgup/recompenses#images" data-rec-tab="images">Images</a>
+    <a class="adm-si" href="/ponhgup/recompenses#charms" data-rec-tab="charms">Charmes</a>
+    <a class="adm-si" href="/ponhgup/recompenses#themes" data-rec-tab="themes">Th&egrave;mes</a>
+    <a class="adm-si" href="/ponhgup/recompenses#speciaux" data-rec-tab="speciaux">Sp&eacute;ciaux</a>
+    <a class="adm-si" href="/ponhgup/recompenses#cartes" data-rec-tab="cartes">Cartes</a>
+    <a class="adm-si" href="/ponhgup/recompenses#classeurs" data-rec-tab="classeurs">Classeurs</a>
+    <a class="adm-si" href="/ponhgup/recompenses#personnages" data-rec-tab="personnages">Personnages</a>
+    <a class="adm-si" href="/ponhgup/recompenses#collections" data-rec-tab="collections">Collections</a>
+    <a class="adm-si" href="/ponhgup/recompenses#races" data-rec-tab="races">Races</a>
   </div>
 
   <div class="adm-sub<%= _activeGroup!=='versions' ? ' adm-sub--off' : '' %>" data-grp-panel="versions">
@@ -86,19 +109,28 @@
 
   /* ── Group first-page map ─────────────────────────── */
   var grpFirstUrl = {
-    users:     '/ponhgup',
-    resources: '/ponhgup#tab-contenu',
-    versions:  '/ponhgup#tab-changelog',
-    audit:     '/ponhgup#tab-audit'
+    users:       '/ponhgup',
+    resources:   '/ponhgup#tab-contenu',
+    recompenses: '/ponhgup/recompenses',
+    versions:    '/ponhgup#tab-changelog',
+    audit:       '/ponhgup#tab-audit'
   };
+
+  /* ── Groupes sans contenu sur le dashboard : toujours une vraie
+     navigation (page à part), jamais un simple dépliage du sous-header. ── */
+  var EXTERNAL_GROUPS = ['recompenses'];
+
+  /* ── Dashboard tab interception ─────────────────── */
+  var isDashboard = window.location.pathname === '/ponhgup';
 
   /* ── Group switching ──────────────────────────────── */
   nav.querySelectorAll('.adm-grp').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var grp = btn.dataset.grp;
 
-      /* If not on dashboard, navigate to the group's first page */
-      if (!isDashboard) {
+      /* If not on dashboard, or the group lives on its own page,
+         navigate to the group's first page */
+      if (!isDashboard || EXTERNAL_GROUPS.indexOf(grp) !== -1) {
         window.location.href = grpFirstUrl[grp] || '/ponhgup';
         return;
       }
@@ -111,9 +143,6 @@
       });
     });
   });
-
-  /* ── Dashboard tab interception ─────────────────── */
-  var isDashboard = window.location.pathname === '/ponhgup';
 
   function activateSi(siId) {
     nav.querySelectorAll('.adm-si[data-si-id]').forEach(function(s) {

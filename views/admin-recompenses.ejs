@@ -82,18 +82,6 @@
 .obj-section { display:none; }
 .obj-section.active { display:block; }
 
-/* ── Sidebar nav links ── */
-.obj-nav-link {
-  display:flex; align-items:center; gap:.6rem;
-  padding:.5rem .75rem; border-radius:7px; text-decoration:none;
-  font-size:.875rem; font-weight:600; transition:background .15s;
-  color:#94a3b8; cursor:pointer; border:none; background:none; width:100%;
-  text-align:left;
-}
-.obj-nav-link:hover { background:rgba(255,255,255,.07); }
-.obj-nav-link.active { background:rgba(248,113,113,.18); color:#fca5a5; }
-.obj-nav-count { margin-left:auto; font-size:.7rem; font-weight:700; opacity:.9; }
-
 /* ── Accueil cards ── */
 .obj-home-card { background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.08); border-radius:12px; padding:1.1rem 1.25rem; margin-bottom:.85rem; }
 .obj-home-card-header { display:flex; align-items:center; gap:.6rem; margin-bottom:.65rem; }
@@ -261,63 +249,10 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 }
 </style>
 
-<div style="display:flex;min-height:calc(100vh - 3.25rem - 2.5rem)">
-
-  <%/* ── Sidebar ── */%>
-  <nav style="width:200px;min-width:180px;background:rgba(255,255,255,.035);border-right:1px solid rgba(255,255,255,.08);padding:1.5rem .75rem;display:flex;flex-direction:column;gap:.25rem;flex-shrink:0">
-
-    <button class="obj-nav-link" data-section="accueil">
-      Accueil
-    </button>
-
-    <button class="obj-nav-link" data-section="images">
-      Images
-      <span class="obj-nav-count"><%= images.length %></span>
-    </button>
-
-    <button class="obj-nav-link" data-section="charms">
-      Charmes
-      <span class="obj-nav-count"><%= charms.length %></span>
-    </button>
-
-    <button class="obj-nav-link" data-section="themes">
-      Th&egrave;mes
-      <span class="obj-nav-count"><%= (themeDefs || []).length %></span>
-    </button>
-
-    <button class="obj-nav-link" data-section="speciaux">
-      Sp&eacute;ciaux
-    </button>
-
-    <button class="obj-nav-link" data-section="cartes">
-      Cartes
-      <span class="obj-nav-count"><%= (wikiCards || []).length %></span>
-    </button>
-
-    <button class="obj-nav-link" data-section="classeurs">
-      Classeurs
-      <span class="obj-nav-count"><%= (classeurs || []).length %></span>
-    </button>
-
-    <button class="obj-nav-link" data-section="personnages">
-      Personnages
-      <span class="obj-nav-count"><%= (personnageCards || []).length %></span>
-    </button>
-
-    <button class="obj-nav-link" data-section="collections">
-      Collections
-      <span class="obj-nav-count"><%= (cardCollections || []).length %></span>
-    </button>
-
-    <button class="obj-nav-link" data-section="races">
-      Races
-      <span class="obj-nav-count"><%= (races || []).length %></span>
-    </button>
-
-  </nav>
-
-  <%/* ── Main content ── */%>
-  <main style="flex:1;padding:2rem;overflow:auto">
+  <%/* ── Contenu : la navigation entre sections vit maintenant dans le
+       sous-header (voir partials/admin-nav.ejs, groupe "Récompenses") —
+       plus de barre latérale propre à cette page. ── */%>
+  <main style="padding:2rem;overflow:auto">
 
     <%/* ── Accueil ── */%>
     <div class="obj-section" data-section="accueil">
@@ -1155,7 +1090,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     </div>
 
   </main>
-</div>
 
 <!-- Selection bar (single, always in DOM) -->
 <div class="obj-sel-bar" id="objSelBar" hidden>
@@ -1534,23 +1468,28 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 <!-- ── Section switching ── -->
 <script nonce="<%= nonce %>">
 (function() {
-  var links = document.querySelectorAll('.obj-nav-link[data-section]');
+  // La navigation entre sections vit dans le sous-header (voir
+  // partials/admin-nav.ejs, groupe "Récompenses", liens [data-rec-tab]) —
+  // ici on se contente d'afficher la bonne section et de suivre le hash.
+  var recNavLinks = document.querySelectorAll('#adm-nav .adm-si[data-rec-tab]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
   var VALID = ['accueil','images','charms','themes','speciaux','cartes','classeurs','personnages','collections','races'];
 
   function activate(key) {
-    links.forEach(function(l) { l.classList.toggle('active', l.dataset.section === key); });
+    recNavLinks.forEach(function(l) { l.classList.toggle('active', l.dataset.recTab === key); });
     sections.forEach(function(s) { s.classList.toggle('active', s.dataset.section === key); });
     history.replaceState(null, '', location.pathname + '#' + key);
   }
 
-  links.forEach(function(l) {
-    l.addEventListener('click', function() { activate(l.dataset.section); });
-  });
-
   // Accueil "goto" buttons
   document.querySelectorAll('.js-goto-section').forEach(function(btn) {
     btn.addEventListener('click', function() { activate(btn.dataset.section); });
+  });
+
+  // Navigation depuis le sous-header sans recharger la page (hashchange)
+  window.addEventListener('hashchange', function() {
+    var h = location.hash.replace('#', '');
+    if (VALID.includes(h)) activate(h);
   });
 
   var hash = location.hash.replace('#', '');
