@@ -3494,10 +3494,8 @@ function listProtagonistesForCards() {
             p.action_acte_name, p.action_acte_power, p.action_acte_effet,
             p.action_finition_name, p.action_finition_power, p.action_finition_effet,
             p.is_base_deck, p.is_ultra, p.card_rarity,
-            p.collection_id, cc.name AS collection_name, cc.color AS collection_color,
             p.classeur_id, cl.name AS classeur_name, cl.color AS classeur_color
      FROM protagonistes p
-     LEFT JOIN card_collections cc ON cc.id = p.collection_id
      LEFT JOIN classeurs cl ON cl.id = p.classeur_id
      ORDER BY p.name COLLATE NOCASE`
   ).all().map(r => {
@@ -3516,9 +3514,6 @@ function listProtagonistesForCards() {
       actionActeName: r.action_acte_name || '', actionActePower: r.action_acte_power ?? 7, actionActeEffet: r.action_acte_effet || '',
       actionFinitionName: r.action_finition_name || '', actionFinitionPower: r.action_finition_power ?? 20, actionFinitionEffet: r.action_finition_effet || '',
       isBaseDeck: r.is_base_deck ?? 1, isUltra: r.is_ultra ?? 0,
-      collectionId: r.collection_id || null,
-      collectionName: r.collection_name || '',
-      collectionColor: r.collection_color || '',
       cardRarity: r.card_rarity || 'rare',
       classeurId: r.classeur_id || null,
       classeurName: r.classeur_name || '',
@@ -6261,57 +6256,9 @@ try {
 } catch(_) {}
 try { db.exec("ALTER TABLE protagonistes ADD COLUMN collection_id INTEGER REFERENCES card_collections(id)"); } catch(_) {}
 
-function listCardCollections() {
-  return db.prepare(
-    `SELECT cc.*, COUNT(p.id) as card_count
-     FROM card_collections cc
-     LEFT JOIN protagonistes p ON p.collection_id = cc.id
-     GROUP BY cc.id
-     ORDER BY cc.sort_order, cc.name COLLATE NOCASE`
-  ).all();
-}
-
-function getCardCollection(id) {
-  return db.prepare("SELECT * FROM card_collections WHERE id=?").get(id);
-}
-
-function createCardCollection({ name, slug, description, color, sortOrder, isPublished }) {
-  const r = db.prepare(
-    "INSERT INTO card_collections (name,slug,description,color,sort_order,is_published) VALUES (?,?,?,?,?,?)"
-  ).run(
-    String(name||'').trim(),
-    String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
-    String(description||'').trim(),
-    String(color||'#6366f1').trim(),
-    Number(sortOrder)||0,
-    isPublished ? 1 : 0
-  );
-  return r.lastInsertRowid;
-}
-
-function updateCardCollection(id, { name, slug, description, color, sortOrder, isPublished }) {
-  db.prepare(
-    "UPDATE card_collections SET name=?,slug=?,description=?,color=?,sort_order=?,is_published=? WHERE id=?"
-  ).run(
-    String(name||'').trim(),
-    String(slug||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
-    String(description||'').trim(),
-    String(color||'#6366f1').trim(),
-    Number(sortOrder)||0,
-    isPublished ? 1 : 0,
-    id
-  );
-}
-
-function deleteCardCollection(id) {
-  db.prepare("UPDATE protagonistes SET collection_id=NULL WHERE collection_id=?").run(id);
-  db.prepare("DELETE FROM card_collections WHERE id=?").run(id);
-}
-
-function setPersonnageCollection(protagonisteId, collectionId) {
-  db.prepare("UPDATE protagonistes SET collection_id=? WHERE id=?")
-    .run(collectionId || null, protagonisteId);
-}
+// Fonctionnalité retirée (remplacée par les classeurs, voir plus bas) —
+// table/colonne laissées en place par prudence (données existantes), mais
+// plus aucune fonction ni route n'y touche.
 
 // ── Classeurs (albums à collectionner, type Panini) : regroupent des cartes
 // Codex (wiki_pages). Une carte n'appartient qu'à un seul classeur à la fois
@@ -8050,12 +7997,6 @@ module.exports = {
   getPlayerCardGameDeck,
   getAICardGameDeck,
   getAICardGamePersonnage,
-  listCardCollections,
-  getCardCollection,
-  createCardCollection,
-  updateCardCollection,
-  deleteCardCollection,
-  setPersonnageCollection,
   listClasseurs, getClasseur, createClasseur, updateClasseur, deleteClasseur, setWikiCardClasseur,
   setPersonnageClasseur,
   listClasseursWithProgress, getClasseurWithCards,

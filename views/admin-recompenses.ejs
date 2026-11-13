@@ -234,19 +234,24 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 .pc-affinite-chip-del { background:none; border:none; color:#f87171; cursor:pointer; padding:0; font-size:.7rem; line-height:1; }
 /* Genre sur carte gwent */
 .pc-gwent-gender { font-size:.6rem; color:rgba(26,26,26,.55); font-style:italic; letter-spacing:.03em; }
-/* Badge collection sur carte */
-.pc-admin-collection-badge {
+/* Badge classeur sur carte */
+.pc-admin-classeur-badge {
   position:absolute; bottom:.38rem; left:.42rem;
   font-size:.46rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
   padding:.12rem .35rem; border-radius:3px; color:#fff; opacity:.92; max-width:90%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-/* Badge classeur sur carte (même recette, côté droit pour coexister avec
-   le badge collection) */
-.pc-admin-classeur-badge {
-  position:absolute; bottom:.38rem; right:.42rem;
-  font-size:.46rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
-  padding:.12rem .35rem; border-radius:3px; color:#fff; opacity:.92; max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+
+/* ── Sous-onglets de l'onglet "Cartes" (Codex / Personnages / Classeurs) ── */
+.cartes-subnav { display:flex; gap:.4rem; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,.08); padding-bottom:.6rem; }
+.cartes-subnav-btn {
+  background:none; border:1px solid rgba(255,255,255,.15); color:#94a3b8;
+  border-radius:7px; padding:.35rem .9rem; font-size:.82rem; font-weight:600;
+  cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s;
 }
+.cartes-subnav-btn:hover { background:rgba(255,255,255,.06); color:#f1f5f9; }
+.cartes-subnav-btn.active { background:rgba(248,113,113,.18); border-color:rgba(248,113,113,.4); color:#fca5a5; }
+.cartes-sub { display:none; }
+.cartes-sub.active { display:block; }
 </style>
 
   <%/* ── Contenu : la navigation entre sections vit maintenant dans le
@@ -327,38 +332,18 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
         </div>
       </div>
 
-      <%/* Cartes Codex card */%>
+      <%/* Cartes card — Codex + Personnages + Classeurs, un seul onglet désormais */%>
       <div class="obj-home-card">
         <div class="obj-home-card-header">
           <span class="obj-home-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-          <span class="obj-home-card-title">Cartes Codex</span>
-          <span class="obj-home-card-total"><%= (wikiCards || []).length %> au total</span>
+          <span class="obj-home-card-title">Cartes</span>
+          <span class="obj-home-card-total"><%= (wikiCards || []).length + (personnageCards || []).length %> au total</span>
           <button class="obj-home-goto js-goto-section" data-section="cartes">&#8594; Gérer</button>
         </div>
         <div class="obj-home-rarities">
           <% rarityList.forEach(function(r) { %>
           <span class="obj-rarity-chip" data-rarity="<%= r %>">
-            <span class="obj-rarity-chip-dot"></span>
-            <strong><%= (cardStatsByRarity && cardStatsByRarity[r]) || 0 %></strong>
-            <span style="color:#94a3b8"><%= rarityLabels[r] %></span>
-          </span>
-          <% }) %>
-        </div>
-      </div>
-
-      <%/* Personnages card */%>
-      <div class="obj-home-card">
-        <div class="obj-home-card-header">
-          <span class="obj-home-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
-          <span class="obj-home-card-title">Cartes Personnages</span>
-          <span class="obj-home-card-total"><%= (personnageCards || []).length %> au total</span>
-          <button class="obj-home-goto js-goto-section" data-section="personnages">&#8594; Gérer</button>
-        </div>
-        <div class="obj-home-rarities">
-          <% rarityList.forEach(function(r) { %>
-          <span class="obj-rarity-chip" data-rarity="<%= r %>">
-            <span class="obj-rarity-chip-dot"></span>
-            <strong><%= (personnageCardStatsByRarity && personnageCardStatsByRarity[r]) || 0 %></strong>
+            <strong><%= ((cardStatsByRarity && cardStatsByRarity[r]) || 0) + ((personnageCardStatsByRarity && personnageCardStatsByRarity[r]) || 0) %></strong>
             <span style="color:#94a3b8"><%= rarityLabels[r] %></span>
           </span>
           <% }) %>
@@ -418,6 +403,47 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           Enregistrer
         </button>
       </form>
+
+      <%/* ── Jokers & Pièces (ex-onglet "Spéciaux", fusionné ici) ── */%>
+      <h3 style="font-size:.82rem;font-weight:700;color:#94a3b8;margin:1.5rem 0 1rem;text-transform:uppercase;letter-spacing:.07em">Offrir un joker</h3>
+      <div class="obj-home-card" style="max-width:420px">
+        <div style="display:flex;flex-direction:column;gap:.65rem">
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input type="text" id="joker-user-search" placeholder="Rechercher un utilisateur&hellip;"
+              style="flex:1;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .6rem;font-size:.85rem;outline:none">
+            <select id="joker-type-select" style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .5rem;font-size:.82rem">
+              <option value="image">Joker Image</option>
+              <option value="charm">Joker Charme</option>
+            </select>
+          </div>
+          <div id="joker-user-results" style="display:none;flex-direction:column;gap:.25rem;max-height:180px;overflow-y:auto;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.3rem"></div>
+          <div id="joker-selected-user" style="display:none;font-size:.82rem;color:#94a3b8;padding:.2rem 0"></div>
+          <button id="joker-gift-btn" disabled
+            style="background:#fbbf24;border:none;color:#0f172a;border-radius:6px;padding:.4rem .9rem;font-size:.82rem;font-weight:700;cursor:pointer;opacity:.5">
+            Offrir le joker
+          </button>
+          <p id="joker-gift-status" style="font-size:.75rem;height:.9em;color:#4ade80">&nbsp;</p>
+        </div>
+      </div>
+
+      <h3 style="font-size:.82rem;font-weight:700;color:#94a3b8;margin:1.5rem 0 1rem;text-transform:uppercase;letter-spacing:.07em">Offrir des pi&egrave;ces</h3>
+      <div class="obj-home-card" style="max-width:420px">
+        <div style="display:flex;flex-direction:column;gap:.65rem">
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input type="text" id="coins-user-search" placeholder="Rechercher un utilisateur&hellip;"
+              style="flex:1;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .6rem;font-size:.85rem;outline:none">
+            <input type="number" id="coins-amount-input" placeholder="Montant" min="1" value="100"
+              style="width:90px;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .5rem;font-size:.82rem;text-align:center">
+          </div>
+          <div id="coins-user-results" style="display:none;flex-direction:column;gap:.25rem;max-height:180px;overflow-y:auto;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.3rem"></div>
+          <div id="coins-selected-user" style="display:none;font-size:.82rem;color:#94a3b8;padding:.2rem 0"></div>
+          <button id="coins-gift-btn" disabled
+            style="background:#fbbf24;border:none;color:#0f172a;border-radius:6px;padding:.4rem .9rem;font-size:.82rem;font-weight:700;cursor:pointer;opacity:.5">
+            Offrir les pi&egrave;ces
+          </button>
+          <p id="coins-gift-status" style="font-size:.75rem;height:.9em;color:#4ade80">&nbsp;</p>
+        </div>
+      </div>
     </div>
 
     <%/* ── Images de profil ── */%>
@@ -536,51 +562,16 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       </div>
     </div>
 
-    <%/* ── Spéciaux (Jokers & Pièces) ── */%>
-    <div class="obj-section" data-section="speciaux">
-      <h3 style="font-size:.82rem;font-weight:700;color:#94a3b8;margin:0 0 1rem;text-transform:uppercase;letter-spacing:.07em">Offrir un joker</h3>
-      <div class="obj-home-card" style="max-width:420px">
-        <div style="display:flex;flex-direction:column;gap:.65rem">
-          <div style="display:flex;gap:.5rem;align-items:center">
-            <input type="text" id="joker-user-search" placeholder="Rechercher un utilisateur&hellip;"
-              style="flex:1;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .6rem;font-size:.85rem;outline:none">
-            <select id="joker-type-select" style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .5rem;font-size:.82rem">
-              <option value="image">Joker Image</option>
-              <option value="charm">Joker Charme</option>
-            </select>
-          </div>
-          <div id="joker-user-results" style="display:none;flex-direction:column;gap:.25rem;max-height:180px;overflow-y:auto;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.3rem"></div>
-          <div id="joker-selected-user" style="display:none;font-size:.82rem;color:#94a3b8;padding:.2rem 0"></div>
-          <button id="joker-gift-btn" disabled
-            style="background:#fbbf24;border:none;color:#0f172a;border-radius:6px;padding:.4rem .9rem;font-size:.82rem;font-weight:700;cursor:pointer;opacity:.5">
-            &#9824; Offrir le joker
-          </button>
-          <p id="joker-gift-status" style="font-size:.75rem;height:.9em;color:#4ade80">&nbsp;</p>
-        </div>
-      </div>
-
-      <h3 style="font-size:.82rem;font-weight:700;color:#94a3b8;margin:1.5rem 0 1rem;text-transform:uppercase;letter-spacing:.07em">Offrir des pi&egrave;ces</h3>
-      <div class="obj-home-card" style="max-width:420px">
-        <div style="display:flex;flex-direction:column;gap:.65rem">
-          <div style="display:flex;gap:.5rem;align-items:center">
-            <input type="text" id="coins-user-search" placeholder="Rechercher un utilisateur&hellip;"
-              style="flex:1;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .6rem;font-size:.85rem;outline:none">
-            <input type="number" id="coins-amount-input" placeholder="Montant" min="1" value="100"
-              style="width:90px;background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.35rem .5rem;font-size:.82rem;text-align:center">
-          </div>
-          <div id="coins-user-results" style="display:none;flex-direction:column;gap:.25rem;max-height:180px;overflow-y:auto;background:#0f172a;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.3rem"></div>
-          <div id="coins-selected-user" style="display:none;font-size:.82rem;color:#94a3b8;padding:.2rem 0"></div>
-          <button id="coins-gift-btn" disabled
-            style="background:#fbbf24;border:none;color:#0f172a;border-radius:6px;padding:.4rem .9rem;font-size:.82rem;font-weight:700;cursor:pointer;opacity:.5">
-            Offrir les pi&egrave;ces
-          </button>
-          <p id="coins-gift-status" style="font-size:.75rem;height:.9em;color:#4ade80">&nbsp;</p>
-        </div>
-      </div>
-    </div>
-
-    <%/* ── Cartes Codex ── */%>
+    <%/* ── Cartes (Codex + Personnages + Classeurs fusionnés : même principe,
+         personnage = carte spéciale, classeur = compilation de plusieurs) ── */%>
     <div class="obj-section" data-section="cartes">
+      <div class="cartes-subnav">
+        <button type="button" class="cartes-subnav-btn active" data-sub="cards">Cartes Codex</button>
+        <button type="button" class="cartes-subnav-btn" data-sub="personnages">Personnages</button>
+        <button type="button" class="cartes-subnav-btn" data-sub="classeurs">Classeurs</button>
+      </div>
+
+      <div class="cartes-sub active" data-sub="cards">
       <%
         var _wcCatSet = {}; (wikiCards||[]).forEach(function(wc){ if(wc.category) _wcCatSet[wc.category]=1; });
         var _wcCats = Object.keys(_wcCatSet).sort();
@@ -695,10 +686,9 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
         </div>
         <% }) %>
       </div>
-    </div>
+      </div>
 
-    <%/* ── Cartes Personnages ── */%>
-    <div class="obj-section" data-section="personnages">
+      <div class="cartes-sub" data-sub="personnages">
       <%
         var _pcParodySet = {}; (personnageCards||[]).forEach(function(pc){ if(pc.parody) _pcParodySet[pc.parody]=1; });
         var _pcParodies = Object.keys(_pcParodySet).sort();
@@ -714,15 +704,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           <option value="combat">Combat uniquement</option>
           <option value="ultra">Ultra</option>
         </select>
-        <% if ((cardCollections||[]).length > 0) { %>
-        <select id="pc-collection-sel" class="admin-filter-select">
-          <option value="all">Toutes collections</option>
-          <option value="none">Sans collection</option>
-          <% (cardCollections||[]).forEach(function(col) { %>
-            <option value="<%= col.id %>"><%= col.name %></option>
-          <% }) %>
-        </select>
-        <% } %>
         <% if (_pcNatures.length > 1) { %>
         <select id="pc-nature-sel" class="admin-filter-select">
           <option value="all">Toutes natures</option>
@@ -752,7 +733,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
              data-card-id="<%= pc.id %>"
              data-deck="<%= pc.isUltra ? 'ultra' : pc.isBaseDeck ? 'base' : 'combat' %>"
              data-nat="<%= pc.nature || '' %>" data-parody="<%= pc.parody || '' %>"
-             data-collection="<%= pc.collectionId || 'none' %>"
              data-pc='<%- JSON.stringify({
                id: pc.id, title: pc.title, description: pc.description,
                thumb: pc.thumb ? thumbUrl(pc.thumb) : null,
@@ -763,7 +743,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
                actionActeName: pc.actionActeName, actionActePower: pc.actionActePower, actionActeEffet: pc.actionActeEffet,
                actionFinitionName: pc.actionFinitionName, actionFinitionPower: pc.actionFinitionPower, actionFinitionEffet: pc.actionFinitionEffet,
                isBaseDeck: pc.isBaseDeck, isUltra: pc.isUltra,
-               collectionId: pc.collectionId, collectionName: pc.collectionName, collectionColor: pc.collectionColor,
                classeurId: pc.classeurId, classeurName: pc.classeurName, classeurColor: pc.classeurColor
              }) %>'>
           <div class="coffre-card-flip-wrap js-coffre-card-flip-admin">
@@ -785,9 +764,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
               </div>
               <span class="lb-codex-flip-cta-icon">&#8635;</span>
               <% if (pc.isUltra) { %><span class="pc-admin-ultra-badge">ULTRA</span><% } %>
-              <% if (pc.collectionName) { %>
-                <span class="pc-admin-collection-badge" style="background:<%= pc.collectionColor || '#6366f1' %>"><%= pc.collectionName %></span>
-              <% } %>
               <% if (pc.classeurName) { %>
                 <span class="pc-admin-classeur-badge" style="background:<%= pc.classeurColor || '#6366f1' %>"><%= pc.classeurName %></span>
               <% } %>
@@ -802,10 +778,9 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
         </div>
         <% }) %>
       </div>
-    </div>
+      </div>
 
-    <%/* ── Classeurs (albums de cartes Codex, type Panini) ── */%>
-    <div class="obj-section" data-section="classeurs">
+      <div class="cartes-sub" data-sub="classeurs">
       <div class="obj-section-toolbar" style="justify-content:flex-end">
         <button class="ari-save-btn" id="cls-new-btn" style="font-size:.78rem;padding:.3rem .8rem">
           + Nouveau classeur
@@ -839,6 +814,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           </button>
         </div>
         <% }) %>
+      </div>
       </div>
     </div>
 
@@ -886,78 +862,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       </div>
     </div>
 
-    <%/* ── Collections de cartes ── */%>
-    <div class="obj-section" data-section="collections">
-      <div class="obj-section-toolbar" style="justify-content:flex-end">
-        <button class="ari-save-btn" id="col-new-btn" style="font-size:.78rem;padding:.3rem .8rem">
-          + Nouvelle collection
-        </button>
-      </div>
-
-      <div id="col-list" style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem">
-        <% if (!(cardCollections||[]).length) { %>
-          <p style="color:#475569;font-size:.82rem">Aucune collection. Créez-en une pour regrouper vos personnages.</p>
-        <% } %>
-        <% (cardCollections||[]).forEach(function(col) { %>
-        <div class="col-item" data-col-id="<%= col.id %>"
-             style="background:#1e293b;border-radius:10px;border:2px solid <%= col.color || '#6366f1' %>33;padding:.65rem .85rem;display:flex;align-items:center;gap:.75rem">
-          <div class="col-item-dot" style="width:14px;height:14px;border-radius:50%;background:<%= col.color || '#6366f1' %>;flex-shrink:0"></div>
-          <div style="flex:1;min-width:0">
-            <strong style="color:#f1f5f9;font-size:.88rem"><%= col.name %></strong>
-            <% if (col.description) { %><span style="color:#64748b;font-size:.72rem;display:block;margin-top:.1rem"><%= col.description %></span><% } %>
-          </div>
-          <span style="font-size:.72rem;color:#64748b;flex-shrink:0">
-            <%= col.card_count %> personnage<%= col.card_count !== 1 ? 's' : '' %>
-          </span>
-          <button class="js-col-edit ari-save-btn" data-col='<%- JSON.stringify(col) %>'
-            style="font-size:.72rem;padding:.2rem .55rem;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:#94a3b8">
-            &#9998; Modifier
-          </button>
-          <button class="js-col-delete" data-col-id="<%= col.id %>" data-col-name="<%= col.name %>"
-            style="background:none;border:none;color:#f87171;cursor:pointer;font-size:.8rem;padding:.2rem .35rem">
-            &#10005;
-          </button>
-        </div>
-        <% }) %>
-      </div>
-    </div>
-
-    <%/* ── Modal collection ── */%>
-    <div class="pc-modal-overlay" id="colModal" hidden>
-      <div style="background:#1e293b;border-radius:14px;width:min(95vw,480px);display:flex;flex-direction:column;overflow:hidden">
-        <div style="display:flex;align-items:center;padding:.7rem 1rem;background:#162032;border-bottom:1px solid rgba(255,255,255,.08)">
-          <strong id="colModalTitle" style="flex:1;color:#f1f5f9;font-size:.95rem">Nouvelle collection</strong>
-          <button id="colModalClose" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:1rem;padding:.2rem">&#10005;</button>
-        </div>
-        <div style="padding:1rem;display:flex;flex-direction:column;gap:.65rem">
-          <input type="hidden" id="colModalId">
-          <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em">
-            Nom
-            <input type="text" id="colModalName" class="pc-modal-input" placeholder="Ex: Harry Potter, Marvel...">
-          </label>
-          <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em">
-            Description
-            <input type="text" id="colModalDesc" class="pc-modal-input" placeholder="Courte description (optionnel)">
-          </label>
-          <div style="display:flex;gap:.5rem;align-items:center">
-            <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:1">
-              Couleur
-              <input type="color" id="colModalColor" value="#6366f1"
-                style="width:100%;height:32px;border-radius:5px;border:1px solid rgba(255,255,255,.12);background:#0f172a;cursor:pointer;padding:.1rem .2rem;margin-top:.25rem">
-            </label>
-            <label style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:1">
-              Ordre d'affichage
-              <input type="number" id="colModalOrder" class="pc-modal-input" min="0" value="0">
-            </label>
-          </div>
-          <div style="display:flex;justify-content:center;gap:.6rem;margin-top:.2rem">
-            <button id="colModalSave" class="ari-save-btn" style="font-size:.82rem;padding:.38rem 1.4rem">Enregistrer</button>
-            <span id="colModalStatus" style="font-size:.72rem;color:#4ade80;align-self:center"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <%/* ── Modal édition personnage ── */%>
     <div class="pc-modal-overlay" id="pcModal" hidden>
       <div class="pc-modal-box" role="dialog" aria-modal="true">
@@ -985,14 +889,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
               <option value="normal">Normal</option>
               <option value="ultra">Ultra</option>
             </select>
-            <% if ((cardCollections||[]).length > 0) { %>
-            <select id="pcSelCollection" class="pc-modal-input" style="width:100%">
-              <option value="">Sans collection</option>
-              <% (cardCollections||[]).forEach(function(col) { %>
-                <option value="<%= col.id %>" data-color="<%= col.color %>"><%= col.name %></option>
-              <% }) %>
-            </select>
-            <% } %>
             <% if ((classeurs||[]).length > 0) { %>
             <select id="pcSelClasseur" class="pc-modal-input" style="width:100%">
               <option value="">Sans classeur</option>
@@ -1147,323 +1043,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       </div>
     </div>
   </div>
-
-    <%/* ── Races / Espèces ── */%>
-    <div class="obj-section" data-section="races">
-
-      <h2 style="font-size:1rem;font-weight:700;color:#e2e8f0;margin:0 0 .25rem;text-transform:uppercase;letter-spacing:.06em">Races &amp; Esp&egrave;ces</h2>
-      <p style="font-size:.78rem;color:#64748b;margin:0 0 1.25rem">Chaque race peut avoir des clans internes. Les personnages peuvent y &ecirc;tre associ&eacute;s depuis leur fiche.</p>
-
-      <%/* Formulaire création nouvelle race */%>
-      <div id="race-create-form" style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
-        <div style="font-size:.78rem;font-weight:700;color:#a5b4fc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem">Nouvelle race</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem">
-          <input type="text" id="race-create-name" class="admin-filter-select" placeholder="Nom de la race (ex : Démon)" style="grid-column:1/-1">
-          <input type="text" id="race-create-desc" class="admin-filter-select" placeholder="Description courte (optionnelle)" style="grid-column:1/-1">
-          <div style="display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.3rem .6rem">
-            <label style="font-size:.72rem;color:#94a3b8;flex-shrink:0">Couleur</label>
-            <input type="color" id="race-create-color" value="#6366f1" style="width:28px;height:22px;border:none;background:none;cursor:pointer;padding:0">
-          </div>
-          <input type="text" id="race-create-icon" class="admin-filter-select" placeholder="Emoji (ex : 😈)" style="text-align:center;font-size:1.1rem">
-        </div>
-        <button id="race-create-btn" class="ari-save-btn" style="font-size:.8rem;padding:.35rem 1rem">+ Créer la race</button>
-        <span id="race-create-status" style="font-size:.72rem;color:#4ade80;margin-left:.6rem"></span>
-      </div>
-
-      <%/* Liste des races existantes */%>
-      <div id="race-list" style="display:flex;flex-direction:column;gap:1rem">
-        <% if (!(races||[]).length) { %>
-          <p style="color:#475569;font-size:.82rem;font-style:italic">Aucune race cr&eacute;&eacute;e pour l&apos;instant.</p>
-        <% } %>
-
-        <% (races||[]).forEach(function(race) { %>
-        <div class="race-card" data-race-id="<%= race.id %>"
-          style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.09);border-radius:12px;overflow:hidden">
-
-          <%/* En-tête de la race avec champs directement éditables */%>
-          <div style="padding:.85rem 1rem;display:flex;align-items:flex-start;gap:.85rem">
-            <input type="color" class="race-inp-color" value="<%= race.color || '#6366f1' %>"
-              title="Couleur de la race"
-              style="width:32px;height:32px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0;border-radius:50%;margin-top:.1rem">
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
-                <input type="text" class="race-inp-icon"
-                  value="<%= race.icon || '' %>" placeholder="😈"
-                  title="Icône (emoji)"
-                  style="width:36px;text-align:center;font-size:1.15rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#f1f5f9;padding:.15rem 0;outline:none">
-                <input type="text" class="race-inp-name"
-                  value="<%= race.name %>" placeholder="Nom de la race"
-                  style="flex:1;font-size:.95rem;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#e2e8f0;padding:.2rem .5rem;outline:none;font-family:inherit">
-                <span style="font-size:.7rem;color:#475569;white-space:nowrap;flex-shrink:0"><%= race.count %> personnage<%= race.count !== 1 ? 's' : '' %></span>
-              </div>
-              <input type="text" class="race-inp-desc"
-                value="<%= race.description || '' %>" placeholder="Description (optionnelle)"
-                style="width:100%;font-size:.78rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#94a3b8;padding:.18rem .45rem;outline:none;font-family:inherit;box-sizing:border-box">
-            </div>
-            <div style="display:flex;gap:.35rem;flex-shrink:0;align-items:center">
-              <button class="race-save-btn ari-save-btn" style="font-size:.72rem;padding:.25rem .65rem" title="Sauvegarder">Sauver</button>
-              <button class="race-delete-btn" title="Supprimer cette race"
-                style="background:#7f1d1d;border:none;color:#fca5a5;font-size:.75rem;padding:.25rem .55rem;border-radius:6px;cursor:pointer">Supprimer</button>
-            </div>
-          </div>
-
-          <%/* Clans */%>
-          <div style="border-top:1px solid rgba(255,255,255,.07);padding:.75rem 1rem">
-            <div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.55rem">
-              Clans (<%= (race.clans||[]).length %>)
-            </div>
-            <div class="clan-list" style="display:flex;flex-direction:column;gap:.35rem">
-              <% if (!(race.clans||[]).length) { %>
-                <p style="font-size:.75rem;color:#475569;font-style:italic;margin:.1rem 0 .4rem">Aucun clan. Utilisez le champ ci-dessous pour en cr&eacute;er.</p>
-              <% } %>
-              <% (race.clans||[]).forEach(function(clan) { %>
-              <div class="clan-row" data-clan-id="<%= clan.id %>"
-                style="display:flex;align-items:center;gap:.5rem;background:rgba(0,0,0,.2);border-radius:7px;padding:.35rem .65rem">
-                <input type="color" class="clan-inp-color" value="<%= clan.color || race.color || '#6366f1' %>"
-                  title="Couleur du clan"
-                  style="width:20px;height:20px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0;border-radius:50%">
-                <input type="text" class="clan-inp-name" value="<%= clan.name %>"
-                  placeholder="Nom du clan"
-                  style="flex:1;background:none;border:none;color:#e2e8f0;font-size:.82rem;outline:none;font-family:inherit">
-                <button class="clan-save-btn"
-                  style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:#a5b4fc;font-size:.68rem;padding:.15rem .45rem;border-radius:5px;cursor:pointer;flex-shrink:0">Sauver</button>
-                <button class="clan-delete-btn"
-                  style="background:none;border:1px solid rgba(239,68,68,.3);color:#f87171;font-size:.72rem;padding:.15rem .35rem;border-radius:5px;cursor:pointer;flex-shrink:0">×</button>
-              </div>
-              <% }) %>
-            </div>
-            <%/* Ajout d'un clan */%>
-            <div style="display:flex;gap:.4rem;margin-top:.55rem;align-items:center">
-              <input type="text" class="clan-new-name admin-filter-select" placeholder="Nom du nouveau clan…"
-                style="flex:1;font-size:.78rem;padding:.28rem .55rem">
-              <button class="clan-add-btn ari-save-btn" style="font-size:.74rem;padding:.28rem .7rem;flex-shrink:0">+ Ajouter un clan</button>
-            </div>
-            <span class="clan-add-status" style="font-size:.7rem;color:#4ade80;display:block;height:.9em;margin-top:.2rem"></span>
-          </div>
-
-        </div>
-        <% }) %>
-      </div>
-    </div>
-
-  </div>
 </div>
-
-<script nonce="<%= nonce %>">
-(function() {
-  // ── Création d'une nouvelle race ─────────────────────────────────────────
-  var createBtn = document.getElementById('race-create-btn');
-  if (createBtn) {
-    createBtn.addEventListener('click', function() {
-      var name  = document.getElementById('race-create-name').value.trim();
-      var desc  = document.getElementById('race-create-desc').value.trim();
-      var color = document.getElementById('race-create-color').value;
-      var icon  = document.getElementById('race-create-icon').value.trim();
-      var status = document.getElementById('race-create-status');
-      if (!name) { document.getElementById('race-create-name').focus(); return; }
-      createBtn.disabled = true;
-      fetch('/ponhgup/races', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, description: desc, color: color, icon: icon })
-      }).then(function(r) { return r.json(); }).then(function(d) {
-        createBtn.disabled = false;
-        if (!d.ok) { if (status) status.textContent = 'Erreur'; return; }
-        // Réinitialiser le formulaire
-        document.getElementById('race-create-name').value = '';
-        document.getElementById('race-create-desc').value = '';
-        document.getElementById('race-create-icon').value = '';
-        if (status) { status.textContent = 'Race créée !'; setTimeout(function() { status.textContent = ''; }, 2000); }
-        // Ajouter la carte dans la liste sans rechargement
-        appendRaceCard(d.race || { id: d.id, name: name, description: desc, color: color, icon: icon, count: 0, clans: [] });
-      });
-    });
-  }
-
-  function appendRaceCard(race) {
-    var raceList = document.getElementById('race-list');
-    var empty = raceList.querySelector('p[style*="italic"]');
-    if (empty) empty.remove();
-
-    var card = document.createElement('div');
-    card.className = 'race-card';
-    card.dataset.raceId = race.id;
-    card.style.cssText = 'background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.09);border-radius:12px;overflow:hidden';
-
-    // Header éditable
-    var header = document.createElement('div');
-    header.style.cssText = 'padding:.85rem 1rem;display:flex;align-items:flex-start;gap:.85rem';
-
-    var colorInp = document.createElement('input');
-    colorInp.type = 'color'; colorInp.className = 'race-inp-color'; colorInp.value = race.color || '#6366f1';
-    colorInp.title = 'Couleur de la race';
-    colorInp.style.cssText = 'width:32px;height:32px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0;border-radius:50%;margin-top:.1rem';
-
-    var info = document.createElement('div');
-    info.style.cssText = 'flex:1;min-width:0';
-
-    var topRow = document.createElement('div');
-    topRow.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem';
-
-    var iconInp = document.createElement('input');
-    iconInp.type = 'text'; iconInp.className = 'race-inp-icon'; iconInp.value = race.icon || ''; iconInp.placeholder = '😈';
-    iconInp.style.cssText = 'width:36px;text-align:center;font-size:1.15rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#f1f5f9;padding:.15rem 0;outline:none';
-
-    var nameInp = document.createElement('input');
-    nameInp.type = 'text'; nameInp.className = 'race-inp-name'; nameInp.value = race.name; nameInp.placeholder = 'Nom de la race';
-    nameInp.style.cssText = 'flex:1;font-size:.95rem;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#e2e8f0;padding:.2rem .5rem;outline:none;font-family:inherit';
-
-    var countSp = document.createElement('span');
-    countSp.style.cssText = 'font-size:.7rem;color:#475569;white-space:nowrap;flex-shrink:0';
-    countSp.textContent = '0 personnage';
-
-    topRow.appendChild(iconInp); topRow.appendChild(nameInp); topRow.appendChild(countSp);
-
-    var descInp = document.createElement('input');
-    descInp.type = 'text'; descInp.className = 'race-inp-desc'; descInp.value = race.description || ''; descInp.placeholder = 'Description (optionnelle)';
-    descInp.style.cssText = 'width:100%;font-size:.78rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#94a3b8;padding:.18rem .45rem;outline:none;font-family:inherit;box-sizing:border-box';
-
-    info.appendChild(topRow); info.appendChild(descInp);
-
-    var btns = document.createElement('div');
-    btns.style.cssText = 'display:flex;gap:.35rem;flex-shrink:0;align-items:center';
-
-    var saveBtn = document.createElement('button');
-    saveBtn.className = 'race-save-btn ari-save-btn'; saveBtn.textContent = 'Sauver';
-    saveBtn.style.cssText = 'font-size:.72rem;padding:.25rem .65rem';
-
-    var delBtn = document.createElement('button');
-    delBtn.className = 'race-delete-btn'; delBtn.textContent = 'Supprimer';
-    delBtn.style.cssText = 'background:#7f1d1d;border:none;color:#fca5a5;font-size:.75rem;padding:.25rem .55rem;border-radius:6px;cursor:pointer';
-
-    btns.appendChild(saveBtn); btns.appendChild(delBtn);
-    header.appendChild(colorInp); header.appendChild(info); header.appendChild(btns);
-
-    // Section clans
-    var clanSection = document.createElement('div');
-    clanSection.style.cssText = 'border-top:1px solid rgba(255,255,255,.07);padding:.75rem 1rem';
-    clanSection.innerHTML = '<div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.55rem">Clans (0)</div>' +
-      '<div class="clan-list" style="display:flex;flex-direction:column;gap:.35rem"><p style="font-size:.75rem;color:#475569;font-style:italic;margin:.1rem 0 .4rem">Aucun clan.</p></div>' +
-      '<div style="display:flex;gap:.4rem;margin-top:.55rem;align-items:center">' +
-        '<input type="text" class="clan-new-name admin-filter-select" placeholder="Nom du nouveau clan…" style="flex:1;font-size:.78rem;padding:.28rem .55rem">' +
-        '<button class="clan-add-btn ari-save-btn" style="font-size:.74rem;padding:.28rem .7rem;flex-shrink:0">+ Ajouter un clan</button>' +
-      '</div>' +
-      '<span class="clan-add-status" style="font-size:.7rem;color:#4ade80;display:block;height:.9em;margin-top:.2rem"></span>';
-
-    card.appendChild(header); card.appendChild(clanSection);
-    raceList.appendChild(card);
-  }
-
-  // ── Actions sur les races existantes ─────────────────────────────────────
-  var raceList = document.getElementById('race-list');
-  if (!raceList) return;
-
-  raceList.addEventListener('click', function(e) {
-    var card = e.target.closest('.race-card');
-    if (!card) return;
-    var raceId = card.dataset.raceId;
-
-    // Sauver race
-    if (e.target.closest('.race-save-btn')) {
-      var name  = card.querySelector('.race-inp-name').value.trim();
-      var desc  = card.querySelector('.race-inp-desc').value.trim();
-      var color = card.querySelector('.race-inp-color').value;
-      var icon  = card.querySelector('.race-inp-icon').value.trim();
-      if (!name) return;
-      var btn = e.target.closest('.race-save-btn');
-      btn.textContent = '…'; btn.disabled = true;
-      fetch('/ponhgup/races/' + raceId, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, description: desc, color: color, icon: icon })
-      }).then(function(r) { return r.json(); }).then(function(d) {
-        btn.textContent = 'Sauver'; btn.disabled = false;
-        if (d.ok) { btn.textContent = 'Sauvé ✓'; setTimeout(function() { btn.textContent = 'Sauver'; }, 1500); }
-      });
-      return;
-    }
-
-    // Supprimer race
-    if (e.target.closest('.race-delete-btn')) {
-      var name = card.querySelector('.race-inp-name').value.trim() || 'cette race';
-      if (!confirm('Supprimer "' + name + '" ? Les personnages associés perdront leur race et leur clan.')) return;
-      fetch('/ponhgup/races/' + raceId, { method: 'DELETE' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) { if (d.ok) card.remove(); });
-      return;
-    }
-
-    // Sauver clan
-    if (e.target.closest('.clan-save-btn')) {
-      var clanRow = e.target.closest('.clan-row');
-      var clanId = clanRow.dataset.clanId;
-      var clanName  = clanRow.querySelector('.clan-inp-name').value.trim();
-      var clanColor = clanRow.querySelector('.clan-inp-color').value;
-      if (!clanName) return;
-      var btn2 = e.target.closest('.clan-save-btn');
-      btn2.textContent = '…'; btn2.disabled = true;
-      fetch('/ponhgup/clans/' + clanId, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: clanName, color: clanColor })
-      }).then(function() {
-        btn2.textContent = '✓'; btn2.disabled = false;
-        setTimeout(function() { btn2.textContent = 'Sauver'; }, 1400);
-      });
-      return;
-    }
-
-    // Supprimer clan
-    if (e.target.closest('.clan-delete-btn')) {
-      var clanRow2 = e.target.closest('.clan-row');
-      var clanName2 = clanRow2.querySelector('.clan-inp-name').value.trim() || 'ce clan';
-      if (!confirm('Supprimer "' + clanName2 + '" ?')) return;
-      fetch('/ponhgup/clans/' + clanRow2.dataset.clanId, { method: 'DELETE' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) { if (d.ok) clanRow2.remove(); });
-      return;
-    }
-
-    // Ajouter clan
-    if (e.target.closest('.clan-add-btn')) {
-      var inp = card.querySelector('.clan-new-name');
-      var newName = inp.value.trim();
-      if (!newName) { inp.focus(); return; }
-      var addBtn = e.target.closest('.clan-add-btn');
-      addBtn.disabled = true;
-      fetch('/ponhgup/races/' + raceId + '/clans', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName })
-      }).then(function(r) { return r.json(); }).then(function(d) {
-        addBtn.disabled = false;
-        if (!d.ok) return;
-        var clanList = card.querySelector('.clan-list');
-        var empty2 = clanList.querySelector('p[style*="italic"]');
-        if (empty2) empty2.remove();
-
-        var row = document.createElement('div');
-        row.className = 'clan-row'; row.dataset.clanId = d.id;
-        row.style.cssText = 'display:flex;align-items:center;gap:.5rem;background:rgba(0,0,0,.2);border-radius:7px;padding:.35rem .65rem';
-
-        var cc = document.createElement('input'); cc.type = 'color'; cc.className = 'clan-inp-color'; cc.value = '#6366f1';
-        cc.style.cssText = 'width:20px;height:20px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0;border-radius:50%';
-
-        var cn = document.createElement('input'); cn.type = 'text'; cn.className = 'clan-inp-name'; cn.value = newName; cn.placeholder = 'Nom du clan';
-        cn.style.cssText = 'flex:1;background:none;border:none;color:#e2e8f0;font-size:.82rem;outline:none;font-family:inherit';
-
-        var sb = document.createElement('button'); sb.className = 'clan-save-btn'; sb.textContent = 'Sauver';
-        sb.style.cssText = 'background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:#a5b4fc;font-size:.68rem;padding:.15rem .45rem;border-radius:5px;cursor:pointer;flex-shrink:0';
-
-        var db2 = document.createElement('button'); db2.className = 'clan-delete-btn'; db2.textContent = '×';
-        db2.style.cssText = 'background:none;border:1px solid rgba(239,68,68,.3);color:#f87171;font-size:.72rem;padding:.15rem .35rem;border-radius:5px;cursor:pointer;flex-shrink:0';
-
-        row.appendChild(cc); row.appendChild(cn); row.appendChild(sb); row.appendChild(db2);
-        clanList.appendChild(row);
-        inp.value = '';
-        var st = card.querySelector('.clan-add-status');
-        if (st) { st.textContent = 'Clan "' + newName + '" ajouté'; setTimeout(function() { st.textContent = ''; }, 2000); }
-      });
-    }
-  });
-})();
-</script>
 
 <!-- ── Section switching ── -->
 <script nonce="<%= nonce %>">
@@ -1473,7 +1053,7 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   // ici on se contente d'afficher la bonne section et de suivre le hash.
   var recNavLinks = document.querySelectorAll('#adm-nav .adm-si[data-rec-tab]');
   var sections = document.querySelectorAll('.obj-section[data-section]');
-  var VALID = ['accueil','images','charms','themes','speciaux','cartes','classeurs','personnages','collections','races'];
+  var VALID = ['accueil','images','charms','themes','cartes'];
 
   function activate(key) {
     recNavLinks.forEach(function(l) { l.classList.toggle('active', l.dataset.recTab === key); });
@@ -1494,6 +1074,20 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
   var hash = location.hash.replace('#', '');
   activate(VALID.includes(hash) ? hash : 'accueil');
+})();
+</script>
+
+<!-- ── Sous-onglets "Cartes" (Codex / Personnages / Classeurs) ── -->
+<script nonce="<%= nonce %>">
+(function() {
+  var btns = document.querySelectorAll('.cartes-subnav-btn');
+  var subs = document.querySelectorAll('.cartes-sub');
+  btns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      btns.forEach(function(b) { b.classList.toggle('active', b === btn); });
+      subs.forEach(function(s) { s.classList.toggle('active', s.dataset.sub === btn.dataset.sub); });
+    });
+  });
 })();
 </script>
 
@@ -2404,29 +1998,23 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   const pcDeckSel       = document.getElementById('pc-deck-sel');
   const pcNatureSel     = document.getElementById('pc-nature-sel');
   const pcParodySel     = document.getElementById('pc-parody-sel');
-  const pcCollectionSel = document.getElementById('pc-collection-sel');
   pcDeckSel       && pcDeckSel.addEventListener('change', applyPcFilters);
   pcNatureSel     && pcNatureSel.addEventListener('change', applyPcFilters);
   pcParodySel     && pcParodySel.addEventListener('change', applyPcFilters);
-  pcCollectionSel && pcCollectionSel.addEventListener('change', applyPcFilters);
 
   function applyPcFilters() {
     const deck = pcDeckSel ? pcDeckSel.value : 'all';
     const nat  = pcNatureSel ? pcNatureSel.value : 'all';
     const par  = pcParodySel ? pcParodySel.value : 'all';
-    const col  = pcCollectionSel ? pcCollectionSel.value : 'all';
     const q = (document.getElementById('pc-search-input') || {}).value;
     const ql = q ? q.trim().toLowerCase() : '';
     pcItems.forEach(c => {
       const deckMatch = deck === 'all' || c.dataset.deck === deck;
       const natMatch  = nat === 'all' || c.dataset.nat === nat;
       const parMatch  = par === 'all' || c.dataset.parody === par;
-      const colMatch  = col === 'all'
-        || (col === 'none' && (!c.dataset.collection || c.dataset.collection === 'none'))
-        || c.dataset.collection === col;
       const nameEl = c.querySelector('.pc-gwent-name');
       const textMatch = !ql || (nameEl && nameEl.textContent.toLowerCase().includes(ql));
-      c.hidden = !(deckMatch && natMatch && parMatch && colMatch && textMatch);
+      c.hidden = !(deckMatch && natMatch && parMatch && textMatch);
     });
   }
 
@@ -2443,7 +2031,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   const modalStatsStatus = document.getElementById('pcModalStatsStatus');
   const pcSelStatut      = document.getElementById('pcSelStatut');
   const pcSelVisibilite  = document.getElementById('pcSelVisibilite');
-  const pcSelCollection  = document.getElementById('pcSelCollection');
   const pcSelClasseur    = document.getElementById('pcSelClasseur');
   let activePcId = null;
 
@@ -2496,7 +2083,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
     if (pcSelStatut)     pcSelStatut.value     = (pc.isBaseDeck != null ? pc.isBaseDeck : 1) ? 'base' : 'gagner';
     if (pcSelVisibilite) pcSelVisibilite.value  = pc.isUltra ? 'ultra' : 'normal';
-    if (pcSelCollection) pcSelCollection.value  = pc.collectionId || '';
     if (pcSelClasseur)   pcSelClasseur.value    = pc.classeurId || '';
 
     modalDesc.value = pc.description || '';
@@ -2584,17 +2170,15 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
     try {
       const base = '/ponhgup/recompenses/personnages/' + activePcId;
       const opts = (body) => ({ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-      const collectionId = pcSelCollection ? (pcSelCollection.value || null) : null;
       const classeurId = pcSelClasseur ? (pcSelClasseur.value || null) : null;
-      const [r1, r2, r3, r4, r5] = await Promise.all([
+      const [r1, r2, r3, r4] = await Promise.all([
         fetch(base + '/flags',       opts(flags)),
         fetch(base + '/description', opts({ description })),
         fetch(base + '/stats',       opts(statsPayload)),
-        fetch(base + '/collection',  opts({ collectionId })),
         fetch(base + '/classeur',    opts({ classeurId })),
       ]);
-      const [d1, d2, d3, d4, d5] = await Promise.all([r1.json(), r2.json(), r3.json(), r4.json(), r5.json()]);
-      const ok = d1.ok && d2.ok && d3.ok && d4.ok && d5.ok;
+      const [d1, d2, d3, d4] = await Promise.all([r1.json(), r2.json(), r3.json(), r4.json()]);
+      const ok = d1.ok && d2.ok && d3.ok && d4.ok;
       // Mettre à jour le dataset de la tuile
       const tile = document.querySelector('.pc-card-tile[data-card-id="' + activePcId + '"]');
       if (tile && ok) {
@@ -2618,20 +2202,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
           badge.className = 'pc-admin-ultra-badge'; badge.textContent = 'ULTRA';
           tile.querySelector('.lb-codex-flip-front').appendChild(badge);
         } else if (!flags.isUltra && ultraBadge) { ultraBadge.remove(); }
-        // Badge collection
-        tile.dataset.collection = collectionId || 'none';
-        const colBadgeEl = tile.querySelector('.pc-admin-collection-badge');
-        if (collectionId && pcSelCollection) {
-          const opt = pcSelCollection.options[pcSelCollection.selectedIndex];
-          const colColor = opt ? (opt.dataset.color || '#6366f1') : '#6366f1';
-          const colName  = opt ? opt.textContent : '';
-          if (colBadgeEl) { colBadgeEl.textContent = colName; colBadgeEl.style.background = colColor; }
-          else {
-            const cb = document.createElement('span');
-            cb.className = 'pc-admin-collection-badge'; cb.textContent = colName; cb.style.background = colColor;
-            tile.querySelector('.lb-codex-flip-front').appendChild(cb);
-          }
-        } else if (colBadgeEl) { colBadgeEl.remove(); }
         // Badge classeur
         const clsBadgeEl = tile.querySelector('.pc-admin-classeur-badge');
         if (classeurId && pcSelClasseur) {
@@ -2742,83 +2312,5 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 })();
 </script>
 
-<!-- ── Collections JS ── -->
-<script nonce="<%= nonce %>">
-(function() {
-  var modal     = document.getElementById('colModal');
-  var closeBtn  = document.getElementById('colModalClose');
-  var saveBtn   = document.getElementById('colModalSave');
-  var titleEl   = document.getElementById('colModalTitle');
-  var idInp     = document.getElementById('colModalId');
-  var nameInp   = document.getElementById('colModalName');
-  var descInp   = document.getElementById('colModalDesc');
-  var colorInp  = document.getElementById('colModalColor');
-  var orderInp  = document.getElementById('colModalOrder');
-  var statusEl  = document.getElementById('colModalStatus');
-  if (!modal) return;
-
-  function openModal(col) {
-    idInp.value    = col ? col.id    : '';
-    nameInp.value  = col ? col.name  : '';
-    descInp.value  = col ? col.description : '';
-    colorInp.value = col ? (col.color || '#6366f1') : '#6366f1';
-    orderInp.value = col ? (col.sort_order || 0) : 0;
-    titleEl.textContent = col ? 'Modifier la collection' : 'Nouvelle collection';
-    statusEl.textContent = '';
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeModal() { modal.hidden = true; document.body.style.overflow = ''; }
-
-  closeBtn && closeBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
-
-  document.getElementById('col-new-btn') && document.getElementById('col-new-btn').addEventListener('click', function() {
-    openModal(null);
-  });
-
-  document.querySelectorAll('.js-col-edit').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      try { openModal(JSON.parse(btn.dataset.col)); } catch(e) {}
-    });
-  });
-
-  document.querySelectorAll('.js-col-delete').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      if (!confirm('Supprimer la collection "' + btn.dataset.colName + '" ? Les personnages ne seront pas supprimés.')) return;
-      fetch('/ponhgup/recompenses/collections/' + btn.dataset.colId, { method: 'DELETE' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) { if (d.ok) location.reload(); else alert('Erreur'); });
-    });
-  });
-
-  saveBtn && saveBtn.addEventListener('click', async function() {
-    const id   = idInp.value;
-    const body = {
-      name:        nameInp.value.trim(),
-      description: descInp.value.trim(),
-      color:       colorInp.value,
-      sortOrder:   parseInt(orderInp.value) || 0,
-      isPublished: true,
-    };
-    if (!body.name) { statusEl.textContent = 'Nom requis'; statusEl.style.color = '#f87171'; return; }
-    statusEl.textContent = '…'; statusEl.style.color = '#94a3b8';
-
-    const url    = id ? '/ponhgup/recompenses/collections/' + id : '/ponhgup/recompenses/collections';
-    const method = id ? 'PUT' : 'POST';
-    try {
-      const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-      const d = await r.json();
-      if (d.ok) {
-        statusEl.textContent = '✓ Enregistré'; statusEl.style.color = '#4ade80';
-        setTimeout(function() { location.reload(); }, 600);
-      } else {
-        statusEl.textContent = d.error || 'Erreur'; statusEl.style.color = '#f87171';
-      }
-    } catch(e) { statusEl.textContent = 'Erreur réseau'; statusEl.style.color = '#f87171'; }
-  });
-})();
-</script>
 
 <%- include('partials/foot') %>
