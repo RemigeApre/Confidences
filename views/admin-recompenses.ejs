@@ -118,8 +118,6 @@
 .obj-tool-btn { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.95rem; transition:background .12s; }
 .obj-tool-btn:hover { background:rgba(255,255,255,.15); }
 .obj-tools { display:flex; gap:.4rem; margin-left:auto; }
-.obj-section-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; margin-bottom:.75rem; }
-.obj-section-toolbar .ari-filter-bar { margin-bottom:0; flex:1; flex-wrap:wrap; }
 
 /* ── Personnages — tuiles visuelles ── */
 .pc-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.65rem; margin-top:.75rem; }
@@ -252,12 +250,169 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 .cartes-subnav-btn.active { background:rgba(248,113,113,.18); border-color:rgba(248,113,113,.4); color:#fca5a5; }
 .cartes-sub { display:none; }
 .cartes-sub.active { display:block; }
+
+/* ── Volet de filtres fixe, collé à gauche ── */
+.rec-filters-sidebar {
+  position:fixed; left:0; top:96px; bottom:0; width:232px;
+  overflow-y:auto; background:#0f172a; border-right:1px solid rgba(255,255,255,.08);
+  padding:1.25rem 1rem; z-index:50;
+}
+.rec-filters-sidebar[hidden] { display:none; }
+.rec-filters-sidebar-label {
+  font-size:.68rem; font-weight:700; color:#64748b; text-transform:uppercase;
+  letter-spacing:.07em; margin:0 0 .5rem;
+}
+.rec-filters-sidebar-label:not(:first-child) { margin-top:1.1rem; }
+.rec-filters-panel { display:none; flex-direction:column; gap:.5rem; }
+.rec-filters-panel.active { display:flex; }
+.rec-filters-panel .admin-filter-select,
+.rec-filters-panel input[type="text"] { width:100%; box-sizing:border-box; margin-left:0 !important; }
+.rec-filters-panel .obj-tools { margin-left:0; }
+.rec-filters-sub-panel { display:none; flex-direction:column; gap:.5rem; }
+.rec-filters-sub-panel.active { display:flex; }
+.rec-main { padding:2rem; overflow:auto; margin-left:232px; }
+.rec-main.rec-main--full { margin-left:0; }
+@media (max-width:640px) {
+  .rec-filters-sidebar { position:static; width:auto; top:auto; bottom:auto; border-right:none; border-bottom:1px solid rgba(255,255,255,.08); margin-bottom:1rem; }
+  .rec-main { margin-left:0; padding:1.25rem; }
+}
 </style>
 
-  <%/* ── Contenu : la navigation entre sections vit maintenant dans le
-       sous-header (voir partials/admin-nav.ejs, groupe "Récompenses") —
-       plus de barre latérale propre à cette page. ── */%>
-  <main style="padding:2rem;overflow:auto">
+  <%/* ── Contenu : la navigation entre sections vit dans le sous-header
+       (voir partials/admin-nav.ejs, groupe "Récompenses"). Les filtres et
+       la recherche de chaque section vivent dans le volet fixe ci-dessous. ── */%>
+  <%
+    /* Pré-calcul des listes de filtres (utilisées par le volet gauche et par les grilles) */
+    var _wcCatSet = {}; (wikiCards||[]).forEach(function(wc){ if(wc.category) _wcCatSet[wc.category]=1; });
+    var _wcCats = Object.keys(_wcCatSet).sort();
+    var _wcCatLabels = { position:'Positions', lieux:'Lieux', partenaires:'Partenaires', jeu_de_role:'Scénarios', tenues:'Tenues', objets:'Objets', pratique:'Pratiques', autre:'Autre' };
+
+    var _pcParodySet = {}; (personnageCards||[]).forEach(function(pc){ if(pc.parody) _pcParodySet[pc.parody]=1; });
+    var _pcParodies = Object.keys(_pcParodySet).sort();
+    var _pcNatures = [];
+    var _pcNatSet = {}; (personnageCards||[]).forEach(function(pc){ if(pc.nature && !_pcNatSet[pc.nature]){ _pcNatSet[pc.nature]=1; _pcNatures.push(pc.nature); } });
+    _pcNatures.sort();
+    var _pcNatLabels = { humain:'Humanoïde', monstre:'Monstre', animal:'Animal', pokemon:'Pokémon', autre:'Autre' };
+  %>
+
+  <aside class="rec-filters-sidebar" id="recFiltersSidebar" hidden>
+
+    <div class="rec-filters-panel" data-filters-section="images">
+      <p class="rec-filters-sidebar-label">Filtrer par rareté</p>
+      <select id="ari-filter-sel" class="admin-filter-select">
+        <option value="all">Toutes raretés</option>
+        <option value="common">Commun</option>
+        <option value="rare">Rare</option>
+        <option value="epic">Épique</option>
+        <option value="legendary">Légendaire</option>
+        <option value="mythic">Mythique</option>
+      </select>
+      <p class="rec-filters-sidebar-label">Actions en lot</p>
+      <div class="obj-tools">
+        <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="images"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8c-1.2-3-5-4.5-5-1.5S9.5 8 12 8Zm0 0c1.2-3 5-4.5 5-1.5S14.5 8 12 8Z"/></svg></button>
+        <button class="obj-tool-btn js-sel-mode" data-action="delete" title="Supprimer en lot" data-section="images"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+      </div>
+    </div>
+
+    <div class="rec-filters-panel" data-filters-section="charms">
+      <p class="rec-filters-sidebar-label">Filtrer par rareté</p>
+      <select id="charm-filter-sel" class="admin-filter-select">
+        <option value="all">Toutes raretés</option>
+        <option value="common">Commun</option>
+        <option value="rare">Rare</option>
+        <option value="epic">Épique</option>
+        <option value="legendary">Légendaire</option>
+        <option value="mythic">Mythique</option>
+      </select>
+      <p class="rec-filters-sidebar-label">Actions en lot</p>
+      <div class="obj-tools">
+        <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="charms"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8c-1.2-3-5-4.5-5-1.5S9.5 8 12 8Zm0 0c1.2-3 5-4.5 5-1.5S14.5 8 12 8Z"/></svg></button>
+        <button class="obj-tool-btn js-sel-mode" data-action="delete" title="Supprimer en lot" data-section="charms"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+      </div>
+    </div>
+
+    <div class="rec-filters-panel" data-filters-section="themes">
+      <p class="rec-filters-sidebar-label">Filtrer par rareté</p>
+      <select id="theme-filter-sel" class="admin-filter-select">
+        <option value="all">Toutes raretés</option>
+        <option value="common">Commun</option>
+        <option value="rare">Rare</option>
+        <option value="epic">Épique</option>
+        <option value="legendary">Légendaire</option>
+        <option value="mythic">Mythique</option>
+      </select>
+      <p class="rec-filters-sidebar-label">Actions en lot</p>
+      <div class="obj-tools">
+        <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="themes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8c-1.2-3-5-4.5-5-1.5S9.5 8 12 8Zm0 0c1.2-3 5-4.5 5-1.5S14.5 8 12 8Z"/></svg></button>
+      </div>
+    </div>
+
+    <div class="rec-filters-panel" data-filters-section="cartes">
+      <div class="rec-filters-sub-panel active" data-filters-sub="cards">
+        <p class="rec-filters-sidebar-label">Rareté</p>
+        <select id="card-filter-sel" class="admin-filter-select">
+          <option value="all">Toutes raretés</option>
+          <option value="common">Commun</option>
+          <option value="rare">Rare</option>
+          <option value="epic">Épique</option>
+          <option value="legendary">Légendaire</option>
+          <option value="mythic">Mythique</option>
+        </select>
+        <p class="rec-filters-sidebar-label">Catégorie</p>
+        <select id="card-cat-filter-sel" class="admin-filter-select">
+          <option value="all">Toutes catégories</option>
+          <% _wcCats.forEach(function(cat) { %>
+            <option value="<%= cat %>"><%= _wcCatLabels[cat] || cat %></option>
+          <% }) %>
+        </select>
+        <p class="rec-filters-sidebar-label">Tri</p>
+        <select id="card-sort-sel" class="admin-filter-select">
+          <option value="alpha">Alphabétique</option>
+          <option value="newest">Nouveauté</option>
+          <option value="updated">Dernière modification</option>
+        </select>
+        <p class="rec-filters-sidebar-label">Recherche</p>
+        <input type="text" id="card-search-input" placeholder="Chercher…"
+          style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none">
+      </div>
+
+      <div class="rec-filters-sub-panel" data-filters-sub="personnages">
+        <p class="rec-filters-sidebar-label">Deck</p>
+        <select id="pc-deck-sel" class="admin-filter-select">
+          <option value="all">Tous</option>
+          <option value="base">Deck de base</option>
+          <option value="combat">Combat uniquement</option>
+          <option value="ultra">Ultra</option>
+        </select>
+        <% if (_pcNatures.length > 1) { %>
+        <p class="rec-filters-sidebar-label">Nature</p>
+        <select id="pc-nature-sel" class="admin-filter-select">
+          <option value="all">Toutes natures</option>
+          <% _pcNatures.forEach(function(nat) { %><option value="<%= nat %>"><%= _pcNatLabels[nat] || nat %></option><% }) %>
+        </select>
+        <% } %>
+        <% if (_pcParodies.length > 1) { %>
+        <p class="rec-filters-sidebar-label">Univers</p>
+        <select id="pc-parody-sel" class="admin-filter-select">
+          <option value="all">Tous univers</option>
+          <% _pcParodies.forEach(function(par) { %><option value="<%= par %>"><%= par %></option><% }) %>
+        </select>
+        <% } %>
+        <p class="rec-filters-sidebar-label">Recherche</p>
+        <input type="text" id="pc-search-input" placeholder="Chercher…"
+          style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none">
+      </div>
+
+      <div class="rec-filters-sub-panel" data-filters-sub="classeurs">
+        <button class="ari-save-btn" id="cls-new-btn" style="font-size:.78rem;padding:.3rem .8rem;width:100%">
+          + Nouveau classeur
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <main class="rec-main" id="recMain">
 
     <%/* ── Accueil ── */%>
     <div class="obj-section" data-section="accueil">
@@ -448,21 +603,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
     <%/* ── Images de profil ── */%>
     <div class="obj-section" data-section="images">
-      <div class="obj-section-toolbar">
-        <select id="ari-filter-sel" class="admin-filter-select">
-          <option value="all">Toutes raretés</option>
-          <option value="common">Commun</option>
-          <option value="rare">Rare</option>
-          <option value="epic">Épique</option>
-          <option value="legendary">Légendaire</option>
-          <option value="mythic">Mythique</option>
-        </select>
-        <div class="obj-tools">
-          <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="images"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8c-1.2-3-5-4.5-5-1.5S9.5 8 12 8Zm0 0c1.2-3 5-4.5 5-1.5S14.5 8 12 8Z"/></svg></button>
-          <button class="obj-tool-btn js-sel-mode" data-action="delete" title="Supprimer en lot" data-section="images"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
-        </div>
-      </div>
-
       <div class="ari-grid" id="ari-grid">
         <% images.forEach(function(img, idx) { %>
         <div class="ari-card" data-id="<%= img.id %>" data-rarity="<%= img.rarity %>" data-idx="<%= idx %>" data-title="<%= img.title || '' %>" data-excluded="<%= img.lootboxExcluded ? '1' : '0' %>" tabindex="0" role="button" aria-label="<%= img.title || 'Image ' + img.id %>">
@@ -480,20 +620,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
     <%/* ── Charmes ── */%>
     <div class="obj-section" data-section="charms">
-      <div class="obj-section-toolbar">
-        <select id="charm-filter-sel" class="admin-filter-select">
-          <option value="all">Toutes raretés</option>
-          <option value="common">Commun</option>
-          <option value="rare">Rare</option>
-          <option value="epic">Épique</option>
-          <option value="legendary">Légendaire</option>
-          <option value="mythic">Mythique</option>
-        </select>
-        <div class="obj-tools">
-          <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="charms"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8c-1.2-3-5-4.5-5-1.5S9.5 8 12 8Zm0 0c1.2-3 5-4.5 5-1.5S14.5 8 12 8Z"/></svg></button>
-          <button class="obj-tool-btn js-sel-mode" data-action="delete" title="Supprimer en lot" data-section="charms"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
-        </div>
-      </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.65rem" id="charm-grid">
         <% charms.forEach(function(charm) { %>
         <%
@@ -521,19 +647,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 
     <%/* ── Thèmes ── */%>
     <div class="obj-section" data-section="themes">
-      <div class="obj-section-toolbar">
-        <select id="theme-filter-sel" class="admin-filter-select">
-          <option value="all">Toutes raretés</option>
-          <option value="common">Commun</option>
-          <option value="rare">Rare</option>
-          <option value="epic">Épique</option>
-          <option value="legendary">Légendaire</option>
-          <option value="mythic">Mythique</option>
-        </select>
-        <div class="obj-tools">
-          <button class="obj-tool-btn js-sel-mode" data-action="gift" title="Offrir en lot" data-section="themes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8c-1.2-3-5-4.5-5-1.5S9.5 8 12 8Zm0 0c1.2-3 5-4.5 5-1.5S14.5 8 12 8Z"/></svg></button>
-        </div>
-      </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.65rem" id="theme-grid">
         <% (themeDefs || []).forEach(function(t) { %>
         <%
@@ -572,35 +685,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       </div>
 
       <div class="cartes-sub active" data-sub="cards">
-      <%
-        var _wcCatSet = {}; (wikiCards||[]).forEach(function(wc){ if(wc.category) _wcCatSet[wc.category]=1; });
-        var _wcCats = Object.keys(_wcCatSet).sort();
-        var _wcCatLabels = { position:'Positions', lieux:'Lieux', partenaires:'Partenaires', jeu_de_role:'Scénarios', tenues:'Tenues', objets:'Objets', pratique:'Pratiques', autre:'Autre' };
-      %>
-      <div class="obj-section-toolbar" style="gap:.5rem;flex-wrap:wrap;align-items:center">
-        <select id="card-filter-sel" class="admin-filter-select">
-          <option value="all">Toutes raretés</option>
-          <option value="common">Commun</option>
-          <option value="rare">Rare</option>
-          <option value="epic">Épique</option>
-          <option value="legendary">Légendaire</option>
-          <option value="mythic">Mythique</option>
-        </select>
-        <select id="card-cat-filter-sel" class="admin-filter-select">
-          <option value="all">Toutes catégories</option>
-          <% _wcCats.forEach(function(cat) { %>
-            <option value="<%= cat %>"><%= _wcCatLabels[cat] || cat %></option>
-          <% }) %>
-        </select>
-        <select id="card-sort-sel" class="admin-filter-select">
-          <option value="alpha">Alphab&eacute;tique</option>
-          <option value="newest">Nouveaut&eacute;</option>
-          <option value="updated">Derni&egrave;re modification</option>
-        </select>
-        <input type="text" id="card-search-input" placeholder="Chercher&hellip;"
-          style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
-      </div>
-
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin-top:.75rem" id="card-wiki-grid">
         <% (wikiCards || []).forEach(function(wc) { %>
         <%
@@ -689,37 +773,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       </div>
 
       <div class="cartes-sub" data-sub="personnages">
-      <%
-        var _pcParodySet = {}; (personnageCards||[]).forEach(function(pc){ if(pc.parody) _pcParodySet[pc.parody]=1; });
-        var _pcParodies = Object.keys(_pcParodySet).sort();
-        var _pcNatures = [];
-        var _pcNatSet = {}; (personnageCards||[]).forEach(function(pc){ if(pc.nature && !_pcNatSet[pc.nature]){ _pcNatSet[pc.nature]=1; _pcNatures.push(pc.nature); } });
-        _pcNatures.sort();
-        var _pcNatLabels = { humain:'Humanoïde', monstre:'Monstre', animal:'Animal', pokemon:'Pokémon', autre:'Autre' };
-      %>
-      <div class="obj-section-toolbar" style="gap:.5rem;flex-wrap:wrap;align-items:center">
-        <select id="pc-deck-sel" class="admin-filter-select">
-          <option value="all">Tous</option>
-          <option value="base">Deck de base</option>
-          <option value="combat">Combat uniquement</option>
-          <option value="ultra">Ultra</option>
-        </select>
-        <% if (_pcNatures.length > 1) { %>
-        <select id="pc-nature-sel" class="admin-filter-select">
-          <option value="all">Toutes natures</option>
-          <% _pcNatures.forEach(function(nat) { %><option value="<%= nat %>"><%= _pcNatLabels[nat] || nat %></option><% }) %>
-        </select>
-        <% } %>
-        <% if (_pcParodies.length > 1) { %>
-        <select id="pc-parody-sel" class="admin-filter-select">
-          <option value="all">Tous univers</option>
-          <% _pcParodies.forEach(function(par) { %><option value="<%= par %>"><%= par %></option><% }) %>
-        </select>
-        <% } %>
-        <input type="text" id="pc-search-input" placeholder="Chercher&hellip;"
-          style="background:#0f172a;border:1px solid rgba(255,255,255,.18);color:#f1f5f9;border-radius:6px;padding:.3rem .6rem;font-size:.82rem;outline:none;width:160px;margin-left:auto">
-      </div>
-
       <div class="coffre-cards-grid" id="pc-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem">
         <% (personnageCards || []).forEach(function(pc) { %>
         <%
@@ -781,12 +834,6 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
       </div>
 
       <div class="cartes-sub" data-sub="classeurs">
-      <div class="obj-section-toolbar" style="justify-content:flex-end">
-        <button class="ari-save-btn" id="cls-new-btn" style="font-size:.78rem;padding:.3rem .8rem">
-          + Nouveau classeur
-        </button>
-      </div>
-
       <div id="cls-list" style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem">
         <% if (!(classeurs||[]).length) { %>
           <p style="color:#475569;font-size:.82rem">Aucun classeur. Créez-en un pour regrouper des cartes Codex à collectionner.</p>
@@ -1055,10 +1102,20 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
   var sections = document.querySelectorAll('.obj-section[data-section]');
   var VALID = ['accueil','images','charms','themes','cartes'];
 
+  // Volet de filtres fixe : une section par clé, masqué pour "accueil" (pas de filtre).
+  var filtersSidebar = document.getElementById('recFiltersSidebar');
+  var filtersPanels = document.querySelectorAll('.rec-filters-panel');
+  var mainEl = document.getElementById('recMain');
+
   function activate(key) {
     recNavLinks.forEach(function(l) { l.classList.toggle('active', l.dataset.recTab === key); });
     sections.forEach(function(s) { s.classList.toggle('active', s.dataset.section === key); });
     history.replaceState(null, '', location.pathname + '#' + key);
+
+    var hasFilters = key !== 'accueil';
+    if (filtersSidebar) filtersSidebar.hidden = !hasFilters;
+    if (mainEl) mainEl.classList.toggle('rec-main--full', !hasFilters);
+    filtersPanels.forEach(function(p) { p.classList.toggle('active', p.dataset.filtersSection === key); });
   }
 
   // Accueil "goto" buttons
@@ -1082,10 +1139,12 @@ select#pcSelVisibilite[value="ultra"] { border-color:#a855f7; color:#d8b4fe; }
 (function() {
   var btns = document.querySelectorAll('.cartes-subnav-btn');
   var subs = document.querySelectorAll('.cartes-sub');
+  var filterSubs = document.querySelectorAll('.rec-filters-sub-panel');
   btns.forEach(function(btn) {
     btn.addEventListener('click', function() {
       btns.forEach(function(b) { b.classList.toggle('active', b === btn); });
       subs.forEach(function(s) { s.classList.toggle('active', s.dataset.sub === btn.dataset.sub); });
+      filterSubs.forEach(function(s) { s.classList.toggle('active', s.dataset.filtersSub === btn.dataset.sub); });
     });
   });
 })();
