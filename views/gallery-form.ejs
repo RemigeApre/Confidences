@@ -13,17 +13,39 @@
     <button type="submit" class="wf-delete-btn-fixed" title="Supprimer l&rsquo;image">&#128465;</button>
   </form>
 
-  <aside class="ef-left-sidebar" id="gf-left-sidebar">
-    <button type="button" class="mobile-filter-close" id="gf-left-close" aria-label="Fermer">&times;</button>
-    <div class="ef-left-topbar">
-      <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
-      <a href="/galerie" class="ef-left-back">&#8592; Retour</a>
-      <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/galerie/' + image.id + '/edit' }) %>
-    </div>
-  </aside>
-
   <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form gf-form" id="gf-form" data-no-enter-submit>
     <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
+
+    <aside class="ef-left-sidebar" id="gf-left-sidebar">
+      <button type="button" class="mobile-filter-close" id="gf-left-close" aria-label="Fermer">&times;</button>
+      <div class="ef-left-topbar">
+        <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
+        <a href="/galerie" class="ef-left-back">&#8592; Retour</a>
+        <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/galerie/' + image.id + '/edit' }) %>
+      </div>
+
+      <%# ── BLOC IMAGE ──────────────────────────────────────────────────── %>
+      <div class="ef-block ef-block--image">
+        <% if (image.imagePaths && image.imagePaths.length) { %>
+          <div class="wiki-images-existing">
+            <% image.imagePaths.forEach(function(src) { %>
+              <div class="wiki-existing-img-wrap">
+                <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
+                <label class="wiki-img-remove-label">
+                  <input type="checkbox" name="remove_image" value="<%= src %>" />
+                  <span>&#215;</span>
+                </label>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+        <label class="wiki-image-add-label">
+          <span>+ Ajouter d&rsquo;autres images (fiches ind&eacute;pendantes)</span>
+          <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
+        </label>
+        <div class="wiki-new-previews"></div>
+      </div>
+    </aside>
 
     <%# ── BLOC 1 : META ──────────────────────────────────────────────────── %>
     <div class="ef-block">
@@ -59,28 +81,6 @@
         </label>
       </div>
 
-    </div>
-
-    <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
-    <div class="ef-block ef-block--image">
-      <% if (image.imagePaths && image.imagePaths.length) { %>
-        <div class="wiki-images-existing">
-          <% image.imagePaths.forEach(function(src) { %>
-            <div class="wiki-existing-img-wrap">
-              <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
-              <label class="wiki-img-remove-label">
-                <input type="checkbox" name="remove_image" value="<%= src %>" />
-                <span>&#215;</span>
-              </label>
-            </div>
-          <% }) %>
-        </div>
-      <% } %>
-      <label class="wiki-image-add-label">
-        <span>+ Ajouter d&rsquo;autres images (fiches ind&eacute;pendantes)</span>
-        <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
-      </label>
-      <div class="wiki-new-previews"></div>
     </div>
 
     <%# ── BLOC ORIGINES ───────────────────────────────────────────────────── %>
