@@ -1,0 +1,112 @@
+<%
+  /* ── Sélecteur de tags guidé par catégorie ────────────────────────────
+     Remplace le champ libre (.wiki-tags-widget) pour Images/BD/Histoires.
+     Attend en locals :
+       currentTags : tableau de tags déjà présents (ultra/irréaliste/en
+                     couleur déjà retirés par l'appelant, ce sont des
+                     checkboxes séparées)
+       groups      : résultat de db.getTagsGroupedByCategory()
+     Le contrat de sortie ne change pas : un seul <input type="hidden"
+     name="tags"> contenant une liste séparée par des virgules — les
+     routes de sauvegarde (gallery.js/bd.js/nouvelles.js) n'ont donc
+     rien à changer. ── */
+  var ctwOrder = ['femme', 'homme', 'vetement', 'rapport', 'lieu', 'objet'];
+  var ctwCurrentSet = {};
+  (currentTags || []).forEach(function (t) { ctwCurrentSet[String(t).toLowerCase().trim()] = true; });
+
+  // Tags déjà connus (rattachés à une des catégories de l'assistant, ou à
+  // "autre") — tout le reste présent sur le contenu est "non reconnu"
+  // (ex. catégorie "relation", ou tag jamais catégorisé) et doit malgré
+  // tout être conservé : on le remonte dans la section "Autre".
+  var ctwKnown = {};
+  ctwOrder.concat(['autre']).forEach(function (k) {
+    ((groups[k] || {}).tags || []).forEach(function (t) { ctwKnown[t.tag] = true; });
+  });
+  var ctwLeftover = (currentTags || []).filter(function (t) { return !ctwKnown[t]; });
+%>
+<div class="cat-tags-widget">
+  <input type="hidden" name="tags" class="ctw-hidden" value="<%= (currentTags || []).join(', ') %>" />
+
+  <% ctwOrder.forEach(function (catKey) { %>
+    <% var g = groups[catKey] || { label: catKey, hasSubcats: false, subcategories: [], tags: [] }; %>
+    <% var hasAny = g.tags.some(function (t) { return ctwCurrentSet[t.tag]; }); %>
+    <div class="ctw-section" data-cat="<%= catKey %>">
+      <div class="ctw-section-head">
+        <span class="ctw-section-title"><%= g.label %></span>
+        <% if (catKey === 'vetement') { %>
+          <label class="ctw-nude-toggle">
+            <input type="checkbox" class="ctw-nude-check" <%= hasAny ? '' : 'checked' %> />
+            <span>Personne n&rsquo;est habill&eacute;&middot;e</span>
+          </label>
+        <% } else { %>
+          <button type="button" class="ctw-yn-toggle<%= hasAny ? ' active' : '' %>" data-state="<%= hasAny ? '1' : '0' %>">
+            <span class="ctw-yn-label"><%= hasAny ? 'Oui' : 'Non' %></span>
+          </button>
+        <% } %>
+      </div>
+      <div class="ctw-section-body"<%= (hasAny || catKey === 'vetement') ? '' : ' hidden' %>>
+        <% if (g.hasSubcats && g.subcategories.length) { %>
+          <%
+            var bucketed = {};
+            (g.subcategories || []).forEach(function (s) { bucketed[s.key] = []; });
+            var noSub = [];
+            g.tags.forEach(function (t) {
+              if (t.subcategory && bucketed[t.subcategory]) bucketed[t.subcategory].push(t.tag);
+              else noSub.push(t.tag);
+            });
+          %>
+          <% g.subcategories.forEach(function (sub) { %>
+            <div class="ctw-subgroup">
+              <p class="ctw-subgroup-label"><%= sub.label %></p>
+              <div class="ctw-chip-row">
+                <% bucketed[sub.key].sort().forEach(function (tag) { %>
+                  <button type="button" class="ctw-chip<%= ctwCurrentSet[tag] ? ' active' : '' %>" data-tag="<%= tag %>"><%= tag %></button>
+                <% }) %>
+              </div>
+              <div class="ctw-add-row" data-cat="<%= catKey %>" data-sub="<%= sub.key %>">
+                <input type="text" class="ctw-add-input" placeholder="+ nouveau tag&hellip;" />
+              </div>
+            </div>
+          <% }) %>
+          <div class="ctw-subgroup">
+            <p class="ctw-subgroup-label">Autre</p>
+            <div class="ctw-chip-row">
+              <% noSub.sort().forEach(function (tag) { %>
+                <button type="button" class="ctw-chip<%= ctwCurrentSet[tag] ? ' active' : '' %>" data-tag="<%= tag %>"><%= tag %></button>
+              <% }) %>
+            </div>
+            <div class="ctw-add-row" data-cat="<%= catKey %>" data-sub="">
+              <input type="text" class="ctw-add-input" placeholder="+ nouveau tag&hellip;" />
+            </div>
+          </div>
+        <% } else { %>
+          <div class="ctw-chip-row">
+            <% g.tags.map(function (t) { return t.tag; }).sort().forEach(function (tag) { %>
+              <button type="button" class="ctw-chip<%= ctwCurrentSet[tag] ? ' active' : '' %>" data-tag="<%= tag %>"><%= tag %></button>
+            <% }) %>
+          </div>
+          <div class="ctw-add-row" data-cat="<%= catKey %>" data-sub="">
+            <input type="text" class="ctw-add-input" placeholder="+ nouveau tag&hellip;" />
+          </div>
+        <% } %>
+      </div>
+    </div>
+  <% }) %>
+
+  <%# ── Autre : catch-all + tags non reconnus par l'assistant (ex. catégorie "relation") ── %>
+  <div class="ctw-section" data-cat="autre">
+    <div class="ctw-section-head">
+      <span class="ctw-section-title">Autre</span>
+    </div>
+    <div class="ctw-section-body">
+      <div class="ctw-chip-row">
+        <% ((groups.autre ? groups.autre.tags.map(function (t) { return t.tag; }) : []).concat(ctwLeftover)).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort().forEach(function (tag) { %>
+          <button type="button" class="ctw-chip<%= ctwCurrentSet[tag] ? ' active' : '' %>" data-tag="<%= tag %>"><%= tag %></button>
+        <% }) %>
+      </div>
+      <div class="ctw-add-row" data-cat="autre" data-sub="">
+        <input type="text" class="ctw-add-input" placeholder="+ nouveau tag&hellip;" />
+      </div>
+    </div>
+  </div>
+</div>

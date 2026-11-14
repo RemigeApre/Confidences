@@ -49,6 +49,7 @@ const {
   updateWikiPage,
   setWikiPageSfwPaths,
   invalidateSfwSet,
+  getTagsGroupedByCategory,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -526,7 +527,7 @@ function buildGalleryRouter(config) {
     });
     const editLang = req.query.editLang === "en" ? "en" : "fr";
     const translations = editLang === "en" ? getTranslationsForEntity("gallery", id, "en") : {};
-    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, imageSeries, allSeries, allProtagonists, existingLinks, allAuthors: listGalleryAuthors(), editLang, translations });
+    res.render("gallery-form", { config, image, allTags, categories: CATEGORIES, imageSeries, allSeries, allProtagonists, existingLinks, allAuthors: listGalleryAuthors(), editLang, translations, groups: getTagsGroupedByCategory() });
   });
 
   router.post("/:id/view", (req, res) => {

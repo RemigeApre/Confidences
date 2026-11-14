@@ -1062,11 +1062,12 @@ db.exec(`
     [
       ['femme',    'Femme',    1, 0],
       ['homme',    'Homme',    1, 1],
-      ['rapport',  'Rapport',  0, 2],
-      ['lieu',     'Lieu',     0, 3],
-      ['relation', 'Relation', 0, 4],
-      ['objet',    'Objet',    0, 5],
-      ['autre',    'Autre',    0, 6],
+      ['vetement', 'Vêtement', 0, 2],
+      ['rapport',  'Position', 0, 3],
+      ['lieu',     'Lieu',     0, 4],
+      ['relation', 'Relation', 0, 5],
+      ['objet',    'Objet',    0, 6],
+      ['autre',    'Autre',    0, 7],
     ].forEach(r => ins.run(...r));
   }
   const subs = db.prepare("SELECT COUNT(*) as n FROM tag_subcategories").get();
@@ -1077,13 +1078,28 @@ db.exec(`
       ['physique',    'Physique',                  0],
       ['ethnie',      'Ethnie',                    1],
       ['fantastique', 'Fantastique et impossible', 2],
-      ['vetements',   'Vêtements',                 3],
     ];
     for (const ck of catKeys) {
       for (const [key, label, ord] of defaults) { ins2.run(key, ck, label, ord); }
     }
   }
 })();
+
+// Migration one-time : "Rapport" devient "Position" (même clé en base,
+// seul le libellé affiché change — aucun tag déjà classé ne bouge).
+try { db.prepare("UPDATE tag_categories SET label='Position' WHERE key='rapport' AND label='Rapport'").run(); } catch (_) {}
+
+// Migration one-time : la sous-catégorie "Vêtements" (dupliquée jusqu'ici
+// sous Femme et sous Homme) devient sa propre catégorie top-level
+// "Vêtement" — les tags déjà classés comme vêtements (peu importe le
+// genre associé) sont migrés vers cette nouvelle catégorie, rien n'est
+// perdu. Idempotent : sans effet si déjà fait.
+try {
+  const vCatCount = db.prepare("SELECT MAX(sort_order) as m FROM tag_categories").get().m || 0;
+  db.prepare("INSERT OR IGNORE INTO tag_categories (key, label, has_subcats, sort_order) VALUES ('vetement','Vêtement',0,?)").run(vCatCount + 1);
+  db.prepare("UPDATE tag_meta SET category='vetement', subcategory='' WHERE subcategory='vetements'").run();
+  db.prepare("DELETE FROM tag_subcategories WHERE key='vetements'").run();
+} catch (_) {}
 
 // Blacklist personnelle de tags (bouton "Masquer le tag" de la popup tag,
 // gérée depuis /tags/masques) : tout contenu portant un de ces tags reste
@@ -2974,6 +2990,23 @@ function getAllCategoriesWithSubs() {
   const cats = getAllCategories();
   const subsMap = getAllSubcategoriesByCategory();
   return cats.map(c => Object.assign({}, c, { subcategories: subsMap[c.key] || [] }));
+}
+// Tags déjà classés, regroupés par catégorie (et sous-catégorie pour
+// Femme/Homme) — alimente le sélecteur de tags guidé (Images/BD/Histoires,
+// voir partials/cat-tags-widget). Les tags remontés viennent de tout le
+// site (wiki/galerie/bd/nouvelles), comme pour la page /tags.
+function getTagsGroupedByCategory() {
+  const cats = getAllCategoriesWithSubs();
+  const result = {};
+  cats.forEach((c) => {
+    result[c.key] = { label: c.label, hasSubcats: !!c.has_subcats, subcategories: c.subcategories, tags: [] };
+  });
+  db.prepare("SELECT tag, category, subcategory FROM tag_meta").all().forEach((r) => {
+    const cat = r.category || "autre";
+    if (!result[cat]) result[cat] = { label: cat, hasSubcats: false, subcategories: [], tags: [] };
+    result[cat].tags.push({ tag: r.tag, subcategory: r.subcategory || "" });
+  });
+  return result;
 }
 function getAllSubcategoriesList(categoryKey) {
   if (categoryKey) {
@@ -7526,6 +7559,7 @@ module.exports = {
   getAllSubcategoriesList,
   getAllSubcategoriesByCategory,
   getAllCategoriesWithSubs,
+  getTagsGroupedByCategory,
   createCategory,
   updateCategory,
   deleteCategory,

@@ -133,7 +133,7 @@ function buildNouvellesRouter(config) {
     const allTags      = db.listAllSiteTags();
     const protagonistes = db.listProtagonistes();
     const preSerieId   = req.query.serie ? Number(req.query.serie) : null;
-    res.render("nouvelles-form", { config, nouvelle: null, series, allTags, protagonistes, preSerieId, allParodies: db.listAllParodies(), categories: CATEGORIES, stages: STAGES });
+    res.render("nouvelles-form", { config, nouvelle: null, series, allTags, protagonistes, preSerieId, allParodies: db.listAllParodies(), categories: CATEGORIES, stages: STAGES, groups: db.getTagsGroupedByCategory() });
   });
   router.post("/new", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const title = String(req.body.title || "").slice(0, 300).trim();
@@ -213,7 +213,7 @@ function buildNouvellesRouter(config) {
     const protagonistes = db.listProtagonistes();
     const editLang = req.query.editLang === "en" ? "en" : "fr";
     const translations = editLang === "en" ? db.getTranslationsForEntity("nouvelle", id, "en") : {};
-    res.render("nouvelles-form", { config, nouvelle, series, allTags, protagonistes, preSerieId: null, allParodies: db.listAllParodies(), categories: CATEGORIES, stages: STAGES, editLang, translations });
+    res.render("nouvelles-form", { config, nouvelle, series, allTags, protagonistes, preSerieId: null, allParodies: db.listAllParodies(), categories: CATEGORIES, stages: STAGES, editLang, translations, groups: db.getTagsGroupedByCategory() });
   });
   router.post("/:id/update", requireAdmin, express.urlencoded({ extended: false }), (req, res) => {
     const nouvelle = db.getNouvelleById(req.params.id);

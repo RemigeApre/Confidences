@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation, listProtagonistes, listBdAuthors } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation, listProtagonistes, listBdAuthors, getTagsGroupedByCategory } = require("../db");
 const { requireUser, requireUserOrForeign, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -106,7 +106,7 @@ function buildBdRouter(config) {
   });
 
   router.get("/new", requireAdmin, (req, res) => {
-    res.render("bd-form", { config, book: null, allParodies: listAllParodies(), allProtagonists: listProtagonistes({ includeChildren: true }), allBdAuthors: listBdAuthors() });
+    res.render("bd-form", { config, book: null, allParodies: listAllParodies(), allProtagonists: listProtagonistes({ includeChildren: true }), allBdAuthors: listBdAuthors(), groups: getTagsGroupedByCategory() });
   });
 
   router.post("/", requireAdmin, upload.any(), (req, res) => {
@@ -157,7 +157,7 @@ function buildBdRouter(config) {
     if (!book) return res.redirect("/bd");
     const editLang = req.query.editLang === "en" ? "en" : "fr";
     const translations = editLang === "en" ? getTranslationsForEntity("bd", id, "en") : {};
-    res.render("bd-form", { config, book, allParodies: listAllParodies(), allProtagonists: listProtagonistes({ includeChildren: true }), editLang, translations, allBdAuthors: listBdAuthors() });
+    res.render("bd-form", { config, book, allParodies: listAllParodies(), allProtagonists: listProtagonistes({ includeChildren: true }), editLang, translations, allBdAuthors: listBdAuthors(), groups: getTagsGroupedByCategory() });
   });
 
   router.post("/:id/delete", requireAdmin, (req, res) => {

@@ -196,12 +196,11 @@
       <% if (locals.editLang !== 'en') { %>
       <div class="bdf-sidebar-block">
         <p class="bdf-sidebar-label">Tags</p>
-        <div class="wiki-tags-widget">
-          <div class="wiki-tags-board">
-            <input type="text" class="wiki-tags-typing" placeholder="Tags&hellip;" autocomplete="off" />
-          </div>
-          <input type="hidden" name="tags" class="wiki-tags-hidden" value="<%= book ? book.tags.join(', ') : '' %>" />
-        </div>
+        <%
+          var _bdExcluded = ['ultra', 'irréaliste', 'en couleur'];
+          var _bdCurrentTags = book ? book.tags.filter(function(t){ return _bdExcluded.indexOf(t.toLowerCase()) === -1; }) : [];
+        %>
+        <%- include('partials/cat-tags-widget', { currentTags: _bdCurrentTags, groups: groups }) %>
       </div>
       <% } %>
 
@@ -268,4 +267,5 @@ window.BD_TOTAL_PAGES = <%= book ? (book.imagePaths ? book.imagePaths.length : 0
 </script>
 <script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
 <script nonce="<%= nonce %>" src="/bd.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/cat-tags-widget.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>

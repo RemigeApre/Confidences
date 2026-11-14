@@ -48,20 +48,10 @@
         </label>
       </div>
 
-      <div class="wiki-tags-widget">
-        <div class="wiki-tags-board">
-          <input type="text" class="wiki-tags-typing" placeholder="Ajouter un tag&hellip;" autocomplete="off" />
-        </div>
-        <input type="hidden" name="tags" class="wiki-tags-hidden"
-          value="<%= image.tags.filter(function(t){ return t.toLowerCase() !== 'ultra' && t.toLowerCase() !== 'irr\u00e9aliste'; }).join(', ') %>" />
-        <% if (allTags.length) { %>
-          <div class="wiki-tag-suggestions">
-            <% allTags.filter(function(t){ return t.toLowerCase() !== 'ultra' && t.toLowerCase() !== 'irr\u00e9aliste'; }).slice(0, 20).forEach(function(t) { %>
-              <button type="button" class="wiki-tag-suggest-chip" data-tag="<%= t %>"><%= t %></button>
-            <% }) %>
-          </div>
-        <% } %>
-      </div>
+      <%- include('partials/cat-tags-widget', {
+            currentTags: image.tags.filter(function(t){ return t.toLowerCase() !== 'ultra' && t.toLowerCase() !== 'irr\u00e9aliste'; }),
+            groups: groups
+          }) %>
     </div>
 
     <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
@@ -390,4 +380,5 @@
 </script>
 <script nonce="<%= nonce %>" src="/wiki.js?v=<%= assetVersion %>"></script>
 <script nonce="<%= nonce %>" src="/gallery.js?v=<%= assetVersion %>"></script>
+<script nonce="<%= nonce %>" src="/cat-tags-widget.js?v=<%= assetVersion %>"></script>
 <%- include('partials/foot') %>
