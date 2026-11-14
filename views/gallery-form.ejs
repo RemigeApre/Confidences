@@ -1,12 +1,13 @@
 <%- include('partials/head', { title: 'Images : Modifier l\'image' }) %>
-<main class="container gf-has-right-sidebar">
+<main class="container gf-has-right-sidebar gf-has-left-sidebar">
   <%- include('partials/top-nav', { config: config }) %>
   <%- include('partials/mobile-filter-toggle') %>
-  <a href="/galerie" class="wf-back-btn">&#8592; Retour</a>
-  <div class="wf-actions-right">
-    <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/galerie/' + image.id + '/edit' }) %>
-    <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
-  </div>
+  <button type="button" class="mobile-filter-toggle ef-left-toggle" id="gf-left-toggle"
+    aria-label="Infos" aria-expanded="false" aria-controls="gf-left-sidebar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+    <span>Infos</span>
+  </button>
+  <div class="nav-backdrop" id="gf-left-backdrop"></div>
   <form method="POST" action="/galerie/<%= image.id %>/delete" class="wf-delete-form-fixed"
     onsubmit="return confirm('Supprimer cette image d\u00e9finitivement ?')">
     <button type="submit" class="wf-delete-btn-fixed" title="Supprimer l&rsquo;image">&#128465;</button>
@@ -14,6 +15,15 @@
 
   <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form gf-form" id="gf-form" data-no-enter-submit>
     <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
+
+    <aside class="ef-left-sidebar" id="gf-left-sidebar">
+      <button type="button" class="mobile-filter-close" id="gf-left-close" aria-label="Fermer">&times;</button>
+
+      <div class="ef-left-topbar">
+        <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
+        <a href="/galerie" class="ef-left-back">&#8592; Retour</a>
+        <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/galerie/' + image.id + '/edit' }) %>
+      </div>
 
     <%# ── BLOC 1 : META ──────────────────────────────────────────────────── %>
     <div class="ef-block">
@@ -49,28 +59,6 @@
         </label>
       </div>
 
-    </div>
-
-    <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
-    <div class="ef-block ef-block--image">
-      <% if (image.imagePaths && image.imagePaths.length) { %>
-        <div class="wiki-images-existing">
-          <% image.imagePaths.forEach(function(src) { %>
-            <div class="wiki-existing-img-wrap">
-              <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
-              <label class="wiki-img-remove-label">
-                <input type="checkbox" name="remove_image" value="<%= src %>" />
-                <span>&#215;</span>
-              </label>
-            </div>
-          <% }) %>
-        </div>
-      <% } %>
-      <label class="wiki-image-add-label">
-        <span>+ Ajouter d&rsquo;autres images (fiches ind&eacute;pendantes)</span>
-        <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
-      </label>
-      <div class="wiki-new-previews"></div>
     </div>
 
     <%# ── BLOC ORIGINES ───────────────────────────────────────────────────── %>
@@ -250,6 +238,60 @@
           hiddenName:    'gallery_links'
         }) %>
 
+    <%# ─ Séries ─ %>
+    <div class="gs-form-section">
+      <h3 class="gs-form-title">S&eacute;ries</h3>
+      <% if (imageSeries.length) { %>
+        <ul class="gs-form-list">
+          <% imageSeries.forEach(function(s) { %>
+          <li class="gs-form-item">
+            <a href="/galerie/series/<%= s.id %>" class="gs-form-series-link"><%= s.title %></a>
+            <span class="gs-form-pos">&eacute;p.&nbsp;<%= s.position + 1 %> / <%= s.total %></span>
+            <button type="button" class="gs-form-rm link-delete-btn-text"
+                    data-series-id="<%= s.id %>" data-gallery-id="<%= image.id %>">&times; Retirer</button>
+          </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="gs-form-none">Pas encore dans une s&eacute;rie.</p>
+      <% } %>
+      <div class="gs-form-add-row">
+        <select id="gf-series-select" class="gb-select gs-form-select">
+          <option value="">Ajouter &agrave; une s&eacute;rie</option>
+          <% allSeries.forEach(function(s) { %>
+            <% if (!imageSeries.find(function(is){ return is.id === s.id; })) { %>
+              <option value="<%= s.id %>"><%= s.title %></option>
+            <% } %>
+          <% }) %>
+        </select>
+        <button type="button" id="gf-series-add-btn" class="gb-btn-sm">Ajouter</button>
+      </div>
+      <p id="gf-series-msg" class="gs-add-msg" hidden></p>
+    </div>
+    </aside>
+
+    <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
+    <div class="ef-block ef-block--image">
+      <% if (image.imagePaths && image.imagePaths.length) { %>
+        <div class="wiki-images-existing">
+          <% image.imagePaths.forEach(function(src) { %>
+            <div class="wiki-existing-img-wrap">
+              <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
+              <label class="wiki-img-remove-label">
+                <input type="checkbox" name="remove_image" value="<%= src %>" />
+                <span>&#215;</span>
+              </label>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+      <label class="wiki-image-add-label">
+        <span>+ Ajouter d&rsquo;autres images (fiches ind&eacute;pendantes)</span>
+        <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
+      </label>
+      <div class="wiki-new-previews"></div>
+    </div>
+
     <div class="wiki-form-actions wf-mobile-actions">
       <button type="submit">Enregistrer</button>
     </div>
@@ -264,41 +306,34 @@
     </aside>
   </form>
 
-  <%# ─ Séries ─ %>
-  <div class="gs-form-section">
-    <h3 class="gs-form-title">S&eacute;ries</h3>
-    <% if (imageSeries.length) { %>
-      <ul class="gs-form-list">
-        <% imageSeries.forEach(function(s) { %>
-        <li class="gs-form-item">
-          <a href="/galerie/series/<%= s.id %>" class="gs-form-series-link"><%= s.title %></a>
-          <span class="gs-form-pos">&eacute;p.&nbsp;<%= s.position + 1 %> / <%= s.total %></span>
-          <button type="button" class="gs-form-rm link-delete-btn-text"
-                  data-series-id="<%= s.id %>" data-gallery-id="<%= image.id %>">&times; Retirer</button>
-        </li>
-        <% }) %>
-      </ul>
-    <% } else { %>
-      <p class="gs-form-none">Pas encore dans une s&eacute;rie.</p>
-    <% } %>
-    <div class="gs-form-add-row">
-      <select id="gf-series-select" class="gb-select gs-form-select">
-        <option value="">Ajouter &agrave; une s&eacute;rie</option>
-        <% allSeries.forEach(function(s) { %>
-          <% if (!imageSeries.find(function(is){ return is.id === s.id; })) { %>
-            <option value="<%= s.id %>"><%= s.title %></option>
-          <% } %>
-        <% }) %>
-      </select>
-      <button type="button" id="gf-series-add-btn" class="gb-btn-sm">Ajouter</button>
-    </div>
-    <p id="gf-series-msg" class="gs-add-msg" hidden></p>
-  </div>
-
 </main>
 <script nonce="<%= nonce %>">
 (function () {
   var IMAGE_ID = <%= image.id %>;
+
+  // ── Volet gauche (infos) — tiroir mobile dédié, distinct du volet tags ────
+  (function () {
+    var toggle = document.getElementById('gf-left-toggle');
+    var panel = document.getElementById('gf-left-sidebar');
+    var backdrop = document.getElementById('gf-left-backdrop');
+    var close = document.getElementById('gf-left-close');
+    if (!toggle || !panel || !backdrop) return;
+    function openPanel() {
+      panel.classList.add('mobile-filter-open');
+      backdrop.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('nav-drawer-locked');
+    }
+    function closePanel() {
+      panel.classList.remove('mobile-filter-open');
+      backdrop.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('nav-drawer-locked');
+    }
+    toggle.addEventListener('click', openPanel);
+    backdrop.addEventListener('click', closePanel);
+    if (close) close.addEventListener('click', closePanel);
+  })();
 
   // ── Auteur autocomplete ───────────────────────────────────────────────────
   var authorInput = document.getElementById('ef-author-input');
