@@ -1660,5 +1660,14 @@ body.nav-drawer-locked .msg-widget-fab{display:none}
 
 /* ── Tags groupés par catégorie dans le volet d'une image ouverte
    (lightbox galerie) — voir public/gallery.js. ── */
-.gallery-lb-tag-group { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
-.gallery-lb-tag-group-label { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #ffffff80; margin-right: .2rem; }
+.gallery-lb-tag-group {
+  flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem;
+  padding: .35rem 0; border-top: 1px solid rgba(255,255,255,.07);
+}
+.gallery-lb-tag-group:first-child { border-top: none; padding-top: 0; }
+.gallery-lb-tag-group-label {
+  font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  color: hsl(var(--cat-hue, 220), 70%, 75%);
+  background: hsl(var(--cat-hue, 220), 55%, 22%);
+  padding: .18rem .55rem; border-radius: 999px; margin-right: .15rem;
+}

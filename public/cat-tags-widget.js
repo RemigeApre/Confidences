@@ -5,7 +5,7 @@
 // champ libre), peu importe les sous-catégories.
 (function () {
 
-  function makeBoard(fieldEl, cat, available, initialTags, selected, sync, categoryOf, getBoard) {
+  function makeBoard(fieldEl, cat, available, initialTags, selected, sync, categoryOf, getBoard, trackFetch) {
     var board = fieldEl.querySelector('.ctw-board');
     var chipsArea = fieldEl.querySelector('.wiki-tags-chips');
     var typer = fieldEl.querySelector('.wiki-tags-typing');
@@ -42,10 +42,13 @@
       sync();
       if (available.indexOf(t) === -1) {
         available.push(t);
-        fetch('/api/tags/create', {
+        // Un nouveau tag doit être créé ET affecté à sa catégorie avant que
+        // le formulaire ne parte — voir le blocage de soumission ci-dessous,
+        // sinon il pourrait finir sans catégorie en cas de coupure réseau.
+        trackFetch(fetch('/api/tags/create', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tag: t, category: cat }),
-        }).catch(function () {});
+        }).catch(function () {}));
       }
     }
 
@@ -146,11 +149,20 @@
     });
     function sync() { hidden.value = Object.keys(selected).join(', '); }
 
+    // Tags en cours de création (appels /api/tags/create pas encore
+    // terminés) — voir le blocage de soumission plus bas : un nouveau tag
+    // ne doit jamais finir sauvegardé sur le contenu sans catégorie assignée.
+    var pending = [];
+    function trackFetch(p) {
+      pending.push(p);
+      p.then(function () { pending.splice(pending.indexOf(p), 1); }, function () { pending.splice(pending.indexOf(p), 1); });
+    }
+
     var boards = {};
     function getBoard(cat) { return boards[cat]; }
     root.querySelectorAll('.ctw-field[data-cat]').forEach(function (fieldEl) {
       var cat = fieldEl.dataset.cat;
-      boards[cat] = makeBoard(fieldEl, cat, data.available[cat], data.current[cat], selected, sync, data.categoryOf || {}, getBoard);
+      boards[cat] = makeBoard(fieldEl, cat, data.available[cat], data.current[cat], selected, sync, data.categoryOf || {}, getBoard, trackFetch);
     });
 
     // Hooks exposés pour du code externe (ex. détection de tags dans le
@@ -162,6 +174,21 @@
       var board = boards.autre;
       if (board) board.addTag(tag); else { selected[tag] = true; sync(); }
     };
+
+    // Le formulaire attend que les créations de tags en cours soient
+    // confirmées (catégorie bien enregistrée) avant de partir réellement —
+    // sinon un tag tapé juste avant "Enregistrer" pourrait finir sans
+    // catégorie si la requête n'a pas eu le temps d'aboutir.
+    var formEl = root.closest('form');
+    if (formEl) {
+      formEl.addEventListener('submit', function (e) {
+        if (!pending.length) return;
+        e.preventDefault();
+        var settle = Promise.all(pending.map(function (p) { return p; }));
+        var timeout = new Promise(function (resolve) { setTimeout(resolve, 4000); });
+        Promise.race([settle, timeout]).then(function () { formEl.submit(); });
+      });
+    }
 
     sync();
   });

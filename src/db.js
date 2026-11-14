@@ -1060,14 +1060,16 @@ db.exec(`
   if (cats.n === 0) {
     const ins = db.prepare("INSERT OR IGNORE INTO tag_categories (key, label, has_subcats, sort_order) VALUES (?,?,?,?)");
     [
-      ['femme',    'Femme',    1, 0],
-      ['homme',    'Homme',    1, 1],
-      ['vetement', 'Vêtement', 0, 2],
-      ['rapport',  'Position', 0, 3],
-      ['lieu',     'Lieu',     0, 4],
-      ['relation', 'Relation', 0, 5],
-      ['objet',    'Objet',    0, 6],
-      ['autre',    'Autre',    0, 7],
+      ['femme',       'Femme',        1, 0],
+      ['homme',       'Homme',        1, 1],
+      ['vetement',    'Vêtement',     0, 2],
+      ['rapport',     'Position',     0, 3],
+      ['pointdevue',  'Point de vue', 0, 4],
+      ['lieu',        'Lieu',         0, 5],
+      ['esthetique',  'Esthétique',   0, 6],
+      ['relation',    'Relation',     0, 7],
+      ['objet',       'Objet',        0, 8],
+      ['autre',       'Autre',        0, 9],
     ].forEach(r => ins.run(...r));
   }
   const subs = db.prepare("SELECT COUNT(*) as n FROM tag_subcategories").get();
@@ -1099,6 +1101,26 @@ try {
   db.prepare("INSERT OR IGNORE INTO tag_categories (key, label, has_subcats, sort_order) VALUES ('vetement','Vêtement',0,?)").run(vCatCount + 1);
   db.prepare("UPDATE tag_meta SET category='vetement', subcategory='' WHERE subcategory='vetements'").run();
   db.prepare("DELETE FROM tag_subcategories WHERE key='vetements'").run();
+} catch (_) {}
+
+// Migration one-time : ajoute "Point de vue" et "Esthétique" si absentes
+// (bases déjà seedées avant leur ajout) — idempotent.
+try {
+  const n = db.prepare("SELECT MAX(sort_order) as m FROM tag_categories").get().m || 0;
+  db.prepare("INSERT OR IGNORE INTO tag_categories (key, label, has_subcats, sort_order) VALUES ('pointdevue','Point de vue',0,?)").run(n + 1);
+  db.prepare("INSERT OR IGNORE INTO tag_categories (key, label, has_subcats, sort_order) VALUES ('esthetique','Esthétique',0,?)").run(n + 2);
+} catch (_) {}
+
+// Migration one-time : remet les catégories par défaut dans l'ordre voulu
+// (Femme, Homme, Vêtement, Position, Point de vue, Lieu, Esthétique,
+// Relation, Objet, Autre) — sur une base déjà seedée avant l'ajout de l'une
+// d'elles, elle se serait retrouvée après "Autre" (sort_order = ancien
+// max + 1). Les catégories personnalisées créées par l'admin ne sont pas
+// touchées.
+try {
+  const ordre = { femme: 0, homme: 1, vetement: 2, rapport: 3, pointdevue: 4, lieu: 5, esthetique: 6, relation: 7, objet: 8, autre: 9 };
+  const stmt = db.prepare("UPDATE tag_categories SET sort_order=? WHERE key=?");
+  for (const [key, ord] of Object.entries(ordre)) stmt.run(ord, key);
 } catch (_) {}
 
 // Blacklist personnelle de tags (bouton "Masquer le tag" de la popup tag,
