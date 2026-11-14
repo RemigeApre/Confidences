@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
-const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation, listProtagonistes, listBdAuthors, getTagsGroupedByCategory } = require("../db");
+const { listBdBooks, getBdBook, insertBdBook, updateBdBook, deleteBdBook, reactBdBook, getBdPageReactionsMap, reactBdPage, mergeUserReactions, mergePartnerReaction, excludeHidden, getUserReaction, isFavorite, logBdView, listAllParodies, normalizeParody, checkAndGrantActionLootbox, countUserRatingsTotal, getTranslationsForEntity, setTranslation, listProtagonistes, listBdAuthors, getTagsGroupedByCategory, groupTagListByCategory } = require("../db");
 const { requireUser, requireUserOrForeign, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
 const { filterOff, isOffForUser } = require("../specialContent");
@@ -102,7 +102,7 @@ function buildBdRouter(config) {
     const allTags = [...tagSet].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
     const allParodies = listAllParodies();
     const allProtagonists = listProtagonistes({ includeChildren: true });
-    res.render("bd", { config, books, allTags, allParodies, allProtagonists });
+    res.render("bd", { config, books, allTags, groupedTags: groupTagListByCategory(allTags), allParodies, allProtagonists });
   });
 
   router.get("/new", requireAdmin, (req, res) => {

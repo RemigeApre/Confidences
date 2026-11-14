@@ -29,22 +29,27 @@
   var _evt    = eventName;
   var _cnt    = (typeof counts    !== 'undefined') ? counts    : null;
   var _max    = (typeof maxItems  !== 'undefined') ? maxItems  : 60;
+  var _groups = (typeof groups    !== 'undefined' && groups && groups.length) ? groups : null;
 %>
-<% if (_items.length) { %>
+<% if (_items.length || _groups) { %>
 <details class="wiki-subpanel-details filter-block filter-block--chips" id="<%= _fid %>-block"<% if (typeof openByDefault !== 'undefined' && openByDefault) { %> open<% } %>>
   <summary class="wiki-subpanel-summary"<% if (_labelEn) { %> data-fr="<%= _label %>" data-en="<%= _labelEn %>"<% } %>><%= _label %></summary>
   <input type="search" id="<%= _fid %>-search" class="wiki-tag-search-input"
     placeholder="Chercher&hellip;" data-placeholder-fr="Chercher…" data-placeholder-en="Search…" autocomplete="off" />
   <div class="wiki-tag-cloud" id="<%= _fid %>">
-    <% _items.slice(0, _max).forEach(function(item) {
-      var val   = (typeof item === 'object') ? item.name  : item;
-      var count = (typeof item === 'object') ? item.count : (_cnt && _cnt[val] ? _cnt[val] : 0);
-    %>
-      <button type="button" class="<%= _cls %>" data-<%= _key %>="<%= val %>" data-state="0">
-        <span class="wtc-label"><%= val %></span>
-        <% if (count) { %><span class="wtc-count"><%= count %></span><% } %>
-      </button>
-    <% }) %>
+    <% if (_groups) { %>
+      <%- include('tag-group-chips', { groups: _groups, chipClass: _cls, itemKey: _key, counts: _cnt }) %>
+    <% } else { %>
+      <% _items.slice(0, _max).forEach(function(item) {
+        var val   = (typeof item === 'object') ? item.name  : item;
+        var count = (typeof item === 'object') ? item.count : (_cnt && _cnt[val] ? _cnt[val] : 0);
+      %>
+        <button type="button" class="<%= _cls %>" data-<%= _key %>="<%= val %>" data-state="0">
+          <span class="wtc-label"><%= val %></span>
+          <% if (count) { %><span class="wtc-count"><%= count %></span><% } %>
+        </button>
+      <% }) %>
+    <% } %>
   </div>
 </details>
 

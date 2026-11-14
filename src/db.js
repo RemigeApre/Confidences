@@ -3008,6 +3008,27 @@ function getTagsGroupedByCategory() {
   });
   return result;
 }
+// Regroupe une liste de tags déjà connue (ex. les tags utilisés dans la
+// galerie, la BD ou les histoires) par catégorie puis sous-catégorie —
+// alimente l'affichage "classé par catégorie" des volets de filtre publics.
+// Ne retourne que les catégories ayant au moins un tag dans la liste
+// fournie, dans l'ordre de tri des catégories (tag_categories.sort_order).
+function groupTagListByCategory(tagList) {
+  const cats = getAllCategoriesWithSubs();
+  const catOf = getAllTagCategories();
+  const subOf = getAllTagSubcategories();
+  const byKey = {};
+  cats.forEach((c) => {
+    byKey[c.key] = { key: c.key, label: c.label, hasSubcats: !!c.has_subcats, subcategories: c.subcategories, tags: [] };
+  });
+  (tagList || []).forEach((t) => {
+    const cat = catOf[t] || "autre";
+    if (!byKey[cat]) byKey[cat] = { key: cat, label: cat, hasSubcats: false, subcategories: [], tags: [] };
+    byKey[cat].tags.push({ tag: t, subcategory: subOf[t] || "" });
+  });
+  const extraKeys = Object.keys(byKey).filter((k) => !cats.some((c) => c.key === k));
+  return cats.map((c) => byKey[c.key]).concat(extraKeys.map((k) => byKey[k])).filter((g) => g.tags.length > 0);
+}
 function getAllSubcategoriesList(categoryKey) {
   if (categoryKey) {
     return db.prepare("SELECT key, label, sort_order FROM tag_subcategories WHERE category_key=? ORDER BY sort_order, label").all(categoryKey);
@@ -7560,6 +7581,7 @@ module.exports = {
   getAllSubcategoriesByCategory,
   getAllCategoriesWithSubs,
   getTagsGroupedByCategory,
+  groupTagListByCategory,
   createCategory,
   updateCategory,
   deleteCategory,

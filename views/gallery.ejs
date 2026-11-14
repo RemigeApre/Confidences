@@ -48,13 +48,7 @@
         <input type="search" id="gallery-tag-search" class="wiki-tag-search-input"
           placeholder="Chercher un tag" data-placeholder-fr="Chercher un tag" data-placeholder-en="Search a tag" autocomplete="off" />
         <div class="wiki-tag-cloud" id="gallery-tag-filter">
-          <% allTags.forEach(function(t) { %>
-            <% var ni = tagImageCounts[t] || 0; %>
-            <button type="button" class="wiki-tag-chip" data-tag="<%= t %>" data-state="0">
-              <span class="wtc-label"><%= t %></span>
-              <% if (ni) { %><span class="wtc-count"><%= ni %></span><% } %>
-            </button>
-          <% }) %>
+          <%- include('partials/filters/tag-group-chips', { groups: groupedTags, chipClass: 'wiki-tag-chip', itemKey: 'tag', counts: tagImageCounts }) %>
         </div>
         <div class="gallery-tag-footer">
           <button type="button" id="gallery-tag-expand-btn" class="wiki-tag-expand-btn" hidden data-fr="&#9660; Plus" data-en="&#9660; More">&#9660; Plus</button>

@@ -1,0 +1,64 @@
+<%
+  /* ── Chips groupées par catégorie (puis sous-catégorie) ───────────────
+     Utilisé par filter-chips.ejs (mode multi + param `groups`) et
+     directement par gallery.ejs (qui garde son propre moteur de filtre,
+     voir public/gallery.js — même principe de regroupement visuel).
+     Attend :
+       groups    : résultat de db.groupTagListByCategory()
+       chipClass : classe CSS du chip (ex. 'wiki-tag-chip')
+       itemKey   : nom de l'attribut data-* (ex. 'tag')
+       counts    : optionnel, { valeur: nombre } ── */
+  var _tgcCounts = (typeof counts !== 'undefined' && counts) ? counts : null;
+%>
+<% groups.forEach(function (g) { %>
+  <div class="ctg-group" data-cat="<%= g.key %>">
+    <p class="ctg-group-label"><%= g.label %></p>
+    <% if (g.hasSubcats && g.subcategories && g.subcategories.length) { %>
+      <%
+        var _tgcBucketed = {};
+        (g.subcategories || []).forEach(function (s) { _tgcBucketed[s.key] = []; });
+        var _tgcNoSub = [];
+        g.tags.forEach(function (t) {
+          if (t.subcategory && _tgcBucketed[t.subcategory]) _tgcBucketed[t.subcategory].push(t.tag);
+          else _tgcNoSub.push(t.tag);
+        });
+      %>
+      <% g.subcategories.forEach(function (sub) { %>
+        <% if (_tgcBucketed[sub.key].length) { %>
+        <div class="ctg-subgroup">
+          <p class="ctg-subgroup-label"><%= sub.label %></p>
+          <div class="ctg-chip-row">
+            <% _tgcBucketed[sub.key].sort().forEach(function (tag) { %>
+              <button type="button" class="<%= chipClass %>" data-<%= itemKey %>="<%= tag %>" data-state="0">
+                <span class="wtc-label"><%= tag %></span>
+                <% if (_tgcCounts && _tgcCounts[tag]) { %><span class="wtc-count"><%= _tgcCounts[tag] %></span><% } %>
+              </button>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+      <% }) %>
+      <% if (_tgcNoSub.length) { %>
+      <div class="ctg-subgroup">
+        <div class="ctg-chip-row">
+          <% _tgcNoSub.sort().forEach(function (tag) { %>
+            <button type="button" class="<%= chipClass %>" data-<%= itemKey %>="<%= tag %>" data-state="0">
+              <span class="wtc-label"><%= tag %></span>
+              <% if (_tgcCounts && _tgcCounts[tag]) { %><span class="wtc-count"><%= _tgcCounts[tag] %></span><% } %>
+            </button>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+    <% } else { %>
+      <div class="ctg-chip-row">
+        <% g.tags.map(function (t) { return t.tag; }).sort().forEach(function (tag) { %>
+          <button type="button" class="<%= chipClass %>" data-<%= itemKey %>="<%= tag %>" data-state="0">
+            <span class="wtc-label"><%= tag %></span>
+            <% if (_tgcCounts && _tgcCounts[tag]) { %><span class="wtc-count"><%= _tgcCounts[tag] %></span><% } %>
+          </button>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+<% }) %>

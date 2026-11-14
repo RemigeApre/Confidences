@@ -9,6 +9,7 @@
   var _labelEn = (typeof labelEn !== 'undefined') ? labelEn : '';
   var _max   = (typeof maxTags !== 'undefined') ? maxTags : 40;
   var _cnt   = (typeof counts  !== 'undefined') ? counts  : null;
+  var _grp   = (typeof groups  !== 'undefined') ? groups  : null;
 %>
 <%- include('filter-chips', {
       filterId:      _fid,
@@ -21,5 +22,6 @@
       eventName:     'tagfilter:change',
       counts:        _cnt,
       maxItems:      _max,
+      groups:        _grp,
       openByDefault: (typeof openByDefault !== 'undefined') ? openByDefault : false
     }) %>

@@ -1,6 +1,7 @@
 <%- include('partials/head', { title: 'Images : Modifier l\'image' }) %>
-<main class="container">
+<main class="container gf-has-right-sidebar">
   <%- include('partials/top-nav', { config: config }) %>
+  <%- include('partials/mobile-filter-toggle') %>
   <a href="/galerie" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
     <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/galerie/' + image.id + '/edit' }) %>
@@ -48,10 +49,6 @@
         </label>
       </div>
 
-      <%- include('partials/cat-tags-widget', {
-            currentTags: image.tags.filter(function(t){ return t.toLowerCase() !== 'ultra' && t.toLowerCase() !== 'irr\u00e9aliste'; }),
-            groups: groups
-          }) %>
     </div>
 
     <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
@@ -256,6 +253,15 @@
     <div class="wiki-form-actions wf-mobile-actions">
       <button type="submit">Enregistrer</button>
     </div>
+
+    <aside class="ctw-sidebar" id="mobile-filter-sidebar">
+      <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
+      <p class="ctw-sidebar-title">Tags</p>
+      <%- include('partials/cat-tags-widget', {
+            currentTags: image.tags.filter(function(t){ return t.toLowerCase() !== 'ultra' && t.toLowerCase() !== 'irréaliste'; }),
+            groups: groups
+          }) %>
+    </aside>
   </form>
 
   <%# ─ Séries ─ %>

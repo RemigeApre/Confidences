@@ -1,125 +1,151 @@
-// ── Sélecteur de tags guidé par catégorie (Images / BD / Histoires) ──────────
+// ── Sélecteur de tags par catégorie (Images / BD / Histoires) ────────────────
 // Remplit le même <input type="hidden" name="tags"> que l'ancien champ libre
 // (.wiki-tags-widget) — aucune route de sauvegarde n'a besoin de changer.
+// Un champ compact par catégorie (board à puces + saisie, comme l'ancien
+// champ libre), peu importe les sous-catégories.
 (function () {
+
+  function makeBoard(fieldEl, cat, available, initialTags, selected, sync) {
+    var board = fieldEl.querySelector('.ctw-board');
+    var chipsArea = fieldEl.querySelector('.wiki-tags-chips');
+    var typer = fieldEl.querySelector('.wiki-tags-typing');
+    if (!board || !chipsArea || !typer) return null;
+
+    available = (available || []).slice();
+    var tags = (initialTags || []).slice();
+
+    function has(t) { return tags.indexOf(t) !== -1; }
+
+    function render() {
+      while (chipsArea.firstChild) chipsArea.removeChild(chipsArea.firstChild);
+      tags.forEach(function (t) {
+        var chip = document.createElement('span');
+        chip.className = 'wiki-chip';
+        chip.appendChild(document.createTextNode(t));
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'wiki-chip-remove';
+        rm.setAttribute('aria-label', 'Retirer');
+        rm.textContent = '×';
+        rm.addEventListener('click', function (e) { e.stopPropagation(); removeTag(t); });
+        chip.appendChild(rm);
+        chipsArea.appendChild(chip);
+      });
+    }
+
+    function addTag(t) {
+      t = String(t || '').toLowerCase().trim();
+      if (!t || has(t)) return;
+      tags.push(t);
+      render();
+      selected[t] = true;
+      sync();
+      if (available.indexOf(t) === -1) {
+        available.push(t);
+        fetch('/api/tags/create', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag: t, category: cat }),
+        }).catch(function () {});
+      }
+    }
+    function removeTag(t) {
+      tags = tags.filter(function (x) { return x !== t; });
+      render();
+      delete selected[t];
+      sync();
+    }
+
+    // Autocomplete (même principe que l'ancien champ libre)
+    var acDrop = document.createElement('ul');
+    acDrop.className = 'wiki-tag-autocomplete';
+    acDrop.hidden = true;
+    board.style.position = 'relative';
+    board.parentNode.insertBefore(acDrop, board.nextSibling);
+    var acSel = -1;
+
+    function clearAc() { while (acDrop.firstChild) acDrop.removeChild(acDrop.firstChild); }
+    function closeAc() { acDrop.hidden = true; clearAc(); acSel = -1; }
+    function showAc(q) {
+      q = (q || '').trim().toLowerCase();
+      if (!q) { closeAc(); return; }
+      var matches = available.filter(function (t) {
+        return t.toLowerCase().indexOf(q) !== -1 && !has(t);
+      }).slice(0, 8);
+      if (!matches.length) { closeAc(); return; }
+      clearAc(); acSel = -1;
+      matches.forEach(function (t) {
+        var li = document.createElement('li');
+        li.className = 'wiki-tag-ac-item';
+        li.textContent = t;
+        li.addEventListener('mousedown', function (e) {
+          e.preventDefault(); addTag(t); typer.value = ''; closeAc(); typer.focus();
+        });
+        acDrop.appendChild(li);
+      });
+      acDrop.hidden = false;
+    }
+
+    typer.addEventListener('input', function () { showAc(typer.value); });
+    typer.addEventListener('blur', function () {
+      if (typer.value.trim()) { addTag(typer.value.trim()); typer.value = ''; }
+      setTimeout(closeAc, 160);
+    });
+    board.addEventListener('click', function (e) {
+      if (e.target === board || e.target === chipsArea) typer.focus();
+    });
+    typer.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
+        e.preventDefault();
+        var val = typer.value.trim();
+        if (val) { addTag(val); typer.value = ''; closeAc(); }
+        return;
+      }
+      if (e.key === 'Backspace' && !typer.value && tags.length) {
+        removeTag(tags[tags.length - 1]); return;
+      }
+      if (acDrop.hidden) return;
+      var items = acDrop.querySelectorAll('.wiki-tag-ac-item');
+      if (e.key === 'ArrowDown') { e.preventDefault(); acSel = Math.min(acSel + 1, items.length - 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); acSel = Math.max(acSel - 1, 0); }
+      else if ((e.key === 'Enter' || e.key === 'Tab') && acSel >= 0 && items[acSel]) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        addTag(items[acSel].textContent); typer.value = ''; closeAc(); return;
+      } else if (e.key === 'Escape') { closeAc(); return; }
+      items.forEach(function (li, i) { li.classList.toggle('selected', i === acSel); });
+    }, true);
+
+    render();
+    return { addTag: addTag, hasTag: has };
+  }
+
   document.querySelectorAll('.cat-tags-widget').forEach(function (root) {
     var hidden = root.querySelector('.ctw-hidden');
-    if (!hidden) return;
+    var dataEl = root.querySelector('.ctw-data');
+    if (!hidden || !dataEl) return;
+
+    var data = { available: {}, current: {} };
+    try { data = JSON.parse(dataEl.textContent); } catch (_) {}
 
     var selected = {};
     (hidden.value || '').split(/[,;]+/).map(function (t) { return t.trim(); }).filter(Boolean).forEach(function (t) {
       selected[t.toLowerCase()] = true;
     });
-
     function sync() { hidden.value = Object.keys(selected).join(', '); }
 
-    function setTag(tag, on) {
-      tag = String(tag || '').toLowerCase().trim();
-      if (!tag) return;
-      if (on) selected[tag] = true; else delete selected[tag];
-      sync();
-    }
-
-    function wireChip(chip, tag) {
-      chip.addEventListener('click', function () {
-        var on = !chip.classList.contains('active');
-        chip.classList.toggle('active', on);
-        setTag(tag, on);
-      });
-    }
-
-    root.querySelectorAll('.ctw-chip').forEach(function (chip) { wireChip(chip, chip.dataset.tag); });
-
-    // Bascules Oui/Non (toutes les sections sauf Vêtement)
-    root.querySelectorAll('.ctw-yn-toggle').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var section = btn.closest('.ctw-section');
-        var body = section.querySelector('.ctw-section-body');
-        var on = btn.dataset.state !== '1';
-        btn.dataset.state = on ? '1' : '0';
-        btn.classList.toggle('active', on);
-        var label = btn.querySelector('.ctw-yn-label');
-        if (label) label.textContent = on ? 'Oui' : 'Non';
-        body.hidden = !on;
-        if (!on) {
-          // Repasser à "Non" décoche tout ce qui avait été choisi ici.
-          section.querySelectorAll('.ctw-chip.active').forEach(function (chip) {
-            chip.classList.remove('active');
-            setTag(chip.dataset.tag, false);
-          });
-        }
-      });
-    });
-
-    // Vêtement : "Personne n'est habillé·e" masque et vide le sélecteur.
-    root.querySelectorAll('.ctw-nude-check').forEach(function (cb) {
-      var section = cb.closest('.ctw-section');
-      var body = section.querySelector('.ctw-section-body');
-      function apply() {
-        body.hidden = cb.checked;
-        if (cb.checked) {
-          section.querySelectorAll('.ctw-chip.active').forEach(function (chip) {
-            chip.classList.remove('active');
-            setTag(chip.dataset.tag, false);
-          });
-        }
-      }
-      cb.addEventListener('change', apply);
-      apply();
-    });
-
-    // Ajout d'un nouveau tag, directement rattaché à sa catégorie (et
-    // sous-catégorie si applicable) via l'API admin déjà existante.
-    root.querySelectorAll('.ctw-add-row').forEach(function (row) {
-      var input = row.querySelector('.ctw-add-input');
-      if (!input) return;
-      input.addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter' && e.key !== ',') return;
-        e.preventDefault();
-        var tag = input.value.toLowerCase().trim().replace(/[,;]+$/, '');
-        if (!tag) return;
-        input.value = '';
-        if (selected[tag]) return;
-
-        var cat = row.dataset.cat;
-        var sub = row.dataset.sub || '';
-        setTag(tag, true);
-
-        var chipRow = row.previousElementSibling;
-        if (chipRow && chipRow.classList.contains('ctw-chip-row')) {
-          var chip = document.createElement('button');
-          chip.type = 'button';
-          chip.className = 'ctw-chip active';
-          chip.dataset.tag = tag;
-          chip.textContent = tag;
-          wireChip(chip, tag);
-          chipRow.appendChild(chip);
-        }
-
-        fetch('/api/tags/create', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tag: tag, category: cat }),
-        }).then(function () {
-          if (sub) {
-            fetch('/api/tags/subcategory', {
-              method: 'PUT', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ tag: tag, subcategory: sub, category: cat }),
-            }).catch(function () {});
-          }
-        }).catch(function () {});
-      });
+    var boards = {};
+    root.querySelectorAll('.ctw-field[data-cat]').forEach(function (fieldEl) {
+      var cat = fieldEl.dataset.cat;
+      boards[cat] = makeBoard(fieldEl, cat, data.available[cat], data.current[cat], selected, sync);
     });
 
     // Hooks exposés pour du code externe (ex. détection de tags dans le
-    // texte d'une histoire, voir nouvelles-form.ejs) qui doit pouvoir lire
-    // et ajouter des tags sans dupliquer la logique du widget.
+    // texte d'une histoire, voir nouvelles-form.ejs).
     root.ctwHasTag = function (tag) { return !!selected[String(tag || '').toLowerCase().trim()]; };
     root.ctwAddTag = function (tag) {
       tag = String(tag || '').toLowerCase().trim();
       if (!tag || selected[tag]) return;
-      setTag(tag, true);
-      var chip = root.querySelector('.ctw-chip[data-tag="' + tag + '"]');
-      if (chip) chip.classList.add('active');
+      var board = boards.autre;
+      if (board) board.addTag(tag); else { selected[tag] = true; sync(); }
     };
 
     sync();

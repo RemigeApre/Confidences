@@ -85,7 +85,7 @@ function buildNouvellesRouter(config) {
     const recent     = all.slice(0, 6);
     const allTags    = db.listNouvellesTags();
     const allParodies = db.listAllParodies();
-    res.render("nouvelles", { config, all, featured, standalone, series, recent, allTags, allParodies, categories: CATEGORIES, stages: STAGES });
+    res.render("nouvelles", { config, all, featured, standalone, series, recent, allTags, groupedTags: db.groupTagListByCategory(allTags), allParodies, categories: CATEGORIES, stages: STAGES });
   });
 
   // ── Séries ─────────────────────────────────────────────────────────────────

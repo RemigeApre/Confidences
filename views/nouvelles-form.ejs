@@ -1,6 +1,7 @@
 <%- include('partials/head', { title: nouvelle ? 'Modifier : ' + nouvelle.title : 'Nouvelle histoire' }) %>
-<main class="container" style="max-width: 860px; margin: 0 auto">
+<main class="container nvf-has-right-sidebar" style="max-width: 860px; margin: 0 auto">
   <%- include('partials/top-nav', { config: config, navTitle: nouvelle ? nouvelle.title : 'Nouvelle histoire', navBack: nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' }) %>
+  <%- include('partials/mobile-filter-toggle') %>
 
   <a href="<%= nouvelle && nouvelle.serie_id ? '/nouvelles/series/' + nouvelle.serie_id : '/nouvelles' %>" class="wf-back-btn">&#8592; Retour</a>
   <div class="wf-actions-right">
@@ -97,19 +98,6 @@
       </div>
       <% } %>
 
-      <%# ── Tags ──────────────────────────────────────────────────────────── %>
-      <% if (allTags && allTags.length) { %>
-        <script id="nv-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
-      <% } %>
-      <%- include('partials/cat-tags-widget', {
-            currentTags: nouvelle && nouvelle.tags ? nouvelle.tags : [],
-            groups: groups
-          }) %>
-      <div id="nv-content-tags" class="nv-content-tags" hidden>
-        <p class="nv-content-tags-label">Détectés dans le texte</p>
-        <div class="nv-content-tag-list"></div>
-      </div>
-
       </div><%# /ef-block meta %>
 
       <%# ── BLOC ORIGINES ── %>
@@ -139,6 +127,22 @@
       <div class="wiki-form-actions wf-mobile-actions">
         <button type="submit">Enregistrer</button>
       </div>
+
+      <aside class="ctw-sidebar" id="mobile-filter-sidebar">
+        <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
+        <p class="ctw-sidebar-title">Tags</p>
+        <% if (allTags && allTags.length) { %>
+          <script id="nv-all-tags" type="application/json"><%- JSON.stringify(allTags) %></script>
+        <% } %>
+        <%- include('partials/cat-tags-widget', {
+              currentTags: nouvelle && nouvelle.tags ? nouvelle.tags : [],
+              groups: groups
+            }) %>
+        <div id="nv-content-tags" class="nv-content-tags" hidden>
+          <p class="nv-content-tags-label">Détectés dans le texte</p>
+          <div class="nv-content-tag-list"></div>
+        </div>
+      </aside>
     </form>
   </div>
 

@@ -50,6 +50,7 @@ const {
   setWikiPageSfwPaths,
   invalidateSfwSet,
   getTagsGroupedByCategory,
+  groupTagListByCategory,
 } = require("../db");
 const { requireUser, requireUserJson, requireAdmin } = require("../auth");
 const { generateThumb, deleteThumb } = require("../thumbs");
@@ -231,11 +232,12 @@ function buildGalleryRouter(config) {
       .filter((r) => r.item_type === "gallery")
       .map((r) => r.item_id) : [];
     const topTags = allTags.slice(0, 20);
+    const groupedTags = groupTagListByCategory(allTags);
     const galleryIds = items.filter((i) => i.id).map((i) => i.id);
     const seriesMap = galleryIds.length ? getSeriesMapForIds(galleryIds) : {};
     const allParodies = listAllParodies();
     const allProtagonists = listProtagonistes();
-    res.render("gallery", { config, items, allTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap, allParodies, allProtagonists });
+    res.render("gallery", { config, items, allTags, groupedTags, topTags, categories: CATEGORIES, favoriteGalleryIds, tagImageCounts, seriesMap, allParodies, allProtagonists });
   });
 
   // Chaque image est sa propre fiche, jamais regroupées automatiquement —
