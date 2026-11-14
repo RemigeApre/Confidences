@@ -5,7 +5,7 @@
 // champ libre), peu importe les sous-catégories.
 (function () {
 
-  function makeBoard(fieldEl, cat, available, initialTags, selected, sync) {
+  function makeBoard(fieldEl, cat, available, initialTags, selected, sync, categoryOf, getBoard) {
     var board = fieldEl.querySelector('.ctw-board');
     var chipsArea = fieldEl.querySelector('.wiki-tags-chips');
     var typer = fieldEl.querySelector('.wiki-tags-typing');
@@ -33,9 +33,9 @@
       });
     }
 
-    function addTag(t) {
-      t = String(t || '').toLowerCase().trim();
-      if (!t || has(t)) return;
+    // Ajoute réellement le tag à CE champ (pas de redirection ici).
+    function addHere(t) {
+      if (has(t)) return;
       tags.push(t);
       render();
       selected[t] = true;
@@ -47,6 +47,20 @@
           body: JSON.stringify({ tag: t, category: cat }),
         }).catch(function () {});
       }
+    }
+
+    // Un tag déjà rattaché à une vraie catégorie (différente d'ici) part
+    // dans le bon champ, même s'il a été tapé dans "Tags généraux" ou
+    // ailleurs par erreur.
+    function addTag(t) {
+      t = String(t || '').toLowerCase().trim();
+      if (!t || has(t)) return;
+      var realCat = categoryOf[t];
+      if (realCat && realCat !== cat && realCat !== 'autre') {
+        var target = getBoard(realCat);
+        if (target) { target.addTag(t); return; }
+      }
+      addHere(t);
     }
     function removeTag(t) {
       tags = tags.filter(function (x) { return x !== t; });
@@ -123,7 +137,7 @@
     var dataEl = root.querySelector('.ctw-data');
     if (!hidden || !dataEl) return;
 
-    var data = { available: {}, current: {} };
+    var data = { available: {}, current: {}, categoryOf: {} };
     try { data = JSON.parse(dataEl.textContent); } catch (_) {}
 
     var selected = {};
@@ -133,9 +147,10 @@
     function sync() { hidden.value = Object.keys(selected).join(', '); }
 
     var boards = {};
+    function getBoard(cat) { return boards[cat]; }
     root.querySelectorAll('.ctw-field[data-cat]').forEach(function (fieldEl) {
       var cat = fieldEl.dataset.cat;
-      boards[cat] = makeBoard(fieldEl, cat, data.available[cat], data.current[cat], selected, sync);
+      boards[cat] = makeBoard(fieldEl, cat, data.available[cat], data.current[cat], selected, sync, data.categoryOf || {}, getBoard);
     });
 
     // Hooks exposés pour du code externe (ex. détection de tags dans le

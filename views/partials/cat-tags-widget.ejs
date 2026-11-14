@@ -47,7 +47,7 @@
 <div class="cat-tags-widget">
   <input type="hidden" name="tags" class="ctw-hidden" value="<%= (currentTags || []).join(', ') %>" />
 
-  <div class="ctw-field" data-cat="autre">
+  <div class="ctw-field ctw-field--general" data-cat="autre">
     <label class="ctw-field-label">Tags g&eacute;n&eacute;raux</label>
     <div class="wiki-tags-board ctw-board">
       <div class="wiki-tags-chips"></div>
@@ -66,5 +66,5 @@
     </div>
   <% }) %>
 
-  <script type="application/json" class="ctw-data"><%- JSON.stringify({ available: ctwAvailable, current: ctwCurrentByCat }) %></script>
+  <script type="application/json" class="ctw-data"><%- JSON.stringify({ available: ctwAvailable, current: ctwCurrentByCat, categoryOf: ctwKnown }) %></script>
 </div>
