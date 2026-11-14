@@ -101,10 +101,16 @@
       acDrop.hidden = false;
     }
 
+    // Valide un ou plusieurs tags séparés par virgule/point-virgule en une
+    // fois (saisie manuelle ou collage d'une liste depuis ailleurs).
+    function commitValue(raw) {
+      String(raw || '').split(/[,;]+/).map(function (t) { return t.trim(); }).filter(Boolean).forEach(addTag);
+    }
+
     typer.addEventListener('focus', function () { showAc(typer.value); });
     typer.addEventListener('input', function () { showAc(typer.value); });
     typer.addEventListener('blur', function () {
-      if (typer.value.trim()) { addTag(typer.value.trim()); typer.value = ''; }
+      if (typer.value.trim()) { commitValue(typer.value); typer.value = ''; }
       setTimeout(closeAc, 160);
     });
     board.addEventListener('click', function (e) {
@@ -114,7 +120,7 @@
       if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
         e.preventDefault();
         var val = typer.value.trim();
-        if (val) { addTag(val); typer.value = ''; closeAc(); }
+        if (val) { commitValue(val); typer.value = ''; closeAc(); }
         return;
       }
       if (e.key === 'Backspace' && !typer.value && tags.length) {
