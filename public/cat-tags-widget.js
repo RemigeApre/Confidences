@@ -132,7 +132,7 @@
     }, true);
 
     render();
-    return { addTag: addTag, hasTag: has };
+    return { addTag: addTag, hasTag: has, getTags: function () { return tags.slice(); } };
   }
 
   document.querySelectorAll('.cat-tags-widget').forEach(function (root) {
@@ -174,6 +174,66 @@
       var board = boards.autre;
       if (board) board.addTag(tag); else { selected[tag] = true; sync(); }
     };
+
+    // ── Copier / importer au format "label{tag1, tag2} label2{tag3}" ──────
+    function fieldLabel(fieldEl) {
+      var el = fieldEl.querySelector('.ctw-field-label');
+      return el ? el.textContent.trim() : fieldEl.dataset.cat;
+    }
+    function serialize() {
+      var parts = [];
+      root.querySelectorAll('.ctw-field[data-cat]').forEach(function (fieldEl) {
+        var board = boards[fieldEl.dataset.cat];
+        if (!board) return;
+        var tags = board.getTags();
+        if (tags.length) parts.push(fieldLabel(fieldEl) + '{' + tags.join(', ') + '}');
+      });
+      return parts.join(' ');
+    }
+
+    var copyBtn = root.querySelector('.ctw-copy-btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function () {
+        var text = serialize();
+        var flash = function () {
+          var old = copyBtn.textContent;
+          copyBtn.textContent = 'Copié !';
+          setTimeout(function () { copyBtn.textContent = old; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(flash).catch(function () { window.prompt('Copiez ce texte :', text); });
+        } else {
+          window.prompt('Copiez ce texte :', text);
+        }
+      });
+    }
+
+    var importBtn = root.querySelector('.ctw-import-btn');
+    if (importBtn) {
+      importBtn.addEventListener('click', function () {
+        var text = window.prompt('Collez le texte au format cat{tag1, tag2} cat2{tag3}…');
+        if (!text) return;
+        var re = /([^{}]+)\{([^{}]*)\}/g;
+        var m;
+        var unmatched = [];
+        while ((m = re.exec(text))) {
+          var label = m[1].trim().toLowerCase();
+          var list = m[2].split(',').map(function (t) { return t.trim().toLowerCase(); }).filter(Boolean);
+          if (!list.length) continue;
+          var targetCat = null;
+          root.querySelectorAll('.ctw-field[data-cat]').forEach(function (fieldEl) {
+            if (targetCat) return;
+            if (fieldLabel(fieldEl).toLowerCase() === label) targetCat = fieldEl.dataset.cat;
+          });
+          var board = (targetCat && boards[targetCat]) || boards.autre;
+          if (board) list.forEach(function (t) { board.addTag(t); });
+          if (!targetCat) unmatched.push(m[1].trim());
+        }
+        if (unmatched.length) {
+          alert('Catégorie(s) non reconnue(s) : "' + unmatched.join('", "') + '" — placées dans "Tags généraux".');
+        }
+      });
+    }
 
     // Le formulaire attend que les créations de tags en cours soient
     // confirmées (catégorie bien enregistrée) avant de partir réellement —
