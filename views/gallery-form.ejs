@@ -9,21 +9,21 @@
   </button>
   <div class="nav-backdrop" id="gf-left-backdrop"></div>
   <form method="POST" action="/galerie/<%= image.id %>/delete" class="wf-delete-form-fixed"
-    onsubmit="return confirm('Supprimer cette image d\u00e9finitivement ?')">
+    onsubmit="return confirm('Supprimer cette image définitivement ?')">
     <button type="submit" class="wf-delete-btn-fixed" title="Supprimer l&rsquo;image">&#128465;</button>
   </form>
 
+  <aside class="ef-left-sidebar" id="gf-left-sidebar">
+    <button type="button" class="mobile-filter-close" id="gf-left-close" aria-label="Fermer">&times;</button>
+    <div class="ef-left-topbar">
+      <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
+      <a href="/galerie" class="ef-left-back">&#8592; Retour</a>
+      <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/galerie/' + image.id + '/edit' }) %>
+    </div>
+  </aside>
+
   <form method="POST" action="/galerie/<%= image.id %>" enctype="multipart/form-data" class="wiki-form gf-form" id="gf-form" data-no-enter-submit>
     <% if (locals.editLang === 'en') { %><input type="hidden" name="_editLang" value="en" /><% } %>
-
-    <aside class="ef-left-sidebar" id="gf-left-sidebar">
-      <button type="button" class="mobile-filter-close" id="gf-left-close" aria-label="Fermer">&times;</button>
-
-      <div class="ef-left-topbar">
-        <button type="submit" form="gf-form" class="wf-save-btn">Enregistrer</button>
-        <a href="/galerie" class="ef-left-back">&#8592; Retour</a>
-        <%- include('partials/lang-toggle', { editLang: locals.editLang || 'fr', editUrl: '/galerie/' + image.id + '/edit' }) %>
-      </div>
 
     <%# ── BLOC 1 : META ──────────────────────────────────────────────────── %>
     <div class="ef-block">
@@ -38,7 +38,7 @@
 
       <% var _gfTitle = (locals.editLang === 'en') ? ((locals.translations || {}).title || '') : image.title; %>
       <input type="text" name="title" class="wiki-title-input ef-block-title" value="<%= _gfTitle %>"
-             placeholder="<%= locals.editLang === 'en' ? image.title : 'Titre\u2026' %>" />
+             placeholder="<%= locals.editLang === 'en' ? image.title : 'Titre…' %>" />
       <label class="ef-title-visible-label">
         <input type="checkbox" name="title_visible" value="1" <%= image.titleVisible ? 'checked' : '' %> />
         Titre visible dans le volet
@@ -50,7 +50,7 @@
           <span>&#128274;&nbsp;Ultra</span>
         </label>
         <label class="chip-option">
-          <input type="checkbox" name="irrealiste" <%= image.tags.some(function(t){ return t.toLowerCase() === 'irr\u00e9aliste'; }) ? 'checked' : '' %> />
+          <input type="checkbox" name="irrealiste" <%= image.tags.some(function(t){ return t.toLowerCase() === 'irréaliste'; }) ? 'checked' : '' %> />
           <span>&#10024;&nbsp;Irr&eacute;aliste</span>
         </label>
         <label class="chip-option">
@@ -59,6 +59,28 @@
         </label>
       </div>
 
+    </div>
+
+    <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
+    <div class="ef-block ef-block--image">
+      <% if (image.imagePaths && image.imagePaths.length) { %>
+        <div class="wiki-images-existing">
+          <% image.imagePaths.forEach(function(src) { %>
+            <div class="wiki-existing-img-wrap">
+              <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
+              <label class="wiki-img-remove-label">
+                <input type="checkbox" name="remove_image" value="<%= src %>" />
+                <span>&#215;</span>
+              </label>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+      <label class="wiki-image-add-label">
+        <span>+ Ajouter d&rsquo;autres images (fiches ind&eacute;pendantes)</span>
+        <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
+      </label>
+      <div class="wiki-new-previews"></div>
     </div>
 
     <%# ── BLOC ORIGINES ───────────────────────────────────────────────────── %>
@@ -78,7 +100,7 @@
             idPrefix:  'gf',
             mainValue: image.parody    || '',
             subValue:  image.subParody || '',
-            mainPh:    'Parodie (optionnel)\u2026'
+            mainPh:    'Parodie (optionnel)…'
           }) %>
 
       <%# Protagonistes — autocomplete avec chips %>
@@ -238,66 +260,11 @@
           hiddenName:    'gallery_links'
         }) %>
 
-    <%# ─ Séries ─ %>
-    <div class="gs-form-section">
-      <h3 class="gs-form-title">S&eacute;ries</h3>
-      <% if (imageSeries.length) { %>
-        <ul class="gs-form-list">
-          <% imageSeries.forEach(function(s) { %>
-          <li class="gs-form-item">
-            <a href="/galerie/series/<%= s.id %>" class="gs-form-series-link"><%= s.title %></a>
-            <span class="gs-form-pos">&eacute;p.&nbsp;<%= s.position + 1 %> / <%= s.total %></span>
-            <button type="button" class="gs-form-rm link-delete-btn-text"
-                    data-series-id="<%= s.id %>" data-gallery-id="<%= image.id %>">&times; Retirer</button>
-          </li>
-          <% }) %>
-        </ul>
-      <% } else { %>
-        <p class="gs-form-none">Pas encore dans une s&eacute;rie.</p>
-      <% } %>
-      <div class="gs-form-add-row">
-        <select id="gf-series-select" class="gb-select gs-form-select">
-          <option value="">Ajouter &agrave; une s&eacute;rie</option>
-          <% allSeries.forEach(function(s) { %>
-            <% if (!imageSeries.find(function(is){ return is.id === s.id; })) { %>
-              <option value="<%= s.id %>"><%= s.title %></option>
-            <% } %>
-          <% }) %>
-        </select>
-        <button type="button" id="gf-series-add-btn" class="gb-btn-sm">Ajouter</button>
-      </div>
-      <p id="gf-series-msg" class="gs-add-msg" hidden></p>
-    </div>
-    </aside>
-
-    <%# ── BLOC IMAGE ──────────────────────────────────────────────────────── %>
-    <div class="ef-block ef-block--image">
-      <% if (image.imagePaths && image.imagePaths.length) { %>
-        <div class="wiki-images-existing">
-          <% image.imagePaths.forEach(function(src) { %>
-            <div class="wiki-existing-img-wrap">
-              <img src="<%= thumbUrl(src) %>" data-src="<%= src %>" alt="" class="wiki-form-existing-image" loading="lazy" />
-              <label class="wiki-img-remove-label">
-                <input type="checkbox" name="remove_image" value="<%= src %>" />
-                <span>&#215;</span>
-              </label>
-            </div>
-          <% }) %>
-        </div>
-      <% } %>
-      <label class="wiki-image-add-label">
-        <span>+ Ajouter d&rsquo;autres images (fiches ind&eacute;pendantes)</span>
-        <input type="file" name="images" accept="image/*" multiple class="wiki-image-input" />
-      </label>
-      <div class="wiki-new-previews"></div>
-    </div>
-
     <div class="wiki-form-actions wf-mobile-actions">
       <button type="submit">Enregistrer</button>
     </div>
 
     <aside class="ctw-sidebar" id="mobile-filter-sidebar">
-      <button type="button" class="mobile-filter-close" id="mobile-filter-close" aria-label="Fermer">&times;</button>
       <p class="ctw-sidebar-title">Tags</p>
       <%- include('partials/cat-tags-widget', {
             currentTags: image.tags.filter(function(t){ return t.toLowerCase() !== 'ultra' && t.toLowerCase() !== 'irréaliste'; }),
@@ -305,6 +272,37 @@
           }) %>
     </aside>
   </form>
+
+  <%# ─ Séries ─ %>
+  <div class="gs-form-section">
+    <h3 class="gs-form-title">S&eacute;ries</h3>
+    <% if (imageSeries.length) { %>
+      <ul class="gs-form-list">
+        <% imageSeries.forEach(function(s) { %>
+        <li class="gs-form-item">
+          <a href="/galerie/series/<%= s.id %>" class="gs-form-series-link"><%= s.title %></a>
+          <span class="gs-form-pos">&eacute;p.&nbsp;<%= s.position + 1 %> / <%= s.total %></span>
+          <button type="button" class="gs-form-rm link-delete-btn-text"
+                  data-series-id="<%= s.id %>" data-gallery-id="<%= image.id %>">&times; Retirer</button>
+        </li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="gs-form-none">Pas encore dans une s&eacute;rie.</p>
+    <% } %>
+    <div class="gs-form-add-row">
+      <select id="gf-series-select" class="gb-select gs-form-select">
+        <option value="">Ajouter &agrave; une s&eacute;rie</option>
+        <% allSeries.forEach(function(s) { %>
+          <% if (!imageSeries.find(function(is){ return is.id === s.id; })) { %>
+            <option value="<%= s.id %>"><%= s.title %></option>
+          <% } %>
+        <% }) %>
+      </select>
+      <button type="button" id="gf-series-add-btn" class="gb-btn-sm">Ajouter</button>
+    </div>
+    <p id="gf-series-msg" class="gs-add-msg" hidden></p>
+  </div>
 
 </main>
 <script nonce="<%= nonce %>">
