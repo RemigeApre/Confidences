@@ -79,12 +79,11 @@
 
     function clearAc() { while (acDrop.firstChild) acDrop.removeChild(acDrop.firstChild); }
     function closeAc() { acDrop.hidden = true; clearAc(); acSel = -1; }
+    // q vide → suggestions actives dès le focus (parcourir sans avoir à taper).
     function showAc(q) {
       q = (q || '').trim().toLowerCase();
-      if (!q) { closeAc(); return; }
-      var matches = available.filter(function (t) {
-        return t.toLowerCase().indexOf(q) !== -1 && !has(t);
-      }).slice(0, 8);
+      var pool = available.filter(function (t) { return !has(t); });
+      var matches = (q ? pool.filter(function (t) { return t.toLowerCase().indexOf(q) !== -1; }) : pool).slice(0, 8);
       if (!matches.length) { closeAc(); return; }
       clearAc(); acSel = -1;
       matches.forEach(function (t) {
@@ -99,6 +98,7 @@
       acDrop.hidden = false;
     }
 
+    typer.addEventListener('focus', function () { showAc(typer.value); });
     typer.addEventListener('input', function () { showAc(typer.value); });
     typer.addEventListener('blur', function () {
       if (typer.value.trim()) { addTag(typer.value.trim()); typer.value = ''; }

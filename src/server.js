@@ -827,6 +827,15 @@ app.use((req, res, next) => {
   } catch (_) {
     res.locals.tagRegistry = {};
   }
+  // Libellés des catégories (clé → nom affiché), pour que le JS client
+  // (galerie/BD) puisse regrouper les tags par catégorie dans les volets de
+  // détail, sans round-trip réseau. Voir window.TAG_CATEGORIES (head.ejs).
+  try {
+    res.locals.tagCategoryLabels = {};
+    getAllCategories().forEach((c) => { res.locals.tagCategoryLabels[c.key] = c.label; });
+  } catch (_) {
+    res.locals.tagCategoryLabels = {};
+  }
   next();
 });
 

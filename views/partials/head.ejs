@@ -165,6 +165,9 @@
     // Voir src/tagRegistry.js. Vide sur les pages qui ne le calculent pas
     // (evite le cout sur les pages sans aucun tag affiche).
     window.TAG_REGISTRY = <%- JSON.stringify(locals.tagRegistry || {}) %>;
+    // Libellés des catégories de tags (clé → nom affiché), pour regrouper
+    // les tags par catégorie côté client (volet d'une image/BD ouverte).
+    window.TAG_CATEGORIES = <%- JSON.stringify(locals.tagCategoryLabels || {}) %>;
     // Lootboxes en attente — injecté côté serveur pour éviter un aller-retour
     // réseau juste pour afficher le badge. Permet aussi le chargement paresseux
     // de lootbox.js (voir foot.ejs).
