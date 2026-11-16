@@ -75,18 +75,25 @@
         </div>
 
         <%# Origine (medium) %>
-        <div class="prot-sb-section">
-          <select name="origine" id="prot-origine" class="prot-form-select-elegant prot-form-select-elegant--sm" style="width:100%">
-            <option value="">Origine</option>
-            <option value="manga"    <%= protagoniste && protagoniste.origine === 'manga'    ? 'selected' : '' %>>Manga</option>
-            <option value="roman"    <%= protagoniste && protagoniste.origine === 'roman'    ? 'selected' : '' %>>Roman</option>
-            <option value="film"     <%= protagoniste && protagoniste.origine === 'film'     ? 'selected' : '' %>>Film</option>
-            <option value="serie"    <%= protagoniste && protagoniste.origine === 'serie'    ? 'selected' : '' %>>S&eacute;rie</option>
-            <option value="bd"       <%= protagoniste && protagoniste.origine === 'bd'       ? 'selected' : '' %>>BD</option>
-            <option value="jeu"      <%= protagoniste && protagoniste.origine === 'jeu'      ? 'selected' : '' %>>Jeux vid&eacute;os</option>
-            <option value="original" <%= protagoniste && protagoniste.origine === 'original' ? 'selected' : '' %>>Original</option>
-            <option value="autre"    <%= protagoniste && protagoniste.origine === 'autre'    ? 'selected' : '' %>>Autre</option>
-          </select>
+        <%
+          var _origineVal = protagoniste ? (protagoniste.origine || '') : '';
+          var _origineOpts = [
+            { value:'manga',    label:'Manga' },
+            { value:'roman',    label:'Roman' },
+            { value:'film',     label:'Film' },
+            { value:'serie',    label:'S\u00e9rie' },
+            { value:'bd',       label:'BD' },
+            { value:'jeu',      label:'Jeux vid\u00e9os' },
+            { value:'original', label:'Original' },
+            { value:'autre',    label:'Autre' }
+          ];
+        %>
+        <input type="hidden" name="origine" id="prot-origine-hidden" value="<%= _origineVal %>" />
+        <div class="prot-sb-section prot-origine-chips" id="prot-origine-chips">
+          <% _origineOpts.forEach(function(o) { %>
+            <button type="button" class="prot-sf-chip prot-origine-chip<%= _origineVal === o.value ? ' active' : '' %>"
+                    data-val="<%= o.value %>"><%= o.label %></button>
+          <% }) %>
         </div>
 
         <%# Nature + Espèce — même ligne %>
@@ -482,6 +489,17 @@
         document.querySelectorAll('.prot-special-btn').forEach(function(b) { b.classList.remove('active'); });
         if (!wasActive) btn.classList.add('active');
         if (specialHidden) specialHidden.value = wasActive ? '' : (btn.dataset.val || '');
+      });
+    });
+
+    // ── Origine : sélection unique (toggle) ────────────────────────────────
+    var origineHidden = document.getElementById('prot-origine-hidden');
+    document.querySelectorAll('.prot-origine-chip').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var wasActive = btn.classList.contains('active');
+        document.querySelectorAll('.prot-origine-chip').forEach(function(b) { b.classList.remove('active'); });
+        if (!wasActive) btn.classList.add('active');
+        if (origineHidden) origineHidden.value = wasActive ? '' : (btn.dataset.val || '');
       });
     });
 
