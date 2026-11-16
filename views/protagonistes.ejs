@@ -72,6 +72,18 @@
         </div>
         <% } %>
 
+        <%# ── Origine (medium) : chips tristate ── %>
+        <div class="prot-sf-section" id="prot-origine-filter">
+          <button type="button" class="prot-sf-chip" data-origine="manga"    data-state="0" data-fr="Manga"       data-en="Manga">Manga</button>
+          <button type="button" class="prot-sf-chip" data-origine="roman"    data-state="0" data-fr="Roman"       data-en="Novel">Roman</button>
+          <button type="button" class="prot-sf-chip" data-origine="film"     data-state="0" data-fr="Film"        data-en="Film">Film</button>
+          <button type="button" class="prot-sf-chip" data-origine="serie"    data-state="0" data-fr="Série"       data-en="Series">S&eacute;rie</button>
+          <button type="button" class="prot-sf-chip" data-origine="bd"       data-state="0" data-fr="BD"          data-en="Comic">BD</button>
+          <button type="button" class="prot-sf-chip" data-origine="jeu"      data-state="0" data-fr="Jeux vidéos" data-en="Video game">Jeux vid&eacute;os</button>
+          <button type="button" class="prot-sf-chip" data-origine="original" data-state="0" data-fr="Original"   data-en="Original">Original</button>
+          <button type="button" class="prot-sf-chip" data-origine="autre"    data-state="0" data-fr="Autre"       data-en="Other">Autre</button>
+        </div>
+
       </div>
     </div>
   </aside>
@@ -88,6 +100,7 @@
           data-nature="<%= p.nature || '' %>"
           data-parody="<%= p.parody || '' %>"
           data-race="<%= p.race_id || '' %>"
+          data-origine="<%= p.origine || '' %>"
           data-special="<%= _pSpecial %>"
           data-is-child="<%= p.parent_id ? '1' : '' %>">
 
@@ -164,17 +177,18 @@
   var SS_KEY = 'prot-filters-v2';
   var saved = (function() { try { return JSON.parse(sessionStorage.getItem(SS_KEY) || '{}'); } catch(_) { return {}; } })();
 
-  var genderState = saved.gender || {};  // { femme: 0|1|-1, ... }
-  var natureState = saved.nature || {};
-  var raceState   = saved.race   || {};
-  var parodyState = saved.parody || {};  // { name: 0|1|-1 }
+  var genderState  = saved.gender  || {};  // { femme: 0|1|-1, ... }
+  var natureState  = saved.nature  || {};
+  var raceState    = saved.race    || {};
+  var parodyState  = saved.parody  || {};  // { name: 0|1|-1 }
+  var origineState = saved.origine || {};
 
   var hideUltra      = localStorage.getItem('gallery-hide-ultra') !== '0';
   var hideIrrealiste = localStorage.getItem('gallery-hide-irrealiste') === '1';
   var hideChildren   = localStorage.getItem('prot-hide-children') !== '0';
 
   function saveFilters() {
-    try { sessionStorage.setItem(SS_KEY, JSON.stringify({ gender: genderState, nature: natureState, race: raceState, parody: parodyState })); } catch(_) {}
+    try { sessionStorage.setItem(SS_KEY, JSON.stringify({ gender: genderState, nature: natureState, race: raceState, parody: parodyState, origine: origineState })); } catch(_) {}
   }
 
   // Logique tristate : si au moins un +1 → la carte doit correspondre à un +1
@@ -192,10 +206,11 @@
     var shown = 0;
     cards.forEach(function(c) {
       var ok = true;
-      if (!tristateMatch(genderState, c.dataset.gender || '')) ok = false;
-      if (!tristateMatch(natureState, c.dataset.nature || '')) ok = false;
-      if (!tristateMatch(raceState,   String(c.dataset.race || ''))) ok = false;
-      if (!tristateMatch(parodyState, c.dataset.parody || '')) ok = false;
+      if (!tristateMatch(genderState,  c.dataset.gender  || '')) ok = false;
+      if (!tristateMatch(natureState,  c.dataset.nature  || '')) ok = false;
+      if (!tristateMatch(raceState,    String(c.dataset.race || ''))) ok = false;
+      if (!tristateMatch(parodyState,  c.dataset.parody  || '')) ok = false;
+      if (!tristateMatch(origineState, c.dataset.origine || '')) ok = false;
       var sp = c.dataset.special || '';
       if (hideUltra      && sp === 'ultra')       ok = false;
       if (hideIrrealiste && sp === 'irrealiste')  ok = false;
@@ -257,6 +272,13 @@
     document.getElementById('prot-race-filter'), 'race',
     function() { return raceState; },
     function(s) { raceState = s; }
+  );
+
+  // Origine
+  wireTristateGroup(
+    document.getElementById('prot-origine-filter'), 'origine',
+    function() { return origineState; },
+    function(s) { origineState = s; }
   );
 
   // Masque les chips de race dont la nature ne correspond pas au filtre nature actif
