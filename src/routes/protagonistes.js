@@ -42,6 +42,7 @@ const galleryUpload = multer({
 const VALID_GENDERS = new Set(["femme", "homme", "autre", ""]);
 const VALID_NATURES = new Set(["humain", "monstre", "animal", "pokemon", "autre", ""]);
 const VALID_ORIENTATIONS = new Set(["hetero", "homo", "bi", "pan", "ace", "autre", ""]);
+const VALID_ORIGINES = new Set(["manga", "roman", "film", "serie", "bd", "jeu", "original", "autre", ""]);
 
 function buildProtagonistesRouter(config) {
   const router = express.Router();
@@ -89,6 +90,7 @@ function buildProtagonistesRouter(config) {
     const gender = VALID_GENDERS.has(req.body.gender) ? req.body.gender : "";
     const nature = VALID_NATURES.has(req.body.nature) ? req.body.nature : "";
     const orientation = VALID_ORIENTATIONS.has(req.body.orientation) ? req.body.orientation : "";
+    const origine = VALID_ORIGINES.has(req.body.origine) ? req.body.origine : "";
     const age = Math.max(0, parseInt(req.body.age || "0", 10) || 0);
     const ageVal = age > 0 ? Math.max(18, age) : 0;
     const imagePath = req.file ? `/uploads/personnages/${req.file.filename}` : "";
@@ -98,7 +100,7 @@ function buildProtagonistesRouter(config) {
       description: String(req.body.description || ""),
       descriptionPhysique: String(req.body.description_physique || ""),
       descriptionOeuvre: String(req.body.description_oeuvre || ""),
-      tags, parody, subParody, gender, nature, imagePath, special, age: ageVal, orientation,
+      tags, parody, subParody, gender, nature, imagePath, special, age: ageVal, orientation, origine,
     });
     const raceId = req.body.race_id ? Number(req.body.race_id) : null;
     const clanId = req.body.clan_id ? Number(req.body.clan_id) : null;
@@ -156,6 +158,7 @@ function buildProtagonistesRouter(config) {
     const gender = VALID_GENDERS.has(req.body.gender) ? req.body.gender : "";
     const nature = VALID_NATURES.has(req.body.nature) ? req.body.nature : "";
     const orientation = VALID_ORIENTATIONS.has(req.body.orientation) ? req.body.orientation : "";
+    const origine = VALID_ORIGINES.has(req.body.origine) ? req.body.origine : "";
     const age = Math.max(0, parseInt(req.body.age || "0", 10) || 0);
     const ageVal = age > 0 ? Math.max(18, age) : 0;
     const imagePath = req.file
@@ -199,7 +202,7 @@ function buildProtagonistesRouter(config) {
         descriptionPhysique: protagoniste.description_physique,
         descriptionOeuvre: protagoniste.description_oeuvre,
         tags, parody, subParody, gender, nature, imagePath, evolutions,
-        special: req.body.special || "", age: ageVal, orientation,
+        special: req.body.special || "", age: ageVal, orientation, origine,
       });
       setProtagonisteRace(protagoniste.id, raceId, clanId);
       return res.redirect(`/protagonistes/${protagoniste.id}`);
@@ -214,7 +217,7 @@ function buildProtagonistesRouter(config) {
       descriptionPhysique: String(req.body.description_physique || ""),
       descriptionOeuvre: String(req.body.description_oeuvre || ""),
       tags, parody, subParody, gender, nature, imagePath, evolutions,
-      special: req.body.special || "", age: ageVal, orientation,
+      special: req.body.special || "", age: ageVal, orientation, origine,
     });
     setProtagonisteRace(protagoniste.id, raceId, clanId);
     res.redirect(`/protagonistes/${protagoniste.id}`);

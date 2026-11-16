@@ -74,6 +74,21 @@
           </div>
         </div>
 
+        <%# Origine (medium) %>
+        <div class="prot-sb-section">
+          <select name="origine" id="prot-origine" class="prot-form-select-elegant prot-form-select-elegant--sm" style="width:100%">
+            <option value="">Origine</option>
+            <option value="manga"    <%= protagoniste && protagoniste.origine === 'manga'    ? 'selected' : '' %>>Manga</option>
+            <option value="roman"    <%= protagoniste && protagoniste.origine === 'roman'    ? 'selected' : '' %>>Roman</option>
+            <option value="film"     <%= protagoniste && protagoniste.origine === 'film'     ? 'selected' : '' %>>Film</option>
+            <option value="serie"    <%= protagoniste && protagoniste.origine === 'serie'    ? 'selected' : '' %>>S&eacute;rie</option>
+            <option value="bd"       <%= protagoniste && protagoniste.origine === 'bd'       ? 'selected' : '' %>>BD</option>
+            <option value="jeu"      <%= protagoniste && protagoniste.origine === 'jeu'      ? 'selected' : '' %>>Jeux vid&eacute;os</option>
+            <option value="original" <%= protagoniste && protagoniste.origine === 'original' ? 'selected' : '' %>>Original</option>
+            <option value="autre"    <%= protagoniste && protagoniste.origine === 'autre'    ? 'selected' : '' %>>Autre</option>
+          </select>
+        </div>
+
         <%# Nature + Espèce — même ligne %>
         <div class="prot-sb-section prot-sb-section--row">
           <select name="nature" id="prot-nature" class="prot-form-select-elegant prot-form-select-elegant--sm">

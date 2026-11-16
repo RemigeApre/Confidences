@@ -285,6 +285,17 @@
         </div>
       <% } %>
 
+      <% if (protagoniste.origine) { %>
+        <%
+          var _origLabels = { manga:{fr:'Manga',en:'Manga'}, roman:{fr:'Roman',en:'Novel'}, film:{fr:'Film',en:'Film'}, serie:{fr:'S\u00e9rie',en:'Series'}, bd:{fr:'BD',en:'Comic'}, jeu:{fr:'Jeux vid\u00e9os',en:'Video game'}, original:{fr:'Original',en:'Original'}, autre:{fr:'Autre',en:'Other'} };
+          var _origLbl = _origLabels[protagoniste.origine] || { fr: protagoniste.origine, en: protagoniste.origine };
+        %>
+        <div class="prot-ds-row prot-ds-row--center">
+          <span class="prot-ds-label" data-fr="Origine" data-en="Origin">Origine</span>
+          <span class="prot-ds-value" data-fr="<%= _origLbl.fr %>" data-en="<%= _origLbl.en %>"><%= _origLbl.fr %></span>
+        </div>
+      <% } %>
+
       <% if (protagoniste.race_name) { %>
         <div class="prot-ds-row prot-ds-row--col">
           <span class="prot-ds-label">Esp&egrave;ce</span>
