@@ -995,7 +995,7 @@ function buildWikiRouter(config) {
     const byCategory = {};
     activeCats.forEach(c => {
       const pages = pagesForCategory(all, c.key)
-        .map(p => ({ id: p.id, title: p.title, slug: p.slug || String(p.id), special: specialTagOf(p.tags) || null }));
+        .map(p => ({ id: p.id, title: p.title, slug: p.slug || String(p.id), special: specialTagOf(p.tags) || null, typeLieu: (p.meta && p.meta.type_lieu) || null }));
       if (pages.length > 0) byCategory[c.key] = pages;
     });
     const cats = activeCats.filter(c => byCategory[c.key]);

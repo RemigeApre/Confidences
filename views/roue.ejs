@@ -19,6 +19,15 @@
         </button>
       <% }) %>
     </div>
+    <%# Filtre lieux — visible seulement si catégorie lieux active %>
+    <div class="roue-lieu-filter" id="roue-lieu-filter" hidden>
+      <span class="roue-lieu-filter-label" data-fr="Lieux" data-en="Places">Lieux</span>
+      <button type="button" class="roue-lieu-btn" data-val="prive"  data-active="1" data-fr="Privé"  data-en="Private">Priv&eacute;</button>
+      <button type="button" class="roue-lieu-btn" data-val="public" data-active="1" data-fr="Public" data-en="Public">Public</button>
+      <button type="button" class="roue-lieu-btn" data-val="cache"  data-active="1" data-fr="Caché"  data-en="Hidden">Cach&eacute;</button>
+      <button type="button" class="roue-lieu-btn" data-val=""       data-active="1" data-fr="Non renseigné" data-en="Unspecified">Non renseign&eacute;</button>
+    </div>
+
     <div class="roue-special-toggles">
       <button type="button" class="roue-special-btn roue-special-btn--ultra" id="roue-toggle-ultra" data-active="1">Ultra</button>
       <button type="button" class="roue-special-btn roue-special-btn--irrealiste" id="roue-toggle-irrealiste" data-active="1">Irr&eacute;aliste</button>
@@ -150,6 +159,12 @@
 .roue-result-cat{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:hsl(var(--drum-hue,220),55%,60%)}
 .roue-result-title{font-size:.95rem;font-weight:700;color:#fff;line-height:1.35}
 
+/* ── Filtre lieu ── */
+.roue-lieu-filter{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;justify-content:center}
+.roue-lieu-filter-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:hsl(140,40%,55%);margin-right:.2rem}
+.roue-lieu-btn{padding:.28rem .75rem;border-radius:999px;font-size:.74rem;font-weight:600;cursor:pointer;border:1px solid hsl(140,30%,28%);background:hsl(140,20%,13%);color:hsl(140,50%,65%);transition:opacity .15s}
+.roue-lieu-btn[data-active="0"]{opacity:.3;text-decoration:line-through}
+
 /* ── Special toggles ── */
 .roue-special-toggles{display:flex;gap:.5rem;justify-content:center}
 .roue-special-btn{padding:.3rem .9rem;border-radius:999px;font-size:.75rem;font-weight:700;cursor:pointer;border:1px solid;transition:background .15s,opacity .15s}
@@ -183,10 +198,31 @@
     this.dataset.active = allowIrrealiste ? '1' : '0';
   });
 
+  // ── Filtre lieux ─────────────────────────────────────────────────────────
+  var lieuFilterEl = document.getElementById('roue-lieu-filter');
+  var lieuActive = { prive: true, public: true, cache: true, '': true }; // '' = non renseigné
+
+  document.querySelectorAll('.roue-lieu-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var val = btn.dataset.val;
+      lieuActive[val] = !lieuActive[val];
+      btn.dataset.active = lieuActive[val] ? '1' : '0';
+    });
+  });
+
+  function updateLieuFilter() {
+    var hasLieux = activeCats.indexOf('lieux') !== -1;
+    lieuFilterEl.hidden = !hasLieux;
+  }
+
   function filteredItems(key) {
     return (ROUE_DATA[key] || []).filter(function (p) {
       if (p.special === 'ultra'      && !allowUltra)      return false;
       if (p.special === 'irrealiste' && !allowIrrealiste) return false;
+      if (key === 'lieux') {
+        var tl = p.typeLieu || '';
+        if (!lieuActive[tl]) return false;
+      }
       return true;
     });
   }
@@ -209,6 +245,7 @@
         chip.classList.remove('active');
       }
       spinBtn.disabled = activeCats.length === 0;
+      updateLieuFilter();
       if (activeCats.length > 0) rebuildDrums();
       else stageEl.hidden = true;
     });
