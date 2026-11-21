@@ -124,6 +124,7 @@
     <%# ── Carte AVEC image ───────────────────────────────────────────── %>
     <div class="wiki-card-image" data-images="<%= wcDataImages.join('|') %>">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
+      <% if (page.parentId) { %><span class="wiki-card-v-badge">V</span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
       <% if (currentUser && currentUser.isAdmin && wcHasEn && !wcIsComplete) { %><span class="wiki-en-badge">EN</span><% } %>
       <% if (wcStatPctF !== null) { %>
@@ -143,7 +144,7 @@
     <div class="wiki-card-accent">
       <% var _wcTitleFr = t(page.title, 'wiki', page.id, 'title'); var _wcTitleEn = (typeof wikiTitlesEn !== 'undefined' && wikiTitlesEn && wikiTitlesEn[page.id]) || _wcTitleFr; %>
       <p class="wiki-card-title" data-fr="<%= _wcTitleFr %>" data-en="<%= _wcTitleEn %>"><%= _wcTitleFr %></p>
-      <% if (page.parentId) { %><span class="wiki-card-sub-badge" data-fr="variante" data-en="variant">variante</span><% } else if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
+      <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </div>
 
   <% } else { %>
@@ -151,6 +152,7 @@
     <% var ph = cat ? cat.hue : 220; %>
     <div class="wiki-card-image">
       <% if (wcBannerText) { %><span class="wiki-card-banner wiki-card-banner--<%= wcBannerMod %>" data-fr="<%= wcBannerText %>" data-en="<%= wcBannerTextEn %>"><%= wcBannerText %></span><% } %>
+      <% if (page.parentId) { %><span class="wiki-card-v-badge">V</span><% } %>
       <% if (currentUser && currentUser.isAdmin) { %><span class="wiki-maturity-badge" data-level="<%= page.maturity || 0 %>"><%= page.maturity || 0 %></span><% } %>
       <% if (currentUser && currentUser.isAdmin && wcHasEn && !wcIsComplete) { %><span class="wiki-en-badge">EN</span><% } %>
       <% if (wcStatPctF !== null) { %>
@@ -184,7 +186,7 @@
     <div class="wiki-card-accent">
       <% var _wcTitleFr = t(page.title, 'wiki', page.id, 'title'); var _wcTitleEn = (typeof wikiTitlesEn !== 'undefined' && wikiTitlesEn && wikiTitlesEn[page.id]) || _wcTitleFr; %>
       <p class="wiki-card-title" data-fr="<%= _wcTitleFr %>" data-en="<%= _wcTitleEn %>"><%= _wcTitleFr %></p>
-      <% if (page.parentId) { %><span class="wiki-card-sub-badge" data-fr="variante" data-en="variant">variante</span><% } else if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
+      <% if (wcShowBadge) { %><span class="wiki-card-accent-label" data-fr="<%= cat ? cat.label : page.category %>" data-en="<%= WC_CAT_EN[page.category] || (cat ? cat.label : page.category) %>"><%= cat ? cat.label : page.category %></span><% } %>
     </div>
   <% } %>
 </a><a href="/wiki/<%= page.slug || page.id %>.md" class="wiki-card-md-link" aria-hidden="true" tabindex="-1"><%= page.title %> (Markdown)</a>
