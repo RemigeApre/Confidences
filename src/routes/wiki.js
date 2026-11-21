@@ -1099,8 +1099,10 @@ function buildWikiRouter(config) {
     const userWikiStatus = (userId && OWNED_CATS.includes(page.category)) ? getUserWikiStatus(userId, page.id) : null;
     const isAdmin = req.user && req.user.isAdmin;
     const subPages = req.user ? getWikiSubPages(page.id) : [];
-    const parentPage = (page.parentId) ? getWikiPage(page.parentId) : null;
-    res.render("wiki-detail", { config, userWikiStatus, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, subPages, parentPage: parentPage || null, ...CTX });
+    const parentPage = page.parentId ? getWikiPage(page.parentId) : null;
+    // Siblings : autres sous-cartes du même parent (hors page courante)
+    const siblingPages = (req.user && page.parentId) ? getWikiSubPages(page.parentId).filter(s => s.id !== page.id) : [];
+    res.render("wiki-detail", { config, userWikiStatus, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, subPages, parentPage: parentPage || null, siblingPages, ...CTX });
   });
 
   // ── Sondage communautaire ─────────────────────────────────────────────────

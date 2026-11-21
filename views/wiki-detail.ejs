@@ -1281,6 +1281,31 @@
 
     </div><%# /wiki-detail-layout %>
 
+    <%# ─ Famille (parent + frères) sur les sous-codex ─ %>
+    <% if (locals.parentPage && locals.siblingPages !== undefined) { %>
+      <% var _familyCards = [parentPage].concat(siblingPages); %>
+      <% if (_familyCards.length > 0) { %>
+        <div class="wiki-subcards-section">
+          <h3 class="wiki-subcards-heading" data-fr="Dans la même série" data-en="In the same series">Dans la m&ecirc;me s&eacute;rie</h3>
+          <div class="wiki-subcards-grid">
+            <% _familyCards.forEach(function(sp, _fi) { %>
+              <% var spcat = categories.find(function(c){ return c.key === sp.category; }); %>
+              <% var spCover = (currentUser || !isFrenchVisitor) ? (sp.imagePaths && sp.imagePaths[0]) : (sp.sfwImagePaths && sp.sfwImagePaths[0]); %>
+              <a href="/wiki/<%= sp.slug || sp.id %>" class="wiki-subcard-item<%= _fi === 0 ? ' wiki-subcard-item--parent' : '' %>" style="--sp-hue:<%= spcat ? spcat.hue : 220 %>">
+                <% if (spCover) { %>
+                  <div class="wiki-subcard-img-wrap"><img src="<%= thumbUrl(spCover) %>" alt="" class="wiki-subcard-img" loading="lazy" /></div>
+                <% } else { %>
+                  <div class="wiki-subcard-img-wrap wiki-subcard-img-wrap--empty"></div>
+                <% } %>
+                <span class="wiki-subcard-title"><%= sp.title %></span>
+                <% if (_fi === 0) { %><span class="wiki-subcard-parent-label" data-fr="Fiche principale" data-en="Main page">Fiche principale</span><% } %>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+    <% } %>
+
     <%# ─ Sous-cartes (variantes) ─ %>
     <% if (locals.subPages && subPages.length > 0) { %>
       <div class="wiki-subcards-section">
