@@ -19,6 +19,11 @@
         </button>
       <% }) %>
     </div>
+    <div class="roue-special-toggles">
+      <button type="button" class="roue-special-btn roue-special-btn--ultra" id="roue-toggle-ultra" data-active="1">Ultra</button>
+      <button type="button" class="roue-special-btn roue-special-btn--irrealiste" id="roue-toggle-irrealiste" data-active="1">Irr&eacute;aliste</button>
+    </div>
+
     <div class="roue-actions">
       <button type="button" class="roue-spin-btn" id="roue-spin-btn" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2v6h-6"/><path d="M2.5 12a10 10 0 0 1 17.8-6.3L21.5 8"/><path d="M2.5 22v-6h6"/><path d="M21.5 12a10 10 0 0 1-17.8 6.3L2.5 16"/></svg>
@@ -70,8 +75,8 @@
 /* ── Spin button ── */
 .roue-actions{display:flex;justify-content:center;margin-top:.5rem}
 .roue-spin-btn{
-  display:inline-flex;align-items:center;gap:.6rem;
-  background:hsl(330,55%,30%);border:1px solid hsl(330,65%,48%);
+  display:inline-flex;align-items:center;justify-content:center;gap:.6rem;
+  background:hsl(330,55%,30%);border:1px solid hsl(330,45%,38%);
   color:#fff;font-size:1rem;font-weight:700;
   padding:.7rem 2.2rem;border-radius:12px;cursor:pointer;
   transition:background .15s,transform .1s;letter-spacing:.03em
@@ -145,6 +150,13 @@
 .roue-result-cat{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:hsl(var(--drum-hue,220),55%,60%)}
 .roue-result-title{font-size:.95rem;font-weight:700;color:#fff;line-height:1.35}
 
+/* ── Special toggles ── */
+.roue-special-toggles{display:flex;gap:.5rem;justify-content:center}
+.roue-special-btn{padding:.3rem .9rem;border-radius:999px;font-size:.75rem;font-weight:700;cursor:pointer;border:1px solid;transition:background .15s,opacity .15s}
+.roue-special-btn[data-active="0"]{opacity:.35;text-decoration:line-through}
+.roue-special-btn--ultra{background:hsl(45,60%,18%);border-color:hsl(45,65%,38%);color:hsl(45,80%,70%)}
+.roue-special-btn--irrealiste{background:hsl(270,40%,18%);border-color:hsl(270,50%,45%);color:hsl(270,70%,80%)}
+
 /* ── Mobile ── */
 @media(max-width:640px){
   .roue-drum{min-width:140px}
@@ -156,8 +168,28 @@
 (function () {
   'use strict';
 
-  var activeCats = [];    // clés actives
-  var isSpinning  = false;
+  var activeCats    = [];
+  var isSpinning    = false;
+  var allowUltra      = true;
+  var allowIrrealiste = true;
+
+  // ── Toggles Ultra / Irréaliste ───────────────────────────────────────────
+  document.getElementById('roue-toggle-ultra').addEventListener('click', function () {
+    allowUltra = !allowUltra;
+    this.dataset.active = allowUltra ? '1' : '0';
+  });
+  document.getElementById('roue-toggle-irrealiste').addEventListener('click', function () {
+    allowIrrealiste = !allowIrrealiste;
+    this.dataset.active = allowIrrealiste ? '1' : '0';
+  });
+
+  function filteredItems(key) {
+    return (ROUE_DATA[key] || []).filter(function (p) {
+      if (p.special === 'ultra'      && !allowUltra)      return false;
+      if (p.special === 'irrealiste' && !allowIrrealiste) return false;
+      return true;
+    });
+  }
 
   var spinBtn    = document.getElementById('roue-spin-btn');
   var drumsEl    = document.getElementById('roue-drums');
@@ -191,7 +223,7 @@
 
     activeCats.forEach(function (key) {
       var catMeta = ROUE_CATS.find(function (c) { return c.key === key; });
-      var items   = ROUE_DATA[key] || [];
+      var items   = filteredItems(key);
       if (!items.length) return;
 
       var drum = document.createElement('div');
@@ -247,7 +279,7 @@
     var winners = {}; // key → item
 
     activeCats.forEach(function (key, i) {
-      var items   = ROUE_DATA[key] || [];
+      var items   = filteredItems(key);
       if (!items.length) return;
       var winIdx  = Math.floor(Math.random() * items.length);
       winners[key] = items[winIdx];
