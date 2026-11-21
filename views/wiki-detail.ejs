@@ -593,6 +593,16 @@
           <%# Bloc admin : édition + maturité (fusionné) ─ %>
           <% if (currentUser && currentUser.isAdmin) { %>
           <div class="wiki-left-admin-block" id="wiki-maturity-widget" data-id="<%= page.id %>" data-level="<%= page.maturity || 0 %>">
+            <% if (locals.parentPage) { %>
+              <a href="/wiki/<%= parentPage.slug || parentPage.id %>" class="wiki-left-parent-btn" title="Carte parente">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="13" height="13" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                <span><%= parentPage.title %></span>
+              </a>
+            <% } %>
+            <a href="/wiki/ajouter?parent=<%= page.id %>&category=<%= page.category %>" class="wiki-left-add-sub-btn" title="Ajouter une sous-carte">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="13" height="13" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              <span>Sous-carte</span>
+            </a>
             <a href="/wiki/<%= page.slug || page.id %>/edit" class="wiki-left-edit-btn" title="Modifier" aria-label="Modifier">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
               <span>Modifier</span>
@@ -606,6 +616,14 @@
               <button type="button" class="wiki-maturity-lvl<%= (page.maturity||0)===5?' active':'' %>" data-level="5" title="Publiée">&#10003;</button>
             </div>
           </div>
+          <% if (locals.subPages && subPages.length > 0) { %>
+            <div class="wiki-left-subpages">
+              <span class="wiki-left-subpages-label">Sous-cartes</span>
+              <% subPages.forEach(function(sp) { %>
+                <a href="/wiki/<%= sp.slug || sp.id %>" class="wiki-left-subpage-link"><%= sp.title %></a>
+              <% }) %>
+            </div>
+          <% } %>
           <% } %>
         </div>
 

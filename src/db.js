@@ -895,6 +895,7 @@ try { db.exec("ALTER TABLE wiki_pages ADD COLUMN card_rarity TEXT NOT NULL DEFAU
 // Sources citables (liens, études, références) — pas encore exposé en UI,
 // prévu pour future interface admin. Format JSON : [{url, label}]
 try { db.exec("ALTER TABLE wiki_pages ADD COLUMN sources TEXT NOT NULL DEFAULT '[]'"); } catch(_) {}
+try { db.exec("ALTER TABLE wiki_pages ADD COLUMN parent_id INTEGER"); } catch(_) {}
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_cards (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2220,6 +2221,7 @@ function rowToWikiPage(row) {
     updatedAt: row.updated_at,
     cardSummary: row.card_summary || null,
     cardRarity: row.card_rarity || 'rare',
+    parentId: row.parent_id || null,
   };
 }
 
@@ -2233,7 +2235,7 @@ function setWikiPageMaturity(id, level) {
   db.prepare("UPDATE wiki_pages SET maturity = ?, maturity_set_at = ? WHERE id = ?").run(level, setAt, id);
 }
 
-function insertWikiPage({ title, category, content, tags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, slug: rawSlug }) {
+function insertWikiPage({ title, category, content, tags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, slug: rawSlug, parentId }) {
   const now = new Date().toISOString();
   // Generate slug if not provided
   let base = rawSlug ? slugify(rawSlug) : slugify(title);
@@ -2245,10 +2247,10 @@ function insertWikiPage({ title, category, content, tags, imagePaths, sfwImagePa
   }
   const info = db
     .prepare(
-      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, sfw_image_paths, owned, meta, extra_categories, parody, sub_parody, slug, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO wiki_pages (title, category, content, tags, image_paths, sfw_image_paths, owned, meta, extra_categories, parody, sub_parody, slug, parent_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), JSON.stringify(sfwImagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", slug, now, now);
+    .run(title, category, content, JSON.stringify(tags), JSON.stringify(imagePaths || []), JSON.stringify(sfwImagePaths || []), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", slug, parentId || null, now, now);
   return { id: info.lastInsertRowid, slug };
 }
 
@@ -2264,7 +2266,7 @@ function listWikiPages() {
 const _listWikiPagesLightStmt = db.prepare(`
   SELECT id, title, slug, category, tags, extra_categories, meta, views,
          owned, maturity, maturity_set_at, created_at, updated_at, parody, sub_parody,
-         image_path, image_paths, sfw_image_paths, featured,
+         image_path, image_paths, sfw_image_paths, featured, parent_id,
          CASE WHEN LENGTH(content) >= 100 THEN 1 ELSE 0 END AS has_content
   FROM wiki_pages ORDER BY title ASC
 `);
@@ -2300,6 +2302,7 @@ function listWikiPagesLight() {
       subParody: row.sub_parody || "",
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      parentId: row.parent_id || null,
       // Valeurs par défaut fusionnées par mergeUserReactions()
       rating: 0, flame: false, interested: false, hidden: false, readLater: false, practiced: false,
     };
@@ -2384,6 +2387,11 @@ function updateWikiPage(id, { title, category, content, tags, imagePaths, sfwIma
      WHERE id = ?`
   ).run(title, category, content, JSON.stringify(tags), JSON.stringify(finalImagePaths), JSON.stringify(finalSfwPaths), owned ? 1 : 0, JSON.stringify(meta || {}), JSON.stringify(extraCategories || []), parody || "", subParody || "", cardSummary !== undefined ? (cardSummary || null) : existing.card_summary, new Date().toISOString(), id);
   return true;
+}
+
+function getWikiSubPages(parentId) {
+  const rows = db.prepare("SELECT * FROM wiki_pages WHERE parent_id = ? ORDER BY title ASC").all(parentId);
+  return rows.map(rowToWikiPage);
 }
 
 // ── Cache SFW images ─────────────────────────────────────────────────────────
@@ -7508,6 +7516,7 @@ module.exports = {
   getWikiPage,
   getWikiPageBySlug,
   updateWikiPage,
+  getWikiSubPages,
   getSfwSet, invalidateSfwSet, setWikiPageSfwPaths,
   updateWikiPageSlug,
   slugify,

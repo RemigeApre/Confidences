@@ -54,6 +54,7 @@
         <div class="wiki-filter-section wiki-filter-toggles">
           <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn" data-fr="Ultra" data-en="Ultra">Ultra</button>
           <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
+          <button type="button" id="wiki-subcard-toggle" class="wiki-ultra-btn wiki-subcard-btn" data-fr="Variantes" data-en="Variants">Variantes</button>
           <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
             <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets" data-fr="Nos objets" data-en="Our items">Nos objets</button>
           <% } %>
@@ -313,6 +314,23 @@
   if (window.innerWidth > 640) {
     var catDetails = document.querySelector('.wiki-cats-collapsible');
     if (catDetails) catDetails.open = true;
+  }
+
+  // ── Toggle "Variantes" (sous-cartes) ──────────────────────────────────
+  var subBtn = document.getElementById('wiki-subcard-toggle');
+  if (subBtn) {
+    var hideSubcards = localStorage.getItem('wiki-hide-subcards') === '1';
+    var wikiMain = document.querySelector('main');
+    function applySubcardFilter() {
+      if (wikiMain) wikiMain.classList.toggle('wiki-hide-subcards', hideSubcards);
+      subBtn.classList.toggle('active', hideSubcards);
+    }
+    applySubcardFilter();
+    subBtn.addEventListener('click', function() {
+      hideSubcards = !hideSubcards;
+      localStorage.setItem('wiki-hide-subcards', hideSubcards ? '1' : '0');
+      applySubcardFilter();
+    });
   }
 })();
 </script>

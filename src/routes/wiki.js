@@ -52,6 +52,7 @@ const {
   getCodexAuthorBySlug,
   getWikiPageBySlug,
   updateWikiPageSlug,
+  getWikiSubPages,
   invalidateSfwSet,
   setWikiPageSfwPaths,
   getAllTagMeta,
@@ -881,7 +882,8 @@ function buildWikiRouter(config) {
     const parody = normalizeParody(String(req.body.parody || ""));
     const subParody = normalizeParody(String(req.body.sub_parody || ""));
 
-    const { id: newId, slug: newSlug } = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, slug: req.body.meta_slug || '' });
+    const parentId = req.body.parent_id ? Number(req.body.parent_id) : null;
+    const { id: newId, slug: newSlug } = insertWikiPage({ title, category, content, tags: enrichedTags, imagePaths, sfwImagePaths, owned, meta, extraCategories, parody, subParody, slug: req.body.meta_slug || '', parentId });
     invalidateSfwSet();
     invalidateWikiCache();
     syncPageGalleryImages(newId, title, imagePaths, meta);
@@ -967,16 +969,20 @@ function buildWikiRouter(config) {
   router.get("/ajouter", requireAdmin, (req, res) => {
     const preCategory = String(req.query.category || "");
     const preTitle    = String(req.query.title    || "");
+    const parentIdRaw = req.query.parent ? Number(req.query.parent) : null;
+    const parentPage  = parentIdRaw ? getWikiPage(parentIdRaw) : null;
     const pages = sortedPages();
     const blankPage = {
-      id: null, title: preTitle, category: preCategory || (CATEGORIES[0] && CATEGORIES[0].key) || "",
+      id: null, title: preTitle,
+      category: (parentPage && parentPage.category) || preCategory || (CATEGORIES[0] && CATEGORIES[0].key) || "",
       content: "", tags: [], imagePaths: [], owned: false, meta: {},
       extraCategories: [], rating: 0, flame: false, interested: false,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      parentId: parentPage ? parentPage.id : null,
     };
     const returnTo = safeReturnTo(req.get("referer"), "/wiki");
     const codexAuthors = listCodexAuthors();
-    res.render("wiki-form", { config, page: blankPage, pages, allTags: getAllTags(pages), returnTo, codexAuthors, ...CTX });
+    res.render("wiki-form", { config, page: blankPage, pages, allTags: getAllTags(pages), returnTo, codexAuthors, parentPage: parentPage || null, ...CTX });
   });
 
   // ── Route markdown publique (crawlers IA, clients texte) ────────────────────
@@ -1091,7 +1097,10 @@ function buildWikiRouter(config) {
     const userSex = req.user ? (req.user.sexe || '') : '';
     const OWNED_CATS = ['objets', 'tenues'];
     const userWikiStatus = (userId && OWNED_CATS.includes(page.category)) ? getUserWikiStatus(userId, page.id) : null;
-    res.render("wiki-detail", { config, userWikiStatus, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, ...CTX });
+    const isAdmin = req.user && req.user.isAdmin;
+    const subPages = isAdmin ? getWikiSubPages(page.id) : [];
+    const parentPage = (isAdmin && page.parentId) ? getWikiPage(page.parentId) : null;
+    res.render("wiki-detail", { config, userWikiStatus, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, subPages, parentPage: parentPage || null, ...CTX });
   });
 
   // ── Sondage communautaire ─────────────────────────────────────────────────
@@ -1160,7 +1169,8 @@ function buildWikiRouter(config) {
     const codexAuthors = listCodexAuthors();
     // Résoudre l'auteur principal pour l'affichage dans le formulaire (nom)
     const codexAuthorMain = page.meta && page.meta.author_main ? getCodexAuthorBySlug(page.meta.author_main) : null;
-    res.render("wiki-form", { config, page, pages, allTags, returnTo, editLang, translations, codexAuthors, codexAuthorMain, ...CTX });
+    const parentPage = page.parentId ? getWikiPage(page.parentId) : null;
+    res.render("wiki-form", { config, page, pages, allTags, returnTo, editLang, translations, codexAuthors, codexAuthorMain, parentPage: parentPage || null, ...CTX });
   });
 
   router.post("/:id", requireAdmin, upload.any(), (req, res) => {
