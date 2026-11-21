@@ -2,180 +2,155 @@
 <main class="container roue-page">
   <%- include('partials/top-nav', { config: config, navTitle: 'Roue du hasard', navTitleEn: 'Wheel of Fortune', navBack: '/wiki' }) %>
 
-  <%# ── Données catégories injectées pour le JS ── %>
   <script nonce="<%= nonce %>">
     var ROUE_DATA = <%- JSON.stringify(byCategory) %>;
     var ROUE_CATS = <%- JSON.stringify(categories.map(function(c){ return { key: c.key, label: c.label, hue: c.hue }; })) %>;
   </script>
 
-  <%# ── Sélecteur de roues ── %>
-  <section class="roue-selector">
-    <p class="roue-selector-hint" data-fr="Choisis les roues à faire tourner" data-en="Choose the wheels to spin">Choisis les roues à faire tourner</p>
-    <div class="roue-chips" id="roue-chips">
-      <% categories.forEach(function(c) { %>
-        <button type="button" class="roue-chip" data-cat="<%= c.key %>" data-hue="<%= c.hue %>" style="--chip-hue:<%= c.hue %>">
-          <%= c.label %>
-          <span class="roue-chip-count">(<%= byCategory[c.key] ? byCategory[c.key].length : 0 %>)</span>
-        </button>
-      <% }) %>
-    </div>
-    <%# Filtre lieux — visible seulement si catégorie lieux active %>
-    <div class="roue-lieu-filter" id="roue-lieu-filter" hidden>
-      <span class="roue-lieu-filter-label" data-fr="Lieux" data-en="Places">Lieux</span>
-      <button type="button" class="roue-lieu-btn" data-val="prive"  data-active="1" data-fr="Privé"  data-en="Private">Priv&eacute;</button>
-      <button type="button" class="roue-lieu-btn" data-val="public" data-active="1" data-fr="Public" data-en="Public">Public</button>
-      <button type="button" class="roue-lieu-btn" data-val="cache"  data-active="1" data-fr="Caché"  data-en="Hidden">Cach&eacute;</button>
-      <button type="button" class="roue-lieu-btn" data-val=""       data-active="1" data-fr="Non renseigné" data-en="Unspecified">Non renseign&eacute;</button>
+  <div class="roue-wrap">
+
+    <%# ── Catégories ── %>
+    <div class="roue-section">
+      <p class="roue-label" data-fr="Catégories" data-en="Categories">Cat&eacute;gories</p>
+      <div class="roue-chips" id="roue-chips">
+        <% categories.forEach(function(c) { %>
+          <button type="button" class="roue-chip" data-cat="<%= c.key %>">
+            <%= c.label %><span class="roue-chip-count"><%= byCategory[c.key] ? byCategory[c.key].length : 0 %></span>
+          </button>
+        <% }) %>
+      </div>
     </div>
 
-    <div class="roue-special-toggles">
-      <button type="button" class="roue-special-btn roue-special-btn--ultra" id="roue-toggle-ultra" data-active="1">Ultra</button>
-      <button type="button" class="roue-special-btn roue-special-btn--irrealiste" id="roue-toggle-irrealiste" data-active="1">Irr&eacute;aliste</button>
+    <%# ── Options ── %>
+    <div class="roue-section roue-options">
+      <div class="roue-option-group" id="roue-lieu-filter" hidden>
+        <span class="roue-label">Lieux</span>
+        <button type="button" class="roue-opt-btn" data-val="prive"  data-active="1">Priv&eacute;</button>
+        <button type="button" class="roue-opt-btn" data-val="public" data-active="1">Public</button>
+        <button type="button" class="roue-opt-btn" data-val="cache"  data-active="1">Cach&eacute;</button>
+        <button type="button" class="roue-opt-btn" data-val=""       data-active="1">Non renseign&eacute;</button>
+      </div>
+      <div class="roue-option-group">
+        <span class="roue-label">Contenu</span>
+        <button type="button" class="roue-opt-btn" id="roue-toggle-ultra"      data-active="1">Ultra</button>
+        <button type="button" class="roue-opt-btn" id="roue-toggle-irrealiste" data-active="1">Irr&eacute;aliste</button>
+      </div>
     </div>
 
-    <div class="roue-actions">
+    <%# ── Bouton ── %>
+    <div class="roue-action">
       <button type="button" class="roue-spin-btn" id="roue-spin-btn" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2v6h-6"/><path d="M2.5 12a10 10 0 0 1 17.8-6.3L21.5 8"/><path d="M2.5 22v-6h6"/><path d="M21.5 12a10 10 0 0 1-17.8 6.3L2.5 16"/></svg>
-        <span data-fr="Lancer" data-en="Spin">Lancer</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2v6h-6"/><path d="M2.5 12a10 10 0 0 1 17.8-6.3L21.5 8"/><path d="M2.5 22v-6h6"/><path d="M21.5 12a10 10 0 0 1-17.8 6.3L2.5 16"/></svg>
+        Lancer
       </button>
     </div>
-  </section>
 
-  <%# ── Zone des drums ── %>
-  <section class="roue-stage" id="roue-stage" hidden>
-    <div class="roue-drums" id="roue-drums">
-      <%# Drums générés en JS %>
-    </div>
-    <div class="roue-results" id="roue-results" hidden>
-      <%# Cartes résultats générées en JS %>
-    </div>
-  </section>
+    <%# ── Drums ── %>
+    <div class="roue-drums" id="roue-drums" hidden></div>
 
+    <%# ── Résultats ── %>
+    <div class="roue-results" id="roue-results" hidden></div>
+
+  </div>
 </main>
 
 <style>
-/* ── Layout ── */
-.roue-page{padding-bottom:4rem}
+.roue-page{padding-bottom:5rem}
+.roue-wrap{max-width:720px;margin:0 auto;padding:1.5rem 1rem;display:flex;flex-direction:column;gap:1.75rem}
 
-/* ── Selector ── */
-.roue-selector{display:flex;flex-direction:column;align-items:center;gap:1.25rem;padding:2rem 1rem 1.5rem;text-align:center}
-.roue-selector-hint{font-size:.85rem;color:var(--muted);margin:0;letter-spacing:.02em}
-.roue-chips{display:flex;flex-wrap:wrap;gap:.55rem;justify-content:center;max-width:680px}
+/* ── Label section ── */
+.roue-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 .6rem}
 
-/* ── Chips ── */
+/* ── Section ── */
+.roue-section{display:flex;flex-direction:column}
+
+/* ── Chips catégories ── */
+.roue-chips{display:flex;flex-wrap:wrap;gap:.4rem}
 .roue-chip{
-  background:hsl(var(--chip-hue,220),20%,14%);
-  border:1.5px solid hsl(var(--chip-hue,220),30%,25%);
-  color:hsl(var(--chip-hue,220),40%,70%);
+  display:inline-flex;align-items:center;gap:.45rem;
+  padding:.38rem .8rem;border-radius:6px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.1);
+  background:transparent;color:rgba(255,255,255,.45);
   font-size:.82rem;font-weight:600;
-  padding:.38rem .85rem;border-radius:999px;cursor:pointer;
-  transition:background .15s,border-color .15s,color .15s,transform .1s;
-  display:flex;align-items:center;gap:.35rem
+  transition:background .12s,border-color .12s,color .12s
 }
-.roue-chip:hover{background:hsl(var(--chip-hue,220),30%,20%);border-color:hsl(var(--chip-hue,220),50%,45%);color:#fff}
-.roue-chip.active{
-  background:hsl(var(--chip-hue,220),45%,22%);
-  border-color:hsl(var(--chip-hue,220),65%,55%);
-  color:hsl(var(--chip-hue,220),80%,85%);
-  transform:scale(1.04)
-}
-.roue-chip-count{font-size:.7rem;opacity:.55;font-weight:400}
+.roue-chip:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.75)}
+.roue-chip.active{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff}
+.roue-chip-count{font-size:.7rem;font-weight:400;opacity:.45}
 
-/* ── Spin button ── */
-.roue-actions{display:flex;justify-content:center;margin-top:.5rem}
+/* ── Options ── */
+.roue-options{gap:.75rem}
+.roue-option-group{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem}
+.roue-option-group .roue-label{margin:0;margin-right:.25rem;flex-shrink:0;white-space:nowrap}
+.roue-opt-btn{
+  padding:.28rem .7rem;border-radius:5px;font-size:.76rem;font-weight:600;cursor:pointer;
+  border:1px solid rgba(255,255,255,.1);background:transparent;
+  color:rgba(255,255,255,.5);transition:color .12s,border-color .12s,opacity .12s
+}
+.roue-opt-btn:hover{border-color:rgba(255,255,255,.22);color:rgba(255,255,255,.8)}
+.roue-opt-btn[data-active="0"]{opacity:.28;text-decoration:line-through}
+
+/* ── Bouton Lancer ── */
+.roue-action{display:flex;justify-content:flex-start}
 .roue-spin-btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:.6rem;
-  background:hsl(330,55%,30%);border:1px solid hsl(330,45%,38%);
-  color:#fff;font-size:1rem;font-weight:700;
-  padding:.7rem 2.2rem;border-radius:12px;cursor:pointer;
-  transition:background .15s,transform .1s;letter-spacing:.03em
+  display:inline-flex;align-items:center;gap:.55rem;
+  padding:.6rem 1.6rem;border-radius:8px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);color:#fff;
+  font-size:.92rem;font-weight:700;
+  transition:background .12s;letter-spacing:.02em
 }
-.roue-spin-btn:hover:not(:disabled){background:hsl(330,55%,38%);transform:scale(1.03)}
-.roue-spin-btn:disabled{opacity:.35;cursor:default;transform:none}
-.roue-spin-btn svg{width:18px;height:18px;flex-shrink:0}
-.roue-spin-btn.spinning svg{animation:roue-spin-icon 0.6s linear infinite}
-@keyframes roue-spin-icon{to{transform:rotate(360deg)}}
-
-/* ── Stage ── */
-.roue-stage{padding:1.5rem 1rem 2rem}
+.roue-spin-btn:hover:not(:disabled){background:rgba(255,255,255,.13)}
+.roue-spin-btn:disabled{opacity:.3;cursor:default}
+.roue-spin-btn svg{width:16px;height:16px;flex-shrink:0}
+.roue-spin-btn.spinning svg{animation:rspin .6s linear infinite}
+@keyframes rspin{to{transform:rotate(360deg)}}
 
 /* ── Drums ── */
-.roue-drums{
-  display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;
-  margin-bottom:2rem
-}
-.roue-drum{
-  display:flex;flex-direction:column;align-items:center;gap:.5rem;
-  min-width:160px;max-width:220px;flex:1
-}
-.roue-drum-label{
-  font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
-  color:hsl(var(--drum-hue,220),50%,60%)
-}
+.roue-drums{display:flex;flex-wrap:wrap;gap:.85rem}
+.roue-drum{display:flex;flex-direction:column;gap:.4rem;min-width:150px;max-width:200px;flex:1}
+.roue-drum-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
 .roue-drum-window{
-  width:100%;height:160px;overflow:hidden;position:relative;
-  border:1.5px solid hsl(var(--drum-hue,220),30%,28%);
-  border-radius:10px;
-  background:hsl(var(--drum-hue,220),18%,10%)
+  width:100%;height:156px;overflow:hidden;position:relative;
+  border:1px solid rgba(255,255,255,.1);border-radius:8px;
+  background:rgba(255,255,255,.03)
 }
-/* Fade top/bottom */
 .roue-drum-window::before,.roue-drum-window::after{
-  content:'';position:absolute;left:0;right:0;height:48px;z-index:2;pointer-events:none
+  content:'';position:absolute;left:0;right:0;height:52px;z-index:2;pointer-events:none
 }
-.roue-drum-window::before{top:0;background:linear-gradient(to bottom,hsl(var(--drum-hue,220),18%,10%),transparent)}
-.roue-drum-window::after{bottom:0;background:linear-gradient(to top,hsl(var(--drum-hue,220),18%,10%),transparent)}
-/* Highlight center */
-.roue-drum-window .roue-drum-cursor{
+.roue-drum-window::before{top:0;background:linear-gradient(to bottom,rgba(14,16,22,1),transparent)}
+.roue-drum-window::after{bottom:0;background:linear-gradient(to top,rgba(14,16,22,1),transparent)}
+.roue-drum-cursor{
   position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
-  height:52px;border-top:1px solid hsl(var(--drum-hue,220),55%,45%);
-  border-bottom:1px solid hsl(var(--drum-hue,220),55%,45%);
-  background:hsl(var(--drum-hue,220),30%,16%);z-index:1;pointer-events:none
+  height:52px;z-index:1;pointer-events:none;
+  border-top:1px solid rgba(255,255,255,.12);
+  border-bottom:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04)
 }
-
-/* ── Drum track ── */
 .roue-drum-track{display:flex;flex-direction:column}
 .roue-drum-item{
   height:52px;display:flex;align-items:center;justify-content:center;
   padding:0 .75rem;text-align:center;
-  font-size:.8rem;font-weight:600;color:hsl(var(--drum-hue,220),30%,65%);
+  font-size:.8rem;font-weight:500;color:rgba(255,255,255,.55);
   line-height:1.3;flex-shrink:0
 }
 
-/* ── Results ── */
-.roue-results{
-  display:flex;flex-wrap:wrap;gap:.85rem;justify-content:center;
-  animation:roue-fadein .4s ease
-}
-@keyframes roue-fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ── Résultats ── */
+.roue-results{display:flex;flex-wrap:wrap;gap:.65rem;animation:rfadein .35s ease}
+@keyframes rfadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .roue-result-card{
-  background:hsl(var(--drum-hue,220),18%,13%);
-  border:1.5px solid hsl(var(--drum-hue,220),35%,28%);
-  border-radius:12px;padding:1rem 1.25rem;
-  min-width:180px;max-width:260px;flex:1;
-  display:flex;flex-direction:column;gap:.35rem;
-  text-decoration:none;transition:border-color .15s,background .15s
+  display:flex;flex-direction:column;gap:.3rem;
+  flex:1;min-width:140px;max-width:220px;
+  padding:.85rem 1rem;border-radius:8px;text-decoration:none;
+  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);
+  transition:background .12s,border-color .12s
 }
-.roue-result-card:hover{border-color:hsl(var(--drum-hue,220),55%,50%);background:hsl(var(--drum-hue,220),22%,17%)}
-.roue-result-cat{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:hsl(var(--drum-hue,220),55%,60%)}
-.roue-result-title{font-size:.95rem;font-weight:700;color:#fff;line-height:1.35}
+.roue-result-card:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22)}
+.roue-result-cat{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.roue-result-title{font-size:.92rem;font-weight:700;color:#fff;line-height:1.3}
 
-/* ── Filtre lieu ── */
-.roue-lieu-filter{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;justify-content:center}
-.roue-lieu-filter-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:hsl(140,40%,55%);margin-right:.2rem}
-.roue-lieu-btn{padding:.28rem .75rem;border-radius:999px;font-size:.74rem;font-weight:600;cursor:pointer;border:1px solid hsl(140,30%,28%);background:hsl(140,20%,13%);color:hsl(140,50%,65%);transition:opacity .15s}
-.roue-lieu-btn[data-active="0"]{opacity:.3;text-decoration:line-through}
-
-/* ── Special toggles ── */
-.roue-special-toggles{display:flex;gap:.5rem;justify-content:center}
-.roue-special-btn{padding:.3rem .9rem;border-radius:999px;font-size:.75rem;font-weight:700;cursor:pointer;border:1px solid;transition:background .15s,opacity .15s}
-.roue-special-btn[data-active="0"]{opacity:.35;text-decoration:line-through}
-.roue-special-btn--ultra{background:hsl(45,60%,18%);border-color:hsl(45,65%,38%);color:hsl(45,80%,70%)}
-.roue-special-btn--irrealiste{background:hsl(270,40%,18%);border-color:hsl(270,50%,45%);color:hsl(270,70%,80%)}
-
-/* ── Mobile ── */
 @media(max-width:640px){
-  .roue-drum{min-width:140px}
-  .roue-spin-btn{padding:.65rem 1.5rem;font-size:.9rem}
+  .roue-drum{min-width:130px}
 }
 </style>
 
@@ -183,12 +158,18 @@
 (function () {
   'use strict';
 
-  var activeCats    = [];
-  var isSpinning    = false;
+  var activeCats      = [];
+  var isSpinning      = false;
   var allowUltra      = true;
   var allowIrrealiste = true;
+  var lieuActive      = { prive: true, public: true, cache: true, '': true };
 
-  // ── Toggles Ultra / Irréaliste ───────────────────────────────────────────
+  var spinBtn   = document.getElementById('roue-spin-btn');
+  var drumsEl   = document.getElementById('roue-drums');
+  var resultsEl = document.getElementById('roue-results');
+  var lieuEl    = document.getElementById('roue-lieu-filter');
+
+  // ── Options ─────────────────────────────────────────────────────────────
   document.getElementById('roue-toggle-ultra').addEventListener('click', function () {
     allowUltra = !allowUltra;
     this.dataset.active = allowUltra ? '1' : '0';
@@ -197,101 +178,73 @@
     allowIrrealiste = !allowIrrealiste;
     this.dataset.active = allowIrrealiste ? '1' : '0';
   });
-
-  // ── Filtre lieux ─────────────────────────────────────────────────────────
-  var lieuFilterEl = document.getElementById('roue-lieu-filter');
-  var lieuActive = { prive: true, public: true, cache: true, '': true }; // '' = non renseigné
-
-  document.querySelectorAll('.roue-lieu-btn').forEach(function (btn) {
+  document.querySelectorAll('.roue-opt-btn[data-val]').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var val = btn.dataset.val;
-      lieuActive[val] = !lieuActive[val];
-      btn.dataset.active = lieuActive[val] ? '1' : '0';
+      var v = btn.dataset.val;
+      lieuActive[v] = !lieuActive[v];
+      btn.dataset.active = lieuActive[v] ? '1' : '0';
     });
   });
 
-  function updateLieuFilter() {
-    var hasLieux = activeCats.indexOf('lieux') !== -1;
-    lieuFilterEl.hidden = !hasLieux;
-  }
-
+  // ── Filtre ───────────────────────────────────────────────────────────────
   function filteredItems(key) {
     return (ROUE_DATA[key] || []).filter(function (p) {
       if (p.special === 'ultra'      && !allowUltra)      return false;
       if (p.special === 'irrealiste' && !allowIrrealiste) return false;
-      if (key === 'lieux') {
-        var tl = p.typeLieu || '';
-        if (!lieuActive[tl]) return false;
-      }
+      if (key === 'lieux' && !lieuActive[p.typeLieu || '']) return false;
       return true;
     });
   }
 
-  var spinBtn    = document.getElementById('roue-spin-btn');
-  var drumsEl    = document.getElementById('roue-drums');
-  var resultsEl  = document.getElementById('roue-results');
-  var stageEl    = document.getElementById('roue-stage');
-
-  // ── Chips ───────────────────────────────────────────────────────────────
+  // ── Chips ────────────────────────────────────────────────────────────────
   document.querySelectorAll('.roue-chip').forEach(function (chip) {
     chip.addEventListener('click', function () {
       var cat = chip.dataset.cat;
       var idx = activeCats.indexOf(cat);
-      if (idx === -1) {
-        activeCats.push(cat);
-        chip.classList.add('active');
-      } else {
-        activeCats.splice(idx, 1);
-        chip.classList.remove('active');
-      }
+      if (idx === -1) { activeCats.push(cat); chip.classList.add('active'); }
+      else            { activeCats.splice(idx, 1); chip.classList.remove('active'); }
       spinBtn.disabled = activeCats.length === 0;
-      updateLieuFilter();
-      if (activeCats.length > 0) rebuildDrums();
-      else stageEl.hidden = true;
+      lieuEl.hidden = activeCats.indexOf('lieux') === -1;
+      rebuildDrums();
     });
   });
 
-  // ── Rebuild drums (on category change) ──────────────────────────────────
+  // ── Drums ────────────────────────────────────────────────────────────────
   function rebuildDrums() {
     drumsEl.innerHTML = '';
     resultsEl.innerHTML = '';
     resultsEl.hidden = true;
-    stageEl.hidden = false;
+
+    if (!activeCats.length) { drumsEl.hidden = true; return; }
+    drumsEl.hidden = false;
 
     activeCats.forEach(function (key) {
-      var catMeta = ROUE_CATS.find(function (c) { return c.key === key; });
-      var items   = filteredItems(key);
+      var cat   = ROUE_CATS.find(function (c) { return c.key === key; });
+      var items = filteredItems(key);
       if (!items.length) return;
 
-      var drum = document.createElement('div');
+      var drum  = document.createElement('div');
       drum.className = 'roue-drum';
-      drum.dataset.cat = key;
-      drum.style.setProperty('--drum-hue', catMeta ? catMeta.hue : 220);
 
-      var label = document.createElement('div');
-      label.className = 'roue-drum-label';
-      label.textContent = catMeta ? catMeta.label : key;
-      drum.appendChild(label);
+      var lbl = document.createElement('div');
+      lbl.className = 'roue-drum-label';
+      lbl.textContent = cat ? cat.label : key;
+      drum.appendChild(lbl);
 
       var win = document.createElement('div');
       win.className = 'roue-drum-window';
-
-      var cursor = document.createElement('div');
-      cursor.className = 'roue-drum-cursor';
-      win.appendChild(cursor);
+      win.appendChild(Object.assign(document.createElement('div'), { className: 'roue-drum-cursor' }));
 
       var track = document.createElement('div');
       track.className = 'roue-drum-track';
-      track.id = 'drum-track-' + key;
+      track.id = 'drum-' + key;
 
-      // Répéter 5× pour l'animation
-      var REPS = 5;
-      for (var r = 0; r < REPS; r++) {
+      for (var r = 0; r < 5; r++) {
         items.forEach(function (p) {
-          var item = document.createElement('div');
-          item.className = 'roue-drum-item';
-          item.textContent = p.title;
-          track.appendChild(item);
+          var el = document.createElement('div');
+          el.className = 'roue-drum-item';
+          el.textContent = p.title;
+          track.appendChild(el);
         });
       }
 
@@ -301,42 +254,37 @@
     });
   }
 
-  // ── Spin ────────────────────────────────────────────────────────────────
-  var ITEM_H   = 52;   // px — doit correspondre au CSS
-  var DURATION = 3200; // ms pour le premier drum
+  // ── Spin ─────────────────────────────────────────────────────────────────
+  var ITEM_H = 52;
 
   spinBtn.addEventListener('click', function () {
-    if (isSpinning || activeCats.length === 0) return;
+    if (isSpinning || !activeCats.length) return;
     isSpinning = true;
     spinBtn.classList.add('spinning');
     spinBtn.disabled = true;
     resultsEl.hidden = true;
     resultsEl.innerHTML = '';
 
-    var winners = {}; // key → item
+    var winners = {};
 
     activeCats.forEach(function (key, i) {
-      var items   = filteredItems(key);
+      var items = filteredItems(key);
       if (!items.length) return;
-      var winIdx  = Math.floor(Math.random() * items.length);
+
+      var winIdx = Math.floor(Math.random() * items.length);
       winners[key] = items[winIdx];
 
-      var track    = document.getElementById('drum-track-' + key);
+      var track = document.getElementById('drum-' + key);
       if (!track) return;
 
-      // Position de départ : reset sans transition
       track.style.transition = 'none';
       track.style.transform  = 'translateY(0)';
-      track.offsetHeight; // force reflow
+      track.offsetHeight;
 
-      // On atterrit dans la 4ème répétition sur le gagnant
       var targetIdx = items.length * 3 + winIdx;
-      // Centrer l'item dans la fenêtre (window=160px, item=52px → offset=54px)
-      var finalY = -(targetIdx * ITEM_H) + 54;
-
-      // Délai décalé par drum pour l'effet cascade
-      var delay    = i * 350;
-      var duration = DURATION + i * 200;
+      var finalY    = -(targetIdx * ITEM_H) + 52;
+      var delay     = i * 300;
+      var duration  = 3000 + i * 300;
 
       setTimeout(function () {
         track.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.17, 0.67, 0.12, 0.99)';
@@ -344,40 +292,37 @@
       }, delay);
     });
 
-    // Afficher les résultats après que tous les drums aient fini
-    var totalDuration = DURATION + (activeCats.length - 1) * (350 + 200) + 400;
+    var total = 3000 + (activeCats.length - 1) * 600 + 500;
     setTimeout(function () {
       showResults(winners);
       isSpinning = false;
       spinBtn.classList.remove('spinning');
       spinBtn.disabled = false;
-    }, totalDuration);
+    }, total);
   });
 
-  // ── Résultats ───────────────────────────────────────────────────────────
+  // ── Résultats ────────────────────────────────────────────────────────────
   function showResults(winners) {
     resultsEl.innerHTML = '';
     activeCats.forEach(function (key) {
-      var item    = winners[key];
+      var item = winners[key];
       if (!item) return;
-      var catMeta = ROUE_CATS.find(function (c) { return c.key === key; });
-      var hue     = catMeta ? catMeta.hue : 220;
+      var cat  = ROUE_CATS.find(function (c) { return c.key === key; });
 
       var card = document.createElement('a');
       card.className = 'roue-result-card';
       card.href = '/wiki/' + item.slug;
-      card.style.setProperty('--drum-hue', hue);
 
-      var catLabel = document.createElement('div');
-      catLabel.className = 'roue-result-cat';
-      catLabel.textContent = catMeta ? catMeta.label : key;
+      var cl = document.createElement('div');
+      cl.className = 'roue-result-cat';
+      cl.textContent = cat ? cat.label : key;
 
-      var title = document.createElement('div');
-      title.className = 'roue-result-title';
-      title.textContent = item.title;
+      var tl = document.createElement('div');
+      tl.className = 'roue-result-title';
+      tl.textContent = item.title;
 
-      card.appendChild(catLabel);
-      card.appendChild(title);
+      card.appendChild(cl);
+      card.appendChild(tl);
       resultsEl.appendChild(card);
     });
     resultsEl.hidden = false;
