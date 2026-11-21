@@ -1,0 +1,320 @@
+<%- include('partials/head', { title: 'Roue du hasard' }) %>
+<main class="container roue-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Roue du hasard', navTitleEn: 'Wheel of Fortune', navBack: '/wiki' }) %>
+
+  <%# ── Données catégories injectées pour le JS ── %>
+  <script nonce="<%= nonce %>">
+    var ROUE_DATA = <%- JSON.stringify(byCategory) %>;
+    var ROUE_CATS = <%- JSON.stringify(categories.map(function(c){ return { key: c.key, label: c.label, hue: c.hue }; })) %>;
+  </script>
+
+  <%# ── Sélecteur de roues ── %>
+  <section class="roue-selector">
+    <p class="roue-selector-hint" data-fr="Choisis les roues à faire tourner" data-en="Choose the wheels to spin">Choisis les roues à faire tourner</p>
+    <div class="roue-chips" id="roue-chips">
+      <% categories.forEach(function(c) { %>
+        <button type="button" class="roue-chip" data-cat="<%= c.key %>" data-hue="<%= c.hue %>" style="--chip-hue:<%= c.hue %>">
+          <%= c.label %>
+          <span class="roue-chip-count">(<%= byCategory[c.key] ? byCategory[c.key].length : 0 %>)</span>
+        </button>
+      <% }) %>
+    </div>
+    <div class="roue-actions">
+      <button type="button" class="roue-spin-btn" id="roue-spin-btn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2v6h-6"/><path d="M2.5 12a10 10 0 0 1 17.8-6.3L21.5 8"/><path d="M2.5 22v-6h6"/><path d="M21.5 12a10 10 0 0 1-17.8 6.3L2.5 16"/></svg>
+        <span data-fr="Lancer" data-en="Spin">Lancer</span>
+      </button>
+    </div>
+  </section>
+
+  <%# ── Zone des drums ── %>
+  <section class="roue-stage" id="roue-stage" hidden>
+    <div class="roue-drums" id="roue-drums">
+      <%# Drums générés en JS %>
+    </div>
+    <div class="roue-results" id="roue-results" hidden>
+      <%# Cartes résultats générées en JS %>
+    </div>
+  </section>
+
+</main>
+
+<style>
+/* ── Layout ── */
+.roue-page{padding-bottom:4rem}
+
+/* ── Selector ── */
+.roue-selector{display:flex;flex-direction:column;align-items:center;gap:1.25rem;padding:2rem 1rem 1.5rem;text-align:center}
+.roue-selector-hint{font-size:.85rem;color:var(--muted);margin:0;letter-spacing:.02em}
+.roue-chips{display:flex;flex-wrap:wrap;gap:.55rem;justify-content:center;max-width:680px}
+
+/* ── Chips ── */
+.roue-chip{
+  background:hsl(var(--chip-hue,220),20%,14%);
+  border:1.5px solid hsl(var(--chip-hue,220),30%,25%);
+  color:hsl(var(--chip-hue,220),40%,70%);
+  font-size:.82rem;font-weight:600;
+  padding:.38rem .85rem;border-radius:999px;cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s,transform .1s;
+  display:flex;align-items:center;gap:.35rem
+}
+.roue-chip:hover{background:hsl(var(--chip-hue,220),30%,20%);border-color:hsl(var(--chip-hue,220),50%,45%);color:#fff}
+.roue-chip.active{
+  background:hsl(var(--chip-hue,220),45%,22%);
+  border-color:hsl(var(--chip-hue,220),65%,55%);
+  color:hsl(var(--chip-hue,220),80%,85%);
+  transform:scale(1.04)
+}
+.roue-chip-count{font-size:.7rem;opacity:.55;font-weight:400}
+
+/* ── Spin button ── */
+.roue-actions{display:flex;justify-content:center;margin-top:.5rem}
+.roue-spin-btn{
+  display:inline-flex;align-items:center;gap:.6rem;
+  background:hsl(330,55%,30%);border:1px solid hsl(330,65%,48%);
+  color:#fff;font-size:1rem;font-weight:700;
+  padding:.7rem 2.2rem;border-radius:12px;cursor:pointer;
+  transition:background .15s,transform .1s;letter-spacing:.03em
+}
+.roue-spin-btn:hover:not(:disabled){background:hsl(330,55%,38%);transform:scale(1.03)}
+.roue-spin-btn:disabled{opacity:.35;cursor:default;transform:none}
+.roue-spin-btn svg{width:18px;height:18px;flex-shrink:0}
+.roue-spin-btn.spinning svg{animation:roue-spin-icon 0.6s linear infinite}
+@keyframes roue-spin-icon{to{transform:rotate(360deg)}}
+
+/* ── Stage ── */
+.roue-stage{padding:1.5rem 1rem 2rem}
+
+/* ── Drums ── */
+.roue-drums{
+  display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;
+  margin-bottom:2rem
+}
+.roue-drum{
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  min-width:160px;max-width:220px;flex:1
+}
+.roue-drum-label{
+  font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
+  color:hsl(var(--drum-hue,220),50%,60%)
+}
+.roue-drum-window{
+  width:100%;height:160px;overflow:hidden;position:relative;
+  border:1.5px solid hsl(var(--drum-hue,220),30%,28%);
+  border-radius:10px;
+  background:hsl(var(--drum-hue,220),18%,10%)
+}
+/* Fade top/bottom */
+.roue-drum-window::before,.roue-drum-window::after{
+  content:'';position:absolute;left:0;right:0;height:48px;z-index:2;pointer-events:none
+}
+.roue-drum-window::before{top:0;background:linear-gradient(to bottom,hsl(var(--drum-hue,220),18%,10%),transparent)}
+.roue-drum-window::after{bottom:0;background:linear-gradient(to top,hsl(var(--drum-hue,220),18%,10%),transparent)}
+/* Highlight center */
+.roue-drum-window .roue-drum-cursor{
+  position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+  height:52px;border-top:1px solid hsl(var(--drum-hue,220),55%,45%);
+  border-bottom:1px solid hsl(var(--drum-hue,220),55%,45%);
+  background:hsl(var(--drum-hue,220),30%,16%);z-index:1;pointer-events:none
+}
+
+/* ── Drum track ── */
+.roue-drum-track{display:flex;flex-direction:column}
+.roue-drum-item{
+  height:52px;display:flex;align-items:center;justify-content:center;
+  padding:0 .75rem;text-align:center;
+  font-size:.8rem;font-weight:600;color:hsl(var(--drum-hue,220),30%,65%);
+  line-height:1.3;flex-shrink:0
+}
+
+/* ── Results ── */
+.roue-results{
+  display:flex;flex-wrap:wrap;gap:.85rem;justify-content:center;
+  animation:roue-fadein .4s ease
+}
+@keyframes roue-fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.roue-result-card{
+  background:hsl(var(--drum-hue,220),18%,13%);
+  border:1.5px solid hsl(var(--drum-hue,220),35%,28%);
+  border-radius:12px;padding:1rem 1.25rem;
+  min-width:180px;max-width:260px;flex:1;
+  display:flex;flex-direction:column;gap:.35rem;
+  text-decoration:none;transition:border-color .15s,background .15s
+}
+.roue-result-card:hover{border-color:hsl(var(--drum-hue,220),55%,50%);background:hsl(var(--drum-hue,220),22%,17%)}
+.roue-result-cat{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:hsl(var(--drum-hue,220),55%,60%)}
+.roue-result-title{font-size:.95rem;font-weight:700;color:#fff;line-height:1.35}
+
+/* ── Mobile ── */
+@media(max-width:640px){
+  .roue-drum{min-width:140px}
+  .roue-spin-btn{padding:.65rem 1.5rem;font-size:.9rem}
+}
+</style>
+
+<script nonce="<%= nonce %>">
+(function () {
+  'use strict';
+
+  var activeCats = [];    // clés actives
+  var isSpinning  = false;
+
+  var spinBtn    = document.getElementById('roue-spin-btn');
+  var drumsEl    = document.getElementById('roue-drums');
+  var resultsEl  = document.getElementById('roue-results');
+  var stageEl    = document.getElementById('roue-stage');
+
+  // ── Chips ───────────────────────────────────────────────────────────────
+  document.querySelectorAll('.roue-chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var cat = chip.dataset.cat;
+      var idx = activeCats.indexOf(cat);
+      if (idx === -1) {
+        activeCats.push(cat);
+        chip.classList.add('active');
+      } else {
+        activeCats.splice(idx, 1);
+        chip.classList.remove('active');
+      }
+      spinBtn.disabled = activeCats.length === 0;
+      if (activeCats.length > 0) rebuildDrums();
+      else stageEl.hidden = true;
+    });
+  });
+
+  // ── Rebuild drums (on category change) ──────────────────────────────────
+  function rebuildDrums() {
+    drumsEl.innerHTML = '';
+    resultsEl.innerHTML = '';
+    resultsEl.hidden = true;
+    stageEl.hidden = false;
+
+    activeCats.forEach(function (key) {
+      var catMeta = ROUE_CATS.find(function (c) { return c.key === key; });
+      var items   = ROUE_DATA[key] || [];
+      if (!items.length) return;
+
+      var drum = document.createElement('div');
+      drum.className = 'roue-drum';
+      drum.dataset.cat = key;
+      drum.style.setProperty('--drum-hue', catMeta ? catMeta.hue : 220);
+
+      var label = document.createElement('div');
+      label.className = 'roue-drum-label';
+      label.textContent = catMeta ? catMeta.label : key;
+      drum.appendChild(label);
+
+      var win = document.createElement('div');
+      win.className = 'roue-drum-window';
+
+      var cursor = document.createElement('div');
+      cursor.className = 'roue-drum-cursor';
+      win.appendChild(cursor);
+
+      var track = document.createElement('div');
+      track.className = 'roue-drum-track';
+      track.id = 'drum-track-' + key;
+
+      // Répéter 5× pour l'animation
+      var REPS = 5;
+      for (var r = 0; r < REPS; r++) {
+        items.forEach(function (p) {
+          var item = document.createElement('div');
+          item.className = 'roue-drum-item';
+          item.textContent = p.title;
+          track.appendChild(item);
+        });
+      }
+
+      win.appendChild(track);
+      drum.appendChild(win);
+      drumsEl.appendChild(drum);
+    });
+  }
+
+  // ── Spin ────────────────────────────────────────────────────────────────
+  var ITEM_H   = 52;   // px — doit correspondre au CSS
+  var DURATION = 3200; // ms pour le premier drum
+
+  spinBtn.addEventListener('click', function () {
+    if (isSpinning || activeCats.length === 0) return;
+    isSpinning = true;
+    spinBtn.classList.add('spinning');
+    spinBtn.disabled = true;
+    resultsEl.hidden = true;
+    resultsEl.innerHTML = '';
+
+    var winners = {}; // key → item
+
+    activeCats.forEach(function (key, i) {
+      var items   = ROUE_DATA[key] || [];
+      if (!items.length) return;
+      var winIdx  = Math.floor(Math.random() * items.length);
+      winners[key] = items[winIdx];
+
+      var track    = document.getElementById('drum-track-' + key);
+      if (!track) return;
+
+      // Position de départ : reset sans transition
+      track.style.transition = 'none';
+      track.style.transform  = 'translateY(0)';
+      track.offsetHeight; // force reflow
+
+      // On atterrit dans la 4ème répétition sur le gagnant
+      var targetIdx = items.length * 3 + winIdx;
+      // Centrer l'item dans la fenêtre (window=160px, item=52px → offset=54px)
+      var finalY = -(targetIdx * ITEM_H) + 54;
+
+      // Délai décalé par drum pour l'effet cascade
+      var delay    = i * 350;
+      var duration = DURATION + i * 200;
+
+      setTimeout(function () {
+        track.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+        track.style.transform  = 'translateY(' + finalY + 'px)';
+      }, delay);
+    });
+
+    // Afficher les résultats après que tous les drums aient fini
+    var totalDuration = DURATION + (activeCats.length - 1) * (350 + 200) + 400;
+    setTimeout(function () {
+      showResults(winners);
+      isSpinning = false;
+      spinBtn.classList.remove('spinning');
+      spinBtn.disabled = false;
+    }, totalDuration);
+  });
+
+  // ── Résultats ───────────────────────────────────────────────────────────
+  function showResults(winners) {
+    resultsEl.innerHTML = '';
+    activeCats.forEach(function (key) {
+      var item    = winners[key];
+      if (!item) return;
+      var catMeta = ROUE_CATS.find(function (c) { return c.key === key; });
+      var hue     = catMeta ? catMeta.hue : 220;
+
+      var card = document.createElement('a');
+      card.className = 'roue-result-card';
+      card.href = '/wiki/' + item.slug;
+      card.style.setProperty('--drum-hue', hue);
+
+      var catLabel = document.createElement('div');
+      catLabel.className = 'roue-result-cat';
+      catLabel.textContent = catMeta ? catMeta.label : key;
+
+      var title = document.createElement('div');
+      title.className = 'roue-result-title';
+      title.textContent = item.title;
+
+      card.appendChild(catLabel);
+      card.appendChild(title);
+      resultsEl.appendChild(card);
+    });
+    resultsEl.hidden = false;
+  }
+
+})();
+</script>
+
+<%- include('partials/foot') %>

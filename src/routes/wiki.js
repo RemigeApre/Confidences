@@ -988,6 +988,20 @@ function buildWikiRouter(config) {
     jeu_de_role: "Scenarios", tenues: "Outfits", objets: "Objects",
     pratique: "Practices", fantasmes: "Fantasies", biologie: "Biology",
   };
+  // ── Roue du hasard ──────────────────────────────────────────────────────
+  router.get("/roue", requireUser, (req, res) => {
+    const all = sortedPages().filter(p => !p.hidden && p.stage !== 'brouillon');
+    const activeCats = CATEGORIES.filter(c => c.key !== 'biologie');
+    const byCategory = {};
+    activeCats.forEach(c => {
+      const pages = pagesForCategory(all, c.key)
+        .map(p => ({ id: p.id, title: p.title, slug: p.slug || String(p.id) }));
+      if (pages.length > 0) byCategory[c.key] = pages;
+    });
+    const cats = activeCats.filter(c => byCategory[c.key]);
+    res.render("roue", { config, categories: cats, byCategory });
+  });
+
   router.get("/:slug.md", (req, res) => {
     const { page, redirectSlug } = findPageByParam(req.params.slug);
     if (redirectSlug) return res.redirect(301, `/wiki/${redirectSlug}.md`);
