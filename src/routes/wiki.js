@@ -1098,8 +1098,8 @@ function buildWikiRouter(config) {
     const OWNED_CATS = ['objets', 'tenues'];
     const userWikiStatus = (userId && OWNED_CATS.includes(page.category)) ? getUserWikiStatus(userId, page.id) : null;
     const isAdmin = req.user && req.user.isAdmin;
-    const subPages = isAdmin ? getWikiSubPages(page.id) : [];
-    const parentPage = (isAdmin && page.parentId) ? getWikiPage(page.parentId) : null;
+    const subPages = req.user ? getWikiSubPages(page.id) : [];
+    const parentPage = (page.parentId) ? getWikiPage(page.parentId) : null;
     res.render("wiki-detail", { config, userWikiStatus, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, subPages, parentPage: parentPage || null, ...CTX });
   });
 
