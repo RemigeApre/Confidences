@@ -791,6 +791,26 @@ function buildWikiRouter(config) {
     res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, partnerUser, metaDescription: `${cat.label} — Codex Confidence. ${pages.length} fiches de sexologie sur la catégorie ${cat.label}.`, ...CTX });
   });
 
+  // ── Vue partenaire : toutes les pages notées/aimées par le partenaire ──
+  router.get("/partenaire", requireUser, (req, res) => {
+    if (!req.user.partnerId) return res.redirect("/wiki");
+    const partnerId = req.user.partnerId;
+    const partnerUser = getUserById(partnerId);
+    if (!partnerUser) return res.redirect("/wiki");
+
+    const all = mergePartnerReaction(
+      filterOff(excludeHidden(mergeUserReactions(sortedPages(), req.user.id, "wiki")), req.user),
+      partnerId, "wiki"
+    );
+
+    const partnerPages = all.filter((p) => p.partnerReaction);
+    const partnerFlame = partnerPages.filter((p) => p.partnerReaction.flame);
+    const partnerOther = partnerPages.filter((p) => !p.partnerReaction.flame);
+    const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
+
+    res.render("wiki-partenaire", { config, partnerUser, partnerFlame, partnerOther, wikiTitlesEn, ...CTX });
+  });
+
   // ── Extraction "Mes goûts" : synthèse .txt des pages notées par le
   // visiteur, groupées par degré d'appréciation (J'adore d'abord, puis 5
   // étoiles, 4, 3, 2, 1, puis "Ça m'intéresse" si le seuil choisi va jusque

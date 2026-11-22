@@ -125,11 +125,15 @@ function buildRouter(config) {
 
   // GET /messages/friends — liste des amis (JSON, pour popup de partage)
   router.get("/friends", requireUserJson, (req, res) => {
+    const partnerId = req.user.partnerId || null;
     const friends = getFriends(req.user.id).map((f) => ({
       id: f.id,
       displayName: f.display_name,
       profileColor: f.profile_color,
+      isPartner: f.id === partnerId,
     }));
+    // Partenaire en premier
+    friends.sort((a, b) => (b.isPartner ? 1 : 0) - (a.isPartner ? 1 : 0));
     res.json({ friends });
   });
 
@@ -139,7 +143,7 @@ function buildRouter(config) {
 
   // GET /messages/widget/list — liste compacte des conversations
   router.get("/widget/list", requireUserJson, (req, res) => {
-    const convs = buildConvList(req.user.id).map((c) => ({
+    const convs = buildConvList(req.user.id, req.user.partnerId || null).map((c) => ({
       partnerId: c.partnerId,
       partnerName: c.partnerName,
       partnerColor: c.partnerColor,
@@ -182,8 +186,9 @@ function buildRouter(config) {
   // ── Conversations ────────────────────────────────────────────────────────
 
   // Helper : enrichit la liste des conversations pour un userId
-  function buildConvList(uid) {
-    return getConversations(uid).map((c) => {
+  // couplePartnerId : ID du partenaire de couple (mis en premier si présent)
+  function buildConvList(uid, couplePartnerId) {
+    const list = getConversations(uid).map((c) => {
       const pId = convPartner(c, uid);
       const isP1 = c.p1_id === uid;
       const avatar = resolveAvatar({
@@ -198,25 +203,31 @@ function buildRouter(config) {
         partnerIsAdmin: !!(isP1 ? c.p2_is_admin : c.p1_is_admin),
         partnerAvatarThumb: avatar.thumb,
         partnerAvatarCrop: avatar.crop,
+        isCouplePartner: couplePartnerId ? pId === couplePartnerId : false,
       };
     });
+    if (couplePartnerId) list.sort((a, b) => (b.isCouplePartner ? 1 : 0) - (a.isCouplePartner ? 1 : 0));
+    return list;
   }
 
   // Helper : liste d'amis enrichie avec leur avatar résolu (popup "+ Nouvelle discussion")
-  function buildFriendsList(uid) {
-    return getFriends(uid).map((f) => {
+  function buildFriendsList(uid, couplePartnerId) {
+    const list = getFriends(uid).map((f) => {
       const avatar = resolveAvatar(f);
-      return { ...f, avatarThumb: avatar.thumb, avatarCrop: avatar.crop };
+      return { ...f, avatarThumb: avatar.thumb, avatarCrop: avatar.crop, isCouplePartner: couplePartnerId ? f.id === couplePartnerId : false };
     });
+    if (couplePartnerId) list.sort((a, b) => (b.isCouplePartner ? 1 : 0) - (a.isCouplePartner ? 1 : 0));
+    return list;
   }
 
   // GET /messages — liste des conversations (panneau droit seul)
   router.get("/", requireUser, (req, res) => {
     const uid = req.user.id;
+    const cpId = req.user.partnerId || null;
     res.render("messages", {
       config,
-      convs: buildConvList(uid),
-      friends: buildFriendsList(uid),
+      convs: buildConvList(uid, cpId),
+      friends: buildFriendsList(uid, cpId),
       partner: null,
       conv: null,
       messages: [],
@@ -247,10 +258,11 @@ function buildRouter(config) {
     const showAdminNotice = !!partner.isAdmin && !isFriendWithPartner;
 
     const recentMessages = getMessages(conv.id, uid, 40, null);
+    const cpId = req.user.partnerId || null;
     res.render("messages", {
       config,
-      convs: buildConvList(uid),
-      friends: buildFriendsList(uid),
+      convs: buildConvList(uid, cpId),
+      friends: buildFriendsList(uid, cpId),
       conv,
       partner,
       partnerAvatarThumb: partnerAvatar.thumb,

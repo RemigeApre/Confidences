@@ -756,12 +756,13 @@ window.RATING_CHARM = { key: <%- JSON.stringify(currentUser.ratingCharm) %>, sym
     }
     _friends.forEach(function (f) {
       var li = document.createElement('li');
-      li.className = 'share-popup-friend';
+      li.className = 'share-popup-friend' + (f.isPartner ? ' share-popup-friend--partner' : '');
       li.innerHTML =
         '<div class="share-popup-avatar" style="background:' + (f.profileColor || '#6b7280') + '">' +
           escHtml((f.displayName || '?').charAt(0).toUpperCase()) +
         '</div>' +
-        '<span class="share-popup-fname">' + escHtml(f.displayName) + '</span>';
+        '<span class="share-popup-fname">' + escHtml(f.displayName) + '</span>' +
+        (f.isPartner ? '<span class="share-popup-partner-tag">Partenaire</span>' : '');
       li.addEventListener('click', function () { sendShare(f); });
       list.appendChild(li);
     });

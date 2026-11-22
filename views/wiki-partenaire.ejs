@@ -1,0 +1,61 @@
+<%- include('partials/head', { title: 'Codex de ' + partnerUser.displayName + ' | Confidence' }) %>
+<main class="container wiki-partner-page">
+  <%- include('partials/top-nav', { config: config, navTitle: partnerUser.displayName, navBack: '/wiki' }) %>
+
+  <div class="wpp-layout">
+
+    <%# ─ En-tête ─ %>
+    <header class="wpp-header">
+      <div class="wpp-avatar" style="<%= partnerUser.profileColor ? '--pa-color:' + partnerUser.profileColor : '' %>">
+        <%= (partnerUser.displayName || '?').charAt(0).toUpperCase() %>
+      </div>
+      <div class="wpp-header-body">
+        <h1 class="wpp-name"><%= partnerUser.displayName %></h1>
+        <p class="wpp-subtitle">
+          <%= (partnerFlame.length + partnerOther.length) %> note<%= (partnerFlame.length + partnerOther.length) !== 1 ? 's' : '' %>
+          <% if (partnerFlame.length) { %>
+            &middot; <%= partnerFlame.length %> j&rsquo;adore
+          <% } %>
+        </p>
+      </div>
+      <a href="/wiki" class="wpp-back-link">Codex</a>
+    </header>
+
+    <%# ─ Bloc J'adore ─ %>
+    <% if (partnerFlame.length) { %>
+    <section class="wpp-section">
+      <h2 class="wpp-section-title wpp-section-title--flame">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M12 2C9.86 5.72 8 8 8 11a4 4 0 0 0 8 0c0-1.5-.5-3-1-4.5C13.5 8 13 9 13 10.5a1.5 1.5 0 0 1-3 0C10 7 11.5 4.5 12 2z"/></svg>
+        J&rsquo;adore
+        <span class="wpp-section-count"><%= partnerFlame.length %></span>
+      </h2>
+      <div class="wpp-grid">
+        <% partnerFlame.forEach(function(page) { %>
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true, partnerUser: partnerUser }) %>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <%# ─ Bloc Autres notes ─ %>
+    <% if (partnerOther.length) { %>
+    <section class="wpp-section">
+      <h2 class="wpp-section-title">
+        Autres notes
+        <span class="wpp-section-count"><%= partnerOther.length %></span>
+      </h2>
+      <div class="wpp-grid">
+        <% partnerOther.forEach(function(page) { %>
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true, partnerUser: partnerUser }) %>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <% if (!partnerFlame.length && !partnerOther.length) { %>
+      <p class="wpp-empty"><%= partnerUser.displayName %> n&rsquo;a pas encore not&eacute; de page.</p>
+    <% } %>
+
+  </div>
+</main>
+<%- include('partials/foot') %>

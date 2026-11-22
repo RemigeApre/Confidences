@@ -145,9 +145,10 @@
       <ul class="msg-new-conv-list">
         <% friends.forEach(function(f) { %>
         <li>
-          <a href="/messages/<%= f.id %>" class="msg-new-conv-friend">
+          <a href="/messages/<%= f.id %>" class="msg-new-conv-friend<%= f.isCouplePartner ? ' msg-new-conv-friend--partner' : '' %>">
             <%- include('partials/msg-avatar', { avatarClass: 'msg-list-avatar', thumb: f.avatarThumb, crop: f.avatarCrop, color: f.profile_color, initial: f.display_name }) %>
             <span><%= f.display_name %></span>
+            <% if (f.isCouplePartner) { %><span class="msg-couple-badge">partenaire</span><% } %>
           </a>
         </li>
         <% }) %>
@@ -698,6 +699,9 @@
 <style>
 /* ── Badge admin ── */
 .msg-admin-badge{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:hsl(220,80%,38%);color:#fff;border-radius:4px;padding:.1rem .4rem;margin-left:.45rem;vertical-align:middle;line-height:1.5}
+/* ── Badge partenaire de couple ── */
+.msg-couple-badge{display:inline-block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:hsl(340,55%,32%);color:hsl(340,80%,80%);border-radius:4px;padding:.1rem .4rem;margin-left:.45rem;vertical-align:middle;line-height:1.5}
+.msg-new-conv-friend--partner{background:rgba(255,255,255,.04)}
 
 /* ── Bouton supprimer discussion ── */
 /* ── Menu ⋮ (options du fil) ── */
