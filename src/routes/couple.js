@@ -5,6 +5,7 @@ const {
   listWikiPages,
   listGalleryImages,
   listBdBooks,
+  getUserWikiStatusList,
 } = require("../db");
 const { requireUser } = require("../auth");
 const { filterOff } = require("../specialContent");
@@ -69,59 +70,48 @@ function buildCoupleRouter(config) {
     res.render("couple-accueil", { config, partner: req.partner, stats, flameWiki, categories: WIKI_CATEGORIES });
   });
 
+  // Helper : construit les sections codex depuis les données d'un userId
+  function buildWikiSections(userId, viewerId) {
+    const viewer = getUserById(viewerId);
+
+    // Statuts objets : indépendants des réactions (une page peut avoir un statut sans note)
+    const statusList = getUserWikiStatusList(userId);
+    const statusObjIds = new Set(statusList.map((s) => s.wikiId));
+
+    const allPages = filterOff(mergeUserReactions(listWikiPages(), userId, "wiki"), viewer);
+    const pages = allPages.filter((p) =>
+      !p.hidden && (p.rating > 0 || p.flame || p.interested || p.practiced || statusObjIds.has(p.id))
+    );
+    const pageMap = new Map(pages.map((p) => [p.id, p]));
+
+    // Objets via user_wiki_status
+    const objPossede  = statusList.filter((s) => s.status === 'posséde'  && s.category === 'objets').map((s) => pageMap.get(s.wikiId)).filter(Boolean);
+    const objSouhaite = statusList.filter((s) => s.status === 'souhaite' && s.category === 'objets').map((s) => pageMap.get(s.wikiId)).filter(Boolean);
+
+    const shown = new Set([...objPossede, ...objSouhaite].map((p) => p.id));
+    const nonObjects = pages.filter((p) => p.category !== "objets");
+
+    const interested = nonObjects.filter((p) => p.interested);
+    interested.forEach((p) => shown.add(p.id));
+    const flame = nonObjects.filter((p) => p.flame && !shown.has(p.id));
+    flame.forEach((p) => shown.add(p.id));
+    const practiced = nonObjects.filter((p) => p.practiced && !shown.has(p.id));
+    practiced.forEach((p) => shown.add(p.id));
+    const rated = pages.filter((p) => p.rating > 0 && !shown.has(p.id));
+
+    return { objPossede, objSouhaite, interested, flame, practiced, rated };
+  }
+
   // ── Vue "mon profil tel que mon partenaire le voit" ──
   router.get("/mon-profil/wiki", (req, res) => {
     const self = { id: req.user.id, displayName: req.user.displayName, profileColor: req.user.profileColor, sexe: req.user.sexe };
-    const all = filterOff(mergeUserReactions(listWikiPages(), req.user.id, "wiki"), req.user)
-      .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested || p.practiced));
-
-    const objects    = all.filter((p) => p.category === "objets");
-    const nonObjects = all.filter((p) => p.category !== "objets");
-
-    const objPossede  = objects.filter((p) => p.practiced);
-    const objSouhaite = objects.filter((p) => p.interested && !p.practiced);
-    const shown = new Set([...objPossede, ...objSouhaite].map((p) => p.id));
-    const interested = nonObjects.filter((p) => p.interested);
-    interested.forEach((p) => shown.add(p.id));
-    const flame = nonObjects.filter((p) => p.flame && !shown.has(p.id));
-    flame.forEach((p) => shown.add(p.id));
-    const practiced = nonObjects.filter((p) => p.practiced && !shown.has(p.id));
-    practiced.forEach((p) => shown.add(p.id));
-    const rated = all.filter((p) => p.rating > 0 && !shown.has(p.id));
-
-    res.render("couple-notes-wiki", {
-      config, partner: self, categories: WIKI_CATEGORIES, selfView: true,
-      objPossede, objSouhaite, interested, flame, practiced, rated,
-    });
+    const sections = buildWikiSections(req.user.id, req.user.id);
+    res.render("couple-notes-wiki", { config, partner: self, categories: WIKI_CATEGORIES, selfView: true, ...sections });
   });
 
   router.get("/notes/wiki", (req, res) => {
-    const all = filterOff(mergeUserReactions(listWikiPages(), req.partner.id, "wiki"), req.user)
-      .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested || p.practiced));
-
-    const objects    = all.filter((p) => p.category === "objets");
-    const nonObjects = all.filter((p) => p.category !== "objets");
-
-    const objPossede  = objects.filter((p) => p.practiced);
-    const objSouhaite = objects.filter((p) => p.interested && !p.practiced);
-
-    const shown = new Set([...objPossede, ...objSouhaite].map((p) => p.id));
-
-    const interested = nonObjects.filter((p) => p.interested);
-    interested.forEach((p) => shown.add(p.id));
-
-    const flame = nonObjects.filter((p) => p.flame && !shown.has(p.id));
-    flame.forEach((p) => shown.add(p.id));
-
-    const practiced = nonObjects.filter((p) => p.practiced && !shown.has(p.id));
-    practiced.forEach((p) => shown.add(p.id));
-
-    const rated = all.filter((p) => p.rating > 0 && !shown.has(p.id));
-
-    res.render("couple-notes-wiki", {
-      config, partner: req.partner, categories: WIKI_CATEGORIES,
-      objPossede, objSouhaite, interested, flame, practiced, rated,
-    });
+    const sections = buildWikiSections(req.partner.id, req.user.id);
+    res.render("couple-notes-wiki", { config, partner: req.partner, categories: WIKI_CATEGORIES, ...sections });
   });
 
   router.get("/notes/images", (req, res) => {
