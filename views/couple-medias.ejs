@@ -1,0 +1,96 @@
+<%
+  var _base = locals.selfView ? '/couple/mon-profil' : '/couple';
+  var _pageTitle = locals.selfView ? 'Mon profil — Médias' : ('Couple : Médias de ' + partner.displayName);
+%>
+<%- include('partials/head', { title: _pageTitle }) %>
+<main class="container wide gallery-has-sidebar profil-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Médias', navBack: _base }) %>
+
+  <%- include('partials/couple-nav', { partner: partner }) %>
+
+  <div class="profil-subpage profil-subpage--wide">
+
+    <% if (!items.length && !books.length) { %>
+      <div class="profil-empty">
+        <div class="profil-empty-icon">&#10024;</div>
+        <p><%= partner.displayName %> n&rsquo;a encore rien not&eacute; dans les m&eacute;dias.</p>
+      </div>
+    <% } %>
+
+    <%# ─ Images ─ %>
+    <% if (items.length) { %>
+    <section class="cnw-section">
+      <h2 class="cnw-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Images
+        <span class="cnw-count"><%= items.length %></span>
+      </h2>
+      <div class="gallery-grid">
+        <% items.forEach(function(item) { %>
+          <div class="gallery-card">
+            <% if (item.imagePaths && item.imagePaths[0]) { %>
+              <a href="/galerie/<%= item.id %>/edit">
+                <img src="<%= thumbUrl(item.imagePaths[0]) %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
+              </a>
+            <% } else if (item.filename) { %>
+              <a href="/galerie/<%= item.id %>/edit">
+                <img src="<%= thumbUrl(item.filename) %>" alt="<%= item.title || '' %>" class="gallery-img" loading="lazy" />
+              </a>
+            <% } %>
+            <div class="gallery-card-overlay">
+              <span class="wiki-card-badges">
+                <% if (item.flame) { %><span class="wiki-card-react-badge" title="J'adore">&#128293;</span><% } %>
+                <% if (item.rating > 0) { %>
+                  <span class="wiki-card-react-badge" title="Note : <%= item.rating %>/5">
+                    <% for (var si = 1; si <= item.rating; si++) { %>&#9733;<% } %>
+                  </span>
+                <% } %>
+              </span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <%# ─ BD ─ %>
+    <% if (books.length) { %>
+    <section class="cnw-section">
+      <h2 class="cnw-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M7 21h13a2 2 0 0 0 2-2V6"/></svg>
+        BD
+        <span class="cnw-count"><%= books.length %></span>
+      </h2>
+      <div class="bd-grid">
+        <% books.forEach(function(book) { %>
+          <a href="/bd/<%= book.id %>" class="bd-card">
+            <% if (book.imagePaths && book.imagePaths.length) { %>
+              <div class="bd-card-cover">
+                <img src="<%= thumbUrl(book.imagePaths[0]) %>" alt="" class="bd-card-img" loading="lazy" />
+                <span class="bd-page-count"><%= book.imagePaths.length %>&nbsp;p.</span>
+              </div>
+            <% } else { %>
+              <div class="bd-card-cover bd-card-cover-empty">
+                <span class="bd-card-empty-icon">&#128214;</span>
+              </div>
+            <% } %>
+            <div class="bd-card-body">
+              <p class="bd-card-title"><%= book.title %></p>
+              <div class="bd-card-reactions">
+                <% if (book.flame) { %><span class="bd-card-react-badge">&#128293;</span><% } %>
+                <% if (book.interested) { %><span class="bd-card-react-badge">&#10024;</span><% } %>
+                <% if (book.rating > 0) { %>
+                  <span class="bd-card-rating"><%= book.rating %><span class="bd-card-star">&#9733;</span></span>
+                <% } %>
+              </div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+  </div>
+
+</main>
+<%- include('partials/foot') %>

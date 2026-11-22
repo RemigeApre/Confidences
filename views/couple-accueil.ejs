@@ -1,75 +1,69 @@
-<%- include('partials/head', { title: 'Couple : ' + partner.displayName }) %>
+<%
+  var _base = locals.selfView ? '/couple/mon-profil' : '/couple';
+  var _title = locals.selfView ? 'Mon profil' : ('Couple : ' + partner.displayName);
+  var _navTitle = locals.selfView ? 'Mon profil' : partner.displayName;
+  var _hasAny = categories.some(function(c){ return catCounts[c.key] && catCounts[c.key].total > 0; }) || medias.images > 0 || medias.bd > 0;
+%>
+<%- include('partials/head', { title: _title }) %>
 <main class="container wide gallery-has-sidebar profil-page">
-  <%- include('partials/top-nav', { config: config, navTitle: partner.displayName, navBack: '/favoris' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: _navTitle, navBack: locals.selfView ? '/couple' : '/favoris' }) %>
 
   <%- include('partials/couple-nav', { partner: partner }) %>
 
   <div class="profil-subpage profil-subpage--wide">
 
-    <%# ─ Identité partenaire ─ %>
+    <%# ─ Identité ─ %>
     <div class="cpa-hero">
       <div class="cpa-avatar" style="<%= partner.profileColor ? 'background:' + partner.profileColor : '' %>">
         <%= (partner.displayName || '?').charAt(0).toUpperCase() %>
       </div>
       <div class="cpa-hero-body">
         <h1 class="cpa-name"><%= partner.displayName %></h1>
-        <p class="cpa-label">Votre partenaire</p>
+        <p class="cpa-label"><%= locals.selfView ? 'Votre profil' : 'Votre partenaire' %></p>
       </div>
     </div>
 
-    <%# ─ Tuiles sections ─ %>
-    <div class="cpa-tiles">
+    <%# ─ Tuiles catégories codex ─ %>
+    <div class="cpa-cat-tiles">
+      <% categories.forEach(function(cat) {
+           var c = catCounts[cat.key] || { total: 0, flame: 0 };
+      %>
+        <a href="<%= _base %>/notes/<%= cat.key %>" class="cpa-cat-tile<%= !c.total ? ' cpa-cat-tile--empty' : '' %>" style="--tile-hue:<%= cat.hue %>">
+          <span class="cpa-cat-tile-label"><%= cat.label %></span>
+          <span class="cpa-cat-tile-count"><%= c.total %></span>
+          <% if (c.flame) { %><span class="cpa-cat-tile-flame"><%= c.flame %> j&rsquo;adore</span><% } %>
+        </a>
+      <% }) %>
 
-      <a href="/couple/notes/wiki" class="cpa-tile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9a2 2 0 0 1 2 2v16l-6.5-4.2L4 21V5a2 2 0 0 1 2-2Z"/></svg>
-        <span class="cpa-tile-label">Codex</span>
-        <span class="cpa-tile-count"><%= stats.wiki.total %></span>
-        <% if (stats.wiki.flame) { %><span class="cpa-tile-flame"><%= stats.wiki.flame %> j&rsquo;adore</span><% } %>
+      <%# ─ Tuile Médias ─ %>
+      <a href="<%= _base %>/medias" class="cpa-cat-tile cpa-cat-tile--medias<%= (!medias.images && !medias.bd) ? ' cpa-cat-tile--empty' : '' %>" style="--tile-hue:200">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span class="cpa-cat-tile-label">Médias</span>
+        <span class="cpa-cat-tile-count"><%= medias.images + medias.bd %></span>
+        <% if (medias.images && medias.bd) { %><span class="cpa-cat-tile-flame"><%= medias.images %> img · <%= medias.bd %> BD</span><% } %>
       </a>
-
-      <a href="/couple/notes/images" class="cpa-tile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        <span class="cpa-tile-label">Images</span>
-        <span class="cpa-tile-count"><%= stats.images.total %></span>
-        <% if (stats.images.flame) { %><span class="cpa-tile-flame"><%= stats.images.flame %> j&rsquo;adore</span><% } %>
-      </a>
-
-      <a href="/couple/notes/bd" class="cpa-tile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M7 21h13a2 2 0 0 0 2-2V6"/></svg>
-        <span class="cpa-tile-label">BD</span>
-        <span class="cpa-tile-count"><%= stats.bd.total %></span>
-        <% if (stats.bd.flame) { %><span class="cpa-tile-flame"><%= stats.bd.flame %> j&rsquo;adore</span><% } %>
-      </a>
-
-      <a href="/couple/a-lire-plus-tard" class="cpa-tile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
-        <span class="cpa-tile-label">&Agrave; lire</span>
-        <span class="cpa-tile-count"><%= stats.readLater %></span>
-      </a>
-
     </div>
 
-    <%# ─ Strip J'adore codex ─ %>
+    <%# ─ Strip J'adore ─ %>
     <% if (flameWiki.length) { %>
     <section class="cpa-section">
       <div class="cpa-section-hd">
         <h2 class="cpa-section-title">
           <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M12 2C9.86 5.72 8 8 8 11a4 4 0 0 0 8 0c0-1.5-.5-3-1-4.5C13.5 8 13 9 13 10.5a1.5 1.5 0 0 1-3 0C10 7 11.5 4.5 12 2z"/></svg>
-          J&rsquo;adore &mdash; Codex
+          J&rsquo;adore
         </h2>
-        <a href="/couple/notes/wiki" class="cpa-section-more">Tout voir &rsaquo;</a>
       </div>
       <div class="cpa-strip-wrap">
         <div class="cpa-strip">
           <% flameWiki.forEach(function(page) { %>
-            <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: false }) %>
+            <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
           <% }) %>
         </div>
       </div>
     </section>
     <% } %>
 
-    <% if (!stats.wiki.total && !stats.images.total && !stats.bd.total) { %>
+    <% if (!_hasAny) { %>
       <p class="cpa-empty"><%= partner.displayName %> n&rsquo;a encore rien not&eacute;.</p>
     <% } %>
 

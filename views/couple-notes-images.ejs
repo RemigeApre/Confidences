@@ -1,6 +1,6 @@
-<%- include('partials/head', { title: 'Couple : Images de ' + partner.displayName }) %>
+<%- include('partials/head', { title: locals.selfView ? 'Mon profil — Images' : ('Couple : Images de ' + partner.displayName) }) %>
 <main class="container wide gallery-has-sidebar profil-page">
-  <%- include('partials/top-nav', { config: config, navTitle: 'Images de ' + partner.displayName, navBack: '/couple' }) %>
+  <%- include('partials/top-nav', { config: config, navTitle: locals.selfView ? 'Mon profil' : ('Images de ' + partner.displayName), navBack: locals.selfView ? '/couple/mon-profil' : '/couple' }) %>
 
   <%- include('partials/couple-nav', { partner: partner }) %>
 
