@@ -1091,20 +1091,40 @@ a.amis-row-name:hover{text-decoration:underline}
 /* ── Couple section ──────────────────────────────── */
 .amis-couple-section{border-top:1px solid rgba(255,255,255,.07);margin-top:.5rem}
 .amis-couple-section .amis-section-title{display:flex;align-items:center;gap:.25rem}
-.amis-couple-current{display:flex;align-items:center;gap:.85rem;padding:.7rem .9rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:10px}
-.amis-couple-avatar{width:46px;height:46px;border-radius:50%;flex-shrink:0;background:#6b7280;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:#fff}
-.amis-couple-avatar--img{background-size:cover;background-position:center;font-size:0}
-.amis-couple-info{flex:1;min-width:0}
-.amis-couple-name{font-weight:600;color:var(--text);text-decoration:none;font-size:.93rem}
-.amis-couple-name:hover{text-decoration:underline}
-.amis-couple-status{display:block;font-size:.72rem;color:var(--muted);margin-top:.1rem}
-.amis-couple-subt{font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 .5rem;font-weight:600}
-.amis-couple-requests,.amis-couple-sent{margin-bottom:.85rem}
-.amis-couple-propose-form{margin-top:.85rem}
-.amis-couple-propose-label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.4rem}
-.amis-couple-propose-row{display:flex;gap:.5rem;align-items:center}
-.amis-couple-select{flex:1;background:var(--input-bg,rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:.38rem .6rem;font-size:.85rem;color:var(--text);min-width:0}
+/* Carte partenaire */
+.couple-card{position:relative;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:linear-gradient(145deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.02) 100%)}
+.couple-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 0%,color-mix(in srgb,var(--cp-color,#6b7280) 18%,transparent),transparent 65%);pointer-events:none}
+.couple-card-header{display:flex;align-items:center;gap:1rem;padding:1.1rem 1.1rem .7rem}
+.couple-card-avatar{width:60px;height:60px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.4rem;color:#fff;border:2px solid rgba(255,255,255,.18)}
+.couple-card-avatar--img{background-size:cover;background-position:center;font-size:0}
+.couple-card-identity{flex:1;min-width:0}
+.couple-card-name{font-size:1.05rem;font-weight:700;color:var(--fg);text-decoration:none;display:block}
+.couple-card-name:hover{text-decoration:underline}
+.couple-card-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-top:.1rem;display:block}
+.couple-card-links{display:flex;gap:.5rem;padding:.1rem 1.1rem .9rem}
+.couple-card-link{display:inline-flex;align-items:center;gap:.35rem;font-size:.78rem;font-weight:600;color:var(--muted);text-decoration:none;padding:.3rem .7rem;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);transition:background .15s,color .15s}
+.couple-card-link:hover{background:rgba(255,255,255,.12);color:var(--fg)}
+.couple-card-quit{display:flex;padding:.6rem 1.1rem;border-top:1px solid rgba(255,255,255,.07)}
+.couple-card-quit-btn{background:none;border:none;font-size:.74rem;color:var(--muted);cursor:pointer;padding:0;text-decoration:underline}
+.couple-card-quit-btn:hover{color:hsl(0,60%,65%)}
+/* Demandes en attente */
+.couple-pending-block{margin-bottom:1rem}
+.couple-pending-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--muted);margin:0 0 .6rem}
+.couple-pending-row{display:flex;align-items:center;gap:.7rem;padding:.5rem .7rem;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:.4rem}
+.couple-pending-avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem;color:#fff}
+.couple-pending-avatar--img{background-size:cover;background-position:center;font-size:0}
+.couple-pending-info{flex:1;min-width:0}
+.couple-pending-name{font-size:.87rem;font-weight:600;color:var(--fg);display:block}
+.couple-pending-code{font-size:.72rem;color:var(--muted);font-family:monospace}
+.couple-pending-actions{display:flex;gap:.4rem;flex-shrink:0}
+/* Formulaire de proposition */
+.couple-propose-form{margin-top:.5rem}
+.couple-propose-hint{font-size:.77rem;color:var(--muted);margin:0 0 .75rem;line-height:1.5}
+.couple-propose-row{display:flex;gap:.5rem;align-items:center}
+.amis-couple-select{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:.38rem .6rem;font-size:.85rem;color:var(--fg);min-width:0}
 .amis-couple-empty{font-size:.82rem;color:var(--muted);margin:.35rem 0 0}
+/* Filtre partenaire codex */
+.wiki-partner-filter .wiki-card[data-partner-rated="0"]{display:none!important}
 /* Badge alerte dans la nav profil */
 .profil-nav-count--alert{background:hsl(0,65%,55%)!important;color:#fff!important}
 /* Gate page additions */

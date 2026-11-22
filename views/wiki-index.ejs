@@ -55,6 +55,9 @@
           <button type="button" id="wiki-ultra-toggle" class="wiki-ultra-btn" data-fr="Ultra" data-en="Ultra">Ultra</button>
           <button type="button" id="wiki-irrealiste-toggle" class="wiki-ultra-btn" data-fr="Irréaliste" data-en="Unrealistic">Irr&eacute;aliste</button>
           <button type="button" id="wiki-subcard-toggle" class="wiki-ultra-btn wiki-subcard-btn" data-fr="Variantes" data-en="Variants">Variantes</button>
+          <% if (locals.partnerUser) { %>
+            <button type="button" id="wiki-partner-toggle" class="wiki-ultra-btn wiki-partner-btn" data-fr="<%= partnerUser.displayName %>" data-en="<%= partnerUser.displayName %>"><%= partnerUser.displayName %></button>
+          <% } %>
           <% if (hasOwnedItems && currentUser && (currentUser.isAdmin || currentUser.canSeeOwned)) { %>
             <button type="button" class="tag-chip tag-chip-owned" data-category="__owned__" data-label="Nos objets" data-fr="Nos objets" data-en="Our items">Nos objets</button>
           <% } %>
@@ -346,6 +349,22 @@
       hideSubcards = !hideSubcards;
       localStorage.setItem('wiki-hide-subcards', hideSubcards ? '1' : '0');
       applySubcardFilter();
+    });
+  }
+
+  // ── Toggle filtre partenaire ──────────────────────────────────────────
+  var partnerBtn = document.getElementById('wiki-partner-toggle');
+  if (partnerBtn) {
+    var showPartnerOnly = localStorage.getItem('wiki-partner-filter') === '1';
+    function applyPartnerFilter() {
+      if (wikiMain) wikiMain.classList.toggle('wiki-partner-filter', showPartnerOnly);
+      partnerBtn.classList.toggle('active', showPartnerOnly);
+    }
+    applyPartnerFilter();
+    partnerBtn.addEventListener('click', function() {
+      showPartnerOnly = !showPartnerOnly;
+      localStorage.setItem('wiki-partner-filter', showPartnerOnly ? '1' : '0');
+      applyPartnerFilter();
     });
   }
 })();

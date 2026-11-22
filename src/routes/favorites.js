@@ -988,6 +988,7 @@ function buildFavoritesRouter(config) {
     const coupleRequestsReceived = getPendingCoupleRequestReceived(req.user.id).map(r => ({ ...r, thumb: buildAmisThumb(r) }));
     const coupleRequestsSent     = getPendingCoupleRequestSent(req.user.id).map(s => ({ ...s, thumb: buildAmisThumb(s) }));
     const currentPartner = req.user.partnerId ? getUserById(req.user.partnerId) : null;
+    const currentPartnerThumb = currentPartner ? buildAmisThumb(currentPartner) : null;
     res.render("favoris-amis", {
       config,
       roleHue: roleHue(req.user),
@@ -995,7 +996,7 @@ function buildFavoritesRouter(config) {
       currentPath: "/favoris/amis",
       friends, received, sent, friendCode,
       pendingInvites, inviteStats,
-      coupleRequestsReceived, coupleRequestsSent, currentPartner,
+      coupleRequestsReceived, coupleRequestsSent, currentPartner, currentPartnerThumb,
       searchResult: null, searchQuery: null, searchError: null,
       ...extra,
     });
