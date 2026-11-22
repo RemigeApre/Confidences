@@ -53,6 +53,7 @@ const {
   getWikiPageBySlug,
   updateWikiPageSlug,
   getWikiSubPages,
+  getUserById,
   invalidateSfwSet,
   setWikiPageSfwPaths,
   getAllTagMeta,
@@ -1102,7 +1103,8 @@ function buildWikiRouter(config) {
     const parentPage = page.parentId ? getWikiPage(page.parentId) : null;
     // Siblings : autres sous-cartes du même parent (hors page courante)
     const siblingPages = (req.user && page.parentId) ? getWikiSubPages(page.parentId).filter(s => s.id !== page.id) : [];
-    res.render("wiki-detail", { config, userWikiStatus, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, subPages, parentPage: parentPage || null, siblingPages, ...CTX });
+    const partnerUser = (req.user && req.user.partnerId) ? getUserById(req.user.partnerId) : null;
+    res.render("wiki-detail", { config, userWikiStatus, page, pages: allPages, suggestions, prevPage, nextPage, backHref: back.href, backLabel: back.label, isFavorite: pageIsFavorite, userNote, tagPageCounts, tagImageCounts, preloadImage: heroImg, ogImage: heroImg || null, exploreMode, variantePage: variantePage || null, translationsEn, pageAuthorMain, pageAuthorsSecondary, aiNavPages, pollAggregate, userPollVote, anonAlreadyVoted, userSex, subPages, parentPage: parentPage || null, siblingPages, partnerUser, ...CTX });
   });
 
   // ── Sondage communautaire ─────────────────────────────────────────────────

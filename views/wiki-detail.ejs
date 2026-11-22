@@ -1249,16 +1249,18 @@
             </div>
 
             <%# Mode couple %>
-            <% if (page.rating > 0 && page.partnerReaction) { %>
+            <% if (page.rating > 0 && page.partnerReaction && locals.partnerUser) { %>
               <div class="wiki-partner-reveal">
-                <span class="wiki-partner-reveal-label">&#127800; <%= partnerUser.displayName %>&nbsp;:</span>
+                <span class="wiki-partner-reveal-label">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true" style="vertical-align:-1px;margin-right:.2rem;opacity:.7"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><%= partnerUser.displayName %>&nbsp;:
+                </span>
                 <% if (page.partnerReaction.rating > 0) { %>
                   <span class="wiki-partner-reveal-stars">
                     <% for (var pi = 1; pi <= 5; pi++) { %><span class="wiki-card-star<%= pi <= page.partnerReaction.rating ? ' filled' : '' %>">&#9733;</span><% } %>
                   </span>
                 <% } %>
-                <% if (page.partnerReaction.flame) { %><span class="wiki-react-icon" title="J&apos;adore">&#128293;</span><% } %>
-                <% if (page.partnerReaction.interested) { %><span class="wiki-react-icon" title="Int&eacute;ress&eacute;(e)">&#10024;</span><% } %>
+                <% if (page.partnerReaction.flame) { %><span class="wiki-react-icon" title="J&apos;adore"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.47-.3 2.98-.93 4.03-1.92.28 1.14.42 2.32.42 3.18C15.75 17.6 13.9 19 11.71 19z"/></svg></span><% } %>
+                <% if (page.partnerReaction.interested) { %><span class="wiki-react-icon" title="Int&eacute;ress&eacute;(e)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span><% } %>
               </div>
             <% } %>
           </div>
