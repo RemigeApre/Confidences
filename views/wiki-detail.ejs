@@ -1249,8 +1249,8 @@
             </div>
 
             <%# Mode couple %>
-            <% if (page.rating > 0 && page.partnerReaction && locals.partnerUser) { %>
-              <div class="wiki-partner-reveal">
+            <% if (page.partnerReaction && locals.partnerUser) { %>
+              <div class="wiki-partner-reveal" id="wiki-partner-reveal"<% if (!page.rating) { %> style="display:none"<% } %>>
                 <span class="wiki-partner-reveal-label">
                   <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true" style="vertical-align:-1px;margin-right:.2rem;opacity:.7"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><%= partnerUser.displayName %>&nbsp;:
                 </span>
@@ -1615,6 +1615,20 @@ window.IRREALISTE_MODE = 'visible';
 <% } %>
 
 <script nonce="<%= nonce %>">
+// ── Affichage dynamique de la note partenaire ──
+(function () {
+  var reveal = document.getElementById('wiki-partner-reveal');
+  if (!reveal) return;
+  var ratingWrap = document.querySelector('.wiki-detail-rating');
+  if (!ratingWrap) return;
+  ratingWrap.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('wiki-star-lg')) return;
+    // wiki.js a déjà mis à jour les classes .filled — on lit l'état résultant
+    var hasRating = !!ratingWrap.querySelector('.wiki-star-lg.filled');
+    reveal.style.display = hasRating ? '' : 'none';
+  });
+})();
+
 // ── Fix : note + réactions perdues quand l'utilisateur clique sur Éditer ──
 (function() {
   // 1) Réactions : patch fetch pour ajouter keepalive sur /react
