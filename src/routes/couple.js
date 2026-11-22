@@ -78,14 +78,20 @@ function buildCoupleRouter(config) {
     const objects    = all.filter((p) => p.category === "objets");
     const nonObjects = all.filter((p) => p.category !== "objets");
 
+    const objPossede  = objects.filter((p) => p.practiced);
+    const objSouhaite = objects.filter((p) => p.interested && !p.practiced);
+    const shown = new Set([...objPossede, ...objSouhaite].map((p) => p.id));
+    const interested = nonObjects.filter((p) => p.interested);
+    interested.forEach((p) => shown.add(p.id));
+    const flame = nonObjects.filter((p) => p.flame && !shown.has(p.id));
+    flame.forEach((p) => shown.add(p.id));
+    const practiced = nonObjects.filter((p) => p.practiced && !shown.has(p.id));
+    practiced.forEach((p) => shown.add(p.id));
+    const rated = all.filter((p) => p.rating > 0 && !shown.has(p.id));
+
     res.render("couple-notes-wiki", {
       config, partner: self, categories: WIKI_CATEGORIES, selfView: true,
-      objPossede:  objects.filter((p) => p.practiced),
-      objSouhaite: objects.filter((p) => p.interested),
-      interested:  nonObjects.filter((p) => p.interested),
-      flame:       nonObjects.filter((p) => p.flame),
-      practiced:   nonObjects.filter((p) => p.practiced),
-      rated:       all.filter((p) => p.rating > 0),
+      objPossede, objSouhaite, interested, flame, practiced, rated,
     });
   });
 
@@ -97,11 +103,20 @@ function buildCoupleRouter(config) {
     const nonObjects = all.filter((p) => p.category !== "objets");
 
     const objPossede  = objects.filter((p) => p.practiced);
-    const objSouhaite = objects.filter((p) => p.interested);
-    const interested  = nonObjects.filter((p) => p.interested);
-    const flame       = nonObjects.filter((p) => p.flame);
-    const practiced   = nonObjects.filter((p) => p.practiced);
-    const rated       = all.filter((p) => p.rating > 0);
+    const objSouhaite = objects.filter((p) => p.interested && !p.practiced);
+
+    const shown = new Set([...objPossede, ...objSouhaite].map((p) => p.id));
+
+    const interested = nonObjects.filter((p) => p.interested);
+    interested.forEach((p) => shown.add(p.id));
+
+    const flame = nonObjects.filter((p) => p.flame && !shown.has(p.id));
+    flame.forEach((p) => shown.add(p.id));
+
+    const practiced = nonObjects.filter((p) => p.practiced && !shown.has(p.id));
+    practiced.forEach((p) => shown.add(p.id));
+
+    const rated = all.filter((p) => p.rating > 0 && !shown.has(p.id));
 
     res.render("couple-notes-wiki", {
       config, partner: req.partner, categories: WIKI_CATEGORIES,
