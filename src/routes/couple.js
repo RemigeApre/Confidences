@@ -48,7 +48,26 @@ function buildCoupleRouter(config) {
     next();
   });
 
-  router.get("/", (req, res) => res.redirect("/couple/notes/wiki"));
+  router.get("/", (req, res) => {
+    const wikiAll = filterOff(mergeUserReactions(listWikiPages(), req.partner.id, "wiki"), req.user)
+      .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested));
+    const imgAll = filterOff(mergeUserReactions(listGalleryImages(), req.partner.id, "gallery"), req.user)
+      .filter((i) => !i.hidden && (i.rating > 0 || i.flame || i.interested));
+    const bdAll = filterOff(mergeUserReactions(listBdBooks(), req.partner.id, "bd"), req.user)
+      .filter((b) => !b.hidden && (b.rating > 0 || b.flame || b.interested));
+    const readLaterCount = filterOff(mergeUserReactions(listWikiPages(), req.partner.id, "wiki"), req.user)
+      .filter((p) => !p.hidden && p.readLater).length;
+
+    const stats = {
+      wiki:      { total: wikiAll.length,  flame: wikiAll.filter((p) => p.flame).length },
+      images:    { total: imgAll.length,   flame: imgAll.filter((i) => i.flame).length },
+      bd:        { total: bdAll.length,    flame: bdAll.filter((b) => b.flame).length },
+      readLater: readLaterCount,
+    };
+    const flameWiki = wikiAll.filter((p) => p.flame).slice(0, 12);
+
+    res.render("couple-accueil", { config, partner: req.partner, stats, flameWiki, categories: WIKI_CATEGORIES });
+  });
 
   router.get("/notes/wiki", (req, res) => {
     const all = filterOff(mergeUserReactions(listWikiPages(), req.partner.id, "wiki"), req.user)
