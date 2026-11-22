@@ -188,6 +188,110 @@
     </section>
     <% } %>
 
+    <%# ── Couple ── %>
+    <section class="amis-section amis-couple-section">
+      <h2 class="amis-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true" style="vertical-align:-2px;margin-right:.35rem"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Couple
+      </h2>
+
+      <% if (currentPartner) { %>
+        <%# En couple %>
+        <div class="amis-couple-current">
+          <% var _cpThumb = currentPartner.profile_image_id ? '/thumbs/' + currentPartner.id + '/avatar/80' : null; %>
+          <% if (_cpThumb) { %>
+            <div class="amis-couple-avatar amis-couple-avatar--img" style="background-image:url('<%= _cpThumb %>')"></div>
+          <% } else { %>
+            <div class="amis-couple-avatar" style="background:<%= currentPartner.profile_color || '#6b7280' %>"><%= (currentPartner.display_name || '?').charAt(0).toUpperCase() %></div>
+          <% } %>
+          <div class="amis-couple-info">
+            <a href="/profil/<%= currentPartner.display_name || currentPartner.username %>" class="amis-couple-name"><%= currentPartner.display_name %></a>
+            <span class="amis-couple-status">En couple</span>
+          </div>
+          <form method="POST" action="/favoris/couple/quitter" class="amis-inline-form"
+                onsubmit="return confirm('Quitter ce couple ?')">
+            <button class="amis-btn amis-btn--refuse" type="submit">Quitter</button>
+          </form>
+        </div>
+
+      <% } else { %>
+        <%# Demandes de couple reçues %>
+        <% if (coupleRequestsReceived && coupleRequestsReceived.length) { %>
+          <div class="amis-couple-requests">
+            <p class="amis-couple-subt">Demande re&ccedil;ue</p>
+            <% coupleRequestsReceived.forEach(function(r) { %>
+            <div class="amis-row">
+              <% if (r.thumb) { %>
+                <div class="amis-row-avatar amis-row-avatar--img" style="background-image:url('<%= r.thumb %>')"></div>
+              <% } else { %>
+                <div class="amis-row-avatar" style="background:<%= r.profile_color || '#6b7280' %>"><%= (r.display_name || '?').charAt(0).toUpperCase() %></div>
+              <% } %>
+              <div class="amis-row-info">
+                <span class="amis-row-name"><%= r.display_name %></span>
+                <span class="amis-row-code">#<%= r.friend_code %></span>
+              </div>
+              <div class="amis-row-actions">
+                <form method="POST" action="/favoris/couple/accepter" class="amis-inline-form">
+                  <input type="hidden" name="from_id" value="<%= r.id %>" />
+                  <button class="amis-btn amis-btn--accept" type="submit">Accepter</button>
+                </form>
+                <form method="POST" action="/favoris/couple/refuser" class="amis-inline-form">
+                  <input type="hidden" name="from_id" value="<%= r.id %>" />
+                  <button class="amis-btn amis-btn--refuse" type="submit">Refuser</button>
+                </form>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        <% } %>
+
+        <%# Demande de couple envoyée %>
+        <% if (coupleRequestsSent && coupleRequestsSent.length) { %>
+          <div class="amis-couple-sent">
+            <p class="amis-couple-subt">Demande envoy&eacute;e</p>
+            <% coupleRequestsSent.forEach(function(s) { %>
+            <div class="amis-row">
+              <% if (s.thumb) { %>
+                <div class="amis-row-avatar amis-row-avatar--img" style="background-image:url('<%= s.thumb %>')"></div>
+              <% } else { %>
+                <div class="amis-row-avatar" style="background:<%= s.profile_color || '#6b7280' %>"><%= (s.display_name || '?').charAt(0).toUpperCase() %></div>
+              <% } %>
+              <div class="amis-row-info">
+                <span class="amis-row-name"><%= s.display_name %></span>
+                <span class="amis-row-code">#<%= s.friend_code %></span>
+              </div>
+              <form method="POST" action="/favoris/couple/annuler" class="amis-inline-form">
+                <input type="hidden" name="to_id" value="<%= s.id %>" />
+                <button class="amis-btn amis-btn--refuse" type="submit">Annuler</button>
+              </form>
+            </div>
+            <% }) %>
+          </div>
+        <% } %>
+
+        <%# Proposer en couple — seulement si pas de demande en cours %>
+        <% if ((!coupleRequestsSent || !coupleRequestsSent.length) && (!coupleRequestsReceived || !coupleRequestsReceived.length)) { %>
+          <% if (friends && friends.length) { %>
+            <form method="POST" action="/favoris/couple/demander" class="amis-couple-propose-form">
+              <label class="amis-couple-propose-label" for="couple-friend-select">Proposer &agrave; un ami</label>
+              <div class="amis-couple-propose-row">
+                <select class="amis-couple-select" name="friend_id" id="couple-friend-select" required>
+                  <option value="">-- Choisir --</option>
+                  <% friends.forEach(function(f) { %>
+                    <option value="<%= f.id %>"><%= f.display_name %></option>
+                  <% }) %>
+                </select>
+                <button class="amis-btn amis-btn--accept" type="submit">Proposer</button>
+              </div>
+            </form>
+          <% } else { %>
+            <p class="amis-couple-empty">Ajoutez des amis pour pouvoir proposer un couple.</p>
+          <% } %>
+        <% } %>
+
+      <% } %>
+    </section>
+
   </div>
 </main>
 

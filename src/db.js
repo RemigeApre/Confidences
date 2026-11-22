@@ -1265,6 +1265,71 @@ function rowToUser(row) {
 }
 
 // Lie deux profils en couple (relation stockée en miroir, voir la colonne
+// ── Demandes de mise en couple (user-initiated) ──────────────────────────────
+// Table des demandes en attente. Une fois acceptée, on appelle setCouplePartners
+// et on supprime la demande. Refusée → on supprime aussi.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS couple_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_id INTEGER NOT NULL REFERENCES users(id),
+    to_id   INTEGER NOT NULL REFERENCES users(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(from_id, to_id)
+  )
+`);
+
+function sendCoupleRequest(fromId, toId) {
+  // Bloque si l'un des deux est déjà en couple
+  const fromUser = db.prepare("SELECT partner_id FROM users WHERE id = ?").get(fromId);
+  const toUser   = db.prepare("SELECT partner_id FROM users WHERE id = ?").get(toId);
+  if (fromUser && fromUser.partner_id) return { error: 'already_in_couple' };
+  if (toUser   && toUser.partner_id)   return { error: 'target_in_couple' };
+  // Bloque si demande déjà envoyée dans un sens
+  const existing = db.prepare("SELECT id FROM couple_requests WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?)").get(fromId, toId, toId, fromId);
+  if (existing) return { error: 'already_requested' };
+  db.prepare("INSERT INTO couple_requests (from_id, to_id) VALUES (?, ?)").run(fromId, toId);
+  return { ok: true };
+}
+
+function acceptCoupleRequest(fromId, toId) {
+  // fromId = celui qui avait envoyé, toId = celui qui accepte
+  const req = db.prepare("SELECT id FROM couple_requests WHERE from_id=? AND to_id=?").get(fromId, toId);
+  if (!req) return false;
+  db.prepare("DELETE FROM couple_requests WHERE id=?").run(req.id);
+  setCouplePartners(fromId, toId);
+  return true;
+}
+
+function refuseCoupleRequest(fromId, toId) {
+  db.prepare("DELETE FROM couple_requests WHERE from_id=? AND to_id=?").run(fromId, toId);
+}
+
+function cancelCoupleRequest(fromId, toId) {
+  db.prepare("DELETE FROM couple_requests WHERE from_id=? AND to_id=?").run(fromId, toId);
+}
+
+function getPendingCoupleRequestReceived(userId) {
+  return db.prepare(`
+    SELECT cr.id, cr.from_id, cr.created_at,
+           u.display_name, u.friend_code, u.profile_color, u.profile_image_id
+    FROM couple_requests cr
+    JOIN users u ON u.id = cr.from_id
+    WHERE cr.to_id = ?
+    ORDER BY cr.created_at DESC
+  `).all(userId);
+}
+
+function getPendingCoupleRequestSent(userId) {
+  return db.prepare(`
+    SELECT cr.id, cr.to_id, cr.created_at,
+           u.display_name, u.friend_code, u.profile_color, u.profile_image_id
+    FROM couple_requests cr
+    JOIN users u ON u.id = cr.to_id
+    WHERE cr.from_id = ?
+    ORDER BY cr.created_at DESC
+  `).all(userId);
+}
+
 // partner_id ci-dessus). Casse d'abord toute liaison existante des deux
 // côtés : un profil n'a jamais plus d'un·e partenaire à la fois.
 function setCouplePartners(userIdA, userIdB) {
@@ -7641,6 +7706,12 @@ module.exports = {
   deleteFilterProfile,
   setCouplePartners,
   clearCouplePartner,
+  sendCoupleRequest,
+  acceptCoupleRequest,
+  refuseCoupleRequest,
+  cancelCoupleRequest,
+  getPendingCoupleRequestReceived,
+  getPendingCoupleRequestSent,
   listUnexploredWikiPages,
   listUnexploredGalleryImages,
   setGalleryImageFeatured,

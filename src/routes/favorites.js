@@ -107,9 +107,17 @@ const {
   setOnboardingDone,
   markSectionIntroSeen,
   getCodexFeatured,
+  sendCoupleRequest,
+  acceptCoupleRequest,
+  refuseCoupleRequest,
+  cancelCoupleRequest,
+  getPendingCoupleRequestReceived,
+  getPendingCoupleRequestSent,
+  clearCouplePartner,
 } = require("../db");
 const { requireUser, requireUserJson } = require("../auth");
 const { hashPassword, verifyPassword } = require("../passwords");
+const { pushToUser } = require("./messages");
 const { sendMail, emailHtml } = require("../mailer");
 
 const WIKI_CATEGORIES = [
@@ -976,6 +984,10 @@ function buildFavoritesRouter(config) {
     const inviteStats    = getUserInviteStats(req.user.id);
     let { friendCode } = req.user;
     if (!friendCode) friendCode = assignFriendCode(req.user.id);
+    // Couple
+    const coupleRequestsReceived = getPendingCoupleRequestReceived(req.user.id).map(r => ({ ...r, thumb: buildAmisThumb(r) }));
+    const coupleRequestsSent     = getPendingCoupleRequestSent(req.user.id).map(s => ({ ...s, thumb: buildAmisThumb(s) }));
+    const currentPartner = req.user.partnerId ? getUserById(req.user.partnerId) : null;
     res.render("favoris-amis", {
       config,
       roleHue: roleHue(req.user),
@@ -983,6 +995,7 @@ function buildFavoritesRouter(config) {
       currentPath: "/favoris/amis",
       friends, received, sent, friendCode,
       pendingInvites, inviteStats,
+      coupleRequestsReceived, coupleRequestsSent, currentPartner,
       searchResult: null, searchQuery: null, searchError: null,
       ...extra,
     });
@@ -1060,6 +1073,79 @@ function buildFavoritesRouter(config) {
   router.post("/amis/:friendId/supprimer", requireUser, (req, res) => {
     const friendId = parseInt(req.params.friendId, 10);
     if (Number.isInteger(friendId)) removeFriend(req.user.id, friendId);
+    res.redirect("/favoris/amis");
+  });
+
+  // ── Couple ──────────────────────────────────────────────────────────────────
+
+  router.post("/couple/demander", requireUser, (req, res) => {
+    const targetId = parseInt(req.body.friend_id, 10);
+    if (!Number.isInteger(targetId)) return res.redirect("/favoris/amis");
+    const result = sendCoupleRequest(req.user.id, targetId);
+    const target = getUserById(targetId);
+    if (result.ok && target) {
+      // Notif SSE temps réel
+      pushToUser(targetId, "couple_request", { fromId: req.user.id, fromName: req.user.displayName });
+      // Email
+      if (target.email) {
+        const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+        sendMail({
+          to: target.email,
+          subject: req.user.displayName + " vous propose d'être en couple — Confidences",
+          text: `Bonjour ${target.displayName},\n\n${req.user.displayName} vous propose d'être en couple sur Confidences.\nRendez-vous sur ${siteUrl}/favoris/amis pour accepter ou refuser.`,
+          html: emailHtml({
+            title: "Demande de couple",
+            body: `<p>Bonjour <strong>${target.displayName}</strong>,</p><p><strong>${req.user.displayName}</strong> vous propose d&rsquo;&ecirc;tre en couple sur Confidences.</p>`,
+            cta: "Voir la demande",
+            ctaUrl: siteUrl + "/favoris/amis",
+            siteUrl,
+          }),
+        });
+      }
+    }
+    res.redirect("/favoris/amis");
+  });
+
+  router.post("/couple/accepter", requireUser, (req, res) => {
+    const fromId = parseInt(req.body.from_id, 10);
+    if (!Number.isInteger(fromId)) return res.redirect("/favoris/amis");
+    const ok = acceptCoupleRequest(fromId, req.user.id);
+    if (ok) {
+      pushToUser(fromId, "couple_accepted", { byId: req.user.id, byName: req.user.displayName });
+      const requester = getUserById(fromId);
+      if (requester && requester.email) {
+        const siteUrl = (req.secure ? "https" : "http") + "://" + req.get("host");
+        sendMail({
+          to: requester.email,
+          subject: req.user.displayName + " a accepté votre demande de couple — Confidences",
+          text: `Bonjour ${requester.displayName},\n\n${req.user.displayName} a accepté votre demande de couple sur Confidences.`,
+          html: emailHtml({
+            title: "Demande accept\u00e9e",
+            body: `<p>Bonjour <strong>${requester.displayName}</strong>,</p><p><strong>${req.user.displayName}</strong> a accept&eacute; votre demande de couple. Vous &ecirc;tes maintenant en couple.</p>`,
+            cta: "Voir mon profil",
+            ctaUrl: siteUrl + "/favoris",
+            siteUrl,
+          }),
+        });
+      }
+    }
+    res.redirect("/favoris/amis");
+  });
+
+  router.post("/couple/refuser", requireUser, (req, res) => {
+    const fromId = parseInt(req.body.from_id, 10);
+    if (Number.isInteger(fromId)) refuseCoupleRequest(fromId, req.user.id);
+    res.redirect("/favoris/amis");
+  });
+
+  router.post("/couple/annuler", requireUser, (req, res) => {
+    const toId = parseInt(req.body.to_id, 10);
+    if (Number.isInteger(toId)) cancelCoupleRequest(req.user.id, toId);
+    res.redirect("/favoris/amis");
+  });
+
+  router.post("/couple/quitter", requireUser, (req, res) => {
+    clearCouplePartner(req.user.id);
     res.redirect("/favoris/amis");
   });
 
