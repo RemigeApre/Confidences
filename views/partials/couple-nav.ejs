@@ -1,7 +1,18 @@
-<%# Volet de navigation du mode couple. Attend : partner. %>
+<%# Volet de navigation du mode couple.
+    Attend : partner (contexte courant — peut être le partenaire ou soi-même).
+    couplePartner et currentUser sont dans res.locals. %>
 <%
-  var _cp = currentPath || '';
+  var _cp  = currentPath || '';
   var _onSelf = _cp.startsWith('/couple/mon-profil');
+  var _hue = _onSelf ? 215 : 330;
+
+  // Qui est en haut / en bas selon le contexte
+  var _main   = _onSelf ? currentUser    : couplePartner;
+  var _other  = _onSelf ? couplePartner  : currentUser;
+  var _mainBase  = _onSelf ? '/couple/mon-profil' : '/couple';
+  var _otherLink = _onSelf ? '/couple'            : '/couple/mon-profil';
+  var _otherLabel = _onSelf ? couplePartner.displayName : 'Mon profil';
+
   var _CATS = [
     { key: 'objets',      label: 'Objets'      },
     { key: 'tenues',      label: 'Tenues'      },
@@ -14,52 +25,35 @@
     { key: 'autre',       label: 'Autre'       },
   ];
 %>
-<aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue:330">
+<aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue:<%= _hue %>">
   <div class="wiki-sidebar-body">
 
-    <%# ─ En-tête partenaire ─ %>
-    <a href="/couple" class="cnav-partner-header">
-      <div class="cnav-partner-avatar" style="<%= partner.profileColor ? 'background:' + partner.profileColor : '' %>">
-        <%= (partner.displayName || '?').charAt(0).toUpperCase() %>
+    <%# ─ En-tête section active ─ %>
+    <a href="<%= _mainBase %>" class="cnav-partner-header">
+      <div class="cnav-partner-avatar" style="<%= _main.profileColor ? 'background:' + _main.profileColor : '' %>">
+        <%= (_main.displayName || '?').charAt(0).toUpperCase() %>
       </div>
-      <span class="cnav-partner-name"><%= partner.displayName %></span>
+      <span class="cnav-partner-name"><%= _main.displayName %></span>
     </a>
 
-    <%# ─ Catégories partenaire ─ %>
+    <%# ─ Catégories section active ─ %>
     <div class="cnav-list">
-      <% _CATS.forEach(function(cat) { %>
-        <a href="/couple/notes/<%= cat.key %>" class="cnav-btn<%= _cp === '/couple/notes/' + cat.key ? ' active' : '' %>"><%= cat.label %></a>
+      <% _CATS.forEach(function(cat) {
+           var href = _mainBase + '/notes/' + cat.key;
+      %>
+        <a href="<%= href %>" class="cnav-btn<%= _cp === href ? ' active' : '' %>"><%= cat.label %></a>
       <% }) %>
-      <a href="/couple/medias" class="cnav-btn<%= _cp === '/couple/medias' ? ' active' : '' %>">M&eacute;dias</a>
+      <a href="<%= _mainBase %>/medias" class="cnav-btn<%= _cp === _mainBase + '/medias' ? ' active' : '' %>">M&eacute;dias</a>
     </div>
 
-    <%# ─ Mon profil (replié par défaut) ─ %>
-    <div class="cnav-section--collapsible">
-      <button class="cnav-btn cnav-btn--toggle<%= _onSelf ? ' active' : '' %>" type="button" aria-expanded="<%= _onSelf ? 'true' : 'false' %>" aria-controls="cnav-self-links">
-        <span>Mon profil</span>
-        <svg class="cnav-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" width="11" height="11" aria-hidden="true"><polyline points="4 6 8 10 12 6"/></svg>
-      </button>
-      <div class="cnav-list" id="cnav-self-links"<%= !_onSelf ? ' hidden' : '' %> style="margin-top:.2rem">
-        <a href="/couple/mon-profil" class="cnav-btn<%= _cp === '/couple/mon-profil' ? ' active' : '' %>">Vue d&rsquo;ensemble</a>
-        <% _CATS.forEach(function(cat) { %>
-          <a href="/couple/mon-profil/notes/<%= cat.key %>" class="cnav-btn<%= _cp === '/couple/mon-profil/notes/' + cat.key ? ' active' : '' %>"><%= cat.label %></a>
-        <% }) %>
-        <a href="/couple/mon-profil/medias" class="cnav-btn<%= _cp === '/couple/mon-profil/medias' ? ' active' : '' %>">M&eacute;dias</a>
+    <%# ─ Switch vers l'autre contexte ─ %>
+    <a href="<%= _otherLink %>" class="cnav-switch">
+      <div class="cnav-switch-avatar" style="<%= _other.profileColor ? 'background:' + _other.profileColor : '' %>">
+        <%= (_other.displayName || '?').charAt(0).toUpperCase() %>
       </div>
-    </div>
+      <span><%= _otherLabel %></span>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" aria-hidden="true" style="margin-left:auto;opacity:.5"><polyline points="6 4 10 8 6 12"/></svg>
+    </a>
 
   </div>
 </aside>
-
-<script nonce="<%= nonce %>">
-(function () {
-  var btn = document.querySelector('.cnav-btn--toggle');
-  if (!btn) return;
-  btn.addEventListener('click', function () {
-    var expanded = btn.getAttribute('aria-expanded') === 'true';
-    var list = document.getElementById('cnav-self-links');
-    btn.setAttribute('aria-expanded', String(!expanded));
-    list.hidden = expanded;
-  });
-})();
-</script>

@@ -41,6 +41,8 @@ function buildCoupleRouter(config) {
       profileImageCrop: partner.profileImageCrop,
       sexe:             partner.sexe,
     };
+    // Expose via res.locals pour que les partials y accèdent sans qu'on le passe explicitement
+    res.locals.couplePartner = req.partner;
     next();
   });
 
