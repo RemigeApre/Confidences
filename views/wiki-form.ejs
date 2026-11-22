@@ -173,8 +173,9 @@
           </div>
         </div>
 
-        <%# ── Possède : feature toggle utilisateur ── %>
-        <label class="wf-possede-toggle">
+        <%# ── Possède : feature toggle utilisateur (désactivé pour position) ── %>
+        <% var _ownedCats = ['objets','tenues']; %>
+        <label class="wf-possede-toggle" <% if (_ownedCats.indexOf(page.category) === -1) { %>style="display:none"<% } %> id="wf-possede-toggle">
           <div class="wf-possede-label">
             <span class="wf-possede-label-title">&laquo;&nbsp;Je poss&egrave;de&nbsp;&raquo;</span>
             <span class="wf-possede-label-hint">Active un bouton utilisateur sur la fiche</span>
@@ -1221,6 +1222,15 @@ initSourcesWidget('wf-psychologique-sources-list','wf-psychologique-sources-hidd
   catSel.addEventListener('change', function() {
     updateSubcat(this.value, '');
   });
+
+  // Masquer "Je possède" pour les catégories non-objets/tenues
+  var possedeTgl = document.getElementById('wf-possede-toggle');
+  if (possedeTgl) {
+    var _ownedAllowed = ['objets', 'tenues'];
+    function updatePossede(cat) { possedeTgl.style.display = _ownedAllowed.indexOf(cat) !== -1 ? '' : 'none'; }
+    updatePossede(catSel.value);
+    catSel.addEventListener('change', function() { updatePossede(this.value); });
+  }
 })();
 </script>
 <%- include('partials/foot') %>
