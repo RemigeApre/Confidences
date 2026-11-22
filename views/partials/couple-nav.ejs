@@ -14,30 +14,33 @@
     { key: 'autre',       label: 'Autre'       },
   ];
 %>
-<aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue: 330">
+<aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue:330">
   <div class="wiki-sidebar-body">
 
-    <%# ─ Section partenaire ─ %>
-    <nav class="cnav-section">
-      <a href="/couple" class="cnav-btn cnav-btn--main<%= (!_onSelf && (_cp === '/couple' || _cp.startsWith('/couple/notes') || _cp === '/couple/medias')) ? ' active' : '' %>">
-        <%= partner.displayName %>
-      </a>
-      <div class="cnav-list">
-        <% _CATS.forEach(function(cat) { %>
-          <a href="/couple/notes/<%= cat.key %>" class="cnav-btn<%= _cp === '/couple/notes/' + cat.key ? ' active' : '' %>"><%= cat.label %></a>
-        <% }) %>
-        <a href="/couple/medias" class="cnav-btn<%= _cp === '/couple/medias' ? ' active' : '' %>">M&eacute;dias</a>
+    <%# ─ En-tête partenaire ─ %>
+    <a href="/couple" class="cnav-partner-header">
+      <div class="cnav-partner-avatar" style="<%= partner.profileColor ? 'background:' + partner.profileColor : '' %>">
+        <%= (partner.displayName || '?').charAt(0).toUpperCase() %>
       </div>
-    </nav>
+      <span class="cnav-partner-name"><%= partner.displayName %></span>
+    </a>
 
-    <%# ─ Section Mon profil (repliée par défaut) ─ %>
-    <div class="cnav-section cnav-section--collapsible">
+    <%# ─ Catégories partenaire ─ %>
+    <div class="cnav-list">
+      <% _CATS.forEach(function(cat) { %>
+        <a href="/couple/notes/<%= cat.key %>" class="cnav-btn<%= _cp === '/couple/notes/' + cat.key ? ' active' : '' %>"><%= cat.label %></a>
+      <% }) %>
+      <a href="/couple/medias" class="cnav-btn<%= _cp === '/couple/medias' ? ' active' : '' %>">M&eacute;dias</a>
+    </div>
+
+    <%# ─ Mon profil (replié par défaut) ─ %>
+    <div class="cnav-section--collapsible">
       <button class="cnav-btn cnav-btn--toggle<%= _onSelf ? ' active' : '' %>" type="button" aria-expanded="<%= _onSelf ? 'true' : 'false' %>" aria-controls="cnav-self-links">
         <span>Mon profil</span>
-        <svg class="cnav-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" aria-hidden="true"><polyline points="4 6 8 10 12 6"/></svg>
+        <svg class="cnav-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" width="11" height="11" aria-hidden="true"><polyline points="4 6 8 10 12 6"/></svg>
       </button>
-      <div class="cnav-list" id="cnav-self-links"<%= !_onSelf ? ' hidden' : '' %>>
-        <a href="/couple/mon-profil" class="cnav-btn<%= _cp === '/couple/mon-profil' ? ' active' : '' %>">Mon profil</a>
+      <div class="cnav-list" id="cnav-self-links"<%= !_onSelf ? ' hidden' : '' %> style="margin-top:.2rem">
+        <a href="/couple/mon-profil" class="cnav-btn<%= _cp === '/couple/mon-profil' ? ' active' : '' %>">Vue d&rsquo;ensemble</a>
         <% _CATS.forEach(function(cat) { %>
           <a href="/couple/mon-profil/notes/<%= cat.key %>" class="cnav-btn<%= _cp === '/couple/mon-profil/notes/' + cat.key ? ' active' : '' %>"><%= cat.label %></a>
         <% }) %>
@@ -55,7 +58,7 @@
   btn.addEventListener('click', function () {
     var expanded = btn.getAttribute('aria-expanded') === 'true';
     var list = document.getElementById('cnav-self-links');
-    btn.setAttribute('aria-expanded', !expanded);
+    btn.setAttribute('aria-expanded', String(!expanded));
     list.hidden = expanded;
   });
 })();
