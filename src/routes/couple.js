@@ -69,6 +69,26 @@ function buildCoupleRouter(config) {
     res.render("couple-accueil", { config, partner: req.partner, stats, flameWiki, categories: WIKI_CATEGORIES });
   });
 
+  // ── Vue "mon profil tel que mon partenaire le voit" ──
+  router.get("/mon-profil/wiki", (req, res) => {
+    const self = { id: req.user.id, displayName: req.user.displayName, profileColor: req.user.profileColor, sexe: req.user.sexe };
+    const all = filterOff(mergeUserReactions(listWikiPages(), req.user.id, "wiki"), req.user)
+      .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested || p.practiced));
+
+    const objects    = all.filter((p) => p.category === "objets");
+    const nonObjects = all.filter((p) => p.category !== "objets");
+
+    res.render("couple-notes-wiki", {
+      config, partner: self, categories: WIKI_CATEGORIES, selfView: true,
+      objPossede:  objects.filter((p) => p.practiced),
+      objSouhaite: objects.filter((p) => p.interested),
+      interested:  nonObjects.filter((p) => p.interested),
+      flame:       nonObjects.filter((p) => p.flame),
+      practiced:   nonObjects.filter((p) => p.practiced),
+      rated:       all.filter((p) => p.rating > 0),
+    });
+  });
+
   router.get("/notes/wiki", (req, res) => {
     const all = filterOff(mergeUserReactions(listWikiPages(), req.partner.id, "wiki"), req.user)
       .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested || p.practiced));
