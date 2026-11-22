@@ -6,9 +6,11 @@ const {
   listGalleryImages,
   listBdBooks,
   getUserWikiStatusList,
+  getGalleryImage,
 } = require("../db");
 const { requireUser } = require("../auth");
 const { filterOff } = require("../specialContent");
+const { thumbUrl } = require("../thumbs");
 
 const WIKI_CATEGORIES = [
   { key: "objets",      label: "Objets",      hue:  28 },
@@ -41,8 +43,17 @@ function buildCoupleRouter(config) {
       profileImageCrop: partner.profileImageCrop,
       sexe:             partner.sexe,
     };
-    // Expose via res.locals pour que les partials y accèdent sans qu'on le passe explicitement
+    // Expose via res.locals pour que les partials y accèdent sans passer explicitement
     res.locals.couplePartner = req.partner;
+    // Vignette avatar du partenaire (même logique que server.js pour l'utilisateur courant)
+    if (req.partner.profileImageId) {
+      const img = getGalleryImage(req.partner.profileImageId);
+      if (img) {
+        const firstPath = (img.imagePaths && img.imagePaths[0]) || img.filename || null;
+        res.locals.couplePartnerAvatarThumb = firstPath ? thumbUrl(firstPath) : null;
+        res.locals.couplePartnerImageCrop   = req.partner.profileImageCrop || null;
+      }
+    }
     next();
   });
 

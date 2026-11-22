@@ -1,17 +1,31 @@
 <%# Volet de navigation du mode couple.
-    Attend : partner (contexte courant — peut être le partenaire ou soi-même).
-    couplePartner et currentUser sont dans res.locals. %>
+    res.locals : couplePartner, couplePartnerAvatarThumb, couplePartnerImageCrop,
+                 currentUser, profileAvatarThumb, profileImageCrop %>
 <%
   var _cp  = currentPath || '';
   var _onSelf = _cp.startsWith('/couple/mon-profil');
   var _hue = _onSelf ? 215 : 330;
 
-  // Qui est en haut / en bas selon le contexte
-  var _main   = _onSelf ? currentUser    : couplePartner;
-  var _other  = _onSelf ? couplePartner  : currentUser;
+  var _main      = _onSelf ? currentUser    : couplePartner;
+  var _other     = _onSelf ? couplePartner  : currentUser;
   var _mainBase  = _onSelf ? '/couple/mon-profil' : '/couple';
   var _otherLink = _onSelf ? '/couple'            : '/couple/mon-profil';
   var _otherLabel = _onSelf ? couplePartner.displayName : 'Mon profil';
+  var _isMainSelf = _onSelf;
+
+  // Thumbs + crops selon contexte
+  var _mainThumb  = _onSelf ? (locals.profileAvatarThumb || null)        : (locals.couplePartnerAvatarThumb || null);
+  var _mainCrop   = _onSelf ? (locals.profileImageCrop || null)           : (locals.couplePartnerImageCrop || null);
+  var _otherThumb = _onSelf ? (locals.couplePartnerAvatarThumb || null)   : (locals.profileAvatarThumb || null);
+  var _otherCrop  = _onSelf ? (locals.couplePartnerImageCrop || null)     : (locals.profileImageCrop || null);
+
+  function avatarStyle(crop) {
+    if (!crop) return '';
+    var cx = (crop.x  != null) ? crop.x  : 50;
+    var cy = (crop.y  != null) ? crop.y  : 50;
+    var cs = (crop.scale != null && crop.scale >= 1) ? crop.scale : 1;
+    return 'object-position:' + cx + '% ' + cy + '%;transform:scale(' + cs + ');transform-origin:' + cx + '% ' + cy + '%;';
+  }
 
   var _CATS = [
     { key: 'objets',      label: 'Objets'      },
@@ -30,10 +44,18 @@
 
     <%# ─ En-tête section active ─ %>
     <a href="<%= _mainBase %>" class="cnav-partner-header">
-      <div class="cnav-partner-avatar" style="<%= _main.profileColor ? 'background:' + _main.profileColor : '' %>">
-        <%= (_main.displayName || '?').charAt(0).toUpperCase() %>
+      <div class="cnav-partner-avatar<%= _mainThumb ? ' cnav-partner-avatar--img' : '' %>"
+           style="<%= !_mainThumb && _main.profileColor ? 'background:' + _main.profileColor : '' %>">
+        <% if (_mainThumb) { %>
+          <img src="<%= _mainThumb %>" alt="" style="<%= avatarStyle(_mainCrop) %>">
+        <% } else { %>
+          <%= (_main.displayName || '?').charAt(0).toUpperCase() %>
+        <% } %>
       </div>
-      <span class="cnav-partner-name"><%= _main.displayName %></span>
+      <div class="cnav-partner-info">
+        <span class="cnav-partner-name"><%= _main.displayName %></span>
+        <% if (_isMainSelf) { %><span class="cnav-partner-you">Vous</span><% } %>
+      </div>
     </a>
 
     <%# ─ Catégories section active ─ %>
@@ -48,11 +70,16 @@
 
     <%# ─ Switch vers l'autre contexte ─ %>
     <a href="<%= _otherLink %>" class="cnav-switch">
-      <div class="cnav-switch-avatar" style="<%= _other.profileColor ? 'background:' + _other.profileColor : '' %>">
-        <%= (_other.displayName || '?').charAt(0).toUpperCase() %>
+      <div class="cnav-switch-avatar<%= _otherThumb ? ' cnav-switch-avatar--img' : '' %>"
+           style="<%= !_otherThumb && _other.profileColor ? 'background:' + _other.profileColor : '' %>">
+        <% if (_otherThumb) { %>
+          <img src="<%= _otherThumb %>" alt="" style="<%= avatarStyle(_otherCrop) %>">
+        <% } else { %>
+          <%= (_other.displayName || '?').charAt(0).toUpperCase() %>
+        <% } %>
       </div>
       <span><%= _otherLabel %></span>
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" aria-hidden="true" style="margin-left:auto;opacity:.5"><polyline points="6 4 10 8 6 12"/></svg>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" aria-hidden="true" style="margin-left:auto;opacity:.4"><polyline points="6 4 10 8 6 12"/></svg>
     </a>
 
   </div>
