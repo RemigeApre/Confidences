@@ -750,6 +750,11 @@ function buildWikiRouter(config) {
       .filter((p) => p.rating > 0)
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 30);
+    // Pages notées par le partenaire mais pas encore par l'utilisateur courant
+    const partnerUser = (req.user && req.user.partnerId) ? getUserById(req.user.partnerId) : null;
+    const partnerLoved = (partnerId && partnerUser)
+      ? pages.filter((p) => p.partnerReaction && !p.rating).slice(0, 30)
+      : [];
     const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
     const aiNavPages = pages.map((p) => ({ id: p.id, title: p.title }));
     res.render("wiki-index", {
@@ -757,7 +762,7 @@ function buildWikiRouter(config) {
       allTags: getAllTags(pages),
       tagCounts: getTagCounts(pages),
       totalCount: pages.length,
-      recentAdded, recentUpdated, popular,
+      recentAdded, recentUpdated, popular, partnerLoved, partnerUser,
       hasOwnedItems: pages.some((p) => p.owned),
       wikiTitlesEn,
       aiNavPages,
@@ -769,8 +774,9 @@ function buildWikiRouter(config) {
   // ── Vue "tout" : toutes les pages, toutes categories melangees ──
   router.get("/tous", (req, res) => {
     const pages = mergePartnerReaction(filterOff(excludeHidden(mergeUserReactions(sortedPages(), req.user ? req.user.id : null, "wiki")), req.user), req.user ? req.user.partnerId : null, "wiki");
+    const partnerUser = (req.user && req.user.partnerId) ? getUserById(req.user.partnerId) : null;
     const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
-    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, ...CTX });
+    res.render("wiki", { config, pages, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: null, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, partnerUser, ...CTX });
   });
 
   // ── Vue par categorie : un "chapitre" du livre ──
@@ -779,9 +785,10 @@ function buildWikiRouter(config) {
     if (!cat) return res.redirect("/wiki");
     const all = sortedPages();
     const pages = mergePartnerReaction(pagesForCategory(filterOff(excludeHidden(mergeUserReactions(all, req.user ? req.user.id : null, "wiki")), req.user), cat.key), req.user ? req.user.partnerId : null, "wiki");
+    const partnerUser = (req.user && req.user.partnerId) ? getUserById(req.user.partnerId) : null;
     const allPagesMin = all.map((p) => ({ id: p.id, title: p.title }));
     const wikiTitlesEn = getFieldTranslationsByEntity('wiki', 'title', 'en');
-    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, metaDescription: `${cat.label} — Codex Confidence. ${pages.length} fiches de sexologie sur la catégorie ${cat.label}.`, ...CTX });
+    res.render("wiki", { config, pages, allPagesMin, allTags: getAllTags(pages), tagCounts: getTagCounts(pages), lockedCategory: cat, hasOwnedItems: pages.some((p) => p.owned), wikiTitlesEn, partnerUser, metaDescription: `${cat.label} — Codex Confidence. ${pages.length} fiches de sexologie sur la catégorie ${cat.label}.`, ...CTX });
   });
 
   // ── Extraction "Mes goûts" : synthèse .txt des pages notées par le

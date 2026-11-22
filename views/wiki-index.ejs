@@ -148,6 +148,22 @@
     </details>
 
     <%# ─ Strips ─ %>
+    <% if (locals.partnerLoved && partnerLoved.length && locals.partnerUser) { %>
+      <div class="wiki-index-strip-section">
+        <h2 class="wiki-index-strip-title wiki-partner-strip-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true" style="vertical-align:-1px;margin-right:.35rem;opacity:.7"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>Aim&eacute; par <%= partnerUser.displayName %>
+        </h2>
+        <div class="wiki-chapter-strip-wrap">
+          <div class="wiki-chapter-strip">
+            <% partnerLoved.forEach(function (page) { %>
+              <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+            <% }) %>
+          </div>
+          <div class="wiki-strip-fade" aria-hidden="true"></div>
+        </div>
+      </div>
+    <% } %>
+
     <% if (recentAdded.length) { %>
       <div class="wiki-index-strip-section">
         <h2 class="wiki-index-strip-title" data-fr="Nouveautés" data-en="New">Nouveaut&eacute;s</h2>
