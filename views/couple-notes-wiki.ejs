@@ -6,7 +6,7 @@
 
   <div class="profil-subpage">
 
-    <% var _total = flamePages.length + otherPages.length; %>
+    <% var _total = objPossede.length + objSouhaite.length + interested.length + flame.length + practiced.length + rated.length; %>
 
     <% if (!_total) { %>
       <div class="profil-empty">
@@ -15,31 +15,95 @@
       </div>
     <% } %>
 
-    <%# ─ Bloc J'adore ─ %>
-    <% if (flamePages.length) { %>
+    <%# ─ Objets ─ %>
+    <% if (objPossede.length || objSouhaite.length) { %>
+    <section class="cnw-section cnw-section--objects">
+      <h2 class="cnw-section-title cnw-section-title--objects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M8 7V5a2 2 0 0 0-4 0v2"/></svg>
+        Objets
+      </h2>
+
+      <% if (objPossede.length) { %>
+      <div class="cnw-subsection">
+        <h3 class="cnw-subsection-title">Je poss&egrave;de <span class="cnw-count"><%= objPossede.length %></span></h3>
+        <div class="cnw-grid">
+          <% objPossede.forEach(function(page) { %>
+            <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: false }) %>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <% if (objSouhaite.length) { %>
+      <div class="cnw-subsection">
+        <h3 class="cnw-subsection-title">Je souhaite <span class="cnw-count"><%= objSouhaite.length %></span></h3>
+        <div class="cnw-grid">
+          <% objSouhaite.forEach(function(page) { %>
+            <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: false }) %>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+    </section>
+    <% } %>
+
+    <%# ─ Intéressé(e) ─ %>
+    <% if (interested.length) { %>
     <section class="cnw-section">
-      <h2 class="cnw-section-title cnw-section-title--flame">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M12 2C9.86 5.72 8 8 8 11a4 4 0 0 0 8 0c0-1.5-.5-3-1-4.5C13.5 8 13 9 13 10.5a1.5 1.5 0 0 1-3 0C10 7 11.5 4.5 12 2z"/></svg>
-        J&rsquo;adore
-        <span class="cnw-count"><%= flamePages.length %></span>
+      <h2 class="cnw-section-title cnw-section-title--interested">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Int&eacute;ress&eacute;<%= partner.sexe === 'femme' ? 'e' : '' %>
+        <span class="cnw-count"><%= interested.length %></span>
       </h2>
       <div class="cnw-grid">
-        <% flamePages.forEach(function(page) { %>
+        <% interested.forEach(function(page) { %>
           <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
         <% }) %>
       </div>
     </section>
     <% } %>
 
-    <%# ─ Bloc Autres notes ─ %>
-    <% if (otherPages.length) { %>
+    <%# ─ J'adore ─ %>
+    <% if (flame.length) { %>
     <section class="cnw-section">
-      <h2 class="cnw-section-title">
-        Autres notes
-        <span class="cnw-count"><%= otherPages.length %></span>
+      <h2 class="cnw-section-title cnw-section-title--flame">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M12 2C9.86 5.72 8 8 8 11a4 4 0 0 0 8 0c0-1.5-.5-3-1-4.5C13.5 8 13 9 13 10.5a1.5 1.5 0 0 1-3 0C10 7 11.5 4.5 12 2z"/></svg>
+        J&rsquo;adore
+        <span class="cnw-count"><%= flame.length %></span>
       </h2>
       <div class="cnw-grid">
-        <% otherPages.forEach(function(page) { %>
+        <% flame.forEach(function(page) { %>
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <%# ─ Pratiqué ─ %>
+    <% if (practiced.length) { %>
+    <section class="cnw-section">
+      <h2 class="cnw-section-title cnw-section-title--practiced">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        D&eacute;j&agrave; pratiqu&eacute;
+        <span class="cnw-count"><%= practiced.length %></span>
+      </h2>
+      <div class="cnw-grid">
+        <% practiced.forEach(function(page) { %>
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <%# ─ Notes ─ %>
+    <% if (rated.length) { %>
+    <section class="cnw-section">
+      <h2 class="cnw-section-title">
+        Notes
+        <span class="cnw-count"><%= rated.length %></span>
+      </h2>
+      <div class="cnw-grid">
+        <% rated.forEach(function(page) { %>
           <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
         <% }) %>
       </div>

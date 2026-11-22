@@ -71,10 +71,22 @@ function buildCoupleRouter(config) {
 
   router.get("/notes/wiki", (req, res) => {
     const all = filterOff(mergeUserReactions(listWikiPages(), req.partner.id, "wiki"), req.user)
-      .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested));
-    const flamePages = all.filter((p) => p.flame);
-    const otherPages = all.filter((p) => !p.flame);
-    res.render("couple-notes-wiki", { config, partner: req.partner, flamePages, otherPages, categories: WIKI_CATEGORIES });
+      .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested || p.practiced));
+
+    const objects    = all.filter((p) => p.category === "objets");
+    const nonObjects = all.filter((p) => p.category !== "objets");
+
+    const objPossede  = objects.filter((p) => p.practiced);
+    const objSouhaite = objects.filter((p) => p.interested);
+    const interested  = nonObjects.filter((p) => p.interested);
+    const flame       = nonObjects.filter((p) => p.flame);
+    const practiced   = nonObjects.filter((p) => p.practiced);
+    const rated       = all.filter((p) => p.rating > 0);
+
+    res.render("couple-notes-wiki", {
+      config, partner: req.partner, categories: WIKI_CATEGORIES,
+      objPossede, objSouhaite, interested, flame, practiced, rated,
+    });
   });
 
   router.get("/notes/images", (req, res) => {
