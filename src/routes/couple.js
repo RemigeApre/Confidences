@@ -7,6 +7,7 @@ const {
   listBdBooks,
 } = require("../db");
 const { requireUser } = require("../auth");
+const { filterOff } = require("../specialContent");
 
 const WIKI_CATEGORIES = [
   { key: "position",    label: "Positions",   hue: 270 },
@@ -50,25 +51,27 @@ function buildCoupleRouter(config) {
   router.get("/", (req, res) => res.redirect("/couple/notes/wiki"));
 
   router.get("/notes/wiki", (req, res) => {
-    const pages = mergeUserReactions(listWikiPages(), req.partner.id, "wiki")
+    const all = filterOff(mergeUserReactions(listWikiPages(), req.partner.id, "wiki"), req.user)
       .filter((p) => !p.hidden && (p.rating > 0 || p.flame || p.interested));
-    res.render("couple-notes-wiki", { config, partner: req.partner, pages, categories: WIKI_CATEGORIES });
+    const flamePages = all.filter((p) => p.flame);
+    const otherPages = all.filter((p) => !p.flame);
+    res.render("couple-notes-wiki", { config, partner: req.partner, flamePages, otherPages, categories: WIKI_CATEGORIES });
   });
 
   router.get("/notes/images", (req, res) => {
-    const items = mergeUserReactions(listGalleryImages(), req.partner.id, "gallery")
+    const items = filterOff(mergeUserReactions(listGalleryImages(), req.partner.id, "gallery"), req.user)
       .filter((img) => !img.hidden && (img.rating > 0 || img.flame || img.interested));
     res.render("couple-notes-images", { config, partner: req.partner, items });
   });
 
   router.get("/notes/bd", (req, res) => {
-    const books = mergeUserReactions(listBdBooks(), req.partner.id, "bd")
+    const books = filterOff(mergeUserReactions(listBdBooks(), req.partner.id, "bd"), req.user)
       .filter((b) => !b.hidden && (b.rating > 0 || b.flame || b.interested));
     res.render("couple-notes-bd", { config, partner: req.partner, books });
   });
 
   router.get("/a-lire-plus-tard", (req, res) => {
-    const pages = mergeUserReactions(listWikiPages(), req.partner.id, "wiki")
+    const pages = filterOff(mergeUserReactions(listWikiPages(), req.partner.id, "wiki"), req.user)
       .filter((p) => !p.hidden && p.readLater);
     res.render("couple-a-lire-plus-tard", { config, partner: req.partner, pages, categories: WIKI_CATEGORIES });
   });

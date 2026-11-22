@@ -6,16 +6,45 @@
 
   <div class="profil-subpage">
 
-    <div class="profil-empty"<%= pages.length ? ' hidden' : '' %>>
-      <div class="profil-empty-icon">&#10024;</div>
-      <p><%= partner.displayName %> n&rsquo;a encore rien not&eacute; dans le codex.</p>
-    </div>
+    <% var _total = flamePages.length + otherPages.length; %>
 
-    <div class="wiki-grid"<%= pages.length ? '' : ' hidden' %>>
-      <% pages.forEach(function(page) { %>
-        <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
-      <% }) %>
-    </div>
+    <% if (!_total) { %>
+      <div class="profil-empty">
+        <div class="profil-empty-icon">&#10024;</div>
+        <p><%= partner.displayName %> n&rsquo;a encore rien not&eacute; dans le codex.</p>
+      </div>
+    <% } %>
+
+    <%# ─ Bloc J'adore ─ %>
+    <% if (flamePages.length) { %>
+    <section class="cnw-section">
+      <h2 class="cnw-section-title cnw-section-title--flame">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M12 2C9.86 5.72 8 8 8 11a4 4 0 0 0 8 0c0-1.5-.5-3-1-4.5C13.5 8 13 9 13 10.5a1.5 1.5 0 0 1-3 0C10 7 11.5 4.5 12 2z"/></svg>
+        J&rsquo;adore
+        <span class="cnw-count"><%= flamePages.length %></span>
+      </h2>
+      <div class="cnw-grid">
+        <% flamePages.forEach(function(page) { %>
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <%# ─ Bloc Autres notes ─ %>
+    <% if (otherPages.length) { %>
+    <section class="cnw-section">
+      <h2 class="cnw-section-title">
+        Autres notes
+        <span class="cnw-count"><%= otherPages.length %></span>
+      </h2>
+      <div class="cnw-grid">
+        <% otherPages.forEach(function(page) { %>
+          <%- include('partials/wiki-card', { page: page, categories: categories, showCategoryBadge: true }) %>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
 
   </div>
 
