@@ -595,6 +595,15 @@
             <svg class="wiki-left-copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="13" height="13" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
             <span class="wiki-left-updated" data-fr="Derni&egrave;re modif.&nbsp;: <%= _updDateFr %>" data-en="Updated: <%= _updDateEn %>">Derni&egrave;re modif.&nbsp;: <%= _updDateFr %></span>
           </button>
+          <% if (locals.inviteToken) { %>
+          <button type="button" class="wiki-left-copy-row wiki-left-share-btn share-trigger-btn"
+                  data-share-type="wiki" data-share-id="<%= page.id %>"
+                  data-share-title="<%= (page.title || '').replace(/"/g, '&quot;') %>"
+                  title="Envoyer à un ami" aria-label="Envoyer à un ami">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true" class="wiki-left-copy-icon"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <span>Envoyer &agrave; un ami</span>
+          </button>
+          <% } %>
 
           <%# Bloc admin : édition + maturité (fusionné) ─ %>
           <% if (currentUser && currentUser.isAdmin) { %>
@@ -1225,14 +1234,6 @@
               <button type="button" class="wiki-react-btn wiki-react-flame wiki-react-iconbtn<%= (page.flame || isFavorite) ? ' active' : '' %>" data-key="flame" data-tooltip="J'adore" data-fr="J'adore" data-en="Love it">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.47-.3 2.98-.93 4.03-1.92.28 1.14.42 2.32.42 3.18C15.75 17.6 13.9 19 11.71 19z"/></svg>
               </button>
-              <% if (locals.inviteToken) { %>
-              <button type="button" class="wiki-react-iconbtn share-trigger-btn wiki-share-btn"
-                      data-tooltip="Envoyer à un ami" title="Envoyer à un ami" aria-label="Envoyer à un ami"
-                      data-share-type="wiki" data-share-id="<%= page.id %>"
-                      data-share-title="<%= (page.title || '').replace(/"/g, '&quot;') %>">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              </button>
-              <% } %>
             </div>
 
             <%# Ligne 2 : intéressé · masquer · pratiqué %>
@@ -1250,17 +1251,22 @@
 
             <%# Mode couple %>
             <% if (page.partnerReaction && locals.partnerUser) { %>
-              <div class="wiki-partner-reveal" id="wiki-partner-reveal"<% if (!page.rating) { %> style="display:none"<% } %>>
-                <span class="wiki-partner-reveal-label">
-                  <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true" style="vertical-align:-1px;margin-right:.2rem;opacity:.7"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><%= partnerUser.displayName %>&nbsp;:
-                </span>
+              <%
+                var _pSexe  = partnerUser.sexe || '';
+                var _pMod   = _pSexe === 'femme' ? 'fem' : _pSexe === 'homme' ? 'masc' : 'neutral';
+                var _pTags  = [];
+                if (page.partnerReaction.flame)      _pTags.push('adore');
+                if (page.partnerReaction.interested) _pTags.push('est int\u00e9ress\u00e9(e)');
+                if (page.partnerReaction.practiced)  _pTags.push('a d\u00e9j\u00e0 fait');
+              %>
+              <div class="wiki-partner-reveal wiki-partner-reveal--<%= _pMod %>" id="wiki-partner-reveal"<% if (!page.rating) { %> style="display:none"<% } %>>
+                <span class="wiki-partner-reveal-label">Votre partenaire <%= partnerUser.displayName %>&nbsp;:</span>
                 <% if (page.partnerReaction.rating > 0) { %>
                   <span class="wiki-partner-reveal-stars">
                     <% for (var pi = 1; pi <= 5; pi++) { %><span class="wiki-card-star<%= pi <= page.partnerReaction.rating ? ' filled' : '' %>">&#9733;</span><% } %>
                   </span>
                 <% } %>
-                <% if (page.partnerReaction.flame) { %><span class="wiki-react-icon" title="J&apos;adore"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.47-.3 2.98-.93 4.03-1.92.28 1.14.42 2.32.42 3.18C15.75 17.6 13.9 19 11.71 19z"/></svg></span><% } %>
-                <% if (page.partnerReaction.interested) { %><span class="wiki-react-icon" title="Int&eacute;ress&eacute;(e)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span><% } %>
+                <% if (_pTags.length) { %><span class="wiki-partner-reveal-tags"><%= _pTags.join(' · ') %></span><% } %>
               </div>
             <% } %>
           </div>
