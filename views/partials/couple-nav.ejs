@@ -1,62 +1,62 @@
-<%# Volet de navigation du mode couple.
-    Attend : partner (objet utilisateur). %>
+<%# Volet de navigation du mode couple. Attend : partner. %>
 <%
   var _cp = currentPath || '';
   var _onSelf = _cp.startsWith('/couple/mon-profil');
   var _CATS = [
-    { key: 'position',    label: 'Positions',   hue: 270 },
-    { key: 'lieux',       label: 'Lieux',       hue: 140 },
-    { key: 'partenaires', label: 'Partenaires', hue: 210 },
-    { key: 'jeu_de_role', label: 'Scénarios',   hue:  60 },
-    { key: 'tenues',      label: 'Tenues',      hue: 175 },
-    { key: 'objets',      label: 'Objets',      hue:  28 },
-    { key: 'pratique',    label: 'Pratiques',   hue:   5 },
-    { key: 'fantasmes',   label: 'Fantasmes',   hue: 330 },
-    { key: 'autre',       label: 'Autre',       hue: 220 },
+    { key: 'objets',      label: 'Objets'      },
+    { key: 'tenues',      label: 'Tenues'      },
+    { key: 'position',    label: 'Positions'   },
+    { key: 'lieux',       label: 'Lieux'       },
+    { key: 'jeu_de_role', label: 'Scénarios'   },
+    { key: 'pratique',    label: 'Pratiques'   },
+    { key: 'partenaires', label: 'Partenaires' },
+    { key: 'fantasmes',   label: 'Fantasmes'   },
+    { key: 'autre',       label: 'Autre'       },
   ];
 %>
 <aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue: 330">
-  <div class="profil-nav-header">
-    <span class="profil-nav-name">Profil de <%= partner.displayName %></span>
-  </div>
   <div class="wiki-sidebar-body">
 
-    <%# ─ Partenaire ─ %>
-    <nav class="profil-nav-links">
-      <a href="/couple" class="profil-nav-link<%= _cp === '/couple' ? ' active' : '' %>">
-        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span>Accueil</span>
+    <%# ─ Section partenaire ─ %>
+    <nav class="cnav-section">
+      <a href="/couple" class="cnav-btn cnav-btn--main<%= (!_onSelf && (_cp === '/couple' || _cp.startsWith('/couple/notes') || _cp === '/couple/medias')) ? ' active' : '' %>">
+        <%= partner.displayName %>
       </a>
-      <% _CATS.forEach(function(cat) { %>
-        <a href="/couple/notes/<%= cat.key %>" class="profil-nav-link cnav-cat-link<%= _cp === '/couple/notes/' + cat.key ? ' active' : '' %>" style="--cat-hue:<%= cat.hue %>">
-          <span class="cnav-cat-dot" aria-hidden="true"></span>
-          <span><%= cat.label %></span>
-        </a>
-      <% }) %>
-      <a href="/couple/medias" class="profil-nav-link<%= _cp === '/couple/medias' ? ' active' : '' %>">
-        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        <span>M&eacute;dias</span>
-      </a>
+      <div class="cnav-list">
+        <% _CATS.forEach(function(cat) { %>
+          <a href="/couple/notes/<%= cat.key %>" class="cnav-btn<%= _cp === '/couple/notes/' + cat.key ? ' active' : '' %>"><%= cat.label %></a>
+        <% }) %>
+        <a href="/couple/medias" class="cnav-btn<%= _cp === '/couple/medias' ? ' active' : '' %>">M&eacute;dias</a>
+      </div>
     </nav>
 
-    <%# ─ Mon profil ─ %>
-    <nav class="profil-nav-links profil-nav-links--selfview">
-      <p class="profil-nav-section-label">Mon profil</p>
-      <a href="/couple/mon-profil" class="profil-nav-link<%= _cp === '/couple/mon-profil' ? ' active' : '' %>">
-        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span>Accueil</span>
-      </a>
-      <% _CATS.forEach(function(cat) { %>
-        <a href="/couple/mon-profil/notes/<%= cat.key %>" class="profil-nav-link cnav-cat-link<%= _cp === '/couple/mon-profil/notes/' + cat.key ? ' active' : '' %>" style="--cat-hue:<%= cat.hue %>">
-          <span class="cnav-cat-dot" aria-hidden="true"></span>
-          <span><%= cat.label %></span>
-        </a>
-      <% }) %>
-      <a href="/couple/mon-profil/medias" class="profil-nav-link<%= _cp === '/couple/mon-profil/medias' ? ' active' : '' %>">
-        <svg class="profil-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        <span>M&eacute;dias</span>
-      </a>
-    </nav>
+    <%# ─ Section Mon profil (repliée par défaut) ─ %>
+    <div class="cnav-section cnav-section--collapsible">
+      <button class="cnav-btn cnav-btn--toggle<%= _onSelf ? ' active' : '' %>" type="button" aria-expanded="<%= _onSelf ? 'true' : 'false' %>" aria-controls="cnav-self-links">
+        <span>Mon profil</span>
+        <svg class="cnav-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" aria-hidden="true"><polyline points="4 6 8 10 12 6"/></svg>
+      </button>
+      <div class="cnav-list" id="cnav-self-links"<%= !_onSelf ? ' hidden' : '' %>>
+        <a href="/couple/mon-profil" class="cnav-btn<%= _cp === '/couple/mon-profil' ? ' active' : '' %>">Mon profil</a>
+        <% _CATS.forEach(function(cat) { %>
+          <a href="/couple/mon-profil/notes/<%= cat.key %>" class="cnav-btn<%= _cp === '/couple/mon-profil/notes/' + cat.key ? ' active' : '' %>"><%= cat.label %></a>
+        <% }) %>
+        <a href="/couple/mon-profil/medias" class="cnav-btn<%= _cp === '/couple/mon-profil/medias' ? ' active' : '' %>">M&eacute;dias</a>
+      </div>
+    </div>
 
   </div>
 </aside>
+
+<script nonce="<%= nonce %>">
+(function () {
+  var btn = document.querySelector('.cnav-btn--toggle');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var expanded = btn.getAttribute('aria-expanded') === 'true';
+    var list = document.getElementById('cnav-self-links');
+    btn.setAttribute('aria-expanded', !expanded);
+    list.hidden = expanded;
+  });
+})();
+</script>
