@@ -706,6 +706,7 @@ try { db.exec("ALTER TABLE users ADD COLUMN onboarding_done INTEGER NOT NULL DEF
 // sections déjà vues par ce profil, affichées une seule fois chacune à la
 // première visite — voir partials/section-intro.ejs.
 try { db.exec("ALTER TABLE users ADD COLUMN section_intros_seen TEXT NOT NULL DEFAULT '[]'"); } catch (_) {}
+try { db.exec("ALTER TABLE users ADD COLUMN accueil_blocks TEXT"); } catch (_) {}
 // Migrations : cadeau / échange / marché
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_listed INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE user_unlocks ADD COLUMN is_new INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
@@ -7562,6 +7563,16 @@ function cleanupOldMessages() {
   return r.changes;
 }
 
+function getAccueilBlocks(userId) {
+  const row = db.prepare("SELECT accueil_blocks FROM users WHERE id=?").get(userId);
+  if (!row || !row.accueil_blocks) return null;
+  try { return JSON.parse(row.accueil_blocks); } catch (_) { return null; }
+}
+
+function setAccueilBlocks(userId, blocks) {
+  db.prepare("UPDATE users SET accueil_blocks=? WHERE id=?").run(JSON.stringify(blocks), userId);
+}
+
 module.exports = {
   db,
   setUserAccountStatus,
@@ -8021,6 +8032,8 @@ module.exports = {
   cancelExchange,
   getExchangesReceived,
   getExchangesSent,
+  getAccueilBlocks,
+  setAccueilBlocks,
 };
 
 // ── Nouvelles ──────────────────────────────────────────────────────────────

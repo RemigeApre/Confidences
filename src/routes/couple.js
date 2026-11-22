@@ -7,6 +7,8 @@ const {
   listBdBooks,
   getUserWikiStatusList,
   getGalleryImage,
+  getAccueilBlocks,
+  setAccueilBlocks,
 } = require("../db");
 const { requireUser } = require("../auth");
 const { filterOff } = require("../specialContent");
@@ -23,6 +25,18 @@ const WIKI_CATEGORIES = [
   { key: "fantasmes",   label: "Fantasmes",   hue: 330 },
   { key: "autre",       label: "Autre",       hue: 220 },
 ];
+
+// Blocs disponibles pour l'accueil configurable
+const BLOCK_DEFS = [
+  { type: "flame",        label: "J'adore" },
+  { type: "interested",   label: "Intéressé(e)" },
+  { type: "practiced",    label: "Déjà pratiqué" },
+  { type: "rated",        label: "Notes" },
+  { type: "objets_wish",  label: "Liste de souhaits" },
+  { type: "objets_have",  label: "Je possède" },
+];
+const VALID_BLOCK_TYPES = new Set(BLOCK_DEFS.map((b) => b.type));
+const DEFAULT_BLOCKS = ["flame"];
 
 // Mode couple (lié par l'admin, voir /admin et src/db.js:setCouplePartners).
 // Lecture seule du profil partenaire par catégorie codex + médias (images/BD).
@@ -64,7 +78,32 @@ function buildCoupleRouter(config) {
     };
   }
 
-  // ── Données accueil : compteurs par catégorie + médias + strip J'adore ──
+  // ── Construit les blocs d'accueil selon la config utilisateur ──
+  function buildBlocks(configTypes, reactedWiki, statusList) {
+    const pageMap = new Map(reactedWiki.map((p) => [p.id, p]));
+    const types = (configTypes && configTypes.length) ? configTypes : DEFAULT_BLOCKS;
+
+    return types.map((type) => {
+      let items;
+      if (type === "flame")       items = reactedWiki.filter((p) => p.flame);
+      else if (type === "interested") items = reactedWiki.filter((p) => p.interested);
+      else if (type === "practiced")  items = reactedWiki.filter((p) => p.practiced);
+      else if (type === "rated")      items = reactedWiki.filter((p) => p.rating > 0);
+      else if (type === "objets_wish") {
+        items = statusList.filter((s) => s.status === "souhaite" && s.category === "objets")
+          .map((s) => pageMap.get(s.wikiId)).filter(Boolean);
+      } else if (type === "objets_have") {
+        items = statusList.filter((s) => s.status === "posséde" && s.category === "objets")
+          .map((s) => pageMap.get(s.wikiId)).filter(Boolean);
+      } else {
+        return null;
+      }
+      const def = BLOCK_DEFS.find((d) => d.type === type);
+      return { type, label: def ? def.label : type, items };
+    }).filter((b) => b !== null);
+  }
+
+  // ── Données accueil : compteurs catégories + médias + blocs configurés ──
   function buildAccueilData(userId, viewer) {
     const statusList = getUserWikiStatusList(userId);
     const statusObjIds = new Set(statusList.map((s) => s.wikiId));
@@ -85,9 +124,10 @@ function buildCoupleRouter(config) {
     const bdAll = filterOff(mergeUserReactions(listBdBooks(), userId, "bd"), viewer)
       .filter((b) => !b.hidden && (b.rating > 0 || b.flame || b.interested));
 
-    const flameWiki = reactedWiki.filter((p) => p.flame).slice(0, 12);
+    const configTypes = getAccueilBlocks(userId) || DEFAULT_BLOCKS;
+    const blocks = buildBlocks(configTypes, reactedWiki, statusList);
 
-    return { catCounts, medias: { images: imgAll.length, bd: bdAll.length }, flameWiki };
+    return { catCounts, medias: { images: imgAll.length, bd: bdAll.length }, blocks, configTypes };
   }
 
   // ── Données page catégorie ──
@@ -174,6 +214,21 @@ function buildCoupleRouter(config) {
     const self = selfObject(req.user);
     const { items, books } = buildMediasData(req.user.id, req.user);
     res.render("couple-medias", { config, partner: self, items, books, selfView: true });
+  });
+
+  // ── Configuration de l'accueil ──
+  router.get("/mon-profil/accueil-config", (req, res) => {
+    const configTypes = getAccueilBlocks(req.user.id) || DEFAULT_BLOCKS;
+    res.render("couple-accueil-config", { config, blockDefs: BLOCK_DEFS, configTypes });
+  });
+
+  router.post("/mon-profil/accueil-config", (req, res) => {
+    const raw = req.body.blocks;
+    const blocks = Array.isArray(raw)
+      ? raw.filter((t) => VALID_BLOCK_TYPES.has(t))
+      : (typeof raw === "string" && VALID_BLOCK_TYPES.has(raw) ? [raw] : []);
+    setAccueilBlocks(req.user.id, blocks.length ? blocks : DEFAULT_BLOCKS);
+    res.redirect("/couple/mon-profil");
   });
 
   return router;

@@ -1,0 +1,33 @@
+<%- include('partials/head', { title: 'Mon profil — Accueil' }) %>
+<main class="container wide profil-page">
+  <%- include('partials/top-nav', { config: config, navTitle: 'Configurer l\'accueil', navBack: '/couple/mon-profil' }) %>
+
+  <div class="profil-subpage">
+    <h1 class="profil-section-title">Accueil partenaire</h1>
+    <p class="profil-section-desc">Choisissez les blocs affich&eacute;s sur votre page d&rsquo;accueil. Votre partenaire verra ces m&ecirc;mes blocs quand il ou elle consulte votre profil.</p>
+
+    <form method="POST" action="/couple/mon-profil/accueil-config" class="cpa-cfg-form">
+      <div class="cpa-cfg-list">
+        <% blockDefs.forEach(function(def) {
+             var checked = configTypes.indexOf(def.type) !== -1;
+        %>
+          <label class="cpa-cfg-item<%= checked ? ' cpa-cfg-item--on' : '' %>">
+            <input type="checkbox" name="blocks" value="<%= def.type %>"<%= checked ? ' checked' : '' %> class="cpa-cfg-checkbox">
+            <span class="cpa-cfg-label"><%= def.label %></span>
+            <span class="cpa-cfg-toggle"></span>
+          </label>
+        <% }) %>
+      </div>
+      <button type="submit" class="btn btn-primary cpa-cfg-save">Enregistrer</button>
+    </form>
+  </div>
+
+</main>
+<script nonce="<%= nonce %>">
+document.querySelectorAll('.cpa-cfg-checkbox').forEach(function(cb) {
+  cb.addEventListener('change', function() {
+    this.closest('.cpa-cfg-item').classList.toggle('cpa-cfg-item--on', this.checked);
+  });
+});
+</script>
+<%- include('partials/foot') %>
