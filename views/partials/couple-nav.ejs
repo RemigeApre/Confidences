@@ -13,7 +13,6 @@
   var _otherLabel = _onSelf ? couplePartner.displayName : 'Mon profil';
   var _isMainSelf = _onSelf;
 
-  // Thumbs + crops selon contexte
   var _mainThumb  = _onSelf ? (locals.profileAvatarThumb || null)        : (locals.couplePartnerAvatarThumb || null);
   var _mainCrop   = _onSelf ? (locals.profileImageCrop || null)           : (locals.couplePartnerImageCrop || null);
   var _otherThumb = _onSelf ? (locals.couplePartnerAvatarThumb || null)   : (locals.profileAvatarThumb || null);
@@ -28,15 +27,15 @@
   }
 
   var _CATS = [
-    { key: 'objets',      label: 'Objets'      },
-    { key: 'tenues',      label: 'Tenues'      },
-    { key: 'position',    label: 'Positions'   },
-    { key: 'lieux',       label: 'Lieux'       },
-    { key: 'jeu_de_role', label: 'Scénarios'   },
-    { key: 'pratique',    label: 'Pratiques'   },
-    { key: 'partenaires', label: 'Partenaires' },
-    { key: 'fantasmes',   label: 'Fantasmes'   },
-    { key: 'autre',       label: 'Autre'       },
+    { key: 'objets',      label: 'Objets',      icon: '<path d="M20 12v10H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>' },
+    { key: 'tenues',      label: 'Tenues',      icon: '<path d="M20.38 3.46 16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/>' },
+    { key: 'position',    label: 'Positions',   icon: '<circle cx="12" cy="5" r="3"/><path d="M6.5 8a7 7 0 00-1.5 4.5V15h14v-2.5A7 7 0 0017.5 8"/><path d="M9 15v3m6-3v3"/>' },
+    { key: 'lieux',       label: 'Lieux',       icon: '<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>' },
+    { key: 'jeu_de_role', label: 'Scénarios',   icon: '<path d="M2 6h4l3 3h2V6h4l1 2h1a2 2 0 010 4h-1l-1 2h-4v-3H9l-3 3H2V6z"/>' },
+    { key: 'pratique',    label: 'Pratiques',   icon: '<polyline points="22 11.08 22 12 12 22 2 12 2.46 7.46"/><polygon points="22 2 15 9 12 6 9 9 2 2 7 2 12 7 17 2 22 2"/>' },
+    { key: 'partenaires', label: 'Partenaires', icon: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>' },
+    { key: 'fantasmes',   label: 'Fantasmes',   icon: '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>' },
+    { key: 'autre',       label: 'Autre',       icon: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>' },
   ];
 %>
 <aside class="wiki-cat-sidebar profil-nav-sidebar" style="--ch-hue:<%= _hue %>">
@@ -63,9 +62,15 @@
       <% _CATS.forEach(function(cat) {
            var href = _mainBase + '/notes/' + cat.key;
       %>
-        <a href="<%= href %>" class="cnav-btn<%= _cp === href ? ' active' : '' %>"><%= cat.label %></a>
+        <a href="<%= href %>" class="cnav-btn<%= _cp === href ? ' active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><%- cat.icon %></svg>
+          <%= cat.label %>
+        </a>
       <% }) %>
-      <a href="<%= _mainBase %>/medias" class="cnav-btn<%= _cp === _mainBase + '/medias' ? ' active' : '' %>">M&eacute;dias</a>
+      <a href="<%= _mainBase %>/medias" class="cnav-btn<%= _cp === _mainBase + '/medias' ? ' active' : '' %>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        M&eacute;dias
+      </a>
     </div>
 
     <%# ─ Switch vers l'autre contexte ─ %>
