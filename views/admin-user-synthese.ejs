@@ -178,6 +178,29 @@
 
     </div>
 
+    <%# ── Gestion couple ── %>
+    <div class="syn-panel syn-couple-panel">
+      <div class="syn-panel-hd">Couple</div>
+      <% if (locals.currentPartner) { %>
+        <div class="syn-couple-current">
+          <span class="syn-couple-name"><%= currentPartner.displayName %></span>
+          <span class="syn-couple-id">#<%= currentPartner.id %></span>
+          <a href="/ponhgup/utilisateur/<%= currentPartner.id %>" class="syn-couple-link">Voir la fiche</a>
+        </div>
+      <% } else { %>
+        <p class="syn-couple-none">Aucun partenaire actuellement.</p>
+      <% } %>
+      <form method="POST" action="/ponhgup/utilisateur/<%= u.id %>/couple" class="syn-couple-form">
+        <select name="partner_id" class="syn-couple-select">
+          <option value="">— Aucun (délier) —</option>
+          <% if (locals.allUsers) { allUsers.forEach(function(pu) { %>
+            <option value="<%= pu.id %>"<%= (locals.currentPartner && currentPartner.id === pu.id) ? ' selected' : '' %>><%= pu.displayName %> (#<%= pu.id %>)</option>
+          <% }) } %>
+        </select>
+        <button type="submit" class="syn-couple-btn">Appliquer</button>
+      </form>
+    </div>
+
   </main>
 </div>
 <%- include('partials/foot') %>

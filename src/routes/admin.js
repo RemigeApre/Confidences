@@ -1012,7 +1012,24 @@ function buildAdminRouter(config) {
         } catch (_) {}
       }
     }
-    res.render("admin-user-synthese", { config, detail, lootboxCount, inviteCount, codexNotes, imagesNotees, bdNotees, histoiresNotees, recentPings, connectionLogs, profileThumb, roleHue: roleHue(detail.user) });
+    const allUsers = listUsers().map(u => ({ id: u.id, displayName: u.display_name || u.username })).filter(u => u.id !== id);
+    const currentPartner = detail.user.partnerId ? getUserById(detail.user.partnerId) : null;
+    res.render("admin-user-synthese", { config, detail, lootboxCount, inviteCount, codexNotes, imagesNotees, bdNotees, histoiresNotees, recentPings, connectionLogs, profileThumb, allUsers, currentPartner, roleHue: roleHue(detail.user) });
+  });
+
+  router.post("/utilisateur/:id/couple", requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.redirect("/ponhgup");
+    const partnerIdRaw = String(req.body.partner_id || "").trim();
+    if (partnerIdRaw === "") {
+      clearCouplePartner(id);
+    } else {
+      const partnerId = Number(partnerIdRaw);
+      if (Number.isInteger(partnerId) && partnerId !== id) {
+        setCouplePartners(id, partnerId);
+      }
+    }
+    res.redirect("/ponhgup/utilisateur/" + id);
   });
 
   router.get("/utilisateur/:id/quizz", requireAdmin, (req, res) => {
